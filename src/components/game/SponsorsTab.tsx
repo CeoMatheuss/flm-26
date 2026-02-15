@@ -14,13 +14,14 @@ interface Props {
 
 export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers }: Props) {
   const totalMonthly = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+  const atLimit = sponsors.length >= 3;
 
   return (
     <div className="space-y-6">
       <Card className="border-primary/30">
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between">
-            <span className="flex items-center gap-2"><Handshake className="h-5 w-5" /> Patrocinadores Ativos</span>
+            <span className="flex items-center gap-2"><Handshake className="h-5 w-5" /> Patrocinadores ({sponsors.length}/3)</span>
             <span className="text-sm font-normal text-muted-foreground">Receita mensal: <span className="text-primary font-bold">R$ {(totalMonthly / 1000).toFixed(0)}k</span></span>
           </CardTitle>
         </CardHeader>
@@ -62,8 +63,8 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                   <p className="text-xs text-muted-foreground">{offer.duration} temporada(s) • Rep. mín: {offer.minReputation}</p>
                 </div>
                 <p className="text-sm font-bold text-primary">R$ {(offer.monthlyPay / 1000).toFixed(0)}k/mês</p>
-                <Button size="sm" onClick={() => onAccept(offer)} disabled={reputation < offer.minReputation}>
-                  <Plus className="h-3 w-3 mr-1" /> Aceitar
+                <Button size="sm" onClick={() => onAccept(offer)} disabled={reputation < offer.minReputation || atLimit}>
+                  <Plus className="h-3 w-3 mr-1" /> {atLimit ? 'Limite' : 'Aceitar'}
                 </Button>
               </div>
             ))}

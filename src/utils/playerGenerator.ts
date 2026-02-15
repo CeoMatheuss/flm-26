@@ -34,13 +34,13 @@ function randomName() {
 function generateAttributes(position: Player['position'], overall: number): PlayerAttributes {
   const variance = () => Math.floor(Math.random() * 16 - 8);
 
-  const base: Record<Player['position'], PlayerAttributes> = {
-    GOL: { speed: overall - 10 + variance(), shooting: overall - 20 + variance(), passing: overall - 5 + variance(), defending: overall + 5 + variance(), physical: overall + variance(), dribbling: overall - 15 + variance(), setPieces: overall - 15 + variance(), positioning: overall + 8 + variance(), heading: overall - 5 + variance(), marking: overall + variance() },
-    ZAG: { speed: overall - 5 + variance(), shooting: overall - 10 + variance(), passing: overall - 3 + variance(), defending: overall + 8 + variance(), physical: overall + 5 + variance(), dribbling: overall - 8 + variance(), setPieces: overall - 8 + variance(), positioning: overall + 5 + variance(), heading: overall + 7 + variance(), marking: overall + 8 + variance() },
-    LAT: { speed: overall + 5 + variance(), shooting: overall - 5 + variance(), passing: overall + 3 + variance(), defending: overall + variance(), physical: overall + variance(), dribbling: overall + 2 + variance(), setPieces: overall - 3 + variance(), positioning: overall + 2 + variance(), heading: overall - 5 + variance(), marking: overall + 3 + variance() },
-    VOL: { speed: overall - 3 + variance(), shooting: overall - 5 + variance(), passing: overall + 5 + variance(), defending: overall + 5 + variance(), physical: overall + 3 + variance(), dribbling: overall - 3 + variance(), setPieces: overall + variance(), positioning: overall + 5 + variance(), heading: overall + 3 + variance(), marking: overall + 7 + variance() },
-    MEI: { speed: overall + variance(), shooting: overall + 3 + variance(), passing: overall + 8 + variance(), defending: overall - 8 + variance(), physical: overall - 3 + variance(), dribbling: overall + 5 + variance(), setPieces: overall + 5 + variance(), positioning: overall + 3 + variance(), heading: overall - 3 + variance(), marking: overall - 5 + variance() },
-    ATA: { speed: overall + 5 + variance(), shooting: overall + 10 + variance(), passing: overall - 3 + variance(), defending: overall - 15 + variance(), physical: overall + variance(), dribbling: overall + 5 + variance(), setPieces: overall + 3 + variance(), positioning: overall + 8 + variance(), heading: overall + 5 + variance(), marking: overall - 12 + variance() },
+  const base: Record<Player['position'], Omit<PlayerAttributes, 'vision' | 'crossing' | 'longShots' | 'workRate' | 'composure' | 'aggression'> & { vision: number; crossing: number; longShots: number; workRate: number; composure: number; aggression: number }> = {
+    GOL: { speed: overall - 10 + variance(), shooting: overall - 20 + variance(), passing: overall - 5 + variance(), defending: overall + 5 + variance(), physical: overall + variance(), dribbling: overall - 15 + variance(), setPieces: overall - 15 + variance(), positioning: overall + 8 + variance(), heading: overall - 5 + variance(), marking: overall + variance(), vision: overall - 5 + variance(), crossing: overall - 20 + variance(), longShots: overall - 20 + variance(), workRate: overall - 5 + variance(), composure: overall + 5 + variance(), aggression: overall - 10 + variance() },
+    ZAG: { speed: overall - 5 + variance(), shooting: overall - 10 + variance(), passing: overall - 3 + variance(), defending: overall + 8 + variance(), physical: overall + 5 + variance(), dribbling: overall - 8 + variance(), setPieces: overall - 8 + variance(), positioning: overall + 5 + variance(), heading: overall + 7 + variance(), marking: overall + 8 + variance(), vision: overall - 5 + variance(), crossing: overall - 10 + variance(), longShots: overall - 8 + variance(), workRate: overall + 3 + variance(), composure: overall + 3 + variance(), aggression: overall + 5 + variance() },
+    LAT: { speed: overall + 5 + variance(), shooting: overall - 5 + variance(), passing: overall + 3 + variance(), defending: overall + variance(), physical: overall + variance(), dribbling: overall + 2 + variance(), setPieces: overall - 3 + variance(), positioning: overall + 2 + variance(), heading: overall - 5 + variance(), marking: overall + 3 + variance(), vision: overall + 2 + variance(), crossing: overall + 8 + variance(), longShots: overall - 5 + variance(), workRate: overall + 5 + variance(), composure: overall + variance(), aggression: overall + 2 + variance() },
+    VOL: { speed: overall - 3 + variance(), shooting: overall - 5 + variance(), passing: overall + 5 + variance(), defending: overall + 5 + variance(), physical: overall + 3 + variance(), dribbling: overall - 3 + variance(), setPieces: overall + variance(), positioning: overall + 5 + variance(), heading: overall + 3 + variance(), marking: overall + 7 + variance(), vision: overall + 3 + variance(), crossing: overall - 5 + variance(), longShots: overall - 3 + variance(), workRate: overall + 5 + variance(), composure: overall + 3 + variance(), aggression: overall + 5 + variance() },
+    MEI: { speed: overall + variance(), shooting: overall + 3 + variance(), passing: overall + 8 + variance(), defending: overall - 8 + variance(), physical: overall - 3 + variance(), dribbling: overall + 5 + variance(), setPieces: overall + 5 + variance(), positioning: overall + 3 + variance(), heading: overall - 3 + variance(), marking: overall - 5 + variance(), vision: overall + 8 + variance(), crossing: overall + 3 + variance(), longShots: overall + 5 + variance(), workRate: overall + variance(), composure: overall + 5 + variance(), aggression: overall - 5 + variance() },
+    ATA: { speed: overall + 5 + variance(), shooting: overall + 10 + variance(), passing: overall - 3 + variance(), defending: overall - 15 + variance(), physical: overall + variance(), dribbling: overall + 5 + variance(), setPieces: overall + 3 + variance(), positioning: overall + 8 + variance(), heading: overall + 5 + variance(), marking: overall - 12 + variance(), vision: overall + 3 + variance(), crossing: overall - 5 + variance(), longShots: overall + 5 + variance(), workRate: overall + 3 + variance(), composure: overall + 5 + variance(), aggression: overall + 3 + variance() },
   };
 
   const attrs = base[position];
@@ -56,26 +56,30 @@ function generateAttributes(position: Player['position'], overall: number): Play
     positioning: clamp(attrs.positioning),
     heading: clamp(attrs.heading),
     marking: clamp(attrs.marking),
+    vision: clamp(attrs.vision),
+    crossing: clamp(attrs.crossing),
+    longShots: clamp(attrs.longShots),
+    workRate: clamp(attrs.workRate),
+    composure: clamp(attrs.composure),
+    aggression: clamp(attrs.aggression),
   };
 }
 
 export function calculateOverall(attrs: PlayerAttributes, position: Player['position']): number {
-  const weights: Record<Player['position'], Record<keyof PlayerAttributes, number>> = {
-    GOL: { speed: 0.04, shooting: 0.01, passing: 0.08, defending: 0.30, physical: 0.18, dribbling: 0.02, setPieces: 0.02, positioning: 0.18, heading: 0.05, marking: 0.12 },
-    ZAG: { speed: 0.08, shooting: 0.03, passing: 0.08, defending: 0.22, physical: 0.15, dribbling: 0.03, setPieces: 0.02, positioning: 0.12, heading: 0.15, marking: 0.12 },
-    LAT: { speed: 0.16, shooting: 0.06, passing: 0.15, defending: 0.14, physical: 0.12, dribbling: 0.12, setPieces: 0.03, positioning: 0.08, heading: 0.04, marking: 0.10 },
-    VOL: { speed: 0.08, shooting: 0.06, passing: 0.18, defending: 0.18, physical: 0.14, dribbling: 0.07, setPieces: 0.04, positioning: 0.10, heading: 0.05, marking: 0.10 },
-    MEI: { speed: 0.10, shooting: 0.12, passing: 0.20, defending: 0.03, physical: 0.08, dribbling: 0.18, setPieces: 0.10, positioning: 0.10, heading: 0.04, marking: 0.05 },
-    ATA: { speed: 0.14, shooting: 0.22, passing: 0.07, defending: 0.01, physical: 0.10, dribbling: 0.15, setPieces: 0.05, positioning: 0.14, heading: 0.10, marking: 0.02 },
+  const weights: Record<Player['position'], Record<string, number>> = {
+    GOL: { speed: 0.04, shooting: 0.01, passing: 0.08, defending: 0.28, physical: 0.16, dribbling: 0.02, setPieces: 0.02, positioning: 0.16, heading: 0.04, marking: 0.10, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.02, composure: 0.02, aggression: 0.01 },
+    ZAG: { speed: 0.07, shooting: 0.02, passing: 0.06, defending: 0.20, physical: 0.13, dribbling: 0.02, setPieces: 0.02, positioning: 0.10, heading: 0.12, marking: 0.10, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.04, composure: 0.04, aggression: 0.04 },
+    LAT: { speed: 0.13, shooting: 0.04, passing: 0.12, defending: 0.11, physical: 0.10, dribbling: 0.10, setPieces: 0.02, positioning: 0.06, heading: 0.03, marking: 0.08, vision: 0.04, crossing: 0.08, longShots: 0.02, workRate: 0.04, composure: 0.02, aggression: 0.01 },
+    VOL: { speed: 0.06, shooting: 0.04, passing: 0.15, defending: 0.15, physical: 0.12, dribbling: 0.05, setPieces: 0.03, positioning: 0.08, heading: 0.04, marking: 0.08, vision: 0.04, crossing: 0.02, longShots: 0.02, workRate: 0.05, composure: 0.04, aggression: 0.03 },
+    MEI: { speed: 0.08, shooting: 0.10, passing: 0.16, defending: 0.02, physical: 0.06, dribbling: 0.14, setPieces: 0.08, positioning: 0.08, heading: 0.03, marking: 0.03, vision: 0.08, crossing: 0.03, longShots: 0.04, workRate: 0.03, composure: 0.03, aggression: 0.01 },
+    ATA: { speed: 0.12, shooting: 0.20, passing: 0.05, defending: 0.01, physical: 0.08, dribbling: 0.12, setPieces: 0.04, positioning: 0.12, heading: 0.08, marking: 0.01, vision: 0.03, crossing: 0.01, longShots: 0.04, workRate: 0.03, composure: 0.04, aggression: 0.02 },
   };
   const w = weights[position];
-  const val = Math.round(
-    attrs.speed * w.speed + attrs.shooting * w.shooting + attrs.passing * w.passing +
-    attrs.defending * w.defending + attrs.physical * w.physical + attrs.dribbling * w.dribbling +
-    attrs.setPieces * w.setPieces + attrs.positioning * w.positioning + attrs.heading * w.heading +
-    attrs.marking * w.marking
-  );
-  return Math.max(1, Math.min(99, val));
+  let val = 0;
+  for (const [key, weight] of Object.entries(w)) {
+    val += ((attrs as any)[key] ?? 50) * weight;
+  }
+  return Math.max(1, Math.min(99, Math.round(val)));
 }
 
 export function generatePlayer(overallRange: [number, number], ageRange: [number, number], pos?: Player['position']): Player {
@@ -168,7 +172,9 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
   const age = Math.floor(Math.random() * 3 + 16);
   const attributes = generateAttributes(pos, targetOverall);
   const overall = calculateOverall(attributes, pos);
-  const potential = Math.min(99, overall + Math.floor(Math.random() * 20 + 5));
+  // Potential capped by academy level: lvl1 = +3~9, lvl5 = +3~17, lvl10 = +3~27
+  const maxPotentialBonus = Math.min(27, 5 + academyLevel * 2);
+  const potential = Math.min(99, overall + Math.floor(Math.random() * maxPotentialBonus + 3));
 
   return {
     id: generateId(),

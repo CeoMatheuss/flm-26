@@ -28,7 +28,7 @@ const scoutOptions = [
   { skill: 10, name: 'Gênio Supremo', salary: 500000, description: 'Lendário. Relatórios perfeitos e instantâneos.' },
 ];
 
-const attrLabels: Record<keyof PlayerAttributes, string> = {
+const attrLabels: Record<string, string> = {
   speed: '⚡ Vel',
   shooting: '🎯 Fin',
   passing: '📐 Pas',
@@ -39,6 +39,12 @@ const attrLabels: Record<keyof PlayerAttributes, string> = {
   positioning: '📍 Pos',
   heading: '🗣️ Cab',
   marking: '🔒 Mar',
+  vision: '👁️ Vis',
+  crossing: '🎯 Cru',
+  longShots: '🚀 CL',
+  workRate: '🔥 Int',
+  composure: '🧠 Com',
+  aggression: '⚔️ Agr',
 };
 
 export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout, onFireScout }: Props) {

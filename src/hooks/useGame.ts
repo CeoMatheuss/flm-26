@@ -567,12 +567,16 @@ export function useGame(initialState?: GameState) {
   }, []);
 
   const acceptSponsor = useCallback((offer: SponsorOffer) => {
+    if (sponsors.length >= 3) {
+      toast.error('Limite de 3 patrocinadores atingido! Aguarde um contrato expirar.');
+      return;
+    }
     setSponsors(prev => [...prev, offer]);
     setSponsorOffers(prev => prev.filter(o => o.id !== offer.id));
     addFinance('receita', 'Patrocínio', offer.monthlyPay, `Novo: ${offer.name}`);
     setClub(prev => ({ ...prev, budget: prev.budget + offer.monthlyPay }));
     toast.success(`Patrocínio aceito: ${offer.name}!`);
-  }, [addFinance]);
+  }, [addFinance, sponsors.length]);
 
   const refreshSponsorOffers = useCallback(() => {
     setSponsorOffers(generateSponsorOffers(club.reputation, 4));
