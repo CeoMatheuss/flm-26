@@ -11,19 +11,20 @@ import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SeasonTab } from '@/components/game/SeasonTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
+import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
 import { initialLeagueTeams } from '@/types/league';
 import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
 import { generateSponsorOffers } from '@/types/sponsor';
-import { generateMarketPlayers } from '@/utils/playerGenerator';
+import { generateMarketPlayers, generateFreeAgents, generateInitialSquad } from '@/utils/playerGenerator';
 import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
@@ -78,6 +79,8 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     const customClub = {
       ...initialClub,
       name: config.name,
+      stadiumName: config.stadiumName || 'Arena ' + config.name,
+      players: generateInitialSquad(),
       matches: generateSeasonMatches(),
     };
     const newState: GameState = {
@@ -86,6 +89,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       leagueTeams: initialLeagueTeams,
       finances: [],
       marketPlayers: generateMarketPlayers(8),
+      freeAgents: generateFreeAgents(12),
       infrastructure: defaultInfrastructure,
       youthProspects: [],
       youthInvestment: 100000,
@@ -95,7 +99,6 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       events: [],
     };
 
-    // Auto-save on creation
     const jsonState = JSON.parse(JSON.stringify(newState));
     await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
 
@@ -112,7 +115,6 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     );
   }
 
-  // Show club creation if no save exists
   if (!hasSave) {
     return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
   }
@@ -191,6 +193,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
                 <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('multiplayer')} className="gap-2 text-xs"><Globe className="h-3.5 w-3.5" /> Multiplayer Online</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -199,7 +202,21 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
           <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} /></TabsContent>
           <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
-          <TabsContent value="market"><MarketTab marketPlayers={game.marketPlayers} clubPlayers={game.club.players} budget={game.club.budget} onBuy={game.buyPlayer} onSell={game.sellPlayer} onRefresh={game.refreshMarket} /></TabsContent>
+          <TabsContent value="market">
+            <MarketTab
+              marketPlayers={game.marketPlayers}
+              freeAgents={game.freeAgents}
+              clubPlayers={game.club.players}
+              budget={game.club.budget}
+              scoutReports={game.club.scoutReports || []}
+              matchesSinceLastScout={game.club.matchesSinceLastScout || 0}
+              onBuy={game.buyPlayer}
+              onSell={game.sellPlayer}
+              onSignFreeAgent={game.signFreeAgent}
+              onRefresh={game.refreshMarket}
+              onRefreshFreeAgents={game.refreshFreeAgents}
+            />
+          </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
           <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} /></TabsContent>
           <TabsContent value="youth">
@@ -227,6 +244,16 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
             <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.hasUnplayedMatches} onEndSeason={game.endSeason} />
           </TabsContent>
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} /></TabsContent>
+          <TabsContent value="settings">
+            <ClubSettingsTab
+              clubName={game.club.name}
+              stadiumName={game.club.stadiumName || 'Arena'}
+              ticketPrice={game.club.ticketPrice || 30}
+              onRenameClub={game.renameClub}
+              onRenameStadium={game.renameStadium}
+              onSetTicketPrice={game.setTicketPrice}
+            />
+          </TabsContent>
           <TabsContent value="multiplayer">
             <MultiplayerTab
               userId={userId}

@@ -1,17 +1,36 @@
+export interface PlayerAttributes {
+  speed: number;      // Velocidade
+  shooting: number;   // Finalização
+  passing: number;    // Passe
+  defending: number;  // Defesa
+  physical: number;   // Físico
+  dribbling: number;  // Drible
+}
+
 export interface Player {
   id: string;
   name: string;
   position: 'GOL' | 'ZAG' | 'LAT' | 'VOL' | 'MEI' | 'ATA';
   overall: number;
+  attributes: PlayerAttributes;
   age: number;
   salary: number;
   stamina: number;
   morale: number;
   goals: number;
   assists: number;
-  contract: number; // years remaining
-  gamesPlayed: number; // games since last training cycle
-  trainingProgress: number; // 0-10, evolves after 10 games
+  contract: number;
+  gamesPlayed: number;
+  trainingProgress: number;
+}
+
+export interface ScoutReport {
+  id: string;
+  player: Player;
+  accuracy: number; // 0-100, how accurate the report is (higher scout level = more accurate)
+  estimatedOverall: number; // may differ from real overall
+  estimatedAttributes: Partial<PlayerAttributes>; // only some attributes revealed
+  reportDate: string;
 }
 
 export interface Match {
@@ -34,10 +53,14 @@ export interface TeamStats {
 
 export interface Club {
   name: string;
+  stadiumName: string;
+  ticketPrice: number;
   budget: number;
   fans: number;
   reputation: number;
   stats: TeamStats;
   players: Player[];
   matches: Match[];
+  scoutReports: ScoutReport[];
+  matchesSinceLastScout: number;
 }
