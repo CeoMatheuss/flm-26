@@ -153,6 +153,7 @@ export function generateScoutReport(player: Player, scoutAccuracy: number): Scou
   return {
     id: generateId(),
     player,
+    scoutName: 'Olheiro',
     accuracy: scoutAccuracy,
     estimatedOverall: Math.max(1, Math.min(99, player.overall + overallNoise)),
     estimatedAttributes: revealed,
