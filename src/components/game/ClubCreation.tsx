@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Shield, Palette } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern } from './ShieldCrest';
-import fcmLogo from '@/assets/fcm26-logo.png';
+import flmLogo from '@/assets/flm26-logo.png';
 
 export interface ClubConfig {
   name: string;
@@ -103,7 +103,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center pb-2">
-          <img src={fcmLogo} alt="FCM 26" className="w-12 h-12 mx-auto mb-1" />
+          <img src={flmLogo} alt="FLM 26" className="w-12 h-12 mx-auto mb-1" />
           <CardTitle className="text-lg sm:text-xl">Criar Seu Clube</CardTitle>
           <CardDescription className="text-xs sm:text-sm">Configure a identidade do seu time</CardDescription>
         </CardHeader>

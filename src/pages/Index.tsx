@@ -31,7 +31,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
 import AuthPage from './Auth';
-import fcmLogo from '@/assets/fcm26-logo.png';
+import flmLogo from '@/assets/flm26-logo.png';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -40,8 +40,8 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <img src={fcmLogo} alt="FCM 26" className="w-20 h-20 mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Carregando FCM 26...</p>
+          <img src={flmLogo} alt="FLM 26" className="w-20 h-20 mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Carregando FLM 26...</p>
         </div>
       </div>
     );
@@ -55,6 +55,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
   const [hasSave, setHasSave] = useState(false);
+  const [isNewClub, setIsNewClub] = useState(false);
   const [displayName, setDisplayName] = useState('Manager');
 
   useEffect(() => {
@@ -106,13 +107,14 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 
     setLoadedState(newState);
     setHasSave(true);
+    setIsNewClub(true);
     toast.success(`${config.name} criado com sucesso! 🏆`);
   }, [userId]);
 
   if (!gameReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <img src={fcmLogo} alt="FCM 26" className="w-16 h-16 animate-pulse" />
+        <img src={flmLogo} alt="FLM 26" className="w-16 h-16 animate-pulse" />
       </div>
     );
   }
@@ -121,10 +123,10 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
   }
 
-  return <GameUI userId={userId} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} />;
+  return <GameUI userId={userId} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} isNewClub={isNewClub} />;
 }
 
-function GameUI({ userId, displayName, onSignOut, initialState }: { userId: string; displayName: string; onSignOut: () => void; initialState?: GameState }) {
+function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { userId: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -152,7 +154,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src={fcmLogo} alt="FCM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
+            <img src={flmLogo} alt="FLM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold truncate">{game.club.name}</h1>
               <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -161,7 +163,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} />
+            <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} isNewClub={isNewClub} />
             <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>

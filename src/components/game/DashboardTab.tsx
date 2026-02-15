@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
-import fcmLogo from '@/assets/fcm26-logo.png';
+import flmLogo from '@/assets/flm26-logo.png';
 
 interface Props {
   club: Club;
@@ -172,7 +172,7 @@ export function DashboardTab({ club, events }: Props) {
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="flex items-center justify-between py-1 sm:py-2">
                 <div className="text-center flex-1">
-                  <img src={fcmLogo} alt="FCM" className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded" />
+                  <img src={flmLogo} alt="FLM" className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded" />
                   <p className="font-bold text-xs sm:text-sm truncate">{club.name}</p>
                 </div>
                 <div className="text-center px-2 sm:px-4">

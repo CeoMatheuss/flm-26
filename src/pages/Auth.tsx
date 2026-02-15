@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import fcmLogo from '@/assets/fcm26-logo.png';
+import flmLogo from '@/assets/flm26-logo.png';
 import { Trophy, Users, Target, Swords, TrendingUp, Star } from 'lucide-react';
 
 const features = [
@@ -67,9 +67,9 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-6">
       {/* Hero */}
       <div className="text-center space-y-2 max-w-md">
-        <img src={fcmLogo} alt="FCM 26" className="w-20 h-20 mx-auto" />
-        <h1 className="text-3xl font-bold tracking-tight">FCM 26</h1>
-        <p className="text-muted-foreground text-sm">Football Club Manager 2026</p>
+        <img src={flmLogo} alt="FLM 26" className="w-20 h-20 mx-auto" />
+        <h1 className="text-3xl font-bold tracking-tight">FLM 26</h1>
+        <p className="text-muted-foreground text-sm">Football League Manager 2026</p>
       </div>
 
       {/* Login Card */}
