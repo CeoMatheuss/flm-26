@@ -286,6 +286,81 @@ export type Database = {
         }
         Relationships: []
       }
+      player_auctions: {
+        Row: {
+          created_at: string
+          current_bid: number
+          current_bidder_id: string | null
+          current_bidder_name: string | null
+          expires_at: string
+          id: string
+          min_price: number
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          seller_club_name: string
+          seller_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          current_bid?: number
+          current_bidder_id?: string | null
+          current_bidder_name?: string | null
+          expires_at?: string
+          id?: string
+          min_price: number
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          seller_club_name?: string
+          seller_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          current_bid?: number
+          current_bidder_id?: string | null
+          current_bidder_name?: string | null
+          expires_at?: string
+          id?: string
+          min_price?: number
+          player_age?: number
+          player_data?: Json
+          player_name?: string
+          player_overall?: number
+          seller_club_name?: string
+          seller_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      premium_users: {
+        Row: {
+          activated_at: string
+          id: string
+          pix_transaction_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          id?: string
+          pix_transaction_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          id?: string
+          pix_transaction_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       private_messages: {
         Row: {
           content: string
