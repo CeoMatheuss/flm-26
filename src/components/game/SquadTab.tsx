@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, CheckCircle, XCircle, Tag } from 'lucide-react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, CheckCircle, XCircle, Tag, HeartPulse } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 interface Props {
@@ -132,6 +132,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   </div>
                 </div>
 
+                {selectedPlayer.injury && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <HeartPulse className="h-4 w-4 text-destructive" />
+                      <span className="text-xs font-bold text-destructive">LESIONADO</span>
+                      <Badge variant="destructive" className="text-[9px] ml-auto">{selectedPlayer.injury.severity}</Badge>
+                    </div>
+                    <p className="text-[11px] font-semibold">{selectedPlayer.injury.type}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Progress value={((selectedPlayer.injury.originalWeeks - selectedPlayer.injury.weeksRemaining) / selectedPlayer.injury.originalWeeks) * 100} className="h-1.5 flex-1" />
+                      <span className="text-[10px] text-muted-foreground">{selectedPlayer.injury.weeksRemaining}/{selectedPlayer.injury.originalWeeks} partidas</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {selectedPlayer.attributes && (Object.entries(selectedPlayer.attributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
                     <div key={key} className="bg-muted/30 rounded p-2">
@@ -167,12 +182,18 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           {/* Player List */}
           <div className="grid gap-1.5">
             {sorted.map(player => (
-              <Card key={player.id} className={`overflow-hidden hover:border-primary/30 transition-colors cursor-pointer ${player.contract <= 1 ? 'border-destructive/30' : ''}`} onClick={() => setSelectedPlayer(player)}>
+              <Card key={player.id} className={`overflow-hidden hover:border-primary/30 transition-colors cursor-pointer ${player.injury ? 'border-red-500/40 bg-red-500/5' : player.contract <= 1 ? 'border-destructive/30' : ''}`} onClick={() => setSelectedPlayer(player)}>
                 <CardContent className="p-2 sm:p-3">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                     <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
-                    {getDevIcon(player)}
+                    {player.injury && (
+                      <Badge variant="destructive" className="text-[8px] px-1 h-4 gap-0.5 shrink-0">
+                        <HeartPulse className="h-2.5 w-2.5" />
+                        {player.injury.weeksRemaining}j
+                      </Badge>
+                    )}
+                    {!player.injury && getDevIcon(player)}
                     <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{player.age}a</span>
                     <span className={`text-[10px] shrink-0 hidden sm:inline ${player.contract <= 1 ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>📄{player.contract}a</span>
                     <span className="text-[10px] text-muted-foreground shrink-0">💰{(player.salary / 1000).toFixed(0)}k</span>

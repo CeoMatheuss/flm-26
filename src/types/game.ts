@@ -7,6 +7,13 @@ export interface PlayerAttributes {
   dribbling: number;  // Drible
 }
 
+export interface Injury {
+  type: string;       // e.g. 'muscular', 'ligamento', 'fratura', 'pancada'
+  severity: 'leve' | 'moderada' | 'grave';
+  weeksRemaining: number;  // matches left to recover
+  originalWeeks: number;   // total recovery time before physio reduction
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -22,6 +29,7 @@ export interface Player {
   contract: number;
   gamesPlayed: number;
   trainingProgress: number;
+  injury?: Injury;
 }
 
 export interface Scout {

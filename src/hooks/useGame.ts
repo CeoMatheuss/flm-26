@@ -155,7 +155,7 @@ export function useGame(initialState?: GameState) {
       }
 
       // Random events after match
-      const newEvents = generateRandomEvents(prev.players, prev.fans, prev.reputation, recentLosses, recentWins);
+      const newEvents = generateRandomEvents(prev.players, prev.fans, prev.reputation, recentLosses, recentWins, infrastructure?.physiotherapy?.level ?? 1);
       if (newEvents.length > 0) {
         let eventFanDelta = 0;
         let eventBudgetDelta = 0;
@@ -188,6 +188,14 @@ export function useGame(initialState?: GameState) {
 
         setEvents(prev => [...newEvents.map(e => ({ ...e, resolved: true })), ...prev].slice(0, 20));
 
+        // Apply injuries from events
+        const injuryMap: Record<string, import('@/types/game').Injury> = {};
+        for (const ev of newEvents) {
+          if (ev.injuryData) {
+            injuryMap[ev.injuryData.playerId] = ev.injuryData.injury;
+          }
+        }
+
         fanChange += eventFanDelta;
         const extraPlayers = prev.players.map(p => {
           const eff = playerEffects[p.id];
@@ -199,23 +207,41 @@ export function useGame(initialState?: GameState) {
         else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
         else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
 
+        const physioLevel = infrastructure?.physiotherapy?.level ?? 1;
+
         return {
           ...prev,
           matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
           players: extraPlayers.map(p => {
-            const newGames = p.gamesPlayed + 1;
-            const boost = getTrainingBoost(infrastructure.trainingCenter.level);
+            // Apply new injury if generated
+            let playerInjury = injuryMap[p.id] ?? p.injury;
+            
+            // Tick down existing injury recovery
+            if (playerInjury && !injuryMap[p.id]) {
+              playerInjury = { ...playerInjury, weeksRemaining: playerInjury.weeksRemaining - 1 };
+              if (playerInjury.weeksRemaining <= 0) {
+                playerInjury = undefined as any;
+                toast.success(`🏥 ${p.name} se recuperou da lesão!`);
+              }
+            }
+
+            const isInjured = !!playerInjury;
+            const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
+            const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
             let newOverall = p.overall;
-            if (newGames >= 10 && p.age <= 33) {
+            if (newGames >= 10 && p.age <= 33 && !isInjured) {
               const chance = p.age <= 30 ? boost : boost * 0.3;
               newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
             }
             return {
               ...p,
+              injury: playerInjury || undefined,
               gamesPlayed: newGames >= 10 ? 0 : newGames,
               trainingProgress: newGames >= 10 ? 0 : newGames,
               overall: newOverall,
-            stamina: Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(infrastructure.physiotherapy.level))),
+              stamina: isInjured
+                ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel) * 0.5)
+                : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel))),
               morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
             };
           }),
@@ -241,23 +267,39 @@ export function useGame(initialState?: GameState) {
       else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
       else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
 
+      const physioLevel2 = infrastructure?.physiotherapy?.level ?? 1;
+
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
-          const newGames = p.gamesPlayed + 1;
-          const boost = getTrainingBoost(infrastructure.trainingCenter.level);
+          // Tick down existing injury
+          let playerInjury = p.injury;
+          if (playerInjury) {
+            playerInjury = { ...playerInjury, weeksRemaining: playerInjury.weeksRemaining - 1 };
+            if (playerInjury.weeksRemaining <= 0) {
+              playerInjury = undefined as any;
+              toast.success(`🏥 ${p.name} se recuperou da lesão!`);
+            }
+          }
+
+          const isInjured = !!playerInjury;
+          const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
+          const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
           let newOverall = p.overall;
-          if (newGames >= 10 && p.age <= 33) {
+          if (newGames >= 10 && p.age <= 33 && !isInjured) {
             const chance = p.age <= 30 ? boost : boost * 0.3;
             newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
           }
           return {
             ...p,
+            injury: playerInjury || undefined,
             gamesPlayed: newGames >= 10 ? 0 : newGames,
             trainingProgress: newGames >= 10 ? 0 : newGames,
             overall: newOverall,
-            stamina: Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(infrastructure.physiotherapy.level))),
+            stamina: isInjured
+              ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel2) * 0.5)
+              : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel2))),
             morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
           };
         }),
@@ -491,7 +533,7 @@ export function useGame(initialState?: GameState) {
         .map(s => ({ ...s, contract: s.contract - 1 }))
         .filter(s => s.contract > 0),
       players: prev.players
-        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0 }))
+        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0, injury: undefined }))
         .map(applyAgeDevelopment)
         .filter(p => p.age <= 42 && p.contract > 0),
     }));
