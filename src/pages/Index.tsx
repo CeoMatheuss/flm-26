@@ -10,11 +10,13 @@ import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SeasonTab } from '@/components/game/SeasonTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
+import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
 import AuthPage from './Auth';
@@ -35,32 +37,31 @@ const Index = () => {
   }
 
   if (!session) return <AuthPage />;
-  return <GameApp userId={session.user.id} onSignOut={signOut} />;
+  return <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />;
 };
 
-function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
+function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
+  const [displayName, setDisplayName] = useState('Manager');
 
   useEffect(() => {
-    const loadSave = async () => {
-      const { data } = await supabase
-        .from('game_saves')
-        .select('club_data')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    const load = async () => {
+      const [saveRes, profileRes] = await Promise.all([
+        supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle(),
+      ]);
 
-      if (data?.club_data) {
+      if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
+      if (saveRes.data?.club_data) {
         try {
-          setLoadedState(data.club_data as unknown as GameState);
+          setLoadedState(saveRes.data.club_data as unknown as GameState);
           toast.success('Save carregado!');
         } catch { /* ignore */ }
       }
       setGameReady(true);
     };
-    loadSave();
+    load();
   }, [userId]);
 
   if (!gameReady) {
@@ -71,11 +72,12 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
     );
   }
 
-  return <GameUI userId={userId} onSignOut={onSignOut} initialState={loadedState} />;
+  return <GameUI userId={userId} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} />;
 }
 
-function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut: () => void; initialState?: GameState }) {
+function GameUI({ userId, displayName, onSignOut, initialState }: { userId: string; displayName: string; onSignOut: () => void; initialState?: GameState }) {
   const game = useGame(initialState);
+  const mp = useMultiplayer(userId, displayName);
 
   const saveGame = useCallback(async () => {
     const state = game.getFullState();
@@ -132,6 +134,7 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
             <TabsTrigger value="infra" className="gap-1 text-xs"><Building2 className="h-3 w-3" /> Estrutura</TabsTrigger>
             <TabsTrigger value="season" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Temporada</TabsTrigger>
             <TabsTrigger value="finance" className="gap-1 text-xs"><DollarSign className="h-3 w-3" /> Finanças</TabsTrigger>
+            <TabsTrigger value="multiplayer" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Online</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard"><DashboardTab club={game.club} /></TabsContent>
@@ -165,6 +168,27 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
             <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.hasUnplayedMatches} onEndSeason={game.endSeason} />
           </TabsContent>
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} /></TabsContent>
+          <TabsContent value="multiplayer">
+            <MultiplayerTab
+              userId={userId}
+              leagues={mp.leagues}
+              currentLeague={mp.currentLeague}
+              members={mp.members}
+              chatMessages={mp.chatMessages}
+              privateMessages={mp.privateMessages}
+              proposals={mp.proposals}
+              rivalries={mp.rivalries}
+              loading={mp.loading}
+              onCreateLeague={mp.createLeague}
+              onJoinLeague={mp.joinLeague}
+              onEnterLeague={mp.enterLeague}
+              onLeaveLeague={mp.leaveLeague}
+              onSendChat={mp.sendChat}
+              onSendPrivateMessage={mp.sendPrivateMessage}
+              onSendProposal={mp.sendProposal}
+              onRespondProposal={mp.respondProposal}
+            />
+          </TabsContent>
         </Tabs>
       </main>
     </div>

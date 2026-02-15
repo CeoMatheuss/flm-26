@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          league_id: string
+          sender_name: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          league_id: string
+          sender_name: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          league_id?: string
+          sender_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_saves: {
         Row: {
           club_data: Json
@@ -41,6 +76,142 @@ export type Database = {
         }
         Relationships: []
       }
+      league_members: {
+        Row: {
+          club_logo: string
+          club_name: string
+          draws: number
+          goals_against: number
+          goals_for: number
+          id: string
+          joined_at: string
+          league_id: string
+          losses: number
+          played: number
+          points: number
+          reputation: number
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          club_logo?: string
+          club_name?: string
+          draws?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          joined_at?: string
+          league_id: string
+          losses?: number
+          played?: number
+          points?: number
+          reputation?: number
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          club_logo?: string
+          club_name?: string
+          draws?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          joined_at?: string
+          league_id?: string
+          losses?: number
+          played?: number
+          points?: number
+          reputation?: number
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_leagues: {
+        Row: {
+          code: string
+          created_at: string
+          current_round: number
+          id: string
+          max_members: number
+          name: string
+          owner_id: string
+          season: number
+          status: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_round?: number
+          id?: string
+          max_members?: number
+          name: string
+          owner_id: string
+          season?: number
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_round?: number
+          id?: string
+          max_members?: number
+          name?: string
+          owner_id?: string
+          season?: number
+          status?: string
+        }
+        Relationships: []
+      }
+      private_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          league_id: string
+          read: boolean
+          receiver_id: string
+          sender_id: string
+          sender_name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          league_id: string
+          read?: boolean
+          receiver_id: string
+          sender_id: string
+          sender_name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          league_id?: string
+          read?: boolean
+          receiver_id?: string
+          sender_id?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -61,6 +232,109 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      rivalries: {
+        Row: {
+          created_at: string
+          draws: number
+          id: string
+          intensity: string
+          league_id: string
+          matches_played: number
+          user_a: string
+          user_a_wins: number
+          user_b: string
+          user_b_wins: number
+        }
+        Insert: {
+          created_at?: string
+          draws?: number
+          id?: string
+          intensity?: string
+          league_id: string
+          matches_played?: number
+          user_a: string
+          user_a_wins?: number
+          user_b: string
+          user_b_wins?: number
+        }
+        Update: {
+          created_at?: string
+          draws?: number
+          id?: string
+          intensity?: string
+          league_id?: string
+          matches_played?: number
+          user_a?: string
+          user_a_wins?: number
+          user_b?: string
+          user_b_wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rivalries_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trade_proposals: {
+        Row: {
+          created_at: string
+          id: string
+          league_id: string
+          loan_duration: number | null
+          message: string | null
+          player_data: Json | null
+          player_name: string
+          price: number
+          proposal_type: string
+          receiver_id: string
+          sender_id: string
+          sender_name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          league_id: string
+          loan_duration?: number | null
+          message?: string | null
+          player_data?: Json | null
+          player_name: string
+          price?: number
+          proposal_type?: string
+          receiver_id: string
+          sender_id: string
+          sender_name: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          league_id?: string
+          loan_duration?: number | null
+          message?: string | null
+          player_data?: Json | null
+          player_name?: string
+          price?: number
+          proposal_type?: string
+          receiver_id?: string
+          sender_id?: string
+          sender_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_proposals_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
