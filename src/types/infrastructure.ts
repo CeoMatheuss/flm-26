@@ -4,6 +4,7 @@ export interface Infrastructure {
   trainingCenter: FacilityLevel;
   youthAcademy: FacilityLevel;
   stadium: FacilityLevel;
+  physiotherapy: FacilityLevel;
 }
 
 export interface FacilityLevel {
@@ -32,7 +33,13 @@ export const defaultInfrastructure: Infrastructure = {
   trainingCenter: { level: 1, maxLevel: 10 },
   youthAcademy: { level: 1, maxLevel: 10 },
   stadium: { level: 1, maxLevel: 10 },
+  physiotherapy: { level: 1, maxLevel: 10 },
 };
+
+export function getPhysiotherapyRecovery(level: number): number {
+  // Base recovery 5 stamina + 3 per level
+  return 5 + level * 3;
+}
 
 export function getTrainingBoost(level: number): number {
   return 0.5 + level * 0.15;

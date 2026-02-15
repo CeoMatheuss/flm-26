@@ -3,7 +3,7 @@ import { Club, Player, Match, ScoutReport, Scout } from '@/types/game';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
-import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
+import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
 import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
@@ -215,7 +215,7 @@ export function useGame(initialState?: GameState) {
               gamesPlayed: newGames >= 10 ? 0 : newGames,
               trainingProgress: newGames >= 10 ? 0 : newGames,
               overall: newOverall,
-              stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
+            stamina: Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(infrastructure.physiotherapy.level))),
               morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
             };
           }),
@@ -257,7 +257,7 @@ export function useGame(initialState?: GameState) {
             gamesPlayed: newGames >= 10 ? 0 : newGames,
             trainingProgress: newGames >= 10 ? 0 : newGames,
             overall: newOverall,
-            stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
+            stamina: Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(infrastructure.physiotherapy.level))),
             morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
           };
         }),
@@ -367,13 +367,13 @@ export function useGame(initialState?: GameState) {
   const refreshMarket = useCallback(() => setMarketPlayers(generateMarketPlayers(8)), []);
   const refreshFreeAgents = useCallback(() => setFreeAgents(generateFreeAgents(12)), []);
 
-  const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium') => {
+  const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => {
     const cost = getUpgradeCost(infrastructure[facility].level);
     if (club.budget < cost) return;
 
     setClub(prev => {
       if (prev.budget < cost) return prev;
-      const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : 'Estádio';
+      const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
       addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${infrastructure[facility].level + 1}`);
       return { ...prev, budget: prev.budget - cost };
     });
