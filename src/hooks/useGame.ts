@@ -178,13 +178,26 @@ export function useGame(initialState?: GameState) {
 
         return {
           ...prev,
-          matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
-          players: extraPlayers.map(p => ({
-            ...p,
-            stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
-            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
-          })),
-          budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
+        matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
+          players: extraPlayers.map(p => {
+            const newGames = p.gamesPlayed + 1;
+            const boost = getTrainingBoost(infrastructure.trainingCenter.level);
+            let newOverall = p.overall;
+            // Every 10 games, chance to improve based on infrastructure
+            if (newGames >= 10 && p.age <= 33) {
+              const chance = p.age <= 30 ? boost : boost * 0.3;
+              newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
+            }
+            return {
+              ...p,
+              gamesPlayed: newGames >= 10 ? 0 : newGames,
+              trainingProgress: newGames >= 10 ? 0 : newGames,
+              overall: newOverall,
+              stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
+              morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+            };
+          }),
+        budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
           fans: Math.max(100, prev.fans + fanChange),
           reputation: Math.min(100, Math.max(1, prev.reputation + repChange + eventRepDelta)),
           stats: {
@@ -207,11 +220,23 @@ export function useGame(initialState?: GameState) {
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
-        players: prev.players.map(p => ({
-          ...p,
-          stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
-          morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
-        })),
+        players: prev.players.map(p => {
+          const newGames = p.gamesPlayed + 1;
+          const boost = getTrainingBoost(infrastructure.trainingCenter.level);
+          let newOverall = p.overall;
+          if (newGames >= 10 && p.age <= 33) {
+            const chance = p.age <= 30 ? boost : boost * 0.3;
+            newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
+          }
+          return {
+            ...p,
+            gamesPlayed: newGames >= 10 ? 0 : newGames,
+            trainingProgress: newGames >= 10 ? 0 : newGames,
+            overall: newOverall,
+            stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
+            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+          };
+        }),
         budget: prev.budget + prize + sponsorWeekly - youthCost,
         fans: Math.max(100, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
@@ -227,32 +252,10 @@ export function useGame(initialState?: GameState) {
     });
   }, [tactics, addFinance, infrastructure, sponsors, youthInvestment]);
 
-  const trainPlayer = useCallback((playerId: string) => {
-    const cost = 10000;
-    const boost = getTrainingBoost(infrastructure.trainingCenter.level);
-    setClub(prev => {
-      if (prev.budget < cost) return prev;
-      const player = prev.players.find(p => p.id === playerId);
-      if (!player) return prev;
-
-      addFinance('despesa', 'Treino', cost, `Treino: ${player.name}`);
-
-      return {
-        ...prev,
-        budget: prev.budget - cost,
-        players: prev.players.map(p => {
-          if (p.id !== playerId) return p;
-          let newOverall = p.overall;
-          if (p.age <= 30) {
-            newOverall = Math.min(99, p.overall + (Math.random() < boost ? 1 : 0));
-          } else if (p.age <= 33) {
-            newOverall = Math.min(99, p.overall + (Math.random() < boost * 0.3 ? 1 : 0));
-          }
-          return { ...p, overall: newOverall, stamina: Math.min(100, p.stamina + 10), morale: Math.min(100, p.morale + 3) };
-        }),
-      };
-    });
-  }, [addFinance, infrastructure.trainingCenter.level]);
+  const trainPlayer = useCallback((_playerId: string) => {
+    // Training is now automatic every 10 games based on infrastructure
+    toast.info('Treino automático: jogadores evoluem a cada 10 jogos com base na estrutura!');
+  }, []);
 
   const restPlayer = useCallback((playerId: string) => {
     setClub(prev => ({
@@ -305,6 +308,7 @@ export function useGame(initialState?: GameState) {
       id: prospect.id, name: prospect.name, position: prospect.position,
       overall: prospect.overall, age: prospect.age, salary: prospect.salary,
       stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
+      contract: 3, gamesPlayed: 0, trainingProgress: 0,
     };
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
@@ -345,7 +349,7 @@ export function useGame(initialState?: GameState) {
       budget: prev.budget + seasonPrize,
       reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),
       players: prev.players
-        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1 }))
+        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0 }))
         .map(applyAgeDevelopment)
         .filter(p => p.age <= 42),
     }));

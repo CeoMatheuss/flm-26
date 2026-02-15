@@ -27,6 +27,9 @@ export function generateMarketPlayer(): Player {
     morale: Math.floor(Math.random() * 30 + 60),
     goals: 0,
     assists: 0,
+    contract: Math.floor(Math.random() * 4 + 1),
+    gamesPlayed: 0,
+    trainingProgress: 0,
   };
 }
 
@@ -59,6 +62,9 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
     morale: Math.floor(Math.random() * 20 + 70),
     goals: 0,
     assists: 0,
+    contract: 5,
+    gamesPlayed: 0,
+    trainingProgress: 0,
     potential,
     monthsInAcademy: 0,
   };
