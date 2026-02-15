@@ -10,6 +10,13 @@ import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFree
 import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
 
+export interface LoanedPlayer {
+  player: Player;
+  fromClub: string; // 'player' = loaned out by player, 'bot' = loaned in from bot
+  direction: 'in' | 'out';
+  seasonStart: number;
+}
+
 export interface GameState {
   club: Club;
   tactics: TacticsConfig;
@@ -24,6 +31,7 @@ export interface GameState {
   sponsors: Sponsor[];
   sponsorOffers: SponsorOffer[];
   events: GameEvent[];
+  loanedPlayers?: LoanedPlayer[];
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -58,6 +66,7 @@ export function useGame(initialState?: GameState) {
   const [sponsors, setSponsors] = useState<Sponsor[]>(initialState?.sponsors ?? []);
   const [sponsorOffers, setSponsorOffers] = useState<SponsorOffer[]>(initialState?.sponsorOffers ?? generateSponsorOffers(65, 4));
   const [events, setEvents] = useState<GameEvent[]>(initialState?.events ?? []);
+  const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
   const [listedForSale, setListedForSale] = useState<string[]>([]);
 
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
@@ -445,6 +454,33 @@ export function useGame(initialState?: GameState) {
   const refreshMarket = useCallback(() => setMarketPlayers(generateMarketPlayers(8)), []);
   const refreshFreeAgents = useCallback(() => setFreeAgents(generateFreeAgents(12)), []);
 
+  // === LOAN SYSTEM ===
+  const loansOut = loanedPlayers.filter(l => l.direction === 'out');
+  const loansIn = loanedPlayers.filter(l => l.direction === 'in');
+
+  const loanOutPlayer = useCallback((playerId: string) => {
+    if (loansOut.length >= 3) { toast.error('Limite de 3 empréstimos atingido!'); return; }
+    setClub(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      if (!player) return prev;
+      if (prev.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return prev; }
+      // Check if player is already loaned in
+      if (loanedPlayers.some(l => l.player.id === playerId)) { toast.error('Este jogador já está emprestado!'); return prev; }
+      setLoanedPlayers(lp => [...lp, { player, fromClub: 'player', direction: 'out', seasonStart: season.currentSeason }]);
+      toast.success(`${player.name} emprestado por 1 temporada! O clube receptor paga o salário.`);
+      return { ...prev, players: prev.players.filter(p => p.id !== playerId) };
+    });
+  }, [loansOut.length, loanedPlayers, season.currentSeason]);
+
+  const loanInPlayer = useCallback((player: Player) => {
+    if (loansIn.length >= 3) { toast.error('Limite de 3 empréstimos recebidos atingido!'); return; }
+    setLoanedPlayers(lp => [...lp, { player, fromClub: 'bot', direction: 'in', seasonStart: season.currentSeason }]);
+    setClub(prev => ({ ...prev, players: [...prev.players, player] }));
+    setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
+    addFinance('despesa', 'Empréstimo', player.salary * 12, `Empréstimo: ${player.name} (salário 1 temporada)`);
+    toast.success(`${player.name} emprestado ao seu clube! Você arca com o salário.`);
+  }, [loansIn.length, season.currentSeason, addFinance]);
+
   const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => {
     const cost = getUpgradeCost(infrastructure[facility].level);
     if (club.budget < cost) return;
@@ -557,22 +593,31 @@ export function useGame(initialState?: GameState) {
     }));
 
     setLeagueTeams(getLeagueTeams(club.country || 'BR', club.name).map(t => ({ ...t, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 })));
-    setClub(prev => ({
-      ...prev,
-      matches: generateSeasonMatches(prev.country),
-      stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      budget: prev.budget + seasonPrize,
-      reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),
-      scoutReports: [],
-      matchesSinceLastScout: 0,
-      scouts: prev.scouts
-        .map(s => ({ ...s, contract: s.contract - 1 }))
-        .filter(s => s.contract > 0),
-      players: prev.players
-        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0, injury: undefined }))
-        .map(applyAgeDevelopment)
-        .filter(p => p.age <= 42 && p.contract > 0),
-    }));
+    // Return loaned-in players (remove from squad), get back loaned-out players
+    const loanedInIds = loanedPlayers.filter(l => l.direction === 'in').map(l => l.player.id);
+    const returnedPlayers = loanedPlayers.filter(l => l.direction === 'out').map(l => l.player);
+
+    setClub(prev => {
+      const basePlayers = prev.players.filter(p => !loanedInIds.includes(p.id));
+      const allPlayers = [...basePlayers, ...returnedPlayers];
+      return {
+        ...prev,
+        matches: generateSeasonMatches(prev.country),
+        stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+        budget: prev.budget + seasonPrize,
+        reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),
+        scoutReports: [],
+        matchesSinceLastScout: 0,
+        scouts: prev.scouts
+          .map(s => ({ ...s, contract: s.contract - 1 }))
+          .filter(s => s.contract > 0),
+        players: allPlayers
+          .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0, injury: undefined }))
+          .map(applyAgeDevelopment)
+          .filter(p => p.age <= 42 && p.contract > 0),
+      };
+    });
+    setLoanedPlayers([]);
 
     addFinance('receita', 'Premiação', seasonPrize, `Premiação T${season.currentSeason} - ${clubPos}º lugar`);
     setMarketPlayers(generateMarketPlayers(10));
@@ -591,16 +636,17 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers]);
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events, listedForSale,
+    sponsors, sponsorOffers, events, listedForSale, loanedPlayers,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
+    loanOutPlayer, loanInPlayer,
   };
 }

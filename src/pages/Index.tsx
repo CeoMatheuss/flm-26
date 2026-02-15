@@ -15,6 +15,8 @@ import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
+import { RulesTab } from '@/components/game/RulesTab';
+import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -27,7 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -215,6 +217,8 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('rules')} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Regras</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('multiplayer')} className="gap-2 text-xs"><Globe className="h-3.5 w-3.5" /> Multiplayer Online</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -232,11 +236,14 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               clubName={game.club.name}
               listedForSale={game.listedForSale}
               scoutReports={game.club.scoutReports || []}
+              loanedPlayers={game.loanedPlayers}
               onBuy={game.buyPlayer}
               onSell={game.sellPlayer}
               onSignFreeAgent={game.signFreeAgent}
               onRefresh={game.refreshMarket}
               onRefreshFreeAgents={game.refreshFreeAgents}
+              onLoanOut={game.loanOutPlayer}
+              onLoanIn={game.loanInPlayer}
             />
           </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
@@ -320,6 +327,8 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               onRespondProposal={mp.respondProposal}
             />
           </TabsContent>
+          <TabsContent value="rules"><RulesTab /></TabsContent>
+          <TabsContent value="updates"><UpdatesTab /></TabsContent>
         </Tabs>
       </main>
     </div>
