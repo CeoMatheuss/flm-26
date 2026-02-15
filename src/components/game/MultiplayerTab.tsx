@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, MessageSquare, Send, ArrowLeft, Users, Trophy, Handshake, Swords, Plus, LogIn, Copy, Check } from 'lucide-react';
-import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry } from '@/hooks/useMultiplayer';
+import { Globe, MessageSquare, Send, ArrowLeft, Users, Trophy, Handshake, Swords, Plus, LogIn, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag } from 'lucide-react';
+import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
 interface Props {
   userId: string;
@@ -18,7 +18,11 @@ interface Props {
   privateMessages: PrivateMessage[];
   proposals: TradeProposal[];
   rivalries: Rivalry[];
+  leagueMatches: LeagueMatch[];
+  leagueSquads: LeagueSquad[];
   loading: boolean;
+  clubPlayers?: any[];
+  clubTactics?: any;
   onCreateLeague: (name: string, clubName: string) => void;
   onJoinLeague: (code: string, clubName: string) => void;
   onEnterLeague: (league: MultiplayerLeague) => void;
@@ -27,6 +31,10 @@ interface Props {
   onSendPrivateMessage: (receiverId: string, content: string) => void;
   onSendProposal: (receiverId: string, playerName: string, price: number, type: string, message?: string, loanDuration?: number) => void;
   onRespondProposal: (proposalId: string, accept: boolean) => void;
+  onSyncSquad?: (players: any[], tactics: any) => void;
+  onStartSeason?: () => void;
+  onSimulateRound?: (round: number) => void;
+  onEndSeason?: () => void;
 }
 
 export function MultiplayerTab(props: Props) {
@@ -84,7 +92,12 @@ function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLe
               <div key={l.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
                 <div>
                   <p className="font-semibold text-sm">{l.name}</p>
-                  <p className="text-xs text-muted-foreground">Código: {l.code} • T{l.season}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Código: {l.code} • T{l.season} •{' '}
+                    <span className={l.season_status === 'in_progress' ? 'text-emerald-400' : l.season_status === 'finished' ? 'text-amber-400' : 'text-muted-foreground'}>
+                      {l.season_status === 'registration' ? '📝 Inscrições' : l.season_status === 'in_progress' ? '⚽ Em andamento' : l.season_status === 'finished' ? '🏆 Finalizada' : l.season_status}
+                    </span>
+                  </p>
                 </div>
                 <Button size="sm" onClick={() => onEnterLeague(l)}>Entrar</Button>
               </div>
@@ -97,8 +110,10 @@ function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLe
 }
 
 function LeagueView(props: Props) {
-  const { currentLeague, members, chatMessages, privateMessages, proposals, rivalries, userId,
-    onLeaveLeague, onSendChat, onSendPrivateMessage, onSendProposal, onRespondProposal } = props;
+  const { currentLeague, members, chatMessages, privateMessages, proposals, rivalries, leagueMatches, leagueSquads, userId,
+    loading, clubPlayers, clubTactics,
+    onLeaveLeague, onSendChat, onSendPrivateMessage, onSendProposal, onRespondProposal,
+    onSyncSquad, onStartSeason, onSimulateRound, onEndSeason } = props;
   const [copied, setCopied] = useState(false);
 
   const copyCode = () => {
@@ -107,6 +122,10 @@ function LeagueView(props: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isOwner = currentLeague!.owner_id === userId;
+  const seasonStatus = (currentLeague as any)?.season_status || 'registration';
+  const mySquadSynced = leagueSquads.some(s => s.user_id === userId);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -114,11 +133,15 @@ function LeagueView(props: Props) {
           <Button size="sm" variant="ghost" onClick={onLeaveLeague}><ArrowLeft className="h-4 w-4" /></Button>
           <div>
             <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-muted-foreground">Código: {currentLeague!.code}</span>
               <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={copyCode}>
                 {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
               </Button>
+              <Badge variant="outline" className="text-[10px]">T{currentLeague!.season}</Badge>
+              <Badge variant={seasonStatus === 'in_progress' ? 'default' : 'secondary'} className="text-[10px]">
+                {seasonStatus === 'registration' ? '📝 Inscrições' : seasonStatus === 'in_progress' ? `⚽ Rodada ${currentLeague!.current_round}` : '🏆 Finalizada'}
+              </Badge>
             </div>
           </div>
         </div>
@@ -128,14 +151,31 @@ function LeagueView(props: Props) {
       <Tabs defaultValue="standings">
         <TabsList className="w-full flex-wrap h-auto gap-1 bg-card/50">
           <TabsTrigger value="standings" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Tabela</TabsTrigger>
-          <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat Global</TabsTrigger>
-          <TabsTrigger value="private" className="gap-1 text-xs"><MessageSquare className="h-3 w-3" /> Privado</TabsTrigger>
-          <TabsTrigger value="proposals" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Propostas</TabsTrigger>
-          <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rivalidades</TabsTrigger>
+          <TabsTrigger value="matches" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Jogos</TabsTrigger>
+          <TabsTrigger value="squad" className="gap-1 text-xs"><Shield className="h-3 w-3" /> Elenco</TabsTrigger>
+          <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat</TabsTrigger>
+          <TabsTrigger value="private" className="gap-1 text-xs"><MessageSquare className="h-3 w-3" /> PM</TabsTrigger>
+          <TabsTrigger value="proposals" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Trades</TabsTrigger>
+          <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rival</TabsTrigger>
+          {isOwner && <TabsTrigger value="admin" className="gap-1 text-xs"><Flag className="h-3 w-3" /> Admin</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="standings">
           <StandingsView members={members} userId={userId} />
+        </TabsContent>
+        <TabsContent value="matches">
+          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} />
+        </TabsContent>
+        <TabsContent value="squad">
+          <SquadSyncView
+            userId={userId}
+            leagueSquads={leagueSquads}
+            members={members}
+            clubPlayers={clubPlayers}
+            clubTactics={clubTactics}
+            mySquadSynced={mySquadSynced}
+            onSync={onSyncSquad}
+          />
         </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
@@ -149,11 +189,26 @@ function LeagueView(props: Props) {
         <TabsContent value="rivalries">
           <RivalriesView rivalries={rivalries} members={members} userId={userId} />
         </TabsContent>
+        {isOwner && (
+          <TabsContent value="admin">
+            <AdminView
+              league={currentLeague!}
+              members={members}
+              leagueSquads={leagueSquads}
+              leagueMatches={leagueMatches}
+              loading={loading}
+              onStartSeason={onStartSeason}
+              onSimulateRound={onSimulateRound}
+              onEndSeason={onEndSeason}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
 
+// === STANDINGS ===
 function StandingsView({ members, userId }: { members: LeagueMember[]; userId: string }) {
   const sorted = [...members].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
   return (
@@ -196,6 +251,261 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
   );
 }
 
+// === MATCHES VIEW ===
+function MatchesView({ matches, members, userId, currentRound }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number }) {
+  const [selectedRound, setSelectedRound] = useState(currentRound || 1);
+  const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
+  const getLogo = (uid: string) => members.find(m => m.user_id === uid)?.club_logo || '⚽';
+  
+  const totalRounds = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : 0;
+  const roundMatches = matches.filter(m => m.round === selectedRound);
+
+  if (matches.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+          <p className="text-sm text-muted-foreground">Nenhuma partida agendada.</p>
+          <p className="text-xs text-muted-foreground mt-1">O dono da liga precisa iniciar a temporada.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Round selector */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        {Array.from({ length: totalRounds }, (_, i) => i + 1).map(r => {
+          const allPlayed = matches.filter(m => m.round === r).every(m => m.status === 'played');
+          const isCurrent = r === currentRound;
+          return (
+            <Button key={r} size="sm" variant={selectedRound === r ? 'default' : 'outline'}
+              onClick={() => setSelectedRound(r)}
+              className={`text-xs shrink-0 ${isCurrent && selectedRound !== r ? 'border-primary/50' : ''}`}>
+              R{r}
+              {allPlayed && <Check className="h-3 w-3 ml-1 text-emerald-400" />}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Matches for selected round */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">RODADA {selectedRound}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {roundMatches.map(m => {
+            const isMyMatch = m.home_user_id === userId || m.away_user_id === userId;
+            return (
+              <div key={m.id} className={`p-3 rounded-lg border ${isMyMatch ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-sm">{getLogo(m.home_user_id)}</span>
+                    <span className={`text-sm font-semibold truncate ${m.home_user_id === userId ? 'text-primary' : ''}`}>
+                      {getClub(m.home_user_id)}
+                    </span>
+                  </div>
+                  <div className="px-3 text-center shrink-0">
+                    {m.status === 'played' ? (
+                      <span className="text-lg font-bold">{m.home_goals} - {m.away_goals}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted">VS</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 justify-end">
+                    <span className={`text-sm font-semibold truncate ${m.away_user_id === userId ? 'text-primary' : ''}`}>
+                      {getClub(m.away_user_id)}
+                    </span>
+                    <span className="text-sm">{getLogo(m.away_user_id)}</span>
+                  </div>
+                </div>
+                {/* Match events */}
+                {m.status === 'played' && m.match_data?.events && (
+                  <div className="mt-2 pt-2 border-t border-border/30">
+                    {(m.match_data.events as any[]).map((ev: any, i: number) => (
+                      <p key={i} className="text-[10px] text-muted-foreground">
+                        {ev.minute}' ⚽ {ev.playerName} ({ev.team === 'home' ? getClub(m.home_user_id) : getClub(m.away_user_id)})
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// === SQUAD SYNC VIEW ===
+function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics, mySquadSynced, onSync }: {
+  userId: string; leagueSquads: LeagueSquad[]; members: LeagueMember[];
+  clubPlayers?: any[]; clubTactics?: any; mySquadSynced: boolean;
+  onSync?: (players: any[], tactics: any) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* My squad sync */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> SINCRONIZAR MEU ELENCO
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Envie seu elenco atual e táticas para a liga online. Necessário antes de iniciar a temporada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Badge variant={mySquadSynced ? 'default' : 'destructive'} className="text-xs">
+              {mySquadSynced ? '✅ Sincronizado' : '❌ Não sincronizado'}
+            </Badge>
+            {clubPlayers && onSync && (
+              <Button size="sm" onClick={() => onSync(clubPlayers, clubTactics)} className="text-xs">
+                <RefreshCw className="h-3 w-3 mr-1" />
+                {mySquadSynced ? 'Atualizar Elenco' : 'Sincronizar Agora'}
+              </Button>
+            )}
+          </div>
+          {clubPlayers && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {clubPlayers.length} jogadores serão enviados • OVR médio: {clubPlayers.length > 0 ? Math.round(clubPlayers.reduce((s, p) => s + p.overall, 0) / clubPlayers.length) : 0}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Other members' squads */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">ELENCOS DA LIGA</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {members.map(m => {
+            const squad = leagueSquads.find(s => s.user_id === m.user_id);
+            const players = squad?.squad_data || [];
+            const avgOvr = players.length > 0 ? Math.round(players.reduce((s: number, p: any) => s + (p.overall || 0), 0) / players.length) : 0;
+            const isMe = m.user_id === userId;
+            return (
+              <div key={m.id} className={`p-3 rounded-lg border ${isMe ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{m.club_logo}</span>
+                    <span className="text-sm font-semibold">{m.club_name}</span>
+                    {isMe && <Badge variant="outline" className="text-[10px]">Você</Badge>}
+                  </div>
+                  <div className="text-right">
+                    {squad ? (
+                      <div>
+                        <p className="text-xs font-semibold">{players.length} jogadores</p>
+                        <p className="text-[10px] text-muted-foreground">OVR médio: {avgOvr}</p>
+                      </div>
+                    ) : (
+                      <Badge variant="destructive" className="text-[10px]">Não sincronizado</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// === ADMIN VIEW ===
+function AdminView({ league, members, leagueSquads, leagueMatches, loading, onStartSeason, onSimulateRound, onEndSeason }: {
+  league: MultiplayerLeague; members: LeagueMember[]; leagueSquads: LeagueSquad[];
+  leagueMatches: LeagueMatch[]; loading: boolean;
+  onStartSeason?: () => void; onSimulateRound?: (round: number) => void; onEndSeason?: () => void;
+}) {
+  const seasonStatus = (league as any).season_status || 'registration';
+  const syncedCount = leagueSquads.length;
+  const totalRounds = leagueMatches.length > 0 ? Math.max(...leagueMatches.map(m => m.round)) : 0;
+  const currentRound = league.current_round;
+  const currentRoundPlayed = leagueMatches.filter(m => m.round === currentRound).every(m => m.status === 'played');
+  const allMatchesPlayed = leagueMatches.length > 0 && leagueMatches.every(m => m.status === 'played');
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2"><Flag className="h-4 w-4" /> ADMINISTRAÇÃO DA LIGA</CardTitle>
+        <CardDescription className="text-xs">
+          Gerencie temporadas, rodadas e o calendário da liga.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Status */}
+        <div className="p-3 rounded-lg bg-muted/50 border border-border/50 space-y-1">
+          <p className="text-xs font-semibold">📊 Status da Liga</p>
+          <p className="text-xs text-muted-foreground">
+            Membros: {members.length} • Elencos sincronizados: {syncedCount}/{members.length}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Temporada: {league.season} • Status: {seasonStatus === 'registration' ? 'Inscrições' : seasonStatus === 'in_progress' ? 'Em andamento' : 'Finalizada'}
+          </p>
+          {totalRounds > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Rodadas: {currentRound}/{totalRounds} • Partidas jogadas: {leagueMatches.filter(m => m.status === 'played').length}/{leagueMatches.length}
+            </p>
+          )}
+        </div>
+
+        {/* Actions based on season_status */}
+        {seasonStatus === 'registration' && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Todos os membros devem sincronizar o elenco antes de iniciar.
+            </p>
+            <Button className="w-full" disabled={loading || syncedCount < members.length || members.length < 2}
+              onClick={onStartSeason}>
+              <Play className="h-4 w-4 mr-2" />
+              Iniciar Temporada ({syncedCount}/{members.length} prontos)
+            </Button>
+          </div>
+        )}
+
+        {seasonStatus === 'in_progress' && (
+          <div className="space-y-2">
+            {!currentRoundPlayed ? (
+              <Button className="w-full" disabled={loading} onClick={() => onSimulateRound?.(currentRound)}>
+                <Swords className="h-4 w-4 mr-2" />
+                Simular Rodada {currentRound}
+              </Button>
+            ) : currentRound < totalRounds ? (
+              <Button className="w-full" disabled={loading} onClick={() => onSimulateRound?.(currentRound + 1)}>
+                <Swords className="h-4 w-4 mr-2" />
+                Simular Rodada {currentRound + 1}
+              </Button>
+            ) : null}
+
+            {allMatchesPlayed && (
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                <p className="text-sm font-bold text-emerald-400">🏆 Temporada Completa!</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Campeão: {[...members].sort((a, b) => b.points - a.points)[0]?.club_name || '?'}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(seasonStatus === 'finished' || allMatchesPlayed) && (
+          <Button className="w-full" variant="outline" disabled={loading} onClick={onEndSeason}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Encerrar e Iniciar Nova Temporada
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// === CHAT ===
 function ChatView({ messages, userId, onSend }: { messages: ChatMessage[]; userId: string; onSend: (c: string) => void }) {
   const [msg, setMsg] = useState('');
   const handleSend = () => { if (msg.trim()) { onSend(msg); setMsg(''); } };
@@ -225,6 +535,7 @@ function ChatView({ messages, userId, onSend }: { messages: ChatMessage[]; userI
   );
 }
 
+// === PRIVATE CHAT ===
 function PrivateChatView({ messages, members, userId, onSend }: {
   messages: PrivateMessage[]; members: LeagueMember[]; userId: string;
   onSend: (receiverId: string, content: string) => void;
@@ -282,6 +593,7 @@ function PrivateChatView({ messages, members, userId, onSend }: {
   );
 }
 
+// === PROPOSALS ===
 function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
   proposals: TradeProposal[]; members: LeagueMember[]; userId: string;
   onSend: (receiverId: string, playerName: string, price: number, type: string, message?: string, loanDuration?: number) => void;
@@ -365,6 +677,7 @@ function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
   );
 }
 
+// === RIVALRIES ===
 function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; members: LeagueMember[]; userId: string }) {
   const getClubName = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
   const getIntensityColor = (i: string) => i === 'intense' ? 'text-red-400' : i === 'friendly' ? 'text-emerald-400' : 'text-muted-foreground';
