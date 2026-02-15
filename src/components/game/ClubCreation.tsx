@@ -135,15 +135,15 @@ export function ClubCreation({ userId, onComplete }: Props) {
           {/* Country */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5">🌍 País do Clube</Label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {countries.map(c => (
                 <button
                   key={c.code}
                   onClick={() => setCountry(c.code)}
-                  className={`h-9 rounded-lg border-2 transition-all flex items-center justify-center gap-1 text-xs ${country === c.code ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                  className={`h-10 rounded-lg border-2 transition-all flex items-center gap-2 px-3 text-xs ${country === c.code ? 'border-primary ring-2 ring-primary/30 scale-[1.02] bg-primary/10' : 'border-border hover:border-primary/50'}`}
                 >
-                  <span className="text-base">{c.flag}</span>
-                  <span className="hidden sm:inline text-[10px]">{c.name}</span>
+                  <span className="text-lg">{c.flag}</span>
+                  <span className="font-medium truncate">{c.name}</span>
                 </button>
               ))}
             </div>
