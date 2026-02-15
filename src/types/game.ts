@@ -9,6 +9,9 @@ export interface Player {
   morale: number;
   goals: number;
   assists: number;
+  contract: number; // years remaining
+  gamesPlayed: number; // games since last training cycle
+  trainingProgress: number; // 0-10, evolves after 10 games
 }
 
 export interface Match {

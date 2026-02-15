@@ -2,12 +2,13 @@ import { Player } from '@/types/game';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Dumbbell, BedDouble } from 'lucide-react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, FileText } from 'lucide-react';
+import { useState } from 'react';
 
 interface Props {
   players: Player[];
   budget: number;
-  onTrain: (id: string) => void;
+  trainingLevel: number;
   onRest: (id: string) => void;
 }
 
@@ -20,69 +21,127 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-export function SquadTab({ players, budget, onTrain, onRest }: Props) {
+const posLabels: Record<string, string> = {
+  GOL: 'Goleiro',
+  ZAG: 'Zagueiro',
+  LAT: 'Lateral',
+  VOL: 'Volante',
+  MEI: 'Meia',
+  ATA: 'Atacante',
+};
+
+export function SquadTab({ players, budget, trainingLevel, onRest }: Props) {
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
   const sorted = [...players].sort((a, b) => {
     const order = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
     return order.indexOf(a.position) - order.indexOf(b.position);
   });
 
+  const getDevIcon = (player: Player) => {
+    if (player.age <= 30) return <TrendingUp className="h-3 w-3 text-green-400" />;
+    if (player.age <= 33) return <Minus className="h-3 w-3 text-yellow-400" />;
+    return <TrendingDown className="h-3 w-3 text-red-400" />;
+  };
+
   return (
-    <div className="space-y-1.5 sm:space-y-2">
-      <div className="flex items-center justify-between px-1 mb-2 sm:mb-3">
+    <div className="space-y-3">
+      {/* Training Info Banner */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-primary">🏋️ Centro de Treinamento — Nível {trainingLevel}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Jogadores evoluem automaticamente a cada 10 jogos. Melhore a infraestrutura para aumentar a chance de evolução.
+              </p>
+            </div>
+            <div className="text-right shrink-0 ml-3">
+              <p className="text-[10px] text-muted-foreground">Chance base</p>
+              <p className="text-sm font-bold text-primary">{Math.round((0.5 + trainingLevel * 0.15) * 100)}%</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between px-1">
         <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{players.length} jogadores</p>
-        <p className="text-[10px] sm:text-xs text-muted-foreground">Treino: <span className="text-primary font-semibold">R$ 10k</span></p>
       </div>
 
-      <div className="grid gap-1.5 sm:gap-2">
-        {sorted.map(player => {
-          const ageLabel = player.age <= 30 ? '📈' : player.age <= 33 ? '➡️' : '📉';
-          return (
-            <Card key={player.id} className="overflow-hidden hover:border-primary/30 transition-colors">
-              <CardContent className="p-2 sm:p-3">
-                <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                  <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
-                  <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
-                  <span className="text-[9px] sm:text-[10px]" title={player.age <= 30 ? 'Evolui com treino' : player.age <= 33 ? 'Mantém nível' : 'Declínio por idade'}>{ageLabel}</span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a</span>
-                  <span className="text-sm sm:text-lg font-bold">{player.overall}</span>
+      {/* Player Detail Modal */}
+      {selectedPlayer && (
+        <Card className="border-primary/30 bg-card">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-mono px-2 py-0.5 rounded ${posColors[selectedPlayer.position]}`}>{selectedPlayer.position}</span>
+                <span className="font-bold text-sm">{selectedPlayer.name}</span>
+              </div>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedPlayer(null)}>✕</Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div><span className="text-muted-foreground">Posição</span><p className="font-semibold">{posLabels[selectedPlayer.position]}</p></div>
+              <div><span className="text-muted-foreground">Overall</span><p className="font-bold text-lg">{selectedPlayer.overall}</p></div>
+              <div><span className="text-muted-foreground">Idade</span><p className="font-semibold">{selectedPlayer.age} anos</p></div>
+              <div><span className="text-muted-foreground">Contrato</span><p className="font-semibold">{selectedPlayer.contract ?? 1} {(selectedPlayer.contract ?? 1) === 1 ? 'ano' : 'anos'}</p></div>
+              <div><span className="text-muted-foreground">Salário</span><p className="font-semibold text-primary">R$ {((selectedPlayer.salary) / 1000).toFixed(0)}k</p></div>
+              <div><span className="text-muted-foreground">Gols</span><p className="font-semibold">⚽ {selectedPlayer.goals}</p></div>
+              <div><span className="text-muted-foreground">Assistências</span><p className="font-semibold">🅰️ {selectedPlayer.assists}</p></div>
+              <div>
+                <span className="text-muted-foreground">Progresso Treino</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Progress value={(selectedPlayer.trainingProgress ?? 0) * 10} className="h-1.5 flex-1" />
+                  <span className="text-[10px] font-mono">{selectedPlayer.trainingProgress ?? 0}/10</span>
                 </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                  <span>Energia</span>
+                  <span className={selectedPlayer.stamina < 60 ? 'text-destructive' : ''}>{selectedPlayer.stamina}%</span>
+                </div>
+                <Progress value={selectedPlayer.stamina} className="h-1.5" />
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                  <span>Moral</span>
+                  <span>{selectedPlayer.morale}%</span>
+                </div>
+                <Progress value={selectedPlayer.morale} className="h-1.5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                  <div>
-                    <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
-                      <span>Energia</span>
-                      <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
-                    </div>
-                    <Progress value={player.stamina} className="h-1 sm:h-1.5" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
-                      <span>Moral</span>
-                      <span>{player.morale}%</span>
-                    </div>
-                    <Progress value={player.morale} className="h-1 sm:h-1.5" />
-                  </div>
+      {/* Player List */}
+      <div className="grid gap-1.5">
+        {sorted.map(player => (
+          <Card key={player.id} className="overflow-hidden hover:border-primary/30 transition-colors cursor-pointer" onClick={() => setSelectedPlayer(player)}>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
+                {getDevIcon(player)}
+                <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{player.age}a</span>
+                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">📄{player.contract ?? 1}a</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">💰{((player.salary) / 1000).toFixed(0)}k</span>
+                {/* Training progress mini bar */}
+                <div className="w-10 shrink-0 hidden sm:block" title={`Treino: ${player.trainingProgress ?? 0}/10 jogos`}>
+                  <Progress value={(player.trainingProgress ?? 0) * 10} className="h-1" />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2 sm:gap-3 text-[9px] sm:text-[10px] text-muted-foreground">
-                    <span>⚽ {player.goals}</span>
-                    <span>🅰️ {player.assists}</span>
-                    <span className="hidden sm:inline">💰 R${(player.salary / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs" onClick={() => onRest(player.id)}>
-                      <BedDouble className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs" onClick={() => onTrain(player.id)} disabled={budget < 10000}>
-                      <Dumbbell className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Treinar</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                <span className="text-sm sm:text-lg font-bold shrink-0">{player.overall}</span>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
+                  <BedDouble className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); }} title="Detalhes">
+                  <FileText className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
