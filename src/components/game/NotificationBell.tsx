@@ -62,7 +62,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: 'tired',
       icon: '😴',
       title: `${tired.length} jogador(es) cansado(s)`,
-      message: `${worst.name} está com apenas ${worst.stamina}% de energia. Use o botão de descanso ou melhore o Centro de Fisioterapia (Nv.${infrastructure.physiotherapy.level}).`,
+      message: `${worst.name} está com apenas ${worst.stamina}% de energia. Use o botão de descanso ou melhore o Centro de Fisioterapia (Nv.${infrastructure?.physiotherapy?.level ?? 1}).`,
       type: 'warning',
     });
   }
@@ -116,7 +116,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   }
 
   // Infrastructure tips
-  if (infrastructure.trainingCenter.level < 3) {
+  if (infrastructure?.trainingCenter && infrastructure.trainingCenter.level < 3) {
     notifications.push({
       id: 'ct_tip',
       icon: '🏋️',
@@ -126,7 +126,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   }
 
-  if (infrastructure.physiotherapy.level < 3) {
+  if (infrastructure?.physiotherapy && infrastructure.physiotherapy.level < 3) {
     notifications.push({
       id: 'physio_tip',
       icon: '🏥',
