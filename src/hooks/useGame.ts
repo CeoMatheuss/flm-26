@@ -186,8 +186,6 @@ export function useGame(initialState?: GameState) {
           else toast.success(ev.title);
         }
 
-        setEvents(prev => [...newEvents.map(e => ({ ...e, resolved: true })), ...prev].slice(0, 20));
-
         // Apply injuries from events
         const injuryMap: Record<string, import('@/types/game').Injury> = {};
         for (const ev of newEvents) {
@@ -208,43 +206,76 @@ export function useGame(initialState?: GameState) {
         else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
 
         const physioLevel = infrastructure?.physiotherapy?.level ?? 1;
+        const extraEvents: GameEvent[] = [];
+
+        // Fan rage when team is doing very poorly
+        if (recentLosses >= 3 && !isWin) {
+          const rageMessages = [
+            `"Diretoria incompetente! Fora técnico!" — Organizadas do ${prev.name} protestam nas redes sociais após mais uma derrota.`,
+            `Torcida organizada do ${prev.name} ameaça não ir mais ao estádio: "Esse time é uma vergonha!"`,
+            `Faixas de protesto são estendidas em frente ao CT do ${prev.name}: "Queremos respeito, não derrota!"`,
+            `Líderes das organizadas convocam reunião de emergência para cobrar jogadores do ${prev.name}.`,
+            `"Vocês não vestem a camisa!" — Organizadas do ${prev.name} xingam elenco após ${recentLosses}ª derrota seguida.`,
+          ];
+          extraEvents.push({
+            id: crypto.randomUUID(),
+            type: 'fan_rage',
+            title: `😡 ORGANIZADAS CONTRA O ${prev.name.toUpperCase()}!`,
+            description: rageMessages[Math.floor(Math.random() * rageMessages.length)],
+            icon: '🔥',
+            impact: `morale_all:-5,fans:-${recentLosses * 300}`,
+            resolved: true,
+          });
+        }
+
+        const mappedPlayers = extraPlayers.map(p => {
+          let playerInjury = injuryMap[p.id] ?? p.injury;
+          if (playerInjury && !injuryMap[p.id]) {
+            playerInjury = { ...playerInjury, weeksRemaining: playerInjury.weeksRemaining - 1 };
+            if (playerInjury.weeksRemaining <= 0) {
+              playerInjury = undefined as any;
+              toast.success(`🏥 ${p.name} se recuperou da lesão!`);
+            }
+          }
+          const isInjured = !!playerInjury;
+          const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
+          const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
+          let newOverall = p.overall;
+          if (newGames >= 10 && p.age <= 33 && !isInjured) {
+            const chance = p.age <= 30 ? boost : boost * 0.3;
+            const gained = Math.random() < chance ? 1 : 0;
+            newOverall = Math.min(99, p.overall + gained);
+            if (gained > 0) {
+              extraEvents.push({
+                id: crypto.randomUUID(),
+                type: 'player_upgrade',
+                title: `📈 ${p.name} EVOLUIU!`,
+                description: `${p.name} (${p.position}) subiu para OVR ${newOverall}! O treinamento no CT está dando resultado.`,
+                icon: '⬆️',
+                impact: `player:${p.id}`,
+                resolved: true,
+              });
+            }
+          }
+          return {
+            ...p,
+            injury: playerInjury || undefined,
+            gamesPlayed: newGames >= 10 ? 0 : newGames,
+            trainingProgress: newGames >= 10 ? 0 : newGames,
+            overall: newOverall,
+            stamina: isInjured
+              ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel) * 0.5)
+              : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel))),
+            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+          };
+        });
+
+        setEvents(ev => [...extraEvents, ...newEvents.map(e => ({ ...e, resolved: true })), ...ev].slice(0, 20));
 
         return {
           ...prev,
           matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
-          players: extraPlayers.map(p => {
-            // Apply new injury if generated
-            let playerInjury = injuryMap[p.id] ?? p.injury;
-            
-            // Tick down existing injury recovery
-            if (playerInjury && !injuryMap[p.id]) {
-              playerInjury = { ...playerInjury, weeksRemaining: playerInjury.weeksRemaining - 1 };
-              if (playerInjury.weeksRemaining <= 0) {
-                playerInjury = undefined as any;
-                toast.success(`🏥 ${p.name} se recuperou da lesão!`);
-              }
-            }
-
-            const isInjured = !!playerInjury;
-            const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
-            const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
-            let newOverall = p.overall;
-            if (newGames >= 10 && p.age <= 33 && !isInjured) {
-              const chance = p.age <= 30 ? boost : boost * 0.3;
-              newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
-            }
-            return {
-              ...p,
-              injury: playerInjury || undefined,
-              gamesPlayed: newGames >= 10 ? 0 : newGames,
-              trainingProgress: newGames >= 10 ? 0 : newGames,
-              overall: newOverall,
-              stamina: isInjured
-                ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel) * 0.5)
-                : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel))),
-              morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
-            };
-          }),
+          players: mappedPlayers,
           budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
           fans: Math.max(100, prev.fans + fanChange),
           reputation: Math.min(100, Math.max(1, prev.reputation + repChange + eventRepDelta)),

@@ -43,6 +43,8 @@ export function DashboardTab({ club, events }: Props) {
     bonus: 'border-l-emerald-500 bg-emerald-500/5',
     discovery: 'border-l-purple-500 bg-purple-500/5',
     scandal: 'border-l-yellow-500 bg-yellow-500/5',
+    player_upgrade: 'border-l-emerald-500 bg-emerald-500/5',
+    fan_rage: 'border-l-red-500 bg-red-500/5',
   };
 
   return (
