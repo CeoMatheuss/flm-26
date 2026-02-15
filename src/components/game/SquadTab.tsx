@@ -1,8 +1,8 @@
-import { Player } from '@/types/game';
+import { Player, PlayerAttributes } from '@/types/game';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BedDouble, TrendingUp, TrendingDown, Minus, FileText } from 'lucide-react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -22,13 +22,24 @@ const posColors: Record<string, string> = {
 };
 
 const posLabels: Record<string, string> = {
-  GOL: 'Goleiro',
-  ZAG: 'Zagueiro',
-  LAT: 'Lateral',
-  VOL: 'Volante',
-  MEI: 'Meia',
-  ATA: 'Atacante',
+  GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
 };
+
+const attrLabels: Record<keyof PlayerAttributes, { label: string; icon: string }> = {
+  speed: { label: 'Velocidade', icon: '⚡' },
+  shooting: { label: 'Finalização', icon: '🎯' },
+  passing: { label: 'Passe', icon: '📐' },
+  defending: { label: 'Defesa', icon: '🛡️' },
+  physical: { label: 'Físico', icon: '💪' },
+  dribbling: { label: 'Drible', icon: '🎨' },
+};
+
+function getAttrColor(val: number): string {
+  if (val >= 80) return 'text-emerald-400';
+  if (val >= 60) return 'text-primary';
+  if (val >= 40) return 'text-yellow-400';
+  return 'text-red-400';
+}
 
 export function SquadTab({ players, budget, trainingLevel, onRest }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -53,7 +64,7 @@ export function SquadTab({ players, budget, trainingLevel, onRest }: Props) {
             <div>
               <p className="text-xs font-semibold text-primary">🏋️ Centro de Treinamento — Nível {trainingLevel}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Jogadores evoluem automaticamente a cada 10 jogos. Melhore a infraestrutura para aumentar a chance de evolução.
+                Jogadores evoluem automaticamente a cada 10 jogos. Melhore a infraestrutura para aumentar a chance.
               </p>
             </div>
             <div className="text-right shrink-0 ml-3">
@@ -77,24 +88,43 @@ export function SquadTab({ players, budget, trainingLevel, onRest }: Props) {
                 <span className={`text-xs font-mono px-2 py-0.5 rounded ${posColors[selectedPlayer.position]}`}>{selectedPlayer.position}</span>
                 <span className="font-bold text-sm">{selectedPlayer.name}</span>
               </div>
-              <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedPlayer(null)}>✕</Button>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setSelectedPlayer(null)}>
+                <X className="h-3 w-3" />
+              </Button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-3">
               <div><span className="text-muted-foreground">Posição</span><p className="font-semibold">{posLabels[selectedPlayer.position]}</p></div>
               <div><span className="text-muted-foreground">Overall</span><p className="font-bold text-lg">{selectedPlayer.overall}</p></div>
               <div><span className="text-muted-foreground">Idade</span><p className="font-semibold">{selectedPlayer.age} anos</p></div>
-              <div><span className="text-muted-foreground">Contrato</span><p className="font-semibold">{selectedPlayer.contract ?? 1} {(selectedPlayer.contract ?? 1) === 1 ? 'ano' : 'anos'}</p></div>
-              <div><span className="text-muted-foreground">Salário</span><p className="font-semibold text-primary">R$ {((selectedPlayer.salary) / 1000).toFixed(0)}k</p></div>
+              <div><span className="text-muted-foreground">Contrato</span><p className="font-semibold">{selectedPlayer.contract} {selectedPlayer.contract === 1 ? 'ano' : 'anos'}</p></div>
+              <div><span className="text-muted-foreground">Salário</span><p className="font-semibold text-primary">R$ {(selectedPlayer.salary / 1000).toFixed(0)}k</p></div>
               <div><span className="text-muted-foreground">Gols</span><p className="font-semibold">⚽ {selectedPlayer.goals}</p></div>
               <div><span className="text-muted-foreground">Assistências</span><p className="font-semibold">🅰️ {selectedPlayer.assists}</p></div>
               <div>
-                <span className="text-muted-foreground">Progresso Treino</span>
+                <span className="text-muted-foreground">Treino</span>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Progress value={(selectedPlayer.trainingProgress ?? 0) * 10} className="h-1.5 flex-1" />
-                  <span className="text-[10px] font-mono">{selectedPlayer.trainingProgress ?? 0}/10</span>
+                  <Progress value={(selectedPlayer.trainingProgress) * 10} className="h-1.5 flex-1" />
+                  <span className="text-[10px] font-mono">{selectedPlayer.trainingProgress}/10</span>
                 </div>
               </div>
             </div>
+
+            {/* Attributes */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {selectedPlayer.attributes && (Object.entries(selectedPlayer.attributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
+                <div key={key} className="bg-muted/30 rounded p-2">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label}</span>
+                    <span className={`text-xs font-bold ${getAttrColor(val)}`}>{val}</span>
+                  </div>
+                  <Progress value={val} className="h-1" />
+                </div>
+              ))}
+            </div>
+
+            {/* Stamina & Morale */}
             <div className="grid grid-cols-2 gap-2 mt-3">
               <div>
                 <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
@@ -125,11 +155,10 @@ export function SquadTab({ players, budget, trainingLevel, onRest }: Props) {
                 <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
                 {getDevIcon(player)}
                 <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{player.age}a</span>
-                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">📄{player.contract ?? 1}a</span>
-                <span className="text-[10px] text-muted-foreground shrink-0">💰{((player.salary) / 1000).toFixed(0)}k</span>
-                {/* Training progress mini bar */}
-                <div className="w-10 shrink-0 hidden sm:block" title={`Treino: ${player.trainingProgress ?? 0}/10 jogos`}>
-                  <Progress value={(player.trainingProgress ?? 0) * 10} className="h-1" />
+                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">📄{player.contract}a</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">💰{(player.salary / 1000).toFixed(0)}k</span>
+                <div className="w-10 shrink-0 hidden sm:block" title={`Treino: ${player.trainingProgress}/10 jogos`}>
+                  <Progress value={player.trainingProgress * 10} className="h-1" />
                 </div>
                 <span className="text-sm sm:text-lg font-bold shrink-0">{player.overall}</span>
                 <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
