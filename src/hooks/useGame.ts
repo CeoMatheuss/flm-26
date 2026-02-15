@@ -58,6 +58,7 @@ export function useGame(initialState?: GameState) {
   const [sponsors, setSponsors] = useState<Sponsor[]>(initialState?.sponsors ?? []);
   const [sponsorOffers, setSponsorOffers] = useState<SponsorOffer[]>(initialState?.sponsorOffers ?? generateSponsorOffers(65, 4));
   const [events, setEvents] = useState<GameEvent[]>(initialState?.events ?? []);
+  const [listedForSale, setListedForSale] = useState<string[]>([]);
 
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
@@ -309,7 +310,8 @@ export function useGame(initialState?: GameState) {
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
   }, [addFinance]);
 
-  const renewContract = useCallback((playerId: string, newSalary: number) => {
+  const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
+    const duration = newDuration || 2;
     setClub(prev => {
       const player = prev.players.find(p => p.id === playerId);
       if (!player) return prev;
@@ -317,20 +319,40 @@ export function useGame(initialState?: GameState) {
         toast.error(`${player.name} recusou! Oferça mais que R$${(player.salary / 1000).toFixed(0)}k.`);
         return prev;
       }
-      const renewalBonus = newSalary * 2;
-      if (prev.budget < renewalBonus) {
+      const renewalCost = newSalary * duration * 12;
+      if (prev.budget < renewalCost) {
         toast.error('Orçamento insuficiente para renovação!');
         return prev;
       }
-      addFinance('despesa', 'Renovação', renewalBonus, `Renovação: ${player.name}`);
-      toast.success(`${player.name} renovou por +2 anos! Novo salário: R$${(newSalary / 1000).toFixed(0)}k/mês`);
+      addFinance('despesa', 'Renovação', renewalCost, `Renovação: ${player.name} (${duration}a)`);
+      toast.success(`${player.name} renovou por +${duration} anos! Novo salário: R$${(newSalary / 1000).toFixed(0)}k/mês`);
       return {
         ...prev,
-        budget: prev.budget - renewalBonus,
-        players: prev.players.map(p => p.id === playerId ? { ...p, salary: newSalary, contract: p.contract + 2 } : p),
+        budget: prev.budget - renewalCost,
+        players: prev.players.map(p => p.id === playerId ? { ...p, salary: newSalary, contract: p.contract + duration } : p),
       };
     });
   }, [addFinance]);
+
+  const listForSale = useCallback((playerId: string) => {
+    setClub(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      if (!player) return prev;
+      if (prev.players.length <= 11) {
+        toast.error('Elenco muito pequeno para vender!');
+        return prev;
+      }
+      setListedForSale(l => {
+        if (l.includes(playerId)) {
+          toast.info(`${player.name} removido da lista de transferência.`);
+          return l.filter(id => id !== playerId);
+        }
+        toast.success(`${player.name} colocado na lista de transferência!`);
+        return [...l, playerId];
+      });
+      return prev;
+    });
+  }, []);
 
   const sellPlayer = useCallback((player: Player) => {
     const value = Math.floor(getPlayerValue(player) * 0.8);
@@ -339,6 +361,7 @@ export function useGame(initialState?: GameState) {
       addFinance('receita', 'Transferência', value, `Venda: ${player.name}`);
       return { ...prev, budget: prev.budget + value, players: prev.players.filter(p => p.id !== player.id) };
     });
+    setListedForSale(l => l.filter(id => id !== player.id));
   }, [addFinance]);
 
   const refreshMarket = useCallback(() => setMarketPlayers(generateMarketPlayers(8)), []);
@@ -495,11 +518,11 @@ export function useGame(initialState?: GameState) {
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events,
+    sponsors, sponsorOffers, events, listedForSale,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
-    hireScout, fireScout, renewContract,
+    hireScout, fireScout, renewContract, listForSale,
   };
 }
