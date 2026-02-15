@@ -17,6 +17,8 @@ import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
+import { FansTab } from '@/components/game/FansTab';
+import { TrainingTab } from '@/components/game/TrainingTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -29,11 +31,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -141,6 +143,20 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
   const mp = useMultiplayer(userId, displayName);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Calculate streaks for FansTab
+  const { winStreak, loseStreak } = useMemo(() => {
+    const playedMatches = game.club.matches.filter(m => m.played);
+    let ws = 0, ls = 0;
+    for (let i = playedMatches.length - 1; i >= 0; i--) {
+      const r = playedMatches[i].result;
+      if (!r) break;
+      if (r.home > r.away) { if (ls > 0) break; ws++; }
+      else if (r.home < r.away) { if (ws > 0) break; ls++; }
+      else break;
+    }
+    return { winStreak: ws, loseStreak: ls };
+  }, [game.club.matches]);
+
   const saveGame = useCallback(async () => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
@@ -193,22 +209,15 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1 mb-4 sm:mb-6">
-            <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/50 p-1">
-              <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Painel</span></TabsTrigger>
-              <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
-              <TabsTrigger value="matches" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Swords className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Jogos</span></TabsTrigger>
-              <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
-              <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
-              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Trophy className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
-            </TabsList>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 sm:h-10 px-2 shrink-0">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-card border-border z-50">
+              <DropdownMenuContent align="start" className="w-48 bg-card border-border z-50">
+                <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2 text-xs"><Dumbbell className="h-3.5 w-3.5" /> Treinos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base / Juvenil</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
@@ -219,9 +228,17 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('rules')} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Regras</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('multiplayer')} className="gap-2 text-xs"><Globe className="h-3.5 w-3.5" /> Multiplayer Online</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/50 p-1">
+              <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Painel</span></TabsTrigger>
+              <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
+              <TabsTrigger value="matches" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Swords className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Jogos</span></TabsTrigger>
+              <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
+              <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
+              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Trophy className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
+            </TabsList>
           </div>
 
           <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} /></TabsContent>
@@ -257,6 +274,23 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               onPromote={game.promoteYouth}
               onSetInvestment={game.setYouthInvestment}
               onGenerateYouth={() => {}}
+            />
+          </TabsContent>
+          <TabsContent value="fans">
+            <FansTab
+              club={game.club}
+              winStreak={winStreak}
+              loseStreak={loseStreak}
+              stadiumLevel={game.infrastructure.stadium.level}
+              ticketPrice={game.club.ticketPrice || 30}
+            />
+          </TabsContent>
+          <TabsContent value="training">
+            <TrainingTab
+              players={game.club.players}
+              infrastructure={game.infrastructure}
+              budget={game.club.budget}
+              onUpgrade={game.upgradeFacility}
             />
           </TabsContent>
           <TabsContent value="sponsors">
@@ -304,35 +338,6 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               onRenameClub={game.renameClub}
               onRenameStadium={game.renameStadium}
               onSetTicketPrice={game.setTicketPrice}
-            />
-          </TabsContent>
-          <TabsContent value="multiplayer">
-            <MultiplayerTab
-              userId={userId}
-              leagues={mp.leagues}
-              currentLeague={mp.currentLeague}
-              members={mp.members}
-              chatMessages={mp.chatMessages}
-              privateMessages={mp.privateMessages}
-              proposals={mp.proposals}
-              rivalries={mp.rivalries}
-              leagueMatches={mp.leagueMatches}
-              leagueSquads={mp.leagueSquads}
-              loading={mp.loading}
-              clubPlayers={game.club.players}
-              clubTactics={game.tactics}
-              onCreateLeague={mp.createLeague}
-              onJoinLeague={mp.joinLeague}
-              onEnterLeague={mp.enterLeague}
-              onLeaveLeague={mp.leaveLeague}
-              onSendChat={mp.sendChat}
-              onSendPrivateMessage={mp.sendPrivateMessage}
-              onSendProposal={mp.sendProposal}
-              onRespondProposal={mp.respondProposal}
-              onSyncSquad={mp.syncSquad}
-              onStartSeason={mp.startSeason}
-              onSimulateRound={mp.simulateRound}
-              onEndSeason={mp.endSeason}
             />
           </TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>

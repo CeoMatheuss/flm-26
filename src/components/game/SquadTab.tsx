@@ -31,7 +31,7 @@ const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
 };
 
-const attrLabels: Record<keyof PlayerAttributes, { label: string; icon: string }> = {
+const attrLabels: Record<string, { label: string; icon: string }> = {
   speed: { label: 'Velocidade', icon: '⚡' },
   shooting: { label: 'Finalização', icon: '🎯' },
   passing: { label: 'Passe', icon: '📐' },
@@ -42,6 +42,12 @@ const attrLabels: Record<keyof PlayerAttributes, { label: string; icon: string }
   positioning: { label: 'Posicionamento', icon: '📍' },
   heading: { label: 'Cabeceio', icon: '🗣️' },
   marking: { label: 'Marcação', icon: '🔒' },
+  vision: { label: 'Visão de Jogo', icon: '👁️' },
+  crossing: { label: 'Cruzamento', icon: '🎯' },
+  longShots: { label: 'Chute de Longe', icon: '🚀' },
+  workRate: { label: 'Intensidade', icon: '🔥' },
+  composure: { label: 'Compostura', icon: '🧠' },
+  aggression: { label: 'Agressividade', icon: '⚔️' },
 };
 
 function getAttrColor(val: number): string {
@@ -148,17 +154,46 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {(Object.entries(selectedPlayer.attributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {Object.entries(selectedPlayer.attributes).filter(([_, val]) => val != null).map(([key, val]) => (
                     <div key={key} className="bg-muted/30 rounded p-2">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label}</span>
-                        <span className={`text-xs font-bold ${getAttrColor(val)}`}>{val}</span>
+                        <span className="text-[9px] sm:text-[10px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
+                        <span className={`text-xs font-bold ${getAttrColor(val as number)}`}>{val}</span>
                       </div>
-                      <Progress value={val} className="h-1" />
+                      <Progress value={val as number} className="h-1" />
                     </div>
                   ))}
                 </div>
+
+                {/* Player History */}
+                {selectedPlayer.history && selectedPlayer.history.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">📜 Histórico</p>
+                    <div className="space-y-1">
+                      {selectedPlayer.history.map((h, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
+                          <span className="font-semibold">{h.club}</span>
+                          <span className="text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `-T${h.seasonEnd}` : ''}</span>
+                          <span className="ml-auto">{h.games}j</span>
+                          <span>⚽{h.goals}</span>
+                          <span>🅰️{h.assists}</span>
+                          <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Current Season Rating */}
+                {selectedPlayer.matchRating != null && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">Nota última partida:</span>
+                    <span className={`text-sm font-bold ${selectedPlayer.matchRating >= 7 ? 'text-emerald-400' : selectedPlayer.matchRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                      ★ {selectedPlayer.matchRating.toFixed(1)}
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <div>

@@ -36,7 +36,7 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-const attrLabels: Record<keyof PlayerAttributes, string> = {
+const attrLabels: Record<string, string> = {
   speed: '⚡ Vel',
   shooting: '🎯 Fin',
   passing: '📐 Pas',
@@ -47,6 +47,12 @@ const attrLabels: Record<keyof PlayerAttributes, string> = {
   positioning: '📍 Pos',
   heading: '🗣️ Cab',
   marking: '🔒 Mar',
+  vision: '👁️ Vis',
+  crossing: '🎯 Cru',
+  longShots: '🚀 CL',
+  workRate: '🔥 Int',
+  composure: '🧠 Com',
+  aggression: '⚔️ Agr',
 };
 
 function getPlayerExpectedSalary(player: Player): number {

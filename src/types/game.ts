@@ -9,13 +9,29 @@ export interface PlayerAttributes {
   positioning: number;  // Posicionamento
   heading: number;      // Cabeceio
   marking: number;      // Marcação
+  vision?: number;      // Visão de Jogo
+  crossing?: number;    // Cruzamento
+  longShots?: number;   // Chute de Longe
+  workRate?: number;    // Intensidade/Raça
+  composure?: number;   // Compostura
+  aggression?: number;  // Agressividade
 }
 
 export interface Injury {
-  type: string;       // e.g. 'muscular', 'ligamento', 'fratura', 'pancada'
+  type: string;
   severity: 'leve' | 'moderada' | 'grave';
-  weeksRemaining: number;  // matches left to recover
-  originalWeeks: number;   // total recovery time before physio reduction
+  weeksRemaining: number;
+  originalWeeks: number;
+}
+
+export interface PlayerHistoryEntry {
+  club: string;
+  seasonStart: number;
+  seasonEnd?: number;
+  games: number;
+  goals: number;
+  assists: number;
+  avgRating: number;
 }
 
 export interface Player {
@@ -34,6 +50,9 @@ export interface Player {
   gamesPlayed: number;
   trainingProgress: number;
   injury?: Injury;
+  history?: PlayerHistoryEntry[];
+  matchRating?: number;
+  seasonRatings?: number[];
 }
 
 export interface Scout {
