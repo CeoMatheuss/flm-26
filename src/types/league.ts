@@ -11,7 +11,7 @@ export interface LeagueTeam {
 }
 
 export const initialLeagueTeams: LeagueTeam[] = [
-  { name: 'FCM 26', logo: '⚽', points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 },
+  { name: 'FLM 26', logo: '⚽', points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 },
   { name: 'Real Esporte FC', logo: '🏆', points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 },
   { name: 'Atlético Cidade', logo: '🏟️', points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 },
   { name: 'Sport Club União', logo: '🦅', points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 },

@@ -26,8 +26,8 @@ export function generateSeasonMatches(): Match[] {
 export const initialPlayers = generateInitialSquad();
 
 export const initialClub: Club = {
-  name: 'FCM 26',
-  stadiumName: 'Arena FCM',
+  name: 'FLM 26',
+  stadiumName: 'Arena FLM',
   ticketPrice: 30,
   budget: 2500000,
   fans: 15000,
