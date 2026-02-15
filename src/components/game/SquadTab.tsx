@@ -27,55 +27,55 @@ export function SquadTab({ players, budget, onTrain, onRest }: Props) {
   });
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between px-1 mb-3">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider">{players.length} jogadores</p>
-        <p className="text-xs text-muted-foreground">Treino: <span className="text-primary font-semibold">R$ 10k</span></p>
+    <div className="space-y-1.5 sm:space-y-2">
+      <div className="flex items-center justify-between px-1 mb-2 sm:mb-3">
+        <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{players.length} jogadores</p>
+        <p className="text-[10px] sm:text-xs text-muted-foreground">Treino: <span className="text-primary font-semibold">R$ 10k</span></p>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-1.5 sm:gap-2">
         {sorted.map(player => {
           const ageLabel = player.age <= 30 ? '📈' : player.age <= 33 ? '➡️' : '📉';
           return (
             <Card key={player.id} className="overflow-hidden hover:border-primary/30 transition-colors">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
-                  <span className="flex-1 font-medium text-sm">{player.name}</span>
-                  <span className="text-[10px]" title={player.age <= 30 ? 'Evolui com treino' : player.age <= 33 ? 'Mantém nível' : 'Declínio por idade'}>{ageLabel}</span>
-                  <span className="text-xs text-muted-foreground">{player.age}a</span>
-                  <span className="text-lg font-bold">{player.overall}</span>
+              <CardContent className="p-2 sm:p-3">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                  <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
+                  <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
+                  <span className="text-[9px] sm:text-[10px]" title={player.age <= 30 ? 'Evolui com treino' : player.age <= 33 ? 'Mantém nível' : 'Declínio por idade'}>{ageLabel}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a</span>
+                  <span className="text-sm sm:text-lg font-bold">{player.overall}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                   <div>
-                    <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                    <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                       <span>Energia</span>
                       <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
                     </div>
-                    <Progress value={player.stamina} className="h-1.5" />
+                    <Progress value={player.stamina} className="h-1 sm:h-1.5" />
                   </div>
                   <div>
-                    <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                    <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                       <span>Moral</span>
                       <span>{player.morale}%</span>
                     </div>
-                    <Progress value={player.morale} className="h-1.5" />
+                    <Progress value={player.morale} className="h-1 sm:h-1.5" />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-3 text-[10px] text-muted-foreground">
+                  <div className="flex gap-2 sm:gap-3 text-[9px] sm:text-[10px] text-muted-foreground">
                     <span>⚽ {player.goals}</span>
                     <span>🅰️ {player.assists}</span>
-                    <span>💰 R${(player.salary / 1000).toFixed(0)}k</span>
+                    <span className="hidden sm:inline">💰 R${(player.salary / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onRest(player.id)}>
+                    <Button size="sm" variant="ghost" className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs" onClick={() => onRest(player.id)}>
                       <BedDouble className="h-3 w-3" />
                     </Button>
-                    <Button size="sm" className="h-7 px-2 text-xs" onClick={() => onTrain(player.id)} disabled={budget < 10000}>
-                      <Dumbbell className="h-3 w-3 mr-1" /> Treinar
+                    <Button size="sm" className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs" onClick={() => onTrain(player.id)} disabled={budget < 10000}>
+                      <Dumbbell className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Treinar</span>
                     </Button>
                   </div>
                 </div>
