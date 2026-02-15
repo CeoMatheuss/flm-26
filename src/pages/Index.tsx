@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
@@ -84,8 +85,14 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       ...initialClub,
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
+      fans: 1,
       players: generateInitialSquad(),
       matches: generateSeasonMatches(),
+      primaryColor: config.primaryColor,
+      secondaryColor: config.secondaryColor,
+      shieldPattern: config.shieldPattern,
+      logoUrl: config.logoUrl,
+      country: config.country,
     };
     const newState: GameState = {
       club: customClub,
@@ -155,7 +162,13 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src={flmLogo} alt="FLM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
+            {game.club.shieldPattern ? (
+              <ShieldCrest primaryColor={game.club.primaryColor || '#2563EB'} secondaryColor={game.club.secondaryColor || '#FFF'} pattern={game.club.shieldPattern} size={40} className="shrink-0" />
+            ) : game.club.logoUrl ? (
+              <img src={game.club.logoUrl} alt={game.club.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 object-cover" />
+            ) : (
+              <img src={flmLogo} alt="FLM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
+            )}
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold truncate">{game.club.name}</h1>
               <p className="text-[10px] sm:text-xs text-muted-foreground">

@@ -81,4 +81,9 @@ export interface Club {
   scouts: Scout[];
   scoutReports: ScoutReport[];
   matchesSinceLastScout: number;
+  primaryColor?: string;
+  secondaryColor?: string;
+  shieldPattern?: string;
+  logoUrl?: string;
+  country?: string;
 }

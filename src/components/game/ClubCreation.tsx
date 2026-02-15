@@ -16,6 +16,7 @@ export interface ClubConfig {
   secondaryColor: string;
   logoUrl: string;
   shieldPattern?: string;
+  country: string;
 }
 
 interface Props {
@@ -34,6 +35,21 @@ const presetColors = [
   { primary: '#DB2777', secondary: '#2563EB' },    // Pink/Blue
 ];
 
+const countries = [
+  { code: 'BR', name: 'Brasil', flag: '🇧🇷' },
+  { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
+  { code: 'ES', name: 'Espanha', flag: '🇪🇸' },
+  { code: 'FR', name: 'França', flag: '🇫🇷' },
+  { code: 'IT', name: 'Itália', flag: '🇮🇹' },
+  { code: 'DE', name: 'Alemanha', flag: '🇩🇪' },
+  { code: 'EN', name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
+  { code: 'NL', name: 'Holanda', flag: '🇳🇱' },
+  { code: 'MX', name: 'México', flag: '🇲🇽' },
+  { code: 'CO', name: 'Colômbia', flag: '🇨🇴' },
+  { code: 'JP', name: 'Japão', flag: '🇯🇵' },
+];
+
 export function ClubCreation({ userId, onComplete }: Props) {
   const [clubName, setClubName] = useState('');
   const [stadiumName, setStadiumName] = useState('');
@@ -43,6 +59,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [country, setCountry] = useState('BR');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +113,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
       secondaryColor,
       logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
       shieldPattern: useCustomLogo ? undefined : selectedPattern,
+      country,
     });
   };
 
@@ -112,6 +130,23 @@ export function ClubCreation({ userId, onComplete }: Props) {
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Nome do Clube</Label>
             <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
+          </div>
+
+          {/* Country */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold flex items-center gap-1.5">🌍 País do Clube</Label>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+              {countries.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => setCountry(c.code)}
+                  className={`h-9 rounded-lg border-2 transition-all flex items-center justify-center gap-1 text-xs ${country === c.code ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                >
+                  <span className="text-base">{c.flag}</span>
+                  <span className="hidden sm:inline text-[10px]">{c.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Stadium Name */}
