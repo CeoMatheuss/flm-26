@@ -1,10 +1,14 @@
 export interface PlayerAttributes {
-  speed: number;      // Velocidade
-  shooting: number;   // Finalização
-  passing: number;    // Passe
-  defending: number;  // Defesa
-  physical: number;   // Físico
-  dribbling: number;  // Drible
+  speed: number;        // Velocidade
+  shooting: number;     // Finalização
+  passing: number;      // Passe
+  defending: number;    // Defesa
+  physical: number;     // Físico
+  dribbling: number;    // Drible
+  setPieces: number;    // Bola Parada
+  positioning: number;  // Posicionamento
+  heading: number;      // Cabeceio
+  marking: number;      // Marcação
 }
 
 export interface Injury {

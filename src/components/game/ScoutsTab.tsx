@@ -35,6 +35,10 @@ const attrLabels: Record<keyof PlayerAttributes, string> = {
   defending: '🛡️ Def',
   physical: '💪 Fís',
   dribbling: '🎨 Dri',
+  setPieces: '🎱 BP',
+  positioning: '📍 Pos',
+  heading: '🗣️ Cab',
+  marking: '🔒 Mar',
 };
 
 export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout, onFireScout }: Props) {
