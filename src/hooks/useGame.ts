@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Club, Player, Match, ScoutReport, Scout } from '@/types/game';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
-import { LeagueTeam, initialLeagueTeams } from '@/types/league';
+import { LeagueTeam, initialLeagueTeams, getLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
 import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
 import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
@@ -73,7 +73,9 @@ export function useGame(initialState?: GameState) {
       const tacticBonus = tactics.playStyle === 'ofensivo' ? 5 : tactics.playStyle === 'defensivo' ? -3 : 0;
       const pressingBonus = tactics.pressing === 'alto' ? 3 : tactics.pressing === 'baixo' ? -2 : 0;
       const adjustedStrength = teamStrength + tacticBonus + pressingBonus;
-      const opponentStrength = 60 + Math.random() * 25;
+      // Use bot team strength from league data
+      const opponentTeam = leagueTeams.find(t => t.name === match.opponent);
+      const opponentStrength = (opponentTeam?.strength || 65) + Math.random() * 15 - 5;
 
       const homeGoals = Math.floor(Math.random() * 4 * (adjustedStrength / opponentStrength));
       const awayGoals = Math.floor(Math.random() * 3 * (opponentStrength / adjustedStrength));
@@ -115,10 +117,13 @@ export function useGame(initialState?: GameState) {
         if (t.name === prev.name) {
           return { ...t, played: t.played + 1, wins: t.wins + (isWin ? 1 : 0), draws: t.draws + (isDraw ? 1 : 0), losses: t.losses + (!isWin && !isDraw ? 1 : 0), goalsFor: t.goalsFor + homeGoals, goalsAgainst: t.goalsAgainst + awayGoals, points: t.points + (isWin ? 3 : isDraw ? 1 : 0) };
         }
-        const w = Math.random() > 0.5;
-        const d = !w && Math.random() > 0.5;
-        const gf = Math.floor(Math.random() * 3);
-        const ga = Math.floor(Math.random() * 3);
+        // AI bot simulation based on team strength
+        const str = t.strength || 65;
+        const winProb = str / 130; // stronger teams win more
+        const w = Math.random() < winProb;
+        const d = !w && Math.random() < 0.3;
+        const gf = w ? Math.floor(Math.random() * 3 + 1) : Math.floor(Math.random() * 2);
+        const ga = w ? Math.floor(Math.random() * 2) : d ? gf : Math.floor(Math.random() * 3 + 1);
         return { ...t, played: t.played + 1, wins: t.wins + (w ? 1 : 0), draws: t.draws + (d ? 1 : 0), losses: t.losses + (!w && !d ? 1 : 0), goalsFor: t.goalsFor + gf, goalsAgainst: t.goalsAgainst + ga, points: t.points + (w ? 3 : d ? 1 : 0) };
       }));
 
@@ -551,10 +556,10 @@ export function useGame(initialState?: GameState) {
       }],
     }));
 
-    setLeagueTeams(resetLeagueTeams());
+    setLeagueTeams(getLeagueTeams(club.country || 'BR', club.name).map(t => ({ ...t, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 })));
     setClub(prev => ({
       ...prev,
-      matches: generateSeasonMatches(),
+      matches: generateSeasonMatches(prev.country),
       stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       budget: prev.budget + seasonPrize,
       reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),

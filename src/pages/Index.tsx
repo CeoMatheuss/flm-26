@@ -18,7 +18,7 @@ import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
-import { initialLeagueTeams } from '@/types/league';
+import { initialLeagueTeams, getLeagueTeams } from '@/types/league';
 import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
 import { generateSponsorOffers } from '@/types/sponsor';
 import { generateMarketPlayers, generateFreeAgents, generateInitialSquad } from '@/utils/playerGenerator';
@@ -87,7 +87,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       stadiumName: config.stadiumName || 'Arena ' + config.name,
       fans: 1,
       players: generateInitialSquad(),
-      matches: generateSeasonMatches(),
+      matches: generateSeasonMatches(config.country),
       primaryColor: config.primaryColor,
       secondaryColor: config.secondaryColor,
       shieldPattern: config.shieldPattern,
@@ -97,7 +97,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     const newState: GameState = {
       club: customClub,
       tactics: defaultTactics,
-      leagueTeams: initialLeagueTeams,
+      leagueTeams: getLeagueTeams(config.country, config.name),
       finances: [],
       marketPlayers: generateMarketPlayers(8),
       freeAgents: generateFreeAgents(12),
