@@ -3,6 +3,7 @@ import { GameEvent } from '@/types/events';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { NewspaperCard } from './NewspaperCard';
 import fcmLogo from '@/assets/fcm26-logo.png';
 
 interface Props {
@@ -66,6 +67,9 @@ export function DashboardTab({ club, events }: Props) {
           </Card>
         ))}
       </div>
+
+      {/* Newspaper */}
+      <NewspaperCard club={club} events={events} />
 
       {/* Events Feed */}
       {recentEvents.length > 0 && (
