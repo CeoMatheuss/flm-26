@@ -80,7 +80,19 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   }
 
-  // Listed for sale
+  // Injured players
+  const injured = players.filter(p => p.injury);
+  if (injured.length > 0) {
+    const names = injured.slice(0, 3).map(p => `${p.name.split(' ')[0]} (${p.injury!.weeksRemaining}j)`).join(', ');
+    notifications.push({
+      id: 'injured',
+      icon: '🏥',
+      title: `${injured.length} jogador(es) lesionado(s)`,
+      message: `${names}${injured.length > 3 ? ` e mais ${injured.length - 3}` : ''} — jogadores lesionados não jogam e recuperam com base na Fisioterapia (Nv.${infrastructure?.physiotherapy?.level ?? 1}).`,
+      type: 'danger',
+    });
+  }
+
   if (listedPlayers.length > 0) {
     notifications.push({
       id: 'listed',
