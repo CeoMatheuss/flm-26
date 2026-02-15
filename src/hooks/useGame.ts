@@ -548,7 +548,7 @@ export function useGame(initialState?: GameState) {
     const seasonPrize = clubPos === 1 ? 5000000 : clubPos <= 4 ? 2000000 : 500000;
 
     setSeason(prev => ({
-      currentSeason: prev.currentSeason + 1, currentWeek: 1, totalWeeks: 18,
+      currentSeason: prev.currentSeason + 1, currentWeek: 1, totalWeeks: 38,
       seasonHistory: [...prev.seasonHistory, {
         season: prev.currentSeason, position: clubPos, points: club.stats.points,
         wins: club.stats.wins, draws: club.stats.draws, losses: club.stats.losses,
