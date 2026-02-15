@@ -7,6 +7,7 @@ import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost
 import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch } from '@/utils/playerGenerator';
+import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
 
 export interface GameState {
@@ -21,6 +22,7 @@ export interface GameState {
   season: SeasonData;
   sponsors: Sponsor[];
   sponsorOffers: SponsorOffer[];
+  events: GameEvent[];
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -48,6 +50,7 @@ export function useGame(initialState?: GameState) {
   const [season, setSeason] = useState<SeasonData>(initialState?.season ?? defaultSeason);
   const [sponsors, setSponsors] = useState<Sponsor[]>(initialState?.sponsors ?? []);
   const [sponsorOffers, setSponsorOffers] = useState<SponsorOffer[]>(initialState?.sponsorOffers ?? generateSponsorOffers(65, 4));
+  const [events, setEvents] = useState<GameEvent[]>(initialState?.events ?? []);
 
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
@@ -123,6 +126,77 @@ export function useGame(initialState?: GameState) {
       }
 
       const youthCost = (playedCount % 4 === 0 && prev.budget >= youthInvestment) ? youthInvestment : 0;
+
+      // Random events after match
+      const newEvents = generateRandomEvents(prev.players, prev.fans, prev.reputation, recentLosses, recentWins);
+      if (newEvents.length > 0) {
+        // Apply event effects
+        let eventFanDelta = 0;
+        let eventBudgetDelta = 0;
+        let eventRepDelta = 0;
+        const playerEffects: Record<string, { stamina: number; morale: number }> = {};
+        let allMoraleDelta = 0;
+
+        for (const ev of newEvents) {
+          const parts = ev.impact.split(',');
+          for (const part of parts) {
+            const [key, val] = part.split(':');
+            if (key === 'fans') eventFanDelta += parseInt(val);
+            if (key === 'budget') eventBudgetDelta += parseInt(val);
+            if (key === 'reputation') eventRepDelta += parseInt(val);
+            if (key === 'morale_all') allMoraleDelta += parseInt(val);
+            if (key === 'stamina' || key === 'morale') {
+              const pidPart = parts.find(p => p.startsWith('player:'));
+              if (pidPart) {
+                const pid = pidPart.split(':')[1];
+                if (!playerEffects[pid]) playerEffects[pid] = { stamina: 0, morale: 0 };
+                playerEffects[pid][key] += parseInt(val);
+              }
+            }
+          }
+          // Show event toast
+          if (ev.type === 'injury') toast.warning(ev.title);
+          else if (ev.type === 'protest') toast.error(ev.title);
+          else if (ev.type === 'offer') toast.info(ev.title);
+          else toast.success(ev.title);
+        }
+
+        setEvents(prev => [...newEvents.map(e => ({ ...e, resolved: true })), ...prev].slice(0, 20));
+
+        // Apply extra effects to the returned state
+        fanChange += eventFanDelta;
+        const extraPlayers = prev.players.map(p => {
+          const eff = playerEffects[p.id];
+          return eff ? { ...p, stamina: Math.max(20, p.stamina + eff.stamina), morale: Math.max(20, p.morale + eff.morale) } : p;
+        }).map(p => ({ ...p, morale: Math.max(20, Math.min(100, p.morale + allMoraleDelta)) }));
+
+        // Result toast with fan info
+        const fanSign2 = fanChange >= 0 ? '+' : '';
+        if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
+        else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
+        else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign2}${fanChange}`);
+
+        return {
+          ...prev,
+          matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
+          players: extraPlayers.map(p => ({
+            ...p,
+            stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
+            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+          })),
+          budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
+          fans: Math.max(100, prev.fans + fanChange),
+          reputation: Math.min(100, Math.max(1, prev.reputation + repChange + eventRepDelta)),
+          stats: {
+            wins: prev.stats.wins + (isWin ? 1 : 0),
+            draws: prev.stats.draws + (isDraw ? 1 : 0),
+            losses: prev.stats.losses + (!isWin && !isDraw ? 1 : 0),
+            goalsFor: prev.stats.goalsFor + homeGoals,
+            goalsAgainst: prev.stats.goalsAgainst + awayGoals,
+            points: prev.stats.points + (isWin ? 3 : isDraw ? 1 : 0),
+          },
+        };
+      }
 
       // Result toast with fan info
       const fanSign = fanChange >= 0 ? '+' : '';
@@ -292,12 +366,12 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers]);
+    club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events]);
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers,
+    sponsors, sponsorOffers, events,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, refreshMarket, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,

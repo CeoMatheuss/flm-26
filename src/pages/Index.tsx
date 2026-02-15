@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
@@ -99,45 +100,51 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header - mobile optimized */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={fcmLogo} alt="FCM 26" className="w-10 h-10 rounded-lg" />
-            <div>
-              <h1 className="text-lg font-bold">{game.club.name}</h1>
-              <p className="text-xs text-muted-foreground">T{game.season.currentSeason} • {game.club.stats.points}pts</p>
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img src={fcmLogo} alt="FCM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg font-bold truncate">{game.club.name}</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                T{game.season.currentSeason} • {game.club.stats.points}pts • <span className="text-primary font-semibold">R$ {(game.club.budget / 1000000).toFixed(1)}M</span>
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-primary mr-2 hidden sm:block">R$ {(game.club.budget / 1000000).toFixed(2)}M</p>
-            <Button size="sm" variant="outline" onClick={saveGame}>
-              <Save className="h-3 w-3 mr-1" /> Salvar
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
+              <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>
-            <Button size="sm" variant="ghost" onClick={onSignOut}>
+            <Button size="sm" variant="ghost" onClick={onSignOut} className="h-7 sm:h-8 px-2">
               <LogOut className="h-3 w-3" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <Tabs defaultValue="dashboard">
-          <TabsList className="w-full mb-6 flex-wrap h-auto gap-1 bg-card/50">
-            <TabsTrigger value="dashboard" className="gap-1 text-xs"><LayoutDashboard className="h-3 w-3" /> Painel</TabsTrigger>
-            <TabsTrigger value="squad" className="gap-1 text-xs"><Users className="h-3 w-3" /> Elenco</TabsTrigger>
-            <TabsTrigger value="matches" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Jogos</TabsTrigger>
-            <TabsTrigger value="market" className="gap-1 text-xs"><ShoppingCart className="h-3 w-3" /> Mercado</TabsTrigger>
-            <TabsTrigger value="tactics" className="gap-1 text-xs"><Target className="h-3 w-3" /> Táticas</TabsTrigger>
-            <TabsTrigger value="league" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Liga</TabsTrigger>
-            <TabsTrigger value="youth" className="gap-1 text-xs"><GraduationCap className="h-3 w-3" /> Base</TabsTrigger>
-            <TabsTrigger value="sponsors" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Patrocínio</TabsTrigger>
-            <TabsTrigger value="infra" className="gap-1 text-xs"><Building2 className="h-3 w-3" /> Estrutura</TabsTrigger>
-            <TabsTrigger value="season" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Temporada</TabsTrigger>
-            <TabsTrigger value="finance" className="gap-1 text-xs"><DollarSign className="h-3 w-3" /> Finanças</TabsTrigger>
-            <TabsTrigger value="multiplayer" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Online</TabsTrigger>
-          </TabsList>
+          {/* Scrollable tab bar for mobile */}
+          <ScrollArea className="w-full mb-4 sm:mb-6">
+            <TabsList className="inline-flex w-max sm:w-full sm:flex-wrap h-auto gap-0.5 sm:gap-1 bg-card/50 p-1">
+              <TabsTrigger value="dashboard" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><LayoutDashboard className="h-3 w-3" /> <span className="hidden xs:inline">Painel</span></TabsTrigger>
+              <TabsTrigger value="squad" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Users className="h-3 w-3" /> <span className="hidden xs:inline">Elenco</span></TabsTrigger>
+              <TabsTrigger value="matches" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Swords className="h-3 w-3" /> <span className="hidden xs:inline">Jogos</span></TabsTrigger>
+              <TabsTrigger value="market" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><ShoppingCart className="h-3 w-3" /> <span className="hidden xs:inline">Mercado</span></TabsTrigger>
+              <TabsTrigger value="tactics" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Target className="h-3 w-3" /> <span className="hidden xs:inline">Táticas</span></TabsTrigger>
+              <TabsTrigger value="league" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Trophy className="h-3 w-3" /> <span className="hidden xs:inline">Liga</span></TabsTrigger>
+              <TabsTrigger value="youth" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><GraduationCap className="h-3 w-3" /> <span className="hidden xs:inline">Base</span></TabsTrigger>
+              <TabsTrigger value="sponsors" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Handshake className="h-3 w-3" /> <span className="hidden xs:inline">Patrocínio</span></TabsTrigger>
+              <TabsTrigger value="infra" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Building2 className="h-3 w-3" /> <span className="hidden xs:inline">Estrutura</span></TabsTrigger>
+              <TabsTrigger value="season" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><CalendarDays className="h-3 w-3" /> <span className="hidden xs:inline">Temporada</span></TabsTrigger>
+              <TabsTrigger value="finance" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><DollarSign className="h-3 w-3" /> <span className="hidden xs:inline">Finanças</span></TabsTrigger>
+              <TabsTrigger value="multiplayer" className="gap-1 text-[10px] sm:text-xs px-2 sm:px-3"><Globe className="h-3 w-3" /> <span className="hidden xs:inline">Online</span></TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} /></TabsContent>
           <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} onTrain={game.trainPlayer} onRest={game.restPlayer} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market"><MarketTab marketPlayers={game.marketPlayers} clubPlayers={game.club.players} budget={game.club.budget} onBuy={game.buyPlayer} onSell={game.sellPlayer} onRefresh={game.refreshMarket} /></TabsContent>
