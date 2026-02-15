@@ -35,6 +35,7 @@ export const initialClub: Club = {
   stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
   players: initialPlayers,
   matches: generateSeasonMatches(),
+  scouts: [],
   scoutReports: [],
   matchesSinceLastScout: 0,
 };

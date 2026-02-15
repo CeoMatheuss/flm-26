@@ -2,10 +2,8 @@ import { Player, PlayerAttributes, ScoutReport } from '@/types/game';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { ShoppingCart, Banknote, UserPlus, Search, Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Props {
@@ -14,7 +12,6 @@ interface Props {
   clubPlayers: Player[];
   budget: number;
   scoutReports: ScoutReport[];
-  matchesSinceLastScout: number;
   onBuy: (player: Player) => void;
   onSell: (player: Player) => void;
   onSignFreeAgent: (player: Player) => void;
@@ -40,20 +37,16 @@ const attrLabels: Record<keyof PlayerAttributes, string> = {
   dribbling: '🎨 Dri',
 };
 
-export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scoutReports, matchesSinceLastScout, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents }: Props) {
-  const [selectedReport, setSelectedReport] = useState<ScoutReport | null>(null);
-
+export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scoutReports, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents }: Props) {
   return (
     <div className="space-y-4 sm:space-y-6">
       <Tabs defaultValue="market" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="market" className="text-[10px] sm:text-xs">🛒 Mercado</TabsTrigger>
           <TabsTrigger value="free" className="text-[10px] sm:text-xs">📋 Livres</TabsTrigger>
-          <TabsTrigger value="scouts" className="text-[10px] sm:text-xs">🔍 Olheiros</TabsTrigger>
           <TabsTrigger value="sell" className="text-[10px] sm:text-xs">💰 Vender</TabsTrigger>
         </TabsList>
 
-        {/* Regular Market */}
         <TabsContent value="market" className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm sm:text-lg">Mercado de Transferências</h3>
@@ -83,12 +76,11 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scou
           </div>
         </TabsContent>
 
-        {/* Free Agents - OVR Hidden */}
         <TabsContent value="free" className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-sm sm:text-lg">Jogadores Livres</h3>
-              <p className="text-[10px] text-muted-foreground">Overall oculto — use olheiros para avaliar</p>
+              <p className="text-[10px] text-muted-foreground">Overall oculto — contrate olheiros para avaliar</p>
             </div>
             <Button variant="outline" size="sm" onClick={onRefreshFreeAgents} className="text-xs sm:text-sm gap-1">
               <RefreshCw className="h-3 w-3" /> Atualizar
@@ -136,64 +128,6 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scou
           </div>
         </TabsContent>
 
-        {/* Scout Reports */}
-        <TabsContent value="scouts" className="space-y-3">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-primary">🔍 Departamento de Olheiros</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Relatórios chegam a cada 5 partidas disputadas. Melhore a infraestrutura para relatórios mais precisos.
-                  </p>
-                </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="text-[10px] text-muted-foreground">Próximo relatório</p>
-                  <p className="text-sm font-bold text-primary">{5 - matchesSinceLastScout} jogos</p>
-                </div>
-              </div>
-              <Progress value={(matchesSinceLastScout / 5) * 100} className="h-1.5 mt-2" />
-            </CardContent>
-          </Card>
-
-          {scoutReports.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Nenhum relatório ainda. Dispute partidas para receber avaliações!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {scoutReports.map(report => (
-                <Card key={report.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedReport(selectedReport?.id === report.id ? null : report)}>
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[report.player.position]}`}>{report.player.position}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs sm:text-sm truncate">{report.player.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{report.player.age}a • Precisão: {report.accuracy}%</p>
-                      </div>
-                      <Badge variant="outline" className="text-[10px]">~OVR {report.estimatedOverall}</Badge>
-                    </div>
-                    {selectedReport?.id === report.id && (
-                      <div className="mt-2 grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                        {(Object.entries(report.estimatedAttributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
-                          <div key={key} className="text-center bg-muted/30 rounded px-1 py-0.5">
-                            <p className="text-[8px] text-muted-foreground">{attrLabels[key]}</p>
-                            <p className="text-[10px] font-bold">{val}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Sell Players */}
         <TabsContent value="sell" className="space-y-3">
           <h3 className="font-semibold text-sm sm:text-lg">Vender Jogadores</h3>
           <div className="space-y-1.5 sm:space-y-2">

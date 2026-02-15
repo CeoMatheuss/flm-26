@@ -12,6 +12,7 @@ import { SeasonTab } from '@/components/game/SeasonTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
+import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -24,7 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
@@ -191,6 +192,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base / Juvenil</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
@@ -209,7 +211,6 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
               clubPlayers={game.club.players}
               budget={game.club.budget}
               scoutReports={game.club.scoutReports || []}
-              matchesSinceLastScout={game.club.matchesSinceLastScout || 0}
               onBuy={game.buyPlayer}
               onSell={game.sellPlayer}
               onSignFreeAgent={game.signFreeAgent}
@@ -240,6 +241,16 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
             />
           </TabsContent>
           <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} onUpgrade={game.upgradeFacility} /></TabsContent>
+          <TabsContent value="scouts">
+            <ScoutsTab
+              scouts={game.club.scouts || []}
+              scoutReports={game.club.scoutReports || []}
+              matchesSinceLastScout={game.club.matchesSinceLastScout || 0}
+              budget={game.club.budget}
+              onHireScout={game.hireScout}
+              onFireScout={game.fireScout}
+            />
+          </TabsContent>
           <TabsContent value="season">
             <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.hasUnplayedMatches} onEndSeason={game.endSeason} />
           </TabsContent>

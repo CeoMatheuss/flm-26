@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Club, Player, Match, ScoutReport } from '@/types/game';
+import { Club, Player, Match, ScoutReport, Scout } from '@/types/game';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
@@ -133,17 +133,24 @@ export function useGame(initialState?: GameState) {
 
       const youthCost = (playedCount % 4 === 0 && prev.budget >= youthInvestment) ? youthInvestment : 0;
 
-      // Scout reports every 5 matches
+      // Scout reports every 5 matches (only if scouts hired)
       const newMatchesSinceScout = prev.matchesSinceLastScout + 1;
       let newScoutReports = prev.scoutReports;
       let resetScoutCounter = newMatchesSinceScout;
-      if (newMatchesSinceScout >= 5) {
-        const scoutAccuracy = 30 + infrastructure.trainingCenter.level * 7;
-        const agentsToScout = freeAgents.slice(0, 3);
-        const reports = agentsToScout.map(p => generateScoutReport(p, scoutAccuracy));
-        newScoutReports = [...reports, ...prev.scoutReports].slice(0, 15);
+      if (newMatchesSinceScout >= 5 && prev.scouts.length > 0) {
+        const allReports: ScoutReport[] = [];
+        for (const scout of prev.scouts) {
+          const scoutAccuracy = 20 + scout.skill * 8;
+          const agentsToScout = freeAgents.slice(0, Math.min(2, Math.ceil(scout.skill / 3)));
+          const reports = agentsToScout.map(p => {
+            const r = generateScoutReport(p, scoutAccuracy);
+            return { ...r, scoutName: scout.name };
+          });
+          allReports.push(...reports);
+        }
+        newScoutReports = [...allReports, ...prev.scoutReports].slice(0, 20);
         resetScoutCounter = 0;
-        toast.info('📋 Novos relatórios de olheiros chegaram!');
+        toast.info(`📋 ${allReports.length} relatório(s) de olheiros chegaram!`);
       }
 
       // Random events after match
@@ -360,6 +367,46 @@ export function useGame(initialState?: GameState) {
     setClub(prev => ({ ...prev, ticketPrice: Math.max(5, Math.min(200, price)) }));
   }, []);
 
+  const scoutOptionData = [
+    { skill: 1, name: 'Amador Local', salary: 5000 },
+    { skill: 2, name: 'Observador Iniciante', salary: 12000 },
+    { skill: 3, name: 'Olheiro Regional', salary: 25000 },
+    { skill: 4, name: 'Olheiro Experiente', salary: 45000 },
+    { skill: 5, name: 'Analista Profissional', salary: 70000 },
+    { skill: 6, name: 'Scout Nacional', salary: 100000 },
+    { skill: 7, name: 'Scout Internacional', salary: 150000 },
+    { skill: 8, name: 'Especialista Elite', salary: 220000 },
+    { skill: 9, name: 'Lenda da Observação', salary: 300000 },
+    { skill: 10, name: 'Gênio Supremo', salary: 500000 },
+  ];
+
+  const hireScout = useCallback((skill: number) => {
+    const opt = scoutOptionData.find(o => o.skill === skill);
+    if (!opt) return;
+    const hireCost = opt.salary * 3;
+    setClub(prev => {
+      if (prev.budget < hireCost) { toast.error('Orçamento insuficiente!'); return prev; }
+      const newScout: Scout = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: opt.name,
+        skill: opt.skill,
+        salary: opt.salary,
+        contract: 2,
+      };
+      addFinance('despesa', 'Olheiros', hireCost, `Contratação: ${opt.name}`);
+      toast.success(`${opt.name} contratado! Hab: ${opt.skill}/10`);
+      return { ...prev, budget: prev.budget - hireCost, scouts: [...prev.scouts, newScout] };
+    });
+  }, [addFinance]);
+
+  const fireScout = useCallback((scoutId: string) => {
+    setClub(prev => {
+      const scout = prev.scouts.find(s => s.id === scoutId);
+      if (scout) toast.info(`${scout.name} dispensado.`);
+      return { ...prev, scouts: prev.scouts.filter(s => s.id !== scoutId) };
+    });
+  }, []);
+
   const acceptSponsor = useCallback((offer: SponsorOffer) => {
     setSponsors(prev => [...prev, offer]);
     setSponsorOffers(prev => prev.filter(o => o.id !== offer.id));
@@ -395,10 +442,13 @@ export function useGame(initialState?: GameState) {
       reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),
       scoutReports: [],
       matchesSinceLastScout: 0,
+      scouts: prev.scouts
+        .map(s => ({ ...s, contract: s.contract - 1 }))
+        .filter(s => s.contract > 0),
       players: prev.players
         .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0 }))
         .map(applyAgeDevelopment)
-        .filter(p => p.age <= 42),
+        .filter(p => p.age <= 42 && p.contract > 0),
     }));
 
     addFinance('receita', 'Premiação', seasonPrize, `Premiação T${season.currentSeason} - ${clubPos}º lugar`);
@@ -428,5 +478,6 @@ export function useGame(initialState?: GameState) {
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
+    hireScout, fireScout,
   };
 }
