@@ -11,12 +11,18 @@ import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SeasonTab } from '@/components/game/SeasonTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
+import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
+import { initialClub, generateSeasonMatches } from '@/data/initialData';
+import { defaultTactics } from '@/types/tactics';
+import { initialLeagueTeams } from '@/types/league';
+import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
+import { generateSponsorOffers } from '@/types/sponsor';
+import { generateMarketPlayers } from '@/utils/playerGenerator';
 import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -45,6 +51,7 @@ const Index = () => {
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
+  const [hasSave, setHasSave] = useState(false);
   const [displayName, setDisplayName] = useState('Manager');
 
   useEffect(() => {
@@ -58,6 +65,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       if (saveRes.data?.club_data) {
         try {
           setLoadedState(saveRes.data.club_data as unknown as GameState);
+          setHasSave(true);
           toast.success('Save carregado!');
         } catch { /* ignore */ }
       }
@@ -66,12 +74,42 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     load();
   }, [userId]);
 
+  const handleClubCreated = useCallback((config: ClubConfig) => {
+    const customClub = {
+      ...initialClub,
+      name: config.name,
+      matches: generateSeasonMatches(),
+    };
+    const newState: GameState = {
+      club: customClub,
+      tactics: defaultTactics,
+      leagueTeams: initialLeagueTeams,
+      finances: [],
+      marketPlayers: generateMarketPlayers(8),
+      infrastructure: defaultInfrastructure,
+      youthProspects: [],
+      youthInvestment: 100000,
+      season: defaultSeason,
+      sponsors: [],
+      sponsorOffers: generateSponsorOffers(65, 4),
+      events: [],
+    };
+    setLoadedState(newState);
+    setHasSave(true);
+    toast.success(`${config.name} criado com sucesso! 🏆`);
+  }, []);
+
   if (!gameReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <img src={fcmLogo} alt="FCM 26" className="w-16 h-16 animate-pulse" />
       </div>
     );
+  }
+
+  // Show club creation if no save exists
+  if (!hasSave) {
+    return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
   }
 
   return <GameUI userId={userId} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} />;
@@ -102,7 +140,6 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - mobile optimized */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -158,7 +195,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
           <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} onTrain={game.trainPlayer} onRest={game.restPlayer} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market"><MarketTab marketPlayers={game.marketPlayers} clubPlayers={game.club.players} budget={game.club.budget} onBuy={game.buyPlayer} onSell={game.sellPlayer} onRefresh={game.refreshMarket} /></TabsContent>
-          <TabsContent value="tactics"><TacticsTab tactics={game.tactics} onUpdate={game.setTactics} /></TabsContent>
+          <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
           <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} /></TabsContent>
           <TabsContent value="youth">
             <YouthAcademyTab
