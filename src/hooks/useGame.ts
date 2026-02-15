@@ -97,9 +97,9 @@ export function useGame(initialState?: GameState) {
       const streakPenalty = recentLosses >= 3 ? -600 : recentLosses >= 2 ? -250 : 0;
       const stadiumFanBonus = infrastructure.stadium.level * 80;
       let fanChange = 0;
-      if (isWin) fanChange = 400 + goalDiff * 150 + (isRout ? 500 : 0);
-      else if (isDraw) fanChange = 50 + (homeGoals >= 3 ? 100 : 0);
-      else fanChange = -300 + goalDiff * 100 + (isBigLoss ? -400 : 0);
+      if (isWin) fanChange = 200 + (isRout ? 500 : 0);
+      else if (isDraw) fanChange = 0;
+      else fanChange = -100 + (isBigLoss ? -200 : 0);
       fanChange += streakBonus + streakPenalty + stadiumFanBonus;
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
@@ -277,7 +277,7 @@ export function useGame(initialState?: GameState) {
           matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
           players: mappedPlayers,
           budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
-          fans: Math.max(100, prev.fans + fanChange),
+          fans: Math.max(1, prev.fans + fanChange),
           reputation: Math.min(100, Math.max(1, prev.reputation + repChange + eventRepDelta)),
           scoutReports: newScoutReports,
           matchesSinceLastScout: resetScoutCounter,
@@ -335,7 +335,7 @@ export function useGame(initialState?: GameState) {
           };
         }),
         budget: prev.budget + prize + sponsorWeekly - youthCost,
-        fans: Math.max(100, prev.fans + fanChange),
+        fans: Math.max(1, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
         scoutReports: newScoutReports,
         matchesSinceLastScout: resetScoutCounter,
