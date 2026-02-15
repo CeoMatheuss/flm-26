@@ -3,19 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import flmLogo from '@/assets/flm26-logo.png';
-import { Trophy, Users, Target, Swords, TrendingUp, Star } from 'lucide-react';
+import { Trophy, Users, Target, Swords, TrendingUp, Star, Shield, Zap, Globe, GraduationCap } from 'lucide-react';
 
 const features = [
-  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale jogadores' },
-  { icon: Swords, title: 'Simule Partidas', desc: 'Jogue campeonatos e copas' },
-  { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual no campo' },
-  { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra e venda de jogadores' },
-  { icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas com amigos em tempo real' },
-  { icon: Star, title: 'Base & Juventude', desc: 'Desenvolva jovens talentos' },
+  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores' },
+  { icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas em tempo real' },
+  { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa no campo' },
+  { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e agentes livres' },
+  { icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas competitivas com amigos' },
+  { icon: GraduationCap, title: 'Base & Olheiros', desc: 'Desenvolva talentos e contrate scouts' },
+  { icon: Shield, title: 'Infraestrutura', desc: 'CT, fisioterapia, estádio e mais' },
+  { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
 export default function AuthPage() {
@@ -64,25 +66,33 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background p-4 gap-6">
       {/* Hero */}
-      <div className="text-center space-y-2 max-w-md">
-        <img src={flmLogo} alt="FLM 26" className="w-20 h-20 mx-auto" />
-        <h1 className="text-3xl font-bold tracking-tight">FLM 26</h1>
+      <div className="text-center space-y-3 max-w-md animate-fade-in">
+        <div className="relative inline-block">
+          <img src={flmLogo} alt="FLM 26" className="w-24 h-24 mx-auto drop-shadow-2xl" />
+          <div className="absolute -inset-3 bg-primary/10 rounded-full blur-xl -z-10" />
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter bg-gradient-to-r from-white to-primary bg-clip-text text-transparent">
+          FLM 26
+        </h1>
         <p className="text-muted-foreground text-sm">Football League Manager 2026</p>
+        <p className="text-[11px] text-muted-foreground/60">
+          Construa seu clube do zero. Gerencie elenco, táticas, finanças e conquiste títulos.
+        </p>
       </div>
 
       {/* Login Card */}
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-center">Entrar no Jogo</CardTitle>
+          <CardTitle className="text-lg text-center">⚽ Entrar no Jogo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Google Button */}
           <Button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full h-11 gap-3"
+            className="w-full h-12 gap-3 text-sm font-semibold"
             variant="outline"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -95,7 +105,7 @@ export default function AuthPage() {
           </Button>
 
           <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50" /></div>
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">ou com email</span></div>
           </div>
 
@@ -107,21 +117,21 @@ export default function AuthPage() {
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-3">
-                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-10" />
-                <Input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required className="h-10" />
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
+                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" />
+                <Input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required className="h-11" />
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                  {loading ? 'Entrando...' : '🎮 Entrar'}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-3">
-                <Input placeholder="Nome do Manager" value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-10" />
-                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-10" />
-                <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-10" />
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Criando...' : 'Criar Conta'}
+                <Input placeholder="Nome do Manager" value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-11" />
+                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" />
+                <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-11" />
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                  {loading ? 'Criando...' : '🏆 Criar Conta'}
                 </Button>
               </form>
             </TabsContent>
@@ -130,21 +140,21 @@ export default function AuthPage() {
       </Card>
 
       {/* Features Grid */}
-      <div className="w-full max-w-md">
-        <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider mb-3">Destaques v2026</p>
+      <div className="w-full max-w-lg">
+        <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades</p>
         <div className="grid grid-cols-2 gap-2">
           {features.map((f, i) => (
-            <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/50 bg-card/30">
+            <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-colors">
               <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <p className="text-xs font-semibold truncate">{f.title}</p>
+                <p className="text-xs font-bold truncate">{f.title}</p>
                 <p className="text-[10px] text-muted-foreground leading-tight">{f.desc}</p>
               </div>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-center text-muted-foreground mt-3">
-          🆕 Escalação 2D • Jornal Dinâmico • Criação de Clube • Multiplayer Online
+        <p className="text-[10px] text-center text-muted-foreground/50 mt-4">
+          FLM 26 © 2026 — Todos os direitos reservados
         </p>
       </div>
     </div>

@@ -1,13 +1,13 @@
-import { Infrastructure, getUpgradeCost } from '@/types/infrastructure';
+import { Infrastructure, getUpgradeCost, getPhysiotherapyRecovery } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Building2, GraduationCap, Landmark, ArrowUp } from 'lucide-react';
+import { Building2, GraduationCap, Landmark, ArrowUp, HeartPulse } from 'lucide-react';
 
 interface Props {
   infrastructure: Infrastructure;
   budget: number;
-  onUpgrade: (facility: 'trainingCenter' | 'youthAcademy' | 'stadium') => void;
+  onUpgrade: (facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => void;
 }
 
 const facilityInfo = {
@@ -28,6 +28,13 @@ const facilityInfo = {
     icon: Landmark,
     desc: 'Aumenta receita de bilheteria e atrai mais torcedores nas partidas.',
     color: 'text-emerald-400',
+  },
+  physiotherapy: {
+    name: 'Centro de Fisioterapia',
+    icon: HeartPulse,
+    desc: 'Recupera a energia dos jogadores após cada partida. Nível maior = recuperação mais rápida.',
+    color: 'text-red-400',
+    getExtra: (level: number) => `+${getPhysiotherapyRecovery(level)} energia/partida`,
   },
 };
 
@@ -55,6 +62,9 @@ export function InfrastructureTab({ infrastructure, budget, onUpgrade }: Props) 
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">Nível {facility.level}/{facility.maxLevel}</span>
                 <Progress value={(facility.level / facility.maxLevel) * 100} className="flex-1 h-3" />
+                {'getExtra' in info && (
+                  <span className="text-xs font-semibold text-primary">{(info as any).getExtra(facility.level)}</span>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
