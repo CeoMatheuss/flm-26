@@ -42,7 +42,7 @@ export function InfrastructureTab({ infrastructure, budget, onUpgrade }: Props) 
   return (
     <div className="space-y-4">
       {(Object.keys(facilityInfo) as Array<keyof typeof facilityInfo>).map(key => {
-        const facility = infrastructure[key];
+        const facility = infrastructure?.[key] ?? { level: 1, maxLevel: 10 };
         const info = facilityInfo[key];
         const Icon = info.icon;
         const cost = getUpgradeCost(facility.level);
