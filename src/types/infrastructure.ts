@@ -87,6 +87,6 @@ export interface SeasonResult {
 export const defaultSeason: SeasonData = {
   currentSeason: 1,
   currentWeek: 1,
-  totalWeeks: 18,
+  totalWeeks: 38,
   seasonHistory: [],
 };
