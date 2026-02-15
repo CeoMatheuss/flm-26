@@ -298,16 +298,38 @@ export function useGame(initialState?: GameState) {
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
   }, [addFinance]);
 
-  const signFreeAgent = useCallback((player: Player) => {
-    const signingFee = Math.floor(player.overall * 5000); // signing bonus
+  const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
+    const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
     setClub(prev => {
-      if (prev.budget < signingFee) return prev;
-      const signed = { ...player, contract: Math.floor(Math.random() * 3 + 1) };
-      addFinance('despesa', 'Transferência Livre', signingFee, `Assinatura: ${player.name}`);
-      return { ...prev, budget: prev.budget - signingFee, players: [...prev.players, signed] };
+      const signed = { ...player, salary, contract: Math.floor(Math.random() * 3 + 2) };
+      addFinance('despesa', 'Transferência Livre', salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
+      return { ...prev, budget: prev.budget - salary * 3, players: [...prev.players, signed] };
     });
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
-    toast.success(`${player.name} assinou como jogador livre!`);
+    toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
+  }, [addFinance]);
+
+  const renewContract = useCallback((playerId: string, newSalary: number) => {
+    setClub(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      if (!player) return prev;
+      if (newSalary < player.salary) {
+        toast.error(`${player.name} recusou! Oferça mais que R$${(player.salary / 1000).toFixed(0)}k.`);
+        return prev;
+      }
+      const renewalBonus = newSalary * 2;
+      if (prev.budget < renewalBonus) {
+        toast.error('Orçamento insuficiente para renovação!');
+        return prev;
+      }
+      addFinance('despesa', 'Renovação', renewalBonus, `Renovação: ${player.name}`);
+      toast.success(`${player.name} renovou por +2 anos! Novo salário: R$${(newSalary / 1000).toFixed(0)}k/mês`);
+      return {
+        ...prev,
+        budget: prev.budget - renewalBonus,
+        players: prev.players.map(p => p.id === playerId ? { ...p, salary: newSalary, contract: p.contract + 2 } : p),
+      };
+    });
   }, [addFinance]);
 
   const sellPlayer = useCallback((player: Player) => {
@@ -478,6 +500,6 @@ export function useGame(initialState?: GameState) {
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
-    hireScout, fireScout,
+    hireScout, fireScout, renewContract,
   };
 }
