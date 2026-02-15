@@ -3,10 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw, DollarSign } from 'lucide-react';
+import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw, DollarSign, ArrowLeftRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
+import { LoanedPlayer } from '@/hooks/useGame';
 
 interface Props {
   marketPlayers: Player[];
@@ -16,11 +17,14 @@ interface Props {
   clubName: string;
   listedForSale: string[];
   scoutReports: ScoutReport[];
+  loanedPlayers: LoanedPlayer[];
   onBuy: (player: Player) => void;
   onSell: (player: Player) => void;
   onSignFreeAgent: (player: Player, offeredSalary: number) => void;
   onRefresh: () => void;
   onRefreshFreeAgents: () => void;
+  onLoanOut: (playerId: string) => void;
+  onLoanIn: (player: Player) => void;
 }
 
 const posColors: Record<string, string> = {
@@ -50,16 +54,21 @@ function getPlayerExpectedSalary(player: Player): number {
   return Math.floor(player.overall * 200 + player.age * 100);
 }
 
-export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, clubName, listedForSale, scoutReports, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents }: Props) {
+export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, clubName, listedForSale, scoutReports, loanedPlayers, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents, onLoanOut, onLoanIn }: Props) {
   const [salaryOffers, setSalaryOffers] = useState<Record<string, number>>({});
   const listedPlayers = clubPlayers.filter(p => listedForSale.includes(p.id));
+  const loansOut = loanedPlayers.filter(l => l.direction === 'out');
+  const loansIn = loanedPlayers.filter(l => l.direction === 'in');
+  const loanedPlayerIds = loanedPlayers.map(l => l.player.id);
+  const loanableClubPlayers = clubPlayers.filter(p => !loanedPlayerIds.includes(p.id) && !listedForSale.includes(p.id));
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <Tabs defaultValue="market" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="market" className="text-[10px] sm:text-xs">🛒 Mercado</TabsTrigger>
           <TabsTrigger value="free" className="text-[10px] sm:text-xs">📋 Livres</TabsTrigger>
+          <TabsTrigger value="loans" className="text-[10px] sm:text-xs">🔄 Empréstimos</TabsTrigger>
           <TabsTrigger value="sell" className="text-[10px] sm:text-xs">💰 Vender</TabsTrigger>
         </TabsList>
 
@@ -187,6 +196,102 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                 </Card>
               );
             })}
+          </div>
+        </TabsContent>
+
+        {/* Loans Tab */}
+        <TabsContent value="loans" className="space-y-3">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-xs font-semibold text-primary">🔄 Empréstimos</p>
+                  <p className="text-[10px] text-muted-foreground">Máx. 3 empréstimos (entrada ou saída). Duração: 1 temporada. Receptor paga salário.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active loans */}
+          {(loansOut.length > 0 || loansIn.length > 0) && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground">Empréstimos Ativos</p>
+              {loansOut.map(loan => (
+                <Card key={loan.player.id} className="border-orange-500/30 bg-orange-500/5">
+                  <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+                    <Badge variant="outline" className="text-[8px] border-orange-500/30 text-orange-400 shrink-0">SAÍDA</Badge>
+                    <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[loan.player.position]}`}>{loan.player.position}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-xs truncate">{loan.player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Desde T{loan.seasonStart}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {loansIn.map(loan => (
+                <Card key={loan.player.id} className="border-blue-500/30 bg-blue-500/5">
+                  <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+                    <Badge variant="outline" className="text-[8px] border-blue-500/30 text-blue-400 shrink-0">ENTRADA</Badge>
+                    <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[loan.player.position]}`}>{loan.player.position}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-xs truncate">{loan.player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Sal: R${(loan.player.salary / 1000).toFixed(0)}k/mês</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Loan out own players */}
+          <div>
+            <p className="text-xs font-semibold mb-1.5">Emprestar Jogadores ({loansOut.length}/3)</p>
+            {loansOut.length >= 3 ? (
+              <p className="text-[10px] text-muted-foreground">Limite de empréstimos de saída atingido.</p>
+            ) : (
+              <div className="space-y-1">
+                {loanableClubPlayers.map(player => (
+                  <Card key={player.id} className="hover:border-primary/30 transition-colors">
+                    <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+                      <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs truncate">{player.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={clubPlayers.length <= 11}>
+                        <ArrowLeftRight className="h-3 w-3" /> Emprestar
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Loan in from market */}
+          <div>
+            <p className="text-xs font-semibold mb-1.5">Pegar Emprestado do Mercado ({loansIn.length}/3)</p>
+            {loansIn.length >= 3 ? (
+              <p className="text-[10px] text-muted-foreground">Limite de empréstimos de entrada atingido.</p>
+            ) : (
+              <div className="space-y-1">
+                {marketPlayers.slice(0, 5).map(player => (
+                  <Card key={player.id} className="hover:border-primary/30 transition-colors">
+                    <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+                      <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs truncate">{player.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • Sal: R${(player.salary / 1000).toFixed(0)}k/mês</p>
+                      </div>
+                      <Button size="sm" variant="default" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanIn(player)}>
+                        <ArrowLeftRight className="h-3 w-3" /> Pegar
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
