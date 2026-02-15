@@ -6,13 +6,16 @@ import { MarketTab } from '@/components/game/MarketTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
 import { LeagueTab } from '@/components/game/LeagueTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
-import { useGame } from '@/hooks/useGame';
+import { InfrastructureTab } from '@/components/game/InfrastructureTab';
+import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
+import { SeasonTab } from '@/components/game/SeasonTab';
+import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import AuthPage from './Auth';
 
 const Index = () => {
@@ -35,9 +38,9 @@ const Index = () => {
 };
 
 function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
-  const game = useGame();
+  const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
+  const [gameReady, setGameReady] = useState(false);
 
-  // Load save on mount
   useEffect(() => {
     const loadSave = async () => {
       const { data } = await supabase
@@ -49,16 +52,38 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
         .maybeSingle();
 
       if (data?.club_data) {
-        // We have a save - but since useGame manages state internally,
-        // we'd need to reload. For now, saves work on explicit save/load.
-        toast.info('Save encontrado! Use o botão salvar para manter seu progresso.');
+        try {
+          setLoadedState(data.club_data as unknown as GameState);
+          toast.success('Save carregado!');
+        } catch {
+          // ignore bad save
+        }
       }
+      setGameReady(true);
     };
     loadSave();
   }, [userId]);
 
+  if (!gameReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="text-5xl mb-4 animate-bounce">⚽</div>
+          <p className="text-muted-foreground">Carregando save...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <GameUI userId={userId} onSignOut={onSignOut} initialState={loadedState} />;
+}
+
+function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut: () => void; initialState?: GameState }) {
+  const game = useGame(initialState);
+
   const saveGame = useCallback(async () => {
     const state = game.getFullState();
+    const jsonState = JSON.parse(JSON.stringify(state));
     const { data: existing } = await supabase
       .from('game_saves')
       .select('id')
@@ -67,9 +92,9 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
       .maybeSingle();
 
     if (existing) {
-      await supabase.from('game_saves').update({ club_data: JSON.parse(JSON.stringify(state)) }).eq('id', existing.id);
+      await supabase.from('game_saves').update({ club_data: jsonState }).eq('id', existing.id);
     } else {
-      await supabase.from('game_saves').insert([{ user_id: userId, club_data: JSON.parse(JSON.stringify(state)) }]);
+      await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
     }
     toast.success('Jogo salvo!');
   }, [game, userId]);
@@ -82,11 +107,11 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xl">⚽</div>
             <div>
               <h1 className="text-xl font-bold">{game.club.name}</h1>
-              <p className="text-xs text-muted-foreground">Football Club Manager 2026</p>
+              <p className="text-xs text-muted-foreground">Temporada {game.season.currentSeason} • FCM 2026</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-emerald-400 mr-2">R$ {(game.club.budget / 1000000).toFixed(2)}M</p>
+            <p className="text-sm font-semibold text-emerald-400 mr-2 hidden sm:block">R$ {(game.club.budget / 1000000).toFixed(2)}M</p>
             <Button size="sm" variant="outline" onClick={saveGame}>
               <Save className="h-3 w-3 mr-1" /> Salvar
             </Button>
@@ -100,50 +125,46 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
       <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs defaultValue="dashboard">
           <TabsList className="w-full mb-6 flex-wrap h-auto gap-1">
-            <TabsTrigger value="dashboard" className="gap-1 text-xs">
-              <LayoutDashboard className="h-3 w-3" /> Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="squad" className="gap-1 text-xs">
-              <Users className="h-3 w-3" /> Elenco
-            </TabsTrigger>
-            <TabsTrigger value="matches" className="gap-1 text-xs">
-              <Swords className="h-3 w-3" /> Partidas
-            </TabsTrigger>
-            <TabsTrigger value="market" className="gap-1 text-xs">
-              <ShoppingCart className="h-3 w-3" /> Mercado
-            </TabsTrigger>
-            <TabsTrigger value="tactics" className="gap-1 text-xs">
-              <Target className="h-3 w-3" /> Táticas
-            </TabsTrigger>
-            <TabsTrigger value="league" className="gap-1 text-xs">
-              <Trophy className="h-3 w-3" /> Liga
-            </TabsTrigger>
-            <TabsTrigger value="finance" className="gap-1 text-xs">
-              <DollarSign className="h-3 w-3" /> Finanças
-            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-1 text-xs"><LayoutDashboard className="h-3 w-3" /> Painel</TabsTrigger>
+            <TabsTrigger value="squad" className="gap-1 text-xs"><Users className="h-3 w-3" /> Elenco</TabsTrigger>
+            <TabsTrigger value="matches" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Jogos</TabsTrigger>
+            <TabsTrigger value="market" className="gap-1 text-xs"><ShoppingCart className="h-3 w-3" /> Mercado</TabsTrigger>
+            <TabsTrigger value="tactics" className="gap-1 text-xs"><Target className="h-3 w-3" /> Táticas</TabsTrigger>
+            <TabsTrigger value="league" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Liga</TabsTrigger>
+            <TabsTrigger value="youth" className="gap-1 text-xs"><GraduationCap className="h-3 w-3" /> Base</TabsTrigger>
+            <TabsTrigger value="infra" className="gap-1 text-xs"><Building2 className="h-3 w-3" /> Estrutura</TabsTrigger>
+            <TabsTrigger value="season" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Temporada</TabsTrigger>
+            <TabsTrigger value="finance" className="gap-1 text-xs"><DollarSign className="h-3 w-3" /> Finanças</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard">
-            <DashboardTab club={game.club} />
+          <TabsContent value="dashboard"><DashboardTab club={game.club} /></TabsContent>
+          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} onTrain={game.trainPlayer} onRest={game.restPlayer} /></TabsContent>
+          <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
+          <TabsContent value="market"><MarketTab marketPlayers={game.marketPlayers} clubPlayers={game.club.players} budget={game.club.budget} onBuy={game.buyPlayer} onSell={game.sellPlayer} onRefresh={game.refreshMarket} /></TabsContent>
+          <TabsContent value="tactics"><TacticsTab tactics={game.tactics} onUpdate={game.setTactics} /></TabsContent>
+          <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} /></TabsContent>
+          <TabsContent value="youth">
+            <YouthAcademyTab
+              prospects={game.youthProspects}
+              academyLevel={game.infrastructure.youthAcademy.level}
+              monthlyInvestment={game.youthInvestment}
+              budget={game.club.budget}
+              onPromote={game.promoteYouth}
+              onSetInvestment={game.setYouthInvestment}
+              onGenerateYouth={game.generateYouth}
+            />
           </TabsContent>
-          <TabsContent value="squad">
-            <SquadTab players={game.club.players} budget={game.club.budget} onTrain={game.trainPlayer} onRest={game.restPlayer} />
+          <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} onUpgrade={game.upgradeFacility} /></TabsContent>
+          <TabsContent value="season">
+            <SeasonTab
+              season={game.season}
+              leagueTeams={game.leagueTeams}
+              clubName={game.club.name}
+              hasUnplayedMatches={game.hasUnplayedMatches}
+              onEndSeason={game.endSeason}
+            />
           </TabsContent>
-          <TabsContent value="matches">
-            <MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} />
-          </TabsContent>
-          <TabsContent value="market">
-            <MarketTab marketPlayers={game.marketPlayers} clubPlayers={game.club.players} budget={game.club.budget} onBuy={game.buyPlayer} onSell={game.sellPlayer} onRefresh={game.refreshMarket} />
-          </TabsContent>
-          <TabsContent value="tactics">
-            <TacticsTab tactics={game.tactics} onUpdate={game.setTactics} />
-          </TabsContent>
-          <TabsContent value="league">
-            <LeagueTab teams={game.leagueTeams} clubName={game.club.name} />
-          </TabsContent>
-          <TabsContent value="finance">
-            <FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} />
-          </TabsContent>
+          <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} /></TabsContent>
         </Tabs>
       </main>
     </div>
