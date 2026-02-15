@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Club, Player, Match, ScoutReport, Scout } from '@/types/game';
+import { Club, Player, Match, ScoutReport, Scout, PlayerAttributes } from '@/types/game';
+import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams, getLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
@@ -32,6 +33,7 @@ export interface GameState {
   sponsorOffers: SponsorOffer[];
   events: GameEvent[];
   loanedPlayers?: LoanedPlayer[];
+  trainingFocus?: Record<string, TrainingFocus>;
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -67,6 +69,7 @@ export function useGame(initialState?: GameState) {
   const [sponsorOffers, setSponsorOffers] = useState<SponsorOffer[]>(initialState?.sponsorOffers ?? generateSponsorOffers(65, 4));
   const [events, setEvents] = useState<GameEvent[]>(initialState?.events ?? []);
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
+  const [trainingFocus, setTrainingFocus] = useState<Record<string, TrainingFocus>>(initialState?.trainingFocus ?? {});
   const [listedForSale, setListedForSale] = useState<string[]>([]);
 
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
@@ -366,7 +369,17 @@ export function useGame(initialState?: GameState) {
   }, [tactics, addFinance, infrastructure, sponsors, youthInvestment, freeAgents]);
 
   const trainPlayer = useCallback((_playerId: string) => {
-    toast.info('Treino automático: jogadores evoluem a cada 10 jogos com base na estrutura!');
+    toast.info('Selecione o foco de treino na aba Treinos!');
+  }, []);
+
+  const setPlayerTrainingFocus = useCallback((playerId: string, focus: TrainingFocus) => {
+    setTrainingFocus(prev => ({ ...prev, [playerId]: focus }));
+    if (focus === 'none') {
+      toast.info('Foco de treino removido.');
+    } else {
+      const focusNames: Record<string, string> = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Defesa', physical: 'Físico', dribbling: 'Drible', positioning: 'Posicionamento', heading: 'Cabeceio', vision: 'Visão', composure: 'Compostura' };
+      toast.success(`Treino focado em ${focusNames[focus] || focus}!`);
+    }
   }, []);
 
   const restPlayer = useCallback((playerId: string) => {
@@ -640,17 +653,17 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus]);
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events, listedForSale, loanedPlayers,
+    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
-    loanOutPlayer, loanInPlayer,
+    loanOutPlayer, loanInPlayer, setPlayerTrainingFocus,
   };
 }
