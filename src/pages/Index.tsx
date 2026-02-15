@@ -23,6 +23,7 @@ import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { PremiumTab } from '@/components/game/PremiumTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
+import { AdminTab } from '@/components/game/AdminTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -35,7 +36,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Crown, Gavel } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Crown, Gavel, Shield } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -255,6 +256,7 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 {/* Sistema */}
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs text-red-400"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('premium')} className="gap-2 text-xs text-yellow-400"><Crown className="h-3.5 w-3.5" /> Premium ⭐</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -381,6 +383,9 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           </TabsContent>
           <TabsContent value="auction">
             <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={isPremium} />
+          </TabsContent>
+          <TabsContent value="admin">
+            <AdminTab userId={userId} />
           </TabsContent>
         </Tabs>
       </main>
