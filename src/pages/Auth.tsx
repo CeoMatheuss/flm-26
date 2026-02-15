@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import fcmLogo from '@/assets/fcm26-logo.png';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="text-5xl mb-2">⚽</div>
+          <img src={fcmLogo} alt="FCM 26" className="w-20 h-20 mx-auto mb-2" />
           <CardTitle className="text-2xl">FCM 26</CardTitle>
           <CardDescription>Football Club Manager 2026</CardDescription>
         </CardHeader>

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { Club, Player } from '@/types/game';
+import { Club, Player, Match } from '@/types/game';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
 import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
-import { initialClub, initialMatches } from '@/data/initialData';
+import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
+import { initialClub } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch } from '@/utils/playerGenerator';
-import { Match } from '@/types/game';
 
 export interface GameState {
   club: Club;
@@ -18,6 +18,8 @@ export interface GameState {
   youthProspects: YouthProspect[];
   youthInvestment: number;
   season: SeasonData;
+  sponsors: Sponsor[];
+  sponsorOffers: SponsorOffer[];
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -34,7 +36,6 @@ function generateSeasonMatches(): Match[] {
     { name: 'Gavião Futebol', logo: '🦅' },
     { name: 'Pantera Negra EC', logo: '🐈‍⬛' },
   ];
-  // home and away = 18 matches
   const matches: Match[] = [];
   opponents.forEach((opp, i) => {
     matches.push({ id: generateId(), opponent: opp.name, opponentLogo: opp.logo, date: `Rodada ${i + 1}`, played: false });
@@ -47,6 +48,18 @@ function resetLeagueTeams(): LeagueTeam[] {
   return initialLeagueTeams.map(t => ({ ...t, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 }));
 }
 
+// Age-based training: up to 30 gains, 31-33 maintains, 33+ loses
+function applyAgeDevelopment(player: Player): Player {
+  if (player.age <= 30) return player; // gains through training only
+  if (player.age <= 33) return player; // maintains
+  // 34+: chance to lose overall
+  const lossChance = 0.1 + (player.age - 33) * 0.08; // 34=18%, 38=50%, 42=82%
+  if (Math.random() < lossChance) {
+    return { ...player, overall: Math.max(40, player.overall - 1) };
+  }
+  return player;
+}
+
 export function useGame(initialState?: GameState) {
   const [club, setClub] = useState<Club>(initialState?.club ?? initialClub);
   const [tactics, setTactics] = useState<TacticsConfig>(initialState?.tactics ?? defaultTactics);
@@ -57,6 +70,8 @@ export function useGame(initialState?: GameState) {
   const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(initialState?.youthProspects ?? []);
   const [youthInvestment, setYouthInvestment] = useState(initialState?.youthInvestment ?? 100000);
   const [season, setSeason] = useState<SeasonData>(initialState?.season ?? defaultSeason);
+  const [sponsors, setSponsors] = useState<Sponsor[]>(initialState?.sponsors ?? []);
+  const [sponsorOffers, setSponsorOffers] = useState<SponsorOffer[]>(initialState?.sponsorOffers ?? generateSponsorOffers(65, 4));
 
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
@@ -80,7 +95,12 @@ export function useGame(initialState?: GameState) {
 
       const stadiumBonus = infrastructure.stadium.level * 20000;
       const prize = (isWin ? 150000 : isDraw ? 75000 : 30000) + stadiumBonus;
+      const sponsorIncome = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
+      if (sponsorIncome > 0) {
+        addFinance('receita', 'Patrocínio', Math.floor(sponsorIncome / 4), 'Receita de patrocínios (semanal)');
+      }
 
       setSeason(prev => ({ ...prev, currentWeek: prev.currentWeek + 1 }));
 
@@ -93,6 +113,20 @@ export function useGame(initialState?: GameState) {
         return { ...t, played: t.played + 1, wins: t.wins + (w ? 1 : 0), draws: t.draws + (d ? 1 : 0), losses: t.losses + (!w && !d ? 1 : 0), goalsFor: t.goalsFor + Math.floor(Math.random() * 3), goalsAgainst: t.goalsAgainst + Math.floor(Math.random() * 3), points: t.points + (w ? 3 : d ? 1 : 0) };
       }));
 
+      // Youth prospects arrive during the season (every 4 matches)
+      const playedCount = prev.matches.filter(m => m.played).length + 1;
+      if (playedCount % 4 === 0) {
+        const count = getYouthMonthlyPlayers(youthInvestment);
+        const newProspects = generateYouthBatch(count, infrastructure.youthAcademy.level);
+        setYouthProspects(yp => [...yp, ...newProspects]);
+        setClub(c => {
+          addFinance('despesa', 'Base', youthInvestment, `Investimento mensal na base (Rodada ${playedCount})`);
+          return { ...c, budget: c.budget - youthInvestment };
+        });
+      }
+
+      const sponsorWeekly = Math.floor(sponsorIncome / 4);
+
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
@@ -101,7 +135,7 @@ export function useGame(initialState?: GameState) {
           stamina: Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5)),
           morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
         })),
-        budget: prev.budget + prize,
+        budget: prev.budget + prize + sponsorWeekly,
         fans: prev.fans + (isWin ? 500 : isDraw ? 100 : -200) + infrastructure.stadium.level * 50,
         stats: {
           wins: prev.stats.wins + (isWin ? 1 : 0),
@@ -113,27 +147,35 @@ export function useGame(initialState?: GameState) {
         },
       };
     });
-  }, [tactics, addFinance, infrastructure.stadium.level]);
+  }, [tactics, addFinance, infrastructure.stadium.level, infrastructure.youthAcademy.level, sponsors, youthInvestment]);
 
   const trainPlayer = useCallback((playerId: string) => {
     const cost = 10000;
     const boost = getTrainingBoost(infrastructure.trainingCenter.level);
     setClub(prev => {
       if (prev.budget < cost) return prev;
-      addFinance('despesa', 'Treino', cost, 'Treino de jogador');
+      const player = prev.players.find(p => p.id === playerId);
+      if (!player) return prev;
+
+      addFinance('despesa', 'Treino', cost, `Treino de ${player.name}`);
+
       return {
         ...prev,
         budget: prev.budget - cost,
-        players: prev.players.map(p =>
-          p.id === playerId
-            ? {
-                ...p,
-                overall: Math.min(99, p.overall + (Math.random() < boost ? 1 : 0)),
-                stamina: Math.min(100, p.stamina + 10),
-                morale: Math.min(100, p.morale + 3),
-              }
-            : p
-        ),
+        players: prev.players.map(p => {
+          if (p.id !== playerId) return p;
+          // Age-based training effectiveness
+          let newOverall = p.overall;
+          if (p.age <= 30) {
+            // Young: gains OVR based on CT level
+            newOverall = Math.min(99, p.overall + (Math.random() < boost ? 1 : 0));
+          } else if (p.age <= 33) {
+            // 31-33: maintains, small chance to gain
+            newOverall = Math.min(99, p.overall + (Math.random() < boost * 0.3 ? 1 : 0));
+          }
+          // 34+: no gain from training
+          return { ...p, overall: newOverall, stamina: Math.min(100, p.stamina + 10), morale: Math.min(100, p.morale + 3) };
+        }),
       };
     });
   }, [addFinance, infrastructure.trainingCenter.level]);
@@ -182,35 +224,27 @@ export function useGame(initialState?: GameState) {
     });
   }, [addFinance]);
 
-  const generateYouth = useCallback(() => {
-    setClub(prev => {
-      if (prev.budget < youthInvestment) return prev;
-      addFinance('despesa', 'Base', youthInvestment, 'Investimento mensal na base');
-      return { ...prev, budget: prev.budget - youthInvestment };
-    });
-    const count = getYouthMonthlyPlayers(youthInvestment);
-    const newProspects = generateYouthBatch(count, infrastructure.youthAcademy.level);
-    setYouthProspects(prev => [...prev, ...newProspects]);
-  }, [youthInvestment, infrastructure.youthAcademy.level, addFinance]);
-
   const promoteYouth = useCallback((youthId: string) => {
     const prospect = youthProspects.find(p => p.id === youthId);
     if (!prospect) return;
     const player: Player = {
-      id: prospect.id,
-      name: prospect.name,
-      position: prospect.position,
-      overall: prospect.overall,
-      age: prospect.age,
-      salary: prospect.salary,
-      stamina: prospect.stamina,
-      morale: 90,
-      goals: 0,
-      assists: 0,
+      id: prospect.id, name: prospect.name, position: prospect.position,
+      overall: prospect.overall, age: prospect.age, salary: prospect.salary,
+      stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
     };
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
   }, [youthProspects]);
+
+  const acceptSponsor = useCallback((offer: SponsorOffer) => {
+    setSponsors(prev => [...prev, offer]);
+    setSponsorOffers(prev => prev.filter(o => o.id !== offer.id));
+    addFinance('receita', 'Patrocínio', offer.monthlyPay, `Novo patrocínio: ${offer.name} (${offer.type})`);
+  }, [addFinance]);
+
+  const refreshSponsorOffers = useCallback(() => {
+    setSponsorOffers(generateSponsorOffers(club.reputation, 4));
+  }, [club.reputation]);
 
   const endSeason = useCallback(() => {
     const sorted = [...leagueTeams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst));
@@ -221,27 +255,25 @@ export function useGame(initialState?: GameState) {
       currentWeek: 1,
       totalWeeks: 18,
       seasonHistory: [...prev.seasonHistory, {
-        season: prev.currentSeason,
-        position: clubPos,
-        points: club.stats.points,
-        wins: club.stats.wins,
-        draws: club.stats.draws,
-        losses: club.stats.losses,
+        season: prev.currentSeason, position: clubPos, points: club.stats.points,
+        wins: club.stats.wins, draws: club.stats.draws, losses: club.stats.losses,
         champion: sorted[0].name,
       }],
     }));
 
-    // Reset for new season
     setLeagueTeams(resetLeagueTeams());
     setClub(prev => ({
       ...prev,
       matches: generateSeasonMatches(),
       stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      players: prev.players.map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1 })),
+      players: prev.players
+        .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1 }))
+        .map(applyAgeDevelopment) // Age degradation for 34+
+        .filter(p => p.age <= 42), // Retire at 42
     }));
     setMarketPlayers(generateMarketPlayers(10));
 
-    // Develop youth
+    // Develop youth prospects
     setYouthProspects(prev => prev.map(p => ({
       ...p,
       overall: Math.min(p.potential, p.overall + Math.floor(Math.random() * 3 + 1)),
@@ -249,21 +281,30 @@ export function useGame(initialState?: GameState) {
       age: p.age + 1,
     })));
 
+    // Sponsor duration decrease
+    setSponsors(prev => prev
+      .map(sp => ({ ...sp, duration: sp.duration - 1 }))
+      .filter(sp => sp.duration > 0)
+    );
+    setSponsorOffers(generateSponsorOffers(club.reputation, 4));
+
     const seasonPrize = clubPos === 1 ? 5000000 : clubPos <= 4 ? 2000000 : 500000;
     addFinance('receita', 'Premiação', seasonPrize, `Premiação T${season.currentSeason} - ${clubPos}º lugar`);
     setClub(prev => ({ ...prev, budget: prev.budget + seasonPrize, reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)) }));
-  }, [leagueTeams, club.name, club.stats, addFinance, season.currentSeason]);
+  }, [leagueTeams, club.name, club.stats, club.reputation, addFinance, season.currentSeason]);
 
   const hasUnplayedMatches = club.matches.some(m => !m.played);
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season]);
+    club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers]);
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
+    sponsors, sponsorOffers,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, refreshMarket, getFullState,
-    upgradeFacility, generateYouth, promoteYouth, setYouthInvestment, endSeason,
+    upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
+    acceptSponsor, refreshSponsorOffers,
   };
 }

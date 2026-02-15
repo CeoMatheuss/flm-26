@@ -9,14 +9,16 @@ import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SeasonTab } from '@/components/game/SeasonTab';
+import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
 import AuthPage from './Auth';
+import fcmLogo from '@/assets/fcm26-logo.png';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -25,7 +27,7 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-bounce">⚽</div>
+          <img src={fcmLogo} alt="FCM 26" className="w-20 h-20 mx-auto mb-4 animate-pulse" />
           <p className="text-muted-foreground">Carregando FCM 26...</p>
         </div>
       </div>
@@ -33,7 +35,6 @@ const Index = () => {
   }
 
   if (!session) return <AuthPage />;
-
   return <GameApp userId={session.user.id} onSignOut={signOut} />;
 };
 
@@ -55,9 +56,7 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
         try {
           setLoadedState(data.club_data as unknown as GameState);
           toast.success('Save carregado!');
-        } catch {
-          // ignore bad save
-        }
+        } catch { /* ignore */ }
       }
       setGameReady(true);
     };
@@ -67,10 +66,7 @@ function GameApp({ userId, onSignOut }: { userId: string; onSignOut: () => void 
   if (!gameReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="text-5xl mb-4 animate-bounce">⚽</div>
-          <p className="text-muted-foreground">Carregando save...</p>
-        </div>
+        <img src={fcmLogo} alt="FCM 26" className="w-16 h-16 animate-pulse" />
       </div>
     );
   }
@@ -101,17 +97,17 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-gradient-to-r from-primary/10 via-background to-primary/10">
+      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xl">⚽</div>
+            <img src={fcmLogo} alt="FCM 26" className="w-10 h-10 rounded-lg" />
             <div>
-              <h1 className="text-xl font-bold">{game.club.name}</h1>
-              <p className="text-xs text-muted-foreground">Temporada {game.season.currentSeason} • FCM 2026</p>
+              <h1 className="text-lg font-bold">{game.club.name}</h1>
+              <p className="text-xs text-muted-foreground">T{game.season.currentSeason} • {game.club.stats.points}pts</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-emerald-400 mr-2 hidden sm:block">R$ {(game.club.budget / 1000000).toFixed(2)}M</p>
+            <p className="text-sm font-bold text-primary mr-2 hidden sm:block">R$ {(game.club.budget / 1000000).toFixed(2)}M</p>
             <Button size="sm" variant="outline" onClick={saveGame}>
               <Save className="h-3 w-3 mr-1" /> Salvar
             </Button>
@@ -124,7 +120,7 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs defaultValue="dashboard">
-          <TabsList className="w-full mb-6 flex-wrap h-auto gap-1">
+          <TabsList className="w-full mb-6 flex-wrap h-auto gap-1 bg-card/50">
             <TabsTrigger value="dashboard" className="gap-1 text-xs"><LayoutDashboard className="h-3 w-3" /> Painel</TabsTrigger>
             <TabsTrigger value="squad" className="gap-1 text-xs"><Users className="h-3 w-3" /> Elenco</TabsTrigger>
             <TabsTrigger value="matches" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Jogos</TabsTrigger>
@@ -132,6 +128,7 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
             <TabsTrigger value="tactics" className="gap-1 text-xs"><Target className="h-3 w-3" /> Táticas</TabsTrigger>
             <TabsTrigger value="league" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Liga</TabsTrigger>
             <TabsTrigger value="youth" className="gap-1 text-xs"><GraduationCap className="h-3 w-3" /> Base</TabsTrigger>
+            <TabsTrigger value="sponsors" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Patrocínio</TabsTrigger>
             <TabsTrigger value="infra" className="gap-1 text-xs"><Building2 className="h-3 w-3" /> Estrutura</TabsTrigger>
             <TabsTrigger value="season" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Temporada</TabsTrigger>
             <TabsTrigger value="finance" className="gap-1 text-xs"><DollarSign className="h-3 w-3" /> Finanças</TabsTrigger>
@@ -151,18 +148,21 @@ function GameUI({ userId, onSignOut, initialState }: { userId: string; onSignOut
               budget={game.club.budget}
               onPromote={game.promoteYouth}
               onSetInvestment={game.setYouthInvestment}
-              onGenerateYouth={game.generateYouth}
+              onGenerateYouth={() => {}}
+            />
+          </TabsContent>
+          <TabsContent value="sponsors">
+            <SponsorsTab
+              sponsors={game.sponsors}
+              offers={game.sponsorOffers}
+              reputation={game.club.reputation}
+              onAccept={game.acceptSponsor}
+              onRefreshOffers={game.refreshSponsorOffers}
             />
           </TabsContent>
           <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} onUpgrade={game.upgradeFacility} /></TabsContent>
           <TabsContent value="season">
-            <SeasonTab
-              season={game.season}
-              leagueTeams={game.leagueTeams}
-              clubName={game.club.name}
-              hasUnplayedMatches={game.hasUnplayedMatches}
-              onEndSeason={game.endSeason}
-            />
+            <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.hasUnplayedMatches} onEndSeason={game.endSeason} />
           </TabsContent>
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} /></TabsContent>
         </Tabs>
