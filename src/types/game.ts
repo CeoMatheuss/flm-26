@@ -24,10 +24,19 @@ export interface Player {
   trainingProgress: number;
 }
 
+export interface Scout {
+  id: string;
+  name: string;
+  skill: number; // 1-10, higher = better reports, more expensive
+  salary: number;
+  contract: number; // seasons remaining
+}
+
 export interface ScoutReport {
   id: string;
   player: Player;
-  accuracy: number; // 0-100, how accurate the report is (higher scout level = more accurate)
+  scoutName: string;
+  accuracy: number; // 0-100, how accurate the report is (higher scout skill = more accurate)
   estimatedOverall: number; // may differ from real overall
   estimatedAttributes: Partial<PlayerAttributes>; // only some attributes revealed
   reportDate: string;
@@ -61,6 +70,7 @@ export interface Club {
   stats: TeamStats;
   players: Player[];
   matches: Match[];
+  scouts: Scout[];
   scoutReports: ScoutReport[];
   matchesSinceLastScout: number;
 }
