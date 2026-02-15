@@ -142,7 +142,7 @@ export function useMultiplayer(userId: string, displayName: string) {
       .from('multiplayer_leagues')
       .select('*')
       .eq('code', code.toUpperCase())
-      .single();
+      .maybeSingle();
 
     if (!league) { toast.error('Liga não encontrada'); setLoading(false); return; }
 
