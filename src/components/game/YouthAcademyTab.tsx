@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { UserPlus, Star, TrendingUp } from 'lucide-react';
+import { UserPlus, Star, Info } from 'lucide-react';
 
 interface Props {
   prospects: YouthProspect[];
@@ -13,7 +12,7 @@ interface Props {
   budget: number;
   onPromote: (id: string) => void;
   onSetInvestment: (amount: number) => void;
-  onGenerateYouth: () => void;
+  onGenerateYouth?: () => void;
 }
 
 const investmentTiers = [
@@ -52,14 +51,12 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
             ))}
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0" />
             <div>
-              <p className="text-sm font-medium">Investimento atual: <span className="text-purple-400">R$ {(monthlyInvestment / 1000).toFixed(0)}k/mês</span></p>
-              <p className="text-xs text-muted-foreground">Nível da Academia: {academyLevel} • Overall dos jovens: {45 + academyLevel * 4}-{55 + academyLevel * 4}</p>
+              <p className="text-sm font-medium">Investimento: <span className="text-primary">R$ {(monthlyInvestment / 1000).toFixed(0)}k/mês</span></p>
+              <p className="text-xs text-muted-foreground">Nível da Academia: {academyLevel} • Overall: {45 + academyLevel * 4}-{55 + academyLevel * 4} • Jovens chegam automaticamente a cada 4 rodadas</p>
             </div>
-            <Button onClick={onGenerateYouth} disabled={budget < monthlyInvestment}>
-              <TrendingUp className="h-4 w-4 mr-1" /> Gerar Safra
-            </Button>
           </div>
         </CardContent>
       </Card>
