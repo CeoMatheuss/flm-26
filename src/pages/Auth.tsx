@@ -1,12 +1,28 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import fcmLogo from '@/assets/fcm26-logo.png';
+import { Trophy, Users, Target, Swords, TrendingUp, Star } from 'lucide-react';
+
+const features = [
+  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale jogadores' },
+  { icon: Swords, title: 'Simule Partidas', desc: 'Jogue campeonatos e copas' },
+  { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual no campo' },
+  { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra e venda de jogadores' },
+  { icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas com amigos em tempo real' },
+  { icon: Star, title: 'Base & Juventude', desc: 'Desenvolva jovens talentos' },
+];
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -19,19 +35,54 @@ export default function AuthPage() {
     }
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error(error.message);
+    setLoading(false);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error('Senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { display_name: displayName || 'Manager' },
+      },
+    });
+    if (error) toast.error(error.message);
+    else toast.success('Conta criada! Verifique seu email para confirmar.');
+    setLoading(false);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center pb-4">
-          <img src={fcmLogo} alt="FCM 26" className="w-24 h-24 mx-auto mb-3" />
-          <CardTitle className="text-2xl">FCM 26</CardTitle>
-          <CardDescription>Football Club Manager 2026</CardDescription>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-6">
+      {/* Hero */}
+      <div className="text-center space-y-2 max-w-md">
+        <img src={fcmLogo} alt="FCM 26" className="w-20 h-20 mx-auto" />
+        <h1 className="text-3xl font-bold tracking-tight">FCM 26</h1>
+        <p className="text-muted-foreground text-sm">Football Club Manager 2026</p>
+      </div>
+
+      {/* Login Card */}
+      <Card className="w-full max-w-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-center">Entrar no Jogo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Google Button */}
           <Button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full h-12 text-base gap-3"
+            className="w-full h-11 gap-3"
             variant="outline"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -42,11 +93,60 @@ export default function AuthPage() {
             </svg>
             {loading ? 'Entrando...' : 'Entrar com Google'}
           </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Faça login para começar a gerenciar seu clube
-          </p>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">ou com email</span></div>
+          </div>
+
+          <Tabs defaultValue="login">
+            <TabsList className="w-full mb-3">
+              <TabsTrigger value="login" className="flex-1 text-xs">Entrar</TabsTrigger>
+              <TabsTrigger value="signup" className="flex-1 text-xs">Criar Conta</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-3">
+                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-10" />
+                <Input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required className="h-10" />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-3">
+                <Input placeholder="Nome do Manager" value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-10" />
+                <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-10" />
+                <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-10" />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Criando...' : 'Criar Conta'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
+
+      {/* Features Grid */}
+      <div className="w-full max-w-md">
+        <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider mb-3">Destaques v2026</p>
+        <div className="grid grid-cols-2 gap-2">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/50 bg-card/30">
+              <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold truncate">{f.title}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-center text-muted-foreground mt-3">
+          🆕 Escalação 2D • Jornal Dinâmico • Criação de Clube • Multiplayer Online
+        </p>
+      </div>
     </div>
   );
 }
