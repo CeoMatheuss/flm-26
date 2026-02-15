@@ -1,6 +1,6 @@
 import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import fcmLogo from '@/assets/fcm26-logo.png';
 
@@ -12,6 +12,27 @@ export function DashboardTab({ club }: Props) {
   const nextMatch = club.matches.find(m => !m.played);
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
+
+  // Fan mood calculation
+  const last5 = club.matches.filter(m => m.played).slice(-5);
+  const recentWins = last5.filter(m => m.result && m.result.home > m.result.away).length;
+  const recentLosses = last5.filter(m => m.result && m.result.home < m.result.away).length;
+  const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentLosses >= 4 ? 'Revoltada 😡' : recentLosses >= 3 ? 'Insatisfeita 😤' : 'Estável 😐';
+  const fanMoodColor = recentWins >= 3 ? 'text-emerald-400' : recentLosses >= 3 ? 'text-destructive' : 'text-primary';
+
+  // Streak
+  const playedMatches = club.matches.filter(m => m.played);
+  let streak = 0;
+  let streakType: 'W' | 'D' | 'L' | '' = '';
+  for (let i = playedMatches.length - 1; i >= 0; i--) {
+    const r = playedMatches[i].result;
+    if (!r) break;
+    const t = r.home > r.away ? 'W' : r.home < r.away ? 'L' : 'D';
+    if (streakType === '') streakType = t;
+    if (t === streakType) streak++;
+    else break;
+  }
+  const streakLabel = streak > 0 ? `${streak}${streakType === 'W' ? 'V' : streakType === 'L' ? 'D' : 'E'} seguidas` : 'Nenhuma';
 
   return (
     <div className="space-y-4">
@@ -37,6 +58,36 @@ export function DashboardTab({ club }: Props) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
+        {/* Fan Mood Card */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Heart className="h-4 w-4" /> Torcida & Moral
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Humor da torcida</span>
+              <span className={`text-sm font-bold ${fanMoodColor}`}>{fanMood}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Sequência</span>
+              <span className="text-sm font-bold flex items-center gap-1">
+                {streak >= 3 && streakType === 'W' && <Flame className="h-3 w-3 text-orange-400" />}
+                {streakLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Torcedores</span>
+              <span className="text-sm font-bold">{club.fans.toLocaleString()}</span>
+            </div>
+            <Progress value={Math.min(100, club.reputation)} className="h-2" />
+            <p className="text-[10px] text-muted-foreground text-center">
+              {recentWins >= 3 ? 'A torcida está lotando o estádio!' : recentLosses >= 3 ? 'Torcedores abandonando o clube...' : 'Mantenha bons resultados para crescer a torcida'}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Performance */}
         <Card>
           <CardHeader className="pb-2">
@@ -74,7 +125,9 @@ export function DashboardTab({ club }: Props) {
             )}
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid md:grid-cols-2 gap-4">
         {/* Next Match */}
         {nextMatch ? (
           <Card className="border-primary/20">
@@ -109,6 +162,31 @@ export function DashboardTab({ club }: Props) {
             </CardContent>
           </Card>
         )}
+
+        {/* Last 5 Results */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">Últimos Resultados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {last5.length > 0 ? (
+              <div className="flex gap-2 justify-center">
+                {last5.map((m, i) => {
+                  const r = m.result!;
+                  const w = r.home > r.away;
+                  const d = r.home === r.away;
+                  return (
+                    <div key={i} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${w ? 'bg-emerald-500/20 text-emerald-400' : d ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}`}>
+                      {r.home}-{r.away}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-3">Nenhum jogo disputado</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Top Players */}

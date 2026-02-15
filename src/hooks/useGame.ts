@@ -74,6 +74,24 @@ export function useGame(initialState?: GameState) {
       const sponsorIncome = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
       const sponsorWeekly = Math.floor(sponsorIncome / 4);
 
+      // Dynamic fan system
+      const goalDiff = homeGoals - awayGoals;
+      const isRout = goalDiff >= 3;
+      const isBigLoss = goalDiff <= -3;
+      const streak = prev.matches.filter(m => m.played).slice(-4);
+      const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
+      const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
+      const streakBonus = recentWins >= 3 ? 800 : recentWins >= 2 ? 300 : 0;
+      const streakPenalty = recentLosses >= 3 ? -600 : recentLosses >= 2 ? -250 : 0;
+      const stadiumFanBonus = infrastructure.stadium.level * 80;
+      let fanChange = 0;
+      if (isWin) fanChange = 400 + goalDiff * 150 + (isRout ? 500 : 0);
+      else if (isDraw) fanChange = 50 + (homeGoals >= 3 ? 100 : 0);
+      else fanChange = -300 + goalDiff * 100 + (isBigLoss ? -400 : 0);
+      fanChange += streakBonus + streakPenalty + stadiumFanBonus;
+      // Reputation momentum
+      const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
+
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
       if (sponsorWeekly > 0) {
         addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
@@ -106,10 +124,11 @@ export function useGame(initialState?: GameState) {
 
       const youthCost = (playedCount % 4 === 0 && prev.budget >= youthInvestment) ? youthInvestment : 0;
 
-      // Result toast
-      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals}`);
-      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals}`);
-      else toast.error(`Derrota: ${homeGoals} x ${awayGoals}`);
+      // Result toast with fan info
+      const fanSign = fanChange >= 0 ? '+' : '';
+      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
 
       return {
         ...prev,
@@ -120,7 +139,8 @@ export function useGame(initialState?: GameState) {
           morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
         })),
         budget: prev.budget + prize + sponsorWeekly - youthCost,
-        fans: prev.fans + (isWin ? 500 : isDraw ? 100 : -200) + infrastructure.stadium.level * 50,
+        fans: Math.max(100, prev.fans + fanChange),
+        reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
         stats: {
           wins: prev.stats.wins + (isWin ? 1 : 0),
           draws: prev.stats.draws + (isDraw ? 1 : 0),
