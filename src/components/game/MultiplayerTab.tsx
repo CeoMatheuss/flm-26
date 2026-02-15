@@ -50,8 +50,8 @@ function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLe
             <CardTitle className="text-sm flex items-center gap-2"><Plus className="h-4 w-4" /> CRIAR LIGA</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Input placeholder="Nome da liga" value={newName} onChange={e => setNewName(e.target.value)} />
-            <Input placeholder="Nome do seu clube" value={newClub} onChange={e => setNewClub(e.target.value)} />
+            <Input placeholder="Nome da liga" value={newName} onChange={e => setNewName(e.target.value)} maxLength={50} />
+            <Input placeholder="Nome do seu clube" value={newClub} onChange={e => setNewClub(e.target.value)} maxLength={50} />
             <Button className="w-full" size="sm" disabled={loading || !newName || !newClub}
               onClick={() => { onCreateLeague(newName, newClub); setNewName(''); setNewClub(''); }}>
               Criar Liga
@@ -65,7 +65,7 @@ function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLe
           </CardHeader>
           <CardContent className="space-y-2">
             <Input placeholder="Código da liga" value={joinCode} onChange={e => setJoinCode(e.target.value)} className="uppercase" />
-            <Input placeholder="Nome do seu clube" value={joinClub} onChange={e => setJoinClub(e.target.value)} />
+            <Input placeholder="Nome do seu clube" value={joinClub} onChange={e => setJoinClub(e.target.value)} maxLength={50} />
             <Button className="w-full" size="sm" disabled={loading || !joinCode || !joinClub}
               onClick={() => { onJoinLeague(joinCode, joinClub); setJoinCode(''); setJoinClub(''); }}>
               Entrar
@@ -217,7 +217,7 @@ function ChatView({ messages, userId, onSend }: { messages: ChatMessage[]; userI
         </ScrollArea>
         <div className="flex gap-2">
           <Input placeholder="Mensagem..." value={msg} onChange={e => setMsg(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()} />
+            onKeyDown={e => e.key === 'Enter' && handleSend()} maxLength={500} />
           <Button size="icon" onClick={handleSend}><Send className="h-4 w-4" /></Button>
         </div>
       </CardContent>
@@ -270,7 +270,7 @@ function PrivateChatView({ messages, members, userId, onSend }: {
             </ScrollArea>
             <div className="flex gap-2">
               <Input placeholder="Mensagem privada..." value={msg} onChange={e => setMsg(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSend()} />
+                onKeyDown={e => e.key === 'Enter' && handleSend()} maxLength={500} />
               <Button size="icon" onClick={handleSend}><Send className="h-4 w-4" /></Button>
             </div>
           </>
@@ -319,9 +319,9 @@ function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
               <option value="loan">Empréstimo</option>
             </select>
           </div>
-          <Input placeholder="Nome do jogador" value={playerName} onChange={e => setPlayerName(e.target.value)} />
-          <Input placeholder="Valor (R$)" type="number" value={price} onChange={e => setPrice(e.target.value)} />
-          <Input placeholder="Mensagem (opcional)" value={pMsg} onChange={e => setPMsg(e.target.value)} />
+          <Input placeholder="Nome do jogador" value={playerName} onChange={e => setPlayerName(e.target.value)} maxLength={100} />
+          <Input placeholder="Valor (R$)" type="number" value={price} onChange={e => setPrice(e.target.value)} min={0} />
+          <Input placeholder="Mensagem (opcional)" value={pMsg} onChange={e => setPMsg(e.target.value)} maxLength={500} />
           <Button className="w-full" size="sm" onClick={handleSend} disabled={!receiverId || !playerName || !price}>
             Enviar Proposta
           </Button>
