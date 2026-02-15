@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, CheckCircle, XCircle, Tag } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
@@ -46,18 +47,11 @@ function getAttrColor(val: number): string {
   return 'text-red-400';
 }
 
-// Player generates their own demand - salary raise + duration
-function getPlayerDemand(player: Player): { salary: number; duration: number } {
-  // Seed based on player id for consistency
-  const seed = player.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const raisePercent = 0.15 + ((seed % 26) / 100); // 15% to 40%
-  const salary = Math.ceil(player.salary * (1 + raisePercent));
-  const duration = 1 + (seed % 3); // 1 to 3 years
-  return { salary, duration };
-}
 
 export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
+  const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
 
   const sorted = [...players].sort((a, b) => {
     const order = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -199,13 +193,13 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
         </TabsContent>
 
-        {/* Contracts Tab - Player chooses the demand */}
+        {/* Contracts Tab - Manager defines salary and duration */}
         <TabsContent value="contracts" className="space-y-3">
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-3">
               <p className="text-xs font-semibold text-primary">📄 Gestão de Contratos</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                O jogador define o salário e a duração desejada. Você aceita ou recusa a proposta dele!
+                Você define o salário e a duração. O salário deve ser igual ou maior que o atual do jogador.
               </p>
             </CardContent>
           </Card>
@@ -223,10 +217,12 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
           <div className="space-y-2">
             {sorted.map(player => {
-              const demand = getPlayerDemand(player);
               const isExpiring = player.contract <= 1;
-              const renewalCost = demand.salary * demand.duration * 12;
+              const salary = offerSalary[player.id] ?? player.salary;
+              const duration = offerDuration[player.id] ?? 1;
+              const renewalCost = salary * duration * 12;
               const canAfford = budget >= renewalCost;
+              const salaryValid = salary >= player.salary;
 
               return (
                 <Card key={player.id} className={isExpiring ? 'border-destructive/30' : ''}>
@@ -245,48 +241,45 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                       </div>
                     </div>
 
-                    {/* Player demand */}
-                    <Card className="bg-muted/20 border-muted/30">
-                      <CardContent className="p-2">
-                        <p className="text-[10px] text-muted-foreground mb-1">💬 Exigência do jogador:</p>
-                        <div className="flex items-center gap-3 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">Salário:</span>
-                            <span className="font-bold text-primary ml-1">R${(demand.salary / 1000).toFixed(0)}k/mês</span>
-                            <span className="text-[9px] text-muted-foreground ml-1">(atual: R${(player.salary / 1000).toFixed(0)}k)</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Duração:</span>
-                            <span className="font-bold ml-1">{demand.duration} {demand.duration === 1 ? 'ano' : 'anos'}</span>
-                          </div>
-                        </div>
-                        <p className="text-[8px] text-muted-foreground mt-1">
-                          Custo total: R${(renewalCost / 1000).toFixed(0)}k
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        className="h-6 px-3 text-[10px] gap-1 flex-1"
-                        disabled={!canAfford}
-                        onClick={() => onRenewContract(player.id, demand.salary, demand.duration)}
-                      >
-                        <CheckCircle className="h-3 w-3" /> Aceitar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 px-3 text-[10px] gap-1 flex-1"
-                        disabled
-                      >
-                        <XCircle className="h-3 w-3" /> Recusar
-                      </Button>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-0.5">Salário (R$/mês) — mín: {(player.salary / 1000).toFixed(0)}k</label>
+                        <Input
+                          type="number"
+                          className="h-7 text-xs"
+                          min={player.salary}
+                          step={1000}
+                          value={salary}
+                          onChange={(e) => setOfferSalary(prev => ({ ...prev, [player.id]: Math.max(player.salary, Number(e.target.value) || player.salary) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-0.5">Duração (anos)</label>
+                        <Input
+                          type="number"
+                          className="h-7 text-xs"
+                          min={1}
+                          max={5}
+                          value={duration}
+                          onChange={(e) => setOfferDuration(prev => ({ ...prev, [player.id]: Math.min(5, Math.max(1, Number(e.target.value) || 1)) }))}
+                        />
+                      </div>
                     </div>
-                    {!canAfford && (
-                      <p className="text-[8px] text-destructive mt-1">Orçamento insuficiente!</p>
-                    )}
+
+                    <p className="text-[9px] text-muted-foreground mb-2">
+                      Custo total: R${(renewalCost / 1000).toFixed(0)}k
+                    </p>
+
+                    <Button
+                      size="sm"
+                      className="h-6 px-3 text-[10px] gap-1 w-full"
+                      disabled={!canAfford || !salaryValid}
+                      onClick={() => onRenewContract(player.id, salary, duration)}
+                    >
+                      <CheckCircle className="h-3 w-3" /> Renovar Contrato
+                    </Button>
+                    {!canAfford && <p className="text-[8px] text-destructive mt-1">Orçamento insuficiente!</p>}
+                    {!salaryValid && <p className="text-[8px] text-destructive mt-1">Salário deve ser ≥ ao atual!</p>}
                   </CardContent>
                 </Card>
               );
