@@ -316,7 +316,11 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               privateMessages={mp.privateMessages}
               proposals={mp.proposals}
               rivalries={mp.rivalries}
+              leagueMatches={mp.leagueMatches}
+              leagueSquads={mp.leagueSquads}
               loading={mp.loading}
+              clubPlayers={game.club.players}
+              clubTactics={game.tactics}
               onCreateLeague={mp.createLeague}
               onJoinLeague={mp.joinLeague}
               onEnterLeague={mp.enterLeague}
@@ -325,6 +329,10 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
               onSendPrivateMessage={mp.sendPrivateMessage}
               onSendProposal={mp.sendProposal}
               onRespondProposal={mp.respondProposal}
+              onSyncSquad={mp.syncSquad}
+              onStartSeason={mp.startSeason}
+              onSimulateRound={mp.simulateRound}
+              onEndSeason={mp.endSeason}
             />
           </TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>

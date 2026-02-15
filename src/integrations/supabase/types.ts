@@ -76,6 +76,56 @@ export type Database = {
         }
         Relationships: []
       }
+      league_matches: {
+        Row: {
+          away_goals: number | null
+          away_user_id: string
+          created_at: string
+          home_goals: number | null
+          home_user_id: string
+          id: string
+          league_id: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          status: string
+        }
+        Insert: {
+          away_goals?: number | null
+          away_user_id: string
+          created_at?: string
+          home_goals?: number | null
+          home_user_id: string
+          id?: string
+          league_id: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          status?: string
+        }
+        Update: {
+          away_goals?: number | null
+          away_user_id?: string
+          created_at?: string
+          home_goals?: number | null
+          home_user_id?: string
+          id?: string
+          league_id?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       league_members: {
         Row: {
           club_logo: string
@@ -135,6 +185,41 @@ export type Database = {
           },
         ]
       }
+      league_squads: {
+        Row: {
+          id: string
+          league_id: string
+          squad_data: Json
+          tactics_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          squad_data?: Json
+          tactics_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          squad_data?: Json
+          tactics_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_squads_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiplayer_leagues: {
         Row: {
           code: string
@@ -145,6 +230,7 @@ export type Database = {
           name: string
           owner_id: string
           season: number
+          season_status: string
           status: string
         }
         Insert: {
@@ -156,6 +242,7 @@ export type Database = {
           name: string
           owner_id: string
           season?: number
+          season_status?: string
           status?: string
         }
         Update: {
@@ -167,6 +254,7 @@ export type Database = {
           name?: string
           owner_id?: string
           season?: number
+          season_status?: string
           status?: string
         }
         Relationships: []
