@@ -54,9 +54,9 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-export function TrainingTab({ players, infrastructure, trainingFocus, onSetTrainingFocus }: Props) {
-  const trainingLevel = infrastructure.trainingCenter.level;
-  const roundsNeeded = Math.max(3, 12 - trainingLevel); // Higher level = fewer rounds needed
+export function TrainingTab({ players, infrastructure, trainingFocus = {}, onSetTrainingFocus }: Props) {
+  const trainingLevel = infrastructure?.trainingCenter?.level ?? 1;
+  const roundsNeeded = Math.max(3, 12 - trainingLevel);
   const successChance = Math.round((0.3 + trainingLevel * 0.07) * 100);
 
   const sorted = [...players].sort((a, b) => b.overall - a.overall);
