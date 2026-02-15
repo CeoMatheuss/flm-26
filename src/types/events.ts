@@ -2,7 +2,7 @@ import { Injury } from './game';
 
 export interface GameEvent {
   id: string;
-  type: 'injury' | 'offer' | 'protest' | 'bonus' | 'scandal' | 'discovery';
+  type: 'injury' | 'offer' | 'protest' | 'bonus' | 'scandal' | 'discovery' | 'player_upgrade' | 'fan_rage';
   title: string;
   description: string;
   icon: string;

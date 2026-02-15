@@ -27,6 +27,10 @@ function generateHeadline(club: Club, events: GameEvent[]): { headline: string; 
         return { headline: 'JOIA DA BASE DESCOBERTA!', subtitle: latest.description, category: 'CANTEIRA' };
       case 'scandal':
         return { headline: 'ESCÂNDALO!', subtitle: latest.description, category: 'POLÊMICA' };
+      case 'player_upgrade':
+        return { headline: latest.title, subtitle: latest.description, category: 'EVOLUÇÃO' };
+      case 'fan_rage':
+        return { headline: 'ORGANIZADAS EXPLODEM!', subtitle: latest.description, category: 'TORCIDA' };
     }
   }
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 
@@ -129,27 +130,43 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     </div>
 
                     {/* Salary negotiation */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="text-[9px] text-muted-foreground shrink-0">Salário:</span>
-                      {salaryOptions.map(sal => (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-[9px] text-muted-foreground shrink-0">Salário mensal:</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {salaryOptions.map(sal => (
+                          <Button
+                            key={sal}
+                            size="sm"
+                            variant={currentOffer === sal ? 'default' : 'outline'}
+                            className="h-5 px-1.5 text-[9px]"
+                            onClick={() => setSalaryOffers(prev => ({ ...prev, [player.id]: sal }))}
+                          >
+                            R${(sal / 1000).toFixed(0)}k
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-muted-foreground">Valor personalizado: R$</span>
+                        <Input
+                          type="number"
+                          min={1000}
+                          step={1000}
+                          value={currentOffer}
+                          onChange={e => setSalaryOffers(prev => ({ ...prev, [player.id]: Math.max(1000, Number(e.target.value)) }))}
+                          className="h-6 w-24 text-[10px] px-1.5"
+                        />
+                        <span className="text-[9px] text-muted-foreground">/mês</span>
                         <Button
-                          key={sal}
                           size="sm"
-                          variant={currentOffer === sal ? 'default' : 'outline'}
-                          className="h-5 px-1.5 text-[9px]"
-                          onClick={() => setSalaryOffers(prev => ({ ...prev, [player.id]: sal }))}
+                          className="h-6 px-2 text-[10px] gap-1 ml-auto"
+                          onClick={() => onSignFreeAgent(player, currentOffer)}
                         >
-                          R${(sal / 1000).toFixed(0)}k
+                          <UserPlus className="h-3 w-3" /> Assinar
                         </Button>
-                      ))}
-                      <Button
-                        size="sm"
-                        className="h-6 px-2 text-[10px] gap-1 ml-auto"
-                        onClick={() => onSignFreeAgent(player, currentOffer)}
-                      >
-                        <UserPlus className="h-3 w-3" /> Assinar
-                      </Button>
+                      </div>
                     </div>
 
                     {report && (

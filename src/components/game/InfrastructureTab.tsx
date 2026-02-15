@@ -2,12 +2,12 @@ import { Infrastructure, getUpgradeCost, getPhysiotherapyRecovery } from '@/type
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Building2, GraduationCap, Landmark, ArrowUp, HeartPulse } from 'lucide-react';
+import { Building2, GraduationCap, ArrowUp, HeartPulse } from 'lucide-react';
 
 interface Props {
   infrastructure: Infrastructure;
   budget: number;
-  onUpgrade: (facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => void;
+  onUpgrade: (facility: 'trainingCenter' | 'youthAcademy' | 'physiotherapy') => void;
 }
 
 const facilityInfo = {
@@ -22,12 +22,6 @@ const facilityInfo = {
     icon: GraduationCap,
     desc: 'Gera jogadores jovens melhores. Quanto maior o nível, maior o overall dos jovens.',
     color: 'text-purple-400',
-  },
-  stadium: {
-    name: 'Estádio',
-    icon: Landmark,
-    desc: 'Aumenta receita de bilheteria e atrai mais torcedores nas partidas.',
-    color: 'text-emerald-400',
   },
   physiotherapy: {
     name: 'Centro de Fisioterapia',
