@@ -74,7 +74,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     load();
   }, [userId]);
 
-  const handleClubCreated = useCallback((config: ClubConfig) => {
+  const handleClubCreated = useCallback(async (config: ClubConfig) => {
     const customClub = {
       ...initialClub,
       name: config.name,
@@ -94,10 +94,15 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       sponsorOffers: generateSponsorOffers(65, 4),
       events: [],
     };
+
+    // Auto-save on creation
+    const jsonState = JSON.parse(JSON.stringify(newState));
+    await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
+
     setLoadedState(newState);
     setHasSave(true);
     toast.success(`${config.name} criado com sucesso! 🏆`);
-  }, []);
+  }, [userId]);
 
   if (!gameReady) {
     return (
