@@ -202,7 +202,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
           </div>
 
           <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} /></TabsContent>
-          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} /></TabsContent>
+          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} onRenewContract={game.renewContract} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market">
             <MarketTab
