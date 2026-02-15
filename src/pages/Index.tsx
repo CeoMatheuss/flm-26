@@ -181,8 +181,8 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
             <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>
-            <Button size="sm" variant="ghost" onClick={onSignOut} className="h-7 sm:h-8 px-2">
-              <LogOut className="h-3 w-3" />
+            <Button size="sm" variant="destructive" onClick={onSignOut} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
+              <LogOut className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
