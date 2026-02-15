@@ -1,5 +1,6 @@
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
+import { Infrastructure } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -10,9 +11,10 @@ import flmLogo from '@/assets/flm26-logo.png';
 interface Props {
   club: Club;
   events: GameEvent[];
+  infrastructure?: Infrastructure;
 }
 
-export function DashboardTab({ club, events }: Props) {
+export function DashboardTab({ club, events, infrastructure }: Props) {
   const nextMatch = club.matches.find(m => !m.played);
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -46,6 +48,13 @@ export function DashboardTab({ club, events }: Props) {
     scandal: 'border-l-yellow-500 bg-yellow-500/5',
     player_upgrade: 'border-l-emerald-500 bg-emerald-500/5',
     fan_rage: 'border-l-red-500 bg-red-500/5',
+    stadium_upgrade: 'border-l-cyan-500 bg-cyan-500/5',
+    transfer_in: 'border-l-blue-400 bg-blue-400/5',
+    transfer_out: 'border-l-orange-400 bg-orange-400/5',
+    record: 'border-l-amber-500 bg-amber-500/5',
+    captain: 'border-l-yellow-500 bg-yellow-500/5',
+    derby: 'border-l-orange-600 bg-orange-600/5',
+    weather: 'border-l-sky-400 bg-sky-400/5',
   };
 
   return (
@@ -72,7 +81,7 @@ export function DashboardTab({ club, events }: Props) {
       </div>
 
       {/* Newspaper */}
-      <NewspaperCard club={club} events={events} />
+      <NewspaperCard club={club} events={events} infrastructure={infrastructure} />
 
       {/* Events Feed */}
       {recentEvents.length > 0 && (

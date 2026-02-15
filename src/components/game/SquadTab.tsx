@@ -5,8 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, CheckCircle, XCircle, Tag, HeartPulse } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse } from 'lucide-react';
+import { useState } from 'react';
 
 interface Props {
   players: Player[];
@@ -38,6 +38,10 @@ const attrLabels: Record<keyof PlayerAttributes, { label: string; icon: string }
   defending: { label: 'Defesa', icon: '🛡️' },
   physical: { label: 'Físico', icon: '💪' },
   dribbling: { label: 'Drible', icon: '🎨' },
+  setPieces: { label: 'Bola Parada', icon: '🎱' },
+  positioning: { label: 'Posicionamento', icon: '📍' },
+  heading: { label: 'Cabeceio', icon: '🗣️' },
+  marking: { label: 'Marcação', icon: '🔒' },
 };
 
 function getAttrColor(val: number): string {
@@ -46,7 +50,6 @@ function getAttrColor(val: number): string {
   if (val >= 40) return 'text-yellow-400';
   return 'text-red-400';
 }
-
 
 export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -77,7 +80,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         </TabsList>
 
         <TabsContent value="squad" className="space-y-3">
-          {/* Training Info Banner */}
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
@@ -95,7 +97,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </CardContent>
           </Card>
 
-          {/* Player Detail Modal */}
           {selectedPlayer && (
             <Card className="border-primary/30 bg-card">
               <CardContent className="p-3 sm:p-4">
@@ -147,11 +148,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {selectedPlayer.attributes && (Object.entries(selectedPlayer.attributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {(Object.entries(selectedPlayer.attributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
                     <div key={key} className="bg-muted/30 rounded p-2">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[10px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label}</span>
+                        <span className="text-[9px] sm:text-[10px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label}</span>
                         <span className={`text-xs font-bold ${getAttrColor(val)}`}>{val}</span>
                       </div>
                       <Progress value={val} className="h-1" />
@@ -179,7 +180,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </Card>
           )}
 
-          {/* Player List */}
           <div className="grid gap-1.5">
             {sorted.map(player => (
               <Card key={player.id} className={`overflow-hidden hover:border-primary/30 transition-colors cursor-pointer ${player.injury ? 'border-red-500/40 bg-red-500/5' : player.contract <= 1 ? 'border-destructive/30' : ''}`} onClick={() => setSelectedPlayer(player)}>
@@ -214,7 +214,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
         </TabsContent>
 
-        {/* Contracts Tab - Manager defines salary and duration */}
         <TabsContent value="contracts" className="space-y-3">
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-3">
