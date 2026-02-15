@@ -34,12 +34,10 @@ export const defaultInfrastructure: Infrastructure = {
   stadium: { level: 1, maxLevel: 10 },
 };
 
-// Training effectiveness based on training center level
 export function getTrainingBoost(level: number): number {
-  return 0.5 + level * 0.15; // level 1 = 0.65, level 10 = 2.0
+  return 0.5 + level * 0.15;
 }
 
-// Youth academy: quantity of players per month based on investment
 export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
   if (investmentPerMonth >= 2000000) return 8;
   if (investmentPerMonth >= 1000000) return 6;
@@ -49,13 +47,12 @@ export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
   return 1;
 }
 
-// Youth academy: quality (min overall) based on academy level
 export function getYouthMinOverall(academyLevel: number): number {
-  return Math.min(45 + academyLevel * 4, 85); // level 1 = 49, level 10 = 85
+  return Math.min(45 + academyLevel * 4, 85);
 }
 
 export function getYouthMaxOverall(academyLevel: number): number {
-  return Math.min(55 + academyLevel * 4, 95); // level 1 = 59, level 10 = 95
+  return Math.min(55 + academyLevel * 4, 95);
 }
 
 export interface YouthProspect extends Player {
@@ -66,7 +63,7 @@ export interface YouthProspect extends Player {
 export interface SeasonData {
   currentSeason: number;
   currentWeek: number;
-  totalWeeks: number; // e.g. 18 weeks per season (round robin)
+  totalWeeks: number;
   seasonHistory: SeasonResult[];
 }
 
@@ -82,7 +79,7 @@ export interface SeasonResult {
 
 export const defaultSeason: SeasonData = {
   currentSeason: 1,
-  currentWeek: 4, // already played 3 matches
+  currentWeek: 1,
   totalWeeks: 18,
   seasonHistory: [],
 };

@@ -1,7 +1,7 @@
 import { Match } from '@/types/game';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play } from 'lucide-react';
+import { Play, Check } from 'lucide-react';
 
 interface Props {
   matches: Match[];
@@ -10,41 +10,48 @@ interface Props {
 }
 
 export function MatchesTab({ matches, clubName, onSimulate }: Props) {
+  const nextIdx = matches.findIndex(m => !m.played);
+
   return (
-    <div className="space-y-3">
-      {matches.map(match => (
-        <Card key={match.id} className={match.played ? 'opacity-80' : 'border-primary/30'}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-xs text-muted-foreground w-16">{match.date}</span>
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="font-medium text-sm">{clubName}</span>
-                  {match.played && match.result ? (
-                    <span className={`font-bold text-lg px-3 py-0.5 rounded ${
-                      match.result.home > match.result.away
-                        ? 'text-emerald-400 bg-emerald-500/10'
-                        : match.result.home < match.result.away
-                        ? 'text-red-400 bg-red-500/10'
-                        : 'text-yellow-400 bg-yellow-500/10'
-                    }`}>
-                      {match.result.home} x {match.result.away}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">vs</span>
-                  )}
-                  <span className="font-medium text-sm">{match.opponentLogo} {match.opponent}</span>
-                </div>
+    <div className="space-y-1.5">
+      {matches.map((match, i) => {
+        const isNext = i === nextIdx;
+        const resultColor = match.result
+          ? match.result.home > match.result.away ? 'text-emerald-400' : match.result.home < match.result.away ? 'text-destructive' : 'text-primary'
+          : '';
+
+        return (
+          <Card key={match.id} className={`${isNext ? 'border-primary/40 bg-primary/5' : match.played ? 'opacity-70' : ''} transition-colors`}>
+            <CardContent className="p-3 flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground font-mono w-14 shrink-0">{match.date}</span>
+
+              {match.played ? (
+                <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+              ) : (
+                <div className="w-3 shrink-0" />
+              )}
+
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-sm font-medium truncate">{clubName}</span>
+                {match.played && match.result ? (
+                  <span className={`font-bold text-sm px-2 py-0.5 rounded bg-muted/50 font-mono ${resultColor}`}>
+                    {match.result.home} - {match.result.away}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">vs</span>
+                )}
+                <span className="text-sm truncate">{match.opponentLogo} {match.opponent}</span>
               </div>
-              {!match.played && (
-                <Button size="sm" onClick={() => onSimulate(match.id)} className="gap-1">
+
+              {isNext && (
+                <Button size="sm" onClick={() => onSimulate(match.id)} className="h-7 px-3 text-xs gap-1">
                   <Play className="h-3 w-3" /> Jogar
                 </Button>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
