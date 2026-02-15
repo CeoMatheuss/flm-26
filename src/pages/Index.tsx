@@ -289,8 +289,8 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
             <TrainingTab
               players={game.club.players}
               infrastructure={game.infrastructure}
-              budget={game.club.budget}
-              onUpgrade={game.upgradeFacility}
+              trainingFocus={game.trainingFocus}
+              onSetTrainingFocus={game.setPlayerTrainingFocus}
             />
           </TabsContent>
           <TabsContent value="sponsors">
