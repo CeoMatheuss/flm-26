@@ -12,6 +12,8 @@ interface Props {
   freeAgents: Player[];
   clubPlayers: Player[];
   budget: number;
+  clubName: string;
+  listedForSale: string[];
   scoutReports: ScoutReport[];
   onBuy: (player: Player) => void;
   onSell: (player: Player) => void;
@@ -43,8 +45,9 @@ function getPlayerExpectedSalary(player: Player): number {
   return Math.floor(player.overall * 200 + player.age * 100);
 }
 
-export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scoutReports, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents }: Props) {
+export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, clubName, listedForSale, scoutReports, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents }: Props) {
   const [salaryOffers, setSalaryOffers] = useState<Record<string, number>>({});
+  const listedPlayers = clubPlayers.filter(p => listedForSale.includes(p.id));
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -167,27 +170,37 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, scou
         </TabsContent>
 
         <TabsContent value="sell" className="space-y-3">
-          <h3 className="font-semibold text-sm sm:text-lg">Vender Jogadores</h3>
-          <div className="space-y-1.5 sm:space-y-2">
-            {clubPlayers.map(player => {
-              const value = Math.floor(getPlayerValue(player) * 0.8);
-              return (
-                <Card key={player.id}>
-                  <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                    <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall} • 📄{player.contract}a</p>
-                    </div>
-                    <p className="text-xs sm:text-sm font-bold text-yellow-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                    <Button size="sm" variant="destructive" onClick={() => onSell(player)} disabled={clubPlayers.length <= 11} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
-                      <Banknote className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Vender</span>
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <h3 className="font-semibold text-sm sm:text-lg">Lista de Transferência</h3>
+          {listedPlayers.length > 0 ? (
+            <div className="space-y-1.5 sm:space-y-2">
+              {listedPlayers.map(player => {
+                const value = Math.floor(getPlayerValue(player) * 0.8);
+                return (
+                  <Card key={player.id} className="border-yellow-500/30">
+                    <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
+                      <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall} • 📄{player.contract}a</p>
+                        <p className="text-[9px] text-primary">🏟️ {clubName}</p>
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold text-yellow-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
+                      <Button size="sm" variant="destructive" onClick={() => onSell(player)} disabled={clubPlayers.length <= 11} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
+                        <Banknote className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Vender</span>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="border-muted/30">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-muted-foreground">Nenhum jogador na lista de transferência.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Use o ícone 🏷️ no Elenco para listar jogadores.</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

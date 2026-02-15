@@ -26,6 +26,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search } from 'lucide-react';
+import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState } from 'react';
@@ -160,6 +161,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} />
             <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>
@@ -202,7 +204,7 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
           </div>
 
           <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} /></TabsContent>
-          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} onRenewContract={game.renewContract} /></TabsContent>
+          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} clubName={game.club.name} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} onRenewContract={game.renewContract} onListForSale={game.listForSale} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market">
             <MarketTab
@@ -210,6 +212,8 @@ function GameUI({ userId, displayName, onSignOut, initialState }: { userId: stri
               freeAgents={game.freeAgents}
               clubPlayers={game.club.players}
               budget={game.club.budget}
+              clubName={game.club.name}
+              listedForSale={game.listedForSale}
               scoutReports={game.club.scoutReports || []}
               onBuy={game.buyPlayer}
               onSell={game.sellPlayer}

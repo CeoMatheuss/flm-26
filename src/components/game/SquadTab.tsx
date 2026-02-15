@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, FileText, X, CheckCircle, XCircle, Tag } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 interface Props {
   players: Player[];
   budget: number;
   trainingLevel: number;
+  clubName: string;
   onRest: (id: string) => void;
-  onRenewContract: (playerId: string, newSalary: number) => void;
+  onRenewContract: (playerId: string, newSalary: number, newDuration: number) => void;
+  onListForSale: (playerId: string) => void;
 }
 
 const posColors: Record<string, string> = {
@@ -44,15 +46,18 @@ function getAttrColor(val: number): string {
   return 'text-red-400';
 }
 
-function getMinRenewalSalary(player: Player): number {
-  // Player demands at least 10-30% raise based on age/overall
-  const raisePercent = player.overall >= 70 ? 0.30 : player.overall >= 55 ? 0.20 : 0.10;
-  return Math.ceil(player.salary * (1 + raisePercent));
+// Player generates their own demand - salary raise + duration
+function getPlayerDemand(player: Player): { salary: number; duration: number } {
+  // Seed based on player id for consistency
+  const seed = player.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const raisePercent = 0.15 + ((seed % 26) / 100); // 15% to 40%
+  const salary = Math.ceil(player.salary * (1 + raisePercent));
+  const duration = 1 + (seed % 3); // 1 to 3 years
+  return { salary, duration };
 }
 
-export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContract }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [renewalOffers, setRenewalOffers] = useState<Record<string, number>>({});
 
   const sorted = [...players].sort((a, b) => {
     const order = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -65,22 +70,6 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
     if (player.age <= 30) return <TrendingUp className="h-3 w-3 text-green-400" />;
     if (player.age <= 33) return <Minus className="h-3 w-3 text-yellow-400" />;
     return <TrendingDown className="h-3 w-3 text-red-400" />;
-  };
-
-  const handleSetOffer = (playerId: string, value: number) => {
-    setRenewalOffers(prev => ({ ...prev, [playerId]: value }));
-  };
-
-  const handleRenew = (player: Player) => {
-    const offer = renewalOffers[player.id] || getMinRenewalSalary(player);
-    const minSalary = getMinRenewalSalary(player);
-    if (offer < minSalary) return;
-    onRenewContract(player.id, offer);
-    setRenewalOffers(prev => {
-      const n = { ...prev };
-      delete n[player.id];
-      return n;
-    });
   };
 
   return (
@@ -200,8 +189,8 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
                     <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
                       <BedDouble className="h-3 w-3" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); }} title="Detalhes">
-                      <FileText className="h-3 w-3" />
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onListForSale(player.id); }} title="Colocar na lista de transferência">
+                      <Tag className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardContent>
@@ -210,13 +199,13 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
           </div>
         </TabsContent>
 
-        {/* Contracts Tab */}
+        {/* Contracts Tab - Player chooses the demand */}
         <TabsContent value="contracts" className="space-y-3">
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-3">
               <p className="text-xs font-semibold text-primary">📄 Gestão de Contratos</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Renove contratos dos jogadores. Eles só aceitam salário maior que o atual. No fim da temporada, jogadores com contrato 0 saem do clube!
+                O jogador define o salário e a duração desejada. Você aceita ou recusa a proposta dele!
               </p>
             </CardContent>
           </Card>
@@ -224,7 +213,7 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
           {expiringPlayers.length > 0 && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="p-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                <span className="text-destructive text-sm">⚠️</span>
                 <p className="text-[11px] text-destructive font-medium">
                   {expiringPlayers.length} jogador(es) com contrato expirando! Renove ou eles sairão no fim da temporada.
                 </p>
@@ -234,15 +223,10 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
 
           <div className="space-y-2">
             {sorted.map(player => {
-              const minSalary = getMinRenewalSalary(player);
-              const currentOffer = renewalOffers[player.id] ?? minSalary;
+              const demand = getPlayerDemand(player);
               const isExpiring = player.contract <= 1;
-              const salarySteps = [
-                minSalary,
-                Math.ceil(minSalary * 1.1),
-                Math.ceil(minSalary * 1.25),
-                Math.ceil(minSalary * 1.5),
-              ];
+              const renewalCost = demand.salary * demand.duration * 12;
+              const canAfford = budget >= renewalCost;
 
               return (
                 <Card key={player.id} className={isExpiring ? 'border-destructive/30' : ''}>
@@ -261,31 +245,48 @@ export function SquadTab({ players, budget, trainingLevel, onRest, onRenewContra
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[9px] text-muted-foreground shrink-0">Atual: R${(player.salary / 1000).toFixed(0)}k →</span>
-                      {salarySteps.map(sal => (
-                        <Button
-                          key={sal}
-                          size="sm"
-                          variant={currentOffer === sal ? 'default' : 'outline'}
-                          className="h-5 px-1.5 text-[9px]"
-                          onClick={() => handleSetOffer(player.id, sal)}
-                        >
-                          R${(sal / 1000).toFixed(0)}k
-                        </Button>
-                      ))}
+                    {/* Player demand */}
+                    <Card className="bg-muted/20 border-muted/30">
+                      <CardContent className="p-2">
+                        <p className="text-[10px] text-muted-foreground mb-1">💬 Exigência do jogador:</p>
+                        <div className="flex items-center gap-3 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Salário:</span>
+                            <span className="font-bold text-primary ml-1">R${(demand.salary / 1000).toFixed(0)}k/mês</span>
+                            <span className="text-[9px] text-muted-foreground ml-1">(atual: R${(player.salary / 1000).toFixed(0)}k)</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Duração:</span>
+                            <span className="font-bold ml-1">{demand.duration} {demand.duration === 1 ? 'ano' : 'anos'}</span>
+                          </div>
+                        </div>
+                        <p className="text-[8px] text-muted-foreground mt-1">
+                          Custo total: R${(renewalCost / 1000).toFixed(0)}k
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <div className="flex items-center gap-2 mt-2">
                       <Button
                         size="sm"
-                        className="h-6 px-2 text-[10px] gap-1 ml-auto"
-                        disabled={budget < currentOffer * 12}
-                        onClick={() => handleRenew(player)}
+                        className="h-6 px-3 text-[10px] gap-1 flex-1"
+                        disabled={!canAfford}
+                        onClick={() => onRenewContract(player.id, demand.salary, demand.duration)}
                       >
-                        <CheckCircle className="h-3 w-3" /> Renovar
+                        <CheckCircle className="h-3 w-3" /> Aceitar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-3 text-[10px] gap-1 flex-1"
+                        disabled
+                      >
+                        <XCircle className="h-3 w-3" /> Recusar
                       </Button>
                     </div>
-                    <p className="text-[8px] text-muted-foreground mt-1">
-                      Mínimo aceito: R${(minSalary / 1000).toFixed(0)}k/mês • Custo anual: R${(currentOffer * 12 / 1000).toFixed(0)}k
-                    </p>
+                    {!canAfford && (
+                      <p className="text-[8px] text-destructive mt-1">Orçamento insuficiente!</p>
+                    )}
                   </CardContent>
                 </Card>
               );
