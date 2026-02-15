@@ -5,12 +5,13 @@ import { Infrastructure } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ChevronDown, ChevronUp } from 'lucide-react';
+import { Newspaper, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 
 interface Props {
   club: Club;
   events: GameEvent[];
   infrastructure?: Infrastructure;
+  onOpenFullPage?: () => void;
 }
 
 function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { headline: string; subtitle: string; category: string } {
@@ -147,7 +148,7 @@ const categoryColors: Record<string, string> = {
   LIDERANÇA: 'bg-yellow-500/80',
 };
 
-export function NewspaperCard({ club, events, infrastructure }: Props) {
+export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: Props) {
   const [expanded, setExpanded] = useState(false);
   const main = generateHeadline(club, events, infrastructure);
   const secondary = generateSecondaryNews(club, events, infrastructure);
@@ -191,21 +192,33 @@ export function NewspaperCard({ club, events, infrastructure }: Props) {
           </div>
         )}
 
-        {/* Ver Mais / Ver Menos */}
-        {secondary.length > 3 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full h-7 text-[10px] sm:text-xs gap-1"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? (
-              <><ChevronUp className="h-3 w-3" /> Ver Menos</>
-            ) : (
-              <><ChevronDown className="h-3 w-3" /> Ver Mais ({secondary.length - 3})</>
-            )}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {/* Ver Mais / Ver Menos */}
+          {secondary.length > 3 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 h-7 text-[10px] sm:text-xs gap-1"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? (
+                <><ChevronUp className="h-3 w-3" /> Ver Menos</>
+              ) : (
+                <><ChevronDown className="h-3 w-3" /> Ver Mais ({secondary.length - 3})</>
+              )}
+            </Button>
+          )}
+          {onOpenFullPage && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-7 text-[10px] sm:text-xs gap-1"
+              onClick={onOpenFullPage}
+            >
+              <ExternalLink className="h-3 w-3" /> Jornal Completo
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

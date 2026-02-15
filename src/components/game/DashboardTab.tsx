@@ -12,9 +12,10 @@ interface Props {
   club: Club;
   events: GameEvent[];
   infrastructure?: Infrastructure;
+  onOpenNewspaper?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: Props) {
   const nextMatch = club.matches.find(m => !m.played);
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -81,7 +82,7 @@ export function DashboardTab({ club, events, infrastructure }: Props) {
       </div>
 
       {/* Newspaper */}
-      <NewspaperCard club={club} events={events} infrastructure={infrastructure} />
+      <NewspaperCard club={club} events={events} infrastructure={infrastructure} onOpenFullPage={onOpenNewspaper} />
 
       {/* Events Feed */}
       {recentEvents.length > 0 && (
