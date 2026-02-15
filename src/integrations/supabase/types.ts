@@ -76,6 +76,33 @@ export type Database = {
         }
         Relationships: []
       }
+      global_chat_messages: {
+        Row: {
+          club_name: string
+          content: string
+          created_at: string
+          id: string
+          sender_name: string
+          user_id: string
+        }
+        Insert: {
+          club_name?: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_name: string
+          user_id: string
+        }
+        Update: {
+          club_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       league_matches: {
         Row: {
           away_goals: number | null

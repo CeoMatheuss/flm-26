@@ -19,6 +19,8 @@ import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { FansTab } from '@/components/game/FansTab';
 import { TrainingTab } from '@/components/game/TrainingTab';
+import { GlobalChatTab } from '@/components/game/GlobalChatTab';
+import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -31,7 +33,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -226,7 +228,8 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('rules')} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Regras</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('newspaper')} className="gap-2 text-xs"><Newspaper className="h-3.5 w-3.5" /> Jornal</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -241,7 +244,7 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('newspaper')} /></TabsContent>
           <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} clubName={game.club.name} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} onRenewContract={game.renewContract} onListForSale={game.listForSale} /></TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market">
@@ -342,6 +345,12 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           </TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>
           <TabsContent value="updates"><UpdatesTab /></TabsContent>
+          <TabsContent value="chat">
+            <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
+          </TabsContent>
+          <TabsContent value="newspaper">
+            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
