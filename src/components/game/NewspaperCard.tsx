@@ -151,7 +151,7 @@ export function NewspaperCard({ club, events, infrastructure }: Props) {
   const [expanded, setExpanded] = useState(false);
   const main = generateHeadline(club, events, infrastructure);
   const secondary = generateSecondaryNews(club, events, infrastructure);
-  const displayedNews = expanded ? secondary : secondary.slice(0, 4);
+  const displayedNews = expanded ? secondary : secondary.slice(0, 3);
 
   return (
     <Card className="border-border bg-card overflow-hidden">
@@ -191,15 +191,19 @@ export function NewspaperCard({ club, events, infrastructure }: Props) {
           </div>
         )}
 
-        {/* Expand/Collapse */}
-        {secondary.length > 4 && (
+        {/* Ver Mais / Ver Menos */}
+        {secondary.length > 3 && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="w-full h-6 text-[10px] text-muted-foreground"
+            className="w-full h-7 text-[10px] sm:text-xs gap-1"
             onClick={() => setExpanded(!expanded)}
           >
-            {expanded ? <><ChevronUp className="h-3 w-3 mr-1" /> Menos notícias</> : <><ChevronDown className="h-3 w-3 mr-1" /> +{secondary.length - 4} notícias</>}
+            {expanded ? (
+              <><ChevronUp className="h-3 w-3" /> Ver Menos</>
+            ) : (
+              <><ChevronDown className="h-3 w-3" /> Ver Mais ({secondary.length - 3})</>
+            )}
           </Button>
         )}
       </CardContent>
