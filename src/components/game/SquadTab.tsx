@@ -17,6 +17,11 @@ interface Props {
   onRest: (id: string) => void;
   onRenewContract: (playerId: string, newSalary: number, newDuration: number) => void;
   onListForSale: (playerId: string) => void;
+  onLoanOut: (playerId: string) => void;
+  onAuction: (player: Player) => void;
+  onChangeNumber: (playerId: string, number: number) => void;
+  canLoanOut: boolean;
+  userId: string;
 }
 
 const posColors: Record<string, string> = {
@@ -58,7 +63,7 @@ function getAttrColor(val: number): string {
   return 'text-red-400';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
@@ -222,7 +227,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <CardContent className="p-2 sm:p-3">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <PlayerProfileModal player={player}>
+                    <PlayerProfileModal player={player} isOwnPlayer onListForSale={onListForSale} onLoanOut={onLoanOut} onAuction={onAuction} onChangeNumber={onChangeNumber} canLoanOut={canLoanOut} canAuction playersCount={players.length}>
                       <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{player.name}</button>
                     </PlayerProfileModal>
                     {player.injury && (
