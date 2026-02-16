@@ -338,6 +338,12 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               autoJoining={mp.autoJoining}
               clubPlayers={game.club.players}
               clubTactics={game.tactics}
+              clubShield={{
+                primaryColor: game.club.primaryColor || '#1a365d',
+                secondaryColor: game.club.secondaryColor || '#f6e05e',
+                pattern: game.club.shieldPattern || 'classic',
+                shape: game.club.shieldShape || 'classic',
+              }}
               onEnterLeague={mp.enterLeague}
               onLeaveLeague={mp.leaveLeague}
               onSendChat={mp.sendChat}

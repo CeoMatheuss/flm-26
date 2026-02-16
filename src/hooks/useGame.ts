@@ -184,15 +184,7 @@ export function useGame(initialState?: GameState) {
       fanChange = Math.max(-200, Math.min(fanChange, 300));
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
-      // Update friendly counters
-      const today = new Date().toDateString();
-      if (lastFriendlyDate !== today) {
-        setFriendliesPlayedToday(1);
-        setLastFriendlyDate(today);
-      } else {
-        setFriendliesPlayedToday(n => n + 1);
-      }
-      setFriendliesPlayedSeason(n => n + 1);
+      // Friendly counters already incremented in generateFriendly
 
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
       if (sponsorWeekly > 0) {
@@ -934,16 +926,21 @@ export function useGame(initialState?: GameState) {
 
   const generateFriendly = useCallback(() => {
     const today = new Date().toDateString();
-    if (lastFriendlyDate !== today) {
-      setFriendliesPlayedToday(0);
-      setLastFriendlyDate(today);
-    }
-    if (friendliesPlayedToday >= MAX_FRIENDLIES_PER_DAY) {
-      toast.error('Limite diário de amistosos atingido!');
+    // Calculate actual today count using local variable to avoid stale state
+    const actualTodayCount = lastFriendlyDate === today ? friendliesPlayedToday : 0;
+    
+    if (actualTodayCount >= MAX_FRIENDLIES_PER_DAY) {
+      toast.error('Limite diário de amistosos atingido! (1 por dia)');
       return;
     }
     if (friendliesPlayedSeason >= MAX_FRIENDLIES_PER_SEASON) {
       toast.error('Limite de amistosos da temporada atingido!');
+      return;
+    }
+    // Check if there's already an unplayed friendly
+    const hasUnplayed = club.matches.some(m => !m.played);
+    if (hasUnplayed) {
+      toast.error('Você já tem um amistoso agendado! Jogue-o primeiro.');
       return;
     }
     // Pick a random bot opponent from league teams
@@ -957,9 +954,13 @@ export function useGame(initialState?: GameState) {
       date: `Amistoso ${friendliesPlayedSeason + 1}`,
       played: false,
     };
+    // Increment counters immediately to prevent double-generation
+    setFriendliesPlayedToday(actualTodayCount + 1);
+    setLastFriendlyDate(today);
+    setFriendliesPlayedSeason(n => n + 1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso agendado vs ${opp.name}!`);
-  }, [leagueTeams, club.name, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
+  }, [leagueTeams, club.name, club.matches, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
