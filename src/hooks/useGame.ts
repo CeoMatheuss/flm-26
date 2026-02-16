@@ -4,12 +4,13 @@ import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams, getLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
-import { Infrastructure, defaultInfrastructure, getUpgradeCost, getStadiumUpgradeCost, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
+import { Infrastructure, defaultInfrastructure, getUpgradeCost, getStadiumUpgradeCost, getStadiumCapacity, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
 import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
+import { FeedItem, createFeedItem } from '@/types/feed';
 
 export interface LoanedPlayer {
   player: Player;
@@ -34,6 +35,7 @@ export interface GameState {
   events: GameEvent[];
   loanedPlayers?: LoanedPlayer[];
   trainingFocus?: Record<string, TrainingFocus>;
+  feedItems?: FeedItem[];
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -71,7 +73,17 @@ export function useGame(initialState?: GameState) {
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
   const [trainingFocus, setTrainingFocus] = useState<Record<string, TrainingFocus>>(initialState?.trainingFocus ?? {});
   const [listedForSale, setListedForSale] = useState<string[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
 
+  const addFeedItem = useCallback((item: FeedItem) => {
+    setFeedItems(prev => [item, ...prev].slice(0, 50));
+  }, []);
+
+  const reactToFeed = useCallback((itemId: string, emoji: string) => {
+    setFeedItems(prev => prev.map(item =>
+      item.id === itemId ? { ...item, userReaction: item.userReaction === emoji ? undefined : emoji } : item
+    ));
+  }, []);
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
   }, []);
@@ -401,7 +413,10 @@ export function useGame(initialState?: GameState) {
       return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-  }, [addFinance]);
+    addFeedItem(createFeedItem('transfer_in', `Reforço: ${player.name}`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) foi contratado por R$ ${(value / 1000).toFixed(0)}k!`, '🛒', {
+      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
+    }));
+  }, [addFinance, addFeedItem]);
 
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
@@ -412,7 +427,10 @@ export function useGame(initialState?: GameState) {
     });
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
-  }, [addFinance]);
+    addFeedItem(createFeedItem('free_agent_signed', `Livre: ${player.name} assinou!`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) assinou como agente livre.`, '✍️', {
+      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
+    }));
+  }, [addFinance, addFeedItem]);
 
   const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;
@@ -501,18 +519,31 @@ export function useGame(initialState?: GameState) {
   const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => {
     const cost = facility === 'stadium' ? getStadiumUpgradeCost(infrastructure[facility].level) : getUpgradeCost(infrastructure[facility].level);
     if (club.budget < cost) return;
+    const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
+    const newLevel = infrastructure[facility].level + 1;
 
     setClub(prev => {
       if (prev.budget < cost) return prev;
-      const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
-      addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${infrastructure[facility].level + 1}`);
+      addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
       return { ...prev, budget: prev.budget - cost };
     });
     setInfrastructure(prev => ({
       ...prev,
       [facility]: { ...prev[facility], level: prev[facility].level + 1 },
     }));
-  }, [addFinance, infrastructure, club.budget]);
+
+    const isStadium = facility === 'stadium';
+    const desc = isStadium
+      ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
+      : `${label} atualizado para nível ${newLevel}!`;
+    addFeedItem(createFeedItem(
+      isStadium ? 'stadium_upgrade' : 'facility_upgrade',
+      `🏗️ ${label} → Nível ${newLevel}`,
+      desc,
+      isStadium ? '🏟️' : '🔧',
+      { facilityData: { name: label, level: newLevel } }
+    ));
+  }, [addFinance, infrastructure, club.budget, addFeedItem]);
 
   const promoteYouth = useCallback((youthId: string) => {
     const prospect = youthProspects.find(p => p.id === youthId);
@@ -527,7 +558,10 @@ export function useGame(initialState?: GameState) {
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
     toast.success(`${prospect.name} promovido ao time principal!`);
-  }, [youthProspects]);
+    addFeedItem(createFeedItem('youth_promoted', `⭐ ${prospect.name} promovido!`, `${prospect.name} (${prospect.position}, ${prospect.age} anos, OVR ${prospect.overall}) saiu da base para o profissional!`, '🌟', {
+      playerData: { name: prospect.name, overall: prospect.overall, age: prospect.age, position: prospect.position },
+    }));
+  }, [youthProspects, addFeedItem]);
 
   const renameClub = useCallback((newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
@@ -657,8 +691,8 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
@@ -670,12 +704,13 @@ export function useGame(initialState?: GameState) {
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus,
+    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
+    reactToFeed,
   };
 }

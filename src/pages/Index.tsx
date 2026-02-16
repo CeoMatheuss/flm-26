@@ -22,6 +22,7 @@ import { TrainingTab } from '@/components/game/TrainingTab';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { AuctionTab } from '@/components/game/AuctionTab';
+import { ClubFeedTab } from '@/components/game/ClubFeedTab';
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
@@ -35,7 +36,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -242,6 +243,7 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 {/* Social */}
                 <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('newspaper')} className="gap-2 text-xs"><Newspaper className="h-3.5 w-3.5" /> Jornal</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('feed')} className="gap-2 text-xs"><Rss className="h-3.5 w-3.5" /> Feed do Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
                 {/* Sistema */}
                 <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
@@ -404,6 +406,9 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           </TabsContent>
           <TabsContent value="auction">
             <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />
+          </TabsContent>
+          <TabsContent value="feed">
+            <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
           </TabsContent>
         </Tabs>
       </main>
