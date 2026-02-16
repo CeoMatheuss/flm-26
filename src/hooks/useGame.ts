@@ -122,6 +122,10 @@ export function useGame(initialState?: GameState) {
   }, []);
 
   const simulateMatch = useCallback((matchId: string) => {
+    // Mark the friendly as played NOW (prevents playing 2 per day)
+    setLastFriendlyDate(new Date().toISOString());
+    setFriendliesPlayedToday(1);
+    
     setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
       if (!match || match.played) return prev;
@@ -168,8 +172,9 @@ export function useGame(initialState?: GameState) {
       const streak = prev.matches.filter(m => m.played).slice(-4);
       const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
       const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
-      const streakBonus = recentWins >= 3 ? 1200 : recentWins >= 2 ? 500 : 0;
-      const streakPenalty = recentLosses >= 3 ? -1000 : recentLosses >= 2 ? -400 : 0;
+      // More patient fans: smaller penalties, need bigger streak to trigger negatives
+      const streakBonus = recentWins >= 4 ? 1200 : recentWins >= 3 ? 500 : recentWins >= 2 ? 200 : 0;
+      const streakPenalty = recentLosses >= 4 ? -800 : recentLosses >= 3 ? -300 : 0; // No penalty for 2 losses
       const stadiumFanBonus = infrastructure.stadium.level * 80;
       const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
                             prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
@@ -294,7 +299,7 @@ export function useGame(initialState?: GameState) {
         const extraEvents: GameEvent[] = [];
 
         // Fan rage when team is doing very poorly
-        if (recentLosses >= 3 && !isWin) {
+        if (recentLosses >= 4 && !isWin) {
           const rageMessages = [
             `"Diretoria incompetente! Fora técnico!" — Organizadas do ${prev.name} protestam nas redes sociais após mais uma derrota.`,
             `Torcida organizada do ${prev.name} ameaça não ir mais ao estádio: "Esse time é uma vergonha!"`,
@@ -308,7 +313,7 @@ export function useGame(initialState?: GameState) {
             title: `😡 ORGANIZADAS CONTRA O ${prev.name.toUpperCase()}!`,
             description: rageMessages[Math.floor(Math.random() * rageMessages.length)],
             icon: '🔥',
-            impact: `morale_all:-5,fans:-${recentLosses * 300}`,
+            impact: `morale_all:-3,fans:-${recentLosses * 200}`,
             resolved: true,
           });
         }
