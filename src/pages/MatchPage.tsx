@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Player } from '@/types/game';
-import { TacticsConfig, Formation, PlayStyle, Pressing } from '@/types/tactics';
+import { TacticsConfig, Formation, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width } from '@/types/tactics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, RefreshCw, Star, Users, Settings2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Star, Users, Settings2, Film } from 'lucide-react';
 
 // ---- Types ----
 interface SimEvent {
@@ -17,6 +17,8 @@ interface SimEvent {
   description: string;
   team: 'home' | 'away';
   playerName?: string;
+  assistName?: string;
+  goalType?: string;
 }
 
 interface SimPlayer {
@@ -100,10 +102,19 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
   const [goalFlash, setGoalFlash] = useState(false);
   const [halftimeCountdown, setHalftimeCountdown] = useState(0);
 
-  // Tactics (modifiable during match)
+  // Tactics (modifiable during match) - all fields
   const [formation, setFormation] = useState<Formation>(initialTactics.formation);
   const [playStyle, setPlayStyle] = useState<PlayStyle>(initialTactics.playStyle);
   const [pressing, setPressing] = useState<Pressing>(initialTactics.pressing);
+  const [tempo, setTempo] = useState<Tempo>(initialTactics.tempo || 'normal');
+  const [marking, setMarking] = useState<Marking>(initialTactics.marking || 'zona');
+  const [passingStyle, setPassingStyle] = useState<PassingStyle>(initialTactics.passingStyle || 'misto');
+  const [defenseLine, setDefenseLine] = useState<DefenseLine>(initialTactics.defenseLine || 'media');
+  const [width, setWidth] = useState<Width>(initialTactics.width || 'normal');
+
+  // Goal replay state
+  const [showReplay, setShowReplay] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
 
   // Substitutions
   const [subsUsed, setSubsUsed] = useState(0);
@@ -236,18 +247,20 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
 
     if (r < 0.06) {
       moveBall(team === 'home' ? 92 : 8, 45 + Math.random() * 10);
-      // Update player stats
+      let assistName: string | undefined;
+      const goalTypes = ['chute', 'cabeceio', 'voleio', 'toque', 'chute de fora da área'];
+      const goalType = goalTypes[Math.floor(Math.random() * goalTypes.length)];
       if (team === 'home') {
         const scorer = pickHomePlayer();
         if (scorer) {
           scorer.goals++;
           scorer.rating = Math.min(10, scorer.rating + 1.2);
-          // Assist
           const others = playersRef.current.filter(p => p.team === 'home' && p.id !== scorer.id && p.isOnPitch);
           if (others.length > 0 && Math.random() < 0.65) {
             const assister = others[Math.floor(Math.random() * others.length)];
             assister.assists++;
             assister.rating = Math.min(10, assister.rating + 0.6);
+            assistName = assister.name;
           }
         }
       }
@@ -257,7 +270,7 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
         `⚽ GOOOOL! Que golaço de ${pName}!`,
         `⚽ GOOOOL! ${pName} cabeceia e é gol do ${tName}!`,
       ];
-      return { minute: min, type: 'goal', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
+      return { minute: min, type: 'goal', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName, assistName, goalType };
     }
     if (r < 0.16) {
       moveBall(team === 'home' ? 85 : 15, 40 + Math.random() * 20);
@@ -522,7 +535,7 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
                 <Select value={formation} onValueChange={v => setFormation(v as Formation)} disabled={phase === 'finished'}>
                   <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {(['4-4-2','4-3-3','4-2-3-1','3-5-2','5-3-2','4-1-4-1','3-4-3','5-4-1','4-5-1'] as Formation[]).map(f => (
+                    {(['4-4-2','4-3-3','4-2-3-1','3-5-2','5-3-2','4-1-4-1','3-4-3','5-4-1','4-5-1','4-3-2-1','4-1-2-1-2','3-4-1-2'] as Formation[]).map(f => (
                       <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>
                     ))}
                   </SelectContent>
@@ -551,7 +564,66 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
                 </Select>
               </div>
             </div>
-            <p className="text-[9px] text-muted-foreground text-center">Mudanças táticas são aplicadas em tempo real</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[9px] text-muted-foreground mb-1 block">Tempo</label>
+                <Select value={tempo} onValueChange={v => setTempo(v as Tempo)} disabled={phase === 'finished'}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['muito-rapido','rapido','normal','lento'] as Tempo[]).map(t => (
+                      <SelectItem key={t} value={t} className="text-xs capitalize">{t.replace('-',' ')}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[9px] text-muted-foreground mb-1 block">Marcação</label>
+                <Select value={marking} onValueChange={v => setMarking(v as Marking)} disabled={phase === 'finished'}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['individual','zona','misto'] as Marking[]).map(m => (
+                      <SelectItem key={m} value={m} className="text-xs capitalize">{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[9px] text-muted-foreground mb-1 block">Passe</label>
+                <Select value={passingStyle} onValueChange={v => setPassingStyle(v as PassingStyle)} disabled={phase === 'finished'}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['curto','misto','longo','direto'] as PassingStyle[]).map(ps => (
+                      <SelectItem key={ps} value={ps} className="text-xs capitalize">{ps}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-muted-foreground mb-1 block">Linha Defensiva</label>
+                <Select value={defenseLine} onValueChange={v => setDefenseLine(v as DefenseLine)} disabled={phase === 'finished'}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['alta','media','baixa'] as DefenseLine[]).map(d => (
+                      <SelectItem key={d} value={d} className="text-xs capitalize">{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[9px] text-muted-foreground mb-1 block">Largura</label>
+                <Select value={width} onValueChange={v => setWidth(v as Width)} disabled={phase === 'finished'}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['estreita','normal','larga'] as Width[]).map(w => (
+                      <SelectItem key={w} value={w} className="text-xs capitalize">{w}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-[9px] text-muted-foreground text-center">⚡ Mudanças táticas aplicadas em tempo real</p>
           </Card>
         </TabsContent>
 
@@ -620,18 +692,81 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
         </TabsContent>
       </Tabs>
 
-      {/* End match button */}
-      {phase === 'finished' && (
-        <div className="pt-2">
-          <Button className="w-full gap-2" onClick={() => {
-            const ratings: Record<string, number> = {};
-            playersRef.current.filter(p => p.team === 'home').forEach(p => { ratings[p.id] = Math.round(p.rating * 10) / 10; });
-            onEnd(homeGoalsRef.current, awayGoalsRef.current, ratings);
-          }}>
-            <ArrowLeft className="h-4 w-4" /> Voltar ao Jogo
-          </Button>
-        </div>
-      )}
+      {/* Goal Replay & End */}
+      {phase === 'finished' && (() => {
+        const goalEvents = events.filter(e => e.type === 'goal');
+        const currentGoal = goalEvents[replayIndex];
+        return (
+          <div className="space-y-2 pt-2">
+            {goalEvents.length > 0 && (
+              <Card className="border-primary/30">
+                <CardHeader className="pb-2 pt-3 px-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Film className="h-4 w-4 text-primary" /> Replay dos Gols ({goalEvents.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 space-y-2">
+                  {!showReplay ? (
+                    <Button variant="outline" className="w-full gap-2" onClick={() => { setShowReplay(true); setReplayIndex(0); }}>
+                      <Film className="h-4 w-4" /> Ver Replay dos Gols
+                    </Button>
+                  ) : currentGoal ? (
+                    <div className="space-y-3">
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-center space-y-2 animate-fade-in">
+                        <Badge variant="outline" className="font-mono text-xs">{currentGoal.minute}'</Badge>
+                        <p className="text-lg font-bold text-emerald-400">⚽ GOOOOL!</p>
+                        <p className="text-sm font-semibold">{currentGoal.playerName || 'Jogador'}</p>
+                        {currentGoal.goalType && (
+                          <Badge variant="secondary" className="text-[10px]">Tipo: {currentGoal.goalType}</Badge>
+                        )}
+                        {currentGoal.assistName && (
+                          <p className="text-xs text-muted-foreground">🅰️ Assistência: <span className="font-medium text-blue-400">{currentGoal.assistName}</span></p>
+                        )}
+                        <p className="text-xs text-muted-foreground italic mt-1">{currentGoal.description}</p>
+                        <div className="flex items-center justify-center gap-1 pt-1">
+                          <Badge className="text-sm font-mono px-3">
+                            {currentGoal.team === 'home' ? homeTeam : awayTeam}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" disabled={replayIndex <= 0} onClick={() => setReplayIndex(i => i - 1)}>
+                          ← Anterior
+                        </Button>
+                        <Badge variant="secondary" className="flex items-center text-[10px] px-2">
+                          {replayIndex + 1}/{goalEvents.length}
+                        </Badge>
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" disabled={replayIndex >= goalEvents.length - 1} onClick={() => setReplayIndex(i => i + 1)}>
+                          Próximo →
+                        </Button>
+                      </div>
+                      <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowReplay(false)}>
+                        Fechar Replay
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center">Sem gols para exibir</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            {goalEvents.length === 0 && (
+              <Card className="border-muted/30">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Partida sem gols - 0 x 0</p>
+                </CardContent>
+              </Card>
+            )}
+            <Button className="w-full gap-2" onClick={() => {
+              const ratings: Record<string, number> = {};
+              playersRef.current.filter(p => p.team === 'home').forEach(p => { ratings[p.id] = Math.round(p.rating * 10) / 10; });
+              onEnd(homeGoalsRef.current, awayGoalsRef.current, ratings);
+            }}>
+              <ArrowLeft className="h-4 w-4" /> Voltar ao Jogo
+            </Button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
