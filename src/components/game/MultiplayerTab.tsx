@@ -271,6 +271,14 @@ function LeagueView(props: Props) {
   );
 }
 
+// === TEAM COLOR HELPER ===
+function getTeamColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 55%)`;
+}
+
 // === BOT SQUAD CARD ===
 const posColors: Record<string, string> = {
   GOL: 'bg-primary/15 text-primary',
@@ -406,7 +414,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-8 w-8 text-primary" />
+              <Shield className="h-8 w-8" style={{ color: getTeamColor(selectedTeam.club_name) }} />
               <div className="flex-1">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   {selectedTeam.club_name}
@@ -541,6 +549,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
+                    <Shield className="h-4 w-4 shrink-0" style={{ color: getTeamColor(m.club_name) }} />
                     <span className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline">{m.club_name}</span>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
