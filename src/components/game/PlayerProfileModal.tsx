@@ -264,8 +264,18 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
         {!isFreeAgent && (
           <div>
             <p className="text-xs font-semibold mb-1.5">📊 Atributos</p>
+            {/* Highlight goalkeeping for GK */}
+            {player.position === 'GOL' && player.attributes.goalkeeping != null && (
+              <div className="mb-2 p-2 rounded-lg bg-primary/10 border border-primary/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
+                  <span className={`text-sm font-bold ${getAttrColor(player.attributes.goalkeeping)}`}>{player.attributes.goalkeeping}</span>
+                </div>
+                <Progress value={player.attributes.goalkeeping} className="h-1.5 mt-1" />
+              </div>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {Object.entries(player.attributes).filter(([_, val]) => val != null).map(([key, val]) => (
+              {Object.entries(player.attributes).filter(([key, val]) => val != null && !(player.position === 'GOL' && key === 'goalkeeping')).map(([key, val]) => (
                 <div key={key} className="bg-muted/30 rounded p-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>

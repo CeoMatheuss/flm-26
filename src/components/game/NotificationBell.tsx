@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -211,7 +211,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       {open && (
         <>
           <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setOpen(false)} />
-          <Card className="absolute right-0 top-11 w-80 sm:w-[420px] z-50 shadow-2xl border-border/80">
+          <Card className="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-11 left-2 sm:left-auto w-auto sm:w-[420px] z-50 shadow-2xl border-border/80">
             <CardContent className="p-0">
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-card">
                 <div className="flex items-center gap-2">
@@ -223,6 +223,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
                     <Badge variant="destructive" className="text-[9px] px-1.5 h-4">{urgentCount} urgente(s)</Badge>
                   )}
                   <Badge variant="outline" className="text-[10px] h-5">{count}</Badge>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-1 hover:bg-destructive/20" onClick={() => setOpen(false)}>
+                    <X className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
               <ScrollArea className="max-h-[400px]">
