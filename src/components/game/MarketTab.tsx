@@ -171,7 +171,7 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     <div className="flex items-center gap-2 sm:gap-3 mb-2">
                       <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                       <div className="flex-1 min-w-0">
-                        <PlayerProfileModal player={player}>
+                        <PlayerProfileModal player={player} isFreeAgent scoutReport={report}>
                           <button className="font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
                         </PlayerProfileModal>
                         <p className="text-[10px] sm:text-xs text-muted-foreground">
