@@ -153,20 +153,17 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 }
 
 function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
-  const isFounder = userEmail === 'fcmsistemas7@gmail.com';
   const [isAdminRole, setIsAdminRole] = useState(false);
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
 
   useEffect(() => {
-    if (!isFounder) {
-      supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle().then(({ data }) => {
-        setIsAdminRole(!!data);
-      });
-    }
-  }, [userId, isFounder]);
+    supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle().then(({ data }) => {
+      setIsAdminRole(!!data);
+    });
+  }, [userId]);
 
-  const showAdmin = isFounder || isAdminRole;
+  const showAdmin = isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
@@ -441,7 +438,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </TabsContent>
           {showAdmin && (
             <TabsContent value="admin">
-              <AdminTab userId={userId} isFounder={isFounder} />
+              <AdminTab userId={userId} isFounder={isAdminRole} />
             </TabsContent>
           )}
         </Tabs>
