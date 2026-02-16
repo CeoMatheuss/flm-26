@@ -261,7 +261,7 @@ function LeagueView(props: Props) {
         </TabsList>
 
         <TabsContent value="standings">
-          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} />
+          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} />
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
@@ -281,8 +281,13 @@ function LeagueView(props: Props) {
 }
 
 // === STANDINGS ===
-function StandingsView({ members, userId, division }: { members: LeagueMember[]; userId: string; division: number }) {
-  const sorted = [...members].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+function StandingsView({ members, userId, division, leagueMatches }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[] }) {
+  const sorted = [...members].sort((a, b) => 
+    b.points - a.points || 
+    (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || 
+    b.goals_for - a.goals_for ||
+    a.losses - b.losses
+  );
   
   const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
@@ -292,45 +297,118 @@ function StandingsView({ members, userId, division }: { members: LeagueMember[];
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
+  // Get last 5 results for a user
+  const getLast5 = (uid: string) => {
+    const played = leagueMatches
+      .filter(m => m.status === 'played' && (m.home_user_id === uid || m.away_user_id === uid))
+      .sort((a, b) => (b.round || 0) - (a.round || 0))
+      .slice(0, 5);
+    return played.map(m => {
+      const isHome = m.home_user_id === uid;
+      const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
+      const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
+      if (myGoals > oppGoals) return 'W';
+      if (myGoals === oppGoals) return 'D';
+      return 'L';
+    }).reverse();
+  };
+
+  const totalTeams = sorted.length;
+  const getZone = (pos: number) => {
+    if (pos <= 1) return 'title'; // 🟢 champion
+    if (pos <= 6) return 'continental'; // 🔵 continental
+    if (pos > totalTeams - 4 && totalTeams > 8) return 'relegation'; // 🔴 relegation
+    return 'none';
+  };
+
+  const getZoneBorder = (zone: string) => {
+    if (zone === 'title') return 'border-l-2 border-l-emerald-500';
+    if (zone === 'continental') return 'border-l-2 border-l-blue-500';
+    if (zone === 'relegation') return 'border-l-2 border-l-rose-500';
+    return '';
+  };
+
+  const getZoneIcon = (zone: string) => {
+    if (zone === 'title') return '🟢';
+    if (zone === 'continental') return '🔵';
+    if (zone === 'relegation') return '🔴';
+    return '';
+  };
+
   return (
     <Card>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">#</TableHead>
+              <TableHead className="w-8 text-center">#</TableHead>
               <TableHead>Clube</TableHead>
-              <TableHead className="text-center w-10">J</TableHead>
-              <TableHead className="text-center w-10">SG</TableHead>
-              <TableHead className="text-center w-12 font-bold">P</TableHead>
-              <TableHead className="text-right w-20">Prêmio Est.</TableHead>
+              <TableHead className="text-center w-9">PTS</TableHead>
+              <TableHead className="text-center w-8">J</TableHead>
+              <TableHead className="text-center w-8">V</TableHead>
+              <TableHead className="text-center w-8">E</TableHead>
+              <TableHead className="text-center w-8">D</TableHead>
+              <TableHead className="text-center w-8">GP</TableHead>
+              <TableHead className="text-center w-8">GC</TableHead>
+              <TableHead className="text-center w-8">SG</TableHead>
+              <TableHead className="text-center w-24">Últ. 5</TableHead>
+              <TableHead className="text-right w-16">Prêmio</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.map((m, i) => {
               const isBot = m.user_id.startsWith('bot_');
-              const isPromotion = i < 4;
-              const isRelegation = i >= sorted.length - 4 && sorted.length > 8;
               const pos = i + 1;
+              const zone = getZone(pos);
+              const last5 = getLast5(m.user_id);
+              const sg = m.goals_for - m.goals_against;
               
               return (
-              <TableRow key={m.id} className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${isPromotion ? 'border-l-2 border-l-emerald-500' : isRelegation ? 'border-l-2 border-l-rose-500' : ''}`}>
-                <TableCell className={`${isPromotion ? 'text-emerald-400 font-bold' : isRelegation ? 'text-rose-400' : ''}`}>{pos}</TableCell>
-                <TableCell>
-                  <span className="mr-1">{m.club_logo}</span> {m.club_name}
-                  {isBot && <Badge variant="secondary" className="ml-1 text-[8px] px-1 py-0">BOT</Badge>}
+              <TableRow key={m.id} className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${getZoneBorder(zone)}`}>
+                <TableCell className="text-center text-xs">
+                  <span className="flex items-center justify-center gap-0.5">
+                    {getZoneIcon(zone)} {pos}
+                  </span>
                 </TableCell>
-                <TableCell className="text-center">{m.played}</TableCell>
-                <TableCell className="text-center">{m.goals_for - m.goals_against}</TableCell>
-                <TableCell className="text-center font-bold">{m.points}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">{m.club_logo}</span>
+                    <span className="text-xs font-semibold truncate max-w-[100px]">{m.club_name}</span>
+                    {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center text-xs font-bold">{m.points}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.played}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.wins}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.draws}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.losses}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.goals_for}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{m.goals_against}</TableCell>
+                <TableCell className={`text-center text-xs font-semibold ${sg > 0 ? 'text-emerald-400' : sg < 0 ? 'text-rose-400' : 'text-muted-foreground'}`}>{sg > 0 ? `+${sg}` : sg}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex gap-0.5 justify-center">
+                    {last5.length === 0 ? <span className="text-[10px] text-muted-foreground">—</span> : last5.map((r, ri) => (
+                      <span key={ri} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
+                        r === 'W' ? 'bg-emerald-500/20 text-emerald-400' : r === 'D' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                      }`}>{r === 'W' ? 'V' : r === 'D' ? 'E' : 'D'}</span>
+                    ))}
+                  </div>
+                </TableCell>
                 <TableCell className="text-right text-[10px] text-emerald-400 font-mono">
-                  R$ {getExpectedReward(pos)}
+                  {getExpectedReward(pos)}
                 </TableCell>
               </TableRow>
               );
             })}
           </TableBody>
         </Table>
+
+        {/* Legend */}
+        <div className="flex gap-3 px-3 py-2 border-t border-border/50 text-[10px] text-muted-foreground">
+          <span>🟢 Título</span>
+          <span>🔵 Continental</span>
+          <span>🔴 Rebaixamento</span>
+        </div>
       </CardContent>
     </Card>
   );
