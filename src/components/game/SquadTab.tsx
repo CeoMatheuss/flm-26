@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { BedDouble, TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse } from 'lucide-react';
 import { useState } from 'react';
+import { PlayerProfileModal } from './PlayerProfileModal';
 
 interface Props {
   players: Player[];
@@ -221,7 +222,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <CardContent className="p-2 sm:p-3">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <span className="flex-1 font-medium text-xs sm:text-sm truncate">{player.name}</span>
+                    <PlayerProfileModal player={player}>
+                      <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{player.name}</button>
+                    </PlayerProfileModal>
                     {player.injury && (
                       <Badge variant="destructive" className="text-[8px] px-1 h-4 gap-0.5 shrink-0">
                         <HeartPulse className="h-2.5 w-2.5" />
