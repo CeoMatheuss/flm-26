@@ -346,7 +346,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-4xl">{selectedTeam.club_logo}</span>
+              <Shield className="h-8 w-8 text-primary" />
               <div className="flex-1">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   {selectedTeam.club_name}
@@ -427,7 +427,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
                   <span className={`font-bold w-4 ${resultColor}`}>{result}</span>
                   <span className="font-mono">{myGoals} - {oppGoals}</span>
                   <span className="text-muted-foreground">vs</span>
-                  <span>{opp?.club_logo || '⚽'}</span>
+                  <span className="truncate font-medium">{opp?.club_name || '???'}</span>
                   <span className="truncate">{opp?.club_name || '???'}</span>
                 </div>
               );
@@ -479,8 +479,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-base">{m.club_logo}</span>
-                    <span className="text-xs font-semibold truncate max-w-[100px] text-primary hover:underline">{m.club_name}</span>
+                    <span className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline">{m.club_name}</span>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
                 </TableCell>
@@ -526,7 +525,7 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
 function MatchesView({ matches, members, userId, currentRound, totalRounds }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number }) {
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
-  const getLogo = (uid: string) => members.find(m => m.user_id === uid)?.club_logo || '⚽';
+  const getLogo = (_uid: string) => '';
   
   const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : totalRounds;
   const roundMatches = matches.filter(m => m.round === selectedRound);
@@ -574,7 +573,7 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds }: { 
               <div key={m.id} className={`p-3 rounded-lg border ${isMyMatch ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="text-sm">{getLogo(m.home_user_id)}</span>
+                    
                     <span className={`text-sm font-semibold truncate ${m.home_user_id === userId ? 'text-primary' : ''}`}>
                       {getClub(m.home_user_id)}
                     </span>
@@ -590,7 +589,7 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds }: { 
                     <span className={`text-sm font-semibold truncate ${m.away_user_id === userId ? 'text-primary' : ''}`}>
                       {getClub(m.away_user_id)}
                     </span>
-                    <span className="text-sm">{getLogo(m.away_user_id)}</span>
+                    
                   </div>
                 </div>
                 {m.status === 'played' && m.match_data?.events && (
@@ -662,7 +661,6 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
               <div key={m.id} className={`p-3 rounded-lg border ${isMe ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span>{m.club_logo}</span>
                     <span className="text-sm font-semibold">{m.club_name}</span>
                     {isMe && <Badge variant="outline" className="text-[10px]">Você</Badge>}
                   </div>
