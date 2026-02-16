@@ -53,6 +53,7 @@ export interface Player {
   history?: PlayerHistoryEntry[];
   matchRating?: number;
   seasonRatings?: number[];
+  shirtNumber?: number;
 }
 
 export interface Scout {

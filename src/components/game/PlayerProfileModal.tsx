@@ -1,9 +1,13 @@
 import { Player, PlayerAttributes } from '@/types/game';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScoutReport } from '@/types/game';
-import { EyeOff } from 'lucide-react';
+import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useState } from 'react';
+import { getPlayerValue } from '@/utils/playerGenerator';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
@@ -49,12 +53,25 @@ interface Props {
   children: React.ReactNode;
   isFreeAgent?: boolean;
   scoutReport?: ScoutReport;
+  isOwnPlayer?: boolean;
+  onListForSale?: (playerId: string) => void;
+  onLoanOut?: (playerId: string) => void;
+  onAuction?: (player: Player) => void;
+  onChangeNumber?: (playerId: string, number: number) => void;
+  canAuction?: boolean;
+  canLoanOut?: boolean;
+  playersCount?: number;
 }
 
-export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport }: Props) {
+export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport, isOwnPlayer, onListForSale, onLoanOut, onAuction, onChangeNumber, canAuction, canLoanOut, playersCount = 99 }: Props) {
+  const [shirtNumber, setShirtNumber] = useState<number>(player.shirtNumber || 0);
+  const [editingNumber, setEditingNumber] = useState(false);
+
   const avgRating = player.seasonRatings && player.seasonRatings.length > 0
     ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length)
     : null;
+
+  const auctionEligible = player.overall >= 65 && player.age <= 35;
 
   return (
     <Dialog>
@@ -65,9 +82,60 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
+            {player.shirtNumber != null && player.shirtNumber > 0 && (
+              <span className="text-[10px] font-mono bg-muted/50 px-1.5 py-0.5 rounded">#{player.shirtNumber}</span>
+            )}
             {player.name}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Action Buttons for own players */}
+        {isOwnPlayer && (
+          <div className="grid grid-cols-2 gap-1.5">
+            {onListForSale && (
+              <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onListForSale(player.id)}>
+                <Tag className="h-3 w-3" /> Lista de Transferência
+              </Button>
+            )}
+            {onLoanOut && (
+              <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (playersCount <= 11)}>
+                <ArrowLeftRight className="h-3 w-3" /> Emprestar
+              </Button>
+            )}
+            {onAuction && (
+              <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onAuction(player)} disabled={!auctionEligible || !canAuction}>
+                <Gavel className="h-3 w-3" /> Leilão
+                {!auctionEligible && <span className="text-[8px] text-muted-foreground">(OVR 65+ / ≤35a)</span>}
+              </Button>
+            )}
+            {onChangeNumber && (
+              <div className="flex items-center gap-1">
+                {editingNumber ? (
+                  <>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={shirtNumber}
+                      onChange={(e) => setShirtNumber(Math.min(99, Math.max(1, Number(e.target.value) || 1)))}
+                      className="h-7 w-16 text-[10px] px-1.5"
+                    />
+                    <Button size="sm" variant="default" className="h-7 px-2 text-[10px]" onClick={() => { onChangeNumber(player.id, shirtNumber); setEditingNumber(false); }}>
+                      OK
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setEditingNumber(false)}>
+                      ✕
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 w-full" onClick={() => { setShirtNumber(player.shirtNumber || 1); setEditingNumber(true); }}>
+                    <Hash className="h-3 w-3" /> Nº {player.shirtNumber || '—'}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Basic Info */}
         <div className="grid grid-cols-3 gap-2 text-xs">

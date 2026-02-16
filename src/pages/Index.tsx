@@ -256,7 +256,39 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           </div>
 
           <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('newspaper')} /></TabsContent>
-          <TabsContent value="squad"><SquadTab players={game.club.players} budget={game.club.budget} clubName={game.club.name} trainingLevel={game.infrastructure.trainingCenter.level} onRest={game.restPlayer} onRenewContract={game.renewContract} onListForSale={game.listForSale} /></TabsContent>
+          <TabsContent value="squad">
+            <SquadTab
+              players={game.club.players}
+              budget={game.club.budget}
+              clubName={game.club.name}
+              trainingLevel={game.infrastructure.trainingCenter.level}
+              onRest={game.restPlayer}
+              onRenewContract={game.renewContract}
+              onListForSale={game.listForSale}
+              onLoanOut={game.loanOutPlayer}
+              onChangeNumber={game.changeShirtNumber}
+              canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
+              userId={userId}
+              onAuction={async (player) => {
+                const halfValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
+                const { error } = await (await import('@/integrations/supabase/client')).supabase.from('player_auctions').insert([{
+                  seller_id: userId,
+                  seller_club_name: game.club.name,
+                  player_data: player as any,
+                  player_name: player.name,
+                  player_overall: player.overall,
+                  player_age: player.age,
+                  min_price: halfValue,
+                  current_bid: halfValue,
+                }]);
+                if (error) {
+                  (await import('sonner')).toast.error('Erro ao criar leilão');
+                } else {
+                  (await import('sonner')).toast.success(`${player.name} colocado em leilão!`);
+                }
+              }}
+            />
+          </TabsContent>
           <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="market">
             <MarketTab

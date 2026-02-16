@@ -656,6 +656,14 @@ export function useGame(initialState?: GameState) {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus,
   }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus]);
 
+  const changeShirtNumber = useCallback((playerId: string, number: number) => {
+    setClub(prev => ({
+      ...prev,
+      players: prev.players.map(p => p.id === playerId ? { ...p, shirtNumber: number } : p),
+    }));
+    toast.success(`Numeração alterada para #${number}`);
+  }, []);
+
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus,
@@ -664,6 +672,6 @@ export function useGame(initialState?: GameState) {
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
-    loanOutPlayer, loanInPlayer, setPlayerTrainingFocus,
+    loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
   };
 }
