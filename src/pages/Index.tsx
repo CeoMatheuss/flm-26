@@ -51,6 +51,7 @@ import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -160,12 +161,24 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 }
 
 function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
+
+  // Handle match result from MatchPage
+  useEffect(() => {
+    const st = location.state as { matchResult?: { matchId: string } } | null;
+    if (st?.matchResult) {
+      game.simulateMatch(st.matchResult.matchId);
+      // Clear state to prevent re-triggering
+      navigate('/', { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     // Server-side admin check only via user_roles table
@@ -427,6 +440,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               leagueTeams={game.leagueTeams}
               players={game.club.players}
               teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))}
+              tactics={game.tactics}
               onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
               onGenerateFriendlyVs={game.generateFriendlyVs}
