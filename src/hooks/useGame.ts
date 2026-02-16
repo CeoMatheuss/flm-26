@@ -23,6 +23,13 @@ export interface LoanedPlayer {
   seasonStart: number;
 }
 
+export interface RankingHistory {
+  season: number;
+  endRating: number;
+  position: number;
+  change: number;
+}
+
 export interface GameState {
   club: Club;
   tactics: TacticsConfig;
@@ -45,6 +52,8 @@ export interface GameState {
   clubProfile?: ClubProfile;
   ctRooms?: CTRooms;
   youthPromotedCount?: number;
+  ranking?: number;
+  rankingHistory?: RankingHistory[];
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -88,6 +97,8 @@ export function useGame(initialState?: GameState) {
    const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
    const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
    const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
+   const [ranking, setRanking] = useState(initialState?.ranking ?? 1000);
+   const [rankingHistory, setRankingHistory] = useState<RankingHistory[]>(initialState?.rankingHistory ?? []);
 
   const addFeedItem = useCallback((item: FeedItem) => {
     setFeedItems(prev => [item, ...prev].slice(0, 50));
@@ -119,6 +130,16 @@ export function useGame(initialState?: GameState) {
       const awayGoals = Math.floor(Math.random() * 3 * (opponentStrength / adjustedStrength));
       const isWin = homeGoals > awayGoals;
       const isDraw = homeGoals === awayGoals;
+
+      // Ranking update: opponent strength factor
+      const strengthDiff = (opponentTeam?.strength || 65) - teamStrength;
+      const strengthFactor = 1 + (strengthDiff / 100); // beating stronger teams = more points
+      const baseWin = 20, baseDraw = 5, baseLoss = -15;
+      const competitionWeight = 1.0; // liga nacional
+      const rankingDelta = Math.round(
+        (isWin ? baseWin : isDraw ? baseDraw : baseLoss) * strengthFactor * competitionWeight
+      );
+      setRanking(r => Math.max(100, r + rankingDelta));
 
       const stadiumBonus = infrastructure.stadium.level * 20000;
       const ticketRevenue = Math.floor(prev.fans * prev.ticketPrice * 0.1); // 10% of fans attend
@@ -652,6 +673,23 @@ export function useGame(initialState?: GameState) {
     const clubPos = sorted.findIndex(t => t.name === club.name) + 1;
     const seasonPrize = clubPos === 1 ? 5000000 : clubPos <= 4 ? 2000000 : 500000;
 
+    // Season ranking adjustment
+    const totalTeams = sorted.length;
+    let rankingSeasonMult = 0;
+    if (clubPos === 1) rankingSeasonMult = 0.10; // champion +10%
+    else if (clubPos <= 4) rankingSeasonMult = 0.05; // top 4 +5%
+    else if (clubPos <= Math.floor(totalTeams * 0.5)) rankingSeasonMult = 0; // mid table
+    else if (clubPos <= Math.floor(totalTeams * 0.75)) rankingSeasonMult = -0.05; // lower mid -5%
+    else if (clubPos <= totalTeams - 2) rankingSeasonMult = -0.10; // relegation zone -10%
+    else rankingSeasonMult = -0.20; // relegated -20%
+    
+    setRanking(prev => {
+      const adjusted = Math.max(100, Math.round(prev * (1 + rankingSeasonMult)));
+      const change = adjusted - prev;
+      setRankingHistory(h => [...h, { season: season.currentSeason, endRating: adjusted, position: clubPos, change }]);
+      return adjusted;
+    });
+
     // Season awards events
     const topScorer = [...club.players].sort((a, b) => (b.goals ?? 0) - (a.goals ?? 0))[0];
     const topAssister = [...club.players].sort((a, b) => (b.assists ?? 0) - (a.assists ?? 0))[0];
@@ -805,8 +843,8 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
@@ -833,7 +871,7 @@ export function useGame(initialState?: GameState) {
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
-    achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount,
+    achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
