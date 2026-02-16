@@ -272,19 +272,12 @@ function LeagueView(props: Props) {
 function StandingsView({ members, userId, division }: { members: LeagueMember[]; userId: string; division: number }) {
   const sorted = [...members].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
   
-  // Calculate expected reward based on position and division
+  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2];
+  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
   const getExpectedReward = (pos: number) => {
-    if (division === 1) {
-      if (pos === 1) return "50M"; if (pos === 2) return "30M"; if (pos === 3) return "20M";
-      if (pos <= 10) return "10M"; return "5M";
-    } else if (division === 2) {
-      if (pos === 1) return "20M"; if (pos === 2) return "15M"; if (pos === 3) return "10M";
-      if (pos <= 10) return "5M"; return "2M";
-    } else if (division === 3) {
-      if (pos === 1) return "10M"; if (pos === 2) return "7M"; if (pos === 3) return "5M"; return "1M";
-    } else {
-      if (pos === 1) return "5M"; if (pos === 2) return "3M"; if (pos === 3) return "2M"; return "500k";
-    }
+    const idx = Math.min(pos, 20) - 1;
+    const val = baseRewards[idx] / getDivisor(division);
+    return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
   return (
@@ -803,13 +796,13 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
       <Card className="border-emerald-500/20 bg-emerald-500/5">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">💰 PREMIAÇÕES POR DIVISÃO</CardTitle>
-          <CardDescription className="text-xs">Valores recebidos ao final da temporada</CardDescription>
+          <CardDescription className="text-xs">Valores da Série A como base • B=50% • C=25% • D=10%</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-emerald-500/10">
-                <TableHead className="text-xs h-8">Posição</TableHead>
+                <TableHead className="text-xs h-8">Pos</TableHead>
                 <TableHead className="text-xs h-8 text-right">Série A</TableHead>
                 <TableHead className="text-xs h-8 text-right">Série B</TableHead>
                 <TableHead className="text-xs h-8 text-right">Série C</TableHead>
@@ -817,43 +810,41 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow className="border-emerald-500/10">
-                <TableCell className="text-xs py-1 font-bold">1º Lugar</TableCell>
-                <TableCell className="text-xs py-1 text-right text-emerald-400 font-bold">R$ 50M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
-              </TableRow>
-              <TableRow className="border-emerald-500/10">
-                <TableCell className="text-xs py-1">2º Lugar</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 30M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 15M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 7M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 3M</TableCell>
-              </TableRow>
-              <TableRow className="border-emerald-500/10">
-                <TableCell className="text-xs py-1">3º Lugar</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 2M</TableCell>
-              </TableRow>
-              <TableRow className="border-emerald-500/10">
-                <TableCell className="text-xs py-1">4º-10º</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 500k</TableCell>
-              </TableRow>
-              <TableRow className="border-transparent">
-                <TableCell className="text-xs py-1">11º-30º</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 2M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
-                <TableCell className="text-xs py-1 text-right">R$ 500k</TableCell>
-              </TableRow>
+              {[
+                [1,20],[2,17],[3,14.5],[4,12.5],[5,11],[6,10],[7,9.2],[8,8.4],[9,7.8],[10,7.2],
+                [11,6.6],[12,6],[13,5.4],[14,4.8],[15,4.2],[16,3.6],[17,3],[18,2.4],[19,1.8],[20,1.2]
+              ].map(([pos, val]) => {
+                const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
+                return (
+                  <TableRow key={pos} className="border-emerald-500/10">
+                    <TableCell className={`text-xs py-1 ${pos <= 3 ? 'font-bold' : ''}`}>
+                      {pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `${pos}º`}
+                    </TableCell>
+                    <TableCell className={`text-xs py-1 text-right ${pos === 1 ? 'text-emerald-400 font-bold' : ''}`}>{fmt(val as number)}</TableCell>
+                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/2)}</TableCell>
+                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/4)}</TableCell>
+                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/10)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      {/* Continental Prizes */}
+      <Card className="border-amber-500/20 bg-amber-500/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">🌎 PREMIAÇÕES CONTINENTAIS</CardTitle>
+          <CardDescription className="text-xs">Sistema único para todas as competições continentais</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <div className="flex justify-between text-xs"><span>🥇 Campeão Continental</span><span className="text-amber-400 font-bold">R$ 30M</span></div>
+          <div className="flex justify-between text-xs"><span>🥈 Vice-campeão</span><span>R$ 15M</span></div>
+          <div className="flex justify-between text-xs"><span>🥉 Semifinalistas</span><span>R$ 7.5M</span></div>
+          <div className="flex justify-between text-xs"><span>🏟️ Participação fase de grupos</span><span>R$ 2M</span></div>
+          <div className="flex justify-between text-xs"><span>✅ Vitória na fase de grupos</span><span>R$ 500k</span></div>
+          <div className="flex justify-between text-xs"><span>➖ Empate na fase de grupos</span><span>R$ 250k</span></div>
         </CardContent>
       </Card>
 

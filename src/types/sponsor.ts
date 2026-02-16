@@ -22,7 +22,10 @@ const sponsorTypes: Sponsor['type'][] = ['camisa', 'estadio', 'treino', 'geral']
 export function generateSponsorOffers(reputation: number, count: number): SponsorOffer[] {
   return Array.from({ length: count }, () => {
     const type = sponsorTypes[Math.floor(Math.random() * sponsorTypes.length)];
-    const basePay = reputation * 1000 + Math.floor(Math.random() * reputation * 2000);
+    // Base multiplier by type: camisa pays most, geral least
+    const typeMultiplier = type === 'camisa' ? 1.5 : type === 'estadio' ? 1.2 : type === 'treino' ? 1.0 : 0.8;
+    // Much higher base values: reputation * 15k-45k range
+    const basePay = Math.floor((reputation * 15000 + Math.floor(Math.random() * reputation * 30000)) * typeMultiplier);
     const duration = Math.floor(Math.random() * 3) + 1;
     return {
       id: Math.random().toString(36).substr(2, 9),
