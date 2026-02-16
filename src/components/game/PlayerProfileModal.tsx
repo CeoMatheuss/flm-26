@@ -1,6 +1,8 @@
 import { Player, PlayerAttributes } from '@/types/game';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { ScoutReport } from '@/types/game';
+import { EyeOff } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 const posLabels: Record<string, string> = {
@@ -45,9 +47,11 @@ function getAttrColor(val: number): string {
 interface Props {
   player: Player;
   children: React.ReactNode;
+  isFreeAgent?: boolean;
+  scoutReport?: ScoutReport;
 }
 
-export function PlayerProfileModal({ player, children }: Props) {
+export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport }: Props) {
   const avgRating = player.seasonRatings && player.seasonRatings.length > 0
     ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length)
     : null;
@@ -73,7 +77,11 @@ export function PlayerProfileModal({ player, children }: Props) {
           </div>
           <div className="bg-muted/30 rounded p-2 text-center">
             <p className="text-[10px] text-muted-foreground">Overall</p>
-            <p className="font-bold text-lg text-primary">{player.overall}</p>
+            {isFreeAgent ? (
+              <p className="font-bold text-lg text-muted-foreground flex items-center justify-center gap-1"><EyeOff className="h-4 w-4" /> ???</p>
+            ) : (
+              <p className="font-bold text-lg text-primary">{player.overall}</p>
+            )}
           </div>
           <div className="bg-muted/30 rounded p-2 text-center">
             <p className="text-[10px] text-muted-foreground">Idade</p>
@@ -81,13 +89,33 @@ export function PlayerProfileModal({ player, children }: Props) {
           </div>
         </div>
 
+        {/* Scout Report Estimate */}
+        {isFreeAgent && scoutReport && (
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-2">
+            <p className="text-[10px] font-semibold text-primary mb-1">🔍 Relatório do Olheiro — OVR estimado: ~{scoutReport.estimatedOverall}</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1">
+              {(Object.entries(scoutReport.estimatedAttributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
+                <div key={key} className="bg-muted/30 rounded p-1 text-center">
+                  <p className="text-[8px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</p>
+                  <p className={`text-[10px] font-bold ${getAttrColor(val)}`}>{val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isFreeAgent && !scoutReport && (
+          <div className="bg-muted/20 border border-muted/30 rounded-lg p-3 text-center">
+            <EyeOff className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            <p className="text-[10px] text-muted-foreground">Contrate um olheiro para revelar os atributos deste jogador.</p>
+          </div>
+        )}
+
         {/* Contract & Salary */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-muted/30 rounded p-2">
             <p className="text-[10px] text-muted-foreground">📄 Contrato</p>
-            <p className={`font-semibold ${player.contract <= 1 ? 'text-destructive' : ''}`}>
-              {player.contract} {player.contract === 1 ? 'ano' : 'anos'} {player.contract <= 1 && '⚠️'}
-            </p>
+            <p className="font-semibold">{isFreeAgent ? 'Livre' : `${player.contract} ${player.contract === 1 ? 'ano' : 'anos'}${player.contract <= 1 ? ' ⚠️' : ''}`}</p>
           </div>
           <div className="bg-muted/30 rounded p-2">
             <p className="text-[10px] text-muted-foreground">💰 Salário</p>
@@ -95,33 +123,35 @@ export function PlayerProfileModal({ player, children }: Props) {
           </div>
         </div>
 
-        {/* Career Stats */}
-        <div>
-          <p className="text-xs font-semibold mb-1.5">🏆 Estatísticas da Carreira</p>
-          <div className="grid grid-cols-4 gap-1.5 text-xs">
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[10px] text-muted-foreground">Jogos</p>
-              <p className="font-bold">{player.gamesPlayed}</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
-              <p className="font-bold">{player.goals}</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
-              <p className="font-bold">{player.assists}</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[10px] text-muted-foreground">★ Média</p>
-              <p className={`font-bold ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
-                {avgRating ? avgRating.toFixed(1) : '—'}
-              </p>
+        {/* Career Stats - hidden for free agents */}
+        {!isFreeAgent && (
+          <div>
+            <p className="text-xs font-semibold mb-1.5">🏆 Estatísticas da Carreira</p>
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Jogos</p>
+                <p className="font-bold">{player.gamesPlayed}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
+                <p className="font-bold">{player.goals}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
+                <p className="font-bold">{player.assists}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">★ Média</p>
+                <p className={`font-bold ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                  {avgRating ? avgRating.toFixed(1) : '—'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Match Rating */}
-        {player.matchRating != null && (
+        {!isFreeAgent && player.matchRating != null && (
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">Nota última partida:</span>
             <span className={`font-bold ${player.matchRating >= 7 ? 'text-emerald-400' : player.matchRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
@@ -130,39 +160,43 @@ export function PlayerProfileModal({ player, children }: Props) {
           </div>
         )}
 
-        {/* Stamina & Morale */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-              <span>⚡ Energia</span>
-              <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
-            </div>
-            <Progress value={player.stamina} className="h-1.5" />
-          </div>
-          <div>
-            <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-              <span>😊 Moral</span>
-              <span>{player.morale}%</span>
-            </div>
-            <Progress value={player.morale} className="h-1.5" />
-          </div>
-        </div>
-
-        {/* All Attributes */}
-        <div>
-          <p className="text-xs font-semibold mb-1.5">📊 Atributos</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-            {Object.entries(player.attributes).filter(([_, val]) => val != null).map(([key, val]) => (
-              <div key={key} className="bg-muted/30 rounded p-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
-                  <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
-                </div>
-                <Progress value={val as number} className="h-1 mt-0.5" />
+        {/* Stamina & Morale - hidden for free agents */}
+        {!isFreeAgent && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                <span>⚡ Energia</span>
+                <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
               </div>
-            ))}
+              <Progress value={player.stamina} className="h-1.5" />
+            </div>
+            <div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                <span>😊 Moral</span>
+                <span>{player.morale}%</span>
+              </div>
+              <Progress value={player.morale} className="h-1.5" />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* All Attributes - hidden for free agents */}
+        {!isFreeAgent && (
+          <div>
+            <p className="text-xs font-semibold mb-1.5">📊 Atributos</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {Object.entries(player.attributes).filter(([_, val]) => val != null).map(([key, val]) => (
+                <div key={key} className="bg-muted/30 rounded p-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
+                    <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                  </div>
+                  <Progress value={val as number} className="h-1 mt-0.5" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* History */}
         <div>
