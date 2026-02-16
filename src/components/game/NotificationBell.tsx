@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Bell, X, ChevronDown, CheckCheck } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, X, ChevronDown, CheckCheck, Check, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Player } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -13,6 +15,20 @@ interface Notification {
   title: string;
   message: string;
   type: 'warning' | 'info' | 'danger' | 'success';
+  actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
+}
+
+interface FriendlyInvite {
+  id: string;
+  sender_club_name: string;
+  sender_stadium: string;
+  sender_stadium_capacity: number;
+  receiver_stadium: string;
+  receiver_stadium_capacity: number;
+  home_team_id: string;
+  sender_id: string;
+  receiver_id: string;
+  match_date: string;
 }
 
 interface Props {
@@ -22,15 +38,79 @@ interface Props {
   clubName: string;
   infrastructure: Infrastructure;
   isNewClub?: boolean;
+  userId: string;
 }
 
-export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub }: Props) {
+export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub, userId }: Props) {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
   const PREVIEW_COUNT = 5;
 
+  const loadInvites = useCallback(async () => {
+    const { data } = await supabase
+      .from('friendly_invites')
+      .select('*')
+      .eq('receiver_id', userId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    if (data) setPendingInvites(data as unknown as FriendlyInvite[]);
+  }, [userId]);
+
+  useEffect(() => {
+    loadInvites();
+    const channel = supabase
+      .channel('bell-friendly-invites')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadInvites]);
+
+  const respondInvite = async (inviteId: string, accept: boolean) => {
+    setRespondingId(inviteId);
+    const { error } = await supabase
+      .from('friendly_invites')
+      .update({ status: accept ? 'accepted' : 'rejected' })
+      .eq('id', inviteId);
+    if (error) toast.error('Erro ao responder');
+    else toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+    setRespondingId(null);
+    loadInvites();
+  };
+
   const notifications: Notification[] = [];
+
+  // Friendly invite notifications
+  pendingInvites.forEach(invite => {
+    const isHome = invite.home_team_id === userId;
+    const stadium = isHome ? invite.receiver_stadium : invite.sender_stadium;
+    const capacity = isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity;
+    const dateStr = new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+    notifications.push({
+      id: `invite-${invite.id}`,
+      icon: '⚔️',
+      title: `${invite.sender_club_name} quer jogar!`,
+      message: `📅 ${dateStr} • 🏟️ ${isHome ? invite.receiver_stadium : invite.sender_stadium} (${(isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity).toLocaleString()}) • ${isHome ? 'Você é mandante' : 'Você é visitante'}`,
+      type: 'warning',
+      actions: [
+        {
+          label: 'Aceitar',
+          icon: <Check className="h-3 w-3" />,
+          variant: 'default',
+          onClick: () => respondInvite(invite.id, true),
+        },
+        {
+          label: 'Recusar',
+          icon: <XCircle className="h-3 w-3" />,
+          variant: 'destructive',
+          onClick: () => respondInvite(invite.id, false),
+        },
+      ],
+    });
+  });
 
   if (isNewClub) {
     notifications.push({
@@ -102,7 +182,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   }
 
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
-  const urgentCount = notifications.filter(n => n.type === 'danger' && !readIds.includes(n.id)).length;
+  const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !readIds.includes(n.id)).length;
   const displayedNotifications = showAll ? notifications : notifications.slice(0, PREVIEW_COUNT);
   const hasMore = notifications.length > PREVIEW_COUNT;
 
@@ -163,20 +243,34 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
                       return (
                         <div
                           key={n.id}
-                          className={`p-2.5 rounded-lg border-l-[3px] ${typeBorder[n.type]} ${typeBg[n.type]} cursor-pointer hover:opacity-80 transition-all ${isRead ? 'opacity-50' : ''}`}
-                          onClick={() => markAsRead(n.id)}
+                          className={`p-2.5 rounded-lg border-l-[3px] ${typeBorder[n.type]} ${typeBg[n.type]} ${isRead && !n.actions ? 'opacity-50' : ''}`}
                         >
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex items-center gap-2 mb-0.5" onClick={() => !n.actions && markAsRead(n.id)}>
                             <span className="text-sm">{n.icon}</span>
                             <p className="text-[11px] font-bold flex-1">{n.title}</p>
                             {!isRead && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
                           </div>
                           <p className="text-[10px] text-muted-foreground leading-relaxed ml-6">{n.message}</p>
+                          {n.actions && (
+                            <div className="flex gap-1.5 ml-6 mt-2">
+                              {n.actions.map((action, i) => (
+                                <Button
+                                  key={i}
+                                  size="sm"
+                                  variant={action.variant}
+                                  className="h-7 text-[10px] gap-1 flex-1"
+                                  onClick={(e) => { e.stopPropagation(); action.onClick(); }}
+                                  disabled={respondingId !== null}
+                                >
+                                  {action.icon} {action.label}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
 
-                    {/* Ver Todos / Recolher */}
                     {hasMore && (
                       <Button
                         variant="ghost"
