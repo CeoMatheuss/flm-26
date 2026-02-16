@@ -116,9 +116,17 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                     </Badge>
                   )}
                 </div>
-                {/* Stadium info */}
-                <div className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
-                  🏟️ {nextMatch.stadium || stadiumName}
+                {/* Stadium info with capacity */}
+                <div className="text-[10px] text-muted-foreground mb-2 space-y-0.5">
+                  <div className="flex items-center gap-1">🏟️ {nextMatch.stadium || stadiumName}</div>
+                  {nextMatch.stadiumCapacity && (
+                    <div className="text-[9px] text-muted-foreground/60">Capacidade: {nextMatch.stadiumCapacity.toLocaleString()} lugares</div>
+                  )}
+                  <div className="text-[9px]">
+                    <span className="font-medium">{nextMatch.isHome ? clubName : nextMatch.opponent}</span>
+                    <span className="text-muted-foreground/50"> (Mandante) vs </span>
+                    <span>{nextMatch.isHome ? nextMatch.opponent : clubName}</span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -209,7 +217,11 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="truncate">{match.opponent}</span>
-                    {match.stadium && <span className="text-[8px] text-muted-foreground/50 truncate">🏟️ {match.stadium}</span>}
+                    {match.stadium && (
+                      <span className="text-[8px] text-muted-foreground/50 truncate">
+                        🏟️ {match.stadium}{match.stadiumCapacity ? ` (${match.stadiumCapacity.toLocaleString()})` : ''}
+                      </span>
+                    )}
                   </div>
                   {match.result && (
                     <span className={`font-bold font-mono px-1.5 py-0.5 rounded bg-muted/50 ${resultColor}`}>

@@ -97,6 +97,60 @@ export type Database = {
           },
         ]
       }
+      friendly_invites: {
+        Row: {
+          created_at: string
+          home_team_id: string
+          id: string
+          match_date: string
+          match_result: Json | null
+          receiver_club_name: string
+          receiver_id: string
+          receiver_stadium: string
+          receiver_stadium_capacity: number
+          sender_club_name: string
+          sender_id: string
+          sender_stadium: string
+          sender_stadium_capacity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          home_team_id: string
+          id?: string
+          match_date: string
+          match_result?: Json | null
+          receiver_club_name?: string
+          receiver_id: string
+          receiver_stadium?: string
+          receiver_stadium_capacity?: number
+          sender_club_name?: string
+          sender_id: string
+          sender_stadium?: string
+          sender_stadium_capacity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          home_team_id?: string
+          id?: string
+          match_date?: string
+          match_result?: Json | null
+          receiver_club_name?: string
+          receiver_id?: string
+          receiver_stadium?: string
+          receiver_stadium_capacity?: number
+          sender_club_name?: string
+          sender_id?: string
+          sender_stadium?: string
+          sender_stadium_capacity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_saves: {
         Row: {
           club_data: Json
