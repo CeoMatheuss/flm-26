@@ -55,6 +55,24 @@ interface SimPlayer {
   isOnPitch: boolean;
   stamina: number;
   morale: number;
+  // Individual attributes
+  speed: number;
+  shooting: number;
+  passing: number;
+  defending: number;
+  physical: number;
+  dribbling: number;
+  heading: number;
+  marking: number;
+  vision: number;
+  crossing: number;
+  longShots: number;
+  workRate: number;
+  composure: number;
+  aggression: number;
+  goalkeeping: number;
+  setPieces: number;
+  positioning: number;
 }
 
 interface MatchStats {
@@ -227,29 +245,73 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     return { homeAdv, moraleMod, fatigueMod, pressingMod, offensiveMod, tempoMod, longPassMod, shortPassMod, highLineMod };
   }, [isHome, homePlayers, pressing, playStyle, tempo, passingStyle, defenseLine]);
 
+  // Helper to extract attributes from a Player
+  const extractAttrs = useCallback((p: Player) => ({
+    speed: p.attributes.speed || 50,
+    shooting: p.attributes.shooting || 50,
+    passing: p.attributes.passing || 50,
+    defending: p.attributes.defending || 50,
+    physical: p.attributes.physical || 50,
+    dribbling: p.attributes.dribbling || 50,
+    heading: p.attributes.heading || 50,
+    marking: p.attributes.marking || 50,
+    vision: p.attributes.vision || 50,
+    crossing: p.attributes.crossing || 50,
+    longShots: p.attributes.longShots || 50,
+    workRate: p.attributes.workRate || 50,
+    composure: p.attributes.composure || 50,
+    aggression: p.attributes.aggression || 50,
+    goalkeeping: p.attributes.goalkeeping || 0,
+    setPieces: p.attributes.setPieces || 50,
+    positioning: p.attributes.positioning || 50,
+  }), []);
+
+  const genAwayAttrs = useCallback((ovr: number, pos: string) => {
+    const base = ovr;
+    const variance = () => Math.floor(base + (rng() * 16 - 8));
+    const isGK = pos === 'GOL';
+    const isDef = pos === 'ZAG' || pos === 'LAT';
+    const isAtt = pos === 'ATA';
+    return {
+      speed: variance(), shooting: isAtt ? variance() + 5 : variance() - 5,
+      passing: variance(), defending: isDef ? variance() + 5 : variance() - 5,
+      physical: variance(), dribbling: isAtt ? variance() + 3 : variance(),
+      heading: isDef ? variance() + 3 : variance(), marking: isDef ? variance() + 5 : variance() - 5,
+      vision: variance(), crossing: variance(), longShots: variance(),
+      workRate: variance(), composure: variance(), aggression: variance(),
+      goalkeeping: isGK ? variance() + 10 : 0, setPieces: variance(), positioning: variance(),
+    };
+  }, []);
+
   // Init sim players
   useEffect(() => {
     const starters = startingIds.map(id => allHomePlayers.find(p => p.id === id)!).filter(Boolean);
     const home: SimPlayer[] = starters.map((p, i) => {
       const slot = HOME_SLOTS[i] || HOME_SLOTS[HOME_SLOTS.length - 1];
+      const attrs = extractAttrs(p);
       return {
         id: p.id, name: p.name.split(' ').pop() || p.name, fullName: p.name,
         position: p.position, x: slot.x, y: slot.y, homeX: slot.x, homeY: slot.y,
-        team: 'home', ovr: p.overall, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
+        team: 'home' as const, ovr: p.overall, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
         isOnPitch: true, stamina: p.stamina || 80, morale: p.morale || 70,
+        ...attrs,
       };
     });
     const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
-    const away: SimPlayer[] = AWAY_SLOTS.map((slot, i) => ({
-      id: `a${i}`, name: awayNames[i] || `Jog.${i+1}`, fullName: `${awayNames[i] || 'Jogador'} ${i+1}`,
-      position: i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA',
-      x: slot.x, y: slot.y, homeX: slot.x, homeY: slot.y,
-      team: 'away', ovr: Math.floor(awayStrength + (rng() * 8 - 4)),
-      rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true,
-      stamina: 70 + Math.floor(rng() * 20), morale: 60 + Math.floor(rng() * 30),
-    }));
+    const away: SimPlayer[] = AWAY_SLOTS.map((slot, i) => {
+      const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
+      const ovr = Math.floor(awayStrength + (rng() * 8 - 4));
+      const attrs = genAwayAttrs(ovr, pos);
+      return {
+        id: `a${i}`, name: awayNames[i] || `Jog.${i+1}`, fullName: `${awayNames[i] || 'Jogador'} ${i+1}`,
+        position: pos, x: slot.x, y: slot.y, homeX: slot.x, homeY: slot.y,
+        team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
+        isOnPitch: true, stamina: 70 + Math.floor(rng() * 20), morale: 60 + Math.floor(rng() * 30),
+        ...attrs,
+      };
+    });
     playersRef.current = [...home, ...away];
-  }, [startingIds, allHomePlayers, awayStrength]);
+  }, [startingIds, allHomePlayers, awayStrength, extractAttrs, genAwayAttrs]);
 
   // Movement targets
   useEffect(() => {
@@ -296,11 +358,36 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     ballTargetRef.current = { x: clamp(x, 3, 97), y: clamp(y, 3, 97) };
   }, []);
 
+  // Attribute-weighted player selection
   const pickPlayer = useCallback((team: 'home' | 'away', posFilter?: string): SimPlayer | null => {
     let pool = playersRef.current.filter(p => p.team === team && p.isOnPitch);
     if (posFilter) pool = pool.filter(p => p.position === posFilter);
     if (pool.length === 0) pool = playersRef.current.filter(p => p.team === team && p.isOnPitch);
     return pool.length > 0 ? pick(pool) : null;
+  }, []);
+
+  // Pick player weighted by a specific attribute (higher attr = more likely to be chosen)
+  const pickByAttr = useCallback((team: 'home' | 'away', attr: keyof SimPlayer, posFilter?: string): SimPlayer | null => {
+    let pool = playersRef.current.filter(p => p.team === team && p.isOnPitch);
+    if (posFilter) pool = pool.filter(p => p.position === posFilter);
+    if (pool.length === 0) pool = playersRef.current.filter(p => p.team === team && p.isOnPitch);
+    if (pool.length === 0) return null;
+    // Weighted random: higher attribute = more likely
+    const weights = pool.map(p => Math.max(1, Number(p[attr]) || 50));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = rng() * total;
+    for (let i = 0; i < pool.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }, []);
+
+  // Get average attribute for a team
+  const teamAvgAttr = useCallback((team: 'home' | 'away', attr: keyof SimPlayer): number => {
+    const pool = playersRef.current.filter(p => p.team === team && p.isOnPitch);
+    if (pool.length === 0) return 50;
+    return pool.reduce((s, p) => s + (Number(p[attr]) || 50), 0) / pool.length;
   }, []);
 
   const playerName = useCallback((team: 'home' | 'away', pos?: string): string => {
@@ -327,16 +414,20 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     lastEventMinRef.current = min;
     eventCountRef.current++;
 
-    // Team determination: strength ratio with home advantage and morale
-    const effectiveHome = homeStrength * mods.homeAdv * mods.moraleMod * mods.fatigueMod;
-    const ratio = effectiveHome / (effectiveHome + awayStrength);
+    // Team determination: use avg passing+vision+speed as offensive strength proxy
+    const homeOff = (teamAvgAttr('home', 'shooting') + teamAvgAttr('home', 'passing') + teamAvgAttr('home', 'speed')) / 3;
+    const awayOff = (teamAvgAttr('away', 'shooting') + teamAvgAttr('away', 'passing') + teamAvgAttr('away', 'speed')) / 3;
+    const effectiveHome = homeOff * mods.homeAdv * mods.moraleMod * mods.fatigueMod;
+    const effectiveAway = awayOff;
+    const ratio = effectiveHome / (effectiveHome + effectiveAway);
     const teamIdx: 0 | 1 = rng() < ratio ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
+    const oppTeamKey: 'home' | 'away' = team === 'home' ? 'away' : 'home';
     const pName = playerName(team);
     const pName2 = playerName(team);
-    const oppName = playerName(team === 'home' ? 'away' : 'home');
+    const oppName = playerName(oppTeamKey);
 
     // Guarantee checks for late game (after minute 75)
     const g = guaranteesRef.current;
@@ -459,25 +550,36 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       ]), team, playerName: pName };
     }
 
-    // Dribble OK (4%)
+    // Dribble OK (4%) - weighted by dribbling attribute
     cumul += 0.04;
     if (r < cumul) {
-      moveBall(ballRef.current.x + (team === 'home' ? 12 : -12), ballRef.current.y + (rng() - 0.5) * 15);
-      const p = pickPlayer(team); if (p) p.rating = Math.min(10, p.rating + 0.15);
-      return { minute: min, type: 'dribble_ok', description: pick([
-        `✨ ${pName} dribla com classe e avança pelo campo!`,
-        `✨ Olé! ${pName} passa por dois marcadores!`,
-        `✨ Drible desconcertante de ${pName}!`,
-        `✨ ${pName} finta o marcador com elegância!`,
-      ]), team, playerName: pName };
+      const dribblerAttr = teamAvgAttr(team, 'dribbling');
+      const defenderAttr = teamAvgAttr(oppTeamKey, 'marking');
+      const successChance = dribblerAttr / (dribblerAttr + defenderAttr);
+      if (rng() < successChance) {
+        moveBall(ballRef.current.x + (team === 'home' ? 12 : -12), ballRef.current.y + (rng() - 0.5) * 15);
+        const p = pickByAttr(team, 'dribbling'); if (p) p.rating = Math.min(10, p.rating + 0.15);
+        return { minute: min, type: 'dribble_ok', description: pick([
+          `✨ ${p?.name || pName} dribla com classe e avança pelo campo!`,
+          `✨ Olé! ${p?.name || pName} passa por dois marcadores!`,
+          `✨ Drible desconcertante de ${p?.name || pName}!`,
+        ]), team, playerName: p?.name || pName };
+      } else {
+        const def = pickByAttr(oppTeamKey, 'marking');
+        return { minute: min, type: 'dribble_fail', description: pick([
+          `🛑 ${pName} tenta o dribble mas ${def?.name || oppName} desarma!`,
+          `🛑 Dribble interceptado! ${def?.name || oppName} recupera a bola.`,
+        ]), team, playerName: pName };
+      }
     }
 
-    // Dribble intercepted (3%)
+    // Dribble intercepted (3%) - weighted by defender marking
     cumul += 0.03;
     if (r < cumul) {
+      const def = pickByAttr(oppTeamKey, 'marking');
       return { minute: min, type: 'dribble_fail', description: pick([
-        `🛑 ${pName} tenta o dribble mas ${oppName} desarma!`,
-        `🛑 Dribble interceptado! ${oppName} recupera a bola.`,
+        `🛑 ${pName} tenta o dribble mas ${def?.name || oppName} desarma!`,
+        `🛑 Dribble interceptado! ${def?.name || oppName} recupera a bola.`,
       ]), team, playerName: pName };
     }
 
@@ -564,30 +666,31 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       ]), team, playerName: pName };
     }
 
-    // Strong shot (2.5%)
+    // Strong shot (2.5%) - pick by shooting attribute
     cumul += 0.025 * mods.offensiveMod;
     if (r < cumul) {
       moveBall(team === 'home' ? 88 : 12, 40 + rng() * 20);
       updateStat('shots', teamIdx);
       updateStat('shotsOnTarget', teamIdx);
-      const p = pickPlayer(team); if (p) p.rating = Math.min(10, p.rating + 0.15);
+      const p = pickByAttr(team, 'shooting'); if (p) p.rating = Math.min(10, p.rating + 0.15);
       return { minute: min, type: 'strong_shot', description: pick([
-        `🎯 ${pName} chuta forte! Goleiro do ${opp} faz boa defesa!`,
-        `🎯 Finalização potente de ${pName}! Bola desviada para escanteio!`,
-        `🎯 ${pName} solta a bomba de fora da área! Goleiro espalma!`,
-      ]), team, playerName: pName };
+        `🎯 ${p?.name || pName} chuta forte! Goleiro do ${opp} faz boa defesa!`,
+        `🎯 Finalização potente de ${p?.name || pName}! Bola desviada para escanteio!`,
+        `🎯 ${p?.name || pName} solta a bomba de fora da área! Goleiro espalma!`,
+      ]), team, playerName: p?.name || pName };
     }
 
-    // Long shot (2%)
+    // Long shot (2%) - pick by longShots attribute
     cumul += 0.02;
     if (r < cumul) {
       moveBall(team === 'home' ? 75 : 25, 40 + rng() * 20);
       updateStat('shots', teamIdx);
+      const p = pickByAttr(team, 'longShots');
       return { minute: min, type: 'long_shot', description: pick([
-        `💣 ${pName} arrisca de fora da área! Bola passa por cima!`,
-        `💣 Chute de longe de ${pName}! Quase!`,
-        `💣 ${pName} tenta o chute de longa distância! Raspa a trave!`,
-      ]), team, playerName: pName };
+        `💣 ${p?.name || pName} arrisca de fora da área! Bola passa por cima!`,
+        `💣 Chute de longe de ${p?.name || pName}! Quase!`,
+        `💣 ${p?.name || pName} tenta o chute de longa distância! Raspa a trave!`,
+      ]), team, playerName: p?.name || pName };
     }
 
     // Shot blocked (2%)
@@ -653,66 +756,93 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       ]), team, playerName: pName };
     }
 
-    // === GOALS (3.5% total) ===
-    // Foot goal (2.5%)
+    // === GOALS - shooting vs goalkeeping determines if it goes in ===
+    // Foot goal attempt (2.5%)
     cumul += 0.025 * mods.offensiveMod;
     if (r < cumul) {
       moveBall(team === 'home' ? 92 : 8, 45 + rng() * 10);
       g.hasGoalOrChance = true;
-      const goalTypes = ['chute rasteiro', 'chute colocado', 'voleio', 'toque de primeira', 'chute cruzado', 'pênalti', 'chute de longe'];
-      const goalType = pick(goalTypes);
-      const scorer = pickPlayer(team, rng() > 0.6 ? 'ATA' : undefined);
-      let assistName: string | undefined;
-      if (scorer) {
-        scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
-        if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
-        else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
-        const others = playersRef.current.filter(p => p.team === team && p.id !== scorer.id && p.isOnPitch);
-        if (others.length > 0 && rng() < 0.65) {
-          const assister = pick(others);
-          assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
-          assistName = assister.name;
+      // Pick scorer weighted by shooting
+      const scorer = pickByAttr(team, 'shooting', rng() > 0.6 ? 'ATA' : undefined);
+      const gk = pickByAttr(oppTeamKey, 'goalkeeping', 'GOL');
+      const shooterSkill = scorer ? (scorer.shooting * 0.6 + scorer.composure * 0.2 + scorer.positioning * 0.2) : 60;
+      const gkSkill = gk ? (gk.goalkeeping * 0.7 + gk.positioning * 0.3) : 55;
+      // Goal probability: shooter vs keeper
+      const goalProb = clamp(shooterSkill / (shooterSkill + gkSkill) + 0.05, 0.25, 0.75);
+      if (rng() < goalProb) {
+        const goalTypes = ['chute rasteiro', 'chute colocado', 'voleio', 'toque de primeira', 'chute cruzado', 'pênalti', 'chute de longe'];
+        const goalType = pick(goalTypes);
+        let assistName: string | undefined;
+        if (scorer) {
+          scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
+          if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
+          else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
+          const others = playersRef.current.filter(p => p.team === team && p.id !== scorer.id && p.isOnPitch);
+          if (others.length > 0 && rng() < 0.65) {
+            const assister = pickByAttr(team, 'vision') || pick(others);
+            assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
+            assistName = assister.name;
+          }
+        } else {
+          if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
+          else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
         }
+        updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
+        setGoalFlash(true); setTimeout(() => setGoalFlash(false), 1200);
+        return { minute: min, type: 'foot_goal', description: pick([
+          `⚽ GOOOOL! ${scorer?.name || pName} marca com um ${goalType} para o ${tName}!`,
+          `⚽ GOOOOL! Que golaço de ${scorer?.name || pName}! ${goalType} espetacular!`,
+          `⚽ GOOOOL! ${scorer?.name || pName} não perdoa! ${goalType} certeiro!`,
+        ]), team, playerName: scorer?.name || pName, assistName, goalType, isGoal: true };
       } else {
-        if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
-        else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
+        // Saved - great save
+        updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
+        updateStat('saves', teamIdx === 0 ? 1 : 0);
+        if (gk) gk.rating = Math.min(10, gk.rating + 0.3);
+        return { minute: min, type: 'great_save', description: pick([
+          `🧤🔥 DEFESAÇA do goleiro do ${opp}! ${scorer?.name || pName} chuta forte e o goleiro salva!`,
+          `🧤🔥 ${scorer?.name || pName} finaliza no ângulo mas o goleiro faz milagre!`,
+        ]), team, playerName: scorer?.name || pName };
       }
-      updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
-      setGoalFlash(true); setTimeout(() => setGoalFlash(false), 1200);
-      return { minute: min, type: 'foot_goal', description: pick([
-        `⚽ GOOOOL! ${scorer?.name || pName} marca com um ${goalType} para o ${tName}!`,
-        `⚽ GOOOOL! Que golaço de ${scorer?.name || pName}! ${goalType} espetacular!`,
-        `⚽ GOOOOL! ${scorer?.name || pName} não perdoa! ${goalType} certeiro!`,
-        `⚽ GOOOOL! Bola na rede! ${scorer?.name || pName} balança tudo!`,
-      ]), team, playerName: scorer?.name || pName, assistName, goalType, isGoal: true };
     }
 
-    // Header goal (0.8%)
+    // Header goal (0.8%) - weighted by heading attribute
     cumul += 0.008;
     if (r < cumul) {
       moveBall(team === 'home' ? 90 : 10, 45 + rng() * 10);
       g.hasGoalOrChance = true;
-      const scorer = pickPlayer(team, 'ZAG') || pickPlayer(team);
-      let assistName: string | undefined;
-      if (scorer) {
-        scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
-        if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
-        else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
-        const others = playersRef.current.filter(p => p.team === team && p.id !== scorer.id && p.isOnPitch);
-        if (others.length > 0 && rng() < 0.7) {
-          const assister = pick(others); assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
-          assistName = assister.name;
+      const scorer = pickByAttr(team, 'heading') || pickPlayer(team);
+      const gk = pickByAttr(oppTeamKey, 'goalkeeping', 'GOL');
+      const headingSkill = scorer ? (scorer.heading * 0.7 + scorer.physical * 0.3) : 55;
+      const gkSkill = gk ? gk.goalkeeping : 55;
+      const goalProb = clamp(headingSkill / (headingSkill + gkSkill) + 0.05, 0.3, 0.7);
+      if (rng() < goalProb) {
+        let assistName: string | undefined;
+        if (scorer) {
+          scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
+          if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
+          else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
+          const others = playersRef.current.filter(p => p.team === team && p.id !== scorer.id && p.isOnPitch);
+          if (others.length > 0 && rng() < 0.7) {
+            const assister = pickByAttr(team, 'crossing') || pick(others);
+            assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
+            assistName = assister.name;
+          }
+        } else {
+          if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
+          else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
         }
+        updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
+        setGoalFlash(true); setTimeout(() => setGoalFlash(false), 1200);
+        return { minute: min, type: 'header_goal', description: pick([
+          `⚽🤕 GOL DE CABEÇA! ${scorer?.name || pName} sobe mais alto que todos!`,
+          `⚽🤕 GOL! ${scorer?.name || pName} desvia de cabeça e a bola morre no canto!`,
+        ]), team, playerName: scorer?.name || pName, assistName, goalType: 'cabeceio', isGoal: true };
       } else {
-        if (team === 'home') { homeGoalsRef.current++; setHomeGoals(homeGoalsRef.current); }
-        else { awayGoalsRef.current++; setAwayGoals(awayGoalsRef.current); }
+        updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
+        updateStat('saves', teamIdx === 0 ? 1 : 0);
+        return { minute: min, type: 'great_save', description: `🧤 Cabeceio de ${scorer?.name || pName} e o goleiro do ${opp} defende!`, team, playerName: scorer?.name || pName };
       }
-      updateStat('shots', teamIdx); updateStat('shotsOnTarget', teamIdx);
-      setGoalFlash(true); setTimeout(() => setGoalFlash(false), 1200);
-      return { minute: min, type: 'header_goal', description: pick([
-        `⚽🤕 GOL DE CABEÇA! ${scorer?.name || pName} sobe mais alto que todos e cabeceia para o fundo das redes!`,
-        `⚽🤕 GOL! ${scorer?.name || pName} desvia de cabeça e a bola morre no canto!`,
-      ]), team, playerName: scorer?.name || pName, assistName, goalType: 'cabeceio', isGoal: true };
     }
 
     // Own goal (0.2%)
@@ -804,19 +934,18 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       return { minute: min, type: 'red_card', description: `🟥 CARTÃO VERMELHO DIRETO! ${pName} faz entrada brutal e é expulso!`, team, playerName: pName };
     }
 
-    // === TACKLES ===
-    // Tackle (3%)
+    // === TACKLES - weighted by defending/marking ===
     cumul += 0.03 * mods.pressingMod;
     if (r < cumul) {
       moveBall(40 + rng() * 20, 20 + rng() * 60);
       updateStat('tackles', teamIdx);
-      const p = pickPlayer(team); if (p) p.rating = Math.min(10, p.rating + 0.1);
+      const p = pickByAttr(team, 'defending'); if (p) p.rating = Math.min(10, p.rating + 0.1);
       return { minute: min, type: 'dribble_fail', description: pick([
-        `💪 Desarme perfeito de ${pName}! Recupera a posse!`,
-        `💪 ${pName} antecipa e intercepta o passe!`,
-        `💪 Carrinho impecável de ${pName}!`,
-        `💪 ${pName} corta a jogada com timing perfeito!`,
-      ]), team, playerName: pName };
+        `💪 Desarme perfeito de ${p?.name || pName}! Recupera a posse!`,
+        `💪 ${p?.name || pName} antecipa e intercepta o passe!`,
+        `💪 Carrinho impecável de ${p?.name || pName}!`,
+        `💪 ${p?.name || pName} corta a jogada com timing perfeito!`,
+      ]), team, playerName: p?.name || pName };
     }
 
     // === MISC EVENTS ===
@@ -903,7 +1032,7 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     moveBall(35 + rng() * 30, 25 + rng() * 50);
     updateStat('passes', teamIdx);
     return { minute: min, type: 'possession', description: `⚽ ${tName} trabalha a bola com paciência.`, team };
-  }, [homeStrength, awayStrength, homeTeam, awayTeam, playerName, pickPlayer, moveBall, updateStat, getTacticalMods, isHome]);
+  }, [homeTeam, awayTeam, playerName, pickPlayer, pickByAttr, teamAvgAttr, moveBall, updateStat, getTacticalMods, isHome]);
 
   // Main game clock
   useEffect(() => {
@@ -1013,11 +1142,13 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     const inPlayerData = allHomePlayers.find(p => p.id === inId);
     if (outPlayer && inPlayerData) {
       outPlayer.isOnPitch = false;
+      const attrs = extractAttrs(inPlayerData);
       const newSim: SimPlayer = {
         id: inId, name: inPlayerData.name.split(' ').pop() || inPlayerData.name, fullName: inPlayerData.name,
         position: inPlayerData.position, x: outPlayer.x, y: outPlayer.y, homeX: outPlayer.homeX, homeY: outPlayer.homeY,
         team: 'home', ovr: inPlayerData.overall, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
         isOnPitch: true, stamina: inPlayerData.stamina || 90, morale: inPlayerData.morale || 75,
+        ...attrs,
       };
       playersRef.current.push(newSim);
     }
