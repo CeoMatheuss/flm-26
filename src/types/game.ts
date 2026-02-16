@@ -111,6 +111,8 @@ export interface Match {
   date: string;
   result?: { home: number; away: number };
   played: boolean;
+  isHome?: boolean;
+  stadium?: string;
 }
 
 export interface TeamStats {

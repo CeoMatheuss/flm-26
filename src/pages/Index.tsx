@@ -414,8 +414,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               stadiumName={game.club.stadiumName} 
               alreadyPlayedToday={game.alreadyPlayedToday}
               lastFriendlyDate={game.lastFriendlyDate}
+              leagueTeams={game.leagueTeams}
               onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
+              onGenerateFriendlyVs={game.generateFriendlyVs}
             />
           </TabsContent>
           <TabsContent value="sponsors">
