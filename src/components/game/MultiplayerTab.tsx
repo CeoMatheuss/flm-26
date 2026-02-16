@@ -243,13 +243,9 @@ function LeagueView(props: Props) {
         <TabsList className="w-full flex-wrap h-auto gap-1 bg-card/50">
           <TabsTrigger value="standings" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Tabela</TabsTrigger>
           <TabsTrigger value="matches" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Jogos</TabsTrigger>
-          <TabsTrigger value="squad" className="gap-1 text-xs"><Shield className="h-3 w-3" /> Elenco</TabsTrigger>
           <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat</TabsTrigger>
-          <TabsTrigger value="private" className="gap-1 text-xs"><MessageSquare className="h-3 w-3" /> PM</TabsTrigger>
-          <TabsTrigger value="proposals" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Trades</TabsTrigger>
           <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios</TabsTrigger>
           <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rival</TabsTrigger>
-          {isOwner && <TabsTrigger value="admin" className="gap-1 text-xs"><Flag className="h-3 w-3" /> Admin</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="standings">
@@ -258,25 +254,8 @@ function LeagueView(props: Props) {
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
         </TabsContent>
-        <TabsContent value="squad">
-          <SquadSyncView
-            userId={userId}
-            leagueSquads={leagueSquads}
-            members={members}
-            clubPlayers={clubPlayers}
-            clubTactics={clubTactics}
-            mySquadSynced={mySquadSynced}
-            onSync={onSyncSquad}
-          />
-        </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
-        </TabsContent>
-        <TabsContent value="private">
-          <PrivateChatView messages={privateMessages} members={members} userId={userId} onSend={onSendPrivateMessage} />
-        </TabsContent>
-        <TabsContent value="proposals">
-          <ProposalsView proposals={proposals} members={members} userId={userId} onSend={onSendProposal} onRespond={onRespondProposal} />
         </TabsContent>
         <TabsContent value="rivalries">
           <RivalriesView rivalries={rivalries} members={members} userId={userId} />
@@ -284,20 +263,6 @@ function LeagueView(props: Props) {
         <TabsContent value="awards">
           <AwardsView leagueMatches={leagueMatches} members={members} />
         </TabsContent>
-        {isOwner && (
-          <TabsContent value="admin">
-            <AdminView
-              league={currentLeague!}
-              members={members}
-              leagueSquads={leagueSquads}
-              leagueMatches={leagueMatches}
-              loading={loading}
-              onStartSeason={onStartSeason}
-              onSimulateRound={onSimulateRound}
-              onEndSeason={onEndSeason}
-            />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
