@@ -22,6 +22,7 @@ import { TrainingTab } from '@/components/game/TrainingTab';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { AuctionTab } from '@/components/game/AuctionTab';
+import { AdminTab } from '@/components/game/AdminTab';
 import { ClubFeedTab } from '@/components/game/ClubFeedTab';
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
@@ -36,7 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -145,10 +146,11 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
   }
 
-  return <GameUI userId={userId} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} isNewClub={isNewClub} />;
+  return <GameUI userId={userId} userEmail={userEmail} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} isNewClub={isNewClub} />;
 }
 
-function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { userId: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
+function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
+  const isOwnerAdmin = userEmail === 'fcmsistemas7@gmail.com';
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -249,6 +251,7 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
+                {isOwnerAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -410,6 +413,11 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           <TabsContent value="feed">
             <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
           </TabsContent>
+          {isOwnerAdmin && (
+            <TabsContent value="admin">
+              <AdminTab userId={userId} />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
