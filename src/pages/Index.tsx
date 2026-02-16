@@ -258,8 +258,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               <DropdownMenuContent align="start" className="w-48 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
                 {/* Clube */}
                 <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Amistosos BOT</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('online-friendlies')} className="gap-2 text-xs"><Globe className="h-3.5 w-3.5" /> Amistosos Online</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Amistosos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
@@ -427,13 +426,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
               onGenerateFriendlyVs={game.generateFriendlyVs}
-            />
-          </TabsContent>
-          <TabsContent value="online-friendlies">
-            <OnlineFriendliesTab
               userId={userId}
-              clubName={game.club.name}
-              stadiumName={game.club.stadiumName || 'Arena'}
               stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
             />
           </TabsContent>

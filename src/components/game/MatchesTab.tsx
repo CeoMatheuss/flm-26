@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Play, Check, Home, Swords, Trophy, Clock, Calendar, Ban, Plane, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Play, Check, Home, Swords, Trophy, Clock, Calendar, Ban, Plane, Search, Globe } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { LeagueTeam } from '@/types/league';
+import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 
 interface Props {
   matches: Match[];
@@ -17,6 +19,8 @@ interface Props {
   onSimulate: (id: string) => void;
   onGenerateFriendly: () => void;
   onGenerateFriendlyVs: (teamName: string) => void;
+  userId: string;
+  stadiumCapacity: number;
 }
 
 function formatDate(isoStr: string): string {
@@ -46,7 +50,7 @@ function getTimeUntilReset(lastFriendlyDate: string): string {
   return `${hours}h ${mins}min`;
 }
 
-export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, leagueTeams, onSimulate, onGenerateFriendly, onGenerateFriendlyVs }: Props) {
+export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, leagueTeams, onSimulate, onGenerateFriendly, onGenerateFriendlyVs, userId, stadiumCapacity }: Props) {
   const canGenerate = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const playedMatches = matches.filter(m => m.played);
@@ -62,7 +66,18 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
   }, [searchTerm, leagueTeams, clubName]);
 
   return (
-    <div className="space-y-3">
+    <Tabs defaultValue="bot" className="space-y-3">
+      <TabsList className="w-full">
+        <TabsTrigger value="bot" className="flex-1 text-xs gap-1.5">
+          <Swords className="h-3.5 w-3.5" /> vs BOT
+        </TabsTrigger>
+        <TabsTrigger value="online" className="flex-1 text-xs gap-1.5">
+          <Globe className="h-3.5 w-3.5" /> Online
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="bot">
+      <div className="space-y-3">
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -235,5 +250,16 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
         </Card>
       )}
     </div>
+      </TabsContent>
+
+      <TabsContent value="online">
+        <OnlineFriendliesTab
+          userId={userId}
+          clubName={clubName}
+          stadiumName={stadiumName || 'Arena'}
+          stadiumCapacity={stadiumCapacity}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
