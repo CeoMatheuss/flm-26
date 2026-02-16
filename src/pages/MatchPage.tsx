@@ -219,6 +219,23 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
   const ballTargetRef = useRef({ x: 50, y: 50 });
   const playerTargetsRef = useRef<Map<string, { tx: number; ty: number }>>(new Map());
 
+  // Sync live score/minute to sessionStorage for dashboard widget
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      const raw = sessionStorage.getItem('match_live');
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          data.homeGoals = homeGoalsRef.current;
+          data.awayGoals = awayGoalsRef.current;
+          data.minute = matchMinute;
+          sessionStorage.setItem('match_live', JSON.stringify(data));
+        } catch {}
+      }
+    }, 2000);
+    return () => clearInterval(syncInterval);
+  }, [matchMinute]);
+
   // ---- Tactical modifiers ----
   const getTacticalMods = useCallback(() => {
     // Home advantage
