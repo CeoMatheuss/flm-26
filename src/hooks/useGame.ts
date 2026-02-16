@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Club, Player, Match, ScoutReport, Scout, PlayerAttributes } from '@/types/game';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
@@ -924,31 +924,30 @@ export function useGame(initialState?: GameState) {
     toast.success(`${roomNames[room]} melhorada para nível ${ctRooms[room] + 1}!`);
   }, [ctRooms, club.budget, addFinance]);
 
-  // Use a ref to track daily friendly count to avoid stale closure issues
-  const friendlyGeneratedRef = useRef(false);
-  
-  // Reset ref when date changes
-  useEffect(() => {
-    const today = new Date().toDateString();
-    if (lastFriendlyDate !== today) {
-      friendlyGeneratedRef.current = false;
-    } else if (friendliesPlayedToday >= MAX_FRIENDLIES_PER_DAY) {
-      friendlyGeneratedRef.current = true;
-    }
-  }, [lastFriendlyDate, friendliesPlayedToday]);
+  // Helper: check if two dates are the same local calendar day
+  const isSameLocalDay = useCallback((d1: Date, d2: Date) => {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }, []);
+
+  // Compute if user already played today based on real timestamps
+  const alreadyPlayedToday = useMemo(() => {
+    if (!lastFriendlyDate) return false;
+    const lastDate = new Date(lastFriendlyDate);
+    return isSameLocalDay(lastDate, new Date());
+  }, [lastFriendlyDate, isSameLocalDay]);
 
   const generateFriendly = useCallback(() => {
-    const today = new Date().toDateString();
+    const now = new Date();
     
-    // Triple-check: ref guard, state guard, and date guard
-    if (friendlyGeneratedRef.current) {
-      toast.error('Limite diário de amistosos atingido! (1 por dia)');
-      return;
-    }
-    const actualTodayCount = lastFriendlyDate === today ? friendliesPlayedToday : 0;
-    if (actualTodayCount >= MAX_FRIENDLIES_PER_DAY) {
-      toast.error('Limite diário de amistosos atingido! (1 por dia)');
-      return;
+    // Check daily limit using real timestamp comparison
+    if (lastFriendlyDate) {
+      const lastDate = new Date(lastFriendlyDate);
+      if (isSameLocalDay(lastDate, now)) {
+        toast.error('Limite diário atingido! Volte amanhã para jogar outro amistoso.');
+        return;
+      }
     }
     if (friendliesPlayedSeason >= MAX_FRIENDLIES_PER_SEASON) {
       toast.error('Limite de amistosos da temporada atingido!');
@@ -960,26 +959,26 @@ export function useGame(initialState?: GameState) {
       toast.error('Você já tem um amistoso agendado! Jogue-o primeiro.');
       return;
     }
-    // Lock immediately via ref to prevent any race condition
-    friendlyGeneratedRef.current = true;
     
     // Pick a random bot opponent from league teams
     const opponents = leagueTeams.filter(t => t.name !== club.name);
     const opp = opponents[Math.floor(Math.random() * opponents.length)];
-    if (!opp) { friendlyGeneratedRef.current = false; return; }
+    if (!opp) return;
+    
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
       opponent: opp.name,
       opponentLogo: opp.logo,
-      date: `Amistoso ${friendliesPlayedSeason + 1}`,
+      date: now.toISOString(), // Real timestamp
       played: false,
     };
-    setFriendliesPlayedToday(actualTodayCount + 1);
-    setLastFriendlyDate(today);
+    // Update last friendly date with real ISO timestamp
+    setLastFriendlyDate(now.toISOString());
+    setFriendliesPlayedToday(1);
     setFriendliesPlayedSeason(n => n + 1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso agendado vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
+  }, [leagueTeams, club.name, club.matches, friendliesPlayedSeason, lastFriendlyDate, isSameLocalDay]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
@@ -990,6 +989,7 @@ export function useGame(initialState?: GameState) {
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
     friendliesPlayedToday, friendliesPlayedSeason, maxFriendliesPerDay: MAX_FRIENDLIES_PER_DAY, maxFriendliesPerSeason: MAX_FRIENDLIES_PER_SEASON,
+    alreadyPlayedToday, lastFriendlyDate,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
