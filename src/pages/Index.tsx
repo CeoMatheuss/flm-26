@@ -78,7 +78,12 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
       if (saveRes.data?.club_data) {
         try {
-          setLoadedState(saveRes.data.club_data as unknown as GameState);
+          const loaded = saveRes.data.club_data as unknown as GameState;
+          // Migrate old saves: ensure stadium maxLevel is 15
+          if (loaded.infrastructure?.stadium && loaded.infrastructure.stadium.maxLevel < 15) {
+            loaded.infrastructure.stadium.maxLevel = 15;
+          }
+          setLoadedState(loaded);
           setHasSave(true);
           toast.success('Save carregado!');
         } catch { /* ignore */ }
