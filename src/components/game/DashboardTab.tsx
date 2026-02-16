@@ -185,6 +185,11 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
               </CardTitle>
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              {/* Match type & stadium */}
+              <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border/30">
+                <span className="text-[9px] sm:text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">⚽ Amistoso</span>
+                <span className="text-[9px] sm:text-[10px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded">🏟️ {club.stadiumName}</span>
+              </div>
               <div className="flex items-center justify-between py-1 sm:py-2">
                 <div className="text-center flex-1">
                   {club.shieldPattern ? (
