@@ -65,6 +65,7 @@ export function getTrainingBoost(level: number): number {
 }
 
 export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
+  if (investmentPerMonth <= 0) return 0;
   if (investmentPerMonth >= 2000000) return 8;
   if (investmentPerMonth >= 1000000) return 6;
   if (investmentPerMonth >= 500000) return 5;

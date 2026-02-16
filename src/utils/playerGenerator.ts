@@ -1,4 +1,4 @@
-import { Player, PlayerAttributes, PlayerHistoryEntry, ScoutReport } from '@/types/game';
+import { Player, PlayerAttributes, PlayerHistoryEntry, ScoutReport, PlayerPersonality, allPersonalities } from '@/types/game';
 import { YouthProspect, getYouthMinOverall, getYouthMaxOverall } from '@/types/infrastructure';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -37,10 +37,17 @@ function randomName() {
   return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
 }
 
+function randomPersonality(): PlayerPersonality {
+  return allPersonalities[Math.floor(Math.random() * allPersonalities.length)];
+}
+
 function generateAttributes(position: Player['position'], overall: number): PlayerAttributes {
   const variance = () => Math.floor(Math.random() * 16 - 8);
 
-  const base: Record<Player['position'], Omit<PlayerAttributes, 'vision' | 'crossing' | 'longShots' | 'workRate' | 'composure' | 'aggression'> & { vision: number; crossing: number; longShots: number; workRate: number; composure: number; aggression: number }> = {
+  // Goalkeeping: high for GOL, very low for others
+  const gkVal = position === 'GOL' ? overall + 10 + variance() : Math.floor(overall * 0.2) + variance();
+
+  const base = {
     GOL: { speed: overall - 10 + variance(), shooting: overall - 20 + variance(), passing: overall - 5 + variance(), defending: overall + 5 + variance(), physical: overall + variance(), dribbling: overall - 15 + variance(), setPieces: overall - 15 + variance(), positioning: overall + 8 + variance(), heading: overall - 5 + variance(), marking: overall + variance(), vision: overall - 5 + variance(), crossing: overall - 20 + variance(), longShots: overall - 20 + variance(), workRate: overall - 5 + variance(), composure: overall + 5 + variance(), aggression: overall - 10 + variance() },
     ZAG: { speed: overall - 5 + variance(), shooting: overall - 10 + variance(), passing: overall - 3 + variance(), defending: overall + 8 + variance(), physical: overall + 5 + variance(), dribbling: overall - 8 + variance(), setPieces: overall - 8 + variance(), positioning: overall + 5 + variance(), heading: overall + 7 + variance(), marking: overall + 8 + variance(), vision: overall - 5 + variance(), crossing: overall - 10 + variance(), longShots: overall - 8 + variance(), workRate: overall + 3 + variance(), composure: overall + 3 + variance(), aggression: overall + 5 + variance() },
     LAT: { speed: overall + 5 + variance(), shooting: overall - 5 + variance(), passing: overall + 3 + variance(), defending: overall + variance(), physical: overall + variance(), dribbling: overall + 2 + variance(), setPieces: overall - 3 + variance(), positioning: overall + 2 + variance(), heading: overall - 5 + variance(), marking: overall + 3 + variance(), vision: overall + 2 + variance(), crossing: overall + 8 + variance(), longShots: overall - 5 + variance(), workRate: overall + 5 + variance(), composure: overall + variance(), aggression: overall + 2 + variance() },
@@ -68,17 +75,18 @@ function generateAttributes(position: Player['position'], overall: number): Play
     workRate: clamp(attrs.workRate),
     composure: clamp(attrs.composure),
     aggression: clamp(attrs.aggression),
+    goalkeeping: clamp(gkVal),
   };
 }
 
 export function calculateOverall(attrs: PlayerAttributes, position: Player['position']): number {
   const weights: Record<Player['position'], Record<string, number>> = {
-    GOL: { speed: 0.04, shooting: 0.01, passing: 0.08, defending: 0.28, physical: 0.16, dribbling: 0.02, setPieces: 0.02, positioning: 0.16, heading: 0.04, marking: 0.10, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.02, composure: 0.02, aggression: 0.01 },
-    ZAG: { speed: 0.07, shooting: 0.02, passing: 0.06, defending: 0.20, physical: 0.13, dribbling: 0.02, setPieces: 0.02, positioning: 0.10, heading: 0.12, marking: 0.10, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.04, composure: 0.04, aggression: 0.04 },
-    LAT: { speed: 0.13, shooting: 0.04, passing: 0.12, defending: 0.11, physical: 0.10, dribbling: 0.10, setPieces: 0.02, positioning: 0.06, heading: 0.03, marking: 0.08, vision: 0.04, crossing: 0.08, longShots: 0.02, workRate: 0.04, composure: 0.02, aggression: 0.01 },
-    VOL: { speed: 0.06, shooting: 0.04, passing: 0.15, defending: 0.15, physical: 0.12, dribbling: 0.05, setPieces: 0.03, positioning: 0.08, heading: 0.04, marking: 0.08, vision: 0.04, crossing: 0.02, longShots: 0.02, workRate: 0.05, composure: 0.04, aggression: 0.03 },
-    MEI: { speed: 0.08, shooting: 0.10, passing: 0.16, defending: 0.02, physical: 0.06, dribbling: 0.14, setPieces: 0.08, positioning: 0.08, heading: 0.03, marking: 0.03, vision: 0.08, crossing: 0.03, longShots: 0.04, workRate: 0.03, composure: 0.03, aggression: 0.01 },
-    ATA: { speed: 0.12, shooting: 0.20, passing: 0.05, defending: 0.01, physical: 0.08, dribbling: 0.12, setPieces: 0.04, positioning: 0.12, heading: 0.08, marking: 0.01, vision: 0.03, crossing: 0.01, longShots: 0.04, workRate: 0.03, composure: 0.04, aggression: 0.02 },
+    GOL: { speed: 0.03, shooting: 0.01, passing: 0.06, defending: 0.15, physical: 0.10, dribbling: 0.01, setPieces: 0.01, positioning: 0.12, heading: 0.03, marking: 0.08, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.02, composure: 0.02, aggression: 0.01, goalkeeping: 0.31 },
+    ZAG: { speed: 0.07, shooting: 0.02, passing: 0.06, defending: 0.20, physical: 0.13, dribbling: 0.02, setPieces: 0.02, positioning: 0.10, heading: 0.12, marking: 0.10, vision: 0.02, crossing: 0.01, longShots: 0.01, workRate: 0.04, composure: 0.04, aggression: 0.04, goalkeeping: 0.00 },
+    LAT: { speed: 0.13, shooting: 0.04, passing: 0.12, defending: 0.11, physical: 0.10, dribbling: 0.10, setPieces: 0.02, positioning: 0.06, heading: 0.03, marking: 0.08, vision: 0.04, crossing: 0.08, longShots: 0.02, workRate: 0.04, composure: 0.02, aggression: 0.01, goalkeeping: 0.00 },
+    VOL: { speed: 0.06, shooting: 0.04, passing: 0.15, defending: 0.15, physical: 0.12, dribbling: 0.05, setPieces: 0.03, positioning: 0.08, heading: 0.04, marking: 0.08, vision: 0.04, crossing: 0.02, longShots: 0.02, workRate: 0.05, composure: 0.04, aggression: 0.03, goalkeeping: 0.00 },
+    MEI: { speed: 0.08, shooting: 0.10, passing: 0.16, defending: 0.02, physical: 0.06, dribbling: 0.14, setPieces: 0.08, positioning: 0.08, heading: 0.03, marking: 0.03, vision: 0.08, crossing: 0.03, longShots: 0.04, workRate: 0.03, composure: 0.03, aggression: 0.01, goalkeeping: 0.00 },
+    ATA: { speed: 0.12, shooting: 0.20, passing: 0.05, defending: 0.01, physical: 0.08, dribbling: 0.12, setPieces: 0.04, positioning: 0.12, heading: 0.08, marking: 0.01, vision: 0.03, crossing: 0.01, longShots: 0.04, workRate: 0.03, composure: 0.04, aggression: 0.02, goalkeeping: 0.00 },
   };
   const w = weights[position];
   let val = 0;
@@ -141,6 +149,7 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     gamesPlayed: 0,
     trainingProgress: 0,
     history,
+    personality: randomPersonality(),
   };
 }
 
@@ -230,6 +239,7 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
     trainingProgress: 0,
     potential,
     monthsInAcademy: 0,
+    personality: randomPersonality(),
   };
 }
 

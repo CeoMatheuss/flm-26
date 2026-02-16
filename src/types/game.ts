@@ -1,3 +1,30 @@
+export type PlayerPersonality = 
+  | 'lider'        // Líder nato - moral +5 para todos quando joga bem
+  | 'festeiro'     // Festeiro - chance de perder stamina extra
+  | 'dedicado'     // Dedicado - treina 20% mais rápido
+  | 'preguicoso'   // Preguiçoso - treina 20% mais devagar
+  | 'ambicioso'    // Ambicioso - pede aumento mais cedo
+  | 'leal'         // Leal - aceita salário menor para ficar
+  | 'temperamental' // Temperamental - moral oscila mais
+  | 'calmo'        // Calmo - moral estável, compostura +5 efetivo
+  | 'competitivo'  // Competitivo - joga melhor em jogos grandes
+  | 'introvertido'; // Introvertido - neutro, sem efeitos especiais
+
+export const personalityLabels: Record<PlayerPersonality, { label: string; emoji: string; desc: string }> = {
+  lider: { label: 'Líder', emoji: '👑', desc: 'Inspira os companheiros. Moral +5 para todos quando joga bem.' },
+  festeiro: { label: 'Festeiro', emoji: '🎉', desc: 'Adora a vida noturna. Pode perder stamina extra entre jogos.' },
+  dedicado: { label: 'Dedicado', emoji: '📚', desc: 'Sempre o primeiro no treino. Evolui 20% mais rápido.' },
+  preguicoso: { label: 'Preguiçoso', emoji: '😴', desc: 'Prefere descansar. Evolui 20% mais devagar.' },
+  ambicioso: { label: 'Ambicioso', emoji: '🔥', desc: 'Quer sempre mais. Pede aumento salarial mais cedo.' },
+  leal: { label: 'Leal', emoji: '💚', desc: 'Ama o clube. Aceita salário menor para renovar.' },
+  temperamental: { label: 'Temperamental', emoji: '😤', desc: 'Humor instável. Moral oscila muito entre jogos.' },
+  calmo: { label: 'Calmo', emoji: '🧘', desc: 'Mente fria. Moral muito estável.' },
+  competitivo: { label: 'Competitivo', emoji: '⚔️', desc: 'Brilha nos clássicos. Joga melhor contra times fortes.' },
+  introvertido: { label: 'Introvertido', emoji: '🤫', desc: 'Na dele. Sem efeitos especiais.' },
+};
+
+export const allPersonalities: PlayerPersonality[] = ['lider', 'festeiro', 'dedicado', 'preguicoso', 'ambicioso', 'leal', 'temperamental', 'calmo', 'competitivo', 'introvertido'];
+
 export interface PlayerAttributes {
   speed: number;        // Velocidade
   shooting: number;     // Finalização
@@ -15,6 +42,7 @@ export interface PlayerAttributes {
   workRate?: number;    // Intensidade/Raça
   composure?: number;   // Compostura
   aggression?: number;  // Agressividade
+  goalkeeping?: number; // Defesa de Goleiro
 }
 
 export interface Injury {
@@ -55,6 +83,7 @@ export interface Player {
   seasonRatings?: number[];
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
+  personality?: PlayerPersonality;
 }
 
 export interface Scout {
