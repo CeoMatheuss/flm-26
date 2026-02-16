@@ -220,17 +220,6 @@ function LeagueView(props: Props) {
         </div>
         
         <div className="flex items-center gap-3">
-          <Card className="bg-emerald-500/10 border-emerald-500/20 px-3 py-1.5 h-auto">
-            <div className="flex items-center gap-2">
-              <Zap className="h-3.5 w-3.5 text-emerald-400" />
-              <div>
-                <p className="text-[10px] text-muted-foreground leading-none">Saldo Online</p>
-                <p className="text-sm font-bold text-emerald-400">
-                  R$ {((members.find(m => m.user_id === userId)?.budget || 0) / 1000000).toFixed(1)}M
-                </p>
-              </div>
-            </div>
-          </Card>
           <Badge variant="outline" className="h-9">{members.length}/{currentLeague!.max_members}</Badge>
         </div>
       </div>
@@ -273,7 +262,7 @@ function LeagueView(props: Props) {
           <RivalriesView rivalries={rivalries} members={members} userId={userId} />
         </TabsContent>
         <TabsContent value="awards">
-          <AwardsView leagueMatches={leagueMatches} members={members} />
+          <AwardsView leagueMatches={leagueMatches} members={members} division={(currentLeague as any).division || 1} />
         </TabsContent>
       </Tabs>
     </div>
@@ -860,7 +849,7 @@ function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
 }
 
 // === AWARDS VIEW ===
-function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; members: LeagueMember[] }) {
+function AwardsView({ leagueMatches, members, division }: { leagueMatches: LeagueMatch[]; members: LeagueMember[]; division: number }) {
   const playerStats: Record<string, { name: string; club: string; goals: number; assists: number }> = {};
   
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
@@ -880,61 +869,42 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
   const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
   const sorted = [...members].sort((a, b) => b.points - a.points);
 
+  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2];
+  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
+  const divLabel = division === 1 ? 'Série A' : division === 2 ? 'Série B' : division === 3 ? 'Série C' : 'Série D';
+  const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
+
   return (
     <div className="space-y-4">
-      {/* Financial Prize Table */}
+      {/* Financial Prize Table - Only current division */}
       <Card className="border-emerald-500/20 bg-emerald-500/5">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">💰 PREMIAÇÕES POR DIVISÃO</CardTitle>
-          <CardDescription className="text-xs">Valores da Série A como base • B=50% • C=25% • D=10%</CardDescription>
+          <CardTitle className="text-sm flex items-center gap-2">💰 PREMIAÇÕES — {divLabel}</CardTitle>
+          <CardDescription className="text-xs">Valores distribuídos ao final da temporada</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-emerald-500/10">
                 <TableHead className="text-xs h-8">Pos</TableHead>
-                <TableHead className="text-xs h-8 text-right">Série A</TableHead>
-                <TableHead className="text-xs h-8 text-right">Série B</TableHead>
-                <TableHead className="text-xs h-8 text-right">Série C</TableHead>
-                <TableHead className="text-xs h-8 text-right">Série D</TableHead>
+                <TableHead className="text-xs h-8 text-right">Prêmio</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                [1,20],[2,17],[3,14.5],[4,12.5],[5,11],[6,10],[7,9.2],[8,8.4],[9,7.8],[10,7.2],
-                [11,6.6],[12,6],[13,5.4],[14,4.8],[15,4.2],[16,3.6],[17,3],[18,2.4],[19,1.8],[20,1.2]
-              ].map(([pos, val]) => {
-                const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
+              {baseRewards.map((val, i) => {
+                const pos = i + 1;
+                const reward = val / getDivisor(division);
                 return (
                   <TableRow key={pos} className="border-emerald-500/10">
                     <TableCell className={`text-xs py-1 ${pos <= 3 ? 'font-bold' : ''}`}>
-                      {pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `${pos}º`}
+                      {pos === 1 ? '🥇 1º' : pos === 2 ? '🥈 2º' : pos === 3 ? '🥉 3º' : `${pos}º`}
                     </TableCell>
-                    <TableCell className={`text-xs py-1 text-right ${pos === 1 ? 'text-emerald-400 font-bold' : ''}`}>{fmt(val as number)}</TableCell>
-                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/2)}</TableCell>
-                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/4)}</TableCell>
-                    <TableCell className="text-xs py-1 text-right">{fmt((val as number)/10)}</TableCell>
+                    <TableCell className={`text-xs py-1 text-right ${pos === 1 ? 'text-emerald-400 font-bold' : ''}`}>{fmt(reward)}</TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      {/* Continental Prizes */}
-      <Card className="border-amber-500/20 bg-amber-500/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">🌎 PREMIAÇÕES CONTINENTAIS</CardTitle>
-          <CardDescription className="text-xs">Sistema único para todas as competições continentais</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <div className="flex justify-between text-xs"><span>🥇 Campeão Continental</span><span className="text-amber-400 font-bold">R$ 30M</span></div>
-          <div className="flex justify-between text-xs"><span>🥈 Vice-campeão</span><span>R$ 15M</span></div>
-          <div className="flex justify-between text-xs"><span>🥉 Semifinalistas</span><span>R$ 7.5M</span></div>
-          <div className="flex justify-between text-xs"><span>🏟️ Participação fase de grupos</span><span>R$ 2M</span></div>
-          <div className="flex justify-between text-xs"><span>✅ Vitória na fase de grupos</span><span>R$ 500k</span></div>
-          <div className="flex justify-between text-xs"><span>➖ Empate na fase de grupos</span><span>R$ 250k</span></div>
         </CardContent>
       </Card>
 
