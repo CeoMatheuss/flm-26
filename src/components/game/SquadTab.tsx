@@ -1,4 +1,4 @@
-import { Player, PlayerAttributes } from '@/types/game';
+import { Player, PlayerAttributes, personalityLabels } from '@/types/game';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -230,6 +230,12 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     <PlayerProfileModal player={player} isOwnPlayer onListForSale={onListForSale} onLoanOut={onLoanOut} onAuction={onAuction} onChangeNumber={onChangeNumber} canLoanOut={canLoanOut} canAuction playersCount={players.length}>
                       <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{player.name}</button>
                     </PlayerProfileModal>
+                    {player.personality && personalityLabels[player.personality] && (
+                      <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
+                    )}
+                    {player.position === 'GOL' && player.attributes.goalkeeping != null && (
+                      <span className="text-[8px] shrink-0 text-muted-foreground" title="Defesa de Goleiro">🧤{player.attributes.goalkeeping}</span>
+                    )}
                     {player.injury && (
                       <Badge variant="destructive" className="text-[8px] px-1 h-4 gap-0.5 shrink-0">
                         <HeartPulse className="h-2.5 w-2.5" />
