@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Club, Player, Match, ScoutReport, Scout, PlayerAttributes } from '@/types/game';
+import { supabase } from '@/integrations/supabase/client';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams, getLeagueTeams } from '@/types/league';
@@ -77,7 +78,7 @@ function applyAgeDevelopment(player: Player): Player {
   return player;
 }
 
-export function useGame(initialState?: GameState) {
+export function useGame(initialState?: GameState, userId?: string) {
   const [club, setClub] = useState<Club>(initialState?.club ?? initialClub);
   const [tactics, setTactics] = useState<TacticsConfig>(initialState?.tactics ?? defaultTactics);
   const [leagueTeams, setLeagueTeams] = useState<LeagueTeam[]>(initialState?.leagueTeams ?? initialLeagueTeams);
@@ -123,8 +124,17 @@ export function useGame(initialState?: GameState) {
 
   const simulateMatch = useCallback((matchId: string) => {
     // Mark the friendly as played NOW (prevents playing 2 per day)
-    setLastFriendlyDate(new Date().toISOString());
+    const nowIso = new Date().toISOString();
+    setLastFriendlyDate(nowIso);
     setFriendliesPlayedToday(1);
+    
+    // Update database timestamp to enforce across sessions
+    if (userId) {
+      supabase.from('game_saves')
+        .update({ last_match_timestamp: nowIso } as any)
+        .eq('user_id', userId)
+        .then(() => {});
+    }
     
     setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
@@ -935,21 +945,62 @@ export function useGame(initialState?: GameState) {
            d1.getDate() === d2.getDate();
   }, []);
 
-  // Compute if user already played today based on real timestamps
+  // Compute if user already played today based on real timestamps (24h rule)
   const alreadyPlayedToday = useMemo(() => {
     if (!lastFriendlyDate) return false;
     const lastDate = new Date(lastFriendlyDate);
-    return isSameLocalDay(lastDate, new Date());
-  }, [lastFriendlyDate, isSameLocalDay]);
+    const now = new Date();
+    const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+    return diffHours < 24;
+  }, [lastFriendlyDate]);
 
-  const generateFriendly = useCallback(() => {
+  // On mount, sync from DB
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from('game_saves')
+      .select('last_match_timestamp')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.last_match_timestamp) {
+          const dbTs = data.last_match_timestamp as string;
+          const diffHours = (Date.now() - new Date(dbTs).getTime()) / (1000 * 60 * 60);
+          if (diffHours < 24) {
+            setLastFriendlyDate(dbTs);
+            setFriendliesPlayedToday(1);
+          }
+        }
+      });
+  }, [userId]);
+
+  const generateFriendly = useCallback(async () => {
     const now = new Date();
     
-    // Check daily limit using real timestamp comparison
+    // Server-side check: fetch last_match_timestamp from DB
+    if (userId) {
+      const { data } = await supabase
+        .from('game_saves')
+        .select('last_match_timestamp')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data?.last_match_timestamp) {
+        const dbLastMatch = new Date(data.last_match_timestamp as string);
+        const diffHours = (now.getTime() - dbLastMatch.getTime()) / (1000 * 60 * 60);
+        if (diffHours < 24) {
+          toast.error('Você já jogou hoje. Volte amanhã.');
+          setLastFriendlyDate(data.last_match_timestamp as string);
+          setFriendliesPlayedToday(1);
+          return;
+        }
+      }
+    }
+    
+    // Client-side fallback check
     if (lastFriendlyDate) {
       const lastDate = new Date(lastFriendlyDate);
-      if (isSameLocalDay(lastDate, now)) {
-        toast.error('Limite diário atingido! Volte amanhã para jogar outro amistoso.');
+      const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+      if (diffHours < 24) {
+        toast.error('Você já jogou hoje. Volte amanhã.');
         return;
       }
     }
@@ -977,19 +1028,37 @@ export function useGame(initialState?: GameState) {
       isHome,
       stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
     };
-    // Update last friendly date with real ISO timestamp
-    setLastFriendlyDate(now.toISOString());
-    setFriendliesPlayedToday(1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, isSameLocalDay]);
+  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, userId]);
 
-  const generateFriendlyVs = useCallback((teamName: string) => {
+  const generateFriendlyVs = useCallback(async (teamName: string) => {
     const now = new Date();
+    
+    // Server-side check
+    if (userId) {
+      const { data } = await supabase
+        .from('game_saves')
+        .select('last_match_timestamp')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data?.last_match_timestamp) {
+        const dbLastMatch = new Date(data.last_match_timestamp as string);
+        const diffHours = (now.getTime() - dbLastMatch.getTime()) / (1000 * 60 * 60);
+        if (diffHours < 24) {
+          toast.error('Você já jogou hoje. Volte amanhã.');
+          setLastFriendlyDate(data.last_match_timestamp as string);
+          setFriendliesPlayedToday(1);
+          return;
+        }
+      }
+    }
+    
     if (lastFriendlyDate) {
       const lastDate = new Date(lastFriendlyDate);
-      if (isSameLocalDay(lastDate, now)) {
-        toast.error('Limite diário atingido! Volte amanhã.');
+      const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+      if (diffHours < 24) {
+        toast.error('Você já jogou hoje. Volte amanhã.');
         return;
       }
     }
@@ -1013,11 +1082,9 @@ export function useGame(initialState?: GameState) {
       isHome,
       stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
     };
-    setLastFriendlyDate(now.toISOString());
-    setFriendliesPlayedToday(1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, isSameLocalDay]);
+  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, userId]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);

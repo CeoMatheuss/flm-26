@@ -35,11 +35,12 @@ function formatTime(isoStr: string): string {
   } catch { return ''; }
 }
 
-function getTimeUntilMidnight(): string {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  const diff = midnight.getTime() - now.getTime();
+function getTimeUntilReset(lastFriendlyDate: string): string {
+  if (!lastFriendlyDate) return '';
+  const lastMatch = new Date(lastFriendlyDate);
+  const resetTime = new Date(lastMatch.getTime() + 24 * 60 * 60 * 1000);
+  const diff = resetTime.getTime() - Date.now();
+  if (diff <= 0) return '0h 0min';
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   return `${hours}h ${mins}min`;
@@ -49,7 +50,7 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
   const canGenerate = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const playedMatches = matches.filter(m => m.played);
-  const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilMidnight() : '', [alreadyPlayedToday]);
+  const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInvite, setShowInvite] = useState(false);
 
