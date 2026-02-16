@@ -183,7 +183,7 @@ function LeagueView(props: Props) {
   return (
     <div className="space-y-4">
       {/* League Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
@@ -206,7 +206,21 @@ function LeagueView(props: Props) {
             </Badge>
           </div>
         </div>
-        <Badge variant="outline">{members.length}/{currentLeague!.max_members}</Badge>
+        
+        <div className="flex items-center gap-3">
+          <Card className="bg-emerald-500/10 border-emerald-500/20 px-3 py-1.5 h-auto">
+            <div className="flex items-center gap-2">
+              <Zap className="h-3.5 w-3.5 text-emerald-400" />
+              <div>
+                <p className="text-[10px] text-muted-foreground leading-none">Saldo Online</p>
+                <p className="text-sm font-bold text-emerald-400">
+                  R$ {((members.find(m => m.user_id === userId)?.budget || 0) / 1000000).toFixed(1)}M
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Badge variant="outline" className="h-9">{members.length}/{currentLeague!.max_members}</Badge>
+        </div>
       </div>
 
       {/* Season Progress Bar */}
@@ -239,7 +253,7 @@ function LeagueView(props: Props) {
         </TabsList>
 
         <TabsContent value="standings">
-          <StandingsView members={members} userId={userId} />
+          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} />
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
@@ -290,8 +304,31 @@ function LeagueView(props: Props) {
 }
 
 // === STANDINGS ===
-function StandingsView({ members, userId }: { members: LeagueMember[]; userId: string }) {
+function StandingsView({ members, userId, division }: { members: LeagueMember[]; userId: string; division: number }) {
   const sorted = [...members].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+  
+  // Calculate expected reward based on position and division
+  const getExpectedReward = (pos: number) => {
+    if (division === 1) {
+      if (pos === 1) return "50M";
+      if (pos === 2) return "30M";
+      if (pos === 3) return "20M";
+      if (pos <= 10) return "10M";
+      return "5M";
+    } else if (division === 2) {
+      if (pos === 1) return "20M";
+      if (pos === 2) return "15M";
+      if (pos === 3) return "10M";
+      if (pos <= 10) return "5M";
+      return "2M";
+    } else {
+      if (pos === 1) return "10M";
+      if (pos === 2) return "7M";
+      if (pos === 3) return "5M";
+      return "1M";
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -301,13 +338,9 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
               <TableHead className="w-8">#</TableHead>
               <TableHead>Clube</TableHead>
               <TableHead className="text-center w-10">J</TableHead>
-              <TableHead className="text-center w-10">V</TableHead>
-              <TableHead className="text-center w-10">E</TableHead>
-              <TableHead className="text-center w-10">D</TableHead>
-              <TableHead className="text-center w-10">GP</TableHead>
-              <TableHead className="text-center w-10">GC</TableHead>
               <TableHead className="text-center w-10">SG</TableHead>
               <TableHead className="text-center w-12 font-bold">P</TableHead>
+              <TableHead className="text-right w-20">Prêmio Est.</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -315,22 +348,21 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
               const isBot = m.user_id.startsWith('bot_');
               const isPromotion = i < 4;
               const isRelegation = i >= sorted.length - 4 && sorted.length > 8;
+              const pos = i + 1;
               
               return (
               <TableRow key={m.id} className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${isPromotion ? 'border-l-2 border-l-emerald-500' : isRelegation ? 'border-l-2 border-l-rose-500' : ''}`}>
-                <TableCell className={`${isPromotion ? 'text-emerald-400 font-bold' : isRelegation ? 'text-rose-400' : ''}`}>{i + 1}</TableCell>
+                <TableCell className={`${isPromotion ? 'text-emerald-400 font-bold' : isRelegation ? 'text-rose-400' : ''}`}>{pos}</TableCell>
                 <TableCell>
                   <span className="mr-1">{m.club_logo}</span> {m.club_name}
                   {isBot && <Badge variant="secondary" className="ml-1 text-[8px] px-1 py-0">BOT</Badge>}
                 </TableCell>
                 <TableCell className="text-center">{m.played}</TableCell>
-                <TableCell className="text-center">{m.wins}</TableCell>
-                <TableCell className="text-center">{m.draws}</TableCell>
-                <TableCell className="text-center">{m.losses}</TableCell>
-                <TableCell className="text-center">{m.goals_for}</TableCell>
-                <TableCell className="text-center">{m.goals_against}</TableCell>
                 <TableCell className="text-center">{m.goals_for - m.goals_against}</TableCell>
                 <TableCell className="text-center font-bold">{m.points}</TableCell>
+                <TableCell className="text-right text-[10px] text-emerald-400 font-mono">
+                  R$ {getExpectedReward(pos)}
+                </TableCell>
               </TableRow>
               );
             })}
@@ -809,6 +841,58 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
 
   return (
     <div className="space-y-4">
+      {/* Financial Prize Table */}
+      <Card className="border-emerald-500/20 bg-emerald-500/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">💰 PREMIAÇÕES POR DIVISÃO</CardTitle>
+          <CardDescription className="text-xs">Valores recebidos ao final da temporada</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-emerald-500/10">
+                <TableHead className="text-xs h-8">Posição</TableHead>
+                <TableHead className="text-xs h-8 text-right">Liga 1</TableHead>
+                <TableHead className="text-xs h-8 text-right">Liga 2</TableHead>
+                <TableHead className="text-xs h-8 text-right">Liga 3+</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="border-emerald-500/10">
+                <TableCell className="text-xs py-1 font-bold">1º Lugar</TableCell>
+                <TableCell className="text-xs py-1 text-right text-emerald-400 font-bold">R$ 50M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
+              </TableRow>
+              <TableRow className="border-emerald-500/10">
+                <TableCell className="text-xs py-1">2º Lugar</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 30M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 15M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 7M</TableCell>
+              </TableRow>
+              <TableRow className="border-emerald-500/10">
+                <TableCell className="text-xs py-1">3º Lugar</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
+              </TableRow>
+              <TableRow className="border-emerald-500/10">
+                <TableCell className="text-xs py-1">4º-10º</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
+              </TableRow>
+              <TableRow className="border-transparent">
+                <TableCell className="text-xs py-1">11º-20º</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 2M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">⚽ ARTILHEIROS</CardTitle>
