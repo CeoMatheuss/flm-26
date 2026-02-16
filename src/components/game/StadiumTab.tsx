@@ -1,4 +1,4 @@
-import { Infrastructure, getUpgradeCost } from '@/types/infrastructure';
+import { Infrastructure, getStadiumCapacity, getStadiumUpgradeCost } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -17,10 +17,6 @@ interface Props {
   onRenameStadium: (name: string) => void;
 }
 
-function getStadiumCapacity(level: number): number {
-  return 5000 + level * 5000;
-}
-
 function getStadiumMatchRevenue(level: number, fans: number, ticketPrice: number): number {
   const capacity = getStadiumCapacity(level);
   const attendance = Math.min(capacity, Math.floor(fans * 0.1));
@@ -29,7 +25,7 @@ function getStadiumMatchRevenue(level: number, fans: number, ticketPrice: number
 
 export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPrice, reputation, onUpgrade, onSetTicketPrice, onRenameStadium }: Props) {
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 10 };
-  const cost = getUpgradeCost(stadium.level);
+  const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
   const capacity = getStadiumCapacity(stadium.level);
   const attendance = Math.min(capacity, Math.floor(fans * 0.1));
@@ -167,13 +163,12 @@ export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPr
       {/* Stadium Benefits Info */}
       <Card className="border-muted/30">
         <CardContent className="p-4 space-y-2">
-          <p className="text-xs font-bold uppercase text-muted-foreground">📋 Benefícios por Nível</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">📋 Capacidade por Nível</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {[
-              { level: '1-3', benefit: 'Capacidade básica, pouca receita de bilheteria' },
-              { level: '4-6', benefit: 'Atrai mais torcedores, receita moderada' },
-              { level: '7-9', benefit: 'Grande capacidade, bônus de torcida a cada jogo' },
-              { level: '10', benefit: 'Estádio de elite — capacidade máxima, receita recorde' },
+              { level: '1-6', benefit: '5k→30k lugares — Expansão: R$ 5M/nível' },
+              { level: '7-13', benefit: '40k→100k lugares — Expansão: R$ 10M/nível' },
+              { level: '14-15', benefit: '110k→120k lugares — Expansão: R$ 20M/nível' },
             ].map(item => (
               <div key={item.level} className="flex gap-2 items-start">
                 <span className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">Nv.{item.level}</span>

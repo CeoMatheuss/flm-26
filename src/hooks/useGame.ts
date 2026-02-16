@@ -4,7 +4,7 @@ import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { LeagueTeam, initialLeagueTeams, getLeagueTeams } from '@/types/league';
 import { FinanceEntry, createFinanceEntry } from '@/types/finance';
-import { Infrastructure, defaultInfrastructure, getUpgradeCost, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
+import { Infrastructure, defaultInfrastructure, getUpgradeCost, getStadiumUpgradeCost, getTrainingBoost, getPhysiotherapyRecovery, YouthProspect, SeasonData, defaultSeason, getYouthMonthlyPlayers } from '@/types/infrastructure';
 import { Sponsor, SponsorOffer, generateSponsorOffers } from '@/types/sponsor';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
@@ -495,7 +495,7 @@ export function useGame(initialState?: GameState) {
   }, [loansIn.length, season.currentSeason, addFinance]);
 
   const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => {
-    const cost = getUpgradeCost(infrastructure[facility].level);
+    const cost = facility === 'stadium' ? getStadiumUpgradeCost(infrastructure[facility].level) : getUpgradeCost(infrastructure[facility].level);
     if (club.budget < cost) return;
 
     setClub(prev => {

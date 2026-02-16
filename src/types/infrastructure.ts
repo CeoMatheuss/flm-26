@@ -32,9 +32,28 @@ export function getUpgradeCost(currentLevel: number): number {
 export const defaultInfrastructure: Infrastructure = {
   trainingCenter: { level: 1, maxLevel: 10 },
   youthAcademy: { level: 1, maxLevel: 10 },
-  stadium: { level: 1, maxLevel: 10 },
+  stadium: { level: 1, maxLevel: 15 },
   physiotherapy: { level: 1, maxLevel: 10 },
 };
+
+// Stadium-specific capacity and costs
+export const stadiumCapacities: Record<number, number> = {
+  1: 5000, 2: 10000, 3: 15000, 4: 20000, 5: 25000, 6: 30000,
+  7: 40000, 8: 50000, 9: 60000, 10: 70000, 11: 80000, 12: 90000, 13: 100000,
+  14: 110000, 15: 120000,
+};
+
+export function getStadiumCapacity(level: number): number {
+  return stadiumCapacities[level] || 5000;
+}
+
+export function getStadiumUpgradeCost(currentLevel: number): number {
+  const nextCapacity = stadiumCapacities[currentLevel + 1];
+  if (!nextCapacity) return 999999999;
+  if (nextCapacity <= 30000) return 5000000;
+  if (nextCapacity <= 100000) return 10000000;
+  return 20000000;
+}
 
 export function getPhysiotherapyRecovery(level: number): number {
   // Base recovery 5 stamina + 3 per level

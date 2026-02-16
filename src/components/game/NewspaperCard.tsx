@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
-import { Infrastructure } from '@/types/infrastructure';
+import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -82,10 +82,6 @@ function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infr
   return { headline: `${club.name}: TEMPORADA EQUILIBRADA`, subtitle: `${club.stats.points} pontos em ${totalGames} jogos disputados.`, category: 'CAMPEONATO' };
 }
 
-function getStadiumCapacity(level: number): number {
-  const capacities: Record<number, number> = { 1: 5000, 2: 10000, 3: 20000, 4: 35000, 5: 50000, 6: 65000, 7: 80000, 8: 95000, 9: 110000, 10: 130000 };
-  return capacities[level] || 5000;
-}
 
 function generateSecondaryNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category?: string }[] {
   const news: { text: string; category?: string }[] = [];

@@ -1,4 +1,5 @@
 import { Club } from '@/types/game';
+import { getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +24,7 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
   const casuais = totalFans - familias - fanaticas - acompanham - socios;
 
   // Stadium capacity based on level
-  const stadiumCapacity = 5000 + stadiumLevel * 5000;
+  const stadiumCapacity = getStadiumCapacity(stadiumLevel);
 
   // Attendance calculation
   const baseAttendance = Math.min(totalFans * 0.15, stadiumCapacity);
