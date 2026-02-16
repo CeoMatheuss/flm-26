@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { LeaguesOverview } from './LeaguesOverview';
+import { ShieldCrest, ShieldShape, ShieldPattern } from './ShieldCrest';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,12 @@ interface Props {
   autoJoining?: boolean;
   clubPlayers?: any[];
   clubTactics?: any;
+  clubShield?: {
+    primaryColor: string;
+    secondaryColor: string;
+    pattern: string;
+    shape: string;
+  };
   onEnterLeague: (league: MultiplayerLeague) => void;
   onLeaveLeague: () => void;
   onSendChat: (content: string) => void;
@@ -252,7 +259,7 @@ function LeagueView(props: Props) {
         </TabsList>
 
         <TabsContent value="standings">
-          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} />
+          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
@@ -338,7 +345,7 @@ function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: 
 }
 
 // === STANDINGS ===
-function StandingsView({ members, userId, division, leagueMatches }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[] }) {
+function StandingsView({ members, userId, division, leagueMatches, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
   const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
   const sorted = [...members].sort((a, b) => 
     b.points - a.points || 
@@ -414,7 +421,23 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-8 w-8" style={{ color: getTeamColor(selectedTeam.club_name) }} />
+              {selectedTeam.user_id === userId && clubShield ? (
+                <ShieldCrest
+                  primaryColor={clubShield.primaryColor}
+                  secondaryColor={clubShield.secondaryColor}
+                  pattern={clubShield.pattern}
+                  shape={clubShield.shape as ShieldShape}
+                  size={36}
+                />
+              ) : (
+                <ShieldCrest
+                  primaryColor={getTeamColor(selectedTeam.club_name)}
+                  secondaryColor="#ffffff"
+                  pattern="classic"
+                  shape="classic"
+                  size={36}
+                />
+              )}
               <div className="flex-1">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   {selectedTeam.club_name}
@@ -549,7 +572,23 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
-                    <Shield className="h-4 w-4 shrink-0" style={{ color: getTeamColor(m.club_name) }} />
+                    {m.user_id === userId && clubShield ? (
+                      <ShieldCrest
+                        primaryColor={clubShield.primaryColor}
+                        secondaryColor={clubShield.secondaryColor}
+                        pattern={clubShield.pattern}
+                        shape={clubShield.shape as ShieldShape}
+                        size={18}
+                      />
+                    ) : (
+                      <ShieldCrest
+                        primaryColor={getTeamColor(m.club_name)}
+                        secondaryColor="#ffffff"
+                        pattern="classic"
+                        shape="classic"
+                        size={18}
+                      />
+                    )}
                     <span className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline">{m.club_name}</span>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
