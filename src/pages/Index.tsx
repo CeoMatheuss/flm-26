@@ -164,15 +164,17 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
 
   useEffect(() => {
-    supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle().then(({ data }) => {
-      setIsAdminRole(!!data);
+    // Server-side admin check only via user_roles table
+    supabase.from('user_roles').select('role').eq('user_id', userId).then(({ data }) => {
+      const roles = (data || []).map(r => r.role);
+      setIsAdminRole(roles.includes('admin'));
+      // Founder is still an admin role but we check specifically for the auto-assigned admin
+      // The founder detection relies on the server-side auto_assign_admin trigger
+      setIsFounder(roles.includes('admin') && userEmail === 'fcmsistemas7@gmail.com');
     });
-    // Detect founder by checking the specific email
-    const isFounderEmail = userEmail === 'fcmsistemas7@gmail.com';
-    setIsFounder(isFounderEmail);
   }, [userId, userEmail]);
 
-  const showAdmin = isAdminRole || isFounder;
+  const showAdmin = isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
