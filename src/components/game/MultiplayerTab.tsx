@@ -275,22 +275,15 @@ function StandingsView({ members, userId, division }: { members: LeagueMember[];
   // Calculate expected reward based on position and division
   const getExpectedReward = (pos: number) => {
     if (division === 1) {
-      if (pos === 1) return "50M";
-      if (pos === 2) return "30M";
-      if (pos === 3) return "20M";
-      if (pos <= 10) return "10M";
-      return "5M";
+      if (pos === 1) return "50M"; if (pos === 2) return "30M"; if (pos === 3) return "20M";
+      if (pos <= 10) return "10M"; return "5M";
     } else if (division === 2) {
-      if (pos === 1) return "20M";
-      if (pos === 2) return "15M";
-      if (pos === 3) return "10M";
-      if (pos <= 10) return "5M";
-      return "2M";
+      if (pos === 1) return "20M"; if (pos === 2) return "15M"; if (pos === 3) return "10M";
+      if (pos <= 10) return "5M"; return "2M";
+    } else if (division === 3) {
+      if (pos === 1) return "10M"; if (pos === 2) return "7M"; if (pos === 3) return "5M"; return "1M";
     } else {
-      if (pos === 1) return "10M";
-      if (pos === 2) return "7M";
-      if (pos === 3) return "5M";
-      return "1M";
+      if (pos === 1) return "5M"; if (pos === 2) return "3M"; if (pos === 3) return "2M"; return "500k";
     }
   };
 
@@ -817,9 +810,10 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
             <TableHeader>
               <TableRow className="hover:bg-transparent border-emerald-500/10">
                 <TableHead className="text-xs h-8">Posição</TableHead>
-                <TableHead className="text-xs h-8 text-right">Liga 1</TableHead>
-                <TableHead className="text-xs h-8 text-right">Liga 2</TableHead>
-                <TableHead className="text-xs h-8 text-right">Liga 3+</TableHead>
+                <TableHead className="text-xs h-8 text-right">Série A</TableHead>
+                <TableHead className="text-xs h-8 text-right">Série B</TableHead>
+                <TableHead className="text-xs h-8 text-right">Série C</TableHead>
+                <TableHead className="text-xs h-8 text-right">Série D</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -828,30 +822,35 @@ function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; 
                 <TableCell className="text-xs py-1 text-right text-emerald-400 font-bold">R$ 50M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
               </TableRow>
               <TableRow className="border-emerald-500/10">
                 <TableCell className="text-xs py-1">2º Lugar</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 30M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 15M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 7M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 3M</TableCell>
               </TableRow>
               <TableRow className="border-emerald-500/10">
                 <TableCell className="text-xs py-1">3º Lugar</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 20M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 2M</TableCell>
               </TableRow>
               <TableRow className="border-emerald-500/10">
                 <TableCell className="text-xs py-1">4º-10º</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 10M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 500k</TableCell>
               </TableRow>
               <TableRow className="border-transparent">
-                <TableCell className="text-xs py-1">11º-20º</TableCell>
+                <TableCell className="text-xs py-1">11º-30º</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 5M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 2M</TableCell>
                 <TableCell className="text-xs py-1 text-right">R$ 1M</TableCell>
+                <TableCell className="text-xs py-1 text-right">R$ 500k</TableCell>
               </TableRow>
             </TableBody>
           </Table>
