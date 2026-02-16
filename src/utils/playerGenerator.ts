@@ -1,4 +1,4 @@
-import { Player, PlayerAttributes, ScoutReport } from '@/types/game';
+import { Player, PlayerAttributes, PlayerHistoryEntry, ScoutReport } from '@/types/game';
 import { YouthProspect, getYouthMinOverall, getYouthMaxOverall } from '@/types/infrastructure';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -23,6 +23,12 @@ const lastNames = [
   'Gomes', 'Dias', 'Mendes', 'Rocha', 'Borges', 'Reis', 'Amaral', 'Melo', 'Pires', 'Tavares',
   'Fonseca', 'Castro', 'Azevedo', 'Moura', 'Barros', 'Sampaio', 'Andrade', 'Cunha', 'Batista', 'Nogueira',
   'Miranda', 'Cavalcanti', 'Vasconcelos', 'Xavier', 'Coelho', 'Alencar', 'Farias', 'Guimarães', 'Braga', 'Medeiros',
+];
+
+const randomClubNames = [
+  'Atlético Mineiro', 'Flamengo', 'Palmeiras', 'São Paulo', 'Corinthians', 'Grêmio', 'Internacional', 'Cruzeiro',
+  'Santos', 'Vasco', 'Botafogo', 'Fluminense', 'Bahia', 'Sport', 'Fortaleza', 'Ceará', 'Coritiba', 'Athletico-PR',
+  'Goiás', 'Vitória', 'Ponte Preta', 'Guarani', 'Juventude', 'Chapecoense', 'Avaí', 'Figueirense',
 ];
 
 const positions: Player['position'][] = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -82,12 +88,42 @@ export function calculateOverall(attrs: PlayerAttributes, position: Player['posi
   return Math.max(1, Math.min(99, Math.round(val)));
 }
 
-export function generatePlayer(overallRange: [number, number], ageRange: [number, number], pos?: Player['position']): Player {
+function generateRandomHistory(age: number): PlayerHistoryEntry[] {
+  if (age < 20) return [];
+  const numClubs = Math.min(age - 18, Math.floor(Math.random() * 3) + 1);
+  const history: PlayerHistoryEntry[] = [];
+  let currentSeason = 1;
+  for (let i = 0; i < numClubs; i++) {
+    const club = randomClubNames[Math.floor(Math.random() * randomClubNames.length)];
+    const duration = Math.floor(Math.random() * 3) + 1;
+    const games = Math.floor(Math.random() * 30 * duration + 10);
+    const goals = Math.floor(Math.random() * games * 0.3);
+    const assists = Math.floor(Math.random() * games * 0.2);
+    const avgRating = +(Math.random() * 3 + 5).toFixed(1);
+    history.push({
+      club,
+      seasonStart: currentSeason,
+      seasonEnd: currentSeason + duration - 1,
+      games,
+      goals,
+      assists,
+      avgRating,
+    });
+    currentSeason += duration;
+  }
+  return history;
+}
+
+export function generatePlayer(overallRange: [number, number], ageRange: [number, number], pos?: Player['position'], clubName?: string): Player {
   const position = pos || positions[Math.floor(Math.random() * positions.length)];
   const targetOverall = Math.floor(Math.random() * (overallRange[1] - overallRange[0] + 1) + overallRange[0]);
   const age = Math.floor(Math.random() * (ageRange[1] - ageRange[0] + 1) + ageRange[0]);
   const attributes = generateAttributes(position, targetOverall);
   const overall = calculateOverall(attributes, position);
+
+  const history: PlayerHistoryEntry[] = clubName
+    ? [{ club: clubName, seasonStart: 1, games: 0, goals: 0, assists: 0, avgRating: 0 }]
+    : generateRandomHistory(age);
 
   return {
     id: generateId(),
@@ -104,17 +140,18 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     contract: Math.floor(Math.random() * 4 + 1),
     gamesPlayed: 0,
     trainingProgress: 0,
+    history,
   };
 }
 
-export function generateInitialSquad(): Player[] {
+export function generateInitialSquad(clubName?: string): Player[] {
   const squad: Player[] = [];
   const posCount: [Player['position'], number][] = [
     ['GOL', 2], ['ZAG', 4], ['LAT', 3], ['VOL', 3], ['MEI', 4], ['ATA', 4],
   ];
   for (const [pos, count] of posCount) {
     for (let i = 0; i < count; i++) {
-      squad.push(generatePlayer([35, 55], [18, 32], pos));
+      squad.push(generatePlayer([35, 55], [18, 32], pos, clubName));
     }
   }
   return squad;

@@ -94,7 +94,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
       fans: 200,
-      players: generateInitialSquad(),
+      players: generateInitialSquad(config.name),
       matches: generateSeasonMatches(config.country),
       primaryColor: config.primaryColor,
       secondaryColor: config.secondaryColor,
