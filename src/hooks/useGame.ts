@@ -121,7 +121,11 @@ export function useGame(initialState?: GameState) {
       const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / prev.players.length;
       const tacticBonus = tactics.playStyle === 'ofensivo' ? 5 : tactics.playStyle === 'defensivo' ? -3 : 0;
       const pressingBonus = tactics.pressing === 'alto' ? 3 : tactics.pressing === 'baixo' ? -2 : 0;
-      const adjustedStrength = teamStrength + tacticBonus + pressingBonus;
+      // Competitivo personality bonus against strong teams
+      const hasCompetitivo = prev.players.some(p => p.personality === 'competitivo');
+      const opponentTeamPreCheck = leagueTeams.find(t => t.name === match.opponent);
+      const competitivoBonus = hasCompetitivo && (opponentTeamPreCheck?.strength || 65) > 70 ? 3 : 0;
+      const adjustedStrength = teamStrength + tacticBonus + pressingBonus + competitivoBonus;
       // Use bot team strength from league data
       const opponentTeam = leagueTeams.find(t => t.name === match.opponent);
       const opponentStrength = (opponentTeam?.strength || 65) + Math.random() * 15 - 5;
@@ -328,15 +332,37 @@ export function useGame(initialState?: GameState) {
           return {
             ...p,
             injury: playerInjury || undefined,
-            gamesPlayed: newGames >= 10 ? 0 : newGames,
-            trainingProgress: newGames >= 10 ? 0 : newGames,
             overall: newOverall,
-            stamina: isInjured
-              ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel) * 0.5)
-              : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel))),
-            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+            gamesPlayed: newGames >= 10 ? 0 : newGames,
+            stamina: (() => {
+              const baseStamina = isInjured
+                ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel) * 0.5)
+                : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel)));
+              const festeiroPenalty = p.personality === 'festeiro' ? Math.floor(Math.random() * 8 + 3) : 0;
+              return Math.max(20, baseStamina - festeiroPenalty);
+            })(),
+            morale: (() => {
+              const baseMoraleDelta = isWin ? 5 : isDraw ? 0 : -5;
+              const moraleDelta = p.personality === 'temperamental' ? baseMoraleDelta * 2 :
+                p.personality === 'calmo' ? Math.round(baseMoraleDelta * 0.5) : baseMoraleDelta;
+              return Math.min(100, Math.max(20, p.morale + moraleDelta));
+            })(),
+            trainingProgress: (() => {
+              const base = newGames >= 10 ? 0 : newGames;
+              if (p.personality === 'dedicado' && !isInjured && base > 0) return Math.min(base + 1, 12);
+              if (p.personality === 'preguicoso' && Math.random() < 0.2) return Math.max(0, base - 1);
+              return base;
+            })(),
           };
         });
+
+        // Líder personality: +3 morale to all teammates when team wins
+        const hasLider = mappedPlayers.some(p => p.personality === 'lider');
+        if (hasLider && isWin) {
+          mappedPlayers.forEach((p, i) => {
+            mappedPlayers[i] = { ...p, morale: Math.min(100, p.morale + 3) };
+          });
+        }
 
         setEvents(ev => [...extraEvents, ...newEvents.map(e => ({ ...e, resolved: true })), ...ev].slice(0, 20));
 
@@ -396,10 +422,19 @@ export function useGame(initialState?: GameState) {
             gamesPlayed: newGames >= 10 ? 0 : newGames,
             trainingProgress: newGames >= 10 ? 0 : newGames,
             overall: newOverall,
-            stamina: isInjured
-              ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel2) * 0.5)
-              : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel2))),
-            morale: Math.min(100, Math.max(30, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+            stamina: (() => {
+              const baseStamina = isInjured
+                ? Math.min(100, p.stamina + getPhysiotherapyRecovery(physioLevel2) * 0.5)
+                : Math.min(100, Math.max(40, p.stamina - Math.floor(Math.random() * 15 + 5) + getPhysiotherapyRecovery(physioLevel2)));
+              const festeiroPenalty = p.personality === 'festeiro' ? Math.floor(Math.random() * 8 + 3) : 0;
+              return Math.max(20, baseStamina - festeiroPenalty);
+            })(),
+            morale: (() => {
+              const baseMoraleDelta = isWin ? 5 : isDraw ? 0 : -5;
+              const moraleDelta = p.personality === 'temperamental' ? baseMoraleDelta * 2 :
+                p.personality === 'calmo' ? Math.round(baseMoraleDelta * 0.5) : baseMoraleDelta;
+              return Math.min(100, Math.max(20, p.morale + moraleDelta));
+            })(),
           };
         }),
         budget: prev.budget + prize + sponsorWeekly - youthCost,
@@ -589,6 +624,7 @@ export function useGame(initialState?: GameState) {
       age: prospect.age, salary: prospect.salary,
       stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
       contract: 3, gamesPlayed: 0, trainingProgress: 0,
+      personality: prospect.personality,
     };
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
