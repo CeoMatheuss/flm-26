@@ -1,24 +1,29 @@
-import { Club, Match } from '@/types/game';
+import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2 } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-interface LiveMatchData {
-  homeTeam: string;
-  awayTeam: string;
-  stadiumName: string;
-  stadiumCapacity?: number;
-  matchId: string;
-  homeGoals?: number;
-  awayGoals?: number;
-  minute?: number;
-  isHome?: boolean;
-  competition?: string;
+interface LiveMatchFromDB {
+  id: string;
+  home_team: string;
+  away_team: string;
+  stadium_name: string;
+  stadium_capacity: number;
+  match_id: string;
+  home_goals: number;
+  away_goals: number;
+  is_home: boolean;
+  competition: string;
+  status: string;
+  started_at: string;
+  duration_seconds: number;
+  events: any;
 }
 
 interface Props {
@@ -30,28 +35,67 @@ type MatchStatus = 'scheduled' | 'live' | 'finished' | 'none';
 /**
  * matchDashboardCard — BLOCO FIXO OBRIGATÓRIO
  * Sempre renderizado no topo do dashboard. Nunca removido.
- * Consome dados de sessionStorage (live) e club.matches (scheduled/finished).
+ * Consome dados do backend (live_matches table) e club.matches (scheduled/finished).
  */
 export function MatchDashboardCard({ club }: Props) {
   const navigate = useNavigate();
-  const [liveMatch, setLiveMatch] = useState<LiveMatchData | null>(null);
+  const [liveMatch, setLiveMatch] = useState<LiveMatchFromDB | null>(null);
+  const [currentMinute, setCurrentMinute] = useState(0);
+  const [currentHomeGoals, setCurrentHomeGoals] = useState(0);
+  const [currentAwayGoals, setCurrentAwayGoals] = useState(0);
 
-  // Poll sessionStorage for live match data every 2s
+  // Poll DB for active live match
   useEffect(() => {
-    const checkLive = () => {
-      try {
-        const raw = sessionStorage.getItem('match_live');
-        if (raw) {
-          setLiveMatch(JSON.parse(raw));
-        } else {
+    const fetchLive = async () => {
+      const { data } = await supabase
+        .from('live_matches')
+        .select('*')
+        .eq('status', 'live')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setLiveMatch(data as any);
+        // Calculate current minute based on elapsed time
+        const startTime = new Date(data.started_at).getTime();
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / (data.duration_seconds * 1000));
+        
+        // Get max minute from events
+        const events = (data.events as any[]) || [];
+        const maxMin = events.length > 0 ? Math.max(...events.map((e: any) => e.minute)) : 90;
+        const gameMin = Math.floor(progress * maxMin);
+        setCurrentMinute(gameMin);
+
+        // Count goals up to current minute
+        let hg = 0, ag = 0;
+        for (const ev of events) {
+          if (ev.isGoal && ev.minute <= gameMin) {
+            if (ev.team === 'home') hg++;
+            else if (ev.team === 'away') ag++;
+          }
+        }
+        setCurrentHomeGoals(hg);
+        setCurrentAwayGoals(ag);
+
+        // Check if match should be finished
+        if (now >= startTime + data.duration_seconds * 1000) {
+          // Auto-finish
+          await supabase
+            .from('live_matches')
+            .update({ status: 'finished', current_minute: maxMin })
+            .eq('id', data.id);
           setLiveMatch(null);
         }
-      } catch {
+      } else {
         setLiveMatch(null);
       }
     };
-    checkLive();
-    const interval = setInterval(checkLive, 2000);
+
+    fetchLive();
+    const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -70,7 +114,7 @@ export function MatchDashboardCard({ club }: Props) {
 
   // Resolve display data
   const homeTeamName = status === 'live'
-    ? liveMatch!.homeTeam
+    ? liveMatch!.home_team
     : status === 'scheduled'
       ? (nextMatch!.isHome !== false ? club.name : nextMatch!.opponent)
       : status === 'finished'
@@ -78,7 +122,7 @@ export function MatchDashboardCard({ club }: Props) {
         : club.name;
 
   const awayTeamName = status === 'live'
-    ? liveMatch!.awayTeam
+    ? liveMatch!.away_team
     : status === 'scheduled'
       ? (nextMatch!.isHome !== false ? nextMatch!.opponent : club.name)
       : status === 'finished'
@@ -96,7 +140,7 @@ export function MatchDashboardCard({ club }: Props) {
       : '—';
 
   const venueName = status === 'live'
-    ? (liveMatch!.stadiumName || club.stadiumName)
+    ? (liveMatch!.stadium_name || club.stadiumName)
     : status === 'scheduled'
       ? (nextMatch!.stadium || club.stadiumName)
       : status === 'finished'
@@ -104,7 +148,7 @@ export function MatchDashboardCard({ club }: Props) {
         : club.stadiumName;
 
   const venueCapacity = status === 'live'
-    ? (liveMatch!.stadiumCapacity || club.matches.find(m => m.id === liveMatch!.matchId)?.stadiumCapacity || null)
+    ? (liveMatch!.stadium_capacity || null)
     : status === 'scheduled'
       ? (nextMatch!.stadiumCapacity || null)
       : status === 'finished'
@@ -112,7 +156,7 @@ export function MatchDashboardCard({ club }: Props) {
         : null;
 
   const isHome = status === 'live'
-    ? (liveMatch!.isHome ?? liveMatch!.homeTeam === club.name)
+    ? liveMatch!.is_home
     : status === 'scheduled'
       ? (nextMatch!.isHome !== false)
       : status === 'finished'
@@ -174,7 +218,6 @@ export function MatchDashboardCard({ club }: Props) {
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
         {status === 'none' ? (
-          /* === SEM PARTIDA === */
           <div className="text-center py-4">
             <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-bold text-sm">Nenhuma partida agendada</p>
@@ -182,7 +225,7 @@ export function MatchDashboardCard({ club }: Props) {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Info bar: Competition, Stadium, Capacity, Home/Away */}
+            {/* Info bar */}
             <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/30">
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">⚽ {competition}</Badge>
               <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
@@ -196,6 +239,11 @@ export function MatchDashboardCard({ club }: Props) {
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">
                 {isHome ? '🏠 Casa' : '✈️ Fora'}
               </Badge>
+              {status === 'live' && (
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] text-emerald-500 border-emerald-500/30">
+                  🖥️ Servidor
+                </Badge>
+              )}
             </div>
 
             {/* Date & Status row */}
@@ -204,7 +252,7 @@ export function MatchDashboardCard({ club }: Props) {
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {status === 'live' ? (
-                  <span className="text-destructive font-bold animate-pulse">AO VIVO — {liveMatch!.minute ?? 0}'</span>
+                  <span className="text-destructive font-bold animate-pulse">AO VIVO — {currentMinute}'</span>
                 ) : status === 'finished' ? (
                   <span>Encerrada</span>
                 ) : (
@@ -215,21 +263,19 @@ export function MatchDashboardCard({ club }: Props) {
 
             {/* Teams & Score */}
             <div className="flex items-center justify-between py-2">
-              {/* Home Team */}
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isHomeTeamClub)}
                 <p className="font-bold text-xs sm:text-sm truncate">{homeTeamName}</p>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Mandante</p>
               </div>
 
-              {/* Score / VS */}
               <div className="text-center px-3 sm:px-5 shrink-0">
                 {status === 'live' ? (
                   <>
                     <p className="text-2xl sm:text-3xl font-black tabular-nums">
-                      {liveMatch!.homeGoals ?? 0} <span className="text-muted-foreground">-</span> {liveMatch!.awayGoals ?? 0}
+                      {currentHomeGoals} <span className="text-muted-foreground">-</span> {currentAwayGoals}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-destructive font-bold animate-pulse mt-0.5">{liveMatch!.minute ?? 0}'</p>
+                    <p className="text-[10px] sm:text-xs text-destructive font-bold animate-pulse mt-0.5">{currentMinute}'</p>
                   </>
                 ) : status === 'finished' && lastFinished?.result ? (
                   <>
@@ -246,7 +292,6 @@ export function MatchDashboardCard({ club }: Props) {
                 )}
               </div>
 
-              {/* Away Team */}
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isAwayTeamClub)}
                 <p className="font-bold text-xs sm:text-sm truncate">{awayTeamName}</p>
@@ -255,11 +300,11 @@ export function MatchDashboardCard({ club }: Props) {
             </div>
 
             {/* Action buttons */}
-            {status === 'live' && (
+            {status === 'live' && liveMatch && (
               <Button
                 className="w-full gap-2 font-bold"
                 variant="destructive"
-                onClick={() => navigate('/match')}
+                onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id } })}
               >
                 <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
               </Button>

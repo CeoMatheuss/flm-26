@@ -428,6 +428,87 @@ export type Database = {
           },
         ]
       }
+      live_matches: {
+        Row: {
+          away_goals: number
+          away_strength: number
+          away_team: string
+          competition: string
+          created_at: string
+          current_minute: number
+          duration_seconds: number
+          events: Json
+          finished_at: string | null
+          home_goals: number
+          home_players: Json
+          home_strength: number
+          home_team: string
+          id: string
+          is_home: boolean
+          match_id: string
+          player_ratings: Json
+          stadium_capacity: number
+          stadium_name: string
+          started_at: string
+          stats: Json
+          status: string
+          tactics: Json
+          user_id: string
+        }
+        Insert: {
+          away_goals?: number
+          away_strength?: number
+          away_team: string
+          competition?: string
+          created_at?: string
+          current_minute?: number
+          duration_seconds?: number
+          events?: Json
+          finished_at?: string | null
+          home_goals?: number
+          home_players?: Json
+          home_strength?: number
+          home_team: string
+          id?: string
+          is_home?: boolean
+          match_id: string
+          player_ratings?: Json
+          stadium_capacity?: number
+          stadium_name?: string
+          started_at?: string
+          stats?: Json
+          status?: string
+          tactics?: Json
+          user_id: string
+        }
+        Update: {
+          away_goals?: number
+          away_strength?: number
+          away_team?: string
+          competition?: string
+          created_at?: string
+          current_minute?: number
+          duration_seconds?: number
+          events?: Json
+          finished_at?: string | null
+          home_goals?: number
+          home_players?: Json
+          home_strength?: number
+          home_team?: string
+          id?: string
+          is_home?: boolean
+          match_id?: string
+          player_ratings?: Json
+          stadium_capacity?: number
+          stadium_name?: string
+          started_at?: string
+          stats?: Json
+          status?: string
+          tactics?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       multiplayer_leagues: {
         Row: {
           auto_created: boolean
