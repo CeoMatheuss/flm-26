@@ -44,6 +44,7 @@ import { useGame, GameState } from '@/hooks/useGame';
 import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
+import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3 } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
@@ -164,6 +165,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
+  usePresence(userId);
 
   useEffect(() => {
     // Server-side admin check only via user_roles table
@@ -235,7 +237,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} infrastructure={game.infrastructure} isNewClub={isNewClub} />
+            <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} infrastructure={game.infrastructure} isNewClub={isNewClub} userId={userId} />
             <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>

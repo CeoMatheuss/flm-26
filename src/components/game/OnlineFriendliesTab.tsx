@@ -32,6 +32,7 @@ interface FriendlyInvite {
 interface OnlineUser {
   user_id: string;
   display_name: string | null;
+  is_online?: boolean;
 }
 
 interface Props {
@@ -83,14 +84,33 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const searchPlayers = async () => {
     if (!searchTerm.trim() || searchTerm.trim().length < 2) return;
     setSearching(true);
-    // Search in game_saves for club names (stored in club_data)
     const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, display_name')
       .neq('user_id', userId)
       .ilike('display_name', `%${searchTerm.trim()}%`)
       .limit(10);
-    setSearchResults(profiles || []);
+
+    // Fetch presence for found users
+    const userIds = (profiles || []).map(p => p.user_id);
+    let presenceMap: Record<string, boolean> = {};
+    if (userIds.length > 0) {
+      const { data: presenceData } = await supabase
+        .from('user_presence')
+        .select('user_id, is_online, last_seen')
+        .in('user_id', userIds);
+      (presenceData || []).forEach(p => {
+        // Consider online if is_online and last_seen within 2 minutes
+        const lastSeen = new Date(p.last_seen).getTime();
+        const twoMinAgo = Date.now() - 2 * 60 * 1000;
+        presenceMap[p.user_id] = p.is_online && lastSeen > twoMinAgo;
+      });
+    }
+
+    setSearchResults((profiles || []).map(p => ({
+      ...p,
+      is_online: presenceMap[p.user_id] || false,
+    })));
     setSearching(false);
   };
 
@@ -243,8 +263,11 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                       setSearchResults([]);
                     }}
                   >
-                    <Users className="h-3 w-3" />
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${u.is_online ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
                     <span className="truncate">{u.display_name || 'Jogador'}</span>
+                    <span className={`text-[8px] ml-auto ${u.is_online ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                      {u.is_online ? 'Online' : 'Offline'}
+                    </span>
                   </Button>
                 ))}
               </div>
