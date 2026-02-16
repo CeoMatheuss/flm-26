@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
-import { Infrastructure } from '@/types/infrastructure';
+import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,6 @@ interface Props {
   onBack: () => void;
 }
 
-function getStadiumCapacity(level: number): number {
-  const capacities: Record<number, number> = { 1: 5000, 2: 10000, 3: 20000, 4: 35000, 5: 50000, 6: 65000, 7: 80000, 8: 95000, 9: 110000, 10: 130000 };
-  return capacities[level] || 5000;
-}
 
 const categoryColors: Record<string, string> = {
   LESÃO: 'bg-orange-500/80',
