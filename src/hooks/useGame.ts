@@ -11,6 +11,10 @@ import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFree
 import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
 import { FeedItem, createFeedItem } from '@/types/feed';
+import { Achievement, checkAchievements } from '@/types/achievements';
+import { MatchReport, generateMatchReport, InterviewScenario, generateInterviewScenario, InterviewChoice } from '@/types/matchReport';
+import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
+import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 
 export interface LoanedPlayer {
   player: Player;
@@ -36,6 +40,11 @@ export interface GameState {
   loanedPlayers?: LoanedPlayer[];
   trainingFocus?: Record<string, TrainingFocus>;
   feedItems?: FeedItem[];
+  achievements?: Achievement[];
+  lastMatchReport?: MatchReport;
+  clubProfile?: ClubProfile;
+  ctRooms?: CTRooms;
+  youthPromotedCount?: number;
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -73,7 +82,12 @@ export function useGame(initialState?: GameState) {
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
   const [trainingFocus, setTrainingFocus] = useState<Record<string, TrainingFocus>>(initialState?.trainingFocus ?? {});
   const [listedForSale, setListedForSale] = useState<string[]>([]);
-  const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
+   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
+   const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
+   const [lastMatchReport, setLastMatchReport] = useState<MatchReport | undefined>(initialState?.lastMatchReport);
+   const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
+   const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
+   const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
 
   const addFeedItem = useCallback((item: FeedItem) => {
     setFeedItems(prev => [item, ...prev].slice(0, 50));
@@ -691,8 +705,8 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
@@ -702,15 +716,30 @@ export function useGame(initialState?: GameState) {
     toast.success(`Numeração alterada para #${number}`);
   }, []);
 
+  const upgradeCTRoom = useCallback((room: keyof CTRooms) => {
+    const cost = getCTRoomUpgradeCost(room, ctRooms[room]);
+    if (club.budget < cost) { toast.error('Orçamento insuficiente!'); return; }
+    const roomNames: Record<string, string> = { gym: 'Musculação', pool: 'Piscina', cryotherapy: 'Crioterapia', videoRoom: 'Sala de Vídeo', nutrition: 'Nutrição', meditation: 'Meditação' };
+    setClub(prev => ({ ...prev, budget: prev.budget - cost }));
+    setCTRooms(prev => ({ ...prev, [room]: prev[room] + 1 }));
+    addFinance('despesa', 'CT', cost, `Sala: ${roomNames[room]} → Nv.${ctRooms[room] + 1}`);
+    toast.success(`${roomNames[room]} melhorada para nível ${ctRooms[room] + 1}!`);
+  }, [ctRooms, club.budget, addFinance]);
+
+  const updateClubProfile = useCallback((profile: ClubProfile) => {
+    setClubProfile(profile);
+  }, []);
+
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
+    achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed,
+    reactToFeed, upgradeCTRoom, updateClubProfile,
   };
 }
