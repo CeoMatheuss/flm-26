@@ -150,9 +150,20 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 }
 
 function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
-  const isOwnerAdmin = userEmail === 'fcmsistemas7@gmail.com';
+  const isFounder = userEmail === 'fcmsistemas7@gmail.com';
+  const [isAdminRole, setIsAdminRole] = useState(false);
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
+
+  useEffect(() => {
+    if (!isFounder) {
+      supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle().then(({ data }) => {
+        setIsAdminRole(!!data);
+      });
+    }
+  }, [userId, isFounder]);
+
+  const showAdmin = isFounder || isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
@@ -251,7 +262,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
-                {isOwnerAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
+                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -413,9 +424,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           <TabsContent value="feed">
             <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
           </TabsContent>
-          {isOwnerAdmin && (
+          {showAdmin && (
             <TabsContent value="admin">
-              <AdminTab userId={userId} />
+              <AdminTab userId={userId} isFounder={isFounder} />
             </TabsContent>
           )}
         </Tabs>
