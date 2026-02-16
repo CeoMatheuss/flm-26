@@ -6,7 +6,8 @@ import { getPlayerValue } from '@/utils/playerGenerator';
 import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw, DollarSign, ArrowLeftRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { LoanedPlayer } from '@/hooks/useGame';
 
 interface Props {
@@ -62,12 +63,36 @@ function getPlayerExpectedSalary(player: Player): number {
 
 export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, clubName, listedForSale, scoutReports, loanedPlayers, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents, onLoanOut, onLoanIn }: Props) {
   const [salaryOffers, setSalaryOffers] = useState<Record<string, number>>({});
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set());
   const listedPlayers = clubPlayers.filter(p => listedForSale.includes(p.id));
   const loansOut = loanedPlayers.filter(l => l.direction === 'out');
   const loansIn = loanedPlayers.filter(l => l.direction === 'in');
   const loanedPlayerIds = loanedPlayers.map(l => l.player.id);
   const loanableClubPlayers = clubPlayers.filter(p => !loanedPlayerIds.includes(p.id) && !listedForSale.includes(p.id));
 
+  const toggleExpand = (id: string) => {
+    setExpandedPlayers(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const renderAttributes = (attrs: PlayerAttributes) => (
+    <div className="mt-2 grid grid-cols-4 sm:grid-cols-8 gap-1">
+      {(Object.entries(attrLabels) as [string, string][]).map(([key, label]) => {
+        const val = attrs[key as keyof PlayerAttributes];
+        if (val === undefined) return null;
+        const color = val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-yellow-400' : 'text-red-400';
+        return (
+          <div key={key} className="text-center bg-muted/30 rounded px-1 py-0.5">
+            <p className="text-[8px] text-muted-foreground">{label}</p>
+            <p className={`text-[10px] font-bold ${color}`}>{val}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
   return (
     <div className="space-y-4 sm:space-y-6">
       <Tabs defaultValue="market" className="w-full">
@@ -88,18 +113,25 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
           <div className="space-y-1.5 sm:space-y-2">
             {marketPlayers.map(player => {
               const value = getPlayerValue(player);
+              const isExpanded = expandedPlayers.has(player.id);
               return (
                 <Card key={player.id}>
-                  <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                    <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall}</p>
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall}</p>
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold text-emerald-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleExpand(player.id)}>
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </Button>
+                      <Button size="sm" onClick={() => onBuy(player)} disabled={budget < value} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
+                        <ShoppingCart className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Comprar</span>
+                      </Button>
                     </div>
-                    <p className="text-xs sm:text-sm font-bold text-emerald-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                    <Button size="sm" onClick={() => onBuy(player)} disabled={budget < value} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
-                      <ShoppingCart className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Comprar</span>
-                    </Button>
+                    {isExpanded && renderAttributes(player.attributes)}
                   </CardContent>
                 </Card>
               );
@@ -282,20 +314,29 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
               <p className="text-[10px] text-muted-foreground">Limite de empréstimos de entrada atingido.</p>
             ) : (
               <div className="space-y-1">
-                {marketPlayers.slice(0, 5).map(player => (
-                  <Card key={player.id} className="hover:border-primary/30 transition-colors">
-                    <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                      <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs truncate">{player.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • Sal: R${(player.salary / 1000).toFixed(0)}k/mês</p>
-                      </div>
-                      <Button size="sm" variant="default" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanIn(player)}>
-                        <ArrowLeftRight className="h-3 w-3" /> Pegar
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                {marketPlayers.slice(0, 5).map(player => {
+                  const isExpanded = expandedPlayers.has(`loan-${player.id}`);
+                  return (
+                    <Card key={player.id} className="hover:border-primary/30 transition-colors">
+                      <CardContent className="p-2 sm:p-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs truncate">{player.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • Sal: R${(player.salary / 1000).toFixed(0)}k/mês</p>
+                          </div>
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleExpand(`loan-${player.id}`)}>
+                            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </Button>
+                          <Button size="sm" variant="default" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanIn(player)}>
+                            <ArrowLeftRight className="h-3 w-3" /> Pegar
+                          </Button>
+                        </div>
+                        {isExpanded && renderAttributes(player.attributes)}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
