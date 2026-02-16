@@ -54,6 +54,7 @@ export interface Player {
   matchRating?: number;
   seasonRatings?: number[];
   shirtNumber?: number;
+  seasonsWithoutPlaying?: number;
 }
 
 export interface Scout {

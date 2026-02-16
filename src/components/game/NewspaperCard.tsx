@@ -51,6 +51,10 @@ function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infr
         return { headline: latest.title, subtitle: latest.description, category: 'CLIMA' };
       case 'captain':
         return { headline: latest.title, subtitle: latest.description, category: 'LIDERANÇA' };
+      case 'season_awards':
+        return { headline: latest.title, subtitle: latest.description, category: 'PREMIAÇÃO' };
+      case 'player_unhappy':
+        return { headline: latest.title, subtitle: latest.description, category: 'INSATISFAÇÃO' };
     }
   }
 
@@ -142,6 +146,8 @@ const categoryColors: Record<string, string> = {
   CRISE: 'bg-destructive/80',
   'PRÉ-TEMPORADA': 'bg-primary/80',
   LIDERANÇA: 'bg-yellow-500/80',
+  PREMIAÇÃO: 'bg-amber-600/80',
+  INSATISFAÇÃO: 'bg-red-700/80',
 };
 
 export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: Props) {

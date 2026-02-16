@@ -28,6 +28,7 @@ import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
+import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -262,6 +263,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2 text-xs"><Medal className="h-3.5 w-3.5" /> Conquistas</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2 text-xs"><User className="h-3.5 w-3.5" /> Perfil do Clube</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2 text-xs"><Trophy className="h-3.5 w-3.5" /> Troféus</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
@@ -404,10 +406,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <ClubSettingsTab
               clubName={game.club.name}
               stadiumName={game.club.stadiumName || 'Arena'}
-              ticketPrice={game.club.ticketPrice || 30}
               onRenameClub={game.renameClub}
               onRenameStadium={game.renameStadium}
-              onSetTicketPrice={game.setTicketPrice}
             />
           </TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>
@@ -435,6 +435,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </TabsContent>
           <TabsContent value="ctrooms">
             <CTRoomsTab rooms={game.ctRooms} budget={game.club.budget} trainingCenterLevel={game.infrastructure.trainingCenter.level} onUpgradeRoom={game.upgradeCTRoom} />
+          </TabsContent>
+          <TabsContent value="trophies">
+            <TrophiesTab trophies={game.clubProfile.trophies || []} />
           </TabsContent>
           {showAdmin && (
             <TabsContent value="admin">

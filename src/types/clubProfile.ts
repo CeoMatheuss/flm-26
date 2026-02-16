@@ -1,9 +1,16 @@
+export interface Trophy {
+  title: string;
+  season: number;
+  date: string;
+}
+
 export interface ClubProfile {
   ownerName: string;
   instagram: string;
   bio: string;
   foundedSeason: number;
   motto: string;
+  trophies?: Trophy[];
 }
 
 export const defaultClubProfile: ClubProfile = {
@@ -12,4 +19,5 @@ export const defaultClubProfile: ClubProfile = {
   bio: '',
   foundedSeason: 1,
   motto: '',
+  trophies: [],
 };

@@ -3,18 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Pencil, Landmark, Ticket, Check } from 'lucide-react';
+import { Pencil, Landmark, Check } from 'lucide-react';
 
 interface Props {
   clubName: string;
   stadiumName: string;
-  ticketPrice: number;
   onRenameClub: (name: string) => void;
   onRenameStadium: (name: string) => void;
-  onSetTicketPrice: (price: number) => void;
 }
 
-export function ClubSettingsTab({ clubName, stadiumName, ticketPrice, onRenameClub, onRenameStadium, onSetTicketPrice }: Props) {
+export function ClubSettingsTab({ clubName, stadiumName, onRenameClub, onRenameStadium }: Props) {
   const [editingClub, setEditingClub] = useState(false);
   const [editingStadium, setEditingStadium] = useState(false);
   const [newClubName, setNewClubName] = useState(clubName);
@@ -76,35 +74,6 @@ export function ClubSettingsTab({ clubName, stadiumName, ticketPrice, onRenameCl
         </CardContent>
       </Card>
 
-      {/* Ticket Price */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Ticket className="h-4 w-4 text-yellow-400" /> Preço do Ingresso
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-primary">R$ {ticketPrice}</p>
-            <p className="text-[10px] text-muted-foreground">por torcedor</p>
-          </div>
-          <Slider
-            value={[ticketPrice]}
-            onValueChange={([v]) => onSetTicketPrice(v)}
-            min={5}
-            max={200}
-            step={5}
-            className="w-full"
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>R$ 5</span>
-            <span>R$ 200</span>
-          </div>
-          <p className="text-[10px] text-muted-foreground">
-            ⚠️ Preços altos geram mais receita mas podem afastar torcedores. Preços baixos atraem mais público.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
