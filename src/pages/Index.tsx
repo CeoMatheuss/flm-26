@@ -112,6 +112,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       primaryColor: config.primaryColor,
       secondaryColor: config.secondaryColor,
       shieldPattern: config.shieldPattern,
+      shieldShape: config.shieldShape,
       logoUrl: config.logoUrl,
       country: config.country,
     };
@@ -210,7 +211,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {game.club.shieldPattern ? (
-              <ShieldCrest primaryColor={game.club.primaryColor || '#2563EB'} secondaryColor={game.club.secondaryColor || '#FFF'} pattern={game.club.shieldPattern} size={40} className="shrink-0" />
+              <ShieldCrest primaryColor={game.club.primaryColor || '#2563EB'} secondaryColor={game.club.secondaryColor || '#FFF'} pattern={game.club.shieldPattern} shape={(game.club as any).shieldShape || 'classic'} size={40} className="shrink-0" />
             ) : game.club.logoUrl ? (
               <img src={game.club.logoUrl} alt={game.club.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 object-cover" />
             ) : (

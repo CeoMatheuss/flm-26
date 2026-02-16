@@ -138,6 +138,7 @@ export interface Club {
   primaryColor?: string;
   secondaryColor?: string;
   shieldPattern?: string;
+  shieldShape?: string;
   logoUrl?: string;
   country?: string;
 }

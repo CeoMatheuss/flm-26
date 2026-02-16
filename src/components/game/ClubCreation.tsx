@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Shield, Palette } from 'lucide-react';
-import { ShieldCrest, shieldPatterns, ShieldPattern } from './ShieldCrest';
+import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
 export interface ClubConfig {
@@ -16,6 +16,7 @@ export interface ClubConfig {
   secondaryColor: string;
   logoUrl: string;
   shieldPattern?: string;
+  shieldShape?: string;
   country: string;
 }
 
@@ -56,6 +57,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [primaryColor, setPrimaryColor] = useState('#2563EB');
   const [secondaryColor, setSecondaryColor] = useState('#FFFFFF');
   const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('classic');
+  const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -113,6 +115,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
       secondaryColor,
       logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
       shieldPattern: useCustomLogo ? undefined : selectedPattern,
+      shieldShape: useCustomLogo ? undefined : selectedShape,
       country,
     });
   };
@@ -188,17 +191,33 @@ export function ClubCreation({ userId, onComplete }: Props) {
             </div>
           </div>
 
+          {/* Shield Shape */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Forma do Escudo</Label>
+            <div className="grid grid-cols-6 gap-1.5">
+              {shieldShapes.map(shape => (
+                <button
+                  key={shape}
+                  onClick={() => setSelectedShape(shape)}
+                  className={`p-1.5 rounded-lg border-2 transition-all flex items-center justify-center ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                >
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern="classic" shape={shape} size={36} />
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Shield Pattern Selection */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Escudo do Clube</Label>
-            <div className="grid grid-cols-6 gap-1.5">
+            <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Padrão do Escudo</Label>
+            <div className="grid grid-cols-8 gap-1.5">
               {shieldPatterns.map(pattern => (
                 <button
                   key={pattern}
                   onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
                   className={`p-1 rounded-lg border-2 transition-all flex items-center justify-center ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
                 >
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={pattern} size={40} />
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={pattern} shape={selectedShape} size={32} />
                 </button>
               ))}
             </div>
@@ -224,7 +243,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
               {useCustomLogo && customLogoUrl ? (
                 <img src={customLogoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
               ) : (
-                <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={selectedPattern} size={72} />
+                <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={selectedPattern} shape={selectedShape} size={72} />
               )}
             </div>
             <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
