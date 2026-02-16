@@ -5,7 +5,7 @@ import { SquadTab } from '@/components/game/SquadTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
 import { MarketTab } from '@/components/game/MarketTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
-import { LeagueTab } from '@/components/game/LeagueTab';
+import { LeagueTab } from '@/components/game/LeagueTab'; // kept for offline reference if needed
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
@@ -160,7 +160,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const game = useGame(initialState);
-  const mp = useMultiplayer(userId, displayName);
+  const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
 
   useEffect(() => {
     supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle().then(({ data }) => {
@@ -250,7 +250,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               <DropdownMenuContent align="start" className="w-48 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
                 {/* Clube */}
                 <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Jogos (Offline)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Amistosos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
@@ -335,10 +335,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               leagueMatches={mp.leagueMatches}
               leagueSquads={mp.leagueSquads}
               loading={mp.loading}
+              autoJoining={mp.autoJoining}
               clubPlayers={game.club.players}
               clubTactics={game.tactics}
-              onCreateLeague={mp.createLeague}
-              onJoinLeague={mp.joinLeague}
               onEnterLeague={mp.enterLeague}
               onLeaveLeague={mp.leaveLeague}
               onSendChat={mp.sendChat}
