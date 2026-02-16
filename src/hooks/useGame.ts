@@ -107,7 +107,6 @@ export function useGame(initialState?: GameState) {
    const [lastFriendlyDate, setLastFriendlyDate] = useState(initialState?.lastFriendlyDate ?? '');
 
    const MAX_FRIENDLIES_PER_DAY = 1;
-   const MAX_FRIENDLIES_PER_SEASON = 35;
 
   const addFeedItem = useCallback((item: FeedItem) => {
     setFeedItems(prev => [item, ...prev].slice(0, 50));
@@ -949,10 +948,6 @@ export function useGame(initialState?: GameState) {
         return;
       }
     }
-    if (friendliesPlayedSeason >= MAX_FRIENDLIES_PER_SEASON) {
-      toast.error('Limite de amistosos da temporada atingido!');
-      return;
-    }
     // Check if there's already an unplayed friendly
     const hasUnplayed = club.matches.some(m => !m.played);
     if (hasUnplayed) {
@@ -975,10 +970,9 @@ export function useGame(initialState?: GameState) {
     // Update last friendly date with real ISO timestamp
     setLastFriendlyDate(now.toISOString());
     setFriendliesPlayedToday(1);
-    setFriendliesPlayedSeason(n => n + 1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso agendado vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, friendliesPlayedSeason, lastFriendlyDate, isSameLocalDay]);
+  }, [leagueTeams, club.name, club.matches, lastFriendlyDate, isSameLocalDay]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
@@ -988,7 +982,7 @@ export function useGame(initialState?: GameState) {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
-    friendliesPlayedToday, friendliesPlayedSeason, maxFriendliesPerDay: MAX_FRIENDLIES_PER_DAY, maxFriendliesPerSeason: MAX_FRIENDLIES_PER_SEASON,
+    friendliesPlayedToday, friendliesPlayedSeason,
     alreadyPlayedToday, lastFriendlyDate,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,

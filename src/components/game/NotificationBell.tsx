@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, ChevronDown, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,191 +26,104 @@ interface Props {
 
 export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub }: Props) {
   const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [readIds, setReadIds] = useState<string[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const PREVIEW_COUNT = 5;
 
   const notifications: Notification[] = [];
 
-  // Welcome message for new clubs
   if (isNewClub) {
     notifications.push({
-      id: 'welcome',
-      icon: '🏆',
-      title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns pela criação do ${clubName}! 🎉 Você agora é Manager! Monte seu elenco, defina táticas, melhore o estádio e a infraestrutura, invista na base, conquiste patrocínios e leve seu clube ao topo. A torcida conta com você! ⚽ Boa sorte, Manager!`,
+      id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
+      message: `Parabéns pela criação do ${clubName}! 🎉 Monte seu elenco, defina táticas e leve seu clube ao topo!`,
       type: 'success',
     });
     notifications.push({
-      id: 'welcome_tips',
-      icon: '💡',
-      title: 'Primeiros passos',
-      message: '1️⃣ Defina sua formação em Táticas • 2️⃣ Jogue amistosos para ganhar torcida • 3️⃣ Melhore o CT e a Base • 4️⃣ Contrate reforços no Mercado • 5️⃣ Entre numa Liga Online para competir!',
+      id: 'welcome_tips', icon: '💡', title: 'Primeiros passos',
+      message: '1️⃣ Formação em Táticas • 2️⃣ Amistosos • 3️⃣ CT e Base • 4️⃣ Mercado • 5️⃣ Liga Online',
       type: 'info',
     });
   }
 
-  // Expiring contracts
   const expiring = players.filter(p => p.contract <= 1);
   if (expiring.length > 0) {
     const names = expiring.slice(0, 3).map(p => p.name.split(' ')[0]).join(', ');
-    notifications.push({
-      id: 'expiring',
-      icon: '📄',
-      title: `${expiring.length} contrato(s) expirando`,
-      message: `${names}${expiring.length > 3 ? ` e mais ${expiring.length - 3}` : ''} — renove na aba Elenco > Contratos antes do fim da temporada!`,
-      type: 'danger',
-    });
+    notifications.push({ id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`, message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove antes do fim da temporada!`, type: 'danger' });
   }
 
-  // Low stamina - detailed
   const tired = players.filter(p => p.stamina < 50);
   if (tired.length > 0) {
     const worst = [...tired].sort((a, b) => a.stamina - b.stamina)[0];
-    notifications.push({
-      id: 'tired',
-      icon: '😴',
-      title: `${tired.length} jogador(es) cansado(s)`,
-      message: `${worst.name} está com apenas ${worst.stamina}% de energia. Use o botão de descanso ou melhore o Centro de Fisioterapia (Nv.${infrastructure?.physiotherapy?.level ?? 1}).`,
-      type: 'warning',
-    });
+    notifications.push({ id: 'tired', icon: '😴', title: `${tired.length} cansado(s)`, message: `${worst.name} com ${worst.stamina}% energia. Descanse ou melhore a Fisioterapia.`, type: 'warning' });
   }
 
-  // Low morale
   const lowMorale = players.filter(p => p.morale < 40);
   if (lowMorale.length > 0) {
     const worst = [...lowMorale].sort((a, b) => a.morale - b.morale)[0];
-    notifications.push({
-      id: 'morale',
-      icon: '😤',
-      title: `${lowMorale.length} jogador(es) com moral baixa`,
-      message: `${worst.name} está com ${worst.morale}% de moral. Vitórias consecutivas ajudam a recuperar a moral do elenco.`,
-      type: 'warning',
-    });
+    notifications.push({ id: 'morale', icon: '😤', title: `${lowMorale.length} com moral baixa`, message: `${worst.name} com ${worst.morale}% moral. Vitórias ajudam!`, type: 'warning' });
   }
 
-  // Injured players
   const injured = players.filter(p => p.injury);
   if (injured.length > 0) {
     const names = injured.slice(0, 3).map(p => `${p.name.split(' ')[0]} (${p.injury!.weeksRemaining}j)`).join(', ');
-    notifications.push({
-      id: 'injured',
-      icon: '🏥',
-      title: `${injured.length} jogador(es) lesionado(s)`,
-      message: `${names}${injured.length > 3 ? ` e mais ${injured.length - 3}` : ''} — jogadores lesionados não jogam e recuperam com base na Fisioterapia (Nv.${infrastructure?.physiotherapy?.level ?? 1}).`,
-      type: 'danger',
-    });
+    notifications.push({ id: 'injured', icon: '🏥', title: `${injured.length} lesionado(s)`, message: `${names}${injured.length > 3 ? ` e +${injured.length - 3}` : ''}`, type: 'danger' });
   }
 
   if (listedPlayers.length > 0) {
-    notifications.push({
-      id: 'listed',
-      icon: '🏷️',
-      title: `${listedPlayers.length} na lista de transferência`,
-      message: 'Jogadores listados aguardando propostas no Mercado > Vender.',
-      type: 'info',
-    });
+    notifications.push({ id: 'listed', icon: '🏷️', title: `${listedPlayers.length} na lista`, message: 'Jogadores aguardando propostas no Mercado.', type: 'info' });
   }
 
-  // Low budget
   const totalSalaries = players.reduce((s, p) => s + p.salary, 0);
   if (budget < totalSalaries * 3) {
     const monthsLeft = totalSalaries > 0 ? Math.floor(budget / totalSalaries) : 99;
-    notifications.push({
-      id: 'budget',
-      icon: '💰',
-      title: 'Orçamento crítico!',
-      message: `Restam ~${monthsLeft} meses de salários (R$${(budget / 1000).toFixed(0)}k). Considere vender jogadores ou buscar patrocínios.`,
-      type: 'danger',
-    });
+    notifications.push({ id: 'budget', icon: '💰', title: 'Orçamento crítico!', message: `~${monthsLeft} meses de salários restantes.`, type: 'danger' });
   }
 
-  // Small squad
   if (players.length < 16) {
-    notifications.push({
-      id: 'squad',
-      icon: '👥',
-      title: 'Elenco curto',
-      message: `Apenas ${players.length} jogadores. O ideal é ter no mínimo 18. Contrate no Mercado ou promova da base!`,
-      type: 'warning',
-    });
+    notifications.push({ id: 'squad', icon: '👥', title: 'Elenco curto', message: `${players.length} jogadores. Ideal: 18+.`, type: 'warning' });
   }
 
-  // Infrastructure tips
   if (infrastructure?.trainingCenter && infrastructure.trainingCenter.level < 3) {
-    notifications.push({
-      id: 'ct_tip',
-      icon: '🏋️',
-      title: 'Dica: Centro de Treinamento',
-      message: `Seu CT está no Nv.${infrastructure.trainingCenter.level}. Melhorar aumenta a chance dos jogadores evoluírem nos treinos!`,
-      type: 'info',
-    });
+    notifications.push({ id: 'ct_tip', icon: '🏋️', title: 'Dica: CT', message: `CT Nv.${infrastructure.trainingCenter.level} — melhore para treinos mais eficientes.`, type: 'info' });
   }
 
   if (infrastructure?.physiotherapy && infrastructure.physiotherapy.level < 3) {
-    notifications.push({
-      id: 'physio_tip',
-      icon: '🏥',
-      title: 'Dica: Fisioterapia',
-      message: `Fisioterapia Nv.${infrastructure.physiotherapy.level} — seus jogadores recuperam pouca energia entre jogos. Melhore na aba Infraestrutura!`,
-      type: 'info',
-    });
+    notifications.push({ id: 'physio_tip', icon: '🏥', title: 'Dica: Fisioterapia', message: `Nv.${infrastructure.physiotherapy.level} — recuperação lenta. Melhore!`, type: 'info' });
   }
 
-  // Top scorer info
   const topScorer = [...players].sort((a, b) => b.goals - a.goals)[0];
   if (topScorer && topScorer.goals > 0) {
-    notifications.push({
-      id: 'topscorer',
-      icon: '⚽',
-      title: 'Artilheiro',
-      message: `${topScorer.name} lidera com ${topScorer.goals} gol(s) e ${topScorer.assists} assistência(s).`,
-      type: 'info',
-    });
+    notifications.push({ id: 'topscorer', icon: '⚽', title: 'Artilheiro', message: `${topScorer.name}: ${topScorer.goals} gol(s), ${topScorer.assists} assist.`, type: 'info' });
   }
 
-  // Best overall player
   const bestPlayer = [...players].sort((a, b) => b.overall - a.overall)[0];
   if (bestPlayer) {
-    notifications.push({
-      id: 'best',
-      icon: '⭐',
-      title: 'Melhor jogador',
-      message: `${bestPlayer.name} (${bestPlayer.position}) — OVR ${bestPlayer.overall} | ${bestPlayer.age} anos | R$${(bestPlayer.salary / 1000).toFixed(0)}k/mês`,
-      type: 'info',
-    });
+    notifications.push({ id: 'best', icon: '⭐', title: 'Melhor jogador', message: `${bestPlayer.name} (${bestPlayer.position}) OVR ${bestPlayer.overall}`, type: 'info' });
   }
 
-  const visible = notifications.filter(n => !dismissed.includes(n.id));
-  const count = visible.length;
-  const urgentCount = visible.filter(n => n.type === 'danger').length;
+  const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
+  const urgentCount = notifications.filter(n => n.type === 'danger' && !readIds.includes(n.id)).length;
+  const displayedNotifications = showAll ? notifications : notifications.slice(0, PREVIEW_COUNT);
+  const hasMore = notifications.length > PREVIEW_COUNT;
 
-  const typeBorder = {
-    danger: 'border-l-destructive',
-    warning: 'border-l-yellow-400',
-    info: 'border-l-primary',
-    success: 'border-l-emerald-400',
+  const markAsRead = (id: string) => {
+    setReadIds(prev => prev.includes(id) ? prev : [...prev, id]);
   };
-  const typeBg = {
-    danger: 'bg-destructive/10',
-    warning: 'bg-yellow-400/5',
-    info: 'bg-primary/5',
-    success: 'bg-emerald-400/10',
+
+  const markAllAsRead = () => {
+    setReadIds(notifications.map(n => n.id));
   };
+
+  const typeBorder = { danger: 'border-l-destructive', warning: 'border-l-yellow-400', info: 'border-l-primary', success: 'border-l-emerald-400' };
+  const typeBg = { danger: 'bg-destructive/10', warning: 'bg-yellow-400/5', info: 'bg-primary/5', success: 'bg-emerald-400/10' };
 
   return (
     <div className="relative">
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-8 sm:h-9 px-2.5 relative"
-        onClick={() => setOpen(!open)}
-      >
+      <Button size="sm" variant="ghost" className="h-8 sm:h-9 px-2.5 relative" onClick={() => setOpen(!open)}>
         <Bell className={`h-5 w-5 ${urgentCount > 0 ? 'text-destructive' : ''}`} />
-        {count > 0 && (
-          <Badge
-            variant="destructive"
-            className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold animate-pulse"
-          >
-            {count}
+        {unreadCount > 0 && (
+          <Badge variant="destructive" className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold animate-pulse">
+            {unreadCount}
           </Badge>
         )}
       </Button>
@@ -226,37 +139,55 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
                   <p className="text-sm font-bold">Notificações</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {urgentCount > 0 && (
-                    <Badge variant="destructive" className="text-[9px] px-1.5 h-4">{urgentCount} urgente(s)</Badge>
+                  {unreadCount > 0 && (
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1" onClick={markAllAsRead}>
+                      <CheckCheck className="h-3 w-3" /> Ler todas
+                    </Button>
                   )}
-                  <Badge variant="outline" className="text-[10px] h-5">{count}</Badge>
+                  <Badge variant="outline" className="text-[10px] h-5">{notifications.length}</Badge>
                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-1 hover:bg-destructive/20" onClick={() => setOpen(false)}>
                     <X className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>
               <ScrollArea className="max-h-[400px]">
-                {visible.length === 0 ? (
+                {notifications.length === 0 ? (
                   <div className="text-center py-8 px-3">
                     <p className="text-2xl mb-2">✅</p>
                     <p className="text-xs text-muted-foreground">Tudo em ordem, Manager!</p>
                   </div>
                 ) : (
                   <div className="p-2 space-y-1.5">
-                    {visible.map(n => (
-                      <div
-                        key={n.id}
-                        className={`p-2.5 rounded-lg border-l-[3px] ${typeBorder[n.type]} ${typeBg[n.type]} cursor-pointer hover:opacity-80 transition-opacity`}
-                        onClick={() => setDismissed(prev => [...prev, n.id])}
-                      >
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm">{n.icon}</span>
-                          <p className="text-[11px] font-bold flex-1">{n.title}</p>
-                          <span className="text-[8px] text-muted-foreground">✕</span>
+                    {displayedNotifications.map(n => {
+                      const isRead = readIds.includes(n.id);
+                      return (
+                        <div
+                          key={n.id}
+                          className={`p-2.5 rounded-lg border-l-[3px] ${typeBorder[n.type]} ${typeBg[n.type]} cursor-pointer hover:opacity-80 transition-all ${isRead ? 'opacity-50' : ''}`}
+                          onClick={() => markAsRead(n.id)}
+                        >
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm">{n.icon}</span>
+                            <p className="text-[11px] font-bold flex-1">{n.title}</p>
+                            {!isRead && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed ml-6">{n.message}</p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed ml-6">{n.message}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
+
+                    {/* Ver Todos / Recolher */}
+                    {hasMore && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs gap-1 mt-1"
+                        onClick={() => setShowAll(!showAll)}
+                      >
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAll ? 'rotate-180' : ''}`} />
+                        {showAll ? 'Recolher' : `Ver todas (${notifications.length})`}
+                      </Button>
+                    )}
                   </div>
                 )}
               </ScrollArea>
