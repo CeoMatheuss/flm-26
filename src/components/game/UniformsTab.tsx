@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shirt, Palette, Save, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import { Sponsor } from '@/types/sponsor';
 
 export interface UniformKit {
   name: string;
@@ -17,6 +19,15 @@ export interface UniformKit {
   numberColor: string;
   collarStyle: 'v-neck' | 'round' | 'polo' | 'henley';
   sleeveStyle: 'short' | 'long';
+  sponsorTextColor?: string;
+}
+
+export interface ShirtSale {
+  number: number;
+  playerName: string;
+  overall: number;
+  position: string;
+  sold: number;
 }
 
 export interface UniformsData {
@@ -24,6 +35,11 @@ export interface UniformsData {
   away: UniformKit;
   third: UniformKit;
   goalkeeper: UniformKit;
+  shirtSales?: {
+    totalSold: number;
+    revenue: number;
+    topSellers: ShirtSale[];
+  };
 }
 
 const defaultHome: UniformKit = {
@@ -36,6 +52,7 @@ const defaultHome: UniformKit = {
   numberColor: '#FFFFFF',
   collarStyle: 'v-neck',
   sleeveStyle: 'short',
+  sponsorTextColor: '#FFFFFF',
 };
 
 const defaultAway: UniformKit = {
@@ -48,6 +65,7 @@ const defaultAway: UniformKit = {
   numberColor: '#2563EB',
   collarStyle: 'round',
   sleeveStyle: 'short',
+  sponsorTextColor: '#2563EB',
 };
 
 const defaultThird: UniformKit = {
@@ -60,6 +78,7 @@ const defaultThird: UniformKit = {
   numberColor: '#FFFFFF',
   collarStyle: 'polo',
   sleeveStyle: 'short',
+  sponsorTextColor: '#FFFFFF',
 };
 
 const defaultGoalkeeper: UniformKit = {
@@ -72,6 +91,7 @@ const defaultGoalkeeper: UniformKit = {
   numberColor: '#FFFFFF',
   collarStyle: 'round',
   sleeveStyle: 'long',
+  sponsorTextColor: '#FFFFFF',
 };
 
 const patternLabels: Record<UniformKit['shirtPattern'], string> = {
@@ -97,117 +117,110 @@ interface Props {
   secondaryColor?: string;
   uniforms?: UniformsData;
   onSave: (uniforms: UniformsData) => void;
+  sponsors?: Sponsor[];
+  players?: Array<{ name: string; position: string; overall: number; goals?: number; gamesPlayed?: number }>;
+  clubReputation?: number;
 }
 
-function ShirtPreview({ kit, size = 'md' }: { kit: UniformKit; size?: 'sm' | 'md' | 'lg' }) {
-  const sizeClass = size === 'sm' ? 'w-16 h-24' : size === 'lg' ? 'w-40 h-56' : 'w-28 h-40';
+function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const dim = size === 'sm' ? 60 : size === 'lg' ? 160 : 100;
+  const scale = dim / 100;
+  const uid = useMemo(() => Math.random().toString(36).slice(2, 8), []);
+  const patternId = `p-${uid}`;
 
-  const bodyPath = "M25,8 L20,12 L12,14 L12,38 L20,36 L25,75 L75,75 L80,36 L88,38 L88,14 L80,12 L75,8 Z";
-  const leftSleeve = kit.sleeveStyle === 'long'
-    ? "M12,14 L4,18 L4,48 L12,46 L12,38 Z"
-    : "M12,14 L4,18 L4,32 L12,30 L12,38 Z";
-  const rightSleeve = kit.sleeveStyle === 'long'
-    ? "M88,14 L96,18 L96,48 L88,46 L88,38 Z"
-    : "M88,14 L96,18 L96,32 L88,30 L88,38 Z";
+  // Uniform proportions: shirt body is a rectangle with shoulder lines
+  const renderPattern = () => {
+    const clipId = `c-${uid}`;
+    const bodyRect = <rect x="20" y="6" width="60" height="56" rx="2" />;
 
-  const patternId = `pat-${kit.name}-${size}`;
+    const patternOverlay = () => {
+      switch (kit.shirtPattern) {
+        case 'stripes':
+          return [28, 36, 44, 52, 60, 68].map(x => (
+            <rect key={x} x={x} y="6" width="4" height="56" fill={kit.shirtSecondaryColor} clipPath={`url(#${clipId})`} />
+          ));
+        case 'hoops':
+          return [10, 20, 30, 40, 50].map(y => (
+            <rect key={y} x="20" y={y} width="60" height="5" fill={kit.shirtSecondaryColor} clipPath={`url(#${clipId})`} />
+          ));
+        case 'halves':
+          return <rect x="50" y="6" width="30" height="56" fill={kit.shirtSecondaryColor} clipPath={`url(#${clipId})`} />;
+        case 'diagonal':
+          return <polygon points="20,35 80,55 80,62 20,42" fill={kit.shirtSecondaryColor} opacity="0.75" clipPath={`url(#${clipId})`} />;
+        case 'pinstripes':
+          return Array.from({ length: 15 }, (_, i) => 22 + i * 4).map(x => (
+            <rect key={x} x={x} y="6" width="1" height="56" fill={kit.shirtSecondaryColor} opacity="0.4" clipPath={`url(#${clipId})`} />
+          ));
+        case 'gradient':
+          return (
+            <>
+              <defs>
+                <linearGradient id={`g-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={kit.shirtColor} />
+                  <stop offset="100%" stopColor={kit.shirtSecondaryColor} />
+                </linearGradient>
+              </defs>
+              <rect x="20" y="6" width="60" height="56" rx="2" fill={`url(#g-${uid})`} clipPath={`url(#${clipId})`} />
+            </>
+          );
+        default:
+          return null;
+      }
+    };
 
-  const renderBodyFill = () => {
-    switch (kit.shirtPattern) {
-      case 'stripes':
-        return (
-          <>
-            <path d={bodyPath} fill={kit.shirtColor} />
-            {[30, 38, 46, 54, 62, 70].map(x => (
-              <line key={x} x1={x} y1="8" x2={x} y2="75" stroke={kit.shirtSecondaryColor} strokeWidth="3" clipPath={`url(#clip-${patternId})`} />
-            ))}
-          </>
-        );
-      case 'hoops':
-        return (
-          <>
-            <path d={bodyPath} fill={kit.shirtColor} />
-            {[14, 22, 30, 38, 46, 54, 62, 70].map(y => (
-              <line key={y} x1="12" y1={y} x2="88" y2={y} stroke={kit.shirtSecondaryColor} strokeWidth="3" clipPath={`url(#clip-${patternId})`} />
-            ))}
-          </>
-        );
-      case 'halves':
-        return (
-          <>
-            <path d={bodyPath} fill={kit.shirtColor} />
-            <rect x="50" y="0" width="50" height="80" fill={kit.shirtSecondaryColor} clipPath={`url(#clip-${patternId})`} />
-          </>
-        );
-      case 'diagonal':
-        return (
-          <>
-            <path d={bodyPath} fill={kit.shirtColor} />
-            <polygon points="0,30 100,60 100,80 0,50" fill={kit.shirtSecondaryColor} opacity="0.7" clipPath={`url(#clip-${patternId})`} />
-          </>
-        );
-      case 'pinstripes':
-        return (
-          <>
-            <path d={bodyPath} fill={kit.shirtColor} />
-            {Array.from({ length: 20 }, (_, i) => 20 + i * 3).map(x => (
-              <line key={x} x1={x} y1="8" x2={x} y2="75" stroke={kit.shirtSecondaryColor} strokeWidth="0.8" opacity="0.5" clipPath={`url(#clip-${patternId})`} />
-            ))}
-          </>
-        );
-      case 'gradient':
-        return (
-          <>
-            <defs>
-              <linearGradient id={`grad-${patternId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor={kit.shirtColor} />
-                <stop offset="100%" stopColor={kit.shirtSecondaryColor} />
-              </linearGradient>
-            </defs>
-            <path d={bodyPath} fill={`url(#grad-${patternId})`} />
-          </>
-        );
-      case 'sleeves':
-        return <path d={bodyPath} fill={kit.shirtColor} />;
-      default:
-        return <path d={bodyPath} fill={kit.shirtColor} />;
-    }
+    return (
+      <>
+        <defs>
+          <clipPath id={clipId}>{bodyRect}</clipPath>
+        </defs>
+        <rect x="20" y="6" width="60" height="56" rx="2" fill={kit.shirtColor} />
+        {patternOverlay()}
+      </>
+    );
   };
 
-  const sleeveColor = kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor;
+  const slvH = kit.sleeveStyle === 'long' ? 36 : 22;
+  const slvColor = kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor;
+  const showSponsor = size !== 'sm' && sponsorName;
+  const sponsorFontSize = size === 'lg' ? 5 : 4;
 
   return (
-    <div className={sizeClass}>
-      <svg viewBox="0 100" className="w-full h-full">
-        <defs>
-          <clipPath id={`clip-${patternId}`}>
-            <path d={bodyPath} />
-          </clipPath>
-        </defs>
-        {/* Sleeves */}
-        <path d={leftSleeve} fill={sleeveColor} />
-        <path d={rightSleeve} fill={sleeveColor} />
-        {/* Body with pattern */}
-        {renderBodyFill()}
+    <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
+      <svg viewBox="0 0 100 120" className="w-full h-full">
+        {/* Left sleeve */}
+        <rect x="6" y="8" width="14" height={slvH} rx="2" fill={slvColor} />
+        {/* Right sleeve */}
+        <rect x="80" y="8" width="14" height={slvH} rx="2" fill={slvColor} />
+        {/* Body */}
+        {renderPattern()}
         {/* Collar */}
-        {kit.collarStyle === 'v-neck' && <polygon points="42,8 50,18 58,8" fill={kit.shirtSecondaryColor} />}
-        {kit.collarStyle === 'round' && <ellipse cx="50" cy="9" rx="10" ry="3" fill={kit.shirtSecondaryColor} />}
-        {kit.collarStyle === 'polo' && <rect x="40" y="6" width="20" height="6" rx="2" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'v-neck' && <polygon points="44,6 50,14 56,6" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'round' && <ellipse cx="50" cy="7" rx="8" ry="3" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'polo' && <rect x="42" y="4" width="16" height="5" rx="2" fill={kit.shirtSecondaryColor} />}
         {kit.collarStyle === 'henley' && (
           <>
-            <rect x="46" y="8" width="8" height="10" rx="1" fill={kit.shirtSecondaryColor} />
-            <circle cx="50" cy="12" r="1" fill={kit.shirtColor} />
-            <circle cx="50" cy="16" r="1" fill={kit.shirtColor} />
+            <rect x="47" y="6" width="6" height="8" rx="1" fill={kit.shirtSecondaryColor} />
+            <circle cx="50" cy="10" r="0.8" fill={kit.shirtColor} />
+            <circle cx="50" cy="13" r="0.8" fill={kit.shirtColor} />
           </>
         )}
+        {/* Sponsor text */}
+        {showSponsor && (
+          <text x="50" y="30" textAnchor="middle" fontSize={sponsorFontSize} fontWeight="bold" fill={kit.sponsorTextColor || '#FFFFFF'} fontFamily="sans-serif" opacity="0.85">
+            {sponsorName.length > 12 ? sponsorName.slice(0, 12) : sponsorName}
+          </text>
+        )}
         {/* Number */}
-        <text x="50" y="48" textAnchor="middle" fontSize="16" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
-        {/* Shorts */}
-        <rect x="30" y="77" width="18" height="14" rx="2" fill={kit.shortsColor} />
-        <rect x="52" y="77" width="18" height="14" rx="2" fill={kit.shortsColor} />
+        <text x="50" y={showSponsor ? 50 : 44} textAnchor="middle" fontSize="14" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
+        {/* Shorts - two rectangles side by side */}
+        <rect x="28" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
+        <rect x="52" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
         {/* Socks */}
-        <rect x="32" y="92" width="12" height="8" rx="1" fill={kit.socksColor} />
-        <rect x="56" y="92" width="12" height="8" rx="1" fill={kit.socksColor} />
+        <rect x="30" y="82" width="16" height="18" rx="2" fill={kit.socksColor} />
+        <rect x="54" y="82" width="16" height="18" rx="2" fill={kit.socksColor} />
+        {/* Shoes */}
+        <rect x="30" y="100" width="16" height="4" rx="1" fill="#222" />
+        <rect x="54" y="100" width="16" height="4" rx="1" fill="#222" />
       </svg>
     </div>
   );
@@ -217,28 +230,19 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
   return (
     <div className="space-y-1">
       <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</Label>
-      <div className="flex items-center gap-1.5 bg-muted/30 rounded-lg p-1.5">
-        <input
-          type="color"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="w-8 h-8 rounded-md cursor-pointer border-2 border-border/50 hover:border-primary/50 transition-colors"
-          style={{ padding: 0 }}
-        />
-        <Input
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="h-7 text-[10px] font-mono flex-1 bg-background/50 border-0"
-        />
+      <div className="flex items-center gap-1.5 bg-muted/30 rounded-lg p-1">
+        <input type="color" value={value} onChange={e => onChange(e.target.value)}
+          className="w-7 h-7 rounded cursor-pointer border border-border/50" style={{ padding: 0 }} />
+        <Input value={value} onChange={e => onChange(e.target.value)}
+          className="h-7 text-[10px] font-mono flex-1 bg-background/50 border-0" />
       </div>
     </div>
   );
 }
 
-function KitEditor({ kit, onChange }: { kit: UniformKit; onChange: (kit: UniformKit) => void }) {
+function KitEditor({ kit, onChange, hasSponsor }: { kit: UniformKit; onChange: (kit: UniformKit) => void; hasSponsor: boolean }) {
   return (
-    <div className="space-y-4">
-      {/* Colors Section */}
+    <div className="space-y-3">
       <div>
         <p className="text-[10px] font-semibold text-primary mb-2 flex items-center gap-1">
           <Palette className="h-3 w-3" /> Cores
@@ -249,10 +253,11 @@ function KitEditor({ kit, onChange }: { kit: UniformKit; onChange: (kit: Uniform
           <ColorPicker label="Calção" value={kit.shortsColor} onChange={v => onChange({ ...kit, shortsColor: v })} />
           <ColorPicker label="Meião" value={kit.socksColor} onChange={v => onChange({ ...kit, socksColor: v })} />
           <ColorPicker label="Número" value={kit.numberColor} onChange={v => onChange({ ...kit, numberColor: v })} />
+          {hasSponsor && (
+            <ColorPicker label="Patrocínio" value={kit.sponsorTextColor || '#FFFFFF'} onChange={v => onChange({ ...kit, sponsorTextColor: v })} />
+          )}
         </div>
       </div>
-
-      {/* Style Section */}
       <div>
         <p className="text-[10px] font-semibold text-primary mb-2 flex items-center gap-1">
           <Shirt className="h-3 w-3" /> Estilo
@@ -312,7 +317,28 @@ const presets = [
   { label: 'Elegante', shirt: '#111827', sec: '#D4AF37', pattern: 'pinstripes' as const },
 ];
 
-export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: Props) {
+function generateShirtSales(players?: Props['players'], reputation?: number): ShirtSale[] {
+  if (!players || players.length === 0) return [];
+  const sorted = [...players]
+    .map(p => {
+      const starFactor = Math.max(0, p.overall - 60) / 40;
+      const matchFactor = (p.gamesPlayed || 0) / 20;
+      const goalFactor = (p.goals || 0) / 10;
+      const repFactor = (reputation || 50) / 100;
+      const base = Math.floor((starFactor * 400 + matchFactor * 200 + goalFactor * 300) * (0.5 + repFactor) * (0.7 + Math.random() * 0.6));
+      return {
+        number: Math.floor(Math.random() * 99) + 1,
+        playerName: p.name,
+        overall: p.overall,
+        position: p.position,
+        sold: Math.max(10, base),
+      };
+    })
+    .sort((a, b) => b.sold - a.sold);
+  return sorted.slice(0, 10);
+}
+
+export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sponsors, players, clubReputation }: Props) {
   const [activeKit, setActiveKit] = useState<'home' | 'away' | 'third' | 'goalkeeper'>('home');
   const [kits, setKits] = useState<UniformsData>(uniforms || {
     home: { ...defaultHome, shirtColor: primaryColor || defaultHome.shirtColor, shirtSecondaryColor: secondaryColor || defaultHome.shirtSecondaryColor },
@@ -322,13 +348,20 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
   });
 
   const currentKit = kits[activeKit];
+  const shirtSponsor = sponsors?.find(s => s.type === 'camisa');
+  const hasSponsor = !!shirtSponsor;
+
+  const topSellers = useMemo(() => generateShirtSales(players, clubReputation), [players, clubReputation]);
+  const totalSold = topSellers.reduce((s, t) => s + t.sold, 0);
+  const shirtPrice = 120 + Math.floor((clubReputation || 50) * 0.8);
+  const totalRevenue = totalSold * shirtPrice;
 
   const handleKitChange = (updated: UniformKit) => {
     setKits(prev => ({ ...prev, [activeKit]: updated }));
   };
 
   const handleSave = () => {
-    onSave(kits);
+    onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     toast.success('🎽 Uniformes salvos com sucesso!');
   };
 
@@ -370,16 +403,14 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
 
       {/* Main Content: Preview + Editor */}
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-        {/* Preview - takes 2 cols */}
         <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10">
-          <CardContent className="p-4 flex flex-col items-center justify-center min-h-[280px]">
-            <ShirtPreview kit={currentKit} size="lg" />
-            <p className="text-xs font-semibold mt-3">{currentKit.name}</p>
+          <CardContent className="p-4 flex flex-col items-center justify-center min-h-[260px]">
+            <ShirtPreview kit={currentKit} sponsorName={shirtSponsor?.name} size="lg" />
+            <p className="text-xs font-semibold mt-2">{currentKit.name}</p>
             <p className="text-[10px] text-muted-foreground">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
           </CardContent>
         </Card>
 
-        {/* Editor - takes 3 cols */}
         <Card className="sm:col-span-3 border-0 bg-muted/10">
           <CardHeader className="pb-2 pt-3 px-3">
             <CardTitle className="text-xs flex items-center gap-1.5">
@@ -387,7 +418,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <KitEditor kit={currentKit} onChange={handleKitChange} />
+            <KitEditor kit={currentKit} onChange={handleKitChange} hasSponsor={hasSponsor} />
           </CardContent>
         </Card>
       </div>
@@ -413,10 +444,10 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
                 })}
               >
                 <div className="flex gap-0.5">
-                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: preset.shirt }} />
-                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: preset.sec }} />
+                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm" style={{ backgroundColor: preset.shirt }} />
+                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm" style={{ backgroundColor: preset.sec }} />
                 </div>
-                <span className="text-[9px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{preset.label}</span>
+                <span className="text-[9px] font-medium text-muted-foreground">{preset.label}</span>
               </button>
             ))}
           </div>
@@ -440,6 +471,66 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
           </button>
         ))}
       </div>
+
+      {/* Shirt Sales */}
+      <Card className="border-0 bg-muted/10">
+        <CardHeader className="pb-2 pt-3 px-3">
+          <CardTitle className="text-xs flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <ShoppingBag className="h-3.5 w-3.5 text-primary" /> Venda de Camisas na Temporada
+            </span>
+            <Badge variant="secondary" className="text-[10px]">
+              R$ {(totalRevenue / 1000).toFixed(0)}k receita
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-primary">{totalSold.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">Camisas vendidas</p>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-primary">R$ {shirtPrice}</p>
+              <p className="text-[10px] text-muted-foreground">Preço unitário</p>
+            </div>
+          </div>
+
+          {topSellers.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" /> Top 10 Camisas Mais Vendidas
+              </p>
+              {topSellers.map((sale, i) => (
+                <div key={i} className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    i === 0 ? 'bg-yellow-500/20 text-yellow-600' :
+                    i === 1 ? 'bg-gray-300/20 text-gray-500' :
+                    i === 2 ? 'bg-orange-400/20 text-orange-500' :
+                    'bg-muted/30 text-muted-foreground'
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <span className="text-xs font-bold text-primary w-8 text-center">#{sale.number}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{sale.playerName}</p>
+                    <p className="text-[10px] text-muted-foreground">{sale.position} • OVR {sale.overall}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold">{sale.sold.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">vendidas</p>
+                  </div>
+                  {i < 3 && <Trophy className={`h-3 w-3 flex-shrink-0 ${
+                    i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : 'text-orange-400'
+                  }`} />}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">Contrate jogadores para começar a vender camisas!</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
