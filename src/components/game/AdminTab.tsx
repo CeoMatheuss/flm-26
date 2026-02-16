@@ -55,6 +55,10 @@ interface Props {
 export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [allPremium, setAllPremium] = useState<PendingUser[]>([]);
   const [bans, setBans] = useState<ChatBan[]>([]);
@@ -71,12 +75,6 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   useEffect(() => {
     const check = async () => {
-      if (isFounder) {
-        setIsAdmin(true);
-        setChecking(false);
-        loadAll();
-        return;
-      }
       const { data } = await supabase
         .from('user_roles')
         .select('role')
@@ -85,10 +83,43 @@ export function AdminTab({ userId, isFounder }: Props) {
         .maybeSingle();
       setIsAdmin(!!data);
       setChecking(false);
-      if (data) loadAll();
     };
     check();
-  }, [userId, isFounder]);
+  }, [userId]);
+
+  const verifyAdminPassword = async () => {
+    if (!adminPassword.trim()) return toast.error('Digite a senha de acesso');
+    setVerifying(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sessão expirada'); setVerifying(false); return; }
+      
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ password: adminPassword }),
+      });
+      const result = await res.json();
+      
+      if (result.blocked) {
+        setBlocked(true);
+        toast.error(result.error);
+      } else if (result.success) {
+        setAdminUnlocked(true);
+        setAdminPassword('');
+        toast.success('🔓 Acesso administrativo liberado!');
+        loadAll();
+      } else {
+        toast.error(result.error || 'Senha incorreta');
+      }
+    } catch {
+      toast.error('Erro ao verificar senha');
+    }
+    setVerifying(false);
+  };
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -287,6 +318,48 @@ export function AdminTab({ userId, isFounder }: Props) {
         <Shield className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground">Acesso restrito.</p>
       </CardContent></Card>
+    );
+  }
+
+  if (!adminUnlocked) {
+    return (
+      <Card className="max-w-md mx-auto mt-8">
+        <CardHeader className="text-center pb-3">
+          <Shield className="h-10 w-10 mx-auto text-primary mb-2" />
+          <CardTitle className="text-base">🔐 Área Administrativa</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Digite a senha de acesso para continuar.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {blocked ? (
+            <div className="text-center py-4">
+              <Ban className="h-8 w-8 mx-auto text-destructive mb-2" />
+              <p className="text-sm font-semibold text-destructive">Acesso bloqueado</p>
+              <p className="text-xs text-muted-foreground mt-1">Muitas tentativas incorretas. Tente novamente em 15 minutos.</p>
+            </div>
+          ) : (
+            <>
+              <Input
+                type="password"
+                placeholder="Senha de acesso"
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && verifyAdminPassword()}
+                className="h-11 text-center"
+                maxLength={50}
+              />
+              <Button
+                className="w-full h-10 font-semibold"
+                onClick={verifyAdminPassword}
+                disabled={verifying}
+              >
+                {verifying ? 'Verificando...' : '🔓 Acessar Painel'}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 
