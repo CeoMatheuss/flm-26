@@ -149,20 +149,54 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     playersRef.current = [...home, ...away];
   }, [startingIds, allHomePlayers, awayStrength]);
 
-  // Smooth player/ball movement via rAF
+  // Smooth player/ball movement via rAF - use CSS transitions instead of per-frame jitter
+  // Target positions are stored separately to avoid shaking
+  const playerTargetsRef = useRef<Map<string, { tx: number; ty: number; lastUpdate: number }>>(new Map());
+
+  // Update targets periodically (not every frame) to avoid jitter
   useEffect(() => {
-    const tick = () => {
+    const updateTargets = () => {
       const players = playersRef.current;
       const bx = ballRef.current.x;
       const by = ballRef.current.y;
       for (const p of players) {
         if (!p.isOnPitch) continue;
-        const pull = p.team === 'home' ? (p.homeX > 30 ? 0.007 : 0.003) : (p.homeX < 70 ? 0.007 : 0.003);
-        p.x = clamp(p.x + (Math.random() - 0.5) * 1.0 + (bx - p.x) * pull + (p.homeX - p.x) * 0.018, 2, 98);
-        p.y = clamp(p.y + (Math.random() - 0.5) * 1.2 + (by - p.y) * pull + (p.homeY - p.y) * 0.018, 2, 98);
+        let target = playerTargetsRef.current.get(p.id);
+        if (!target) {
+          target = { tx: p.homeX, ty: p.homeY, lastUpdate: 0 };
+          playerTargetsRef.current.set(p.id, target);
+        }
+        // Set new target: blend between home position and ball attraction
+        const pullStrength = p.team === 'home' ? (p.homeX > 30 ? 0.15 : 0.06) : (p.homeX < 70 ? 0.15 : 0.06);
+        const offsetX = (Math.random() - 0.5) * 6;
+        const offsetY = (Math.random() - 0.5) * 6;
+        target.tx = clamp(p.homeX + (bx - p.homeX) * pullStrength + offsetX, 3, 97);
+        target.ty = clamp(p.homeY + (by - p.homeY) * pullStrength + offsetY, 3, 97);
       }
+    };
+    const interval = setInterval(updateTargets, 800);
+    updateTargets();
+    return () => clearInterval(interval);
+  }, []);
+
+  // Smooth lerp toward targets via rAF - no random noise per frame
+  useEffect(() => {
+    const tick = () => {
+      const players = playersRef.current;
+      for (const p of players) {
+        if (!p.isOnPitch) continue;
+        const target = playerTargetsRef.current.get(p.id);
+        if (target) {
+          p.x += (target.tx - p.x) * 0.04;
+          p.y += (target.ty - p.y) * 0.04;
+        }
+      }
+      // Smooth ball lerp
+      ballRef.current.x += (ballTargetRef.current.x - ballRef.current.x) * 0.06;
+      ballRef.current.y += (ballTargetRef.current.y - ballRef.current.y) * 0.06;
       if (pitchRef.current) {
-        pitchRef.current.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
+        const els = pitchRef.current.querySelectorAll<HTMLElement>('[data-pid]');
+        els.forEach(el => {
           const pl = players.find(pp => pp.id === el.dataset.pid);
           if (pl) { el.style.left = `${pl.x}%`; el.style.top = `${pl.y}%`; }
         });
@@ -175,8 +209,10 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, []);
 
+  // Ball uses lerp too - store target and lerp in rAF
+  const ballTargetRef = useRef({ x: 50, y: 50 });
   const moveBall = useCallback((x: number, y: number) => {
-    ballRef.current = { x: clamp(x, 3, 97), y: clamp(y, 3, 97) };
+    ballTargetRef.current = { x: clamp(x, 3, 97), y: clamp(y, 3, 97) };
   }, []);
 
   const pickHomeName = useCallback(() => {
@@ -191,7 +227,7 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
   }, []);
 
   const generateEvent = useCallback((min: number): SimEvent | null => {
-    if (Math.random() > 0.18) return null;
+    if (Math.random() > 0.35) return null; // ~35% chance per tick for more frequent events
     const ratio = homeStrength / (homeStrength + awayStrength);
     const team: 'home' | 'away' = Math.random() < ratio ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
@@ -451,8 +487,8 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       </div>
 
       {/* Commentary */}
-      <Card className="p-2">
-        <p className={`text-[11px] sm:text-xs text-center font-medium ${eventColor(lastEventType)}`}>{commentary}</p>
+      <Card className="p-3">
+        <p className={`text-sm sm:text-base text-center font-semibold ${eventColor(lastEventType)}`}>{commentary}</p>
       </Card>
 
       {/* Bottom tabs: Tactics / Substitutions / Events / Ratings */}
