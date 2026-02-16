@@ -106,7 +106,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       ...initialClub,
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
-      fans: 200,
+      fans: 500,
       players: generateInitialSquad(config.name),
       matches: generateSeasonMatches(config.country),
       primaryColor: config.primaryColor,
@@ -249,7 +249,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               <DropdownMenuContent align="start" className="w-48 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
                 {/* Clube */}
                 <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2 text-xs"><Dumbbell className="h-3.5 w-3.5" /> Treinos</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Jogos (Offline)</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
@@ -280,10 +280,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/50 p-1">
               <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Painel</span></TabsTrigger>
               <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
-              <TabsTrigger value="matches" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Swords className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Jogos</span></TabsTrigger>
+              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Globe className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga Online</span></TabsTrigger>
               <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
               <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
-              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Trophy className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
+              <TabsTrigger value="training" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Dumbbell className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Treinos</span></TabsTrigger>
             </TabsList>
           </div>
 
@@ -321,7 +321,35 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               }}
             />
           </TabsContent>
-          <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
+          <TabsContent value="league">
+            <MultiplayerTab
+              userId={userId}
+              leagues={mp.leagues}
+              currentLeague={mp.currentLeague}
+              members={mp.members}
+              chatMessages={mp.chatMessages}
+              privateMessages={mp.privateMessages}
+              proposals={mp.proposals}
+              rivalries={mp.rivalries}
+              leagueMatches={mp.leagueMatches}
+              leagueSquads={mp.leagueSquads}
+              loading={mp.loading}
+              clubPlayers={game.club.players}
+              clubTactics={game.tactics}
+              onCreateLeague={mp.createLeague}
+              onJoinLeague={mp.joinLeague}
+              onEnterLeague={mp.enterLeague}
+              onLeaveLeague={mp.leaveLeague}
+              onSendChat={mp.sendChat}
+              onSendPrivateMessage={mp.sendPrivateMessage}
+              onSendProposal={mp.sendProposal}
+              onRespondProposal={mp.respondProposal}
+              onSyncSquad={mp.syncSquad}
+              onStartSeason={mp.startSeason}
+              onSimulateRound={mp.simulateRound}
+              onEndSeason={mp.endSeason}
+            />
+          </TabsContent>
           <TabsContent value="market">
             <MarketTab
               marketPlayers={game.marketPlayers}
@@ -342,7 +370,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
-          <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} /></TabsContent>
+          
           <TabsContent value="youth">
             <YouthAcademyTab
               prospects={game.youthProspects}
@@ -371,6 +399,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onSetTrainingFocus={game.setPlayerTrainingFocus}
             />
           </TabsContent>
+          <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} onSimulate={game.simulateMatch} /></TabsContent>
           <TabsContent value="sponsors">
             <SponsorsTab
               sponsors={game.sponsors}
