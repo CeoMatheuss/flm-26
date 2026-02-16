@@ -237,18 +237,26 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
     return starters[Math.floor(Math.random() * starters.length)] || null;
   }, []);
 
+  const pickAwayName = useCallback(() => {
+    const awayPlayers = playersRef.current.filter(p => p.team === 'away' && p.isOnPitch);
+    const p = awayPlayers[Math.floor(Math.random() * awayPlayers.length)];
+    return p?.name || `Jogador do ${awayTeam}`;
+  }, [awayTeam]);
+
   const generateEvent = useCallback((min: number): SimEvent | null => {
-    if (Math.random() > 0.35) return null; // ~35% chance per tick for more frequent events
+    if (Math.random() > 0.40) return null; // ~40% chance per tick
     const ratio = homeStrength / (homeStrength + awayStrength);
     const team: 'home' | 'away' = Math.random() < ratio ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
-    const pName = team === 'home' ? pickHomeName() : `Jogador do ${awayTeam}`;
+    const pName = team === 'home' ? pickHomeName() : pickAwayName();
+    const pName2 = team === 'home' ? pickHomeName() : pickAwayName();
     const r = Math.random();
 
-    if (r < 0.06) {
+    // GOAL (5%)
+    if (r < 0.05) {
       moveBall(team === 'home' ? 92 : 8, 45 + Math.random() * 10);
       let assistName: string | undefined;
-      const goalTypes = ['chute', 'cabeceio', 'voleio', 'toque', 'chute de fora da área'];
+      const goalTypes = ['chute rasteiro', 'cabeceio', 'voleio', 'toque de letra', 'chute de fora da área', 'pênalti', 'gol olímpico', 'bicicleta', 'chute colocado'];
       const goalType = goalTypes[Math.floor(Math.random() * goalTypes.length)];
       if (team === 'home') {
         const scorer = pickHomePlayer();
@@ -266,60 +274,189 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       }
       const descs = [
         `⚽ GOOOOL! ${pName} marca para o ${tName}!`,
-        `⚽ GOOOOL! ${pName} não perdoa e balança as redes!`,
-        `⚽ GOOOOL! Que golaço de ${pName}!`,
-        `⚽ GOOOOL! ${pName} cabeceia e é gol do ${tName}!`,
+        `⚽ GOOOOL! ${pName} não perdoa e balança as redes com um ${goalType}!`,
+        `⚽ GOOOOL! Que golaço de ${pName}! ${goalType} espetacular!`,
+        `⚽ GOOOOL! ${pName} finaliza de ${goalType} e marca!`,
+        `⚽ GOOOOL! ${pName} recebe, gira e manda pro fundo das redes!`,
+        `⚽ GOOOOL! Bola na rede! ${pName} faz o gol do ${tName}!`,
       ];
       return { minute: min, type: 'goal', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName, assistName, goalType };
     }
-    if (r < 0.16) {
+    // SHOT ON TARGET (7%)
+    if (r < 0.12) {
       moveBall(team === 'home' ? 85 : 15, 40 + Math.random() * 20);
       if (team === 'home') { const p = pickHomePlayer(); if (p) p.rating = Math.min(10, p.rating + 0.15); }
-      return { minute: min, type: 'shot', description: `🎯 ${pName} finaliza! Goleiro salva!`, team, playerName: pName };
+      const descs = [
+        `🎯 ${pName} finaliza no canto! Goleiro faz grande defesa!`,
+        `🎯 ${pName} chuta forte e o goleiro espalma!`,
+        `🎯 Finalização perigosa de ${pName}! Defesa!`,
+        `🎯 ${pName} bate colocado, goleiro se estica e salva!`,
+      ];
+      return { minute: min, type: 'shot', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.28) {
+    // SHOT OFF TARGET (5%)
+    if (r < 0.17) {
+      moveBall(team === 'home' ? 88 : 12, 30 + Math.random() * 40);
+      const descs = [
+        `💨 ${pName} chuta por cima do gol!`,
+        `💨 Finalização de ${pName} vai para fora!`,
+        `💨 ${pName} tenta de longe mas manda na arquibancada!`,
+        `💨 Chute de ${pName} desvia na zaga e sai!`,
+      ];
+      return { minute: min, type: 'chance', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
+    }
+    // PASS SEQUENCE (8%)
+    if (r < 0.25) {
       moveBall(ballRef.current.x + (team === 'home' ? 8 : -8), 25 + Math.random() * 50);
-      return { minute: min, type: 'pass', description: `📍 ${tName} troca passes buscando espaço.`, team };
+      const descs = [
+        `📍 ${tName} troca passes buscando espaço no ataque.`,
+        `📍 Bela troca de passes entre ${pName} e ${pName2}.`,
+        `📍 ${tName} trabalha a bola com paciência no meio-campo.`,
+        `📍 Toque, toque... ${tName} circula a bola com qualidade.`,
+      ];
+      return { minute: min, type: 'pass', description: descs[Math.floor(Math.random() * descs.length)], team };
     }
-    if (r < 0.38) {
+    // TACKLE (6%)
+    if (r < 0.31) {
       moveBall(40 + Math.random() * 20, 20 + Math.random() * 60);
       if (team === 'home') { const p = pickHomePlayer(); if (p) p.rating = Math.min(10, p.rating + 0.1); }
-      return { minute: min, type: 'tackle', description: `💪 ${pName} faz desarme firme!`, team, playerName: pName };
+      const descs = [
+        `💪 ${pName} faz desarme firme e recupera a posse!`,
+        `💪 Carrinho perfeito de ${pName}!`,
+        `💪 ${pName} antecipa e corta o passe!`,
+        `💪 Grande interceptação de ${pName}!`,
+      ];
+      return { minute: min, type: 'tackle', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.47) {
-      moveBall(team === 'home' ? 80 : 20, 20 + Math.random() * 60);
-      return { minute: min, type: 'cross', description: `↗️ ${pName} cruza na área!`, team, playerName: pName };
+    // CROSS (6%)
+    if (r < 0.37) {
+      moveBall(team === 'home' ? 80 : 20, 15 + Math.random() * 70);
+      const descs = [
+        `↗️ ${pName} cruza na área! Zaga afasta!`,
+        `↗️ Cruzamento rasteiro de ${pName} pela esquerda!`,
+        `↗️ ${pName} levanta na segunda trave!`,
+        `↗️ Bola cruzada por ${pName}, ninguém alcança!`,
+      ];
+      return { minute: min, type: 'cross', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.55) {
+    // FOUL (7%)
+    if (r < 0.44) {
       moveBall(35 + Math.random() * 30, 30 + Math.random() * 40);
-      return { minute: min, type: 'foul', description: `⚠️ Falta de ${pName}.`, team, playerName: pName };
+      const descs = [
+        `⚠️ Falta de ${pName}. Árbitro marca.`,
+        `⚠️ ${pName} chega atrasado e comete falta!`,
+        `⚠️ Falta dura de ${pName} no meio-campo!`,
+        `⚠️ ${pName} puxa a camisa. Falta marcada!`,
+      ];
+      return { minute: min, type: 'foul', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.63) {
+    // DRIBBLE (6%)
+    if (r < 0.50) {
       moveBall(ballRef.current.x + (team === 'home' ? 12 : -12), ballRef.current.y + (Math.random() - 0.5) * 20);
       if (team === 'home') { const p = pickHomePlayer(); if (p) p.rating = Math.min(10, p.rating + 0.15); }
-      return { minute: min, type: 'dribble', description: `✨ ${pName} dribla com classe!`, team, playerName: pName };
+      const descs = [
+        `✨ ${pName} dribla com classe e avança!`,
+        `✨ Olé! ${pName} passa por dois marcadores!`,
+        `✨ ${pName} faz jogada individual espetacular!`,
+        `✨ Belo drible de corpo de ${pName}!`,
+      ];
+      return { minute: min, type: 'dribble', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.71) {
+    // CORNER (5%)
+    if (r < 0.55) {
       moveBall(team === 'home' ? 97 : 3, Math.random() > 0.5 ? 8 : 92);
-      return { minute: min, type: 'corner', description: `🚩 Escanteio para o ${tName}!`, team };
+      const descs = [
+        `🚩 Escanteio para o ${tName}!`,
+        `🚩 Bola desviada! Escanteio para o ${tName}!`,
+        `🚩 Defesa corta e a bola sai pela linha de fundo. Escanteio!`,
+      ];
+      return { minute: min, type: 'corner', description: descs[Math.floor(Math.random() * descs.length)], team };
     }
-    if (r < 0.79) {
+    // COUNTERATTACK (6%)
+    if (r < 0.61) {
       moveBall(team === 'home' ? 70 : 30, 30 + Math.random() * 40);
-      return { minute: min, type: 'counterattack', description: `🏃 Contra-ataque do ${tName}!`, team };
+      const descs = [
+        `🏃 Contra-ataque veloz do ${tName}!`,
+        `🏃 ${pName} puxa o contra-ataque em velocidade!`,
+        `🏃 Transição rápida! ${tName} sai em velocidade!`,
+        `🏃 ${pName} arranca em contra-ataque com ${pName2}!`,
+      ];
+      return { minute: min, type: 'counterattack', description: descs[Math.floor(Math.random() * descs.length)], team };
     }
-    if (r < 0.86) {
+    // HEADER (5%)
+    if (r < 0.66) {
       moveBall(team === 'home' ? 82 : 18, 40 + Math.random() * 20);
-      return { minute: min, type: 'header', description: `🤕 ${pName} cabeceia! Defesa corta.`, team, playerName: pName };
+      const descs = [
+        `🤕 ${pName} cabeceia! Defesa corta em cima da linha!`,
+        `🤕 Cabeçada de ${pName} passa raspando a trave!`,
+        `🤕 ${pName} sobe mais que todo mundo e cabeceia!`,
+      ];
+      return { minute: min, type: 'header', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    if (r < 0.93) {
+    // SAVE (5%)
+    if (r < 0.71) {
+      moveBall(team === 'home' ? 8 : 92, 45 + Math.random() * 10);
+      const descs = [
+        `🧤 Grande defesa do goleiro do ${team === 'home' ? awayTeam : homeTeam}!`,
+        `🧤 Goleiro se estica todo e faz defesaça!`,
+        `🧤 Mão trocada do goleiro! Salvou o time!`,
+      ];
+      return { minute: min, type: 'save', description: descs[Math.floor(Math.random() * descs.length)], team };
+    }
+    // YELLOW CARD (5%)
+    if (r < 0.76) {
       if (team === 'home') {
         const p = pickHomePlayer();
         if (p) { p.cards++; p.rating = Math.max(3, p.rating - 0.5); }
       }
-      return { minute: min, type: 'yellow', description: `🟨 Cartão amarelo para ${pName}!`, team, playerName: pName };
+      const descs = [
+        `🟨 Cartão amarelo para ${pName}!`,
+        `🟨 ${pName} recebe amarelo por falta tática!`,
+        `🟨 Amarelo! ${pName} exagerou na entrada!`,
+      ];
+      return { minute: min, type: 'yellow', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
     }
-    return { minute: min, type: 'offside', description: `🏳️ Impedimento contra o ${tName}.`, team };
-  }, [homeStrength, awayStrength, homeTeam, awayTeam, pickHomeName, pickHomePlayer, moveBall]);
+    // RED CARD (1%)
+    if (r < 0.77) {
+      if (team === 'home') {
+        const p = pickHomePlayer();
+        if (p) { p.cards += 2; p.rating = Math.max(2, p.rating - 1.5); }
+      }
+      return { minute: min, type: 'red', description: `🟥 CARTÃO VERMELHO! ${pName} é expulso!`, team, playerName: pName };
+    }
+    // OFFSIDE (5%)
+    if (r < 0.82) {
+      return { minute: min, type: 'offside', description: `🏳️ Impedimento! ${pName} estava adiantado.`, team, playerName: pName };
+    }
+    // FREE KICK (5%)
+    if (r < 0.87) {
+      moveBall(team === 'home' ? 75 : 25, 45 + Math.random() * 10);
+      const descs = [
+        `⚽ Falta perigosa para o ${tName}! ${pName} na bola!`,
+        `⚽ Cobrança de falta de ${pName}... na barreira!`,
+        `⚽ ${pName} cobra direto no gol! Goleiro defende!`,
+      ];
+      return { minute: min, type: 'chance', description: descs[Math.floor(Math.random() * descs.length)], team, playerName: pName };
+    }
+    // GOAL KICK / POSSESSION (5%)
+    if (r < 0.92) {
+      moveBall(team === 'home' ? 15 : 85, 50);
+      const descs = [
+        `🔄 Tiro de meta do ${tName}. Jogo recomeça.`,
+        `🔄 ${tName} mantém a posse de bola no seu campo.`,
+        `🔄 Bola com o goleiro do ${tName}, jogo segue.`,
+      ];
+      return { minute: min, type: 'pass', description: descs[Math.floor(Math.random() * descs.length)], team };
+    }
+    // THROW-IN / MISC (8%)
+    const descs = [
+      `📋 Lateral para o ${tName}.`,
+      `📋 Bola sai pela lateral. ${tName} repõe.`,
+      `📋 ${pName} recebe na lateral e tenta avançar.`,
+      `📋 Jogo truncado no meio-campo.`,
+    ];
+    return { minute: min, type: 'pass', description: descs[Math.floor(Math.random() * descs.length)], team };
+  }, [homeStrength, awayStrength, homeTeam, awayTeam, pickHomeName, pickAwayName, pickHomePlayer, moveBall]);
 
   // Main game clock
   useEffect(() => {
