@@ -196,7 +196,7 @@ export function useGame(initialState?: GameState) {
 
       // Youth arrive every 4 matches
       const playedCount = prev.matches.filter(m => m.played).length + 1;
-      if (playedCount % 4 === 0 && prev.budget >= youthInvestment) {
+      if (playedCount % 4 === 0 && prev.budget >= youthInvestment && infrastructure.youthAcademy.level >= 1) {
         const count = getYouthMonthlyPlayers(youthInvestment);
         const newProspects = generateYouthBatch(count, infrastructure.youthAcademy.level);
         setYouthProspects(yp => [...yp, ...newProspects]);
