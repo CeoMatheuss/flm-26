@@ -13,7 +13,7 @@ export interface FacilityLevel {
 }
 
 export const facilityCosts: Record<number, number> = {
-  1: 0,
+  1: 150000,
   2: 300000,
   3: 750000,
   4: 1500000,
@@ -30,10 +30,10 @@ export function getUpgradeCost(currentLevel: number): number {
 }
 
 export const defaultInfrastructure: Infrastructure = {
-  trainingCenter: { level: 1, maxLevel: 10 },
-  youthAcademy: { level: 1, maxLevel: 10 },
+  trainingCenter: { level: 0, maxLevel: 10 },
+  youthAcademy: { level: 0, maxLevel: 10 },
   stadium: { level: 1, maxLevel: 15 },
-  physiotherapy: { level: 1, maxLevel: 10 },
+  physiotherapy: { level: 0, maxLevel: 10 },
 };
 
 // Stadium-specific capacity and costs
