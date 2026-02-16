@@ -2,23 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
-
-// Pre-computed SHA-256 hash of "ADM112828"
-const ADMIN_PASSWORD_HASH = "a]HASHED"; // We'll compute it at startup
-
-let cachedHash: string | null = null;
-
-async function getPasswordHash(): Promise<string> {
-  if (cachedHash) return cachedHash;
-  const encoder = new TextEncoder();
-  const data = encoder.encode("ADM112828");
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  cachedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return cachedHash;
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -34,6 +19,11 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const storedHash = Deno.env.get('ADMIN_PASSWORD_HASH');
+
+    if (!storedHash) {
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Verify user
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -85,16 +75,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Senha inválida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Hash the provided password and compare
+    // Hash the provided password and compare against stored hash
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const providedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    const correctHash = await getPasswordHash();
 
-    if (providedHash !== correctHash) {
+    if (providedHash !== storedHash) {
       // Log failed attempt
       await adminClient.from('admin_login_attempts').insert([{
         user_id: userId,
@@ -114,7 +102,7 @@ Deno.serve(async (req) => {
       success: true,
     }]);
 
-    // Generate a simple admin session token (random, stored nowhere - just a signed claim)
+    // Generate a simple admin session token
     const sessionToken = crypto.randomUUID();
 
     return new Response(JSON.stringify({ 
@@ -123,7 +111,7 @@ Deno.serve(async (req) => {
       message: 'Acesso administrativo liberado!'
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-  } catch (err) {
+  } catch (_err) {
     return new Response(JSON.stringify({ error: 'Erro interno do servidor' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
