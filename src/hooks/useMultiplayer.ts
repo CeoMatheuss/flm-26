@@ -12,6 +12,8 @@ export interface MultiplayerLeague {
   season: number;
   current_round: number;
   season_status: string;
+  country: string;
+  auto_created: boolean;
   created_at: string;
 }
 
@@ -103,10 +105,6 @@ export interface LeagueSquad {
   updated_at: string;
 }
 
-function generateCode(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
 // Generate round-robin schedule for members
 function generateRoundRobin(memberIds: string[]): { round: number; home: string; away: string }[] {
   const ids = [...memberIds];
@@ -119,7 +117,6 @@ function generateRoundRobin(memberIds: string[]): { round: number; home: string;
     const baseRound = isReturn ? round - (n - 1) : round;
     const rotated = [ids[0], ...ids.slice(1)];
     
-    // Rotate for this round
     for (let r = 0; r < baseRound; r++) {
       const last = rotated.pop()!;
       rotated.splice(1, 0, last);
@@ -140,18 +137,16 @@ function generateRoundRobin(memberIds: string[]): { round: number; home: string;
 }
 
 // Simulate a PvP match based on squad overall ratings
-function simulatePvPMatch(homeSquad: any[], awaySquad: any[], homeTactics: any, awayTactics: any) {
+function simulatePvPMatch(homeSquad: any[], awaySquad: any[]) {
   const homeOvr = homeSquad.length > 0 ? homeSquad.slice(0, 11).reduce((s: number, p: any) => s + (p.overall || 50), 0) / Math.min(11, homeSquad.length) : 50;
   const awayOvr = awaySquad.length > 0 ? awaySquad.slice(0, 11).reduce((s: number, p: any) => s + (p.overall || 50), 0) / Math.min(11, awaySquad.length) : 50;
   
-  const homeAdv = 1.08; // home advantage
+  const homeAdv = 1.08;
   const homeStr = homeOvr * homeAdv;
   const awayStr = awayOvr;
-  
   const totalStr = homeStr + awayStr;
   const homeChance = homeStr / totalStr;
   
-  // Generate goals with poisson-like distribution
   const avgGoals = 2.7;
   const homeExpected = avgGoals * homeChance;
   const awayExpected = avgGoals * (1 - homeChance);
@@ -165,7 +160,6 @@ function simulatePvPMatch(homeSquad: any[], awaySquad: any[], homeTactics: any, 
   const homeGoals = poissonRandom(homeExpected);
   const awayGoals = poissonRandom(awayExpected);
   
-  // Generate match events
   const events: any[] = [];
   for (let i = 0; i < homeGoals; i++) {
     const minute = Math.floor(Math.random() * 90) + 1;
@@ -182,7 +176,7 @@ function simulatePvPMatch(homeSquad: any[], awaySquad: any[], homeTactics: any, 
   return { homeGoals, awayGoals, events };
 }
 
-export function useMultiplayer(userId: string, displayName: string) {
+export function useMultiplayer(userId: string, displayName: string, clubName?: string, clubCountry?: string) {
   const [leagues, setLeagues] = useState<MultiplayerLeague[]>([]);
   const [currentLeague, setCurrentLeague] = useState<MultiplayerLeague | null>(null);
   const [members, setMembers] = useState<LeagueMember[]>([]);
@@ -193,6 +187,43 @@ export function useMultiplayer(userId: string, displayName: string) {
   const [leagueMatches, setLeagueMatches] = useState<LeagueMatch[]>([]);
   const [leagueSquads, setLeagueSquads] = useState<LeagueSquad[]>([]);
   const [loading, setLoading] = useState(false);
+  const [autoJoining, setAutoJoining] = useState(false);
+
+  // Auto-assign player to a league based on country
+  const autoJoinLeague = useCallback(async () => {
+    if (!clubName || !clubCountry || autoJoining) return;
+    setAutoJoining(true);
+    try {
+      const { data: leagueId, error } = await supabase.rpc('auto_assign_league', {
+        _user_id: userId,
+        _club_name: clubName,
+        _country: clubCountry,
+      });
+
+      if (error) {
+        console.error('Auto-assign error:', error);
+        toast.error('Erro ao entrar na liga automaticamente');
+        setAutoJoining(false);
+        return;
+      }
+
+      if (leagueId) {
+        // Load the league
+        const { data: league } = await supabase
+          .from('multiplayer_leagues')
+          .select('*')
+          .eq('id', leagueId)
+          .single();
+
+        if (league) {
+          await enterLeague(league as MultiplayerLeague);
+        }
+      }
+    } catch (e) {
+      console.error('Auto-join error:', e);
+    }
+    setAutoJoining(false);
+  }, [userId, clubName, clubCountry, autoJoining]);
 
   // Load user's leagues
   const loadLeagues = useCallback(async () => {
@@ -213,61 +244,14 @@ export function useMultiplayer(userId: string, displayName: string) {
     }
   }, [userId]);
 
-  useEffect(() => { loadLeagues(); }, [loadLeagues]);
-
-  // Create league
-  const createLeague = useCallback(async (name: string, clubName: string) => {
-    setLoading(true);
-    const code = generateCode();
-    const { data, error } = await supabase
-      .from('multiplayer_leagues')
-      .insert([{ name, code, owner_id: userId }])
-      .select()
-      .single();
-
-    if (error) { toast.error('Erro ao criar liga'); setLoading(false); return; }
-
-    await supabase.from('league_members').insert([{
-      league_id: data.id, user_id: userId, club_name: clubName, club_logo: '⚽',
-    }]);
-
-    toast.success(`Liga criada! Código: ${code}`);
-    await loadLeagues();
-    setLoading(false);
-  }, [userId, loadLeagues]);
-
-  // Join league
-  const joinLeague = useCallback(async (code: string, clubName: string) => {
-    setLoading(true);
-    const { data: league } = await supabase
-      .from('multiplayer_leagues')
-      .select('*')
-      .eq('code', code.toUpperCase())
-      .maybeSingle();
-
-    if (!league) { toast.error('Liga não encontrada'); setLoading(false); return; }
-
-    // Check max members
-    const { count } = await supabase
-      .from('league_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('league_id', league.id);
-    
-    if (count !== null && count >= league.max_members) {
-      toast.error('Liga está cheia!');
-      setLoading(false);
-      return;
+  // Auto-join on mount if club info is available
+  useEffect(() => {
+    if (clubName && clubCountry) {
+      autoJoinLeague();
+    } else {
+      loadLeagues();
     }
-
-    const { error } = await supabase.from('league_members').insert([{
-      league_id: league.id, user_id: userId, club_name: clubName, club_logo: '⚽',
-    }]);
-
-    if (error) { toast.error('Erro ao entrar na liga'); setLoading(false); return; }
-    toast.success(`Entrou na liga: ${league.name}`);
-    await loadLeagues();
-    setLoading(false);
-  }, [userId, loadLeagues]);
+  }, [clubName, clubCountry]);
 
   // Enter league
   const enterLeague = useCallback(async (league: MultiplayerLeague) => {
@@ -371,11 +355,10 @@ export function useMultiplayer(userId: string, displayName: string) {
     toast.success(accept ? 'Proposta aceita!' : 'Proposta rejeitada.');
   }, []);
 
-  // === NEW: Sync squad to league ===
+  // Sync squad to league
   const syncSquad = useCallback(async (players: any[], tactics: any) => {
     if (!currentLeague) return;
     
-    // Upsert squad data
     const { data: existing } = await supabase
       .from('league_squads')
       .select('id')
@@ -394,7 +377,7 @@ export function useMultiplayer(userId: string, displayName: string) {
     toast.success('Elenco sincronizado com a liga!');
   }, [currentLeague, userId]);
 
-  // === NEW: Start season (owner only) - generates round-robin schedule ===
+  // Start season (owner only)
   const startSeason = useCallback(async () => {
     if (!currentLeague) return;
     if (currentLeague.owner_id !== userId) {
@@ -407,7 +390,6 @@ export function useMultiplayer(userId: string, displayName: string) {
       return;
     }
 
-    // Check all members synced their squads
     const syncedCount = leagueSquads.length;
     if (syncedCount < members.length) {
       toast.error(`${members.length - syncedCount} membro(s) ainda não sincronizou o elenco!`);
@@ -418,7 +400,6 @@ export function useMultiplayer(userId: string, displayName: string) {
     const memberIds = members.map(m => m.user_id);
     const schedule = generateRoundRobin(memberIds);
     
-    // Insert all matches
     const matchInserts = schedule.map(s => ({
       league_id: currentLeague.id,
       round: s.round,
@@ -429,14 +410,12 @@ export function useMultiplayer(userId: string, displayName: string) {
 
     await supabase.from('league_matches').insert(matchInserts);
     
-    // Update league status
     await supabase.from('multiplayer_leagues')
       .update({ season_status: 'in_progress', current_round: 1 })
       .eq('id', currentLeague.id);
 
     setCurrentLeague(prev => prev ? { ...prev, season_status: 'in_progress', current_round: 1 } : null);
     
-    // Reset all member stats
     for (const m of members) {
       await supabase.from('league_members')
         .update({ points: 0, wins: 0, draws: 0, losses: 0, goals_for: 0, goals_against: 0, played: 0 })
@@ -445,12 +424,10 @@ export function useMultiplayer(userId: string, displayName: string) {
 
     toast.success(`Temporada iniciada! ${schedule.length} partidas geradas.`);
     setLoading(false);
-    
-    // Reload
     await enterLeague(currentLeague);
   }, [currentLeague, userId, members, leagueSquads, enterLeague]);
 
-  // === NEW: Simulate a round (owner triggers) ===
+  // Simulate a round (owner triggers)
   const simulateRound = useCallback(async (round: number) => {
     if (!currentLeague) return;
     if (currentLeague.owner_id !== userId) {
@@ -472,12 +449,9 @@ export function useMultiplayer(userId: string, displayName: string) {
       
       const homeSquad = homeSquadData?.squad_data || [];
       const awaySquad = awaySquadData?.squad_data || [];
-      const homeTactics = homeSquadData?.tactics_data || {};
-      const awayTactics = awaySquadData?.tactics_data || {};
       
-      const result = simulatePvPMatch(homeSquad, awaySquad, homeTactics, awayTactics);
+      const result = simulatePvPMatch(homeSquad, awaySquad);
       
-      // Update match
       await supabase.from('league_matches')
         .update({
           home_goals: result.homeGoals,
@@ -488,7 +462,6 @@ export function useMultiplayer(userId: string, displayName: string) {
         })
         .eq('id', match.id);
       
-      // Update standings
       const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
       const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
       
@@ -520,7 +493,6 @@ export function useMultiplayer(userId: string, displayName: string) {
       }
     }
     
-    // Advance round
     const totalRounds = Math.max(...leagueMatches.map(m => m.round));
     const nextRound = round < totalRounds ? round + 1 : round;
     const allPlayed = leagueMatches.every(m => m.status === 'played' || roundMatches.some(rm => rm.id === m.id));
@@ -538,21 +510,16 @@ export function useMultiplayer(userId: string, displayName: string) {
 
     toast.success(`Rodada ${round} simulada!`);
     setLoading(false);
-    
-    // Reload data
     await enterLeague(currentLeague);
   }, [currentLeague, userId, leagueMatches, leagueSquads, members, enterLeague]);
 
-  // === NEW: End season (owner) ===
+  // End season (owner)
   const endSeason = useCallback(async () => {
     if (!currentLeague || currentLeague.owner_id !== userId) return;
     
     setLoading(true);
-    
-    // Delete old matches
     await supabase.from('league_matches').delete().eq('league_id', currentLeague.id);
     
-    // Increment season
     await supabase.from('multiplayer_leagues').update({
       season: currentLeague.season + 1,
       season_status: 'registration',
@@ -573,8 +540,8 @@ export function useMultiplayer(userId: string, displayName: string) {
 
   return {
     leagues, currentLeague, members, chatMessages, privateMessages, proposals, rivalries,
-    leagueMatches, leagueSquads, loading,
-    createLeague, joinLeague, enterLeague, leaveLeague,
+    leagueMatches, leagueSquads, loading, autoJoining,
+    loadLeagues, enterLeague, leaveLeague,
     sendChat, sendPrivateMessage, sendProposal, respondProposal,
     syncSquad, startSeason, simulateRound, endSeason,
   };

@@ -349,7 +349,9 @@ export type Database = {
       }
       multiplayer_leagues: {
         Row: {
+          auto_created: boolean
           code: string
+          country: string
           created_at: string
           current_round: number
           id: string
@@ -361,7 +363,9 @@ export type Database = {
           status: string
         }
         Insert: {
+          auto_created?: boolean
           code: string
+          country?: string
           created_at?: string
           current_round?: number
           id?: string
@@ -373,7 +377,9 @@ export type Database = {
           status?: string
         }
         Update: {
+          auto_created?: boolean
           code?: string
+          country?: string
           created_at?: string
           current_round?: number
           id?: string
@@ -652,6 +658,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_assign_league: {
+        Args: { _club_name: string; _country: string; _user_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

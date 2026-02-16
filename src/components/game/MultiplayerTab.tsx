@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, MessageSquare, Send, ArrowLeft, Users, Trophy, Handshake, Swords, Plus, LogIn, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award } from 'lucide-react';
+import { Globe, MessageSquare, Send, Users, Trophy, Handshake, Swords, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award, Loader2 } from 'lucide-react';
 import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
 interface Props {
@@ -21,10 +21,9 @@ interface Props {
   leagueMatches: LeagueMatch[];
   leagueSquads: LeagueSquad[];
   loading: boolean;
+  autoJoining?: boolean;
   clubPlayers?: any[];
   clubTactics?: any;
-  onCreateLeague: (name: string, clubName: string) => void;
-  onJoinLeague: (code: string, clubName: string) => void;
   onEnterLeague: (league: MultiplayerLeague) => void;
   onLeaveLeague: () => void;
   onSendChat: (content: string) => void;
@@ -38,54 +37,36 @@ interface Props {
 }
 
 export function MultiplayerTab(props: Props) {
+  if (props.autoJoining) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Entrando na liga online...</p>
+      </div>
+    );
+  }
+
   if (!props.currentLeague) {
     return <LeagueLobby {...props} />;
   }
   return <LeagueView {...props} />;
 }
 
-function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLeague }: Props) {
-  const [newName, setNewName] = useState('');
-  const [newClub, setNewClub] = useState('');
-  const [joinCode, setJoinCode] = useState('');
-  const [joinClub, setJoinClub] = useState('');
-
+function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {leagues.length === 0 ? (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2"><Plus className="h-4 w-4" /> CRIAR LIGA</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Input placeholder="Nome da liga" value={newName} onChange={e => setNewName(e.target.value)} maxLength={50} />
-            <Input placeholder="Nome do seu clube" value={newClub} onChange={e => setNewClub(e.target.value)} maxLength={50} />
-            <Button className="w-full" size="sm" disabled={loading || !newName || !newClub}
-              onClick={() => { onCreateLeague(newName, newClub); setNewName(''); setNewClub(''); }}>
-              Criar Liga
-            </Button>
+          <CardContent className="py-12 text-center">
+            <Globe className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+            <p className="text-sm text-muted-foreground">Carregando sua liga...</p>
+            <p className="text-xs text-muted-foreground mt-1">Você será atribuído automaticamente a uma liga do seu país.</p>
           </CardContent>
         </Card>
-
+      ) : (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2"><LogIn className="h-4 w-4" /> ENTRAR EM LIGA</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Input placeholder="Código da liga" value={joinCode} onChange={e => setJoinCode(e.target.value)} className="uppercase" />
-            <Input placeholder="Nome do seu clube" value={joinClub} onChange={e => setJoinClub(e.target.value)} maxLength={50} />
-            <Button className="w-full" size="sm" disabled={loading || !joinCode || !joinClub}
-              onClick={() => { onJoinLeague(joinCode, joinClub); setJoinCode(''); setJoinClub(''); }}>
-              Entrar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {leagues.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">SUAS LIGAS</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4" /> SUAS LIGAS ONLINE</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {leagues.map(l => (
@@ -93,7 +74,7 @@ function LeagueLobby({ leagues, loading, onCreateLeague, onJoinLeague, onEnterLe
                 <div>
                   <p className="font-semibold text-sm">{l.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Código: {l.code} • T{l.season} •{' '}
+                    T{l.season} • {(l as any).country || 'Brasil'} •{' '}
                     <span className={l.season_status === 'in_progress' ? 'text-emerald-400' : l.season_status === 'finished' ? 'text-amber-400' : 'text-muted-foreground'}>
                       {l.season_status === 'registration' ? '📝 Inscrições' : l.season_status === 'in_progress' ? '⚽ Em andamento' : l.season_status === 'finished' ? '🏆 Finalizada' : l.season_status}
                     </span>
@@ -129,23 +110,20 @@ function LeagueView(props: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="ghost" onClick={onLeaveLeague}><ArrowLeft className="h-4 w-4" /></Button>
-          <div>
-            <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground">Código: {currentLeague!.code}</span>
-              <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={copyCode}>
-                {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-              </Button>
-              <Badge variant="outline" className="text-[10px]">T{currentLeague!.season}</Badge>
-              <Badge variant={seasonStatus === 'in_progress' ? 'default' : 'secondary'} className="text-[10px]">
-                {seasonStatus === 'registration' ? '📝 Inscrições' : seasonStatus === 'in_progress' ? `⚽ Rodada ${currentLeague!.current_round}` : '🏆 Finalizada'}
-              </Badge>
-            </div>
+        <div>
+          <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">Código: {currentLeague!.code}</span>
+            <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={copyCode}>
+              {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+            </Button>
+            <Badge variant="outline" className="text-[10px]">T{currentLeague!.season}</Badge>
+            <Badge variant={seasonStatus === 'in_progress' ? 'default' : 'secondary'} className="text-[10px]">
+              {seasonStatus === 'registration' ? '📝 Inscrições' : seasonStatus === 'in_progress' ? `⚽ Rodada ${currentLeague!.current_round}` : '🏆 Finalizada'}
+            </Badge>
           </div>
         </div>
-        <Badge variant="outline">{members.length} managers</Badge>
+        <Badge variant="outline">{members.length}/{currentLeague!.max_members} managers</Badge>
       </div>
 
       <Tabs defaultValue="standings">
@@ -276,7 +254,7 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
         <CardContent className="py-8 text-center">
           <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">Nenhuma partida agendada.</p>
-          <p className="text-xs text-muted-foreground mt-1">O dono da liga precisa iniciar a temporada.</p>
+          <p className="text-xs text-muted-foreground mt-1">A temporada será iniciada quando houver jogadores suficientes.</p>
         </CardContent>
       </Card>
     );
@@ -284,7 +262,6 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
 
   return (
     <div className="space-y-3">
-      {/* Round selector */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         {Array.from({ length: totalRounds }, (_, i) => i + 1).map(r => {
           const allPlayed = matches.filter(m => m.round === r).every(m => m.status === 'played');
@@ -300,7 +277,6 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
         })}
       </div>
 
-      {/* Matches for selected round */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">RODADA {selectedRound}</CardTitle>
@@ -331,7 +307,6 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
                     <span className="text-sm">{getLogo(m.away_user_id)}</span>
                   </div>
                 </div>
-                {/* Match events */}
                 {m.status === 'played' && m.match_data?.events && (
                   <div className="mt-2 pt-2 border-t border-border/30">
                     {(m.match_data.events as any[]).map((ev: any, i: number) => (
@@ -358,7 +333,6 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
 }) {
   return (
     <div className="space-y-4">
-      {/* My squad sync */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -388,7 +362,6 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
         </CardContent>
       </Card>
 
-      {/* Other members' squads */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">ELENCOS DA LIGA</CardTitle>
@@ -449,11 +422,10 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Status */}
         <div className="p-3 rounded-lg bg-muted/50 border border-border/50 space-y-1">
           <p className="text-xs font-semibold">📊 Status da Liga</p>
           <p className="text-xs text-muted-foreground">
-            Membros: {members.length} • Elencos sincronizados: {syncedCount}/{members.length}
+            Membros: {members.length}/{league.max_members} • Elencos sincronizados: {syncedCount}/{members.length}
           </p>
           <p className="text-xs text-muted-foreground">
             Temporada: {league.season} • Status: {seasonStatus === 'registration' ? 'Inscrições' : seasonStatus === 'in_progress' ? 'Em andamento' : 'Finalizada'}
@@ -465,7 +437,6 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
           )}
         </div>
 
-        {/* Actions based on season_status */}
         {seasonStatus === 'registration' && (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
@@ -689,7 +660,6 @@ function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
 
 // === AWARDS VIEW ===
 function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; members: LeagueMember[] }) {
-  // Calculate top scorers and assisters from match_data events
   const playerStats: Record<string, { name: string; club: string; goals: number; assists: number }> = {};
   
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
