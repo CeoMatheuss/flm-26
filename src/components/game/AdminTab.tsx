@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
-  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, Search
+  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +29,13 @@ interface ChatBan {
   banned_by: string;
 }
 
+interface AdminUser {
+  id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+}
+
 interface Stats {
   totalUsers: number;
   totalSaves: number;
@@ -42,22 +49,30 @@ interface Stats {
 
 interface Props {
   userId: string;
+  isFounder: boolean;
 }
 
-export function AdminTab({ userId }: Props) {
+export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [allPremium, setAllPremium] = useState<PendingUser[]>([]);
   const [bans, setBans] = useState<ChatBan[]>([]);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [banUserId, setBanUserId] = useState('');
   const [banReason, setBanReason] = useState('');
-  const [searchUser, setSearchUser] = useState('');
+  const [newAdminId, setNewAdminId] = useState('');
 
   useEffect(() => {
     const check = async () => {
+      if (isFounder) {
+        setIsAdmin(true);
+        setChecking(false);
+        loadAll();
+        return;
+      }
       const { data } = await supabase
         .from('user_roles')
         .select('role')
@@ -69,19 +84,16 @@ export function AdminTab({ userId }: Props) {
       if (data) loadAll();
     };
     check();
-  }, [userId]);
+  }, [userId, isFounder]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins()]);
     setLoading(false);
   }, []);
 
   const loadPremiumUsers = async () => {
-    const { data } = await supabase
-      .from('premium_users')
-      .select('*')
-      .order('activated_at', { ascending: false });
+    const { data } = await supabase.from('premium_users').select('*').order('activated_at', { ascending: false });
     if (data) {
       const typed = data as unknown as PendingUser[];
       setPendingUsers(typed.filter(u => u.status === 'pending'));
@@ -90,11 +102,13 @@ export function AdminTab({ userId }: Props) {
   };
 
   const loadBans = async () => {
-    const { data } = await supabase
-      .from('chat_bans')
-      .select('*')
-      .order('banned_at', { ascending: false });
+    const { data } = await supabase.from('chat_bans').select('*').order('banned_at', { ascending: false });
     if (data) setBans(data as unknown as ChatBan[]);
+  };
+
+  const loadAdmins = async () => {
+    const { data } = await supabase.from('user_roles').select('*').order('created_at', { ascending: false });
+    if (data) setAdmins(data as unknown as AdminUser[]);
   };
 
   const loadStats = async () => {
@@ -145,12 +159,7 @@ export function AdminTab({ userId }: Props) {
       reason: banReason.trim() || 'Sem motivo informado',
     }]);
     if (error) toast.error('Erro ao banir: ' + error.message);
-    else {
-      toast.success('Usuário banido do chat!');
-      setBanUserId('');
-      setBanReason('');
-      loadBans();
-    }
+    else { toast.success('Usuário banido do chat!'); setBanUserId(''); setBanReason(''); loadBans(); }
     setLoading(false);
   };
 
@@ -162,6 +171,36 @@ export function AdminTab({ userId }: Props) {
     setLoading(false);
   };
 
+  const addAdmin = async () => {
+    if (!newAdminId.trim()) return toast.error('Informe o ID do usuário');
+    setLoading(true);
+    const { error } = await supabase.from('user_roles').insert([{
+      user_id: newAdminId.trim(),
+      role: 'admin' as any,
+    }]);
+    if (error) {
+      if (error.message.includes('duplicate') || error.message.includes('unique')) {
+        toast.error('Este usuário já é admin!');
+      } else {
+        toast.error('Erro: ' + error.message);
+      }
+    } else {
+      toast.success('✅ Administrador adicionado!');
+      setNewAdminId('');
+      loadAdmins();
+    }
+    setLoading(false);
+  };
+
+  const removeAdmin = async (roleId: string, targetUserId: string) => {
+    if (targetUserId === userId) return toast.error('Você não pode remover a si mesmo!');
+    setLoading(true);
+    const { error } = await supabase.from('user_roles').delete().eq('id', roleId);
+    if (error) toast.error('Erro ao remover');
+    else { toast.success('Admin removido!'); loadAdmins(); }
+    setLoading(false);
+  };
+
   const deleteMessage = async (msgId: string) => {
     const { error } = await supabase.from('global_chat_messages').delete().eq('id', msgId);
     if (error) toast.error('Erro ao deletar mensagem');
@@ -170,29 +209,25 @@ export function AdminTab({ userId }: Props) {
 
   if (checking) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground mb-2" />
-          <p className="text-xs text-muted-foreground">Verificando permissões...</p>
-        </CardContent>
-      </Card>
+      <Card><CardContent className="p-8 text-center">
+        <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground mb-2" />
+        <p className="text-xs text-muted-foreground">Verificando permissões...</p>
+      </CardContent></Card>
     );
   }
 
   if (!isAdmin) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <Shield className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">Acesso restrito ao administrador.</p>
-        </CardContent>
-      </Card>
+      <Card><CardContent className="p-8 text-center">
+        <Shield className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">Acesso restrito.</p>
+      </CardContent></Card>
     );
   }
 
   const statItems = stats ? [
     { icon: Users, label: 'Jogadores', value: stats.totalUsers, color: 'text-blue-400' },
-    { icon: Crown, label: 'Premium Ativos', value: stats.premiumActive, color: 'text-yellow-400' },
+    { icon: Crown, label: 'Premium', value: stats.premiumActive, color: 'text-yellow-400' },
     { icon: Clock, label: 'Pendentes', value: stats.premiumPending, color: 'text-orange-400' },
     { icon: MessageCircle, label: 'Mensagens', value: stats.totalMessages, color: 'text-green-400' },
     { icon: Gavel, label: 'Leilões', value: stats.totalAuctions, color: 'text-purple-400' },
@@ -208,15 +243,25 @@ export function AdminTab({ userId }: Props) {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-5 w-5 text-red-400" />
-              Painel do Administrador
+              {isFounder ? (
+                <><Star className="h-5 w-5 text-yellow-400 fill-yellow-400" /> Painel do Fundador</>
+              ) : (
+                <><Shield className="h-5 w-5 text-red-400" /> Painel do Administrador</>
+              )}
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
-              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`text-[9px] ${isFounder ? 'text-yellow-400 border-yellow-500/30' : 'text-blue-400 border-blue-500/30'}`}>
+                {isFounder ? '⭐ Fundador' : '🛡️ Admin'}
+              </Badge>
+              <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+              </Button>
+            </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Gerencie o jogo, pagamentos, banimentos e estatísticas.
+            {isFounder
+              ? 'Controle total do jogo. Gerencie admins, pagamentos, banimentos e moderação.'
+              : 'Gerencie pagamentos, banimentos e moderação do chat.'}
           </p>
         </CardHeader>
       </Card>
@@ -235,16 +280,133 @@ export function AdminTab({ userId }: Props) {
       )}
 
       {/* Admin Tabs */}
-      <Tabs defaultValue="premium" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full">
+      <Tabs defaultValue={isFounder ? 'team' : 'premium'} className="w-full">
+        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          {isFounder && <TabsTrigger value="team" className="text-xs gap-1"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
           <TabsTrigger value="premium" className="text-xs gap-1"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
-          <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Banimentos</TabsTrigger>
-          <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Moderação</TabsTrigger>
+          <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
+          <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
         </TabsList>
+
+        {/* Team/Hierarchy Tab - Founder Only */}
+        {isFounder && (
+          <TabsContent value="team" className="space-y-3 mt-3">
+            {/* Hierarchy Info */}
+            <Card className="border-yellow-500/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  Hierarquia do Jogo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-yellow-400">Fundador</p>
+                    <p className="text-[10px] text-muted-foreground">Controle total. Pode adicionar/remover admins, moderar tudo.</p>
+                  </div>
+                  <Badge className="ml-auto text-[8px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Você</Badge>
+                </div>
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <Shield className="h-5 w-5 text-blue-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-blue-400">Administrador</p>
+                    <p className="text-[10px] text-muted-foreground">Pode moderar chat, gerenciar premium e banimentos.</p>
+                  </div>
+                  <Badge variant="outline" className="ml-auto text-[8px] text-blue-400 border-blue-500/30">{admins.filter(a => a.role === 'admin').length}</Badge>
+                </div>
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 border border-border/50">
+                  <Users className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold">Jogador</p>
+                    <p className="text-[10px] text-muted-foreground">Acesso normal ao jogo, sem permissões especiais.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add Admin */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-blue-400" />
+                  Adicionar Administrador
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Input
+                  placeholder="ID do usuário (UUID) — copie do painel de stats"
+                  value={newAdminId}
+                  onChange={e => setNewAdminId(e.target.value)}
+                  className="text-xs h-8"
+                />
+                <Button size="sm" className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white" onClick={addAdmin} disabled={loading}>
+                  <UserPlus className="h-3 w-3 mr-1" /> Promover a Admin
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Current Admins */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-blue-400" />
+                  Administradores Atuais ({admins.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {admins.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum admin além do fundador.</p>
+                ) : (
+                  <ScrollArea className="max-h-[250px]">
+                    <div className="space-y-2">
+                      {admins.map(a => {
+                        const isSelf = a.user_id === userId;
+                        return (
+                          <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/50">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono truncate">{a.user_id.slice(0, 16)}...</span>
+                                {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Badge variant="outline" className={`text-[8px] ${
+                                  a.role === 'admin' ? 'text-blue-400 border-blue-500/30' :
+                                  a.role === 'moderator' ? 'text-green-400 border-green-500/30' :
+                                  'text-muted-foreground'
+                                }`}>
+                                  {a.role === 'admin' ? '🛡️ Admin' : a.role === 'moderator' ? '🔧 Mod' : '👤 User'}
+                                </Badge>
+                                <span className="text-[8px] text-muted-foreground">
+                                  Desde {new Date(a.created_at).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            </div>
+                            {!isSelf && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-[9px] border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                onClick={() => removeAdmin(a.id, a.user_id)}
+                                disabled={loading}
+                              >
+                                <XCircle className="h-3 w-3 mr-1" /> Remover
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {/* Premium Tab */}
         <TabsContent value="premium" className="space-y-3 mt-3">
-          {/* Pending */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -281,8 +443,6 @@ export function AdminTab({ userId }: Props) {
               )}
             </CardContent>
           </Card>
-
-          {/* All Premium */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -332,7 +492,6 @@ export function AdminTab({ userId }: Props) {
               </Button>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -375,18 +534,13 @@ export function AdminTab({ userId }: Props) {
   );
 }
 
-// Moderation sub-panel to view/delete recent chat messages
 function ModerationPanel({ onDeleteMessage }: { onDeleteMessage: (id: string) => Promise<void> }) {
   const [messages, setMessages] = useState<Array<{ id: string; content: string; sender_name: string; created_at: string; user_id: string }>>([]);
   const [loading, setLoading] = useState(false);
 
   const loadMessages = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('global_chat_messages')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const { data } = await supabase.from('global_chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
     if (data) setMessages(data);
     setLoading(false);
   };
