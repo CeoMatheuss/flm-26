@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
-  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star
+  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -64,6 +64,10 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [banUserId, setBanUserId] = useState('');
   const [banReason, setBanReason] = useState('');
   const [newAdminId, setNewAdminId] = useState('');
+  const [allUsers, setAllUsers] = useState<Array<{ user_id: string; display_name: string | null; created_at: string }>>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [giftUserId, setGiftUserId] = useState('');
+  const [giftType, setGiftType] = useState<'premium' | 'budget'>('premium');
 
   useEffect(() => {
     const check = async () => {
@@ -88,9 +92,14 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers()]);
     setLoading(false);
   }, []);
+
+  const loadUsers = async () => {
+    const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
+    if (data) setAllUsers(data);
+  };
 
   const loadPremiumUsers = async () => {
     const { data } = await supabase.from('premium_users').select('*').order('activated_at', { ascending: false });
@@ -201,6 +210,35 @@ export function AdminTab({ userId, isFounder }: Props) {
     setLoading(false);
   };
 
+  const giftPremium = async () => {
+    if (!giftUserId.trim()) return toast.error('Informe o ID do usuário');
+    setLoading(true);
+    if (giftType === 'premium') {
+      const { error } = await supabase.from('premium_users').insert([{
+        user_id: giftUserId.trim(),
+        status: 'active',
+        pix_transaction_id: 'GIFT_BY_ADMIN',
+      }]);
+      if (error) {
+        if (error.message.includes('duplicate') || error.message.includes('unique')) {
+          toast.error('Usuário já é premium!');
+        } else {
+          toast.error('Erro: ' + error.message);
+        }
+      } else {
+        toast.success('🎁 Premium presenteado com sucesso!');
+        setGiftUserId('');
+        loadPremiumUsers();
+      }
+    }
+    setLoading(false);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('ID copiado!');
+  };
+
   const deleteMessage = async (msgId: string) => {
     const { error } = await supabase.from('global_chat_messages').delete().eq('id', msgId);
     if (error) toast.error('Erro ao deletar mensagem');
@@ -280,9 +318,10 @@ export function AdminTab({ userId, isFounder }: Props) {
       )}
 
       {/* Admin Tabs */}
-      <Tabs defaultValue={isFounder ? 'team' : 'premium'} className="w-full">
-        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-4' : 'grid-cols-3'}`}>
+      <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
+        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-5' : 'grid-cols-4'}`}>
           {isFounder && <TabsTrigger value="team" className="text-xs gap-1"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
+          <TabsTrigger value="users" className="text-xs gap-1"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
           <TabsTrigger value="premium" className="text-xs gap-1"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
           <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
           <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
@@ -404,6 +443,69 @@ export function AdminTab({ userId, isFounder }: Props) {
             </Card>
           </TabsContent>
         )}
+
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-3 mt-3">
+          <Card className="border-yellow-500/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Gift className="h-4 w-4 text-yellow-400" />
+                Presentear por ID
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                placeholder="Cole o ID do usuário aqui"
+                value={giftUserId}
+                onChange={e => setGiftUserId(e.target.value)}
+                className="text-xs h-8 font-mono"
+              />
+              <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftPremium} disabled={loading}>
+                <Gift className="h-3 w-3" /> Dar Premium
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-400" />
+                Usuários ({allUsers.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                placeholder="Buscar por nome ou ID..."
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+                className="text-xs h-8"
+              />
+              <ScrollArea className="max-h-[350px]">
+                <div className="space-y-1.5">
+                  {allUsers
+                    .filter(u => !userSearch.trim() || (u.display_name || '').toLowerCase().includes(userSearch.toLowerCase()) || u.user_id.includes(userSearch))
+                    .map(u => (
+                      <div key={u.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-border/50">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold truncate">{u.display_name || 'Sem nome'}</p>
+                          <p className="text-[9px] font-mono text-muted-foreground truncate">ID: {u.user_id}</p>
+                          <p className="text-[8px] text-muted-foreground">Desde {new Date(u.created_at).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => copyToClipboard(u.user_id)} title="Copiar ID">
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-6 px-2 text-[8px] border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10" onClick={() => setGiftUserId(u.user_id)}>
+                            <Gift className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Premium Tab */}
         <TabsContent value="premium" className="space-y-3 mt-3">
