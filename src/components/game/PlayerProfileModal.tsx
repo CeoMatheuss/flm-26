@@ -165,23 +165,29 @@ export function PlayerProfileModal({ player, children }: Props) {
         </div>
 
         {/* History */}
-        {player.history && player.history.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
+        <div>
+          <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
+          {player.history && player.history.length > 0 ? (
             <div className="space-y-1">
               {player.history.map((h, i) => (
                 <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
                   <span className="font-semibold">{h.club}</span>
-                  <span className="text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}</span>
+                  <span className="text-muted-foreground">
+                    T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}
+                  </span>
                   <span className="ml-auto">{h.games}j</span>
                   <span>⚽{h.goals}</span>
                   <span>🅰️{h.assists}</span>
-                  <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>
+                  {h.avgRating > 0 && (
+                    <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-[10px] text-muted-foreground bg-muted/20 rounded px-2 py-1.5">Sem histórico de clubes anteriores.</p>
+          )}
+        </div>
 
         {/* Injury */}
         {player.injury && (
