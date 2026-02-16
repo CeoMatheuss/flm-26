@@ -56,6 +56,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
     captain: 'border-l-yellow-500 bg-yellow-500/5',
     derby: 'border-l-orange-600 bg-orange-600/5',
     weather: 'border-l-sky-400 bg-sky-400/5',
+    season_awards: 'border-l-amber-500 bg-amber-500/5',
+    player_unhappy: 'border-l-red-600 bg-red-600/5',
   };
 
   return (

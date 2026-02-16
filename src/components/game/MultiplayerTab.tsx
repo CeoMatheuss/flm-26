@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, MessageSquare, Send, ArrowLeft, Users, Trophy, Handshake, Swords, Plus, LogIn, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag } from 'lucide-react';
+import { Globe, MessageSquare, Send, ArrowLeft, Users, Trophy, Handshake, Swords, Plus, LogIn, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award } from 'lucide-react';
 import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
 interface Props {
@@ -156,6 +156,7 @@ function LeagueView(props: Props) {
           <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat</TabsTrigger>
           <TabsTrigger value="private" className="gap-1 text-xs"><MessageSquare className="h-3 w-3" /> PM</TabsTrigger>
           <TabsTrigger value="proposals" className="gap-1 text-xs"><Handshake className="h-3 w-3" /> Trades</TabsTrigger>
+          <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios</TabsTrigger>
           <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rival</TabsTrigger>
           {isOwner && <TabsTrigger value="admin" className="gap-1 text-xs"><Flag className="h-3 w-3" /> Admin</TabsTrigger>}
         </TabsList>
@@ -188,6 +189,9 @@ function LeagueView(props: Props) {
         </TabsContent>
         <TabsContent value="rivalries">
           <RivalriesView rivalries={rivalries} members={members} userId={userId} />
+        </TabsContent>
+        <TabsContent value="awards">
+          <AwardsView leagueMatches={leagueMatches} members={members} />
         </TabsContent>
         {isOwner && (
           <TabsContent value="admin">
@@ -230,10 +234,15 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((m, i) => (
+            {sorted.map((m, i) => {
+              const isBot = m.user_id.startsWith('bot_');
+              return (
               <TableRow key={m.id} className={m.user_id === userId ? 'bg-primary/10 font-semibold' : ''}>
                 <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : ''}>{i + 1}</TableCell>
-                <TableCell><span className="mr-1">{m.club_logo}</span> {m.club_name}</TableCell>
+                <TableCell>
+                  <span className="mr-1">{m.club_logo}</span> {m.club_name}
+                  {isBot && <Badge variant="secondary" className="ml-1 text-[8px] px-1 py-0">BOT</Badge>}
+                </TableCell>
                 <TableCell className="text-center">{m.played}</TableCell>
                 <TableCell className="text-center">{m.wins}</TableCell>
                 <TableCell className="text-center">{m.draws}</TableCell>
@@ -243,7 +252,8 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
                 <TableCell className="text-center">{m.goals_for - m.goals_against}</TableCell>
                 <TableCell className="text-center font-bold">{m.points}</TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -671,6 +681,80 @@ function ProposalsView({ proposals, members, userId, onSend, onRespond }: {
               </div>
             );
           })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// === AWARDS VIEW ===
+function AwardsView({ leagueMatches, members }: { leagueMatches: LeagueMatch[]; members: LeagueMember[] }) {
+  // Calculate top scorers and assisters from match_data events
+  const playerStats: Record<string, { name: string; club: string; goals: number; assists: number }> = {};
+  
+  const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
+  
+  leagueMatches.filter(m => m.status === 'played' && m.match_data?.events).forEach(m => {
+    const events = m.match_data.events as any[];
+    events.forEach((ev: any) => {
+      if (ev.type === 'goal') {
+        const clubName = ev.team === 'home' ? getClub(m.home_user_id) : getClub(m.away_user_id);
+        const key = `${ev.playerName}_${clubName}`;
+        if (!playerStats[key]) playerStats[key] = { name: ev.playerName, club: clubName, goals: 0, assists: 0 };
+        playerStats[key].goals++;
+      }
+    });
+  });
+
+  const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
+  const sorted = [...members].sort((a, b) => b.points - a.points);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">⚽ ARTILHEIROS</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {topScorers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhum gol registrado ainda.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {topScorers.map((p, i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold w-5 text-center">{i + 1}</span>
+                    <span className="text-sm font-semibold">{p.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{p.club}</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">{p.goals} ⚽</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">🏆 CLASSIFICAÇÃO FINAL</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {sorted.length > 0 && sorted[0].played > 0 ? (
+            <div className="space-y-1.5">
+              {sorted.slice(0, 3).map((m, i) => (
+                <div key={m.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
+                    <span className="text-sm font-semibold">{m.club_name}</span>
+                  </div>
+                  <span className="text-sm font-bold">{m.points} pts</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">Temporada não iniciada.</p>
+          )}
         </CardContent>
       </Card>
     </div>

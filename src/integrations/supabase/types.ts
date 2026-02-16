@@ -162,6 +162,47 @@ export type Database = {
           },
         ]
       }
+      league_awards: {
+        Row: {
+          award_type: string
+          created_at: string
+          id: string
+          league_id: string
+          player_name: string | null
+          season: number
+          user_id: string
+          value: number
+        }
+        Insert: {
+          award_type: string
+          created_at?: string
+          id?: string
+          league_id: string
+          player_name?: string | null
+          season?: number
+          user_id: string
+          value?: number
+        }
+        Update: {
+          award_type?: string
+          created_at?: string
+          id?: string
+          league_id?: string
+          player_name?: string | null
+          season?: number
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_awards_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       league_matches: {
         Row: {
           away_goals: number | null

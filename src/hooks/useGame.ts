@@ -652,6 +652,75 @@ export function useGame(initialState?: GameState) {
     const clubPos = sorted.findIndex(t => t.name === club.name) + 1;
     const seasonPrize = clubPos === 1 ? 5000000 : clubPos <= 4 ? 2000000 : 500000;
 
+    // Season awards events
+    const topScorer = [...club.players].sort((a, b) => (b.goals ?? 0) - (a.goals ?? 0))[0];
+    const topAssister = [...club.players].sort((a, b) => (b.assists ?? 0) - (a.assists ?? 0))[0];
+    const bestRating = [...club.players].filter(p => (p.seasonRatings?.length ?? 0) > 0)
+      .sort((a, b) => {
+        const avgA = (a.seasonRatings ?? []).reduce((s, r) => s + r, 0) / (a.seasonRatings?.length ?? 1);
+        const avgB = (b.seasonRatings ?? []).reduce((s, r) => s + r, 0) / (b.seasonRatings?.length ?? 1);
+        return avgB - avgA;
+      })[0];
+    const champion = sorted[0];
+
+    const seasonAwardsEvents: GameEvent[] = [];
+    if (topScorer && (topScorer.goals ?? 0) > 0) {
+      seasonAwardsEvents.push({
+        id: crypto.randomUUID(),
+        type: 'season_awards',
+        title: `⚽ ARTILHEIRO DA TEMPORADA: ${topScorer.name}`,
+        description: `${topScorer.name} foi o artilheiro do ${club.name} com ${topScorer.goals} gols na temporada ${season.currentSeason}!`,
+        icon: '⚽',
+        impact: 'morale_all:3',
+        resolved: true,
+      });
+    }
+    if (topAssister && (topAssister.assists ?? 0) > 0) {
+      seasonAwardsEvents.push({
+        id: crypto.randomUUID(),
+        type: 'season_awards',
+        title: `🅰️ GARÇOM DA TEMPORADA: ${topAssister.name}`,
+        description: `${topAssister.name} liderou em assistências com ${topAssister.assists} passes decisivos na temporada ${season.currentSeason}!`,
+        icon: '🅰️',
+        impact: 'morale_all:2',
+        resolved: true,
+      });
+    }
+    if (champion) {
+      seasonAwardsEvents.push({
+        id: crypto.randomUUID(),
+        type: 'season_awards',
+        title: `🏆 CAMPEÃO: ${champion.name}`,
+        description: `${champion.name} conquistou o título da temporada ${season.currentSeason} com ${champion.points} pontos!`,
+        icon: '🏆',
+        impact: 'morale_all:5',
+        resolved: true,
+      });
+    }
+    setEvents(prev => [...seasonAwardsEvents, ...prev].slice(0, 30));
+
+    // Trophies
+    const newTrophies: import('@/types/clubProfile').Trophy[] = [];
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    if (clubPos === 1) {
+      newTrophies.push({ title: 'Campeão da Liga', season: season.currentSeason, date: dateStr });
+    }
+    if (topScorer && (topScorer.goals ?? 0) > 0) {
+      newTrophies.push({ title: `Artilheiro - ${topScorer.name} (${topScorer.goals} gols)`, season: season.currentSeason, date: dateStr });
+    }
+    if (topAssister && (topAssister.assists ?? 0) > 0) {
+      newTrophies.push({ title: `Garçom - ${topAssister.name} (${topAssister.assists} assists)`, season: season.currentSeason, date: dateStr });
+    }
+    if (newTrophies.length > 0) {
+      setClubProfile(prev => ({
+        ...prev,
+        trophies: [...(prev.trophies || []), ...newTrophies],
+      }));
+    }
+
+    // Player unhappiness: players with OVR >= 70 and 0 games for 2+ seasons
+    const unhappyEvents: GameEvent[] = [];
+
     setSeason(prev => ({
       currentSeason: prev.currentSeason + 1, currentWeek: 1, totalWeeks: 38,
       seasonHistory: [...prev.seasonHistory, {
@@ -662,13 +731,47 @@ export function useGame(initialState?: GameState) {
     }));
 
     setLeagueTeams(getLeagueTeams(club.country || 'BR', club.name).map(t => ({ ...t, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 })));
-    // Return loaned-in players (remove from squad), get back loaned-out players
     const loanedInIds = loanedPlayers.filter(l => l.direction === 'in').map(l => l.player.id);
     const returnedPlayers = loanedPlayers.filter(l => l.direction === 'out').map(l => l.player);
 
     setClub(prev => {
       const basePlayers = prev.players.filter(p => !loanedInIds.includes(p.id));
       const allPlayers = [...basePlayers, ...returnedPlayers];
+      
+      // Track seasons without playing and filter unhappy players
+      const processedPlayers = allPlayers
+        .map(p => {
+          const swp = p.gamesPlayed === 0 ? (p.seasonsWithoutPlaying ?? 0) + 1 : 0;
+          return {
+            ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1,
+            contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0,
+            trainingProgress: 0, injury: undefined, seasonsWithoutPlaying: swp,
+          };
+        })
+        .map(applyAgeDevelopment);
+      
+      // Remove unhappy players (OVR >= 70, 2+ seasons without playing, contract expiring)
+      const remaining = processedPlayers.filter(p => {
+        if (p.age > 42 || p.contract <= 0) return false;
+        if (p.overall >= 70 && (p.seasonsWithoutPlaying ?? 0) >= 2) {
+          unhappyEvents.push({
+            id: crypto.randomUUID(),
+            type: 'player_unhappy',
+            title: `😤 ${p.name} PEDE PARA SAIR!`,
+            description: `${p.name} (OVR ${p.overall}) está insatisfeito por ficar ${p.seasonsWithoutPlaying} temporadas sem jogar e deixou o clube.`,
+            icon: '😤',
+            impact: `morale_all:-3`,
+            resolved: true,
+          });
+          return false;
+        }
+        return true;
+      });
+
+      if (unhappyEvents.length > 0) {
+        setEvents(ev => [...unhappyEvents, ...ev].slice(0, 30));
+      }
+
       return {
         ...prev,
         matches: generateSeasonMatches(prev.country),
@@ -680,10 +783,7 @@ export function useGame(initialState?: GameState) {
         scouts: prev.scouts
           .map(s => ({ ...s, contract: s.contract - 1 }))
           .filter(s => s.contract > 0),
-        players: allPlayers
-          .map(p => ({ ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1, contract: Math.max(0, (p.contract ?? 1) - 1), gamesPlayed: 0, trainingProgress: 0, injury: undefined }))
-          .map(applyAgeDevelopment)
-          .filter(p => p.age <= 42 && p.contract > 0),
+        players: remaining,
       };
     });
     setLoanedPlayers([]);
@@ -699,7 +799,7 @@ export function useGame(initialState?: GameState) {
     setSponsorOffers(generateSponsorOffers(club.reputation, 4));
 
     toast.success(`Temporada ${season.currentSeason} encerrada! ${clubPos}º lugar. Prêmio: R$ ${(seasonPrize / 1000000).toFixed(1)}M`);
-  }, [leagueTeams, club, addFinance, season.currentSeason]);
+  }, [leagueTeams, club, addFinance, season.currentSeason, loanedPlayers]);
 
   const hasUnplayedMatches = club.matches.some(m => !m.played);
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);

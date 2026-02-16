@@ -2,7 +2,7 @@ import { Injury } from './game';
 
 export interface GameEvent {
   id: string;
-  type: 'injury' | 'offer' | 'protest' | 'bonus' | 'scandal' | 'discovery' | 'player_upgrade' | 'fan_rage' | 'stadium_upgrade' | 'transfer_in' | 'transfer_out' | 'record' | 'captain' | 'derby' | 'weather';
+  type: 'injury' | 'offer' | 'protest' | 'bonus' | 'scandal' | 'discovery' | 'player_upgrade' | 'fan_rage' | 'stadium_upgrade' | 'transfer_in' | 'transfer_out' | 'record' | 'captain' | 'derby' | 'weather' | 'season_awards' | 'player_unhappy';
   title: string;
   description: string;
   icon: string;
