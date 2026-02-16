@@ -100,48 +100,58 @@ interface Props {
 }
 
 function ShirtPreview({ kit, size = 'md' }: { kit: UniformKit; size?: 'sm' | 'md' | 'lg' }) {
-  const sizeClass = size === 'sm' ? 'w-20 h-28' : size === 'lg' ? 'w-52 h-72' : 'w-36 h-48';
+  const sizeClass = size === 'sm' ? 'w-16 h-24' : size === 'lg' ? 'w-40 h-56' : 'w-28 h-40';
 
-  const renderPattern = () => {
+  const bodyPath = "M25,8 L20,12 L12,14 L12,38 L20,36 L25,75 L75,75 L80,36 L88,38 L88,14 L80,12 L75,8 Z";
+  const leftSleeve = kit.sleeveStyle === 'long'
+    ? "M12,14 L4,18 L4,48 L12,46 L12,38 Z"
+    : "M12,14 L4,18 L4,32 L12,30 L12,38 Z";
+  const rightSleeve = kit.sleeveStyle === 'long'
+    ? "M88,14 L96,18 L96,48 L88,46 L88,38 Z"
+    : "M88,14 L96,18 L96,32 L88,30 L88,38 Z";
+
+  const patternId = `pat-${kit.name}-${size}`;
+
+  const renderBodyFill = () => {
     switch (kit.shirtPattern) {
       case 'stripes':
         return (
           <>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />
-            {[28, 40, 52, 64].map(x => (
-              <rect key={x} x={x} y="10" width="5" height="65" fill={kit.shirtSecondaryColor} />
+            <path d={bodyPath} fill={kit.shirtColor} />
+            {[30, 38, 46, 54, 62, 70].map(x => (
+              <line key={x} x1={x} y1="8" x2={x} y2="75" stroke={kit.shirtSecondaryColor} strokeWidth="3" clipPath={`url(#clip-${patternId})`} />
             ))}
           </>
         );
       case 'hoops':
         return (
           <>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />
-            {[18, 30, 42, 54].map(y => (
-              <rect key={y} x="20" y={y} width="60" height="6" fill={kit.shirtSecondaryColor} />
+            <path d={bodyPath} fill={kit.shirtColor} />
+            {[14, 22, 30, 38, 46, 54, 62, 70].map(y => (
+              <line key={y} x1="12" y1={y} x2="88" y2={y} stroke={kit.shirtSecondaryColor} strokeWidth="3" clipPath={`url(#clip-${patternId})`} />
             ))}
           </>
         );
       case 'halves':
         return (
           <>
-            <rect x="20" y="10" width="30" height="65" fill={kit.shirtColor} />
-            <rect x="50" y="10" width="30" height="65" fill={kit.shirtSecondaryColor} />
+            <path d={bodyPath} fill={kit.shirtColor} />
+            <rect x="50" y="0" width="50" height="80" fill={kit.shirtSecondaryColor} clipPath={`url(#clip-${patternId})`} />
           </>
         );
       case 'diagonal':
         return (
           <>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />
-            <polygon points="20,10 80,50 80,75 20,35" fill={kit.shirtSecondaryColor} opacity="0.7" />
+            <path d={bodyPath} fill={kit.shirtColor} />
+            <polygon points="0,30 100,60 100,80 0,50" fill={kit.shirtSecondaryColor} opacity="0.7" clipPath={`url(#clip-${patternId})`} />
           </>
         );
       case 'pinstripes':
         return (
           <>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />
-            {[25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75].map(x => (
-              <rect key={x} x={x} y="10" width="1" height="65" fill={kit.shirtSecondaryColor} opacity="0.5" />
+            <path d={bodyPath} fill={kit.shirtColor} />
+            {Array.from({ length: 20 }, (_, i) => 20 + i * 3).map(x => (
+              <line key={x} x1={x} y1="8" x2={x} y2="75" stroke={kit.shirtSecondaryColor} strokeWidth="0.8" opacity="0.5" clipPath={`url(#clip-${patternId})`} />
             ))}
           </>
         );
@@ -149,62 +159,55 @@ function ShirtPreview({ kit, size = 'md' }: { kit: UniformKit; size?: 'sm' | 'md
         return (
           <>
             <defs>
-              <linearGradient id={`grad-${kit.name}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <linearGradient id={`grad-${patternId}`} x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor={kit.shirtColor} />
                 <stop offset="100%" stopColor={kit.shirtSecondaryColor} />
               </linearGradient>
             </defs>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={`url(#grad-${kit.name})`} />
+            <path d={bodyPath} fill={`url(#grad-${patternId})`} />
           </>
         );
       case 'sleeves':
-        return (
-          <>
-            <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />
-            <rect x="10" y="12" width="15" height="25" rx="3" fill={kit.shirtSecondaryColor} />
-            <rect x="75" y="12" width="15" height="25" rx="3" fill={kit.shirtSecondaryColor} />
-          </>
-        );
+        return <path d={bodyPath} fill={kit.shirtColor} />;
       default:
-        return <rect x="20" y="10" width="60" height="65" rx="3" fill={kit.shirtColor} />;
+        return <path d={bodyPath} fill={kit.shirtColor} />;
     }
   };
 
+  const sleeveColor = kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor;
+
   return (
     <div className={sizeClass}>
-      <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-lg">
+      <svg viewBox="0 100" className="w-full h-full">
+        <defs>
+          <clipPath id={`clip-${patternId}`}>
+            <path d={bodyPath} />
+          </clipPath>
+        </defs>
         {/* Sleeves */}
-        <rect x="10" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
-        <rect x="75" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
-        {/* Body */}
-        {renderPattern()}
+        <path d={leftSleeve} fill={sleeveColor} />
+        <path d={rightSleeve} fill={sleeveColor} />
+        {/* Body with pattern */}
+        {renderBodyFill()}
         {/* Collar */}
-        {kit.collarStyle === 'v-neck' && <polygon points="42,10 50,22 58,10" fill={kit.shirtSecondaryColor} />}
-        {kit.collarStyle === 'round' && <ellipse cx="50" cy="12" rx="10" ry="4" fill={kit.shirtSecondaryColor} />}
-        {kit.collarStyle === 'polo' && (
-          <>
-            <rect x="40" y="8" width="20" height="8" rx="2" fill={kit.shirtSecondaryColor} />
-            <rect x="40" y="8" width="20" height="3" rx="1" fill={kit.shirtSecondaryColor} opacity="0.7" />
-          </>
-        )}
+        {kit.collarStyle === 'v-neck' && <polygon points="42,8 50,18 58,8" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'round' && <ellipse cx="50" cy="9" rx="10" ry="3" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'polo' && <rect x="40" y="6" width="20" height="6" rx="2" fill={kit.shirtSecondaryColor} />}
         {kit.collarStyle === 'henley' && (
           <>
-            <rect x="46" y="10" width="8" height="12" rx="1" fill={kit.shirtSecondaryColor} />
+            <rect x="46" y="8" width="8" height="10" rx="1" fill={kit.shirtSecondaryColor} />
+            <circle cx="50" cy="12" r="1" fill={kit.shirtColor} />
             <circle cx="50" cy="16" r="1" fill={kit.shirtColor} />
-            <circle cx="50" cy="20" r="1" fill={kit.shirtColor} />
           </>
         )}
         {/* Number */}
-        <text x="50" y="52" textAnchor="middle" fontSize="18" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
+        <text x="50" y="48" textAnchor="middle" fontSize="16" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
         {/* Shorts */}
-        <rect x="28" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
-        <rect x="52" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
+        <rect x="30" y="77" width="18" height="14" rx="2" fill={kit.shortsColor} />
+        <rect x="52" y="77" width="18" height="14" rx="2" fill={kit.shortsColor} />
         {/* Socks */}
-        <rect x="30" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
-        <rect x="56" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
-        {/* Shoes */}
-        <rect x="28" y="114" width="18" height="5" rx="2" fill="#333" />
-        <rect x="54" y="114" width="18" height="5" rx="2" fill="#333" />
+        <rect x="32" y="92" width="12" height="8" rx="1" fill={kit.socksColor} />
+        <rect x="56" y="92" width="12" height="8" rx="1" fill={kit.socksColor} />
       </svg>
     </div>
   );
