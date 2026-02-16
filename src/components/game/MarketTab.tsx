@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, Fragment } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { LoanedPlayer } from '@/hooks/useGame';
+import { PlayerProfileModal } from './PlayerProfileModal';
 
 interface Props {
   marketPlayers: Player[];
@@ -120,7 +121,9 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     <div className="flex items-center gap-2 sm:gap-3">
                       <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
+                        <PlayerProfileModal player={player}>
+                          <button className="font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
+                        </PlayerProfileModal>
                         <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall}</p>
                       </div>
                       <p className="text-xs sm:text-sm font-bold text-emerald-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
@@ -168,7 +171,9 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     <div className="flex items-center gap-2 sm:gap-3 mb-2">
                       <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
+                        <PlayerProfileModal player={player}>
+                          <button className="font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
+                        </PlayerProfileModal>
                         <p className="text-[10px] sm:text-xs text-muted-foreground">
                           {player.age}a • OVR <span className="text-muted-foreground/50"><EyeOff className="h-3 w-3 inline" /> ???</span>
                         </p>
@@ -294,7 +299,9 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     <CardContent className="p-2 sm:p-3 flex items-center gap-2">
                       <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs truncate">{player.name}</p>
+                        <PlayerProfileModal player={player}>
+                          <button className="font-medium text-xs truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
+                        </PlayerProfileModal>
                         <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
                       </div>
                       <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={clubPlayers.length <= 11}>
@@ -322,7 +329,9 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                         <div className="flex items-center gap-2">
                           <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-xs truncate">{player.name}</p>
+                            <PlayerProfileModal player={player}>
+                              <button className="font-medium text-xs truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
+                            </PlayerProfileModal>
                             <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • Sal: R${(player.salary / 1000).toFixed(0)}k/mês</p>
                           </div>
                           <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleExpand(`loan-${player.id}`)}>
