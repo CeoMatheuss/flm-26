@@ -1,4 +1,4 @@
-import { Match } from '@/types/game';
+import { Match, Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Play, Check, Home, Swords, Trophy, Clock, Calendar, Ban, Plane, Search,
 import { useMemo, useState } from 'react';
 import { LeagueTeam } from '@/types/league';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
+import { MatchSimulation2D } from './MatchSimulation2D';
 
 interface Props {
   matches: Match[];
@@ -16,6 +17,8 @@ interface Props {
   alreadyPlayedToday: boolean;
   lastFriendlyDate: string;
   leagueTeams: LeagueTeam[];
+  players: Player[];
+  teamStrength: number;
   onSimulate: (id: string) => void;
   onGenerateFriendly: () => void;
   onGenerateFriendlyVs: (teamName: string) => void;
@@ -50,13 +53,17 @@ function getTimeUntilReset(lastFriendlyDate: string): string {
   return `${hours}h ${mins}min`;
 }
 
-export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, leagueTeams, onSimulate, onGenerateFriendly, onGenerateFriendlyVs, userId, stadiumCapacity }: Props) {
+export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, leagueTeams, players, teamStrength, onSimulate, onGenerateFriendly, onGenerateFriendlyVs, userId, stadiumCapacity }: Props) {
   const canGenerate = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const playedMatches = matches.filter(m => m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInvite, setShowInvite] = useState(false);
+  const [simMatchId, setSimMatchId] = useState<string | null>(null);
+  const [simOpponent, setSimOpponent] = useState<string>('');
+
+  const simMatch = simMatchId ? matches.find(m => m.id === simMatchId) : null;
 
   const filteredTeams = useMemo(() => {
     if (!searchTerm.trim()) return [];
@@ -77,6 +84,23 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
       </TabsList>
 
       <TabsContent value="bot">
+      {simMatchId && simMatch ? (
+        <MatchSimulation2D
+          homeTeam={simMatch.isHome ? clubName : simMatch.opponent}
+          awayTeam={simMatch.isHome ? simMatch.opponent : clubName}
+          homePlayers={players}
+          homeStrength={teamStrength}
+          awayStrength={leagueTeams.find(t => t.name === simMatch.opponent)?.strength || 65}
+          onFinish={() => {
+            onSimulate(simMatchId);
+            setSimMatchId(null);
+          }}
+          onSkip={() => {
+            onSimulate(simMatchId);
+            setSimMatchId(null);
+          }}
+        />
+      ) : (
       <div className="space-y-3">
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
@@ -149,7 +173,7 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                     <span className="text-[10px] text-muted-foreground">vs</span>
                     <span className="text-xs sm:text-sm truncate">{nextMatch.isHome ? nextMatch.opponent : clubName}</span>
                   </div>
-                  <Button size="sm" onClick={() => onSimulate(nextMatch.id)} className="h-7 px-3 text-xs gap-1">
+                  <Button size="sm" onClick={() => { setSimMatchId(nextMatch.id); setSimOpponent(nextMatch.opponent); }} className="h-7 px-3 text-xs gap-1">
                     <Play className="h-3 w-3" /> Jogar
                   </Button>
                 </div>
@@ -250,6 +274,7 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
         </Card>
       )}
     </div>
+      )}
       </TabsContent>
 
       <TabsContent value="online">

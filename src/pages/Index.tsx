@@ -425,6 +425,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               alreadyPlayedToday={game.alreadyPlayedToday}
               lastFriendlyDate={game.lastFriendlyDate}
               leagueTeams={game.leagueTeams}
+              players={game.club.players}
+              teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))}
               onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
               onGenerateFriendlyVs={game.generateFriendlyVs}
