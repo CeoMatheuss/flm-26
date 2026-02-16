@@ -123,7 +123,7 @@ interface Props {
 }
 
 function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const dim = size === 'sm' ? 56 : size === 'lg' ? 100 : 80;
+  const dim = size === 'sm' ? 44 : size === 'lg' ? 72 : 56;
   const scale = dim / 100;
   const uid = useMemo(() => Math.random().toString(36).slice(2, 8), []);
   const patternId = `p-${uid}`;
@@ -404,7 +404,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       {/* Main Content: Preview + Editor */}
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
          <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10">
-          <CardContent className="p-4 flex flex-col items-center justify-center min-h-[180px]">
+          <CardContent className="p-3 flex flex-col items-center justify-center min-h-[140px]">
             <ShirtPreview kit={currentKit} sponsorName={shirtSponsor?.name} size="lg" />
             <p className="text-xs font-semibold mt-2">{currentKit.name}</p>
             <p className="text-[10px] text-muted-foreground">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
