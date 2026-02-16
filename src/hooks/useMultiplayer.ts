@@ -37,6 +37,7 @@ export interface LeagueMember {
   goals_against: number;
   played: number;
   reputation: number;
+  budget: number;
   joined_at: string;
 }
 

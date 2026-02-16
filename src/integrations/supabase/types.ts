@@ -255,6 +255,7 @@ export type Database = {
       }
       league_members: {
         Row: {
+          budget: number
           club_logo: string
           club_name: string
           draws: number
@@ -271,6 +272,7 @@ export type Database = {
           wins: number
         }
         Insert: {
+          budget?: number
           club_logo?: string
           club_name?: string
           draws?: number
@@ -287,6 +289,7 @@ export type Database = {
           wins?: number
         }
         Update: {
+          budget?: number
           club_logo?: string
           club_name?: string
           draws?: number
