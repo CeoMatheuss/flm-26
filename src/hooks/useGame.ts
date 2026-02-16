@@ -107,14 +107,18 @@ export function useGame(initialState?: GameState) {
       const streak = prev.matches.filter(m => m.played).slice(-4);
       const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
       const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
-      const streakBonus = recentWins >= 3 ? 800 : recentWins >= 2 ? 300 : 0;
-      const streakPenalty = recentLosses >= 3 ? -600 : recentLosses >= 2 ? -250 : 0;
+      // Phase bonus/penalty (good/bad form)
+      const streakBonus = recentWins >= 3 ? 1200 : recentWins >= 2 ? 500 : 0;
+      const streakPenalty = recentLosses >= 3 ? -1000 : recentLosses >= 2 ? -400 : 0;
       const stadiumFanBonus = infrastructure.stadium.level * 80;
+      // Ticket price impact: expensive tickets drive fans away
+      const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
+                            prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
       let fanChange = 0;
       if (isWin) fanChange = 200 + (isRout ? 500 : 0);
       else if (isDraw) fanChange = 0;
       else fanChange = -100 + (isBigLoss ? -200 : 0);
-      fanChange += streakBonus + streakPenalty + stadiumFanBonus;
+      fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty;
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
@@ -294,7 +298,7 @@ export function useGame(initialState?: GameState) {
           matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
           players: mappedPlayers,
           budget: prev.budget + prize + sponsorWeekly - youthCost + eventBudgetDelta,
-          fans: Math.max(1, prev.fans + fanChange),
+          fans: Math.max(100, prev.fans + fanChange),
           reputation: Math.min(100, Math.max(1, prev.reputation + repChange + eventRepDelta)),
           scoutReports: newScoutReports,
           matchesSinceLastScout: resetScoutCounter,
@@ -352,7 +356,7 @@ export function useGame(initialState?: GameState) {
           };
         }),
         budget: prev.budget + prize + sponsorWeekly - youthCost,
-        fans: Math.max(1, prev.fans + fanChange),
+        fans: Math.max(100, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
         scoutReports: newScoutReports,
         matchesSinceLastScout: resetScoutCounter,
