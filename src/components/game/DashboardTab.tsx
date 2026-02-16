@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap, Swords } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { ShieldCrest } from './ShieldCrest';
@@ -206,7 +206,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
                   <p className="text-base sm:text-lg font-bold text-muted-foreground">VS</p>
                 </div>
                 <div className="text-center flex-1">
-                  <p className="text-2xl sm:text-3xl mb-1">{nextMatch.opponentLogo}</p>
+                  <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 text-muted-foreground" />
                   <p className="font-bold text-xs sm:text-sm truncate">{nextMatch.opponent}</p>
                 </div>
               </div>
@@ -215,9 +215,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
         ) : (
           <Card className="border-primary/20">
             <CardContent className="p-4 sm:p-6 text-center">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
-              <p className="font-bold text-sm">Temporada Encerrada!</p>
-              <p className="text-xs text-muted-foreground">Vá até Temporada para iniciar a próxima</p>
+              <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+              <p className="font-bold text-sm">Nenhum jogo agendado</p>
+              <p className="text-xs text-muted-foreground">Gere um amistoso na aba Amistosos!</p>
             </CardContent>
           </Card>
         )}

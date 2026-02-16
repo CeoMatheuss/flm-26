@@ -400,7 +400,19 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onSetTrainingFocus={game.setPlayerTrainingFocus}
             />
           </TabsContent>
-          <TabsContent value="matches"><MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} onSimulate={game.simulateMatch} /></TabsContent>
+          <TabsContent value="matches">
+            <MatchesTab 
+              matches={game.club.matches} 
+              clubName={game.club.name} 
+              stadiumName={game.club.stadiumName} 
+              friendliesPlayedToday={game.friendliesPlayedToday}
+              friendliesPlayedSeason={game.friendliesPlayedSeason}
+              maxFriendliesPerDay={game.maxFriendliesPerDay}
+              maxFriendliesPerSeason={game.maxFriendliesPerSeason}
+              onSimulate={game.simulateMatch} 
+              onGenerateFriendly={game.generateFriendly}
+            />
+          </TabsContent>
           <TabsContent value="sponsors">
             <SponsorsTab
               sponsors={game.sponsors}

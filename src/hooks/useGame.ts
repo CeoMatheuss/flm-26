@@ -54,6 +54,9 @@ export interface GameState {
   youthPromotedCount?: number;
   ranking?: number;
   rankingHistory?: RankingHistory[];
+  friendliesPlayedToday?: number;
+  friendliesPlayedSeason?: number;
+  lastFriendlyDate?: string;
 }
 
 function resetLeagueTeams(): LeagueTeam[] {
@@ -99,6 +102,12 @@ export function useGame(initialState?: GameState) {
    const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
    const [ranking, setRanking] = useState(initialState?.ranking ?? 1000);
    const [rankingHistory, setRankingHistory] = useState<RankingHistory[]>(initialState?.rankingHistory ?? []);
+   const [friendliesPlayedToday, setFriendliesPlayedToday] = useState(initialState?.friendliesPlayedToday ?? 0);
+   const [friendliesPlayedSeason, setFriendliesPlayedSeason] = useState(initialState?.friendliesPlayedSeason ?? 0);
+   const [lastFriendlyDate, setLastFriendlyDate] = useState(initialState?.lastFriendlyDate ?? '');
+
+   const MAX_FRIENDLIES_PER_DAY = 1;
+   const MAX_FRIENDLIES_PER_SEASON = 35;
 
   const addFeedItem = useCallback((item: FeedItem) => {
     setFeedItems(prev => [item, ...prev].slice(0, 50));
@@ -151,33 +160,39 @@ export function useGame(initialState?: GameState) {
       const sponsorIncome = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
       const sponsorWeekly = Math.floor(sponsorIncome / 4);
 
-      // Dynamic fan system — friendlies generate reduced fans
-      const isFriendly = true; // all single-player matches are friendlies for now
-      const friendlyMultiplier = isFriendly ? 0.3 : 1.0; // 30% of normal fan growth
+      // Dynamic fan system — friendlies with progressive diminishing returns
+      const diminishFactor = Math.max(0.1, 1 - (friendliesPlayedSeason * 0.03)); // 3% less per friendly played
+      const friendlyMultiplier = 0.3 * diminishFactor;
       const goalDiff = homeGoals - awayGoals;
       const isRout = goalDiff >= 3;
       const isBigLoss = goalDiff <= -3;
       const streak = prev.matches.filter(m => m.played).slice(-4);
       const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
       const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
-      // Phase bonus/penalty (good/bad form)
       const streakBonus = recentWins >= 3 ? 1200 : recentWins >= 2 ? 500 : 0;
       const streakPenalty = recentLosses >= 3 ? -1000 : recentLosses >= 2 ? -400 : 0;
       const stadiumFanBonus = infrastructure.stadium.level * 80;
-      // Ticket price impact: expensive tickets drive fans away
       const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
                             prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
-      // Opponent strength bonus (harder opponents = more fan interest)
       const opponentLevelBonus = Math.floor(((opponentTeam?.strength || 65) - 50) * 0.5);
       let fanChange = 0;
       if (isWin) fanChange = 200 + (isRout ? 500 : 0);
       else if (isDraw) fanChange = 50;
-      else fanChange = 20 + (isBigLoss ? -50 : 0); // even losses give tiny fan gain in friendlies
+      else fanChange = 20 + (isBigLoss ? -50 : 0);
       fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty + opponentLevelBonus;
-      // Apply friendly multiplier and cap per match
       fanChange = Math.round(fanChange * friendlyMultiplier);
-      fanChange = Math.max(-200, Math.min(fanChange, 300)); // cap friendly fan change
+      fanChange = Math.max(-200, Math.min(fanChange, 300));
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
+
+      // Update friendly counters
+      const today = new Date().toDateString();
+      if (lastFriendlyDate !== today) {
+        setFriendliesPlayedToday(1);
+        setLastFriendlyDate(today);
+      } else {
+        setFriendliesPlayedToday(n => n + 1);
+      }
+      setFriendliesPlayedSeason(n => n + 1);
 
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
       if (sponsorWeekly > 0) {
@@ -862,7 +877,7 @@ export function useGame(initialState?: GameState) {
 
       return {
         ...prev,
-        matches: generateSeasonMatches(prev.country),
+        matches: [], // friendlies are generated on demand now
         stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
         budget: prev.budget + seasonPrize,
         reputation: Math.min(100, prev.reputation + (clubPos <= 4 ? 5 : -2)),
@@ -875,6 +890,9 @@ export function useGame(initialState?: GameState) {
       };
     });
     setLoanedPlayers([]);
+    setFriendliesPlayedToday(0);
+    setFriendliesPlayedSeason(0);
+    setLastFriendlyDate('');
 
     addFinance('receita', 'Premiação', seasonPrize, `Premiação T${season.currentSeason} - ${clubPos}º lugar`);
     setMarketPlayers(generateMarketPlayers(10));
@@ -893,8 +911,8 @@ export function useGame(initialState?: GameState) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
@@ -914,6 +932,35 @@ export function useGame(initialState?: GameState) {
     toast.success(`${roomNames[room]} melhorada para nível ${ctRooms[room] + 1}!`);
   }, [ctRooms, club.budget, addFinance]);
 
+  const generateFriendly = useCallback(() => {
+    const today = new Date().toDateString();
+    if (lastFriendlyDate !== today) {
+      setFriendliesPlayedToday(0);
+      setLastFriendlyDate(today);
+    }
+    if (friendliesPlayedToday >= MAX_FRIENDLIES_PER_DAY) {
+      toast.error('Limite diário de amistosos atingido!');
+      return;
+    }
+    if (friendliesPlayedSeason >= MAX_FRIENDLIES_PER_SEASON) {
+      toast.error('Limite de amistosos da temporada atingido!');
+      return;
+    }
+    // Pick a random bot opponent from league teams
+    const opponents = leagueTeams.filter(t => t.name !== club.name);
+    const opp = opponents[Math.floor(Math.random() * opponents.length)];
+    if (!opp) return;
+    const friendlyMatch: Match = {
+      id: Math.random().toString(36).substr(2, 9),
+      opponent: opp.name,
+      opponentLogo: opp.logo,
+      date: `Amistoso ${friendliesPlayedSeason + 1}`,
+      played: false,
+    };
+    setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
+    toast.info(`⚽ Amistoso agendado vs ${opp.name}!`);
+  }, [leagueTeams, club.name, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
+
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
   }, []);
@@ -922,12 +969,13 @@ export function useGame(initialState?: GameState) {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
+    friendliesPlayedToday, friendliesPlayedSeason, maxFriendliesPerDay: MAX_FRIENDLIES_PER_DAY, maxFriendliesPerSeason: MAX_FRIENDLIES_PER_SEASON,
     setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile,
+    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly,
   };
 }
