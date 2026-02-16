@@ -11,6 +11,25 @@ interface Update {
 
 const updates: Update[] = [
   {
+    version: '2.0.0',
+    date: 'Em breve',
+    type: 'feature',
+    items: [
+      '🏆 Copa Nacional e Torneios Eliminatórios entre ligas',
+      '🌎 Copa Intercontinental — desafie clubes de outros países',
+      '🔄 Mercado de transferências entre jogadores reais (multiplayer P2P)',
+      '📈 Sistema de moral individual dos jogadores (afeta desempenho em campo)',
+      '🎙️ Entrevistas pós-jogo com impacto na reputação e moral do elenco',
+      '🏅 Conquistas e troféus desbloqueáveis (artilheiro, invicto, campeão, etc.)',
+      '📺 Modo espectador para assistir partidas de outros jogadores ao vivo',
+      '🧤 Posição de goleiro com atributos exclusivos (reflexo, posicionamento, saída de gol)',
+      '💬 Sistema de negociação avançado com contraproposta e troca de jogadores',
+      '📊 Relatório completo pós-partida com mapa de calor e estatísticas detalhadas',
+      '🎵 Trilha sonora e efeitos sonoros durante as partidas',
+      '🏠 Personalização do CT com salas específicas (musculação, piscina, crioterapia)',
+    ],
+  },
+  {
     version: '1.9.0',
     date: '16/02/2026',
     type: 'feature',

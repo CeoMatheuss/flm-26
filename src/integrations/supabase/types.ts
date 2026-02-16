@@ -618,6 +618,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_league_member: {
+        Args: { _league_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
