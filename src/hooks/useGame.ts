@@ -240,7 +240,7 @@ export function useGame(initialState?: GameState) {
       }
 
       // Random events after match
-      const newEvents = generateRandomEvents(prev.players, prev.fans, prev.reputation, recentLosses, recentWins, infrastructure?.physiotherapy?.level ?? 1);
+      const newEvents = generateRandomEvents(prev.players, prev.fans, prev.reputation, recentLosses, recentWins, infrastructure?.physiotherapy?.level ?? 1, infrastructure?.trainingCenter?.level ?? 1);
       if (newEvents.length > 0) {
         let eventFanDelta = 0;
         let eventBudgetDelta = 0;
@@ -326,7 +326,7 @@ export function useGame(initialState?: GameState) {
           const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
           const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
           let newOverall = p.overall;
-          if (newGames >= 10 && p.age <= 33 && !isInjured) {
+          if (newGames >= 10 && p.age <= 33 && !isInjured && (infrastructure?.trainingCenter?.level ?? 1) >= 2) {
             const chance = p.age <= 30 ? boost : boost * 0.3;
             const gained = Math.random() < chance ? 1 : 0;
             newOverall = Math.min(99, p.overall + gained);
@@ -425,7 +425,7 @@ export function useGame(initialState?: GameState) {
           const newGames = isInjured ? p.gamesPlayed : p.gamesPlayed + 1;
           const boost = getTrainingBoost(infrastructure?.trainingCenter?.level ?? 1);
           let newOverall = p.overall;
-          if (newGames >= 10 && p.age <= 33 && !isInjured) {
+          if (newGames >= 10 && p.age <= 33 && !isInjured && (infrastructure?.trainingCenter?.level ?? 1) >= 2) {
             const chance = p.age <= 30 ? boost : boost * 0.3;
             newOverall = Math.min(99, p.overall + (Math.random() < chance ? 1 : 0));
           }
@@ -959,20 +959,60 @@ export function useGame(initialState?: GameState) {
     const opponents = leagueTeams.filter(t => t.name !== club.name);
     const opp = opponents[Math.floor(Math.random() * opponents.length)];
     if (!opp) return;
+
+    const isHome = Math.random() > 0.5;
+    const opponentStadium = `Estádio ${opp.name}`;
     
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
       opponent: opp.name,
       opponentLogo: opp.logo,
-      date: now.toISOString(), // Real timestamp
+      date: now.toISOString(),
       played: false,
+      isHome,
+      stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
     };
     // Update last friendly date with real ISO timestamp
     setLastFriendlyDate(now.toISOString());
     setFriendliesPlayedToday(1);
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
-    toast.info(`⚽ Amistoso agendado vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, lastFriendlyDate, isSameLocalDay]);
+    toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
+  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, isSameLocalDay]);
+
+  const generateFriendlyVs = useCallback((teamName: string) => {
+    const now = new Date();
+    if (lastFriendlyDate) {
+      const lastDate = new Date(lastFriendlyDate);
+      if (isSameLocalDay(lastDate, now)) {
+        toast.error('Limite diário atingido! Volte amanhã.');
+        return;
+      }
+    }
+    const hasUnplayed = club.matches.some(m => !m.played);
+    if (hasUnplayed) {
+      toast.error('Você já tem um amistoso agendado!');
+      return;
+    }
+    const opp = leagueTeams.find(t => t.name === teamName);
+    if (!opp) return;
+
+    const isHome = Math.random() > 0.5;
+    const opponentStadium = `Estádio ${opp.name}`;
+
+    const friendlyMatch: Match = {
+      id: Math.random().toString(36).substr(2, 9),
+      opponent: opp.name,
+      opponentLogo: opp.logo,
+      date: now.toISOString(),
+      played: false,
+      isHome,
+      stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
+    };
+    setLastFriendlyDate(now.toISOString());
+    setFriendliesPlayedToday(1);
+    setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
+    toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
+  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, isSameLocalDay]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
@@ -990,6 +1030,6 @@ export function useGame(initialState?: GameState) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly,
+    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs,
   };
 }

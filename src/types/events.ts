@@ -38,6 +38,7 @@ export function generateRandomEvents(
   recentLosses: number,
   recentWins: number,
   physioLevel?: number,
+  trainingCenterLevel?: number,
 ): GameEvent[] {
   const events: GameEvent[] = [];
   const roll = Math.random();
@@ -121,8 +122,9 @@ export function generateRandomEvents(
     });
   }
 
-  // ~10% chance of bonus when winning streak
-  if (roll >= 0.37 && roll < 0.47 && recentWins >= 2) {
+  // ~10% chance of bonus when winning streak — requires CT level >= 3
+  const ctLevel = trainingCenterLevel ?? 1;
+  if (roll >= 0.37 && roll < 0.47 && recentWins >= 2 && ctLevel >= 3) {
     const bonus = recentWins * 50000 + Math.floor(Math.random() * 100000);
     events.push({
       id: crypto.randomUUID(),

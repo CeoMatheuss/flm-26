@@ -2,8 +2,10 @@ import { Match } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Check, Home, Swords, Trophy, Clock, Calendar, Ban } from 'lucide-react';
-import { useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { Play, Check, Home, Swords, Trophy, Clock, Calendar, Ban, Plane, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { LeagueTeam } from '@/types/league';
 
 interface Props {
   matches: Match[];
@@ -11,8 +13,10 @@ interface Props {
   stadiumName: string;
   alreadyPlayedToday: boolean;
   lastFriendlyDate: string;
+  leagueTeams: LeagueTeam[];
   onSimulate: (id: string) => void;
   onGenerateFriendly: () => void;
+  onGenerateFriendlyVs: (teamName: string) => void;
 }
 
 function formatDate(isoStr: string): string {
@@ -41,11 +45,20 @@ function getTimeUntilMidnight(): string {
   return `${hours}h ${mins}min`;
 }
 
-export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, onSimulate, onGenerateFriendly }: Props) {
+export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate, leagueTeams, onSimulate, onGenerateFriendly, onGenerateFriendlyVs }: Props) {
   const canGenerate = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const playedMatches = matches.filter(m => m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilMidnight() : '', [alreadyPlayedToday]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
+
+  const filteredTeams = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    return leagueTeams
+      .filter(t => t.name !== clubName && t.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .slice(0, 5);
+  }, [searchTerm, leagueTeams, clubName]);
 
   return (
     <div className="space-y-3">
@@ -93,7 +106,8 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                 <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border/30">
                   <Badge variant="secondary" className="text-[9px] gap-1">⚽ Amistoso</Badge>
                   <Badge variant="outline" className="text-[9px] gap-1">
-                    <Home className="h-2.5 w-2.5" /> {stadiumName}
+                    {nextMatch.isHome ? <Home className="h-2.5 w-2.5" /> : <Plane className="h-2.5 w-2.5" />}
+                    {nextMatch.isHome ? 'Casa' : 'Fora'}
                   </Badge>
                   {formatTime(nextMatch.date) && (
                     <Badge variant="outline" className="text-[9px] gap-1">
@@ -101,11 +115,15 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                     </Badge>
                   )}
                 </div>
+                {/* Stadium info */}
+                <div className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
+                  🏟️ {nextMatch.stadium || stadiumName}
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs sm:text-sm font-medium truncate">{clubName}</span>
+                    <span className="text-xs sm:text-sm font-medium truncate">{nextMatch.isHome ? clubName : nextMatch.opponent}</span>
                     <span className="text-[10px] text-muted-foreground">vs</span>
-                    <span className="text-xs sm:text-sm truncate">{nextMatch.opponent}</span>
+                    <span className="text-xs sm:text-sm truncate">{nextMatch.isHome ? nextMatch.opponent : clubName}</span>
                   </div>
                   <Button size="sm" onClick={() => onSimulate(nextMatch.id)} className="h-7 px-3 text-xs gap-1">
                     <Play className="h-3 w-3" /> Jogar
@@ -114,14 +132,56 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
               </CardContent>
             </Card>
           ) : (
-            <Button onClick={onGenerateFriendly} disabled={!canGenerate} className="w-full gap-2">
-              <Swords className="h-4 w-4" />
-              {alreadyPlayedToday ? 'Volte amanhã' : 'Gerar Amistoso'}
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={onGenerateFriendly} disabled={!canGenerate} className="w-full gap-2">
+                <Swords className="h-4 w-4" />
+                {alreadyPlayedToday ? 'Volte amanhã' : 'Gerar Amistoso Aleatório'}
+              </Button>
+
+              {/* Invite by club name */}
+              {canGenerate && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setShowInvite(!showInvite)} className="w-full gap-2 text-xs">
+                    <Search className="h-3.5 w-3.5" />
+                    Convidar Clube Específico
+                  </Button>
+                  {showInvite && (
+                    <div className="space-y-1.5">
+                      <Input
+                        placeholder="Buscar por nome do clube..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                      {filteredTeams.map(team => (
+                        <Button
+                          key={team.name}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start h-8 text-xs gap-2"
+                          onClick={() => {
+                            onGenerateFriendlyVs(team.name);
+                            setShowInvite(false);
+                            setSearchTerm('');
+                          }}
+                        >
+                          <span>{team.logo}</span>
+                          <span className="truncate">{team.name}</span>
+                          <Badge variant="outline" className="ml-auto text-[8px]">OVR ~{team.strength}</Badge>
+                        </Button>
+                      ))}
+                      {searchTerm.trim() && filteredTeams.length === 0 && (
+                        <p className="text-[10px] text-muted-foreground text-center py-1">Nenhum clube encontrado</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )}
 
           <p className="text-[10px] text-muted-foreground text-center">
-            ⚽ 1 amistoso por dia • 🏟️ torcida • 📈 entrosamento
+            ⚽ 1 amistoso por dia • 🏟️ mando de campo • 📈 entrosamento
           </p>
         </CardContent>
       </Card>
@@ -141,12 +201,15 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
                 : '';
               return (
                 <div key={match.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 text-xs">
-                  <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+                  {match.isHome ? <Home className="h-3 w-3 text-emerald-400 shrink-0" /> : <Plane className="h-3 w-3 text-blue-400 shrink-0" />}
                   <div className="flex flex-col w-16 shrink-0">
                     <span className="text-muted-foreground font-mono text-[10px]">{formatDate(match.date)}</span>
                     <span className="text-muted-foreground/60 font-mono text-[9px]">{formatTime(match.date)}</span>
                   </div>
-                  <span className="truncate flex-1">{match.opponent}</span>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="truncate">{match.opponent}</span>
+                    {match.stadium && <span className="text-[8px] text-muted-foreground/50 truncate">🏟️ {match.stadium}</span>}
+                  </div>
                   {match.result && (
                     <span className={`font-bold font-mono px-1.5 py-0.5 rounded bg-muted/50 ${resultColor}`}>
                       {match.result.home} - {match.result.away}
