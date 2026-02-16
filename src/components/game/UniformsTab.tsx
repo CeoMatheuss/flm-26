@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shirt, Palette, Save, Eye, Sparkles, ShieldCheck } from 'lucide-react';
+import { Shirt, Palette, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface UniformKit {
@@ -100,7 +99,9 @@ interface Props {
   onSave: (uniforms: UniformsData) => void;
 }
 
-function ShirtPreview({ kit }: { kit: UniformKit }) {
+function ShirtPreview({ kit, size = 'md' }: { kit: UniformKit; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClass = size === 'sm' ? 'w-20 h-28' : size === 'lg' ? 'w-52 h-72' : 'w-36 h-48';
+
   const renderPattern = () => {
     switch (kit.shirtPattern) {
       case 'stripes':
@@ -170,124 +171,143 @@ function ShirtPreview({ kit }: { kit: UniformKit }) {
   };
 
   return (
-    <svg viewBox="0 0 100 120" className="w-full h-full">
-      {/* Sleeves */}
-      <rect x="10" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
-      <rect x="75" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
-      {/* Body */}
-      {renderPattern()}
-      {/* Collar */}
-      {kit.collarStyle === 'v-neck' && <polygon points="42,10 50,22 58,10" fill={kit.shirtSecondaryColor} />}
-      {kit.collarStyle === 'round' && <ellipse cx="50" cy="12" rx="10" ry="4" fill={kit.shirtSecondaryColor} />}
-      {kit.collarStyle === 'polo' && (
-        <>
-          <rect x="40" y="8" width="20" height="8" rx="2" fill={kit.shirtSecondaryColor} />
-          <rect x="40" y="8" width="20" height="3" rx="1" fill={kit.shirtSecondaryColor} opacity="0.7" />
-        </>
-      )}
-      {kit.collarStyle === 'henley' && (
-        <>
-          <rect x="46" y="10" width="8" height="12" rx="1" fill={kit.shirtSecondaryColor} />
-          <circle cx="50" cy="16" r="1" fill={kit.shirtColor} />
-          <circle cx="50" cy="20" r="1" fill={kit.shirtColor} />
-        </>
-      )}
-      {/* Number */}
-      <text x="50" y="52" textAnchor="middle" fontSize="18" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
-      {/* Shorts */}
-      <rect x="28" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
-      <rect x="52" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
-      {/* Socks */}
-      <rect x="30" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
-      <rect x="56" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
-      {/* Shoes */}
-      <rect x="28" y="114" width="18" height="5" rx="2" fill="#333" />
-      <rect x="54" y="114" width="18" height="5" rx="2" fill="#333" />
-    </svg>
+    <div className={sizeClass}>
+      <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-lg">
+        {/* Sleeves */}
+        <rect x="10" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
+        <rect x="75" y="12" width="15" height={kit.sleeveStyle === 'long' ? '40' : '25'} rx="3" fill={kit.shirtPattern === 'sleeves' ? kit.shirtSecondaryColor : kit.shirtColor} />
+        {/* Body */}
+        {renderPattern()}
+        {/* Collar */}
+        {kit.collarStyle === 'v-neck' && <polygon points="42,10 50,22 58,10" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'round' && <ellipse cx="50" cy="12" rx="10" ry="4" fill={kit.shirtSecondaryColor} />}
+        {kit.collarStyle === 'polo' && (
+          <>
+            <rect x="40" y="8" width="20" height="8" rx="2" fill={kit.shirtSecondaryColor} />
+            <rect x="40" y="8" width="20" height="3" rx="1" fill={kit.shirtSecondaryColor} opacity="0.7" />
+          </>
+        )}
+        {kit.collarStyle === 'henley' && (
+          <>
+            <rect x="46" y="10" width="8" height="12" rx="1" fill={kit.shirtSecondaryColor} />
+            <circle cx="50" cy="16" r="1" fill={kit.shirtColor} />
+            <circle cx="50" cy="20" r="1" fill={kit.shirtColor} />
+          </>
+        )}
+        {/* Number */}
+        <text x="50" y="52" textAnchor="middle" fontSize="18" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
+        {/* Shorts */}
+        <rect x="28" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
+        <rect x="52" y="78" width="20" height="20" rx="3" fill={kit.shortsColor} />
+        {/* Socks */}
+        <rect x="30" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
+        <rect x="56" y="100" width="14" height="16" rx="2" fill={kit.socksColor} />
+        {/* Shoes */}
+        <rect x="28" y="114" width="18" height="5" rx="2" fill="#333" />
+        <rect x="54" y="114" width="18" height="5" rx="2" fill="#333" />
+      </svg>
+    </div>
+  );
+}
+
+function ColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</Label>
+      <div className="flex items-center gap-1.5 bg-muted/30 rounded-lg p-1.5">
+        <input
+          type="color"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-8 h-8 rounded-md cursor-pointer border-2 border-border/50 hover:border-primary/50 transition-colors"
+          style={{ padding: 0 }}
+        />
+        <Input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="h-7 text-[10px] font-mono flex-1 bg-background/50 border-0"
+        />
+      </div>
+    </div>
   );
 }
 
 function KitEditor({ kit, onChange }: { kit: UniformKit; onChange: (kit: UniformKit) => void }) {
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="text-[10px]">Cor da Camisa</Label>
-          <div className="flex gap-1.5 items-center">
-            <input type="color" value={kit.shirtColor} onChange={e => onChange({ ...kit, shirtColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0" />
-            <Input value={kit.shirtColor} onChange={e => onChange({ ...kit, shirtColor: e.target.value })} className="h-7 text-[10px] font-mono flex-1" />
-          </div>
-        </div>
-        <div>
-          <Label className="text-[10px]">Cor Secundária</Label>
-          <div className="flex gap-1.5 items-center">
-            <input type="color" value={kit.shirtSecondaryColor} onChange={e => onChange({ ...kit, shirtSecondaryColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0" />
-            <Input value={kit.shirtSecondaryColor} onChange={e => onChange({ ...kit, shirtSecondaryColor: e.target.value })} className="h-7 text-[10px] font-mono flex-1" />
-          </div>
+    <div className="space-y-4">
+      {/* Colors Section */}
+      <div>
+        <p className="text-[10px] font-semibold text-primary mb-2 flex items-center gap-1">
+          <Palette className="h-3 w-3" /> Cores
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <ColorPicker label="Camisa" value={kit.shirtColor} onChange={v => onChange({ ...kit, shirtColor: v })} />
+          <ColorPicker label="Secundária" value={kit.shirtSecondaryColor} onChange={v => onChange({ ...kit, shirtSecondaryColor: v })} />
+          <ColorPicker label="Calção" value={kit.shortsColor} onChange={v => onChange({ ...kit, shortsColor: v })} />
+          <ColorPicker label="Meião" value={kit.socksColor} onChange={v => onChange({ ...kit, socksColor: v })} />
+          <ColorPicker label="Número" value={kit.numberColor} onChange={v => onChange({ ...kit, numberColor: v })} />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <Label className="text-[10px]">Calção</Label>
-          <div className="flex gap-1 items-center">
-            <input type="color" value={kit.shortsColor} onChange={e => onChange({ ...kit, shortsColor: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
-            <Input value={kit.shortsColor} onChange={e => onChange({ ...kit, shortsColor: e.target.value })} className="h-7 text-[10px] font-mono flex-1" />
+      {/* Style Section */}
+      <div>
+        <p className="text-[10px] font-semibold text-primary mb-2 flex items-center gap-1">
+          <Shirt className="h-3 w-3" /> Estilo
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Padrão</Label>
+            <Select value={kit.shirtPattern} onValueChange={v => onChange({ ...kit, shirtPattern: v as UniformKit['shirtPattern'] })}>
+              <SelectTrigger className="h-8 text-[10px] bg-muted/30 border-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(patternLabels).map(([k, v]) => (
+                  <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        <div>
-          <Label className="text-[10px]">Meião</Label>
-          <div className="flex gap-1 items-center">
-            <input type="color" value={kit.socksColor} onChange={e => onChange({ ...kit, socksColor: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
-            <Input value={kit.socksColor} onChange={e => onChange({ ...kit, socksColor: e.target.value })} className="h-7 text-[10px] font-mono flex-1" />
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Gola</Label>
+            <Select value={kit.collarStyle} onValueChange={v => onChange({ ...kit, collarStyle: v as UniformKit['collarStyle'] })}>
+              <SelectTrigger className="h-8 text-[10px] bg-muted/30 border-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(collarLabels).map(([k, v]) => (
+                  <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        <div>
-          <Label className="text-[10px]">Número</Label>
-          <div className="flex gap-1 items-center">
-            <input type="color" value={kit.numberColor} onChange={e => onChange({ ...kit, numberColor: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
-            <Input value={kit.numberColor} onChange={e => onChange({ ...kit, numberColor: e.target.value })} className="h-7 text-[10px] font-mono flex-1" />
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Manga</Label>
+            <Select value={kit.sleeveStyle} onValueChange={v => onChange({ ...kit, sleeveStyle: v as UniformKit['sleeveStyle'] })}>
+              <SelectTrigger className="h-8 text-[10px] bg-muted/30 border-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="short" className="text-xs">Curta</SelectItem>
+                <SelectItem value="long" className="text-xs">Longa</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <Label className="text-[10px]">Padrão</Label>
-          <Select value={kit.shirtPattern} onValueChange={v => onChange({ ...kit, shirtPattern: v as UniformKit['shirtPattern'] })}>
-            <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(patternLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-[10px]">Gola</Label>
-          <Select value={kit.collarStyle} onValueChange={v => onChange({ ...kit, collarStyle: v as UniformKit['collarStyle'] })}>
-            <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(collarLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-[10px]">Manga</Label>
-          <Select value={kit.sleeveStyle} onValueChange={v => onChange({ ...kit, sleeveStyle: v as UniformKit['sleeveStyle'] })}>
-            <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="short" className="text-xs">Curta</SelectItem>
-              <SelectItem value="long" className="text-xs">Longa</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
     </div>
   );
 }
+
+const kitTabs = [
+  { key: 'home' as const, label: 'Titular', emoji: '🏠' },
+  { key: 'away' as const, label: 'Visitante', emoji: '✈️' },
+  { key: 'third' as const, label: 'Alternativo', emoji: '⭐' },
+  { key: 'goalkeeper' as const, label: 'Goleiro', emoji: '🧤' },
+];
+
+const presets = [
+  { label: 'Clássico', shirt: '#DC2626', sec: '#000000', pattern: 'stripes' as const },
+  { label: 'Seleção', shirt: '#EAB308', sec: '#22C55E', pattern: 'solid' as const },
+  { label: 'Europeu', shirt: '#2563EB', sec: '#FFFFFF', pattern: 'halves' as const },
+  { label: 'Moderno', shirt: '#8B5CF6', sec: '#EC4899', pattern: 'gradient' as const },
+  { label: 'Retrô', shirt: '#F97316', sec: '#000000', pattern: 'hoops' as const },
+  { label: 'Elegante', shirt: '#111827', sec: '#D4AF37', pattern: 'pinstripes' as const },
+];
 
 export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: Props) {
   const [activeKit, setActiveKit] = useState<'home' | 'away' | 'third' | 'goalkeeper'>('home');
@@ -297,13 +317,6 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
     third: defaultThird,
     goalkeeper: defaultGoalkeeper,
   });
-
-  const kitTabs = [
-    { key: 'home' as const, label: '🏠 Titular', color: 'text-emerald-400' },
-    { key: 'away' as const, label: '✈️ Visitante', color: 'text-blue-400' },
-    { key: 'third' as const, label: '⭐ Alternativo', color: 'text-purple-400' },
-    { key: 'goalkeeper' as const, label: '🧤 Goleiro', color: 'text-yellow-400' },
-  ];
 
   const currentKit = kits[activeKit];
 
@@ -317,111 +330,78 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5">
-        <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-          <Shirt className="h-5 w-5 text-primary shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold text-primary">🎽 Uniformes Personalizados</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Crie uniformes únicos para titular, visitante, alternativo e goleiro</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Shirt className="h-4 w-4 text-primary" />
           </div>
-          <Button size="sm" className="h-8 px-3 text-xs gap-1.5" onClick={handleSave}>
-            <Save className="h-3 w-3" /> Salvar
-          </Button>
-        </CardContent>
-      </Card>
+          <div>
+            <p className="text-sm font-bold">Uniformes</p>
+            <p className="text-[10px] text-muted-foreground">Personalize seus 4 kits</p>
+          </div>
+        </div>
+        <Button size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
+          <Save className="h-3 w-3" /> Salvar
+        </Button>
+      </div>
 
-      {/* Kit Selector */}
-      <div className="flex gap-1.5">
+      {/* Kit Selector Tabs */}
+      <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
         {kitTabs.map(tab => (
-          <Button
+          <button
             key={tab.key}
-            variant={activeKit === tab.key ? 'default' : 'outline'}
-            size="sm"
-            className={`flex-1 text-[10px] sm:text-xs h-8 ${activeKit === tab.key ? '' : 'opacity-70'}`}
+            className={`flex-1 py-2 px-1 rounded-lg text-[10px] sm:text-xs font-medium transition-all ${
+              activeKit === tab.key
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
             onClick={() => setActiveKit(tab.key)}
           >
-            {tab.label}
-          </Button>
+            <span className="block text-sm">{tab.emoji}</span>
+            <span className="block mt-0.5">{tab.label}</span>
+          </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Preview */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Pré-visualização
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <div className="w-40 h-52 sm:w-48 sm:h-64">
-              <ShirtPreview kit={currentKit} />
-            </div>
+      {/* Main Content: Preview + Editor */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        {/* Preview - takes 2 cols */}
+        <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10">
+          <CardContent className="p-4 flex flex-col items-center justify-center min-h-[280px]">
+            <ShirtPreview kit={currentKit} size="lg" />
+            <p className="text-xs font-semibold mt-3">{currentKit.name}</p>
+            <p className="text-[10px] text-muted-foreground">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
           </CardContent>
         </Card>
 
-        {/* Editor */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Palette className="h-4 w-4" /> Personalizar — {currentKit.name}
+        {/* Editor - takes 3 cols */}
+        <Card className="sm:col-span-3 border-0 bg-muted/10">
+          <CardHeader className="pb-2 pt-3 px-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <Palette className="h-3.5 w-3.5 text-primary" /> Personalizar
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pb-3">
             <KitEditor kit={currentKit} onChange={handleKitChange} />
           </CardContent>
         </Card>
       </div>
 
-      {/* All Kits Overview */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4" /> Todos os Uniformes
+      {/* Quick Templates */}
+      <Card className="border-0 bg-muted/10">
+        <CardHeader className="pb-2 pt-3 px-3">
+          <CardTitle className="text-xs flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Templates Rápidos
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-3">
-            {kitTabs.map(tab => (
-              <div
-                key={tab.key}
-                className={`cursor-pointer rounded-lg p-2 border transition-colors ${activeKit === tab.key ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                onClick={() => setActiveKit(tab.key)}
-              >
-                <div className="w-full h-28 sm:h-32">
-                  <ShirtPreview kit={kits[tab.key]} />
-                </div>
-                <p className="text-[9px] sm:text-[10px] text-center mt-1 font-semibold">{tab.label}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preset Templates */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" /> Templates Rápidos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {[
-              { label: 'Clássico', shirt: '#DC2626', sec: '#000000', pattern: 'stripes' as const },
-              { label: 'Seleção', shirt: '#EAB308', sec: '#22C55E', pattern: 'solid' as const },
-              { label: 'Europeu', shirt: '#2563EB', sec: '#FFFFFF', pattern: 'halves' as const },
-              { label: 'Moderno', shirt: '#8B5CF6', sec: '#EC4899', pattern: 'gradient' as const },
-              { label: 'Retrô', shirt: '#F97316', sec: '#000000', pattern: 'hoops' as const },
-              { label: 'Elegante', shirt: '#111827', sec: '#D4AF37', pattern: 'pinstripes' as const },
-            ].map(preset => (
-              <Button
+        <CardContent className="px-3 pb-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            {presets.map(preset => (
+              <button
                 key={preset.label}
-                variant="outline"
-                size="sm"
-                className="h-auto py-2 flex flex-col gap-1 text-[9px]"
+                className="group flex flex-col items-center gap-1.5 p-2 rounded-lg border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-all"
                 onClick={() => handleKitChange({
                   ...currentKit,
                   shirtColor: preset.shirt,
@@ -430,15 +410,33 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave }: 
                 })}
               >
                 <div className="flex gap-0.5">
-                  <div className="w-3 h-3 rounded-full border border-border/50" style={{ backgroundColor: preset.shirt }} />
-                  <div className="w-3 h-3 rounded-full border border-border/50" style={{ backgroundColor: preset.sec }} />
+                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: preset.shirt }} />
+                  <div className="w-4 h-4 rounded-full border-2 border-background shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: preset.sec }} />
                 </div>
-                {preset.label}
-              </Button>
+                <span className="text-[9px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{preset.label}</span>
+              </button>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* All Kits Mini Overview */}
+      <div className="grid grid-cols-4 gap-2">
+        {kitTabs.map(tab => (
+          <button
+            key={tab.key}
+            className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
+              activeKit === tab.key
+                ? 'border-primary/50 bg-primary/5 shadow-sm'
+                : 'border-border/30 hover:border-primary/30 hover:bg-muted/20'
+            }`}
+            onClick={() => setActiveKit(tab.key)}
+          >
+            <ShirtPreview kit={kits[tab.key]} size="sm" />
+            <p className="text-[9px] font-semibold mt-1">{tab.emoji} {tab.label}</p>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
