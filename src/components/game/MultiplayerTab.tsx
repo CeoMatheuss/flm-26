@@ -127,6 +127,7 @@ function LeagueCard({ league, onEnter, isBeginner }: { league: MultiplayerLeague
   const totalRounds = l.total_rounds || 30;
   const currentRound = l.current_round || 0;
   const daysLeft = totalRounds - currentRound;
+  const division = l.division || 1;
 
   return (
     <div className={`flex items-center justify-between p-3 rounded-lg border ${isBeginner ? 'bg-amber-500/5 border-amber-500/20' : 'bg-muted/50 border-border/50'}`}>
@@ -136,6 +137,8 @@ function LeagueCard({ league, onEnter, isBeginner }: { league: MultiplayerLeague
           {isBeginner && <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400">Iniciantes</Badge>}
         </div>
         <div className="flex items-center gap-2 flex-wrap mt-0.5">
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">DIV {division}</Badge>
+          <span className="text-[10px] text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground">T{l.season}</span>
           <span className="text-[10px] text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground">{l.country}</span>
@@ -195,6 +198,7 @@ function LeagueView(props: Props) {
             <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={copyCode}>
               {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
             </Button>
+            <Badge variant="outline" className="text-[10px]">DIV {(currentLeague as any).division || 1}</Badge>
             <Badge variant="outline" className="text-[10px]">T{currentLeague!.season}</Badge>
             <Badge variant="outline" className="text-[10px]">{totalRounds} rodadas</Badge>
             <Badge variant={seasonStatus === 'in_progress' ? 'default' : 'secondary'} className="text-[10px]">
@@ -309,9 +313,12 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
           <TableBody>
             {sorted.map((m, i) => {
               const isBot = m.user_id.startsWith('bot_');
+              const isPromotion = i < 4;
+              const isRelegation = i >= sorted.length - 4 && sorted.length > 8;
+              
               return (
-              <TableRow key={m.id} className={m.user_id === userId ? 'bg-primary/10 font-semibold' : ''}>
-                <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : ''}>{i + 1}</TableCell>
+              <TableRow key={m.id} className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${isPromotion ? 'border-l-2 border-l-emerald-500' : isRelegation ? 'border-l-2 border-l-rose-500' : ''}`}>
+                <TableCell className={`${isPromotion ? 'text-emerald-400 font-bold' : isRelegation ? 'text-rose-400' : ''}`}>{i + 1}</TableCell>
                 <TableCell>
                   <span className="mr-1">{m.club_logo}</span> {m.club_name}
                   {isBot && <Badge variant="secondary" className="ml-1 text-[8px] px-1 py-0">BOT</Badge>}

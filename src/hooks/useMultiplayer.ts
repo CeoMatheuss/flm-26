@@ -16,6 +16,7 @@ export interface MultiplayerLeague {
   auto_created: boolean;
   league_type: string;
   total_rounds: number;
+  division?: number;
   round_interval_hours: number;
   season_start: string | null;
   season_end: string | null;

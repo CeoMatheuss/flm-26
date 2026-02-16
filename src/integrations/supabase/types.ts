@@ -354,6 +354,7 @@ export type Database = {
           country: string
           created_at: string
           current_round: number
+          division: number | null
           id: string
           league_type: string
           max_members: number
@@ -373,6 +374,7 @@ export type Database = {
           country?: string
           created_at?: string
           current_round?: number
+          division?: number | null
           id?: string
           league_type?: string
           max_members?: number
@@ -392,6 +394,7 @@ export type Database = {
           country?: string
           created_at?: string
           current_round?: number
+          division?: number | null
           id?: string
           league_type?: string
           max_members?: number
@@ -691,6 +694,10 @@ export type Database = {
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
         Returns: boolean
+      }
+      process_season_transition: {
+        Args: { _country: string }
+        Returns: undefined
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
     }
