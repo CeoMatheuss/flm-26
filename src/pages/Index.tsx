@@ -46,7 +46,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Radio } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -259,6 +259,30 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </Button>
           </div>
         </div>
+        {/* Live match banner */}
+        {(() => {
+          try {
+            const live = sessionStorage.getItem('match_live');
+            if (live) {
+              const data = JSON.parse(live);
+              return (
+                <div className="max-w-5xl mx-auto px-3 sm:px-4 py-1.5">
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 gap-2 text-xs border-destructive/40 bg-destructive/5 hover:bg-destructive/10 animate-pulse"
+                    onClick={() => navigate('/match')}
+                  >
+                    <Radio className="h-3.5 w-3.5 text-destructive" />
+                    <span className="font-bold text-destructive">🔴 AO VIVO</span>
+                    <span className="text-muted-foreground truncate">{data.homeTeam} vs {data.awayTeam}</span>
+                    <span className="text-muted-foreground text-[10px]">• {data.stadiumName}</span>
+                  </Button>
+                </div>
+              );
+            }
+          } catch {}
+          return null;
+        })()}
       </header>
 
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">

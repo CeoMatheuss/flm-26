@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, RefreshCw, Star, Users, Settings2, Film } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Star, Users, Settings2, Film, LogOut } from 'lucide-react';
 
 // ---- Types ----
 interface SimEvent {
@@ -81,15 +81,36 @@ export default function MatchPage() {
     if (!state) navigate('/', { replace: true });
   }, [state, navigate]);
 
+  // Store match-in-progress in sessionStorage so Dashboard can show "AO VIVO"
+  useEffect(() => {
+    if (state) {
+      sessionStorage.setItem('match_live', JSON.stringify({
+        homeTeam: state.homeTeam,
+        awayTeam: state.awayTeam,
+        stadiumName: state.stadiumName,
+        matchId: state.matchId,
+      }));
+    }
+    return () => {
+      // cleanup on unmount (match ended or abandoned)
+    };
+  }, [state]);
+
   if (!state) return null;
 
+  const handleAbandon = () => {
+    sessionStorage.removeItem('match_live');
+    navigate('/', { replace: true });
+  };
+
   return <MatchSimulation {...state} onEnd={(hg, ag, ratings) => {
+    sessionStorage.removeItem('match_live');
     navigate('/', { state: { matchResult: { matchId: state.matchId, homeGoals: hg, awayGoals: ag, playerRatings: ratings } } });
-  }} />;
+  }} onAbandon={handleAbandon} />;
 }
 
 // ---- Main Simulation Component ----
-function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics: initialTactics, stadiumName, stadiumCapacity, isHome, onEnd }: MatchPageState & { onEnd: (hg: number, ag: number, ratings: Record<string, number>) => void }) {
+function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics: initialTactics, stadiumName, stadiumCapacity, isHome, onEnd, onAbandon }: MatchPageState & { onEnd: (hg: number, ag: number, ratings: Record<string, number>) => void; onAbandon: () => void }) {
   // Game state
   const [phase, setPhase] = useState<'first_half' | 'halftime' | 'second_half' | 'finished'>('first_half');
   const [matchMinute, setMatchMinute] = useState(0);
@@ -584,6 +605,11 @@ function MatchSimulation({ homeTeam, awayTeam, homePlayers, homeStrength, awaySt
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          {phase !== 'finished' && (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-destructive hover:text-destructive gap-1" onClick={onAbandon}>
+              <LogOut className="h-3 w-3" /> Sair
+            </Button>
+          )}
           <Badge variant={phase === 'halftime' ? 'secondary' : phase === 'finished' ? 'outline' : 'default'} className="text-xs font-mono px-2">
             {matchMinute}' {phase === 'first_half' ? '1ºT' : phase === 'halftime' ? 'INT' : phase === 'second_half' ? '2ºT' : 'FIM'}
           </Badge>
