@@ -21,9 +21,8 @@ import { FansTab } from '@/components/game/FansTab';
 import { TrainingTab } from '@/components/game/TrainingTab';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
-import { PremiumTab } from '@/components/game/PremiumTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
-import { AdminTab } from '@/components/game/AdminTab';
+import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -36,7 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Crown, Gavel, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -147,20 +146,7 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isPremium, setIsPremium] = useState(false);
-
-  // Check premium status
-  useEffect(() => {
-    const checkPremium = async () => {
-      const { data } = await supabase
-        .from('premium_users')
-        .select('status')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (data?.status === 'active') setIsPremium(true);
-    };
-    checkPremium();
-  }, [userId]);
+  const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
   // Calculate streaks for FansTab
   const { winStreak, loseStreak } = useMemo(() => {
@@ -209,7 +195,6 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold truncate">
                 {game.club.name}
-                {isPremium && <span className="text-[8px] sm:text-[10px] ml-1 text-yellow-400 font-black">PREMIUM</span>}
               </h1>
               <p className="text-[10px] sm:text-xs text-muted-foreground">
                 T{game.season.currentSeason} • {game.club.stats.points}pts • <span className="text-primary font-semibold">R$ {(game.club.budget / 1000000).toFixed(1)}M</span>
@@ -254,10 +239,9 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
                 <DropdownMenuItem onClick={() => setActiveTab('newspaper')} className="gap-2 text-xs"><Newspaper className="h-3.5 w-3.5" /> Jornal</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
                 {/* Sistema */}
+                <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs text-red-400"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('premium')} className="gap-2 text-xs text-yellow-400"><Crown className="h-3.5 w-3.5" /> Premium ⭐</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -378,14 +362,11 @@ function GameUI({ userId, displayName, onSignOut, initialState, isNewClub }: { u
           <TabsContent value="newspaper">
             <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
-          <TabsContent value="premium">
-            <PremiumTab userId={userId} clubName={game.club.name} budget={game.club.budget} isPremium={isPremium} onPremiumRequest={() => {}} />
+          <TabsContent value="uniforms">
+            <UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} />
           </TabsContent>
           <TabsContent value="auction">
-            <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={isPremium} />
-          </TabsContent>
-          <TabsContent value="admin">
-            <AdminTab userId={userId} />
+            <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />
           </TabsContent>
         </Tabs>
       </main>

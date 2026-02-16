@@ -11,13 +11,17 @@ interface Update {
 
 const updates: Update[] = [
   {
-    version: '1.8.0',
-    date: '15/02/2026',
+    version: '1.9.0',
+    date: '16/02/2026',
     type: 'feature',
     items: [
-      '🔄 Sistema de empréstimo de jogadores (máx. 3 por temporada, 1 temporada de duração)',
-      '📖 Aba de Regras com manual completo do jogo',
-      '📋 Aba de Atualizações com histórico de mudanças',
+      '🎽 Sistema completo de uniformes personalizados (titular, visitante, alternativo, goleiro)',
+      '🎨 8 padrões de camisa: liso, listras, horizontais, metade, diagonal, risca de giz, degradê, mangas',
+      '👔 Personalização de gola (V, redonda, polo, henley) e tipo de manga (curta/longa)',
+      '🎨 6 templates rápidos: Clássico, Seleção, Europeu, Moderno, Retrô, Elegante',
+      '👁️ Pré-visualização em tempo real do uniforme completo com número',
+      '🔓 Leilão de jogadores agora disponível para todos os jogadores',
+      '🗑️ Removido sistema Premium e área Admin (será reestruturado)',
     ],
   },
   {
