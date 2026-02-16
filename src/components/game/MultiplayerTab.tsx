@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { LeaguesOverview } from './LeaguesOverview';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Globe, MessageSquare, Send, Users, Trophy, Handshake, Swords, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award, Loader2, Clock, Star, Zap } from 'lucide-react';
+import { generatePlayer } from '@/utils/playerGenerator';
+import type { Player } from '@/types/game';
 import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
 interface Props {
@@ -269,6 +271,64 @@ function LeagueView(props: Props) {
   );
 }
 
+// === BOT SQUAD CARD ===
+const posColors: Record<string, string> = {
+  GOL: 'bg-primary/15 text-primary',
+  ZAG: 'bg-blue-500/15 text-blue-400',
+  LAT: 'bg-cyan-500/15 text-cyan-400',
+  VOL: 'bg-emerald-500/15 text-emerald-400',
+  MEI: 'bg-purple-500/15 text-purple-400',
+  ATA: 'bg-red-500/15 text-red-400',
+};
+const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
+
+function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: number }) {
+  const squad = useMemo(() => {
+    const strength = Math.max(40, Math.min(85, reputation));
+    const minOvr = Math.max(40, strength - 15);
+    const maxOvr = Math.min(95, strength + 5);
+    const posCount: [Player['position'], number][] = [
+      ['GOL', 2], ['ZAG', 4], ['LAT', 3], ['VOL', 3], ['MEI', 4], ['ATA', 4],
+    ];
+    const players: Player[] = [];
+    for (const [pos, count] of posCount) {
+      for (let i = 0; i < count; i++) {
+        players.push(generatePlayer([minOvr, maxOvr], [18, 34], pos));
+      }
+    }
+    return players.sort((a, b) => {
+      const pA = posOrder.indexOf(a.position);
+      const pB = posOrder.indexOf(b.position);
+      if (pA !== pB) return pA - pB;
+      return b.overall - a.overall;
+    });
+  }, [teamName, reputation]);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Users className="h-4 w-4" /> Elenco
+          <Badge variant="outline" className="text-[9px] ml-2">OVR oculto</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-1">
+          {squad.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 hover:bg-muted/40 transition-colors">
+              <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
+              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
+              <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
+              <span className="text-[10px] text-muted-foreground">{p.age} anos</span>
+              <span className="text-xs font-bold w-8 text-right text-muted-foreground">???</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // === STANDINGS ===
 function StandingsView({ members, userId, division, leagueMatches }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[] }) {
   const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
@@ -428,12 +488,14 @@ function StandingsView({ members, userId, division, leagueMatches }: { members: 
                   <span className="font-mono">{myGoals} - {oppGoals}</span>
                   <span className="text-muted-foreground">vs</span>
                   <span className="truncate font-medium">{opp?.club_name || '???'}</span>
-                  <span className="truncate">{opp?.club_name || '???'}</span>
                 </div>
               );
             })}
           </CardContent>
         </Card>
+
+        {/* Bot Squad */}
+        {isBot && <BotSquadCard teamName={selectedTeam.club_name} reputation={selectedTeam.reputation} />}
       </div>
     );
   }
