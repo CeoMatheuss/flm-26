@@ -338,7 +338,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
-          <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} country={game.club.country} /></TabsContent>
+          <TabsContent value="league"><LeagueTab teams={game.leagueTeams} clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} /></TabsContent>
           <TabsContent value="youth">
             <YouthAcademyTab
               prospects={game.youthProspects}
