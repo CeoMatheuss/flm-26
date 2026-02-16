@@ -35,9 +35,16 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     notifications.push({
       id: 'welcome',
       icon: '🏆',
-      title: 'Bem-vindo!',
-      message: `Parabéns pela criação do ${clubName}! Monte seu elenco, defina táticas, melhore a infraestrutura e conquiste títulos. Boa sorte, Manager!`,
+      title: 'Bem-vindo ao FLM 26!',
+      message: `Parabéns pela criação do ${clubName}! 🎉 Você agora é Manager! Monte seu elenco, defina táticas, melhore o estádio e a infraestrutura, invista na base, conquiste patrocínios e leve seu clube ao topo. A torcida conta com você! ⚽ Boa sorte, Manager!`,
       type: 'success',
+    });
+    notifications.push({
+      id: 'welcome_tips',
+      icon: '💡',
+      title: 'Primeiros passos',
+      message: '1️⃣ Defina sua formação em Táticas • 2️⃣ Jogue amistosos para ganhar torcida • 3️⃣ Melhore o CT e a Base • 4️⃣ Contrate reforços no Mercado • 5️⃣ Entre numa Liga Online para competir!',
+      type: 'info',
     });
   }
 
