@@ -11,6 +11,7 @@ interface Props {
   academyLevel: number;
   monthlyInvestment: number;
   budget: number;
+  hasScouts: boolean;
   onPromote: (id: string) => void;
   onSetInvestment: (amount: number) => void;
   onGenerateYouth?: () => void;
@@ -33,7 +34,7 @@ const getLevelTier = (level: number) => {
   return { label: 'Mundial', color: 'text-yellow-400', emoji: '🟡' };
 };
 
-export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, budget, onPromote, onSetInvestment, onGenerateYouth, onUpgradeAcademy }: Props) {
+export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, budget, hasScouts, onPromote, onSetInvestment, onGenerateYouth, onUpgradeAcademy }: Props) {
   const upgradeCost = getAcademyUpgradeCost(academyLevel);
   const canUpgrade = budget >= upgradeCost && academyLevel < 30;
   const tier = getLevelTier(academyLevel);
@@ -152,6 +153,12 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
           <CardTitle className="text-sm">Jovens na Base ({prospects.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          {!hasScouts && prospects.length > 0 && (
+            <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <span className="text-sm">🔍</span>
+              <p className="text-[11px] text-amber-300">Contrate um <strong>olheiro</strong> na aba Olheiros para revelar o potencial (POT) dos jovens!</p>
+            </div>
+          )}
           {prospects.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum jovem na base. Invista para gerar uma safra!</p>
           ) : (
@@ -163,17 +170,28 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
                     <p className="font-medium text-sm truncate">{p.name}</p>
                     <p className="text-xs text-muted-foreground">{p.age} anos • {p.monthsInAcademy} meses</p>
                   </div>
-                  <div className="text-center mr-1">
-                    <p className="text-lg font-bold">{p.overall}</p>
-                    <p className="text-[10px] text-muted-foreground">OVR</p>
-                  </div>
-                  <div className="text-center mr-1">
-                    <p className="text-lg font-bold text-yellow-400">{p.potential}</p>
-                    <p className="text-[10px] text-muted-foreground">POT</p>
-                  </div>
-                  <div className="w-12">
-                    <Progress value={(p.overall / p.potential) * 100} className="h-2" />
-                  </div>
+                   <div className="text-center mr-1">
+                     <p className="text-lg font-bold">{p.overall}</p>
+                     <p className="text-[10px] text-muted-foreground">OVR</p>
+                   </div>
+                   {hasScouts ? (
+                     <div className="text-center mr-1">
+                       <p className="text-lg font-bold text-yellow-400">{p.potential}</p>
+                       <p className="text-[10px] text-muted-foreground">POT</p>
+                     </div>
+                   ) : (
+                     <div className="text-center mr-1">
+                       <p className="text-lg font-bold text-muted-foreground/40">???</p>
+                       <p className="text-[10px] text-muted-foreground">POT</p>
+                     </div>
+                   )}
+                   <div className="w-12">
+                     {hasScouts ? (
+                       <Progress value={(p.overall / p.potential) * 100} className="h-2" />
+                     ) : (
+                       <Progress value={50} className="h-2 opacity-30" />
+                     )}
+                   </div>
                   <Button size="sm" onClick={() => onPromote(p.id)}>
                     <UserPlus className="h-3 w-3 mr-1" /> Promover
                   </Button>

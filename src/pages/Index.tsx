@@ -383,6 +383,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               academyLevel={game.infrastructure.youthAcademy.level}
               monthlyInvestment={game.youthInvestment}
               budget={game.club.budget}
+              hasScouts={(game.club.scouts?.length ?? 0) > 0}
               onPromote={game.promoteYouth}
               onSetInvestment={game.setYouthInvestment}
               onGenerateYouth={() => {}}
@@ -411,8 +412,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               matches={game.club.matches} 
               clubName={game.club.name} 
               stadiumName={game.club.stadiumName} 
-              friendliesPlayedSeason={game.friendliesPlayedSeason}
-              maxFriendliesPerSeason={game.maxFriendliesPerSeason}
               alreadyPlayedToday={game.alreadyPlayedToday}
               lastFriendlyDate={game.lastFriendlyDate}
               onSimulate={game.simulateMatch} 

@@ -182,8 +182,25 @@ export function generateFreeAgents(count: number): Player[] {
 }
 
 export function getPlayerValue(player: Player): number {
-  const baseValue = player.overall * 15000;
-  const ageFactor = player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1;
+  // Exponential value based on OVR tiers
+  let baseValue: number;
+  if (player.overall >= 85) baseValue = player.overall * 80000;
+  else if (player.overall >= 75) baseValue = player.overall * 40000;
+  else if (player.overall >= 65) baseValue = player.overall * 20000;
+  else if (player.overall >= 55) baseValue = player.overall * 10000;
+  else baseValue = player.overall * 5000;
+
+  // Age curve: peak value 23-27, young premium, old discount
+  let ageFactor: number;
+  if (player.age <= 20) ageFactor = 1.5;      // wonderkid premium
+  else if (player.age <= 22) ageFactor = 1.4;
+  else if (player.age <= 24) ageFactor = 1.3;  // rising star
+  else if (player.age <= 27) ageFactor = 1.2;  // prime
+  else if (player.age <= 29) ageFactor = 1.0;  // mature
+  else if (player.age <= 31) ageFactor = 0.7;  // declining
+  else if (player.age <= 33) ageFactor = 0.4;  // veteran
+  else ageFactor = 0.2;                         // twilight
+
   return Math.floor(baseValue * ageFactor);
 }
 
