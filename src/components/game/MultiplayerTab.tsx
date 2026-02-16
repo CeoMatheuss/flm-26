@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, MessageSquare, Send, Users, Trophy, Handshake, Swords, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award, Loader2 } from 'lucide-react';
+import { Globe, MessageSquare, Send, Users, Trophy, Handshake, Swords, Copy, Check, CalendarDays, Shield, Play, RefreshCw, Flag, Award, Loader2, Clock, Star, Zap } from 'lucide-react';
 import type { MultiplayerLeague, LeagueMember, ChatMessage, PrivateMessage, TradeProposal, Rivalry, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
 interface Props {
@@ -42,6 +42,7 @@ export function MultiplayerTab(props: Props) {
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Entrando na liga online...</p>
+        <p className="text-xs text-muted-foreground/60">Você será colocado automaticamente na liga do seu país</p>
       </div>
     );
   }
@@ -53,8 +54,31 @@ export function MultiplayerTab(props: Props) {
 }
 
 function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
+  const mainLeagues = leagues.filter(l => (l as any).league_type !== 'beginner');
+  const beginnerLeagues = leagues.filter(l => (l as any).league_type === 'beginner');
+
   return (
     <div className="space-y-4">
+      {/* Season Info Banner */}
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Globe className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm">Sistema de Ligas Online</h3>
+              <p className="text-xs text-muted-foreground">
+                📅 30 rodadas por temporada (1 rodada = 1 dia) • Dia 31 = transição entre temporadas
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                🏟️ Ligas criadas automaticamente pelo servidor • Redistribuição ao final de cada temporada
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {leagues.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -64,28 +88,72 @@ function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4" /> SUAS LIGAS ONLINE</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {leagues.map(l => (
-              <div key={l.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
-                <div>
-                  <p className="font-semibold text-sm">{l.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    T{l.season} • {(l as any).country || 'Brasil'} •{' '}
-                    <span className={l.season_status === 'in_progress' ? 'text-emerald-400' : l.season_status === 'finished' ? 'text-amber-400' : 'text-muted-foreground'}>
-                      {l.season_status === 'registration' ? '📝 Inscrições' : l.season_status === 'in_progress' ? '⚽ Em andamento' : l.season_status === 'finished' ? '🏆 Finalizada' : l.season_status}
-                    </span>
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => onEnterLeague(l)}>Entrar</Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <>
+          {mainLeagues.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4" /> LIGAS PRINCIPAIS</CardTitle>
+                <CardDescription className="text-xs">30 rodadas • 1 rodada por dia • Redistribuição automática</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {mainLeagues.map(l => (
+                  <LeagueCard key={l.id} league={l} onEnter={() => onEnterLeague(l)} />
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {beginnerLeagues.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2"><Star className="h-4 w-4 text-amber-400" /> TORNEIO DE INICIANTES</CardTitle>
+                <CardDescription className="text-xs">Jogadores novos ou que entraram no meio da temporada</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {beginnerLeagues.map(l => (
+                  <LeagueCard key={l.id} league={l} onEnter={() => onEnterLeague(l)} isBeginner />
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+function LeagueCard({ league, onEnter, isBeginner }: { league: MultiplayerLeague; onEnter: () => void; isBeginner?: boolean }) {
+  const l = league as any;
+  const totalRounds = l.total_rounds || 30;
+  const currentRound = l.current_round || 0;
+  const daysLeft = totalRounds - currentRound;
+
+  return (
+    <div className={`flex items-center justify-between p-3 rounded-lg border ${isBeginner ? 'bg-amber-500/5 border-amber-500/20' : 'bg-muted/50 border-border/50'}`}>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-sm truncate">{l.name}</p>
+          {isBeginner && <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400">Iniciantes</Badge>}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+          <span className="text-xs text-muted-foreground">T{l.season}</span>
+          <span className="text-[10px] text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground">{l.country}</span>
+          <span className="text-[10px] text-muted-foreground">•</span>
+          <span className={`text-xs ${l.season_status === 'in_progress' ? 'text-emerald-400' : l.season_status === 'finished' ? 'text-amber-400' : 'text-muted-foreground'}`}>
+            {l.season_status === 'registration' ? '📝 Inscrições' : l.season_status === 'in_progress' ? `⚽ Rodada ${currentRound}/${totalRounds}` : l.season_status === 'finished' ? '🏆 Finalizada' : l.season_status}
+          </span>
+          {l.season_status === 'in_progress' && daysLeft > 0 && (
+            <>
+              <span className="text-[10px] text-muted-foreground">•</span>
+              <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                <Clock className="h-2.5 w-2.5" /> {daysLeft}d restantes
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      <Button size="sm" onClick={onEnter} className="shrink-0">Entrar</Button>
     </div>
   );
 }
@@ -106,25 +174,52 @@ function LeagueView(props: Props) {
   const isOwner = currentLeague!.owner_id === userId;
   const seasonStatus = (currentLeague as any)?.season_status || 'registration';
   const mySquadSynced = leagueSquads.some(s => s.user_id === userId);
+  const leagueType = (currentLeague as any)?.league_type || 'main';
+  const totalRounds = (currentLeague as any)?.total_rounds || 30;
 
   return (
     <div className="space-y-4">
+      {/* League Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-lg">{currentLeague!.name}</h2>
+            {leagueType === 'beginner' && (
+              <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                <Star className="h-3 w-3 mr-0.5" /> Iniciantes
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground">Código: {currentLeague!.code}</span>
             <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={copyCode}>
               {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
             </Button>
             <Badge variant="outline" className="text-[10px]">T{currentLeague!.season}</Badge>
+            <Badge variant="outline" className="text-[10px]">{totalRounds} rodadas</Badge>
             <Badge variant={seasonStatus === 'in_progress' ? 'default' : 'secondary'} className="text-[10px]">
-              {seasonStatus === 'registration' ? '📝 Inscrições' : seasonStatus === 'in_progress' ? `⚽ Rodada ${currentLeague!.current_round}` : '🏆 Finalizada'}
+              {seasonStatus === 'registration' ? '📝 Inscrições' : seasonStatus === 'in_progress' ? `⚽ Rodada ${currentLeague!.current_round}/${totalRounds}` : '🏆 Finalizada'}
             </Badge>
           </div>
         </div>
-        <Badge variant="outline">{members.length}/{currentLeague!.max_members} managers</Badge>
+        <Badge variant="outline">{members.length}/{currentLeague!.max_members}</Badge>
       </div>
+
+      {/* Season Progress Bar */}
+      {seasonStatus === 'in_progress' && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Progresso da Temporada</span>
+            <span>{currentLeague!.current_round}/{totalRounds} dias</span>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary rounded-full transition-all" 
+              style={{ width: `${(currentLeague!.current_round / totalRounds) * 100}%` }} 
+            />
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="standings">
         <TabsList className="w-full flex-wrap h-auto gap-1 bg-card/50">
@@ -143,7 +238,7 @@ function LeagueView(props: Props) {
           <StandingsView members={members} userId={userId} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} />
+          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
         </TabsContent>
         <TabsContent value="squad">
           <SquadSyncView
@@ -240,12 +335,12 @@ function StandingsView({ members, userId }: { members: LeagueMember[]; userId: s
 }
 
 // === MATCHES VIEW ===
-function MatchesView({ matches, members, userId, currentRound }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number }) {
+function MatchesView({ matches, members, userId, currentRound, totalRounds }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number }) {
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
   const getLogo = (uid: string) => members.find(m => m.user_id === uid)?.club_logo || '⚽';
   
-  const totalRounds = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : 0;
+  const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : totalRounds;
   const roundMatches = matches.filter(m => m.round === selectedRound);
 
   if (matches.length === 0) {
@@ -254,7 +349,7 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
         <CardContent className="py-8 text-center">
           <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">Nenhuma partida agendada.</p>
-          <p className="text-xs text-muted-foreground mt-1">A temporada será iniciada quando houver jogadores suficientes.</p>
+          <p className="text-xs text-muted-foreground mt-1">A temporada será iniciada pelo servidor em data fixa.</p>
         </CardContent>
       </Card>
     );
@@ -263,14 +358,14 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {Array.from({ length: totalRounds }, (_, i) => i + 1).map(r => {
+        {Array.from({ length: maxRound }, (_, i) => i + 1).map(r => {
           const allPlayed = matches.filter(m => m.round === r).every(m => m.status === 'played');
           const isCurrent = r === currentRound;
           return (
             <Button key={r} size="sm" variant={selectedRound === r ? 'default' : 'outline'}
               onClick={() => setSelectedRound(r)}
               className={`text-xs shrink-0 ${isCurrent && selectedRound !== r ? 'border-primary/50' : ''}`}>
-              R{r}
+              D{r}
               {allPlayed && <Check className="h-3 w-3 ml-1 text-emerald-400" />}
             </Button>
           );
@@ -279,7 +374,10 @@ function MatchesView({ matches, members, userId, currentRound }: { matches: Leag
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">RODADA {selectedRound}</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2">
+            DIA {selectedRound} DE {totalRounds}
+            {selectedRound === currentRound && <Badge className="text-[9px]">Hoje</Badge>}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {roundMatches.map(m => {
@@ -407,8 +505,9 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
   onStartSeason?: () => void; onSimulateRound?: (round: number) => void; onEndSeason?: () => void;
 }) {
   const seasonStatus = (league as any).season_status || 'registration';
+  const leagueType = (league as any).league_type || 'main';
+  const totalRounds = (league as any).total_rounds || 30;
   const syncedCount = leagueSquads.length;
-  const totalRounds = leagueMatches.length > 0 ? Math.max(...leagueMatches.map(m => m.round)) : 0;
   const currentRound = league.current_round;
   const currentRoundPlayed = leagueMatches.filter(m => m.round === currentRound).every(m => m.status === 'played');
   const allMatchesPlayed = leagueMatches.length > 0 && leagueMatches.every(m => m.status === 'played');
@@ -418,21 +517,24 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2"><Flag className="h-4 w-4" /> ADMINISTRAÇÃO DA LIGA</CardTitle>
         <CardDescription className="text-xs">
-          Gerencie temporadas, rodadas e o calendário da liga.
+          {leagueType === 'beginner' ? 'Torneio de Iniciantes — Jogadores serão redistribuídos ao final' : `Liga Principal — ${totalRounds} rodadas (1/dia)`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="p-3 rounded-lg bg-muted/50 border border-border/50 space-y-1">
-          <p className="text-xs font-semibold">📊 Status da Liga</p>
+          <p className="text-xs font-semibold">📊 Status</p>
           <p className="text-xs text-muted-foreground">
-            Membros: {members.length}/{league.max_members} • Elencos sincronizados: {syncedCount}/{members.length}
+            Tipo: {leagueType === 'beginner' ? '⭐ Torneio Iniciantes' : '🏆 Liga Principal'} • Membros: {members.length}/{league.max_members}
           </p>
           <p className="text-xs text-muted-foreground">
-            Temporada: {league.season} • Status: {seasonStatus === 'registration' ? 'Inscrições' : seasonStatus === 'in_progress' ? 'Em andamento' : 'Finalizada'}
+            Elencos sincronizados: {syncedCount}/{members.length} • Temporada: {league.season}
           </p>
-          {totalRounds > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Status: {seasonStatus === 'registration' ? 'Inscrições' : seasonStatus === 'in_progress' ? `Em andamento (dia ${currentRound}/${totalRounds})` : 'Finalizada'}
+          </p>
+          {leagueMatches.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Rodadas: {currentRound}/{totalRounds} • Partidas jogadas: {leagueMatches.filter(m => m.status === 'played').length}/{leagueMatches.length}
+              Partidas jogadas: {leagueMatches.filter(m => m.status === 'played').length}/{leagueMatches.length}
             </p>
           )}
         </div>
@@ -455,12 +557,12 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
             {!currentRoundPlayed ? (
               <Button className="w-full" disabled={loading} onClick={() => onSimulateRound?.(currentRound)}>
                 <Swords className="h-4 w-4 mr-2" />
-                Simular Rodada {currentRound}
+                Simular Dia {currentRound}
               </Button>
             ) : currentRound < totalRounds ? (
               <Button className="w-full" disabled={loading} onClick={() => onSimulateRound?.(currentRound + 1)}>
                 <Swords className="h-4 w-4 mr-2" />
-                Simular Rodada {currentRound + 1}
+                Simular Dia {currentRound + 1}
               </Button>
             ) : null}
 
@@ -470,6 +572,11 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
                 <p className="text-xs text-muted-foreground mt-1">
                   Campeão: {[...members].sort((a, b) => b.points - a.points)[0]?.club_name || '?'}
                 </p>
+                {leagueType === 'beginner' && (
+                  <p className="text-xs text-amber-400 mt-1">
+                    ⭐ Jogadores serão redistribuídos para ligas principais
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -478,9 +585,23 @@ function AdminView({ league, members, leagueSquads, leagueMatches, loading, onSt
         {(seasonStatus === 'finished' || allMatchesPlayed) && (
           <Button className="w-full" variant="outline" disabled={loading} onClick={onEndSeason}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Encerrar e Iniciar Nova Temporada
+            {leagueType === 'beginner' ? 'Encerrar e Redistribuir Jogadores' : 'Encerrar e Iniciar Nova Temporada'}
           </Button>
         )}
+
+        {/* Day 31 Info */}
+        <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+          <p className="text-xs font-semibold text-blue-400">📅 Calendário da Temporada</p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            • Dias 1-{totalRounds}: 1 rodada por dia (partidas simuladas automaticamente)
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            • Dia {totalRounds + 1}: Transição — sem jogos, reorganização e início da próxima temporada
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            • Jogadores são redistribuídos automaticamente ao final de cada temporada
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -747,12 +868,12 @@ function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; m
         {rivalries.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma rivalidade registrada ainda. Jogue partidas para criar histórico!</p>}
         {rivalries.map(r => (
           <div key={r.id} className="p-3 rounded-lg bg-muted/50 border border-border/50 mb-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold">{getClubName(r.user_a)} vs {getClubName(r.user_b)}</span>
-              <span className={`text-xs font-bold ${getIntensityColor(r.intensity)}`}>{getIntensityLabel(r.intensity)}</span>
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold">{getClubName(r.user_a)} vs {getClubName(r.user_b)}</div>
+              <span className={`text-xs ${getIntensityColor(r.intensity)}`}>{getIntensityLabel(r.intensity)}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {r.matches_played} jogos • {getClubName(r.user_a)}: {r.user_a_wins}V • {getClubName(r.user_b)}: {r.user_b_wins}V • Empates: {r.draws}
+              {r.matches_played} jogos • {r.user_a_wins}V-{r.draws}E-{r.user_b_wins}D
             </p>
           </div>
         ))}

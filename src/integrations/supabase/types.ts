@@ -355,12 +355,17 @@ export type Database = {
           created_at: string
           current_round: number
           id: string
+          league_type: string
           max_members: number
           name: string
           owner_id: string
+          round_interval_hours: number
           season: number
+          season_end: string | null
+          season_start: string | null
           season_status: string
           status: string
+          total_rounds: number
         }
         Insert: {
           auto_created?: boolean
@@ -369,12 +374,17 @@ export type Database = {
           created_at?: string
           current_round?: number
           id?: string
+          league_type?: string
           max_members?: number
           name: string
           owner_id: string
+          round_interval_hours?: number
           season?: number
+          season_end?: string | null
+          season_start?: string | null
           season_status?: string
           status?: string
+          total_rounds?: number
         }
         Update: {
           auto_created?: boolean
@@ -383,12 +393,17 @@ export type Database = {
           created_at?: string
           current_round?: number
           id?: string
+          league_type?: string
           max_members?: number
           name?: string
           owner_id?: string
+          round_interval_hours?: number
           season?: number
+          season_end?: string | null
+          season_start?: string | null
           season_status?: string
           status?: string
+          total_rounds?: number
         }
         Relationships: []
       }
@@ -662,6 +677,10 @@ export type Database = {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
       }
+      end_season_redistribute: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -673,6 +692,7 @@ export type Database = {
         Args: { _league_id: string; _user_id: string }
         Returns: boolean
       }
+      redistribute_beginners: { Args: { _country: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

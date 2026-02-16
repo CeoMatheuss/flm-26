@@ -14,6 +14,11 @@ export interface MultiplayerLeague {
   season_status: string;
   country: string;
   auto_created: boolean;
+  league_type: string;
+  total_rounds: number;
+  round_interval_hours: number;
+  season_start: string | null;
+  season_end: string | null;
   created_at: string;
 }
 
@@ -106,18 +111,22 @@ export interface LeagueSquad {
 }
 
 // Generate round-robin schedule for members
-function generateRoundRobin(memberIds: string[]): { round: number; home: string; away: string }[] {
+function generateRoundRobin(memberIds: string[], totalRounds: number): { round: number; home: string; away: string }[] {
   const ids = [...memberIds];
   if (ids.length % 2 !== 0) ids.push('BYE');
   const n = ids.length;
   const rounds: { round: number; home: string; away: string }[] = [];
   
-  for (let round = 0; round < (n - 1) * 2; round++) {
-    const isReturn = round >= n - 1;
-    const baseRound = isReturn ? round - (n - 1) : round;
+  // Generate enough base rounds, then cycle to fill totalRounds
+  const baseRounds = n - 1;
+  
+  for (let round = 0; round < totalRounds; round++) {
+    const cycleRound = round % (baseRounds * 2);
+    const isReturn = cycleRound >= baseRounds;
+    const baseR = isReturn ? cycleRound - baseRounds : cycleRound;
     const rotated = [ids[0], ...ids.slice(1)];
     
-    for (let r = 0; r < baseRound; r++) {
+    for (let r = 0; r < baseR; r++) {
       const last = rotated.pop()!;
       rotated.splice(1, 0, last);
     }
@@ -208,7 +217,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       }
 
       if (leagueId) {
-        // Load the league
         const { data: league } = await supabase
           .from('multiplayer_leagues')
           .select('*')
@@ -216,7 +224,8 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
           .single();
 
         if (league) {
-          await enterLeague(league as MultiplayerLeague);
+          await loadLeagues();
+          await enterLeague(league as unknown as MultiplayerLeague);
         }
       }
     } catch (e) {
@@ -238,7 +247,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         .from('multiplayer_leagues')
         .select('*')
         .in('id', ids);
-      setLeagues((data as MultiplayerLeague[]) || []);
+      setLeagues((data as unknown as MultiplayerLeague[]) || []);
     } else {
       setLeagues([]);
     }
@@ -377,7 +386,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     toast.success('Elenco sincronizado com a liga!');
   }, [currentLeague, userId]);
 
-  // Start season (owner only)
+  // Start season (owner only) - now with 30 rounds and date scheduling
   const startSeason = useCallback(async () => {
     if (!currentLeague) return;
     if (currentLeague.owner_id !== userId) {
@@ -398,8 +407,13 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
     setLoading(true);
     const memberIds = members.map(m => m.user_id);
-    const schedule = generateRoundRobin(memberIds);
+    const numRounds = currentLeague.total_rounds || 30;
+    const schedule = generateRoundRobin(memberIds, numRounds);
     
+    const now = new Date();
+    const seasonEnd = new Date(now);
+    seasonEnd.setDate(seasonEnd.getDate() + numRounds); // 1 round per day
+
     const matchInserts = schedule.map(s => ({
       league_id: currentLeague.id,
       round: s.round,
@@ -411,10 +425,21 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     await supabase.from('league_matches').insert(matchInserts);
     
     await supabase.from('multiplayer_leagues')
-      .update({ season_status: 'in_progress', current_round: 1 })
+      .update({ 
+        season_status: 'in_progress', 
+        current_round: 1,
+        season_start: now.toISOString(),
+        season_end: seasonEnd.toISOString(),
+      })
       .eq('id', currentLeague.id);
 
-    setCurrentLeague(prev => prev ? { ...prev, season_status: 'in_progress', current_round: 1 } : null);
+    setCurrentLeague(prev => prev ? { 
+      ...prev, 
+      season_status: 'in_progress', 
+      current_round: 1,
+      season_start: now.toISOString(),
+      season_end: seasonEnd.toISOString(),
+    } : null);
     
     for (const m of members) {
       await supabase.from('league_members')
@@ -422,7 +447,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         .eq('id', m.id);
     }
 
-    toast.success(`Temporada iniciada! ${schedule.length} partidas geradas.`);
+    toast.success(`Temporada iniciada! ${numRounds} rodadas (1 por dia). ${schedule.length} partidas geradas.`);
     setLoading(false);
     await enterLeague(currentLeague);
   }, [currentLeague, userId, members, leagueSquads, enterLeague]);
@@ -493,7 +518,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       }
     }
     
-    const totalRounds = Math.max(...leagueMatches.map(m => m.round));
+    const totalRounds = currentLeague.total_rounds || 30;
     const nextRound = round < totalRounds ? round + 1 : round;
     const allPlayed = leagueMatches.every(m => m.status === 'played' || roundMatches.some(rm => rm.id === m.id));
     
@@ -513,18 +538,20 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     await enterLeague(currentLeague);
   }, [currentLeague, userId, leagueMatches, leagueSquads, members, enterLeague]);
 
-  // End season (owner)
+  // End season and redistribute
   const endSeason = useCallback(async () => {
     if (!currentLeague || currentLeague.owner_id !== userId) return;
     
     setLoading(true);
-    await supabase.from('league_matches').delete().eq('league_id', currentLeague.id);
     
-    await supabase.from('multiplayer_leagues').update({
-      season: currentLeague.season + 1,
-      season_status: 'registration',
-      current_round: 0,
-    }).eq('id', currentLeague.id);
+    // Call the redistribute function for beginner tournaments
+    if (currentLeague.league_type === 'beginner') {
+      await supabase.rpc('redistribute_beginners', { _country: currentLeague.country });
+      toast.success('Jogadores do torneio de iniciantes redistribuídos para ligas principais!');
+    }
+    
+    // Use the server-side end season function
+    await supabase.rpc('end_season_redistribute', { _league_id: currentLeague.id });
 
     setCurrentLeague(prev => prev ? {
       ...prev,
@@ -533,10 +560,29 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       current_round: 0,
     } : null);
 
-    toast.success(`Temporada ${currentLeague.season} encerrada! Nova temporada disponível.`);
+    toast.success(`Temporada ${currentLeague.season} encerrada! Jogadores redistribuídos.`);
     setLoading(false);
-    await enterLeague({ ...currentLeague, season: currentLeague.season + 1, season_status: 'registration', current_round: 0 });
-  }, [currentLeague, userId, enterLeague]);
+    await loadLeagues();
+  }, [currentLeague, userId, loadLeagues]);
+
+  // Get season info for display
+  const getSeasonInfo = useCallback(() => {
+    if (!currentLeague) return null;
+    const totalRounds = currentLeague.total_rounds || 30;
+    const currentRound = currentLeague.current_round || 0;
+    const daysRemaining = totalRounds - currentRound;
+    const isTransitionDay = currentRound >= totalRounds && currentLeague.season_status === 'finished';
+    
+    return {
+      totalRounds,
+      currentRound,
+      daysRemaining,
+      isTransitionDay,
+      leagueType: currentLeague.league_type || 'main',
+      seasonStart: currentLeague.season_start,
+      seasonEnd: currentLeague.season_end,
+    };
+  }, [currentLeague]);
 
   return {
     leagues, currentLeague, members, chatMessages, privateMessages, proposals, rivalries,
@@ -544,5 +590,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     loadLeagues, enterLeague, leaveLeague,
     sendChat, sendPrivateMessage, sendProposal, respondProposal,
     syncSquad, startSeason, simulateRound, endSeason,
+    getSeasonInfo,
   };
 }
