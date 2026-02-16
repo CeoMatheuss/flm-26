@@ -2,25 +2,10 @@ import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Target, Shield, TrendingUp, Flame, Heart, Zap, Swords, MapPin, Calendar, Clock, Radio } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { NewspaperCard } from './NewspaperCard';
-import { ShieldCrest } from './ShieldCrest';
-import flmLogo from '@/assets/flm26-logo.png';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-interface LiveMatchData {
-  homeTeam: string;
-  awayTeam: string;
-  stadiumName: string;
-  matchId: string;
-  homeGoals?: number;
-  awayGoals?: number;
-  minute?: number;
-}
+import { MatchDashboardCard } from './MatchDashboardCard';
 
 interface Props {
   club: Club;
@@ -30,27 +15,6 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: Props) {
-  const navigate = useNavigate();
-  const [liveMatch, setLiveMatch] = useState<LiveMatchData | null>(null);
-
-  // Poll sessionStorage for live match data
-  useEffect(() => {
-    const checkLive = () => {
-      try {
-        const raw = sessionStorage.getItem('match_live');
-        if (raw) {
-          setLiveMatch(JSON.parse(raw));
-        } else {
-          setLiveMatch(null);
-        }
-      } catch { setLiveMatch(null); }
-    };
-    checkLive();
-    const interval = setInterval(checkLive, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const nextMatch = club.matches.find(m => !m.played);
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
 
@@ -96,7 +60,10 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Stats Row - responsive grid */}
+      {/* === BLOCO FIXO OBRIGATÓRIO — PARTIDA === */}
+      <MatchDashboardCard club={club} />
+
+      {/* Stats Row */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
         {[
           { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, accent: 'bg-primary/10 border-primary/20' },
@@ -208,134 +175,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
           </CardContent>
         </Card>
       </div>
-
-      {/* === PRÓXIMA PARTIDA / PARTIDA ATUAL === */}
-      <Card className={`border-2 ${liveMatch ? 'border-destructive/60 bg-destructive/5' : 'border-primary/30'}`}>
-        <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-            {liveMatch ? (
-              <>
-                <Radio className="h-3 w-3 sm:h-4 sm:w-4 text-destructive animate-pulse" />
-                <span className="text-destructive font-bold">Partida Atual — AO VIVO</span>
-                <Badge variant="destructive" className="text-[9px] animate-pulse ml-auto">🔴 AO VIVO</Badge>
-              </>
-            ) : (
-              <>
-                <Target className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                <span className="text-muted-foreground">Próxima Partida</span>
-              </>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-          {liveMatch ? (
-            // === AO VIVO ===
-            <div className="space-y-3">
-              {/* Competition & Stadium */}
-              <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/30">
-                <Badge variant="outline" className="text-[9px] sm:text-[10px]">⚽ Amistoso</Badge>
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
-                  <MapPin className="h-2.5 w-2.5" /> {liveMatch.stadiumName || club.stadiumName}
-                </Badge>
-                <Badge variant="outline" className="text-[9px] sm:text-[10px]">
-                  🏠 {liveMatch.homeTeam === club.name ? 'Casa' : 'Fora'}
-                </Badge>
-              </div>
-
-              {/* Teams & Score */}
-              <div className="flex items-center justify-between py-2">
-                <div className="text-center flex-1">
-                  {club.shieldPattern ? (
-                    <ShieldCrest primaryColor={club.primaryColor || '#2563EB'} secondaryColor={club.secondaryColor || '#FFF'} pattern={club.shieldPattern} size={40} className="mx-auto mb-1" />
-                  ) : club.logoUrl ? (
-                    <img src={club.logoUrl} alt={club.name} className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded object-cover" />
-                  ) : (
-                    <img src={flmLogo} alt="FLM" className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded" />
-                  )}
-                  <p className="font-bold text-xs sm:text-sm truncate">{liveMatch.homeTeam}</p>
-                </div>
-                <div className="text-center px-3 sm:px-5">
-                  <p className="text-2xl sm:text-3xl font-black tabular-nums">
-                    {liveMatch.homeGoals ?? 0} <span className="text-muted-foreground">-</span> {liveMatch.awayGoals ?? 0}
-                  </p>
-                  {liveMatch.minute != null && (
-                    <p className="text-[10px] sm:text-xs text-destructive font-bold animate-pulse mt-0.5">{liveMatch.minute}'</p>
-                  )}
-                </div>
-                <div className="text-center flex-1">
-                  <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 text-muted-foreground" />
-                  <p className="font-bold text-xs sm:text-sm truncate">{liveMatch.awayTeam}</p>
-                </div>
-              </div>
-
-              {/* Go to match button */}
-              <Button
-                className="w-full gap-2 font-bold"
-                variant="destructive"
-                onClick={() => navigate('/match')}
-              >
-                <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
-              </Button>
-            </div>
-          ) : nextMatch ? (
-            // === PRÓXIMO JOGO AGENDADO ===
-            <div className="space-y-3">
-              {/* Competition & Stadium info */}
-              <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/30">
-                <Badge variant="outline" className="text-[9px] sm:text-[10px]">⚽ Amistoso</Badge>
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
-                  <MapPin className="h-2.5 w-2.5" /> {nextMatch.stadium || club.stadiumName}
-                </Badge>
-                {nextMatch.stadiumCapacity && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px]">
-                    🪑 {nextMatch.stadiumCapacity.toLocaleString()} lugares
-                  </Badge>
-                )}
-                <Badge variant="outline" className="text-[9px] sm:text-[10px]">
-                  🏠 {nextMatch.isHome !== false ? 'Casa' : 'Fora'}
-                </Badge>
-              </div>
-
-              {/* Date & Time */}
-              <div className="flex items-center gap-3 text-[10px] sm:text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {nextMatch.date}</span>
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Agendada</span>
-              </div>
-
-              {/* Teams */}
-              <div className="flex items-center justify-between py-1 sm:py-2">
-                <div className="text-center flex-1">
-                  {club.shieldPattern ? (
-                    <ShieldCrest primaryColor={club.primaryColor || '#2563EB'} secondaryColor={club.secondaryColor || '#FFF'} pattern={club.shieldPattern} size={40} className="mx-auto mb-1" />
-                  ) : club.logoUrl ? (
-                    <img src={club.logoUrl} alt={club.name} className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded object-cover" />
-                  ) : (
-                    <img src={flmLogo} alt="FLM" className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded" />
-                  )}
-                  <p className="font-bold text-xs sm:text-sm truncate">{club.name}</p>
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground">Mandante</p>
-                </div>
-                <div className="text-center px-2 sm:px-4">
-                  <p className="text-base sm:text-lg font-bold text-muted-foreground">VS</p>
-                  <Badge className="text-[8px] mt-1">Agendada</Badge>
-                </div>
-                <div className="text-center flex-1">
-                  <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 text-muted-foreground" />
-                  <p className="font-bold text-xs sm:text-sm truncate">{nextMatch.opponent}</p>
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground">Visitante</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // === SEM PARTIDA ===
-            <div className="text-center py-4">
-              <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-bold text-sm">Nenhum jogo agendado</p>
-              <p className="text-xs text-muted-foreground">Gere um amistoso na aba Amistosos!</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {/* Last 5 Results */}
