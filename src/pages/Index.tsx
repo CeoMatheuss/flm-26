@@ -411,10 +411,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               matches={game.club.matches} 
               clubName={game.club.name} 
               stadiumName={game.club.stadiumName} 
-              friendliesPlayedToday={game.friendliesPlayedToday}
               friendliesPlayedSeason={game.friendliesPlayedSeason}
-              maxFriendliesPerDay={game.maxFriendliesPerDay}
               maxFriendliesPerSeason={game.maxFriendliesPerSeason}
+              alreadyPlayedToday={game.alreadyPlayedToday}
+              lastFriendlyDate={game.lastFriendlyDate}
               onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
             />
