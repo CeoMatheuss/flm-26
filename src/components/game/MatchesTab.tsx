@@ -7,10 +7,11 @@ import { Play, Check, Home } from 'lucide-react';
 interface Props {
   matches: Match[];
   clubName: string;
+  stadiumName: string;
   onSimulate: (id: string) => void;
 }
 
-export function MatchesTab({ matches, clubName, onSimulate }: Props) {
+export function MatchesTab({ matches, clubName, stadiumName, onSimulate }: Props) {
   const nextIdx = matches.findIndex(m => !m.played);
 
   return (
@@ -31,7 +32,7 @@ export function MatchesTab({ matches, clubName, onSimulate }: Props) {
                     ⚽ Amistoso
                   </Badge>
                   <Badge variant="outline" className="text-[9px] gap-1">
-                    <Home className="h-2.5 w-2.5" /> Estádio
+                    <Home className="h-2.5 w-2.5" /> {stadiumName}
                   </Badge>
                 </div>
               )}

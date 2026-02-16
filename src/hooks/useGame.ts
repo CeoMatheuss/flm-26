@@ -151,7 +151,9 @@ export function useGame(initialState?: GameState) {
       const sponsorIncome = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
       const sponsorWeekly = Math.floor(sponsorIncome / 4);
 
-      // Dynamic fan system
+      // Dynamic fan system — friendlies generate reduced fans
+      const isFriendly = true; // all single-player matches are friendlies for now
+      const friendlyMultiplier = isFriendly ? 0.3 : 1.0; // 30% of normal fan growth
       const goalDiff = homeGoals - awayGoals;
       const isRout = goalDiff >= 3;
       const isBigLoss = goalDiff <= -3;
@@ -165,11 +167,16 @@ export function useGame(initialState?: GameState) {
       // Ticket price impact: expensive tickets drive fans away
       const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
                             prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
+      // Opponent strength bonus (harder opponents = more fan interest)
+      const opponentLevelBonus = Math.floor(((opponentTeam?.strength || 65) - 50) * 0.5);
       let fanChange = 0;
       if (isWin) fanChange = 200 + (isRout ? 500 : 0);
-      else if (isDraw) fanChange = 0;
-      else fanChange = -100 + (isBigLoss ? -200 : 0);
-      fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty;
+      else if (isDraw) fanChange = 50;
+      else fanChange = 20 + (isBigLoss ? -50 : 0); // even losses give tiny fan gain in friendlies
+      fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty + opponentLevelBonus;
+      // Apply friendly multiplier and cap per match
+      fanChange = Math.round(fanChange * friendlyMultiplier);
+      fanChange = Math.max(-200, Math.min(fanChange, 300)); // cap friendly fan change
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
       addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
