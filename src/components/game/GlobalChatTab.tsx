@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Trash2, SmilePlus } from 'lucide-react';
+import { MessageCircle, Send, Trash2, SmilePlus, ShieldAlert, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { containsProfanity, sanitizeMessage } from '@/utils/profanityFilter';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -39,16 +39,25 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isMod, setIsMod] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const load = async () => {
-      const [msgRes, reactRes] = await Promise.all([
+      const [msgRes, reactRes, adminRes, modRes, banRes] = await Promise.all([
         supabase.from('global_chat_messages').select('*').order('created_at', { ascending: true }).limit(100),
         supabase.from('global_chat_reactions' as any).select('*'),
+        supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'moderator').maybeSingle(),
+        supabase.from('chat_bans' as any).select('id').eq('user_id', userId).maybeSingle(),
       ]);
       if (msgRes.data) setMessages(msgRes.data as GlobalMsg[]);
       if (reactRes.data) setReactions(reactRes.data as unknown as Reaction[]);
+      setIsAdmin(!!adminRes.data);
+      setIsMod(!!modRes.data);
+      setIsBanned(!!banRes.data);
     };
     load();
 
@@ -69,13 +78,17 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
       .subscribe();
 
     return () => { supabase.removeChannel(msgChannel); };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = async () => {
+    if (isBanned) {
+      toast.error('🚫 Você está banido do chat global!');
+      return;
+    }
     const msg = sanitizeMessage(input);
     if (!msg) return;
     if (containsProfanity(msg)) {
@@ -99,6 +112,31 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
     if (error) toast.error('Erro ao apagar mensagem');
   };
 
+  const banUser = async (targetUserId: string, targetName: string) => {
+    if (!isAdmin) return;
+    const { error } = await supabase.from('chat_bans' as any).insert([{
+      user_id: targetUserId,
+      banned_by: userId,
+      reason: `Banido por admin`,
+    }]);
+    if (error) {
+      if (error.code === '23505') {
+        toast.info('Usuário já está banido.');
+      } else {
+        toast.error('Erro ao banir: ' + error.message);
+      }
+    } else {
+      toast.success(`🚫 ${targetName} foi banido do chat global!`);
+    }
+  };
+
+  const unbanUser = async (targetUserId: string) => {
+    if (!isAdmin) return;
+    const { error } = await supabase.from('chat_bans' as any).delete().eq('user_id', targetUserId);
+    if (error) toast.error('Erro ao desbanir');
+    else toast.success('✅ Usuário desbanido!');
+  };
+
   const toggleReaction = async (messageId: string, emoji: string) => {
     const existing = reactions.find(r => r.message_id === messageId && r.user_id === userId && r.emoji === emoji);
     if (existing) {
@@ -119,16 +157,30 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
     return grouped;
   };
 
+  const canDelete = isAdmin || isMod;
+
   return (
     <div className="space-y-3">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary" /> Chat Global
+            {(isAdmin || isMod) && (
+              <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-4 border-red-500/30 text-red-400">
+                <ShieldAlert className="h-2.5 w-2.5 mr-0.5" />
+                {isAdmin ? 'ADMIN' : 'MOD'}
+              </Badge>
+            )}
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">Converse com todos os managers do FLM 26. Xingamentos são proibidos.</p>
         </CardHeader>
         <CardContent className="p-0">
+          {isBanned && (
+            <div className="mx-3 mt-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2">
+              <Ban className="h-4 w-4 text-destructive" />
+              <p className="text-xs text-destructive font-medium">Você está banido do chat global.</p>
+            </div>
+          )}
           <ScrollArea className="h-[400px] px-3">
             <div className="space-y-2 py-2">
               {messages.length === 0 && (
@@ -168,9 +220,18 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
                               </div>
                             </PopoverContent>
                           </Popover>
-                          {isMe && (
-                            <button className="p-0.5 rounded hover:bg-destructive/20" onClick={() => deleteMessage(m.id)}>
+                          {(isMe || canDelete) && (
+                            <button className="p-0.5 rounded hover:bg-destructive/20" onClick={() => deleteMessage(m.id)} title="Apagar mensagem">
                               <Trash2 className="h-3 w-3 text-destructive" />
+                            </button>
+                          )}
+                          {isAdmin && !isMe && (
+                            <button
+                              className="p-0.5 rounded hover:bg-destructive/20"
+                              onClick={() => banUser(m.user_id, m.sender_name)}
+                              title="Banir usuário do chat"
+                            >
+                              <Ban className="h-3 w-3 text-red-500" />
                             </button>
                           )}
                         </div>
@@ -202,12 +263,13 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
             <Input
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="Digite sua mensagem..."
+              placeholder={isBanned ? "Você está banido..." : "Digite sua mensagem..."}
               className="text-xs h-8"
               maxLength={500}
+              disabled={isBanned}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
             />
-            <Button size="sm" className="h-8 px-3" onClick={sendMessage} disabled={sending || !input.trim()}>
+            <Button size="sm" className="h-8 px-3" onClick={sendMessage} disabled={sending || !input.trim() || isBanned}>
               <Send className="h-3 w-3" />
             </Button>
           </div>
