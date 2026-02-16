@@ -1019,6 +1019,9 @@ export function useGame(initialState?: GameState, userId?: string) {
     const isHome = Math.random() > 0.5;
     const opponentStadium = `Estádio ${opp.name}`;
     
+    const opponentCapacity = Math.floor(5000 + (opp.strength - 50) * 200); // estimated
+    const myCapacity = getStadiumCapacity(infrastructure?.stadium?.level ?? 1);
+    
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
       opponent: opp.name,
@@ -1027,6 +1030,7 @@ export function useGame(initialState?: GameState, userId?: string) {
       played: false,
       isHome,
       stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
+      stadiumCapacity: isHome ? myCapacity : opponentCapacity,
     };
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
@@ -1073,6 +1077,9 @@ export function useGame(initialState?: GameState, userId?: string) {
     const isHome = Math.random() > 0.5;
     const opponentStadium = `Estádio ${opp.name}`;
 
+    const opponentCapacity2 = Math.floor(5000 + ((opp?.strength || 65) - 50) * 200);
+    const myCapacity2 = getStadiumCapacity(infrastructure?.stadium?.level ?? 1);
+    
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
       opponent: opp.name,
@@ -1081,6 +1088,7 @@ export function useGame(initialState?: GameState, userId?: string) {
       played: false,
       isHome,
       stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
+      stadiumCapacity: isHome ? myCapacity2 : opponentCapacity2,
     };
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
     toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);

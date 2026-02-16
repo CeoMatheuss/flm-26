@@ -113,6 +113,7 @@ export interface Match {
   played: boolean;
   isHome?: boolean;
   stadium?: string;
+  stadiumCapacity?: number;
 }
 
 export interface TeamStats {
