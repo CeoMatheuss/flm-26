@@ -67,7 +67,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [allUsers, setAllUsers] = useState<Array<{ user_id: string; display_name: string | null; created_at: string }>>([]);
   const [userSearch, setUserSearch] = useState('');
   const [giftUserId, setGiftUserId] = useState('');
-  const [giftType, setGiftType] = useState<'premium' | 'budget'>('premium');
+  const [giftType, setGiftType] = useState<'premium' | 'moderator' | 'unban'>('premium');
 
   useEffect(() => {
     const check = async () => {
@@ -210,14 +210,15 @@ export function AdminTab({ userId, isFounder }: Props) {
     setLoading(false);
   };
 
-  const giftPremium = async () => {
+  const giftUser = async () => {
     if (!giftUserId.trim()) return toast.error('Informe o ID do usuário');
+    if (!isFounder) return toast.error('Somente o Fundador pode dar presentes!');
     setLoading(true);
     if (giftType === 'premium') {
       const { error } = await supabase.from('premium_users').insert([{
         user_id: giftUserId.trim(),
         status: 'active',
-        pix_transaction_id: 'GIFT_BY_ADMIN',
+        pix_transaction_id: 'GIFT_BY_FOUNDER',
       }]);
       if (error) {
         if (error.message.includes('duplicate') || error.message.includes('unique')) {
@@ -229,6 +230,32 @@ export function AdminTab({ userId, isFounder }: Props) {
         toast.success('🎁 Premium presenteado com sucesso!');
         setGiftUserId('');
         loadPremiumUsers();
+      }
+    } else if (giftType === 'moderator') {
+      const { error } = await supabase.from('user_roles').insert([{
+        user_id: giftUserId.trim(),
+        role: 'moderator' as any,
+      }]);
+      if (error) {
+        if (error.message.includes('duplicate') || error.message.includes('unique')) {
+          toast.error('Usuário já é moderador!');
+        } else {
+          toast.error('Erro: ' + error.message);
+        }
+      } else {
+        toast.success('🎁 Moderador concedido!');
+        setGiftUserId('');
+        loadAdmins();
+      }
+    } else if (giftType === 'unban') {
+      const { data: banData } = await supabase.from('chat_bans').select('id').eq('user_id', giftUserId.trim());
+      if (banData && banData.length > 0) {
+        await supabase.from('chat_bans').delete().eq('user_id', giftUserId.trim());
+        toast.success('🎁 Usuário desbanido!');
+        setGiftUserId('');
+        loadBans();
+      } else {
+        toast.error('Usuário não está banido.');
       }
     }
     setLoading(false);
@@ -446,25 +473,48 @@ export function AdminTab({ userId, isFounder }: Props) {
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-3 mt-3">
-          <Card className="border-yellow-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Gift className="h-4 w-4 text-yellow-400" />
-                Presentear por ID
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="Cole o ID do usuário aqui"
-                value={giftUserId}
-                onChange={e => setGiftUserId(e.target.value)}
-                className="text-xs h-8 font-mono"
-              />
-              <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftPremium} disabled={loading}>
-                <Gift className="h-3 w-3" /> Dar Premium
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Gift section - Founder Only */}
+          {isFounder && (
+            <Card className="border-yellow-500/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-yellow-400" />
+                  Presentear por ID (Fundador)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Input
+                  placeholder="Cole o ID do usuário aqui"
+                  value={giftUserId}
+                  onChange={e => setGiftUserId(e.target.value)}
+                  className="text-xs h-8 font-mono"
+                />
+                <div className="grid grid-cols-3 gap-1">
+                  <Button size="sm" variant={giftType === 'premium' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('premium')}>
+                    👑 Premium
+                  </Button>
+                  <Button size="sm" variant={giftType === 'moderator' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('moderator')}>
+                    🔧 Moderador
+                  </Button>
+                  <Button size="sm" variant={giftType === 'unban' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('unban')}>
+                    ✅ Desbanir
+                  </Button>
+                </div>
+                <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftUser} disabled={loading}>
+                  <Gift className="h-3 w-3" /> {giftType === 'premium' ? 'Dar Premium' : giftType === 'moderator' ? 'Dar Moderador' : 'Desbanir Usuário'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isFounder && (
+            <Card className="border-muted/30">
+              <CardContent className="p-4 text-center">
+                <Gift className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                <p className="text-xs text-muted-foreground">Somente o Fundador pode dar presentes.</p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-2">
@@ -495,9 +545,11 @@ export function AdminTab({ userId, isFounder }: Props) {
                           <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => copyToClipboard(u.user_id)} title="Copiar ID">
                             <Copy className="h-3 w-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-6 px-2 text-[8px] border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10" onClick={() => setGiftUserId(u.user_id)}>
-                            <Gift className="h-3 w-3" />
-                          </Button>
+                          {isFounder && (
+                            <Button size="sm" variant="outline" className="h-6 px-2 text-[8px] border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10" onClick={() => setGiftUserId(u.user_id)}>
+                              <Gift className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
