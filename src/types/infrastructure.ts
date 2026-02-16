@@ -25,13 +25,33 @@ export const facilityCosts: Record<number, number> = {
   10: 50000000,
 };
 
+// Academy-specific costs (level 1-30)
+export const academyUpgradeCosts: Record<number, number> = {
+  // 1-5 Initial
+  1: 200000, 2: 300000, 3: 400000, 4: 500000,
+  // 6-10 Basic
+  5: 700000, 6: 900000, 7: 1100000, 8: 1300000, 9: 1500000,
+  // 11-15 Intermediate
+  10: 2000000, 11: 2500000, 12: 3000000, 13: 3500000, 14: 4000000,
+  // 16-20 Advanced
+  15: 5000000, 16: 6000000, 17: 7000000, 18: 8000000, 19: 9000000,
+  // 21-25 Elite
+  20: 11000000, 21: 13000000, 22: 15000000, 23: 17000000, 24: 19000000,
+  // 26-30 World Class
+  25: 22000000, 26: 25000000, 27: 28000000, 28: 32000000, 29: 36000000,
+};
+
+export function getAcademyUpgradeCost(currentLevel: number): number {
+  return academyUpgradeCosts[currentLevel] ?? 999999999;
+}
+
 export function getUpgradeCost(currentLevel: number): number {
   return facilityCosts[currentLevel + 1] ?? 999999999;
 }
 
 export const defaultInfrastructure: Infrastructure = {
   trainingCenter: { level: 0, maxLevel: 10 },
-  youthAcademy: { level: 0, maxLevel: 10 },
+  youthAcademy: { level: 0, maxLevel: 30 },
   stadium: { level: 1, maxLevel: 15 },
   physiotherapy: { level: 0, maxLevel: 10 },
 };
@@ -64,22 +84,35 @@ export function getTrainingBoost(level: number): number {
   return 0.5 + level * 0.15;
 }
 
-export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
-  if (investmentPerMonth <= 0) return 0;
-  if (investmentPerMonth >= 2000000) return 8;
-  if (investmentPerMonth >= 1000000) return 6;
-  if (investmentPerMonth >= 500000) return 5;
-  if (investmentPerMonth >= 250000) return 3;
-  if (investmentPerMonth >= 100000) return 2;
-  return 1;
+// Investment tiers: basic, medium, high
+export type YouthInvestmentTier = 'none' | 'basic' | 'medium' | 'high';
+
+export function getYouthInvestmentInfo(tier: YouthInvestmentTier): { cost: number; minPlayers: number; maxPlayers: number; label: string } {
+  switch (tier) {
+    case 'basic': return { cost: 500000, minPlayers: 1, maxPlayers: 2, label: 'Básico (R$ 500k)' };
+    case 'medium': return { cost: 1500000, minPlayers: 2, maxPlayers: 3, label: 'Médio (R$ 1.5M)' };
+    case 'high': return { cost: 3000000, minPlayers: 3, maxPlayers: 5, label: 'Alto (R$ 3M)' };
+    default: return { cost: 0, minPlayers: 0, maxPlayers: 0, label: 'Sem investimento' };
+  }
 }
 
+export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
+  // Map old numeric values to new tiers for backward compatibility
+  if (investmentPerMonth >= 3000000) return Math.floor(Math.random() * 3) + 3; // 3-5
+  if (investmentPerMonth >= 1500000) return Math.floor(Math.random() * 2) + 2; // 2-3
+  if (investmentPerMonth >= 500000) return Math.floor(Math.random() * 2) + 1; // 1-2
+  return 0;
+}
+
+// Academy level 1-30 determines quality
 export function getYouthMinOverall(academyLevel: number): number {
-  return Math.min(45 + academyLevel * 4, 85);
+  // Level 1: 35, Level 15: 56, Level 30: 80
+  return Math.min(35 + Math.floor(academyLevel * 1.5), 80);
 }
 
 export function getYouthMaxOverall(academyLevel: number): number {
-  return Math.min(55 + academyLevel * 4, 95);
+  // Level 1: 45, Level 15: 67, Level 30: 90
+  return Math.min(45 + Math.floor(academyLevel * 1.5), 90);
 }
 
 export interface YouthProspect extends Player {
