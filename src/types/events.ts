@@ -45,8 +45,8 @@ export function generateRandomEvents(
 
   const availablePlayers = players.filter(p => !p.injury);
 
-  // ~25% chance of injury
-  if (roll < 0.25 && availablePlayers.length > 0) {
+  // ~12% chance of injury
+  if (roll < 0.12 && availablePlayers.length > 0) {
     const p = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
     const staminaFactor = (p.stamina ?? 80) < 50 ? 0.3 : 0;
     const severityRoll = Math.random() + staminaFactor;
@@ -89,7 +89,7 @@ export function generateRandomEvents(
   }
 
   // ~15% chance of big club offer
-  if (roll >= 0.25 && roll < 0.4) {
+  if (roll >= 0.12 && roll < 0.27) {
     const topPlayers = players.filter(p => p.overall >= 70 && p.age <= 30);
     if (topPlayers.length > 0) {
       const p = topPlayers[Math.floor(Math.random() * topPlayers.length)];
@@ -108,7 +108,7 @@ export function generateRandomEvents(
   }
 
   // ~10% chance of fan protest when losing streak
-  if (roll >= 0.4 && roll < 0.5 && recentLosses >= 2) {
+  if (roll >= 0.27 && roll < 0.37 && recentLosses >= 2) {
     const intensity = recentLosses >= 4 ? 'violento' : recentLosses >= 3 ? 'grande' : 'moderado';
     events.push({
       id: crypto.randomUUID(),
@@ -122,7 +122,7 @@ export function generateRandomEvents(
   }
 
   // ~10% chance of bonus when winning streak
-  if (roll >= 0.5 && roll < 0.6 && recentWins >= 2) {
+  if (roll >= 0.37 && roll < 0.47 && recentWins >= 2) {
     const bonus = recentWins * 50000 + Math.floor(Math.random() * 100000);
     events.push({
       id: crypto.randomUUID(),
@@ -135,8 +135,8 @@ export function generateRandomEvents(
     });
   }
 
-  // ~8% chance of youth talent discovery
-  if (roll >= 0.6 && roll < 0.68) {
+  // ~11% chance of youth talent discovery
+  if (roll >= 0.47 && roll < 0.58) {
     events.push({
       id: crypto.randomUUID(),
       type: 'discovery',
@@ -149,7 +149,7 @@ export function generateRandomEvents(
   }
 
   // ~7% chance of scandal
-  if (roll >= 0.68 && roll < 0.75) {
+  if (roll >= 0.58 && roll < 0.65) {
     const p = players[Math.floor(Math.random() * players.length)];
     if (p) {
       events.push({
@@ -164,8 +164,8 @@ export function generateRandomEvents(
     }
   }
 
-  // ~8% chance of record event
-  if (roll >= 0.75 && roll < 0.83) {
+  // ~10% chance of record event
+  if (roll >= 0.65 && roll < 0.75) {
     const topScorer = [...players].sort((a, b) => (b.goals ?? 0) - (a.goals ?? 0))[0];
     if (topScorer && (topScorer.goals ?? 0) > 0) {
       const goals = topScorer.goals ?? 0;
@@ -186,8 +186,8 @@ export function generateRandomEvents(
     }
   }
 
-  // ~7% chance of derby/classic match hype
-  if (roll >= 0.83 && roll < 0.9) {
+  // ~10% chance of derby/classic match hype
+  if (roll >= 0.75 && roll < 0.85) {
     const derbyMessages = [
       'A cidade ferve! O clássico da próxima rodada promete casa cheia e emoção.',
       'Rivalidade acirrada: torcidas organizam mosaicos gigantes para o próximo jogo.',
@@ -205,8 +205,8 @@ export function generateRandomEvents(
     });
   }
 
-  // ~10% chance of weather event
-  if (roll >= 0.9) {
+  // ~15% chance of weather event
+  if (roll >= 0.85) {
     const weatherEvents = [
       { title: '🌧️ Chuva Torrencial', desc: 'Forte chuva afeta o gramado e dificulta treinos da semana. Condicionamento físico do elenco prejudicado.', impact: 'morale_all:-2' },
       { title: '☀️ Calor Extremo', desc: 'Onda de calor atinge a cidade. Jogadores treinam em horário alternativo para evitar desidratação.', impact: 'morale_all:-1' },

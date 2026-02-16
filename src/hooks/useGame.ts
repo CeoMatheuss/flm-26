@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Club, Player, Match, ScoutReport, Scout, PlayerAttributes } from '@/types/game';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
@@ -924,11 +924,28 @@ export function useGame(initialState?: GameState) {
     toast.success(`${roomNames[room]} melhorada para nível ${ctRooms[room] + 1}!`);
   }, [ctRooms, club.budget, addFinance]);
 
+  // Use a ref to track daily friendly count to avoid stale closure issues
+  const friendlyGeneratedRef = useRef(false);
+  
+  // Reset ref when date changes
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (lastFriendlyDate !== today) {
+      friendlyGeneratedRef.current = false;
+    } else if (friendliesPlayedToday >= MAX_FRIENDLIES_PER_DAY) {
+      friendlyGeneratedRef.current = true;
+    }
+  }, [lastFriendlyDate, friendliesPlayedToday]);
+
   const generateFriendly = useCallback(() => {
     const today = new Date().toDateString();
-    // Calculate actual today count using local variable to avoid stale state
-    const actualTodayCount = lastFriendlyDate === today ? friendliesPlayedToday : 0;
     
+    // Triple-check: ref guard, state guard, and date guard
+    if (friendlyGeneratedRef.current) {
+      toast.error('Limite diário de amistosos atingido! (1 por dia)');
+      return;
+    }
+    const actualTodayCount = lastFriendlyDate === today ? friendliesPlayedToday : 0;
     if (actualTodayCount >= MAX_FRIENDLIES_PER_DAY) {
       toast.error('Limite diário de amistosos atingido! (1 por dia)');
       return;
@@ -943,10 +960,13 @@ export function useGame(initialState?: GameState) {
       toast.error('Você já tem um amistoso agendado! Jogue-o primeiro.');
       return;
     }
+    // Lock immediately via ref to prevent any race condition
+    friendlyGeneratedRef.current = true;
+    
     // Pick a random bot opponent from league teams
     const opponents = leagueTeams.filter(t => t.name !== club.name);
     const opp = opponents[Math.floor(Math.random() * opponents.length)];
-    if (!opp) return;
+    if (!opp) { friendlyGeneratedRef.current = false; return; }
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
       opponent: opp.name,
@@ -954,7 +974,6 @@ export function useGame(initialState?: GameState) {
       date: `Amistoso ${friendliesPlayedSeason + 1}`,
       played: false,
     };
-    // Increment counters immediately to prevent double-generation
     setFriendliesPlayedToday(actualTodayCount + 1);
     setLastFriendlyDate(today);
     setFriendliesPlayedSeason(n => n + 1);
