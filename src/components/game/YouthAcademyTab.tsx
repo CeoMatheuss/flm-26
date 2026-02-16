@@ -16,6 +16,7 @@ interface Props {
 }
 
 const investmentTiers = [
+  { amount: 0, label: 'R$ 0', players: 0 },
   { amount: 100000, label: 'R$ 100k', players: 2 },
   { amount: 250000, label: 'R$ 250k', players: 3 },
   { amount: 500000, label: 'R$ 500k', players: 5 },

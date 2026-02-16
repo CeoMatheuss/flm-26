@@ -30,6 +30,7 @@ import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { RankingTab } from '@/components/game/RankingTab';
+import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -156,6 +157,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 
 function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
   const [isAdminRole, setIsAdminRole] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const game = useGame(initialState);
   const mp = useMultiplayer(userId, displayName);
 
@@ -203,6 +205,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} />
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -269,6 +272,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Tutorial</DropdownMenuItem>
                 {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>

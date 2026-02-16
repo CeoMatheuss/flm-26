@@ -1,4 +1,4 @@
-import { Player, PlayerAttributes } from '@/types/game';
+import { Player, PlayerAttributes, personalityLabels } from '@/types/game';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ const attrLabels: Record<string, { label: string; icon: string }> = {
   workRate: { label: 'Intensidade', icon: '🔥' },
   composure: { label: 'Compostura', icon: '🧠' },
   aggression: { label: 'Agressividade', icon: '⚔️' },
+  goalkeeping: { label: 'Defesa de Goleiro', icon: '🧤' },
 };
 
 function getAttrColor(val: number): string {
@@ -176,6 +177,17 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
           <div className="bg-muted/20 border border-muted/30 rounded-lg p-3 text-center">
             <EyeOff className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-[10px] text-muted-foreground">Contrate um olheiro para revelar os atributos deste jogador.</p>
+          </div>
+        )}
+
+        {/* Personality */}
+        {player.personality && personalityLabels[player.personality] && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50">
+            <span className="text-lg">{personalityLabels[player.personality].emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">{personalityLabels[player.personality].label}</p>
+              <p className="text-[10px] text-muted-foreground">{personalityLabels[player.personality].desc}</p>
+            </div>
           </div>
         )}
 
