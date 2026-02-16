@@ -218,9 +218,10 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
   const age = Math.floor(Math.random() * 3 + 16);
   const attributes = generateAttributes(pos, targetOverall);
   const overall = calculateOverall(attributes, pos);
-  // Potential capped by academy level: lvl1 = +3~9, lvl5 = +3~17, lvl10 = +3~27
-  const maxPotentialBonus = Math.min(27, 5 + academyLevel * 2);
-  const potential = Math.min(99, overall + Math.floor(Math.random() * maxPotentialBonus + 3));
+  // Potential by academy level: lvl1=+3~5, lvl15=+3~15, lvl26-30=chance of generational talent
+  const maxPotentialBonus = Math.min(30, 3 + Math.floor(academyLevel * 0.9));
+  const isGenerational = academyLevel >= 26 && Math.random() < (academyLevel - 25) * 0.02; // up to 10% at lvl 30
+  const potential = Math.min(99, overall + Math.floor(Math.random() * maxPotentialBonus + 3) + (isGenerational ? 10 : 0));
 
   return {
     id: generateId(),

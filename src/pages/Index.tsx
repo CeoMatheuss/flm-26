@@ -380,6 +380,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onPromote={game.promoteYouth}
               onSetInvestment={game.setYouthInvestment}
               onGenerateYouth={() => {}}
+              onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')}
             />
           </TabsContent>
           <TabsContent value="fans">
