@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { LeaguesOverview } from './LeaguesOverview';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,8 +55,15 @@ export function MultiplayerTab(props: Props) {
 }
 
 function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
+  const [showAllLeagues, setShowAllLeagues] = useState(false);
   const mainLeagues = leagues.filter(l => (l as any).league_type !== 'beginner');
   const beginnerLeagues = leagues.filter(l => (l as any).league_type === 'beginner');
+  const currentCountry = leagues.length > 0 ? (leagues[0] as any).country || 'Brasil' : 'Brasil';
+  const clubName = leagues.length > 0 ? '' : '';
+
+  if (showAllLeagues) {
+    return <LeaguesOverview currentCountry={currentCountry} clubName={clubName} onBack={() => setShowAllLeagues(false)} />;
+  }
 
   return (
     <div className="space-y-4">
@@ -116,6 +124,10 @@ function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
               </CardContent>
             </Card>
           )}
+
+          <Button variant="outline" className="w-full gap-2" onClick={() => setShowAllLeagues(true)}>
+            <Globe className="h-4 w-4" /> Ver Mais Ligas
+          </Button>
         </>
       )}
     </div>
