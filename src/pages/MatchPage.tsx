@@ -268,6 +268,163 @@ export default function MatchPage() {
   );
 }
 
+// ---- 2D Pitch View ----
+function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, visibleEvents, isFinished }: {
+  currentMinute: number;
+  homeTeam: string;
+  awayTeam: string;
+  homeGoals: number;
+  awayGoals: number;
+  visibleEvents: SimEvent[];
+  isFinished: boolean;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+
+  const seed = useCallback((n: number) => {
+    let x = Math.sin(n * 9301 + 49297) * 233280;
+    return x - Math.floor(x);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const homeBase = [
+      { x: 0.06, y: 0.5 },
+      { x: 0.18, y: 0.15 }, { x: 0.18, y: 0.38 }, { x: 0.18, y: 0.62 }, { x: 0.18, y: 0.85 },
+      { x: 0.38, y: 0.15 }, { x: 0.35, y: 0.38 }, { x: 0.35, y: 0.62 }, { x: 0.38, y: 0.85 },
+      { x: 0.48, y: 0.35 }, { x: 0.48, y: 0.65 },
+    ];
+    const awayBase = homeBase.map(p => ({ x: 1 - p.x, y: p.y }));
+
+    const draw = () => {
+      const t = Date.now() * 0.001;
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.fillStyle = '#1a6b3c';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grass stripes
+      ctx.fillStyle = 'rgba(255,255,255,0.02)';
+      for (let i = 0; i < 10; i++) {
+        if (i % 2 === 0) ctx.fillRect(i * (W / 10), 0, W / 10, H);
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(4, 4, W - 8, H - 8);
+      ctx.beginPath(); ctx.moveTo(W / 2, 4); ctx.lineTo(W / 2, H - 4); ctx.stroke();
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, 40, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeRect(4, H * 0.25, W * 0.15, H * 0.5);
+      ctx.strokeRect(W - 4 - W * 0.15, H * 0.25, W * 0.15, H * 0.5);
+      ctx.strokeRect(4, H * 0.38, W * 0.06, H * 0.24);
+      ctx.strokeRect(W - 4 - W * 0.06, H * 0.38, W * 0.06, H * 0.24);
+
+      // Center dot
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill();
+
+      const lastEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
+      let ballX = 0.5, ballY = 0.5;
+      let attackShift = 0;
+
+      if (lastEvent) {
+        if (lastEvent.team === 'home') {
+          attackShift = 0.1;
+          ballX = 0.55 + seed(currentMinute * 3) * 0.3;
+        } else if (lastEvent.team === 'away') {
+          attackShift = -0.1;
+          ballX = 0.15 + seed(currentMinute * 3) * 0.3;
+        }
+        if (lastEvent.isGoal && lastEvent.team === 'home') { ballX = 0.92; ballY = 0.5; }
+        if (lastEvent.isGoal && lastEvent.team === 'away') { ballX = 0.08; ballY = 0.5; }
+        if (lastEvent.type === 'halftime' || lastEvent.type === 'final_whistle') { ballX = 0.5; ballY = 0.5; attackShift = 0; }
+        ballY = 0.3 + seed(currentMinute * 7 + 1) * 0.4;
+      }
+
+      const drawPlayers = (bases: { x: number; y: number }[], color: string, shift: number) => {
+        bases.forEach((p, i) => {
+          const jx = Math.sin(t * 1.3 + i * 2.1) * 0.015 + seed(currentMinute + i * 13) * 0.03 - 0.015;
+          const jy = Math.cos(t * 1.1 + i * 1.7) * 0.015 + seed(currentMinute + i * 17) * 0.03 - 0.015;
+          const px = (p.x + shift + jx) * W;
+          const py = (p.y + jy) * H;
+
+          // Shadow
+          ctx.beginPath();
+          ctx.ellipse(px + 1, py + 3, 5, 2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+          ctx.fill();
+
+          // Player dot
+          ctx.beginPath();
+          ctx.arc(px, py, 6, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        });
+      };
+
+      drawPlayers(homeBase, '#3b82f6', attackShift);
+      drawPlayers(awayBase, '#ef4444', -attackShift);
+
+      // Ball shadow
+      const bx = ballX * W;
+      const by = ballY * H;
+      ctx.beginPath();
+      ctx.ellipse(bx + 1, by + 2, 4, 1.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fill();
+
+      // Ball
+      ctx.beginPath();
+      ctx.arc(bx, by, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      if (!isFinished) {
+        animRef.current = requestAnimationFrame(draw);
+      }
+    };
+
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [currentMinute, visibleEvents, isFinished, seed]);
+
+  return (
+    <Card className="p-1.5 overflow-hidden">
+      <div className="relative w-full aspect-[5/3]">
+        <canvas
+          ref={canvasRef}
+          width={500}
+          height={300}
+          className="w-full h-full rounded-lg"
+        />
+        <div className="absolute top-1 left-2 right-2 flex justify-between items-center">
+          <span className="text-[8px] font-bold text-blue-300 drop-shadow-md">{homeTeam}</span>
+          <span className="text-[10px] font-mono font-black text-white drop-shadow-md">{homeGoals} x {awayGoals}</span>
+          <span className="text-[8px] font-bold text-red-300 drop-shadow-md">{awayTeam}</span>
+        </div>
+        {isFinished && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+            <span className="text-white font-bold text-lg tracking-widest">FIM DE JOGO</span>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 // ---- Match Viewer (pure viewer, no simulation logic) ----
 function MatchViewer({ matchData, matchDbId, onExit }: {
   matchData: {
@@ -464,6 +621,17 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
           </Badge>
         </div>
       )}
+
+      {/* 2D Pitch View */}
+      <Pitch2DView
+        currentMinute={currentMinute}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
+        homeGoals={currentHomeGoals}
+        awayGoals={currentAwayGoals}
+        visibleEvents={visibleEvents}
+        isFinished={isFinished}
+      />
 
       {/* Bottom tabs */}
       <Tabs defaultValue="events" className="space-y-1">
