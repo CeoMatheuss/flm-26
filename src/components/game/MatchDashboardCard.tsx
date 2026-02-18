@@ -80,13 +80,10 @@ export function MatchDashboardCard({ club }: Props) {
         setCurrentHomeGoals(hg);
         setCurrentAwayGoals(ag);
 
-        // Check if match should be finished
+        // If match time has elapsed, treat as finished locally
+        // NOTE: Actual finalization is handled exclusively by MatchResultLocker
+        // to prevent duplicate writes. Dashboard only reads status.
         if (now >= startTime + data.duration_seconds * 1000) {
-          // Auto-finish
-          await supabase
-            .from('live_matches')
-            .update({ status: 'finished', current_minute: maxMin })
-            .eq('id', data.id);
           setLiveMatch(null);
         }
       } else {
