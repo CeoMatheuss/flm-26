@@ -608,6 +608,28 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Input validation
+    if (typeof homeTeam !== 'string' || homeTeam.length > 100 ||
+        typeof awayTeam !== 'string' || awayTeam.length > 100 ||
+        typeof matchId !== 'string' || matchId.length > 200) {
+      return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (stadiumName && (typeof stadiumName !== 'string' || stadiumName.length > 100)) {
+      return new Response(JSON.stringify({ error: 'Invalid stadium name' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (competition && (typeof competition !== 'string' || competition.length > 100)) {
+      return new Response(JSON.stringify({ error: 'Invalid competition' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (homeStrength !== undefined && (typeof homeStrength !== 'number' || homeStrength < 0 || homeStrength > 100)) {
+      return new Response(JSON.stringify({ error: 'Invalid strength value' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (awayStrength !== undefined && (typeof awayStrength !== 'number' || awayStrength < 0 || awayStrength > 100)) {
+      return new Response(JSON.stringify({ error: 'Invalid strength value' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (stadiumCapacity !== undefined && (typeof stadiumCapacity !== 'number' || stadiumCapacity < 0 || stadiumCapacity > 200000)) {
+      return new Response(JSON.stringify({ error: 'Invalid capacity' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     // Check for existing active match
     const adminClient = createClient(supabaseUrl, serviceKey);
     const { data: existing } = await adminClient
@@ -664,7 +686,8 @@ Deno.serve(async (req) => {
       .single();
 
     if (insertError) {
-      return new Response(JSON.stringify({ error: 'Failed to create match', details: insertError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.error('Failed to create match:', insertError.message);
+      return new Response(JSON.stringify({ error: 'Failed to create match' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({
