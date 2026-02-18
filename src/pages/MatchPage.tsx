@@ -1,40 +1,15 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Player } from '@/types/game';
-import { TacticsConfig, Formation, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width } from '@/types/tactics';
+import { TacticsConfig } from '@/types/tactics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
 
 // ---- Types ----
-interface SimEvent {
-  minute: number;
-  type: string;
-  description: string;
-  team: 'home' | 'away' | 'neutral';
-  playerName?: string;
-  assistName?: string;
-  goalType?: string;
-  isGoal?: boolean;
-}
-
-interface MatchStats {
-  possession: [number, number];
-  shots: [number, number];
-  shotsOnTarget: [number, number];
-  corners: [number, number];
-  fouls: [number, number];
-  yellowCards: [number, number];
-  redCards: [number, number];
-  passes: [number, number];
-  tackles: [number, number];
-  saves: [number, number];
-  offsides: [number, number];
-}
-
 interface MatchPageState {
   homeTeam: string;
   awayTeam: string;
@@ -46,13 +21,8 @@ interface MatchPageState {
   stadiumName: string;
   stadiumCapacity: number;
   isHome: boolean;
-  // If reconnecting to existing match:
   liveMatchDbId?: string;
 }
-
-// Constants: 12 min real time = 90 game minutes
-const MATCH_DURATION_S = 720;
-const GAME_MINUTES = 95; // ~95 including added time
 
 export default function MatchPage() {
   const navigate = useNavigate();
@@ -60,110 +30,26 @@ export default function MatchPage() {
   const state = location.state as MatchPageState | null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [matchDbId, setMatchDbId] = useState<string | null>(state?.liveMatchDbId || null);
-  const [matchData, setMatchData] = useState<{
-    events: SimEvent[];
-    homeGoals: number;
-    awayGoals: number;
-    stats: MatchStats;
-    playerRatings: Record<string, number>;
-    startedAt: string;
-    durationSeconds: number;
-    homeTeam: string;
-    awayTeam: string;
-    stadiumName: string;
-    stadiumCapacity: number;
-    isHome: boolean;
-    competition: string;
-    status: string;
-  } | null>(null);
 
-  // Start match on server or reconnect
+  const { state: matchState, startNewMatch, loadFromDb, findActiveMatch, destroy } = useMatchManager();
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // If reconnecting to an existing match
-        if (matchDbId) {
-          const { data: existing, error: fetchErr } = await supabase
-            .from('live_matches')
-            .select('*')
-            .eq('id', matchDbId)
-            .maybeSingle();
-          
-          if (fetchErr || !existing) {
-            setError('Partida não encontrada.');
-            setLoading(false);
-            return;
-          }
-
-          setMatchData({
-            events: (existing.events as any) || [],
-            homeGoals: existing.home_goals,
-            awayGoals: existing.away_goals,
-            stats: (existing.stats as any) || { possession: [50,50], shots: [0,0], shotsOnTarget: [0,0], corners: [0,0], fouls: [0,0], yellowCards: [0,0], redCards: [0,0], passes: [0,0], tackles: [0,0], saves: [0,0], offsides: [0,0] },
-            playerRatings: (existing.player_ratings as any) || {},
-            startedAt: existing.started_at,
-            durationSeconds: existing.duration_seconds,
-            homeTeam: existing.home_team,
-            awayTeam: existing.away_team,
-            stadiumName: existing.stadium_name,
-            stadiumCapacity: existing.stadium_capacity,
-            isHome: existing.is_home,
-            competition: existing.competition || 'Amistoso',
-            status: existing.status,
-          });
+        // Reconnect to existing match by ID
+        if (state?.liveMatchDbId) {
+          const ok = await loadFromDb(state.liveMatchDbId);
+          if (!ok) { setError('Partida não encontrada.'); }
           setLoading(false);
           return;
         }
 
-        if (!state) {
-          // Check if there's an active match in DB
-          const { data: activeMatch } = await supabase
-            .from('live_matches')
-            .select('*')
-            .eq('status', 'live')
-            .maybeSingle();
-
-          if (activeMatch) {
-            setMatchDbId(activeMatch.id);
-            setMatchData({
-              events: (activeMatch.events as any) || [],
-              homeGoals: activeMatch.home_goals,
-              awayGoals: activeMatch.away_goals,
-              stats: (activeMatch.stats as any) || { possession: [50,50], shots: [0,0], shotsOnTarget: [0,0], corners: [0,0], fouls: [0,0], yellowCards: [0,0], redCards: [0,0], passes: [0,0], tackles: [0,0], saves: [0,0], offsides: [0,0] },
-              playerRatings: (activeMatch.player_ratings as any) || {},
-              startedAt: activeMatch.started_at,
-              durationSeconds: activeMatch.duration_seconds,
-              homeTeam: activeMatch.home_team,
-              awayTeam: activeMatch.away_team,
-              stadiumName: activeMatch.stadium_name,
-              stadiumCapacity: activeMatch.stadium_capacity,
-              isHome: activeMatch.is_home,
-              competition: activeMatch.competition || 'Amistoso',
-              status: activeMatch.status,
-            });
-            setLoading(false);
-            return;
-          }
-
-          navigate('/', { replace: true });
-          return;
-        }
-
-        // Start new match on server
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData?.session?.access_token;
-        if (!token) {
-          setError('Você precisa estar logado.');
-          setLoading(false);
-          return;
-        }
-
-        const resp = await supabase.functions.invoke('start-match', {
-          body: {
+        // Start new match
+        if (state) {
+          const result = await startNewMatch({
             homeTeam: state.homeTeam,
             awayTeam: state.awayTeam,
             homePlayers: state.homePlayers,
@@ -175,63 +61,31 @@ export default function MatchPage() {
             stadiumCapacity: state.stadiumCapacity,
             isHome: state.isHome,
             competition: 'Amistoso',
-          },
-        });
-
-        if (resp.error) {
-          setError('Erro ao iniciar partida no servidor.');
-          setLoading(false);
-          return;
-        }
-
-        const result = resp.data;
-        if (!result.success) {
-          // Match already exists
-          if (result.matchDbId) {
-            setMatchDbId(result.matchDbId);
-            // Re-trigger to load existing
-            return;
-          }
-          setError(result.error || 'Erro ao iniciar partida.');
-          setLoading(false);
-          return;
-        }
-
-        setMatchDbId(result.matchDbId);
-        // Fetch full match data
-        const { data: newMatch } = await supabase
-          .from('live_matches')
-          .select('*')
-          .eq('id', result.matchDbId)
-          .single();
-
-        if (newMatch) {
-          setMatchData({
-            events: (newMatch.events as any) || [],
-            homeGoals: newMatch.home_goals,
-            awayGoals: newMatch.away_goals,
-            stats: (newMatch.stats as any) || { possession: [50,50], shots: [0,0], shotsOnTarget: [0,0], corners: [0,0], fouls: [0,0], yellowCards: [0,0], redCards: [0,0], passes: [0,0], tackles: [0,0], saves: [0,0], offsides: [0,0] },
-            playerRatings: (newMatch.player_ratings as any) || {},
-            startedAt: newMatch.started_at,
-            durationSeconds: newMatch.duration_seconds,
-            homeTeam: newMatch.home_team,
-            awayTeam: newMatch.away_team,
-            stadiumName: newMatch.stadium_name,
-            stadiumCapacity: newMatch.stadium_capacity,
-            isHome: newMatch.is_home,
-            competition: newMatch.competition || 'Amistoso',
-            status: newMatch.status,
           });
+
+          if (!result.success) {
+            setError(result.error || 'Erro ao iniciar partida.');
+          }
+          setLoading(false);
+          return;
+        }
+
+        // No state — check for active match
+        const found = await findActiveMatch();
+        if (!found) {
+          navigate('/', { replace: true });
+          return;
         }
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Erro inesperado ao carregar partida.');
         setLoading(false);
       }
     };
 
     init();
-  }, [matchDbId, state, navigate]);
+    return () => destroy();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -257,18 +111,17 @@ export default function MatchPage() {
     );
   }
 
-  if (!matchData) return null;
+  if (matchState.phase === 'loading') return null;
 
   return (
     <MatchViewer
-      matchData={matchData}
-      matchDbId={matchDbId!}
+      matchState={matchState}
       onExit={() => navigate('/', { replace: true })}
     />
   );
 }
 
-// ---- 2D Pitch View ----
+// ---- 2D Pitch View (PURE VISUAL — no state modification) ----
 function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, visibleEvents, isFinished }: {
   currentMinute: number;
   homeTeam: string;
@@ -310,7 +163,6 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
       ctx.fillStyle = '#1a6b3c';
       ctx.fillRect(0, 0, W, H);
 
-      // Grass stripes
       ctx.fillStyle = 'rgba(255,255,255,0.02)';
       for (let i = 0; i < 10; i++) {
         if (i % 2 === 0) ctx.fillRect(i * (W / 10), 0, W / 10, H);
@@ -326,7 +178,6 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
       ctx.strokeRect(4, H * 0.38, W * 0.06, H * 0.24);
       ctx.strokeRect(W - 4 - W * 0.06, H * 0.38, W * 0.06, H * 0.24);
 
-      // Center dot
       ctx.beginPath(); ctx.arc(W / 2, H / 2, 3, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill();
 
@@ -335,13 +186,8 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
       let attackShift = 0;
 
       if (lastEvent) {
-        if (lastEvent.team === 'home') {
-          attackShift = 0.1;
-          ballX = 0.55 + seed(currentMinute * 3) * 0.3;
-        } else if (lastEvent.team === 'away') {
-          attackShift = -0.1;
-          ballX = 0.15 + seed(currentMinute * 3) * 0.3;
-        }
+        if (lastEvent.team === 'home') { attackShift = 0.1; ballX = 0.55 + seed(currentMinute * 3) * 0.3; }
+        else if (lastEvent.team === 'away') { attackShift = -0.1; ballX = 0.15 + seed(currentMinute * 3) * 0.3; }
         if (lastEvent.isGoal && lastEvent.team === 'home') { ballX = 0.92; ballY = 0.5; }
         if (lastEvent.isGoal && lastEvent.team === 'away') { ballX = 0.08; ballY = 0.5; }
         if (lastEvent.type === 'halftime' || lastEvent.type === 'final_whistle') { ballX = 0.5; ballY = 0.5; attackShift = 0; }
@@ -354,47 +200,25 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
           const jy = Math.cos(t * 1.1 + i * 1.7) * 0.015 + seed(currentMinute + i * 17) * 0.03 - 0.015;
           const px = (p.x + shift + jx) * W;
           const py = (p.y + jy) * H;
-
-          // Shadow
-          ctx.beginPath();
-          ctx.ellipse(px + 1, py + 3, 5, 2, 0, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.25)';
-          ctx.fill();
-
-          // Player dot
-          ctx.beginPath();
-          ctx.arc(px, py, 6, 0, Math.PI * 2);
-          ctx.fillStyle = color;
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(px + 1, py + 3, 5, 2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
+          ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2);
+          ctx.fillStyle = color; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.2; ctx.stroke();
         });
       };
 
       drawPlayers(homeBase, '#3b82f6', attackShift);
       drawPlayers(awayBase, '#ef4444', -attackShift);
 
-      // Ball shadow
-      const bx = ballX * W;
-      const by = ballY * H;
-      ctx.beginPath();
-      ctx.ellipse(bx + 1, by + 2, 4, 1.5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.fill();
+      const bx = ballX * W, by = ballY * H;
+      ctx.beginPath(); ctx.ellipse(bx + 1, by + 2, 4, 1.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 0.8; ctx.stroke();
 
-      // Ball
-      ctx.beginPath();
-      ctx.arc(bx, by, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-
-      if (!isFinished) {
-        animRef.current = requestAnimationFrame(draw);
-      }
+      if (!isFinished) { animRef.current = requestAnimationFrame(draw); }
     };
 
     draw();
@@ -404,12 +228,7 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
   return (
     <Card className="p-1.5 overflow-hidden">
       <div className="relative w-full aspect-[5/3]">
-        <canvas
-          ref={canvasRef}
-          width={500}
-          height={300}
-          className="w-full h-full rounded-lg"
-        />
+        <canvas ref={canvasRef} width={500} height={300} className="w-full h-full rounded-lg" />
         <div className="absolute top-1 left-2 right-2 flex justify-between items-center">
           <span className="text-[8px] font-bold text-blue-300 drop-shadow-md">{homeTeam}</span>
           <span className="text-[10px] font-mono font-black text-white drop-shadow-md">{homeGoals} x {awayGoals}</span>
@@ -425,141 +244,34 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
   );
 }
 
-// ---- Match Viewer (pure viewer, no simulation logic) ----
-function MatchViewer({ matchData, matchDbId, onExit }: {
-  matchData: {
-    events: SimEvent[];
-    homeGoals: number;
-    awayGoals: number;
-    stats: MatchStats;
-    playerRatings: Record<string, number>;
-    startedAt: string;
-    durationSeconds: number;
-    homeTeam: string;
-    awayTeam: string;
-    stadiumName: string;
-    stadiumCapacity: number;
-    isHome: boolean;
-    competition: string;
-    status: string;
-  };
-  matchDbId: string;
+// ---- Match Viewer (pure viewer — reads from MatchManager state) ----
+function MatchViewer({ matchState, onExit }: {
+  matchState: import('@/match').MatchManagerState;
   onExit: () => void;
 }) {
-  const { events: allEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals, stats, playerRatings, startedAt, durationSeconds, homeTeam, awayTeam, stadiumName, stadiumCapacity, status: initialStatus } = matchData;
+  const { phase, snapshot, config, stats, lockedResult } = matchState;
+  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent } = snapshot;
+  const { homeTeam, awayTeam, stadiumName, stadiumCapacity } = config;
 
-  const startTime = useMemo(() => new Date(startedAt).getTime(), [startedAt]);
-  const endTime = useMemo(() => startTime + durationSeconds * 1000, [startTime, durationSeconds]);
-
-  // Current state based on elapsed time
-  const [currentMinute, setCurrentMinute] = useState(0);
-  const [visibleEvents, setVisibleEvents] = useState<SimEvent[]>([]);
-  const [currentHomeGoals, setCurrentHomeGoals] = useState(0);
-  const [currentAwayGoals, setCurrentAwayGoals] = useState(0);
-  const [isFinished, setIsFinished] = useState(initialStatus === 'finished');
-  const [commentary, setCommentary] = useState('⚽ A bola vai rolar!');
-  const [lastEventType, setLastEventType] = useState('');
-  const [goalFlash, setGoalFlash] = useState(false);
-  const [showReplay, setShowReplay] = useState(false);
-  const [replayIndex, setReplayIndex] = useState(0);
-
-  // Determine the max game minute from events
-  const maxGameMinute = useMemo(() => {
-    if (allEvents.length === 0) return 90;
-    return Math.max(...allEvents.map(e => e.minute));
-  }, [allEvents]);
-
-  // Tick: reveal events based on elapsed real time
-  useEffect(() => {
-    if (isFinished) {
-      // Show all events
-      setVisibleEvents(allEvents);
-      setCurrentMinute(maxGameMinute);
-      setCurrentHomeGoals(finalHomeGoals);
-      setCurrentAwayGoals(finalAwayGoals);
-      if (allEvents.length > 0) {
-        setCommentary(allEvents[allEvents.length - 1].description);
-        setLastEventType(allEvents[allEvents.length - 1].type);
-      }
-      return;
-    }
-
-    const tick = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / (durationSeconds * 1000));
-      const gameMin = Math.floor(progress * maxGameMinute);
-      
-      setCurrentMinute(gameMin);
-
-      // Reveal events up to current game minute
-      const visible = allEvents.filter(e => e.minute <= gameMin);
-      setVisibleEvents(visible);
-
-      // Count goals up to current minute
-      let hg = 0, ag = 0;
-      for (const ev of visible) {
-        if (ev.isGoal) {
-          if (ev.team === 'home') hg++;
-          else if (ev.team === 'away') ag++;
-        }
-      }
-      setCurrentHomeGoals(hg);
-      setCurrentAwayGoals(ag);
-
-      // Update commentary to latest event
-      if (visible.length > 0) {
-        const last = visible[visible.length - 1];
-        setCommentary(last.description);
-        setLastEventType(last.type);
-      }
-
-      // Check if match is done
-      if (now >= endTime) {
-        setIsFinished(true);
-        setVisibleEvents(allEvents);
-        setCurrentMinute(maxGameMinute);
-        setCurrentHomeGoals(finalHomeGoals);
-        setCurrentAwayGoals(finalAwayGoals);
-        // Mark as finished in DB
-        supabase
-          .from('live_matches')
-          .update({ status: 'finished', current_minute: maxGameMinute })
-          .eq('id', matchDbId)
-          .then(() => {});
-      }
-    };
-
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [allEvents, startTime, endTime, durationSeconds, maxGameMinute, finalHomeGoals, finalAwayGoals, isFinished, matchDbId]);
+  const isFinished = phase === 'finished';
+  const commentary = latestEvent?.description || '⚽ A bola vai rolar!';
+  const lastEventType = latestEvent?.type || '';
 
   // Goal flash effect
+  const [goalFlash, setGoalFlash] = useState(false);
   const lastGoalCount = useRef(0);
   useEffect(() => {
-    const total = currentHomeGoals + currentAwayGoals;
+    const total = homeGoals + awayGoals;
     if (total > lastGoalCount.current) {
       setGoalFlash(true);
       setTimeout(() => setGoalFlash(false), 1200);
     }
     lastGoalCount.current = total;
-  }, [currentHomeGoals, currentAwayGoals]);
+  }, [homeGoals, awayGoals]);
 
-  // Time display
-  const realTimeLeft = useMemo(() => {
-    if (isFinished) return 0;
-    return Math.max(0, endTime - Date.now());
-  }, [endTime, isFinished, currentMinute]);
-
-  const formatTimeDisplay = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
-
-  const phase = isFinished ? 'finished' : currentMinute <= 45 ? 'first_half' : currentMinute <= 50 ? 'halftime' : 'second_half';
+  // Replay state
+  const [showReplay, setShowReplay] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
 
   const eventColor = (type: string) => {
     if (type.includes('goal') || type === 'own_goal') return 'text-emerald-400 font-bold';
@@ -575,6 +287,9 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
 
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
+  const finalHomeGoals = lockedResult?.homeGoals ?? homeGoals;
+  const finalAwayGoals = lockedResult?.awayGoals ?? awayGoals;
+
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4 max-w-2xl mx-auto space-y-2">
       {/* Header */}
@@ -583,14 +298,9 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
           <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
             <LogOut className="h-3 w-3" /> Sair
           </Button>
-          <Badge variant={phase === 'halftime' ? 'secondary' : phase === 'finished' ? 'outline' : 'default'} className="text-xs font-mono px-2">
+          <Badge variant={phase === 'halftime' ? 'secondary' : isFinished ? 'outline' : 'default'} className="text-xs font-mono px-2">
             {currentMinute}' {phase === 'first_half' ? '1ºT' : phase === 'halftime' ? 'INT' : phase === 'second_half' ? '2ºT' : 'FIM'}
           </Badge>
-          {!isFinished && (
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {formatTimeDisplay(realTimeLeft)}
-            </span>
-          )}
         </div>
         <div className="text-[9px] text-muted-foreground">
           🏟️ {stadiumName} ({stadiumCapacity?.toLocaleString()})
@@ -602,7 +312,7 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
         <div className="flex items-center gap-3 justify-center">
           <p className="text-xs sm:text-sm font-bold truncate text-right flex-1">{homeTeam}</p>
           <div className={`text-3xl sm:text-4xl font-black font-mono px-4 py-1.5 rounded-lg min-w-[90px] text-center transition-colors ${goalFlash ? 'bg-yellow-400/20' : 'bg-muted/30'}`}>
-            {currentHomeGoals} <span className="text-muted-foreground text-base">x</span> {currentAwayGoals}
+            {isFinished ? finalHomeGoals : homeGoals} <span className="text-muted-foreground text-base">x</span> {isFinished ? finalAwayGoals : awayGoals}
           </div>
           <p className="text-xs sm:text-sm font-bold truncate text-left flex-1">{awayTeam}</p>
         </div>
@@ -622,13 +332,13 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
         </div>
       )}
 
-      {/* 2D Pitch View */}
+      {/* 2D Pitch View — PURE VISUAL, no state modification */}
       <Pitch2DView
         currentMinute={currentMinute}
         homeTeam={homeTeam}
         awayTeam={awayTeam}
-        homeGoals={currentHomeGoals}
-        awayGoals={currentAwayGoals}
+        homeGoals={isFinished ? finalHomeGoals : homeGoals}
+        awayGoals={isFinished ? finalAwayGoals : awayGoals}
         visibleEvents={visibleEvents}
         isFinished={isFinished}
       />
@@ -717,7 +427,7 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
                 ))}
               </div>
               <p className="text-[8px] text-muted-foreground text-center mt-2">
-                Total de lances: {allEvents.length} | ⚽ Gols: {finalHomeGoals + finalAwayGoals}
+                Total de lances: {visibleEvents.length} | ⚽ Gols: {finalHomeGoals + finalAwayGoals}
               </p>
             </CardContent>
           </Card>
@@ -761,9 +471,7 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
             </Card>
           )}
 
-          <Button className="w-full gap-2" onClick={() => {
-            onExit();
-          }}>
+          <Button className="w-full gap-2" onClick={onExit}>
             <ArrowLeft className="h-4 w-4" /> Voltar ao Dashboard
           </Button>
         </div>
