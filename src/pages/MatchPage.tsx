@@ -641,12 +641,12 @@ function MatchViewer({ matchData, matchDbId, onExit }: {
         </TabsList>
 
         <TabsContent value="events">
-          <Card className="p-1.5 max-h-[250px] overflow-y-auto">
-            <div className="space-y-0.5">
-              {visibleEvents.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-3">Aguardando lances...</p>}
+          <Card className="p-1.5 max-h-[300px] overflow-y-auto">
+            <div className="space-y-1">
+              {visibleEvents.length === 0 && <p className="text-xs text-muted-foreground text-center py-3">Aguardando lances...</p>}
               {[...visibleEvents].reverse().slice(0, 20).map((ev, i) => (
-                <div key={i} className={`flex items-center gap-1.5 text-[9px] sm:text-[10px] px-1 py-0.5 rounded ${ev.isGoal ? 'bg-emerald-500/10 border border-emerald-500/20' : ev.team === 'home' ? 'bg-primary/5' : ev.team === 'away' ? 'bg-destructive/5' : 'bg-muted/10'}`}>
-                  <Badge variant="outline" className="text-[6px] w-6 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
+                <div key={i} className={`flex items-center gap-2 text-xs sm:text-sm px-2 py-1 rounded ${ev.isGoal ? 'bg-emerald-500/10 border border-emerald-500/20' : ev.team === 'home' ? 'bg-primary/5' : ev.team === 'away' ? 'bg-destructive/5' : 'bg-muted/10'}`}>
+                  <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
                   <span className={eventColor(ev.type)}>{ev.description}</span>
                 </div>
               ))}
