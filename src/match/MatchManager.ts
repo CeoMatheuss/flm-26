@@ -70,6 +70,7 @@ export class MatchManager {
    * Initialize from an existing live match in DB (reconnect scenario)
    */
   async loadFromDb(matchDbId: string): Promise<boolean> {
+    console.log('[MatchManager] loadFromDb() — loading match:', matchDbId);
     try {
       const { data, error } = await supabase
         .from('live_matches')

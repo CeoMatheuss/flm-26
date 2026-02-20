@@ -216,53 +216,50 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       return;
     }
 
-    if (st?.matchResult) {
-      // Legacy offline path — only for backwards compatibility
-      console.log('[Index] Legacy matchResult (offline):', st.matchResult.matchId);
-      game.simulateMatch(st.matchResult.matchId);
-      navigate('/', { replace: true, state: {} });
-      return;
-    }
+    // Legacy offline path REMOVED — no more simulateMatch() calls
 
     // Check for stale finished server-side matches (safety net — runs once on mount)
     // Uses applyServerResult() — NEVER simulateMatch()
-    const checkFinished = async () => {
-      const { data: finishedMatches } = await supabase
-        .from('live_matches')
-        .select('match_id, home_goals, away_goals, is_home, id, status')
-        .eq('status', 'finished')
-        .order('created_at', { ascending: false })
-        .limit(1);
+    // Guard: skip if serverMatchResult was already processed above
+    if (!st?.serverMatchResult) {
+      const checkFinished = async () => {
+        const { data: finishedMatches } = await supabase
+          .from('live_matches')
+          .select('match_id, home_goals, away_goals, is_home, id, status')
+          .eq('status', 'finished')
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (!finishedMatches || finishedMatches.length === 0) return;
+        if (!finishedMatches || finishedMatches.length === 0) return;
 
-      const fm = finishedMatches[0];
-      console.log('[Index] checkFinished: found stale finished match:', fm);
+        const fm = finishedMatches[0];
+        console.log('[Index] checkFinished: found stale finished match:', fm);
 
-      // Only process if there is a corresponding unplayed local match
-      const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played)
-        ?? game.club.matches.find(m => !m.played);
-
-      if (!localMatch) {
-        // No unplayed match — just clean up the stale DB record
+        // Delete FIRST to prevent race condition with double-processing
         await supabase.from('live_matches').delete().eq('id', fm.id);
-        return;
-      }
 
-      // Apply real server result — no recalculation
-      game.applyServerResult({
-        matchId: localMatch.id,
-        homeGoals: fm.home_goals,
-        awayGoals: fm.away_goals,
-        isHome: fm.is_home ?? localMatch.isHome ?? true,
-      });
+        // Only process if there is a corresponding unplayed local match
+        const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played)
+          ?? game.club.matches.find(m => !m.played);
 
-      // Delete after applying to prevent double-processing
-      await supabase.from('live_matches').delete().eq('id', fm.id);
-      console.log('[Index] checkFinished: applied and cleaned up match:', fm.id);
-    };
+        if (!localMatch) {
+          console.log('[Index] checkFinished: no unplayed match found, cleaned up stale record');
+          return;
+        }
 
-    checkFinished();
+        // Apply real server result — no recalculation
+        game.applyServerResult({
+          matchId: localMatch.id,
+          homeGoals: fm.home_goals,
+          awayGoals: fm.away_goals,
+          isHome: fm.is_home ?? localMatch.isHome ?? true,
+        });
+
+        console.log('[Index] checkFinished: applied and cleaned up match:', fm.id);
+      };
+
+      checkFinished();
+    }
   }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -526,13 +523,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               stadiumName={game.club.stadiumName} 
               alreadyPlayedToday={game.alreadyPlayedToday}
               lastFriendlyDate={game.lastFriendlyDate}
-              leagueTeams={game.leagueTeams}
               players={game.club.players}
               teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))}
               tactics={game.tactics}
-              onSimulate={game.simulateMatch} 
               onGenerateFriendly={game.generateFriendly}
-              onGenerateFriendlyVs={game.generateFriendlyVs}
               userId={userId}
               stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
             />

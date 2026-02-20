@@ -1136,88 +1136,34 @@ export function useGame(initialState?: GameState, userId?: string) {
       return;
     }
     
-    // Pick a random bot opponent from league teams
-    const opponents = leagueTeams.filter(t => t.name !== club.name);
-    const opp = opponents[Math.floor(Math.random() * opponents.length)];
-    if (!opp) return;
-
+    // BOT FC — oponente genérico com força variável (55-80 OVR)
+    const botStrength = 55 + Math.floor(Math.random() * 26); // 55-80
     const isHome = Math.random() > 0.5;
-    const opponentStadium = `Estádio ${opp.name}`;
-    
-    const opponentCapacity = Math.floor(5000 + (opp.strength - 50) * 200); // estimated
+    const botStadium = 'Estádio BOT FC';
+    const botCapacity = Math.floor(5000 + (botStrength - 50) * 150);
     const myCapacity = getStadiumCapacity(infrastructure?.stadium?.level ?? 1);
     
     const friendlyMatch: Match = {
       id: Math.random().toString(36).substr(2, 9),
-      opponent: opp.name,
-      opponentLogo: opp.logo,
+      opponent: 'BOT FC',
+      opponentLogo: '🤖',
       date: now.toISOString(),
       played: false,
       isHome,
-      stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
-      stadiumCapacity: isHome ? myCapacity : opponentCapacity,
+      stadium: isHome ? (club.stadiumName || 'Arena') : botStadium,
+      stadiumCapacity: isHome ? myCapacity : botCapacity,
+      // Store bot strength in the match for later use
+      opponentStrength: botStrength,
     };
     setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
-    toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, userId]);
+    toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs BOT FC (OVR ~${botStrength})!`);
+  }, [club.name, club.matches, club.stadiumName, lastFriendlyDate, userId, infrastructure]);
 
-  const generateFriendlyVs = useCallback(async (teamName: string) => {
-    const now = new Date();
-    
-    // Server-side check
-    if (userId) {
-      const { data } = await supabase
-        .from('game_saves')
-        .select('last_match_timestamp')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (data?.last_match_timestamp) {
-        const dbLastMatch = new Date(data.last_match_timestamp as string);
-        const diffHours = (now.getTime() - dbLastMatch.getTime()) / (1000 * 60 * 60);
-        if (diffHours < 24) {
-          toast.error('Você já jogou hoje. Volte amanhã.');
-          setLastFriendlyDate(data.last_match_timestamp as string);
-          setFriendliesPlayedToday(1);
-          return;
-        }
-      }
-    }
-    
-    if (lastFriendlyDate) {
-      const lastDate = new Date(lastFriendlyDate);
-      const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
-      if (diffHours < 24) {
-        toast.error('Você já jogou hoje. Volte amanhã.');
-        return;
-      }
-    }
-    const hasUnplayed = club.matches.some(m => !m.played);
-    if (hasUnplayed) {
-      toast.error('Você já tem um amistoso agendado!');
-      return;
-    }
-    const opp = leagueTeams.find(t => t.name === teamName);
-    if (!opp) return;
-
-    const isHome = Math.random() > 0.5;
-    const opponentStadium = `Estádio ${opp.name}`;
-
-    const opponentCapacity2 = Math.floor(5000 + ((opp?.strength || 65) - 50) * 200);
-    const myCapacity2 = getStadiumCapacity(infrastructure?.stadium?.level ?? 1);
-    
-    const friendlyMatch: Match = {
-      id: Math.random().toString(36).substr(2, 9),
-      opponent: opp.name,
-      opponentLogo: opp.logo,
-      date: now.toISOString(),
-      played: false,
-      isHome,
-      stadium: isHome ? (club.stadiumName || 'Arena') : opponentStadium,
-      stadiumCapacity: isHome ? myCapacity2 : opponentCapacity2,
-    };
-    setClub(prev => ({ ...prev, matches: [...prev.matches, friendlyMatch] }));
-    toast.info(`⚽ Amistoso ${isHome ? '(Casa)' : '(Fora)'} vs ${opp.name}!`);
-  }, [leagueTeams, club.name, club.matches, club.stadiumName, lastFriendlyDate, userId]);
+  // generateFriendlyVs removed — no more specific club invites, only BOT FC
+  const generateFriendlyVs = useCallback(async (_teamName: string) => {
+    // Redirect to BOT FC
+    return generateFriendly();
+  }, [generateFriendly]);
 
   const updateClubProfile = useCallback((profile: ClubProfile) => {
     setClubProfile(profile);
