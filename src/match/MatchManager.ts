@@ -132,18 +132,38 @@ export class MatchManager {
     try {
       const resp = await supabase.functions.invoke('start-match', { body: params });
 
+      // supabase-js marks non-2xx as resp.error, but the JSON body may still
+      // contain matchDbId (e.g. 409 "already in progress"). Parse it first.
       if (resp.error) {
+        // Try to extract the body from the FunctionsHttpError context
+        let errBody: any = null;
+        try {
+          if (resp.error && typeof (resp.error as any).context?.json === 'function') {
+            errBody = await (resp.error as any).context.json();
+          } else if (resp.data) {
+            errBody = resp.data;
+          }
+        } catch { /* ignore parse errors */ }
+
+        if (errBody?.matchDbId) {
+          console.log('[MatchManager] Partida existente detectada, carregando:', errBody.matchDbId);
+          await this.loadFromDb(errBody.matchDbId);
+          return { success: true };
+        }
+
+        console.error('[MatchManager] Edge function error:', resp.error);
         return { success: false, error: 'Erro ao iniciar partida no servidor.' };
       }
 
       const result = resp.data;
-      if (!result.success) {
-        if (result.matchDbId) {
+      if (!result?.success) {
+        if (result?.matchDbId) {
           // Match already exists — load it
+          console.log('[MatchManager] Carregando partida existente:', result.matchDbId);
           await this.loadFromDb(result.matchDbId);
           return { success: true };
         }
-        return { success: false, error: result.error || 'Erro ao iniciar partida.' };
+        return { success: false, error: result?.error || 'Erro ao iniciar partida.' };
       }
 
       // Load the newly created match
