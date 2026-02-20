@@ -509,6 +509,75 @@ export type Database = {
         }
         Relationships: []
       }
+      match_history: {
+        Row: {
+          away_goals: number
+          away_team: string
+          competition: string
+          created_at: string
+          events: Json
+          goal_scorers: Json
+          home_goals: number
+          home_players: Json
+          home_team: string
+          id: string
+          is_home: boolean
+          live_match_id: string | null
+          man_of_the_match: string | null
+          match_type: string
+          played_at: string
+          player_ratings: Json
+          stadium_capacity: number
+          stadium_name: string
+          stats: Json
+          user_id: string
+        }
+        Insert: {
+          away_goals?: number
+          away_team: string
+          competition?: string
+          created_at?: string
+          events?: Json
+          goal_scorers?: Json
+          home_goals?: number
+          home_players?: Json
+          home_team: string
+          id?: string
+          is_home?: boolean
+          live_match_id?: string | null
+          man_of_the_match?: string | null
+          match_type?: string
+          played_at?: string
+          player_ratings?: Json
+          stadium_capacity?: number
+          stadium_name?: string
+          stats?: Json
+          user_id: string
+        }
+        Update: {
+          away_goals?: number
+          away_team?: string
+          competition?: string
+          created_at?: string
+          events?: Json
+          goal_scorers?: Json
+          home_goals?: number
+          home_players?: Json
+          home_team?: string
+          id?: string
+          is_home?: boolean
+          live_match_id?: string | null
+          man_of_the_match?: string | null
+          match_type?: string
+          played_at?: string
+          player_ratings?: Json
+          stadium_capacity?: number
+          stadium_name?: string
+          stats?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       multiplayer_leagues: {
         Row: {
           auto_created: boolean
