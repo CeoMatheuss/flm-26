@@ -139,44 +139,26 @@ export function MatchesTab({ matches, clubName, stadiumName, alreadyPlayedToday,
             </div>
           )}
 
-          {/* Next match or generate */}
+          {/* Gerar ou jogar */}
           {nextMatch ? (
             <Card className="border-primary/40 bg-primary/5">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border/30">
-                  <Badge variant="secondary" className="text-[9px] gap-1">⚽ Amistoso</Badge>
+                  <Badge variant="secondary" className="text-[9px] gap-1">⚽ Amistoso Gerado</Badge>
                   <Badge variant="outline" className="text-[9px] gap-1">
                     {nextMatch.isHome ? <Home className="h-2.5 w-2.5" /> : <Plane className="h-2.5 w-2.5" />}
                     {nextMatch.isHome ? 'Casa' : 'Fora'}
                   </Badge>
-                  {formatTime(nextMatch.date) && (
-                    <Badge variant="outline" className="text-[9px] gap-1">
-                      <Clock className="h-2.5 w-2.5" /> {formatTime(nextMatch.date)}
-                    </Badge>
-                  )}
-                </div>
-                {/* Stadium info */}
-                <div className="text-[10px] text-muted-foreground mb-2 space-y-0.5">
-                  <div className="flex items-center gap-1">🏟️ {nextMatch.stadium || stadiumName}</div>
-                  {nextMatch.stadiumCapacity && (
-                    <div className="text-[9px] text-muted-foreground/60">Capacidade: {nextMatch.stadiumCapacity.toLocaleString()} lugares</div>
-                  )}
-                  <div className="text-[9px]">
-                    <span className="font-medium">{nextMatch.isHome ? clubName : nextMatch.opponent}</span>
-                    <span className="text-muted-foreground/50"> (Mandante) vs </span>
-                    <span>{nextMatch.isHome ? nextMatch.opponent : clubName}</span>
-                  </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs sm:text-sm font-medium truncate">{nextMatch.isHome ? clubName : nextMatch.opponent}</span>
-                    <span className="text-[10px] text-muted-foreground">vs</span>
-                    <span className="text-xs sm:text-sm truncate">{nextMatch.isHome ? nextMatch.opponent : clubName}</span>
-                  </div>
+                  <span className="text-xs font-medium truncate">vs {nextMatch.opponent}</span>
                   <Button size="sm" onClick={() => goToMatch(nextMatch)} className="h-7 px-3 text-xs gap-1">
                     <Play className="h-3 w-3" /> Jogar
                   </Button>
                 </div>
+                <p className="text-[9px] text-muted-foreground mt-1">
+                  🏟️ {nextMatch.stadium || stadiumName} • {nextMatch.isHome ? 'Mandante' : 'Visitante'}
+                </p>
               </CardContent>
             </Card>
           ) : (

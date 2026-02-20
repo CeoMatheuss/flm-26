@@ -514,6 +514,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               infrastructure={game.infrastructure}
               trainingFocus={game.trainingFocus}
               onSetTrainingFocus={game.setPlayerTrainingFocus}
+              tactics={game.tactics}
+              onPlayersUpdate={game.updatePlayers}
+              currentWeek={game.season.currentWeek}
             />
           </TabsContent>
           <TabsContent value="matches">

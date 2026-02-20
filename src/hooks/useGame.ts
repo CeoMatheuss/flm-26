@@ -1223,6 +1223,10 @@ export function useGame(initialState?: GameState, userId?: string) {
     setClubProfile(profile);
   }, []);
 
+  const updatePlayers = useCallback((players: Player[]) => {
+    setClub(prev => ({ ...prev, players }));
+  }, []);
+
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
@@ -1235,6 +1239,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs,
+    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers,
   };
 }
