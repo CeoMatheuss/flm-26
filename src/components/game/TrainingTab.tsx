@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Dumbbell, Zap, HeartPulse, Target, Users, TrendingUp, Calendar, Play, AlertTriangle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Dumbbell, Target, Users, TrendingUp, Calendar, Play, AlertTriangle, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { TrainingHelpButton } from './TrainingHelpPanel';
 
 import type { TrainingFocusKey, TrainingIntensity, PlayerTrainingConfig, WeeklyTrainingResult } from '@/training/TrainingTypes';
 import { focusLabels, focusToAttr, intensityConfig, positionRecommendations } from '@/training/TrainingTypes';
@@ -261,9 +261,12 @@ export function TrainingTab({
       {/* ── Header: Informações do CT ──────────────────────────────── */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-primary" /> Sistema de Treinos FLM 26
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-primary" /> Sistema de Treinos FLM 26
+            </CardTitle>
+            <TrainingHelpButton />
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Stats grid */}
@@ -437,7 +440,7 @@ export function TrainingTab({
         <Card className="border-destructive/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-destructive" /> Departamento Médico ({injured.length})
+              <AlertTriangle className="h-4 w-4 text-destructive" /> Departamento Médico ({injured.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
