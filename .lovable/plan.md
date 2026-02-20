@@ -1,163 +1,152 @@
 
-# Diagnóstico Completo e Plano de Reorganização — Sistema de Partidas FLM
+# Plano de Correção da Simulação e Fluidez do FLM 26
 
-## Conflitos Identificados (Bugs Reais)
+## Diagnóstico dos Problemas Reais
 
-### Bug Crítico #1 — Dupla Simulação de Resultado (RAIZ DO PROBLEMA)
-**Localização:** `src/pages/Index.tsx`, linhas 183-198
+### Problema 1 — Congelamento da Simulação (CRÍTICO)
+**Localização:** `src/match/MatchManager.ts` — `_startTick()`
 
-Ao retornar para o dashboard após uma partida, o código executa `checkFinished()`, que:
-1. Busca partidas com `status = 'finished'` no banco
-2. Chama `game.simulateMatch(fm.match_id)` — uma função da versão **OFFLINE** que recalcula gols aleatoriamente do zero
-3. Deleta o registro da `live_matches`
+O tick loop usa `window.setInterval(tick, 1000)`, mas o `SimulationEngine.getSnapshot()` calcula o progresso pela fórmula:
+```
+progress = (Date.now() - startTime) / durationMs
+```
+Isso significa que a simulação é **baseada em tempo absoluto** — correta em teoria. Porém o problema real identificado nos logs é diferente: quando o `MatchResultLocker.persist()` navega para `/`, o `destroy()` para o tick mas não reseta o singleton. Na próxima visita ao `/match`, o singleton já está em estado `FINISHED` ou com `_startTime` do jogo anterior, causando o snapshot de 0x0 que o usuário vê ao entrar na partida.
 
-Isso significa que **o placar exibido na MatchPage é descartado**. O jogo recalcula um resultado completamente diferente usando lógica offline. O usuário vê um placar durante a partida (ex: 2x1) e depois o dashboard exibe outro (ex: 0x0), porque `simulateMatch` gera novos números aleatórios.
+### Problema 2 — Divergência de Placar (0x0 ao entrar)
+**Localização:** `src/pages/MatchPage.tsx` linhas 40-74
 
-### Bug Crítico #2 — Simulação Offline Ainda Ativa
-**Localização:** `src/hooks/useGame.ts`, linhas 125-483
+Quando o usuário retorna à partida existente (via `loadFromDb`), o `SimulationEngine` é carregado com os dados corretos, mas o `resetAndGetMatchManager()` é chamado no mount do `useMatchManager`, que chama `hardReset()` e zera o engine antes de `loadFromDb` ser chamado. A sequência é:
+1. Mount → `resetAndGetMatchManager()` → `hardReset()` → estado zerado
+2. `init()` async → `loadFromDb()` → carrega dados do banco ✓
 
-A função `simulateMatch()` é um motor completo da versão offline: calcula gols, atualiza placar, fan change, finanças, etc. Ela não usa nenhum dado do servidor. Ela é chamada tanto pela UI antiga (MatchesTab via `onSimulate`) quanto pelo bug #1 acima.
+Este fluxo é correto, mas há uma race condition: o componente mostra `phase = 'loading'` e depois exibe o estado atualizado. O placar 0x0 visível ao entrar é o estado inicial correto antes do `loadFromDb` completar — porém o usuário vê isso como bug.
 
-### Bug #3 — Singleton MatchManager com Estado Residual
-**Localização:** `src/match/MatchManager.ts`, linha 260
+### Problema 3 — Toast de resultado baseado em gols calculados localmente
+**Localização:** `src/hooks/useGame.ts` linha 202-204
 
-O `getMatchManager()` retorna um singleton global. Se o usuário sair da partida e voltar, o singleton pode ter estado da partida anterior sem reset adequado, causando conflito de eventos e minutos.
+O toast de `"Vitória! X x Y | Torcida +Z"` usa as variáveis `homeGoals` e `awayGoals` da função `applyServerResult`, que são os valores **corretos do servidor**. Mas há um segundo toast idêntico dentro do bloco `simulateMatch` (linhas 429-431) que usa variáveis locais calculadas offline. Este toast duplo pode aparecer quando o fluxo de fallback é ativado.
 
-### Bug #4 — MatchResultLocker persiste apenas `status: 'finished'` sem salvar o resultado real
-**Localização:** `src/match/MatchResultLocker.ts`, linhas 55-62
+**Bug confirmado nos logs:**
+```
+[Index] serverMatchResult received: { matchDbId, homeGoals: 0, awayGoals: 1 }
+[Index] checkFinished: found stale finished match (mesmo match_id!)
+[applyServerResult] Applied server result for match knz6skno4: 0x1
+```
+O `checkFinished()` está rodando **depois** do `serverMatchResult` já ter sido processado, aplicando o resultado **duas vezes** para matches diferentes (match local `fte4yh2t6` e depois `knz6skno4`).
 
-O método `persist()` atualiza apenas `status` e `current_minute`, mas os gols já foram salvos pelo Edge Function na criação. O problema é que o `Index.tsx` (bug #1) lê a partida finished e recalcula, ignorando os gols corretos.
+### Problema 4 — Amistosos: Oponente usa times reais (Flamengo, Santos, etc.)
+**Localização:** `src/hooks/useGame.ts` — `generateFriendly()` linha 1140
 
-### Bug #5 — MatchDashboardCard calcula gols localmente
-**Localização:** `src/components/game/MatchDashboardCard.tsx`, linhas 73-80
+```typescript
+const opponents = leagueTeams.filter(t => t.name !== club.name);
+const opp = opponents[Math.floor(Math.random() * opponents.length)];
+```
+O oponente vem de `leagueTeams` que contém times reais (Flamengo, Santos, etc.). O usuário exige que o adversário seja sempre **BOT FC** com força variável, sem usar nomes de clubes reais.
 
-O card recalcula gols contando eventos por minuto local em vez de usar `home_goals`/`away_goals` do banco diretamente. Isso pode resultar em placares diferentes do real enquanto a partida está ao vivo.
+### Problema 5 — `simulateMatch` offline ainda aparece no fluxo legacy
+**Localização:** `src/pages/Index.tsx` linhas 219-224
 
-### Bug #6 — `useMatchManager` usa singleton mas `destroy()` não reseta o singleton
-**Localização:** `src/match/useMatchManager.ts`, linha 45
+```typescript
+if (st?.matchResult) {
+  // Legacy offline path
+  game.simulateMatch(st.matchResult.matchId);
+```
+Este caminho ainda existe e pode ser ativado caso algo envie `matchResult` no estado de navegação.
 
-`destroy()` chama `manager.destroy()` que para o tick, mas o singleton `_instance` permanece com estado `RUNNING` ou `FINISHED`. Na próxima navegação para `/match`, o mesmo objeto é reutilizado sem reset.
+### Problema 6 — MatchesTab ainda mostra "Convidar Clube Específico" com times reais
+Ao buscar clubes específicos para amistoso, o componente exibe clubes reais da liga do usuário. Esses clubes devem ser substituídos pelo BOT FC genérico.
+
+### Problema 7 — Aplicação dupla de resultado no `checkFinished`
+**Bug nos logs:** O resultado é aplicado via `serverMatchResult` (correto), E depois o `checkFinished` encontra o mesmo registro ainda no banco (pois o `supabase.delete()` é assíncrono e pode completar depois do `checkFinished` rodar) e aplica novamente.
 
 ---
 
-## Arquitetura Atual (Diagnóstico Visual)
+## Arquivos a Modificar (6 mudanças)
+
+### Mudança 1 — `src/hooks/useGame.ts`
+**Objetivo:** Substituir oponente real por BOT FC; remover legacy `simulateMatch` do fluxo; corrigir toast duplo.
+
+- `generateFriendly()`: oponente sempre `BOT FC` com força aleatória entre 55-80, sem usar `leagueTeams`
+- `generateFriendlyVs()`: remover completamente ou desabilitar — não há mais "clube específico"  
+- Toast de resultado no `applyServerResult`: garantir que só dispara **uma vez** (não há toast duplo no código atual da `applyServerResult` — o problema é o `checkFinished` duplo, tratado abaixo)
+
+### Mudança 2 — `src/pages/Index.tsx`
+**Objetivo:** Corrigir dupla aplicação de resultado; eliminar caminho legacy offline; proteger `checkFinished` contra re-execução.
+
+- Remover o bloco `st?.matchResult` (caminho legacy offline) completamente
+- No `checkFinished()`: adicionar guarda — após processar, salvar o `id` processado em um `Set` local `ref` para não processar duas vezes na mesma sessão
+- Limpar o registro do banco **antes** de chamar `applyServerResult` para evitar race condition
+- Não chamar `checkFinished` se `serverMatchResult` já foi processado no mesmo render
+
+### Mudança 3 — `src/components/game/MatchesTab.tsx`  
+**Objetivo:** Remover busca de "clube específico"; simplificar UI para só mostrar BOT FC.
+
+- Remover estado `showInvite`, `searchTerm`, `filteredTeams`
+- Remover botão "Convidar Clube Específico" e a lógica de busca
+- Remover prop `onGenerateFriendlyVs` e `onSimulate` do componente
+- Manter apenas: botão "Jogar Amistoso vs BOT FC" quando disponível, bloqueio quando já jogou
+
+### Mudança 4 — `supabase/functions/start-match/index.ts`
+**Objetivo:** Melhorar a narração — adicionar kickoff com estádio + público + tipo de partida; tornar substituições mais descritivas com nomes dos jogadores.
+
+- Evento `kickoff`: incluir nome do estádio, capacidade estimada e tipo de competição
+- Evento `substitution`: incluir nomes dos jogadores que entram e saem
+- BOT FC: ajustar geração de nomes dos jogadores do away para usar nomes de `BOT FC #N`
+
+### Mudança 5 — `src/pages/MatchPage.tsx`
+**Objetivo:** Corrigir aviso de `ref` no `Pitch2DView`; garantir exibição de placar correto durante loading.
+
+- Corrigir o `Pitch2DView` para usar `React.forwardRef` (elimina o warning no console)
+- Durante `loading = true`: mostrar placar inicial zerado explicitamente (não causa confusão)
+- Adicionar mensagem visual de kickoff que exibe o estádio ao início da partida
+
+### Mudança 6 — `src/match/MatchManager.ts`
+**Objetivo:** Garantir que o singleton não mantém estado de `startTime` de partidas anteriores após `hardReset`.
+
+- No `hardReset()`: garantir que `this.engine.reset()` é chamado (já existe, mas verificar ordem)
+- Adicionar log de debug confirmando o reset antes de `loadFromDb`
+
+---
+
+## Sequência de Execução
 
 ```text
-VERSÃO OFFLINE (AINDA ATIVA)           VERSÃO ONLINE (NOVA)
-+---------------------------+          +---------------------------+
-| useGame.simulateMatch()   |          | Edge Function start-match |
-| - Calcula gols aleatório  |          | - Simula no servidor      |
-| - Atualiza club.matches   |          | - Salva em live_matches   |
-| - Modifica budget/fans    |          | - Retorna events[]        |
-+------------+--------------+          +-------------+-------------+
-             |                                       |
-             |   CONFLITO AQUI                       |
-             v                                       v
-+---------------------------+          +---------------------------+
-| Index.tsx checkFinished() |<-------->| MatchPage / MatchManager  |
-| - Chama simulateMatch()   |          | - Revela eventos em tempo |
-| - DESCARTA placar online  |          | - MatchResultLocker       |
-+---------------------------+          +---------------------------+
+1. useGame.ts          → BOT FC, sem times reais, fix toast
+2. Index.tsx           → fix dupla aplicação, remover legacy offline
+3. MatchesTab.tsx      → UI simplificada, sem busca de clube real
+4. start-match/index.ts → kickoff melhorado, subs descritivas (deploy)
+5. MatchPage.tsx       → forwardRef, kickoff visual
+6. MatchManager.ts     → garantir hardReset completo
 ```
 
 ---
 
-## Novo Fluxo Correto (Pós-Correção)
+## Comportamento Esperado Após Correção
 
-```text
-SERVIDOR (Edge Function)              CLIENTE (React)
-+---------------------------+         +---------------------------+
-| start-match               |         | MatchPage                 |
-| 1. Gera 90min de eventos  |-------->| 1. Revela eventos em tempo|
-| 2. Calcula placar final   |         | 2. Exibe 2D visual        |
-| 3. Salva tudo no DB       |         | 3. Ao fim: chama          |
-|    (status='live',        |         |    applyServerResult()    |
-|     home_goals,away_goals)|         |    com dados DO BANCO     |
-+---------------------------+         +-------------+-------------+
-                                                    |
-                                                    v
-                                      +---------------------------+
-                                      | Index.tsx                 |
-                                      | - NÃO chama simulateMatch |
-                                      | - Aplica resultado server |
-                                      | - Atualiza club.matches   |
-                                      | - Atualiza budget/fans    |
-                                      +---------------------------+
-```
+**Amistosos:**
+- Botão "Jogar Amistoso vs BOT FC" → gera um BOT FC com força aleatória
+- Ao clicar Jogar → vai para `/match`
+- Ao voltar → bloqueado por 24h, countdown correto
+- Nenhum time real como oponente de amistoso
+
+**Simulação:**
+- Kickoff: "⚽ A partida começa no [Estádio X], com [X.XXX] torcedores! Amistoso entre [Time] e BOT FC!"
+- Gols aparecem com destaque, placar entre colchetes
+- Substituições com nomes: "🔄 [Nome sai] → [Nome entra]"
+- Placar no dashboard bate com placar da partida
+
+**Resultado:**
+- Toast único e correto com placar do servidor
+- Sem dupla aplicação de resultado
+- Histórico registra o resultado real
 
 ---
 
-## Plano de Implementação — 6 Mudanças Cirúrgicas
+## Garantias Técnicas
 
-### Mudança 1 — Novo método `applyServerResult` em `useGame.ts`
-Criar um método separado que aplica o resultado de uma partida **já calculada pelo servidor**, recebendo os gols do banco de dados em vez de recalcular. Este método substitui chamadas de `simulateMatch` para partidas online.
-
-**Parâmetros:** `{ matchId, homeGoals, awayGoals, playerRatings? }`
-**O que faz:** atualiza `club.matches`, budget, fans, morale dos jogadores — mas usando os gols reais do servidor, não gerando novos.
-
-### Mudança 2 — Corrigir `Index.tsx` — Eliminar `checkFinished()` mal implementado
-Substituir o bloco `checkFinished()` (linhas 183-198) por uma lógica correta:
-- Ao retornar de `/match`, verificar se há partidas `finished` com `match_id` pendente de processamento
-- Chamar `game.applyServerResult()` com os gols reais do banco
-- **Não** recalcular nada — apenas persistir o estado correto no save local
-- Deletar o registro `live_matches` apenas após aplicar corretamente
-
-### Mudança 3 — Corrigir `MatchDashboardCard.tsx` — Usar gols do banco
-Substituir o cálculo local de gols (linhas 73-80) por `data.home_goals` e `data.away_goals` direto do banco para o placar ao vivo. Manter o cálculo de minuto por elapsed time (correto). Simplificar drasticamente o componente.
-
-### Mudança 4 — Corrigir `useMatchManager.ts` — Reset do singleton ao entrar em nova partida
-Ao iniciar um novo match ou carregar do DB, verificar se o singleton tem estado conflitante e fazer reset antes de inicializar. Adicionar método `hardReset()` no MatchManager que limpa o estado completamente.
-
-### Mudança 5 — MatchResultLocker — Comunicar resultado ao Index via navigation state
-Ao finalizar (persist), navegar de volta para `/` passando o resultado correto via `location.state` para que o Index processe sem precisar fazer polling. Isso elimina a janela de risco onde o `checkFinished()` pode ser chamado antes do resultado ser aplicado.
-
-### Mudança 6 — Desabilitar `onSimulate` para partidas online no MatchesTab
-O prop `onSimulate` em `MatchesTab` deve redirecionar para `/match` em vez de simular offline. Atualmente o código já faz isso via `goToMatch()`, mas o prop `onSimulate` ainda está presente como escape para a lógica offline. Remover essa rota alternativa.
-
----
-
-## Estrutura Final dos Módulos (Após Correção)
-
-```text
-src/match/
-  MatchManager.ts          — Orquestrador (corrigido: reset no singleton)
-  MatchStateController.ts  — Estados PRE/RUNNING/FINISHED (sem mudança)
-  SimulationEngine.ts      — Revelar eventos do servidor (sem mudança)
-  MatchResultLocker.ts     — Trava resultado + navega com state correto
-  useMatchManager.ts       — Hook React (corrigido: reset ao remontar)
-  index.ts                 — Exports (sem mudança)
-
-src/hooks/
-  useGame.ts               — Adicionar applyServerResult()
-
-src/pages/
-  Index.tsx                — Corrigir checkFinished() 
-  MatchPage.tsx            — Sem mudança estrutural (já correto)
-
-src/components/game/
-  MatchDashboardCard.tsx   — Usar gols direto do banco
-```
-
----
-
-## Garantias de Estabilidade
-
-- **Placar único:** somente `home_goals`/`away_goals` do banco são usados
-- **Sem dupla simulação:** `simulateMatch()` offline é preservado apenas para usos explícitos futuros fora do fluxo de partidas ao vivo
-- **Sem loops infinitos:** `checkFinished()` só processa partidas com `match_id` presente no `club.matches` do save
-- **Mobile:** MatchDashboardCard e MatchPage já são responsivos e não mudam estruturalmente
-- **Escalabilidade:** `applyServerResult` é o ponto extensível para narração, replay e relatórios futuros (recebe `playerRatings` para notas individuais)
-- **Debug:** Logs existentes no `MatchManager`, `SimulationEngine` e `MatchResultLocker` são mantidos
-
----
-
-## Arquivos Modificados
-
-1. `src/hooks/useGame.ts` — Adicionar `applyServerResult()`
-2. `src/pages/Index.tsx` — Corrigir `checkFinished()` (linhas 183-198)
-3. `src/components/game/MatchDashboardCard.tsx` — Simplificar cálculo de gols
-4. `src/match/MatchManager.ts` — Adicionar `hardReset()` e corrigir singleton
-5. `src/match/useMatchManager.ts` — Chamar reset no mount
-6. `src/match/MatchResultLocker.ts` — Passar resultado via navigation state ao persistir
-
-Nenhuma mudança de banco de dados. Nenhuma nova Edge Function. Apenas correções cirúrgicas nos pontos de conflito.
+- `simulateMatch()` offline não é chamado em nenhum caminho do fluxo online
+- `checkFinished` tem guarda contra dupla execução na mesma sessão
+- BOT FC usa força variável (55-80 OVR) para partidas desafiadoras mas não impossíveis
+- `Pitch2DView` com `forwardRef` elimina warning do React no console
+- Nenhuma mudança de banco de dados necessária
+- Edge Function redeploy automático após mudança no `start-match`
