@@ -245,49 +245,31 @@ export function AdminTab({ userId, isFounder }: Props) {
     if (!giftUserId.trim()) return toast.error('Informe o ID do usuário');
     if (!isFounder) return toast.error('Somente o Fundador pode dar presentes!');
     setLoading(true);
-    if (giftType === 'premium') {
-      const { error } = await supabase.from('premium_users').insert([{
-        user_id: giftUserId.trim(),
-        status: 'active',
-        pix_transaction_id: 'GIFT_BY_FOUNDER',
-      }]);
-      if (error) {
-        if (error.message.includes('duplicate') || error.message.includes('unique')) {
-          toast.error('Usuário já é premium!');
-        } else {
-          toast.error('Erro: ' + error.message);
-        }
-      } else {
-        toast.success('🎁 Premium presenteado com sucesso!');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sessão expirada'); setLoading(false); return; }
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ giftType, targetUserId: giftUserId.trim() }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        toast.success(`🎁 ${result.message}`);
         setGiftUserId('');
-        loadPremiumUsers();
-      }
-    } else if (giftType === 'moderator') {
-      const { error } = await supabase.from('user_roles').insert([{
-        user_id: giftUserId.trim(),
-        role: 'moderator' as any,
-      }]);
-      if (error) {
-        if (error.message.includes('duplicate') || error.message.includes('unique')) {
-          toast.error('Usuário já é moderador!');
-        } else {
-          toast.error('Erro: ' + error.message);
-        }
+        if (giftType === 'premium') loadPremiumUsers();
+        else if (giftType === 'moderator') loadAdmins();
+        else if (giftType === 'unban') loadBans();
       } else {
-        toast.success('🎁 Moderador concedido!');
-        setGiftUserId('');
-        loadAdmins();
+        toast.error(result.error || 'Erro ao processar presente');
       }
-    } else if (giftType === 'unban') {
-      const { data: banData } = await supabase.from('chat_bans').select('id').eq('user_id', giftUserId.trim());
-      if (banData && banData.length > 0) {
-        await supabase.from('chat_bans').delete().eq('user_id', giftUserId.trim());
-        toast.success('🎁 Usuário desbanido!');
-        setGiftUserId('');
-        loadBans();
-      } else {
-        toast.error('Usuário não está banido.');
-      }
+    } catch {
+      toast.error('Erro ao processar presente');
     }
     setLoading(false);
   };
