@@ -46,6 +46,7 @@ export class MatchManager {
   private _matchDbId: string | null = null;
   private _tickInterval: number | null = null;
   private _onUpdate: ((state: MatchManagerState) => void) | null = null;
+  private _navigateFn: ((path: string, opts: any) => void) | null = null;
 
   get config(): MatchConfig { return this._config; }
   get matchDbId(): string | null { return this._matchDbId; }
@@ -55,6 +56,14 @@ export class MatchManager {
    */
   setUpdateCallback(fn: (state: MatchManagerState) => void): void {
     this._onUpdate = fn;
+  }
+
+  /**
+   * Set navigation function — called by useMatchManager after the match finishes
+   * so MatchResultLocker can navigate to '/' with the result in location.state.
+   */
+  setNavigateFn(fn: (path: string, opts: any) => void): void {
+    this._navigateFn = fn;
   }
 
   /**
@@ -180,7 +189,7 @@ export class MatchManager {
         );
         if (locked) {
           this.stateController.finish();
-          this.resultLocker.persist(this.engine.maxGameMinute);
+          this.resultLocker.persist(this.engine.maxGameMinute, this._navigateFn ?? undefined);
           this._stopTick();
         }
       }
@@ -239,6 +248,7 @@ export class MatchManager {
   destroy(): void {
     this._stopTick();
     this._onUpdate = null;
+    // Don't clear _navigateFn here — it may still be needed for persist() calls in flight
   }
 
   /**
@@ -253,11 +263,40 @@ export class MatchManager {
     this._stats = { ...EMPTY_STATS };
     this._matchDbId = null;
   }
+
+  /**
+   * Hard reset — resets singleton state completely for a new match.
+   * Must be called before startNewMatch or loadFromDb when a previous match existed.
+   */
+  hardReset(): void {
+    console.log('[MatchManager] hardReset() — clearing all state');
+    this._stopTick();
+    this.stateController.reset();
+    this.engine.reset();
+    this.resultLocker.reset();
+    this._config = { homeTeam: '', awayTeam: '', stadiumName: '', stadiumCapacity: 0, isHome: true, competition: '' };
+    this._stats = { ...EMPTY_STATS };
+    this._matchDbId = null;
+    this._onUpdate = null;
+  }
 }
 
 // Singleton for app-wide access
 let _instance: MatchManager | null = null;
 export function getMatchManager(): MatchManager {
   if (!_instance) _instance = new MatchManager();
+  return _instance;
+}
+
+/**
+ * Reset and return the singleton — use when navigating TO /match
+ * to guarantee a clean state even if a previous match was left mid-session.
+ */
+export function resetAndGetMatchManager(): MatchManager {
+  if (_instance) {
+    _instance.hardReset();
+  } else {
+    _instance = new MatchManager();
+  }
   return _instance;
 }

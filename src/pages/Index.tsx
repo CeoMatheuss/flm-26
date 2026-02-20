@@ -170,34 +170,100 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
 
-  // Handle match result from MatchPage (legacy state-based) or from server-side finished matches
+  // Handle match result from MatchResultLocker via navigation state (Bug #1 fix)
+  // MatchResultLocker navigates to '/' with serverMatchResult in state after persist().
+  // We read the real goals from the server and call applyServerResult() — never simulateMatch().
   useEffect(() => {
-    const st = location.state as { matchResult?: { matchId: string } } | null;
+    const st = location.state as {
+      serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number };
+      matchResult?: { matchId: string }; // legacy fallback (offline)
+    } | null;
+
+    if (st?.serverMatchResult) {
+      // New path: result came from MatchResultLocker with real server goals
+      const { matchDbId, homeGoals, awayGoals } = st.serverMatchResult;
+      console.log('[Index] serverMatchResult received:', { matchDbId, homeGoals, awayGoals });
+
+      // Find the local match entry that corresponds to this server match
+      const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
+      if (pendingMatch) {
+        game.applyServerResult({
+          matchId: matchDbId,
+          homeGoals,
+          awayGoals,
+          isHome: pendingMatch.isHome ?? true,
+        });
+      } else {
+        // Fallback: try any unplayed match (matchDbId from Edge Function may differ from local id)
+        const anyUnplayed = game.club.matches.find(m => !m.played);
+        if (anyUnplayed) {
+          console.log('[Index] Applying server result to first unplayed match:', anyUnplayed.id);
+          game.applyServerResult({
+            matchId: anyUnplayed.id,
+            homeGoals,
+            awayGoals,
+            isHome: anyUnplayed.isHome ?? true,
+          });
+        }
+      }
+
+      // Clean finished live_match from DB to avoid re-processing
+      supabase.from('live_matches').delete().eq('match_id', matchDbId).then(() => {
+        console.log('[Index] Cleaned up live_match for match_id:', matchDbId);
+      });
+
+      navigate('/', { replace: true, state: {} });
+      return;
+    }
+
     if (st?.matchResult) {
+      // Legacy offline path — only for backwards compatibility
+      console.log('[Index] Legacy matchResult (offline):', st.matchResult.matchId);
       game.simulateMatch(st.matchResult.matchId);
       navigate('/', { replace: true, state: {} });
       return;
     }
 
-    // Check for finished server-side matches that haven't been processed yet
+    // Check for stale finished server-side matches (safety net — runs once on mount)
+    // Uses applyServerResult() — NEVER simulateMatch()
     const checkFinished = async () => {
       const { data: finishedMatches } = await supabase
         .from('live_matches')
-        .select('match_id, home_goals, away_goals, player_ratings, status, id')
+        .select('match_id, home_goals, away_goals, is_home, id, status')
         .eq('status', 'finished')
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (finishedMatches && finishedMatches.length > 0) {
-        const fm = finishedMatches[0];
-        // Process the match result
-        game.simulateMatch(fm.match_id);
-        // Delete the finished match from live_matches to avoid re-processing
+      if (!finishedMatches || finishedMatches.length === 0) return;
+
+      const fm = finishedMatches[0];
+      console.log('[Index] checkFinished: found stale finished match:', fm);
+
+      // Only process if there is a corresponding unplayed local match
+      const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played)
+        ?? game.club.matches.find(m => !m.played);
+
+      if (!localMatch) {
+        // No unplayed match — just clean up the stale DB record
         await supabase.from('live_matches').delete().eq('id', fm.id);
+        return;
       }
+
+      // Apply real server result — no recalculation
+      game.applyServerResult({
+        matchId: localMatch.id,
+        homeGoals: fm.home_goals,
+        awayGoals: fm.away_goals,
+        isHome: fm.is_home ?? localMatch.isHome ?? true,
+      });
+
+      // Delete after applying to prevent double-processing
+      await supabase.from('live_matches').delete().eq('id', fm.id);
+      console.log('[Index] checkFinished: applied and cleaned up match:', fm.id);
     };
+
     checkFinished();
-  }, [location.state]);
+  }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Server-side admin check only via user_roles table

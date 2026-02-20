@@ -122,6 +122,131 @@ export function useGame(initialState?: GameState, userId?: string) {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
   }, []);
 
+  /**
+   * applyServerResult — Aplica resultado JÁ CALCULADO pelo servidor.
+   * NÃO recalcula gols. Usa home_goals/away_goals do banco.
+   * Substitui simulateMatch() para o fluxo de partidas online.
+   */
+  const applyServerResult = useCallback(({
+    matchId,
+    homeGoals,
+    awayGoals,
+    isHome = true,
+  }: {
+    matchId: string;
+    homeGoals: number;
+    awayGoals: number;
+    isHome?: boolean;
+  }) => {
+    const nowIso = new Date().toISOString();
+    setLastFriendlyDate(nowIso);
+    setFriendliesPlayedToday(1);
+
+    if (userId) {
+      supabase.from('game_saves')
+        .update({ last_match_timestamp: nowIso } as any)
+        .eq('user_id', userId)
+        .then(() => {});
+    }
+
+    const isWin = isHome ? homeGoals > awayGoals : awayGoals > homeGoals;
+    const isDraw = homeGoals === awayGoals;
+
+    setClub(prev => {
+      const match = prev.matches.find(m => m.id === matchId);
+      if (!match || match.played) {
+        console.warn('[applyServerResult] Match not found or already played:', matchId);
+        return prev;
+      }
+
+      const opponentTeam = leagueTeams.find(t => t.name === match.opponent);
+      const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, prev.players.length);
+      const strengthDiff = (opponentTeam?.strength || 65) - teamStrength;
+      const strengthFactor = 1 + (strengthDiff / 100);
+      const baseWin = 20, baseDraw = 5, baseLoss = -15;
+      const rankingDelta = Math.round((isWin ? baseWin : isDraw ? baseDraw : baseLoss) * strengthFactor);
+      setRanking(r => Math.max(100, r + rankingDelta));
+
+      const sponsorIncome = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+      const sponsorWeekly = Math.floor(sponsorIncome / 4);
+      const stadiumBonus = infrastructure.stadium.level * 20000;
+      const ticketRevenue = Math.floor(prev.fans * prev.ticketPrice * 0.1);
+      const prize = (isWin ? 150000 : isDraw ? 75000 : 30000) + stadiumBonus + ticketRevenue;
+
+      if (sponsorWeekly > 0) {
+        addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
+      }
+      addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
+
+      const goalDiff = homeGoals - awayGoals;
+      const isRout = isHome ? goalDiff >= 3 : goalDiff <= -3;
+      const isBigLoss = isHome ? goalDiff <= -3 : goalDiff >= 3;
+      const streak = prev.matches.filter(m => m.played).slice(-4);
+      const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
+      const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
+      const streakBonus = recentWins >= 4 ? 1200 : recentWins >= 3 ? 500 : recentWins >= 2 ? 200 : 0;
+      const streakPenalty = recentLosses >= 4 ? -800 : recentLosses >= 3 ? -300 : 0;
+      const stadiumFanBonus = infrastructure.stadium.level * 80;
+      const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
+                            prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
+      let fanChange = 0;
+      if (isWin) fanChange = 200 + (isRout ? 500 : 0);
+      else if (isDraw) fanChange = 50;
+      else fanChange = 20 + (isBigLoss ? -50 : 0);
+      fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty;
+      fanChange = Math.round(fanChange * 0.3);
+      fanChange = Math.max(-200, Math.min(fanChange, 300));
+      const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
+
+      const fanSign = fanChange >= 0 ? '+' : '';
+      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+
+      setSeason(s => ({ ...s, currentWeek: s.currentWeek + 1 }));
+
+      // Update league table
+      setLeagueTeams(prevTeams => prevTeams.map(t => {
+        if (t.name === prev.name) {
+          return { ...t, played: t.played + 1, wins: t.wins + (isWin ? 1 : 0), draws: t.draws + (isDraw ? 1 : 0), losses: t.losses + (!isWin && !isDraw ? 1 : 0), goalsFor: t.goalsFor + homeGoals, goalsAgainst: t.goalsAgainst + awayGoals, points: t.points + (isWin ? 3 : isDraw ? 1 : 0) };
+        }
+        const str = t.strength || 65;
+        const winProb = str / 130;
+        const w = Math.random() < winProb;
+        const d = !w && Math.random() < 0.3;
+        const gf = w ? Math.floor(Math.random() * 3 + 1) : Math.floor(Math.random() * 2);
+        const ga = w ? Math.floor(Math.random() * 2) : d ? gf : Math.floor(Math.random() * 3 + 1);
+        return { ...t, played: t.played + 1, wins: t.wins + (w ? 1 : 0), draws: t.draws + (d ? 1 : 0), losses: t.losses + (!w && !d ? 1 : 0), goalsFor: t.goalsFor + gf, goalsAgainst: t.goalsAgainst + ga, points: t.points + (w ? 3 : d ? 1 : 0) };
+      }));
+
+      return {
+        ...prev,
+        matches: prev.matches.map(m =>
+          m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m
+        ),
+        players: prev.players.map(p => ({
+          ...p,
+          morale: Math.min(100, Math.max(20, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+          stamina: Math.min(100, Math.max(20, p.stamina - Math.floor(Math.random() * 10 + 5))),
+          gamesPlayed: p.gamesPlayed + 1,
+        })),
+        budget: prev.budget + prize + sponsorWeekly,
+        fans: Math.max(100, prev.fans + fanChange),
+        reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
+        stats: {
+          wins: prev.stats.wins + (isWin ? 1 : 0),
+          draws: prev.stats.draws + (isDraw ? 1 : 0),
+          losses: prev.stats.losses + (!isWin && !isDraw ? 1 : 0),
+          goalsFor: prev.stats.goalsFor + homeGoals,
+          goalsAgainst: prev.stats.goalsAgainst + awayGoals,
+          points: prev.stats.points + (isWin ? 3 : isDraw ? 1 : 0),
+        },
+      };
+    });
+
+    console.log(`[applyServerResult] Applied server result for match ${matchId}: ${homeGoals}x${awayGoals}`);
+  }, [addFinance, infrastructure, sponsors, leagueTeams, userId]);
+
   const simulateMatch = useCallback((matchId: string) => {
     // Mark the friendly as played NOW (prevents playing 2 per day)
     const nowIso = new Date().toISOString();
@@ -1104,7 +1229,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
     friendliesPlayedToday, friendliesPlayedSeason,
     alreadyPlayedToday, lastFriendlyDate,
-    setTactics, simulateMatch, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
+    setTactics, simulateMatch, applyServerResult, trainPlayer, restPlayer, buyPlayer, sellPlayer, signFreeAgent, refreshMarket, refreshFreeAgents, getFullState,
     upgradeFacility, promoteYouth, setYouthInvestment, endSeason,
     acceptSponsor, refreshSponsorOffers,
     renameClub, renameStadium, setTicketPrice,

@@ -40,8 +40,10 @@ export class MatchResultLocker {
 
   /**
    * Persist the locked result to DB — can only be called ONCE after lock.
+   * After persisting, communicates result back to Index via navigation state.
+   * This avoids Index polling for finished matches and calling simulateMatch().
    */
-  async persist(maxGameMinute: number): Promise<boolean> {
+  async persist(maxGameMinute: number, navigateFn?: (path: string, opts: any) => void): Promise<boolean> {
     if (!this._locked || !this._result) {
       console.warn('[ResultLocker] Cannot persist — not locked');
       return false;
@@ -52,18 +54,37 @@ export class MatchResultLocker {
     }
     this._persisted = true;
 
+    const result = this._result;
+
     try {
       const { error } = await supabase
         .from('live_matches')
         .update({ status: 'finished', current_minute: maxGameMinute })
-        .eq('id', this._result.matchDbId);
+        .eq('id', result.matchDbId);
 
       if (error) {
         console.error('[ResultLocker] DB persist failed:', error.message);
-        this._persisted = false; // Allow retry
+        this._persisted = false;
         return false;
       }
-      console.log(`[ResultLocker] Result persisted to DB for match ${this._result.matchDbId}`);
+
+      console.log(`[ResultLocker] Result persisted to DB for match ${result.matchDbId}`);
+
+      // Pass result via navigation state so Index.tsx processes it
+      // without polling and without calling simulateMatch()
+      if (navigateFn) {
+        navigateFn('/', {
+          replace: true,
+          state: {
+            serverMatchResult: {
+              matchDbId: result.matchDbId,
+              homeGoals: result.homeGoals,
+              awayGoals: result.awayGoals,
+            },
+          },
+        });
+      }
+
       return true;
     } catch (err) {
       console.error('[ResultLocker] Persist exception:', err);
