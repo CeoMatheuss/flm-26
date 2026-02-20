@@ -3,12 +3,10 @@ import { TacticsConfig } from '@/types/tactics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Search, Globe } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LeagueTeam } from '@/types/league';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 
@@ -18,13 +16,10 @@ interface Props {
   stadiumName: string;
   alreadyPlayedToday: boolean;
   lastFriendlyDate: string;
-  leagueTeams: LeagueTeam[];
   players: Player[];
   teamStrength: number;
   tactics: TacticsConfig;
-  onSimulate: (id: string) => void;
   onGenerateFriendly: () => void;
-  onGenerateFriendlyVs: (teamName: string) => void;
   userId: string;
   stadiumCapacity: number;
 }
@@ -58,35 +53,26 @@ function getTimeUntilReset(lastFriendlyDate: string): string {
 
 export function MatchesTab({
   matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate,
-  leagueTeams, players, teamStrength, tactics, onSimulate,
-  onGenerateFriendly, onGenerateFriendlyVs, userId, stadiumCapacity
+  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity
 }: Props) {
   const navigate = useNavigate();
   const canGenerate = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showInvite, setShowInvite] = useState(false);
-
-  const filteredTeams = useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    return leagueTeams
-      .filter(t => t.name !== clubName && t.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .slice(0, 5);
-  }, [searchTerm, leagueTeams, clubName]);
 
   const goToMatch = (match: Match) => {
-    const opp = leagueTeams.find(t => t.name === match.opponent);
+    // BOT FC strength: use stored value or default 65
+    const botStrength = (match as any).opponentStrength || 65;
     navigate('/match', {
       state: {
         homeTeam: match.isHome ? clubName : match.opponent,
         awayTeam: match.isHome ? match.opponent : clubName,
         homePlayers: players,
         homeStrength: teamStrength,
-        awayStrength: opp?.strength || 65,
+        awayStrength: botStrength,
         matchId: match.id,
         tactics,
-        stadiumName: match.isHome ? stadiumName : (match.stadium || `Estádio do ${match.opponent}`),
+        stadiumName: match.isHome ? stadiumName : (match.stadium || 'Estádio BOT FC'),
         stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 10000),
         isHome: match.isHome ?? true,
       },
@@ -113,7 +99,7 @@ export function MatchesTab({
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Swords className="h-4 w-4 text-primary" /> Amistoso Diário vs BOT
+                <Swords className="h-4 w-4 text-primary" /> Amistoso Diário vs BOT FC
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -152,14 +138,19 @@ export function MatchesTab({
                 <Card className="border-primary/40 bg-primary/5">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border/30">
-                      <Badge variant="secondary" className="text-[9px] gap-1">⚽ Amistoso Gerado</Badge>
+                      <Badge variant="secondary" className="text-[9px] gap-1">🤖 Amistoso vs BOT FC</Badge>
                       <Badge variant="outline" className="text-[9px] gap-1">
                         {nextMatch.isHome ? <Home className="h-2.5 w-2.5" /> : <Plane className="h-2.5 w-2.5" />}
                         {nextMatch.isHome ? 'Casa' : 'Fora'}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium truncate">vs {nextMatch.opponent}</span>
+                      <div>
+                        <span className="text-xs font-medium">vs {nextMatch.opponent}</span>
+                        {(nextMatch as any).opponentStrength && (
+                          <Badge variant="outline" className="ml-2 text-[8px]">OVR ~{(nextMatch as any).opponentStrength}</Badge>
+                        )}
+                      </div>
                       <Button size="sm" onClick={() => goToMatch(nextMatch)} className="h-7 px-3 text-xs gap-1">
                         <Play className="h-3 w-3" /> Jogar
                       </Button>
@@ -170,55 +161,14 @@ export function MatchesTab({
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-2">
-                  <Button onClick={onGenerateFriendly} disabled={!canGenerate} className="w-full gap-2">
-                    <Swords className="h-4 w-4" />
-                    {alreadyPlayedToday ? 'Volte amanhã' : 'Gerar Amistoso Aleatório'}
-                  </Button>
-
-                  {canGenerate && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => setShowInvite(!showInvite)} className="w-full gap-2 text-xs">
-                        <Search className="h-3.5 w-3.5" />
-                        Convidar Clube Específico
-                      </Button>
-                      {showInvite && (
-                        <div className="space-y-1.5">
-                          <Input
-                            placeholder="Buscar por nome do clube..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="h-8 text-xs"
-                          />
-                          {filteredTeams.map(team => (
-                            <Button
-                              key={team.name}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start h-8 text-xs gap-2"
-                              onClick={() => {
-                                onGenerateFriendlyVs(team.name);
-                                setShowInvite(false);
-                                setSearchTerm('');
-                              }}
-                            >
-                              <span>{team.logo}</span>
-                              <span className="truncate">{team.name}</span>
-                              <Badge variant="outline" className="ml-auto text-[8px]">OVR ~{team.strength}</Badge>
-                            </Button>
-                          ))}
-                          {searchTerm.trim() && filteredTeams.length === 0 && (
-                            <p className="text-[10px] text-muted-foreground text-center py-1">Nenhum clube encontrado</p>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                <Button onClick={onGenerateFriendly} disabled={!canGenerate} className="w-full gap-2">
+                  <Swords className="h-4 w-4" />
+                  {alreadyPlayedToday ? 'Volte amanhã' : 'Jogar Amistoso vs BOT FC'}
+                </Button>
               )}
 
               <p className="text-[10px] text-muted-foreground text-center">
-                ⚽ 1 amistoso por dia • 🏟️ mando de campo • 📈 entrosamento
+                ⚽ 1 amistoso por dia • 🤖 BOT FC com força variável • 🏟️ mando aleatório
               </p>
             </CardContent>
           </Card>

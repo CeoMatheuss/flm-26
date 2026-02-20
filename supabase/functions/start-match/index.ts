@@ -89,7 +89,10 @@ function simulateFullMatch(
     positioning: p.attributes?.positioning || 50,
   }));
 
-  const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
+  // BOT FC players use generic numbered names
+  const awayNames = awayTeam === 'BOT FC'
+    ? Array.from({ length: 11 }, (_, i) => `BOT #${i + 1}`)
+    : ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
   const away: SimPlayer[] = Array.from({ length: 11 }, (_, i) => {
     const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
     const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
@@ -296,14 +299,22 @@ function simulateFullMatch(
     });
   }
 
-  // SUBSTITUIÇÕES
+  // SUBSTITUIÇÕES — com nomes dos jogadores
   for (const m of subMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
+    const onPitch = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const playerOut = onPitch.length > 1 ? onPitch[Math.floor(rng() * (onPitch.length - 1)) + 1] : onPitch[0]; // skip GK
+    const playerInName = team === 'home'
+      ? `Reserva ${Math.floor(rng() * 7 + 12)}`
+      : (awayTeam === 'BOT FC' ? `BOT #${Math.floor(rng() * 5 + 12)}` : `Reserva ${Math.floor(rng() * 7 + 12)}`);
+    const outName = playerOut?.name || 'Jogador';
+    if (playerOut) playerOut.isOnPitch = false;
     allPlanned.push({
       minute: m, type: 'substitution', team, animType: 'sub',
-      description: `🔄 SUBSTITUIÇÃO no ${tName}! O técnico mexe buscando mais intensidade no jogo.`,
+      playerName: outName,
+      description: `🔄 SUBSTITUIÇÃO no ${tName}! Sai ${outName}, entra ${playerInName}. O técnico busca fôlego novo!`,
     });
   }
 
@@ -371,10 +382,12 @@ function simulateFullMatch(
 
   const finalEvents: SimEvent[] = [];
 
-  // KICKOFF
+  // KICKOFF — with stadium, crowd and competition info
+  const competition = isHome ? 'Amistoso' : 'Amistoso';
+  const estimatedCrowd = Math.floor(stats.possession[0] * 100 + rng() * 5000 + 2000);
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `⚽ O árbitro apita! ${homeTeam} dá a saída no ${stadiumName}! Bola rolando para o 1º tempo!`,
+    description: `🏟️ A partida começa no ${stadiumName}, com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — Amistoso! O árbitro apita e a bola rola!`,
   });
 
   // Eventos do 1T
