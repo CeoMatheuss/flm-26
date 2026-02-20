@@ -14,7 +14,7 @@
  * it receives data from useMatchManager and NEVER modifies state.
  */
 
-export { MatchManager, getMatchManager } from './MatchManager';
+export { MatchManager, getMatchManager, resetAndGetMatchManager } from './MatchManager';
 export type { MatchConfig, MatchManagerState, MatchPhase } from './MatchManager';
 
 export { MatchStateController } from './MatchStateController';

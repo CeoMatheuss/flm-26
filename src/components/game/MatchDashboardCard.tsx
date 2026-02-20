@@ -62,27 +62,21 @@ export function MatchDashboardCard({ club }: Props) {
         const now = Date.now();
         const elapsed = now - startTime;
         const progress = Math.min(1, elapsed / (data.duration_seconds * 1000));
-        
+
         // Get max minute from events
         const events = (data.events as any[]) || [];
         const maxMin = events.length > 0 ? Math.max(...events.map((e: any) => e.minute)) : 90;
         const gameMin = Math.floor(progress * maxMin);
         setCurrentMinute(gameMin);
 
-        // Count goals up to current minute
-        let hg = 0, ag = 0;
-        for (const ev of events) {
-          if (ev.isGoal && ev.minute <= gameMin) {
-            if (ev.team === 'home') hg++;
-            else if (ev.team === 'away') ag++;
-          }
-        }
-        setCurrentHomeGoals(hg);
-        setCurrentAwayGoals(ag);
+        // CORREÇÃO Bug #5: usar home_goals/away_goals diretamente do banco.
+        // Não recalcular contando eventos — isso causava placares divergentes.
+        // Os gols já vêm corretos do Edge Function.
+        setCurrentHomeGoals(data.home_goals);
+        setCurrentAwayGoals(data.away_goals);
 
-        // If match time has elapsed, treat as finished locally
+        // If match time has elapsed, treat as finished locally (visual only)
         // NOTE: Actual finalization is handled exclusively by MatchResultLocker
-        // to prevent duplicate writes. Dashboard only reads status.
         if (now >= startTime + data.duration_seconds * 1000) {
           setLiveMatch(null);
         }

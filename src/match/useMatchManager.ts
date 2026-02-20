@@ -3,10 +3,17 @@
  * 
  * Provides reactive state from the MatchManager singleton.
  * All match logic flows through MatchManager — this hook only observes.
+ * 
+ * CORREÇÃO Bug #3 e #6:
+ * - Ao montar, chama hardReset() no singleton para evitar estado residual
+ *   de partidas anteriores.
+ * - Registra o navigate do React Router no MatchManager para que
+ *   MatchResultLocker possa navegar para '/' com o resultado via state.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MatchManager, MatchManagerState, getMatchManager } from './MatchManager';
+import { useNavigate } from 'react-router-dom';
+import { MatchManager, MatchManagerState, resetAndGetMatchManager } from './MatchManager';
 import { EMPTY_STATS } from './SimulationEngine';
 
 const INITIAL_STATE: MatchManagerState = {
@@ -19,16 +26,20 @@ const INITIAL_STATE: MatchManagerState = {
 };
 
 export function useMatchManager() {
-  const managerRef = useRef<MatchManager>(getMatchManager());
+  const navigate = useNavigate();
+  // Use resetAndGetMatchManager to guarantee clean state on every /match mount
+  const managerRef = useRef<MatchManager>(resetAndGetMatchManager());
   const [state, setState] = useState<MatchManagerState>(INITIAL_STATE);
 
   useEffect(() => {
     const manager = managerRef.current;
     manager.setUpdateCallback(setState);
+    // Register navigate so MatchResultLocker can pass result via location.state
+    manager.setNavigateFn(navigate);
     return () => {
       manager.setUpdateCallback(() => {});
     };
-  }, []);
+  }, [navigate]);
 
   const startNewMatch = useCallback(async (params: Parameters<MatchManager['startNewMatch']>[0]) => {
     return managerRef.current.startNewMatch(params);
