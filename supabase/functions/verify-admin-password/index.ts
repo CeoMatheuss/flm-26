@@ -82,6 +82,10 @@ Deno.serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const providedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
+    console.log('DEBUG providedHash:', providedHash);
+    console.log('DEBUG storedHash:', storedHash);
+    console.log('DEBUG match:', providedHash === storedHash);
+
     if (providedHash !== storedHash) {
       // Log failed attempt
       await adminClient.from('admin_login_attempts').insert([{
