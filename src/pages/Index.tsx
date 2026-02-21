@@ -118,6 +118,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       matches: [], // friendlies generated on demand only
       primaryColor: config.primaryColor,
       secondaryColor: config.secondaryColor,
+      detailColor: config.detailColor,
       shieldPattern: config.shieldPattern,
       shieldShape: config.shieldShape,
       logoUrl: config.logoUrl,
