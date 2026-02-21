@@ -346,7 +346,6 @@ function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: 
 
 // === STANDINGS ===
 function StandingsView({ members, userId, division, leagueMatches, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
-  const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
   const sorted = [...members].sort((a, b) => 
     b.points - a.points || 
     (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || 
@@ -399,137 +398,6 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
     return '';
   };
 
-  // Team detail panel
-  if (selectedTeam) {
-    const teamPos = sorted.findIndex(m => m.id === selectedTeam.id) + 1;
-    const teamLast5 = getLast5(selectedTeam.user_id);
-    const sg = selectedTeam.goals_for - selectedTeam.goals_against;
-    const winRate = selectedTeam.played > 0 ? Math.round((selectedTeam.wins / selectedTeam.played) * 100) : 0;
-    const isBot = selectedTeam.user_id.startsWith('bot_');
-
-    // Get all matches for this team
-    const teamMatches = leagueMatches
-      .filter(m => m.home_user_id === selectedTeam.user_id || m.away_user_id === selectedTeam.user_id)
-      .sort((a, b) => (a.round || 0) - (b.round || 0));
-
-    return (
-      <div className="space-y-3">
-        <Button variant="outline" size="sm" onClick={() => setSelectedTeam(null)} className="gap-1.5 text-xs">
-          ← Voltar à Tabela
-        </Button>
-
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              {selectedTeam.user_id === userId && clubShield ? (
-                <ShieldCrest
-                  primaryColor={clubShield.primaryColor}
-                  secondaryColor={clubShield.secondaryColor}
-                  pattern={clubShield.pattern}
-                  shape={clubShield.shape as ShieldShape}
-                  size={36}
-                />
-              ) : (
-                <ShieldCrest
-                  primaryColor={getTeamColor(selectedTeam.club_name)}
-                  secondaryColor="#ffffff"
-                  pattern="solid"
-                  shape="classic"
-                  size={36}
-                />
-              )}
-              <div className="flex-1">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  {selectedTeam.club_name}
-                  {isBot && <Badge variant="secondary" className="text-[8px]">BOT</Badge>}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  {teamPos}º lugar • {getZone(teamPos) === 'title' ? '🟢 Zona de Título' : getZone(teamPos) === 'continental' ? '🔵 Zona Continental' : getZone(teamPos) === 'relegation' ? '🔴 Zona de Rebaixamento' : 'Meio da tabela'}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-lg font-bold">{selectedTeam.points}</p>
-                <p className="text-[9px] text-muted-foreground uppercase">Pontos</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-lg font-bold text-emerald-400">{selectedTeam.wins}</p>
-                <p className="text-[9px] text-muted-foreground uppercase">Vitórias</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className={`text-lg font-bold ${sg > 0 ? 'text-emerald-400' : sg < 0 ? 'text-rose-400' : ''}`}>{sg > 0 ? `+${sg}` : sg}</p>
-                <p className="text-[9px] text-muted-foreground uppercase">Saldo</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-lg font-bold">{winRate}%</p>
-                <p className="text-[9px] text-muted-foreground uppercase">Aprov.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-                <span className="text-muted-foreground">J</span> <span className="font-bold ml-1">{selectedTeam.played}</span>
-              </div>
-              <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-                <span className="text-muted-foreground">GP</span> <span className="font-bold ml-1">{selectedTeam.goals_for}</span>
-              </div>
-              <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-                <span className="text-muted-foreground">GC</span> <span className="font-bold ml-1">{selectedTeam.goals_against}</span>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">Forma:</span>
-              <div className="flex gap-0.5">
-                {teamLast5.length === 0 ? <span className="text-[10px] text-muted-foreground">—</span> : teamLast5.map((r, ri) => (
-                  <span key={ri} className={`w-5 h-5 rounded-sm flex items-center justify-center text-[10px] font-bold ${
-                    r === 'W' ? 'bg-emerald-500/20 text-emerald-400' : r === 'D' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-                  }`}>{r === 'W' ? 'V' : r === 'D' ? 'E' : 'D'}</span>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Match History */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" /> Histórico de Jogos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {teamMatches.filter(m => m.status === 'played').length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogo disputado ainda</p>
-            ) : teamMatches.filter(m => m.status === 'played').map(m => {
-              const isHome = m.home_user_id === selectedTeam.user_id;
-              const oppId = isHome ? m.away_user_id : m.home_user_id;
-              const opp = members.find(mb => mb.user_id === oppId);
-              const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
-              const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
-              const result = myGoals > oppGoals ? 'V' : myGoals === oppGoals ? 'E' : 'D';
-              const resultColor = result === 'V' ? 'text-emerald-400' : result === 'D' ? 'text-rose-400' : 'text-amber-400';
-              return (
-                <div key={m.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 text-xs">
-                  <span className="text-muted-foreground font-mono w-6">R{m.round}</span>
-                  <span className={`font-bold w-4 ${resultColor}`}>{result}</span>
-                  <span className="font-mono">{myGoals} - {oppGoals}</span>
-                  <span className="text-muted-foreground">vs</span>
-                  <span className="truncate font-medium">{opp?.club_name || '???'}</span>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Bot Squad */}
-        {isBot && <BotSquadCard teamName={selectedTeam.club_name} reputation={selectedTeam.reputation} />}
-      </div>
-    );
-  }
 
   return (
     <Card>
@@ -562,8 +430,7 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${getZoneBorder(zone)} cursor-pointer hover:bg-muted/40 transition-colors`}
-                onClick={() => setSelectedTeam(m)}
+                className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${getZoneBorder(zone)}`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
