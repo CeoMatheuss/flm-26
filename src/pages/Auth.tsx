@@ -87,7 +87,6 @@ export default function AuthPage() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
         data: { display_name: displayName || 'Manager' },
       },
     });
