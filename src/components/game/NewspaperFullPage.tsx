@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ChevronDown, ChevronUp, ArrowLeft, Megaphone } from 'lucide-react';
+import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Props {
   club: Club;
@@ -14,7 +15,6 @@ interface Props {
   infrastructure?: Infrastructure;
   onBack: () => void;
 }
-
 
 const categoryColors: Record<string, string> = {
   LESÃO: 'bg-orange-500/80',
@@ -42,12 +42,21 @@ const categoryColors: Record<string, string> = {
   LESÕES: 'bg-orange-500/80',
   PRESTÍGIO: 'bg-amber-500/80',
   ESTATÍSTICAS: 'bg-muted-foreground/80',
+  ATUALIZAÇÃO: 'bg-primary/80',
 };
 
-function generateAllNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category: string; isEvent?: boolean }[] {
+interface SavedEntry {
+  id: string;
+  text: string;
+  category: string;
+  narration: string | null;
+  is_event: boolean;
+  created_at: string;
+}
+
+function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category: string; isEvent?: boolean }[] {
   const news: { text: string; category: string; isEvent?: boolean }[] = [];
-  
-  // All events as news
+
   events.forEach(ev => {
     const catMap: Record<string, string> = {
       injury: 'LESÃO', offer: 'MERCADO', protest: 'BASTIDORES', bonus: 'FINANÇAS',
@@ -59,22 +68,14 @@ function generateAllNews(club: Club, events: GameEvent[], infrastructure?: Infra
     news.push({ text: `${ev.icon} ${ev.title} — ${ev.description}`, category: catMap[ev.type] || ev.type.toUpperCase(), isEvent: true });
   });
 
-  // Infrastructure news
   if (infrastructure) {
     const cap = getStadiumCapacity(infrastructure.stadium.level);
     news.push({ text: `🏟️ ${club.stadiumName}: capacidade de ${cap.toLocaleString()} torcedores (Nv.${infrastructure.stadium.level})`, category: 'ESTÁDIO' });
-    if (infrastructure.trainingCenter.level >= 2) {
-      news.push({ text: `🏋️ Centro de Treinamento Nv.${infrastructure.trainingCenter.level} — evolução do elenco acelerada`, category: 'ESTRUTURA' });
-    }
-    if (infrastructure.youthAcademy.level >= 2) {
-      news.push({ text: `🎓 Base Nv.${infrastructure.youthAcademy.level} — formando talentos para o time principal`, category: 'CANTEIRA' });
-    }
-    if (infrastructure.physiotherapy.level >= 2) {
-      news.push({ text: `💊 Fisioterapia Nv.${infrastructure.physiotherapy.level} — recuperação mais rápida`, category: 'ESTRUTURA' });
-    }
+    if (infrastructure.trainingCenter.level >= 2) news.push({ text: `🏋️ Centro de Treinamento Nv.${infrastructure.trainingCenter.level} — evolução acelerada`, category: 'ESTRUTURA' });
+    if (infrastructure.youthAcademy.level >= 2) news.push({ text: `🎓 Base Nv.${infrastructure.youthAcademy.level} — formando talentos`, category: 'CANTEIRA' });
+    if (infrastructure.physiotherapy.level >= 2) news.push({ text: `💊 Fisioterapia Nv.${infrastructure.physiotherapy.level} — recuperação rápida`, category: 'ESTRUTURA' });
   }
 
-  // Player stats
   const topPlayer = [...club.players].sort((a, b) => b.overall - a.overall)[0];
   const topScorer = [...club.players].sort((a, b) => b.goals - a.goals)[0];
   const topAssister = [...club.players].sort((a, b) => b.assists - a.assists)[0];
@@ -100,19 +101,128 @@ function generateAllNews(club: Club, events: GameEvent[], infrastructure?: Infra
 }
 
 export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
-  const allNews = generateAllNews(club, events, infrastructure);
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
+  const [savedEntries, setSavedEntries] = useState<SavedEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [narrating, setNarrating] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [expandedNarration, setExpandedNarration] = useState<string | null>(null);
+
+  // Save current news to DB and fetch history
+  const saveAndLoad = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Generate current news
+      const currentNews = generateCurrentNews(club, events, infrastructure);
+
+      // Save current news (upsert by checking if similar text exists recently)
+      if (currentNews.length > 0) {
+        const entries = currentNews.map(n => ({
+          user_id: user.id,
+          text: n.text,
+          category: n.category,
+          is_event: n.isEvent || false,
+        }));
+
+        // Check last saved texts to avoid duplicates
+        const { data: recent } = await supabase
+          .from('newspaper_entries')
+          .select('text')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        const recentTexts = new Set((recent || []).map(r => r.text));
+        const newEntries = entries.filter(e => !recentTexts.has(e.text));
+
+        if (newEntries.length > 0) {
+          await supabase.from('newspaper_entries').insert(newEntries);
+        }
+      }
+
+      // Load all saved entries
+      const { data } = await supabase
+        .from('newspaper_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (data) setSavedEntries(data as SavedEntry[]);
+
+      // Load admin updates
+      const { data: updates } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(20);
+      if (updates) setAdminUpdates(updates as any[]);
+    } catch (err) {
+      console.error('Error loading newspaper:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [club, events, infrastructure]);
 
   useEffect(() => {
-    const fetchUpdates = async () => {
-      const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(20);
-      if (data) setAdminUpdates(data as any[]);
-    };
-    fetchUpdates();
-  }, []);
+    saveAndLoad();
+  }, [saveAndLoad]);
+
+  // Generate AI narration for entries without it
+  const generateNarrations = async () => {
+    const withoutNarration = savedEntries.filter(e => !e.narration).slice(0, 10);
+    if (withoutNarration.length === 0) {
+      toast.info('Todas as notícias já possuem narração!');
+      return;
+    }
+
+    setNarrating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-narration', {
+        body: {
+          headlines: withoutNarration.map(e => ({ text: e.text, category: e.category })),
+        },
+      });
+
+      if (error) throw error;
+
+      const narrations: string[] = data.narrations || [];
+
+      // Update entries in DB with narrations
+      for (let i = 0; i < withoutNarration.length && i < narrations.length; i++) {
+        if (narrations[i]) {
+          await supabase
+            .from('newspaper_entries')
+            .update({ narration: narrations[i] })
+            .eq('id', withoutNarration[i].id);
+        }
+      }
+
+      // Reload entries
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: updated } = await supabase
+          .from('newspaper_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (updated) setSavedEntries(updated as SavedEntry[]);
+      }
+
+      toast.success(`Narração gerada para ${Math.min(narrations.length, withoutNarration.length)} notícias!`);
+    } catch (err) {
+      console.error('Narration error:', err);
+      toast.error('Erro ao gerar narração');
+    } finally {
+      setNarrating(false);
+    }
+  };
+
+  const visibleEntries = showMore ? savedEntries : savedEntries.slice(0, 30);
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -120,7 +230,17 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
           <Newspaper className="h-4 w-4" />
           <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
-        <Badge variant="outline" className="text-[9px]">{allNews.length} notícias</Badge>
+        <Badge variant="outline" className="text-[9px]">{savedEntries.length} notícias</Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateNarrations}
+          disabled={narrating}
+          className="h-7 text-[10px] gap-1 ml-auto"
+        >
+          {narrating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          {narrating ? 'Narrando...' : 'Gerar Narração IA'}
+        </Button>
       </div>
 
       {/* Admin Updates */}
@@ -145,20 +265,63 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         </div>
       )}
 
-      {/* News */}
-      <div className="space-y-2">
-        {allNews.map((item, i) => (
-          <Card key={i} className="border-border">
-            <CardContent className="p-3 flex items-start gap-2">
-              <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                {item.category}
-              </span>
-              <p className="text-xs leading-snug flex-1">{item.text}</p>
-              {item.isEvent && <Badge variant="secondary" className="text-[7px] shrink-0">Evento</Badge>}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          {/* News from DB */}
+          <div className="space-y-2">
+            {visibleEntries.map((item) => (
+              <Card key={item.id} className="border-border">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-2">
+                    <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                      {item.category}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs leading-snug">{item.text}</p>
+                      {item.narration && (
+                        <div
+                          className="mt-1.5 cursor-pointer"
+                          onClick={() => setExpandedNarration(expandedNarration === item.id ? null : item.id)}
+                        >
+                          <div className="flex items-center gap-1 text-[9px] text-primary font-medium">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            <span>Narração IA</span>
+                          </div>
+                          {expandedNarration === item.id && (
+                            <p className="text-[10px] leading-snug text-muted-foreground mt-1 italic border-l-2 border-primary/30 pl-2">
+                              {item.narration}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end shrink-0 gap-1">
+                      {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
+                      <span className="text-[8px] text-muted-foreground">
+                        {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {savedEntries.length > 30 && !showMore && (
+            <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs gap-1">
+              <ChevronDown className="h-3 w-3" /> Ver mais {savedEntries.length - 30} notícias
+            </Button>
+          )}
+
+          {savedEntries.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-6">Nenhuma notícia registrada ainda. Jogue partidas para gerar notícias!</p>
+          )}
+        </>
+      )}
     </div>
   );
 }

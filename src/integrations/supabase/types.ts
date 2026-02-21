@@ -764,6 +764,36 @@ export type Database = {
         }
         Relationships: []
       }
+      newspaper_entries: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_event: boolean
+          narration: string | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_event?: boolean
+          narration?: string | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_event?: boolean
+          narration?: string | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       player_auctions: {
         Row: {
           created_at: string
