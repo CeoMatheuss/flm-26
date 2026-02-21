@@ -624,7 +624,7 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
           <span>🟢 Título</span>
           <span>🔵 Continental</span>
           <span>🔴 Rebaixamento</span>
-          <span className="ml-auto">👆 Clique num time para ver detalhes</span>
+          
         </div>
       </CardContent>
     </Card>
