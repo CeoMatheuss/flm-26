@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { BedDouble, TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse } from 'lucide-react';
 import { useState } from 'react';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { getPlayerBaseValue } from '@/utils/playerGenerator';
 
 interface Props {
   players: Player[];
@@ -246,6 +247,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{player.age}a</span>
                     <span className={`text-[10px] shrink-0 hidden sm:inline ${player.contract <= 1 ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>📄{player.contract}a</span>
                     <span className="text-[10px] text-muted-foreground shrink-0">💰{(player.salary / 1000).toFixed(0)}k</span>
+                    <span className="text-[8px] text-emerald-400 shrink-0 hidden sm:inline">💎{(getPlayerBaseValue(player) / 1000).toFixed(0)}k</span>
                     <div className="w-10 shrink-0 hidden sm:block" title={`Treino: ${player.trainingProgress}/10 jogos`}>
                       <Progress value={player.trainingProgress * 10} className="h-1" />
                     </div>
