@@ -26,7 +26,7 @@ const lastNames = [
 ];
 
 const randomClubNames = [
-  'Atlético Mineiro', 'Flamengo', 'Palmeiras', 'São Paulo', 'Corinthians', 'Grêmio', 'Internacional', 'Cruzeiro',
+  'Atlético Mineiro', 'Palmeiras', 'São Paulo', 'Corinthians', 'Grêmio', 'Internacional', 'Cruzeiro',
   'Santos', 'Vasco', 'Botafogo', 'Fluminense', 'Bahia', 'Sport', 'Fortaleza', 'Ceará', 'Coritiba', 'Athletico-PR',
   'Goiás', 'Vitória', 'Ponte Preta', 'Guarani', 'Juventude', 'Chapecoense', 'Avaí', 'Figueirense',
 ];
