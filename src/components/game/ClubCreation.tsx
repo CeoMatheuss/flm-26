@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Shield, Palette, Shirt } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
@@ -62,26 +63,38 @@ const countries = [
 ];
 
 function UniformPreview({ primary, secondary, detail, size = 80 }: { primary: string; secondary: string; detail: string; size?: number }) {
-  const s = size;
+  const dim = size;
+  const uid = `cp-${Math.random().toString(36).slice(2, 8)}`;
   return (
-    <svg width={s} height={s * 1.2} viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-      {/* Shirt body */}
-      <path d="M25 25 L15 35 L15 50 L25 45 L25 95 L75 95 L75 45 L85 50 L85 35 L75 25 L65 15 Q50 20 35 15 L25 25 Z" fill={primary} stroke={detail} strokeWidth="2" />
-      {/* Sleeves detail */}
-      <path d="M25 25 L15 35 L15 50 L25 45 Z" fill={secondary} opacity={0.6} />
-      <path d="M75 25 L85 35 L85 50 L75 45 Z" fill={secondary} opacity={0.6} />
-      {/* Collar */}
-      <path d="M35 15 Q50 22 65 15 Q60 20 50 22 Q40 20 35 15" fill={detail} />
-      {/* Center stripe */}
-      <rect x="46" y="25" width="8" height="70" fill={secondary} opacity={0.3} rx="2" />
-      {/* Shorts */}
-      <path d="M30 95 L30 115 L48 115 L50 100 L52 115 L70 115 L70 95 Z" fill={secondary} stroke={detail} strokeWidth="1.5" />
-      {/* Shorts detail line */}
-      <line x1="30" y1="100" x2="70" y2="100" stroke={detail} strokeWidth="1" opacity={0.5} />
-    </svg>
+    <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
+      <svg viewBox="0 0 100 120" className="w-full h-full">
+        {/* Left sleeve */}
+        <rect x="6" y="8" width="14" height="22" rx="2" fill={secondary} />
+        {/* Right sleeve */}
+        <rect x="80" y="8" width="14" height="22" rx="2" fill={secondary} />
+        {/* Body */}
+        <rect x="20" y="6" width="60" height="56" rx="2" fill={primary} />
+        {/* Stripes pattern */}
+        {[28, 36, 44, 52, 60, 68].map(x => (
+          <rect key={x} x={x} y="6" width="4" height="56" fill={secondary} opacity="0.3" />
+        ))}
+        {/* Collar V */}
+        <polygon points="44,6 50,14 56,6" fill={detail} />
+        {/* Number */}
+        <text x="50" y="44" textAnchor="middle" fontSize="14" fontWeight="bold" fill={detail} fontFamily="monospace">10</text>
+        {/* Shorts */}
+        <rect x="28" y="64" width="20" height="16" rx="2" fill={secondary} />
+        <rect x="52" y="64" width="20" height="16" rx="2" fill={secondary} />
+        {/* Socks */}
+        <rect x="30" y="82" width="16" height="18" rx="2" fill={primary} />
+        <rect x="54" y="82" width="16" height="18" rx="2" fill={primary} />
+        {/* Shoes */}
+        <rect x="30" y="100" width="16" height="4" rx="1" fill="#222" />
+        <rect x="54" y="100" width="16" height="4" rx="1" fill="#222" />
+      </svg>
+    </div>
   );
 }
-
 export function ClubCreation({ userId, onComplete }: Props) {
   const [clubName, setClubName] = useState('');
   const [stadiumName, setStadiumName] = useState('');
@@ -152,24 +165,31 @@ export function ClubCreation({ userId, onComplete }: Props) {
             <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
           </div>
 
-          {/* Country - horizontal scrollable */}
+          {/* Country - Select dropdown */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5">🌍 País do Clube</Label>
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-2 pb-2">
+            <Select value={country} onValueChange={setCountry}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Escolha o país">
+                  {countries.find(c => c.code === country) && (
+                    <span className="flex items-center gap-2">
+                      <span>{countries.find(c => c.code === country)?.flag}</span>
+                      <span>{countries.find(c => c.code === country)?.name}</span>
+                    </span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-[240px]">
                 {countries.map(c => (
-                  <button
-                    key={c.code}
-                    onClick={() => setCountry(c.code)}
-                    className={`shrink-0 h-12 rounded-xl border-2 transition-all flex flex-col items-center justify-center px-3 min-w-[72px] ${country === c.code ? 'border-primary ring-2 ring-primary/30 bg-primary/10 scale-[1.03]' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <span className="text-xl leading-none">{c.flag}</span>
-                    <span className="text-[9px] font-medium mt-0.5">{c.name}</span>
-                  </button>
+                  <SelectItem key={c.code} value={c.code} className="text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{c.flag}</span>
+                      <span>{c.name}</span>
+                    </span>
+                  </SelectItem>
                 ))}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Stadium Name */}
