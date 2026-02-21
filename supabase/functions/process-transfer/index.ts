@@ -349,6 +349,16 @@ Deno.serve(async (req) => {
         transfer_type: 'sale',
       });
 
+      // Create journal entry for the transfer (visible to all)
+      const priceStr = offer.offered_price >= 1000000
+        ? `R$${(offer.offered_price / 1000000).toFixed(1)}M`
+        : `R$${(offer.offered_price / 1000).toFixed(0)}k`;
+      await adminClient.from('journal_updates').insert({
+        user_id: listing.seller_id,
+        title: `📰 ${listing.player_name} muda de clube!`,
+        content: `⚽ TRANSFERÊNCIA CONFIRMADA!\n\n${listing.player_name} (${listing.player_data?.position || '???'}, ${listing.player_age}a, OVR ${listing.player_overall}) foi vendido pelo ${listing.seller_club_name} para o ${offer.buyer_club_name} por ${priceStr}.\n\nO jogador assinou contrato de ${offer.offered_contract_years} ano(s) com salário de R$${offer.offered_salary}/mês.${offer.signing_bonus > 0 ? ` Luvas de R$${(offer.signing_bonus / 1000).toFixed(0)}k foram incluídas.` : ''}`,
+      });
+
       // Check for fominha behavior: high goal bonus makes player selfish
       const fominhaRisk = (offer.bonus_goals || 0) > 50000 ? 0.3 : (offer.bonus_goals || 0) > 20000 ? 0.15 : 0;
 
