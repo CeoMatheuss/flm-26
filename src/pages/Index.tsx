@@ -355,8 +355,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
-                <DropdownMenuItem onClick={() => setActiveTab('squad')} className="gap-2 text-xs"><Users className="h-3.5 w-3.5" /> Elenco</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('tactics')} className="gap-2 text-xs"><Target className="h-3.5 w-3.5" /> Táticas</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('calendar')} className="gap-2 text-xs"><Calendar className="h-3.5 w-3.5" /> Calendário</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2 text-xs"><Dumbbell className="h-3.5 w-3.5" /> Treinos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
@@ -385,10 +385,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/50 p-1">
               <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Painel</span></TabsTrigger>
               <TabsTrigger value="matches" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Swords className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Partidas</span></TabsTrigger>
-              <TabsTrigger value="calendar" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Calendar className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Calendário</span></TabsTrigger>
+              <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
+              <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
               <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Globe className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
               <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
-              <TabsTrigger value="training" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Dumbbell className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Treinos</span></TabsTrigger>
             </TabsList>
           </div>
 
