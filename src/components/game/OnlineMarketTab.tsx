@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
+import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
 
 interface TransferListing {
@@ -61,9 +62,12 @@ interface Props {
   budget: number;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
+  loanedPlayers?: LoanedPlayer[];
+  onLoanOut?: (playerId: string) => void;
+  onLoanIn?: (player: Player) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSold, onPlayerBought }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn }: Props) {
   const [listings, setListings] = useState<TransferListing[]>([]);
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
@@ -266,9 +270,10 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
   return (
     <div className="space-y-4">
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="browse" className="text-[10px] sm:text-xs">🌐 Mercado</TabsTrigger>
           <TabsTrigger value="list" className="text-[10px] sm:text-xs">📋 Listar</TabsTrigger>
+          <TabsTrigger value="loans" className="text-[10px] sm:text-xs">🔄 Emprestar</TabsTrigger>
           <TabsTrigger value="offers" className="text-[10px] sm:text-xs">
             📩 Propostas {incomingOffers.length > 0 && <Badge variant="destructive" className="ml-1 text-[8px] h-4 px-1">{incomingOffers.length}</Badge>}
           </TabsTrigger>
@@ -371,6 +376,59 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                 })}
               </div>
             </ScrollArea>
+          )}
+        </TabsContent>
+
+        {/* LOANS */}
+        <TabsContent value="loans" className="space-y-3">
+          <h3 className="font-semibold text-sm">🔄 Empréstimos</h3>
+
+          {loanedPlayers.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground">Empréstimos ativos:</p>
+              {loanedPlayers.map((loan, i) => (
+                <Card key={i} className="border-cyan-500/20">
+                  <CardContent className="p-2 flex items-center gap-2">
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[loan.player.position] || 'bg-muted'}`}>{loan.player.position}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{loan.player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+                    </div>
+                    <Badge variant={loan.direction === 'out' ? 'destructive' : 'default'} className="text-[8px]">
+                      {loan.direction === 'out' ? '↗ Cedido' : '↙ Recebido'}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {onLoanOut && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground">Emprestar jogador (máx 3 cedidos):</p>
+              <ScrollArea className="max-h-[40vh]">
+                <div className="space-y-1">
+                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id)).map(player => (
+                    <Card key={player.id} className="hover:border-cyan-500/30 transition-colors">
+                      <CardContent className="p-2 flex items-center gap-2">
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{player.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => onLoanOut(player.id)} disabled={players.length <= 11 || loanedPlayers.filter(l => l.direction === 'out').length >= 3}>
+                          <ArrowLeftRight className="h-3 w-3 mr-0.5" /> Emprestar
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {loanedPlayers.length === 0 && (
+            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhum empréstimo ativo.</CardContent></Card>
           )}
         </TabsContent>
 

@@ -375,8 +375,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2 text-xs"><Trophy className="h-3.5 w-3.5" /> Troféus</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('ranking')} className="gap-2 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Ranking</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2 text-xs"><User className="h-3.5 w-3.5" /> Perfil do Clube</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Tutorial</DropdownMenuItem>
                 {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
@@ -463,45 +461,21 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="market">
-            <Tabs defaultValue="online" className="w-full">
-              <TabsList className="grid grid-cols-2 w-full mb-2">
-                <TabsTrigger value="online" className="text-[10px] sm:text-xs">🌐 Mercado Online</TabsTrigger>
-                <TabsTrigger value="local" className="text-[10px] sm:text-xs">🏪 Mercado Local</TabsTrigger>
-              </TabsList>
-              <TabsContent value="online">
-                <OnlineMarketTab
-                  userId={userId}
-                  clubName={game.club.name}
-                  players={game.club.players}
-                  budget={game.club.budget}
-                  onPlayerSold={(playerId, price) => {
-                    game.sellPlayer(game.club.players.find(p => p.id === playerId)!);
-                  }}
-                  onPlayerBought={(playerData, price, salary, contractYears) => {
-                    game.buyPlayer({ ...playerData, salary, contract: contractYears });
-                  }}
-                />
-              </TabsContent>
-              <TabsContent value="local">
-                <MarketTab
-                  marketPlayers={game.marketPlayers}
-                  freeAgents={game.freeAgents}
-                  clubPlayers={game.club.players}
-                  budget={game.club.budget}
-                  clubName={game.club.name}
-                  listedForSale={game.listedForSale}
-                  scoutReports={game.club.scoutReports || []}
-                  loanedPlayers={game.loanedPlayers}
-                  onBuy={game.buyPlayer}
-                  onSell={game.sellPlayer}
-                  onSignFreeAgent={game.signFreeAgent}
-                  onRefresh={game.refreshMarket}
-                  onRefreshFreeAgents={game.refreshFreeAgents}
-                  onLoanOut={game.loanOutPlayer}
-                  onLoanIn={game.loanInPlayer}
-                />
-              </TabsContent>
-            </Tabs>
+            <OnlineMarketTab
+              userId={userId}
+              clubName={game.club.name}
+              players={game.club.players}
+              budget={game.club.budget}
+              onPlayerSold={(playerId, price) => {
+                game.sellPlayer(game.club.players.find(p => p.id === playerId)!);
+              }}
+              onPlayerBought={(playerData, price, salary, contractYears) => {
+                game.buyPlayer({ ...playerData, salary, contract: contractYears });
+              }}
+              loanedPlayers={game.loanedPlayers}
+              onLoanOut={game.loanOutPlayer}
+              onLoanIn={game.loanInPlayer}
+            />
           </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
           
@@ -586,18 +560,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onFireScout={game.fireScout}
             />
           </TabsContent>
-          <TabsContent value="season">
-            <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.hasUnplayedMatches} onEndSeason={game.endSeason} />
-          </TabsContent>
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} /></TabsContent>
-          <TabsContent value="settings">
-            <ClubSettingsTab
-              clubName={game.club.name}
-              stadiumName={game.club.stadiumName || 'Arena'}
-              onRenameClub={game.renameClub}
-              onRenameStadium={game.renameStadium}
-            />
-          </TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>
           <TabsContent value="updates"><UpdatesTab /></TabsContent>
           <TabsContent value="chat">
