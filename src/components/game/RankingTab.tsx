@@ -1,73 +1,140 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Shield, Star, Flame, BarChart3 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Shield, Star, Flame, BarChart3, RefreshCw, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
-interface RankingHistory {
-  season: number;
-  endRating: number;
-  position: number;
-  change: number;
+interface RankingEntry {
+  id: string;
+  user_id: string;
+  club_name: string;
+  ranking_points: number;
+  games_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  last_change: number;
+  current_competition: string;
 }
 
 interface Props {
   rating: number;
-  rankingHistory: RankingHistory[];
+  rankingHistory: any[];
   clubName: string;
   stats: { wins: number; draws: number; losses: number };
   season: number;
 }
 
-function getRankTier(rating: number): { name: string; color: string; icon: string; min: number; max: number } {
-  if (rating >= 1500) return { name: 'Lendário', color: 'text-amber-400', icon: '👑', min: 1500, max: 2000 };
-  if (rating >= 1200) return { name: 'Elite', color: 'text-purple-400', icon: '💎', min: 1200, max: 1500 };
-  if (rating >= 900) return { name: 'Ouro', color: 'text-yellow-400', icon: '🥇', min: 900, max: 1200 };
-  if (rating >= 600) return { name: 'Prata', color: 'text-slate-300', icon: '🥈', min: 600, max: 900 };
-  if (rating >= 300) return { name: 'Bronze', color: 'text-orange-400', icon: '🥉', min: 300, max: 600 };
-  return { name: 'Ferro', color: 'text-gray-400', icon: '⚙️', min: 0, max: 300 };
-}
-
 export function RankingTab({ rating, rankingHistory, clubName, stats, season }: Props) {
-  const tier = getRankTier(rating);
-  const progress = Math.min(100, Math.max(0, ((rating - tier.min) / (tier.max - tier.min)) * 100));
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user?.id ?? null);
+    });
+  }, []);
+  const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [myPosition, setMyPosition] = useState<number | null>(null);
+
+  const fetchRankings = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('global_ranking')
+      .select('*')
+      .order('ranking_points', { ascending: false })
+      .limit(200);
+
+    if (!error && data) {
+      setRankings(data as RankingEntry[]);
+      if (userId) {
+        const pos = data.findIndex((r: any) => r.user_id === userId);
+        setMyPosition(pos >= 0 ? pos + 1 : null);
+      }
+    }
+    setLoading(false);
+  };
+
+  // Ensure user has a ranking entry
+  useEffect(() => {
+    if (!userId) return;
+    const ensureEntry = async () => {
+      const { data } = await supabase
+        .from('global_ranking')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!data) {
+        await supabase.from('global_ranking').insert({
+          user_id: userId,
+          club_name: clubName,
+          ranking_points: 0,
+          games_played: stats.wins + stats.draws + stats.losses,
+          wins: stats.wins,
+          draws: stats.draws,
+          losses: stats.losses,
+        });
+      } else {
+        await supabase.from('global_ranking').update({ club_name: clubName }).eq('user_id', userId);
+      }
+      fetchRankings();
+    };
+    ensureEntry();
+  }, [userId, clubName]);
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('global-ranking-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_ranking' }, () => {
+        fetchRankings();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const totalGames = stats.wins + stats.draws + stats.losses;
   const winRate = totalGames > 0 ? Math.round((stats.wins / totalGames) * 100) : 0;
 
-  // Last season change
-  const lastHistory = rankingHistory.length > 0 ? rankingHistory[rankingHistory.length - 1] : null;
+  const getChangeIcon = (change: number) => {
+    if (change > 0) return <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />;
+    if (change < 0) return <TrendingDown className="h-3.5 w-3.5 text-destructive" />;
+    return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
+  };
+
+  const getChangeText = (change: number) => {
+    if (change > 0) return <span className="text-emerald-400 font-mono text-xs">+{change}</span>;
+    if (change < 0) return <span className="text-destructive font-mono text-xs">{change}</span>;
+    return <span className="text-muted-foreground font-mono text-xs">→</span>;
+  };
 
   return (
     <div className="space-y-4">
-      {/* Rating Card */}
+      {/* My Ranking Summary */}
       <Card className="border-primary/30 bg-gradient-to-br from-card to-primary/5">
         <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground">Ranking Online</p>
-              <h2 className="text-3xl sm:text-4xl font-bold">{rating}</h2>
-              <p className={`text-sm font-semibold ${tier.color} flex items-center gap-1`}>
-                {tier.icon} {tier.name}
+              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Globe className="h-3 w-3" /> Ranking Global
               </p>
+              <h2 className="text-3xl sm:text-4xl font-bold">{myPosition ? `#${myPosition}` : '—'}</h2>
+              <p className="text-sm font-semibold text-primary">{clubName}</p>
             </div>
-            <div className="text-right">
+            <div className="text-right space-y-1">
               <p className="text-[10px] sm:text-xs text-muted-foreground">Temporada {season}</p>
-              <p className="text-sm font-bold">{clubName}</p>
-              {lastHistory && (
-                <div className={`flex items-center gap-1 text-xs mt-1 ${lastHistory.change >= 0 ? 'text-emerald-400' : 'text-destructive'}`}>
-                  {lastHistory.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {lastHistory.change >= 0 ? '+' : ''}{lastHistory.change} última temporada
-                </div>
+              <p className="text-2xl font-bold">{rankings.find(r => r.user_id === userId)?.ranking_points ?? 0} <span className="text-xs text-muted-foreground">pts</span></p>
+              <div className="flex gap-3 text-xs font-mono justify-end">
+                <span className="text-emerald-400">{stats.wins}V</span>
+                <span className="text-primary">{stats.draws}E</span>
+                <span className="text-destructive">{stats.losses}D</span>
+              </div>
+              {totalGames > 0 && (
+                <p className="text-[10px] text-muted-foreground">{winRate}% aproveitamento</p>
               )}
             </div>
-          </div>
-
-          {/* Tier Progress */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>{tier.min}</span>
-              <span>Próximo tier: {tier.max}</span>
-            </div>
-            <Progress value={progress} className="h-2" />
           </div>
         </CardContent>
       </Card>
@@ -84,113 +151,102 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
               <Trophy className="h-4 w-4 mx-auto text-emerald-400 mb-1" />
               <p className="text-xs font-bold text-emerald-400">Vitória</p>
-              <p className="text-[10px] text-muted-foreground">+20 pts</p>
+              <p className="text-[10px] text-muted-foreground">+ pontos</p>
             </div>
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-center">
               <Minus className="h-4 w-4 mx-auto text-primary mb-1" />
               <p className="text-xs font-bold text-primary">Empate</p>
-              <p className="text-[10px] text-muted-foreground">+5 pts</p>
+              <p className="text-[10px] text-muted-foreground">+ poucos pts</p>
             </div>
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2 text-center">
               <TrendingDown className="h-4 w-4 mx-auto text-destructive mb-1" />
               <p className="text-xs font-bold text-destructive">Derrota</p>
-              <p className="text-[10px] text-muted-foreground">−15 pts</p>
+              <p className="text-[10px] text-muted-foreground">− pontos</p>
             </div>
           </div>
 
           <div className="text-[10px] sm:text-xs text-muted-foreground space-y-1 mt-2">
+            <p className="flex items-center gap-1"><Trophy className="h-3 w-3" /> <strong>Peso:</strong> Liga 1.0 · Copa 1.2 · Continental 1.6 · Mundial 2.0</p>
             <p className="flex items-center gap-1"><Swords className="h-3 w-3" /> <strong>Adversário forte:</strong> ganhar vale mais, perder dói menos</p>
             <p className="flex items-center gap-1"><Shield className="h-3 w-3" /> <strong>Adversário fraco:</strong> ganhar vale menos, perder dói mais</p>
-            <p className="flex items-center gap-1"><Star className="h-3 w-3" /> <strong>Campeão:</strong> +10% ao final da temporada</p>
-            <p className="flex items-center gap-1"><Flame className="h-3 w-3" /> <strong>Rebaixado:</strong> −20% ao final da temporada</p>
+            <p className="flex items-center gap-1"><Star className="h-3 w-3" /> <strong>Campeão:</strong> +10% a +25% ao final da temporada</p>
+            <p className="flex items-center gap-1"><Flame className="h-3 w-3" /> <strong>Rebaixado:</strong> −10% a −25% ao final da temporada</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Current Season Stats */}
+      {/* Global Ranking Table */}
       <Card>
-        <CardHeader className="pb-2 px-4 pt-4">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">Temporada Atual</CardTitle>
+        <CardHeader className="pb-2 px-4 pt-4 flex flex-row items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Globe className="h-3.5 w-3.5" /> Classificação Global
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={fetchRankings} disabled={loading} className="h-7 px-2">
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
-          {totalGames > 0 ? (
-            <div className="space-y-3">
-              <div className="flex gap-4 text-sm font-mono justify-center">
-                <span className="text-emerald-400">{stats.wins}V</span>
-                <span className="text-primary">{stats.draws}E</span>
-                <span className="text-destructive">{stats.losses}D</span>
-                <span className="text-muted-foreground">{totalGames} jogos</span>
-              </div>
-              <div className="flex gap-0.5 h-2 rounded overflow-hidden">
-                {stats.wins > 0 && <div className="bg-emerald-500" style={{ flex: stats.wins }} />}
-                {stats.draws > 0 && <div className="bg-primary" style={{ flex: stats.draws }} />}
-                {stats.losses > 0 && <div className="bg-destructive" style={{ flex: stats.losses }} />}
-              </div>
-              <p className="text-center text-xs text-muted-foreground">
-                Aproveitamento: <span className="font-bold text-foreground">{winRate}%</span>
-              </p>
-            </div>
+        <CardContent className="px-2 sm:px-4 pb-4">
+          {loading && rankings.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-8">Carregando ranking...</p>
+          ) : rankings.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-8">Nenhum clube no ranking ainda</p>
           ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogo disputado ainda</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Ranking History */}
-      {rankingHistory.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2 px-4 pt-4">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">Histórico de Ranking</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="space-y-2">
-              {[...rankingHistory].reverse().map((h, i) => {
-                const hTier = getRankTier(h.endRating);
-                return (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] px-1.5">{`T${h.season}`}</Badge>
-                      <span className="text-xs">{h.position}º lugar</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] ${hTier.color}`}>{hTier.icon}</span>
-                      <span className="text-sm font-bold">{h.endRating}</span>
-                      <span className={`text-[10px] font-mono ${h.change >= 0 ? 'text-emerald-400' : 'text-destructive'}`}>
-                        {h.change >= 0 ? '+' : ''}{h.change}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border/50 text-muted-foreground">
+                    <th className="text-left py-2 px-1 w-8">#</th>
+                    <th className="text-left py-2 px-1">Clube</th>
+                    <th className="text-right py-2 px-1">Pts</th>
+                    <th className="text-center py-2 px-1">J</th>
+                    <th className="text-center py-2 px-1 hidden sm:table-cell">V</th>
+                    <th className="text-center py-2 px-1 hidden sm:table-cell">E</th>
+                    <th className="text-center py-2 px-1 hidden sm:table-cell">D</th>
+                    <th className="text-center py-2 px-1">Var</th>
+                    <th className="text-left py-2 px-1 hidden sm:table-cell">Competição</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankings.map((entry, idx) => {
+                    const pos = idx + 1;
+                    const isMe = entry.user_id === userId;
+                    return (
+                      <tr
+                        key={entry.id}
+                        className={`border-b border-border/30 transition-colors ${isMe ? 'bg-primary/10 font-semibold' : 'hover:bg-muted/30'}`}
+                      >
+                        <td className="py-2 px-1">
+                          {pos <= 3 ? (
+                            <span className={`font-bold ${pos === 1 ? 'text-amber-400' : pos === 2 ? 'text-slate-300' : 'text-orange-400'}`}>
+                              {pos}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">{pos}</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px]">
+                          {entry.club_name || 'Sem nome'}
+                          {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
+                        </td>
+                        <td className="py-2 px-1 text-right font-bold">{entry.ranking_points}</td>
+                        <td className="py-2 px-1 text-center text-muted-foreground">{entry.games_played}</td>
+                        <td className="py-2 px-1 text-center text-emerald-400 hidden sm:table-cell">{entry.wins}</td>
+                        <td className="py-2 px-1 text-center text-primary hidden sm:table-cell">{entry.draws}</td>
+                        <td className="py-2 px-1 text-center text-destructive hidden sm:table-cell">{entry.losses}</td>
+                        <td className="py-2 px-1 text-center">
+                          <div className="flex items-center justify-center gap-0.5">
+                            {getChangeIcon(entry.last_change)}
+                            {getChangeText(entry.last_change)}
+                          </div>
+                        </td>
+                        <td className="py-2 px-1 text-muted-foreground truncate max-w-[80px] hidden sm:table-cell">{entry.current_competition}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tier Legend */}
-      <Card>
-        <CardHeader className="pb-2 px-4 pt-4">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">Tiers do Ranking</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {[
-              { name: 'Ferro', icon: '⚙️', range: '0-299', color: 'text-gray-400' },
-              { name: 'Bronze', icon: '🥉', range: '300-599', color: 'text-orange-400' },
-              { name: 'Prata', icon: '🥈', range: '600-899', color: 'text-slate-300' },
-              { name: 'Ouro', icon: '🥇', range: '900-1199', color: 'text-yellow-400' },
-              { name: 'Elite', icon: '💎', range: '1200-1499', color: 'text-purple-400' },
-              { name: 'Lendário', icon: '👑', range: '1500+', color: 'text-amber-400' },
-            ].map(t => (
-              <div key={t.name} className={`flex items-center gap-2 p-2 rounded bg-muted/30 ${rating >= parseInt(t.range) ? 'ring-1 ring-primary/30' : ''}`}>
-                <span className="text-sm">{t.icon}</span>
-                <div>
-                  <p className={`text-xs font-bold ${t.color}`}>{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.range}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
