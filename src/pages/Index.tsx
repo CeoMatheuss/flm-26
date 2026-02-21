@@ -293,7 +293,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return { winStreak: ws, loseStreak: ls };
   }, [game.club.matches]);
 
-  const saveGame = useCallback(async () => {
+  const saveGame = useCallback(async (silent = false) => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
     const { data: existing } = await supabase
@@ -308,8 +308,16 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     } else {
       await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
     }
-    toast.success('Jogo salvo!');
+    if (!silent) toast.success('Jogo salvo!');
   }, [game, userId]);
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveGame(true);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [saveGame]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -335,7 +343,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} infrastructure={game.infrastructure} isNewClub={isNewClub} userId={userId} />
-            <Button size="sm" variant="outline" onClick={saveGame} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
+            <Button size="sm" variant="outline" onClick={() => saveGame()} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
             </Button>
             <Button size="sm" variant="destructive" onClick={onSignOut} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
