@@ -5,10 +5,9 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { BedDouble, TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse } from 'lucide-react';
+import { BedDouble, TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { PlayerProfileModal } from './PlayerProfileModal';
-import { getPlayerBaseValue } from '@/utils/playerGenerator';
+import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue } from '@/utils/playerGenerator';
 
 interface Props {
   players: Player[];
@@ -68,6 +67,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
+  const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
+  const [shirtNumber, setShirtNumber] = useState<number>(0);
+  const [editingNumber, setEditingNumber] = useState(false);
 
   const sorted = [...players].sort((a, b) => {
     const order = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -81,6 +83,258 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     if (player.age <= 33) return <Minus className="h-3 w-3 text-yellow-400" />;
     return <TrendingDown className="h-3 w-3 text-red-400" />;
   };
+
+  // Full-page player profile view
+  if (viewingPlayer) {
+    const player = viewingPlayer;
+    const avgRating = player.seasonRatings && player.seasonRatings.length > 0
+      ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length)
+      : null;
+    const auctionEligible = player.overall >= 65 && player.age <= 35;
+
+    return (
+      <div className="space-y-3">
+        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setViewingPlayer(null)}>
+          <ArrowLeft className="h-3 w-3" /> Voltar ao Elenco
+        </Button>
+
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-mono px-2 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
+              {player.shirtNumber != null && player.shirtNumber > 0 && (
+                <span className="text-[10px] font-mono bg-muted/50 px-1.5 py-0.5 rounded">#{player.shirtNumber}</span>
+              )}
+              <h2 className="text-lg font-bold">{player.name}</h2>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-1.5">
+              {onListForSale && (
+                <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onListForSale(player.id)}>
+                  <Tag className="h-3 w-3" /> Lista de Transferência
+                </Button>
+              )}
+              {onLoanOut && (
+                <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (players.length <= 11)}>
+                  <ArrowLeftRight className="h-3 w-3" /> Emprestar
+                </Button>
+              )}
+              {onAuction && (
+                <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onAuction(player)} disabled={!auctionEligible}>
+                  <Gavel className="h-3 w-3" /> Leilão
+                  {!auctionEligible && <span className="text-[8px] text-muted-foreground">(OVR 65+ / ≤35a)</span>}
+                </Button>
+              )}
+              {onChangeNumber && (
+                <div className="flex items-center gap-1">
+                  {editingNumber ? (
+                    <>
+                      <Input type="number" min={1} max={99} value={shirtNumber}
+                        onChange={(e) => setShirtNumber(Math.min(99, Math.max(1, Number(e.target.value) || 1)))}
+                        className="h-7 w-16 text-[10px] px-1.5" />
+                      <Button size="sm" variant="default" className="h-7 px-2 text-[10px]" onClick={() => { onChangeNumber(player.id, shirtNumber); setEditingNumber(false); }}>OK</Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setEditingNumber(false)}>✕</Button>
+                    </>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 w-full" onClick={() => { setShirtNumber(player.shirtNumber || 1); setEditingNumber(true); }}>
+                      <Hash className="h-3 w-3" /> Nº {player.shirtNumber || '—'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Posição</p>
+                <p className="font-semibold">{posLabels[player.position]}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Overall</p>
+                <p className="font-bold text-lg text-primary">{player.overall}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Idade</p>
+                <p className="font-semibold">{player.age} anos</p>
+              </div>
+            </div>
+
+            {/* Personality */}
+            {player.personality && personalityLabels[player.personality] && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50">
+                <span className="text-lg">{personalityLabels[player.personality].emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold">{personalityLabels[player.personality].label}</p>
+                  <p className="text-[10px] text-muted-foreground">{personalityLabels[player.personality].desc}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Contract & Salary */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-muted/30 rounded p-2">
+                <p className="text-[10px] text-muted-foreground">📄 Contrato</p>
+                <p className="font-semibold">{player.contract} {player.contract === 1 ? 'ano' : 'anos'}{player.contract <= 1 ? ' ⚠️' : ''}</p>
+              </div>
+              <div className="bg-muted/30 rounded p-2">
+                <p className="text-[10px] text-muted-foreground">💰 Salário</p>
+                <p className="font-semibold text-primary">R$ {(player.salary / 1000).toFixed(0)}k/mês</p>
+              </div>
+            </div>
+
+            {/* Tabs: Atributos / Estatísticas */}
+            <Tabs defaultValue="attributes" className="w-full">
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="attributes" className="text-[10px]">📊 Atributos</TabsTrigger>
+                <TabsTrigger value="stats" className="text-[10px]">📈 Estatísticas</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="attributes" className="space-y-3 mt-2">
+                {player.position === 'GOL' && player.attributes.goalkeeping != null && (
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
+                      <span className={`text-sm font-bold ${getAttrColor(player.attributes.goalkeeping)}`}>{player.attributes.goalkeeping}</span>
+                    </div>
+                    <Progress value={player.attributes.goalkeeping} className="h-1.5 mt-1" />
+                  </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {Object.entries(player.attributes).filter(([key, val]) => val != null && !(player.position === 'GOL' && key === 'goalkeeping')).map(([key, val]) => (
+                    <div key={key} className="bg-muted/30 rounded p-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
+                        <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                      </div>
+                      <Progress value={val as number} className="h-1 mt-0.5" />
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="stats" className="space-y-3 mt-2">
+                <div>
+                  <p className="text-xs font-semibold mb-1.5">🏆 Números da Carreira</p>
+                  <div className="grid grid-cols-4 gap-1.5 text-xs">
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">Jogos</p>
+                      <p className="font-bold text-lg">{player.gamesPlayed}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
+                      <p className="font-bold text-lg">{player.goals}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
+                      <p className="font-bold text-lg">{player.assists}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">★ Média</p>
+                      <p className={`font-bold text-lg ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                        {avgRating ? avgRating.toFixed(1) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {player.gamesPlayed > 0 && (
+                    <div className="grid grid-cols-2 gap-1.5 mt-1.5 text-[10px]">
+                      <div className="bg-muted/20 rounded p-1.5 text-center">
+                        <span className="text-muted-foreground">Gols/Jogo: </span>
+                        <span className="font-bold">{(player.goals / player.gamesPlayed).toFixed(2)}</span>
+                      </div>
+                      <div className="bg-muted/20 rounded p-1.5 text-center">
+                        <span className="text-muted-foreground">Assist/Jogo: </span>
+                        <span className="font-bold">{(player.assists / player.gamesPlayed).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {player.matchRating != null && (
+                  <div className="flex items-center gap-2 text-xs bg-muted/20 rounded p-2">
+                    <span className="text-muted-foreground">Nota última partida:</span>
+                    <span className={`font-bold text-sm ${player.matchRating >= 7 ? 'text-emerald-400' : player.matchRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                      ★ {player.matchRating.toFixed(1)}
+                    </span>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
+                  {player.history && player.history.length > 0 ? (
+                    <div className="space-y-1">
+                      {player.history.map((h, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
+                          <span className="font-semibold">{h.club}</span>
+                          <span className="text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}</span>
+                          <span className="ml-auto">{h.games}j</span>
+                          <span>⚽{h.goals}</span>
+                          <span>🅰️{h.assists}</span>
+                          {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground bg-muted/20 rounded px-2 py-1.5">Sem histórico de clubes anteriores.</p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold mb-1.5">💰 Valor de Mercado</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">Valor Fixo (atributos)</p>
+                      <p className="font-bold text-sm text-emerald-400">R${(getPlayerBaseValue(player) / 1000).toFixed(0)}k</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">Valor Total (estimado)</p>
+                      <p className="font-bold text-sm text-primary">R${(getPlayerValue(player) / 1000).toFixed(0)}k</p>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1">O valor variável (±10%) depende da sequência de vitórias/derrotas e colocação na liga.</p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Injury */}
+            {player.injury && (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-destructive">🏥 LESIONADO</span>
+                  <Badge variant="destructive" className="text-[9px] ml-auto">{player.injury.severity}</Badge>
+                </div>
+                <p className="text-[11px] font-semibold">{player.injury.type}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Progress value={((player.injury.originalWeeks - player.injury.weeksRemaining) / player.injury.originalWeeks) * 100} className="h-1.5 flex-1" />
+                  <span className="text-[10px] text-muted-foreground">{player.injury.weeksRemaining}/{player.injury.originalWeeks} partidas</span>
+                </div>
+              </div>
+            )}
+
+            {/* Energy & Morale */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                  <span>Energia</span>
+                  <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
+                </div>
+                <Progress value={player.stamina} className="h-1.5" />
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                  <span>Moral</span>
+                  <span>{player.morale}%</span>
+                </div>
+                <Progress value={player.morale} className="h-1.5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -228,9 +482,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <CardContent className="p-2 sm:p-3">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <PlayerProfileModal player={player} isOwnPlayer onListForSale={onListForSale} onLoanOut={onLoanOut} onAuction={onAuction} onChangeNumber={onChangeNumber} canLoanOut={canLoanOut} canAuction playersCount={players.length}>
-                      <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{player.name}</button>
-                    </PlayerProfileModal>
+                    <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); setViewingPlayer(player); }}>{player.name}</button>
                     {player.personality && personalityLabels[player.personality] && (
                       <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
                     )}
