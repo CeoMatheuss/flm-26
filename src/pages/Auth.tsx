@@ -8,8 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import flmLogo from '@/assets/flm26-logo.png';
-import gamePreview from '@/assets/game-preview.jpg';
-import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw } from 'lucide-react';
+import gamePreview1 from '@/assets/game-preview.jpg';
+import gamePreview2 from '@/assets/game-preview-2.jpg';
+import gamePreview3 from '@/assets/game-preview-3.jpg';
+import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const previewSlides = [
+  { src: gamePreview1, title: 'Gerencie. Compita. Conquiste.', desc: 'Construa seu clube do zero, escale táticas em tempo real e dispute ligas online.' },
+  { src: gamePreview2, title: 'Táticas em Tempo Real', desc: 'Escalação visual 2D com controle total da formação e estratégia do seu time.' },
+  { src: gamePreview3, title: 'Mercado de Transferências', desc: 'Compre, venda e negocie jogadores no mercado online com outros managers.' },
+];
 
 const RESEND_COOLDOWN = 60; // seconds
 
@@ -33,7 +41,15 @@ export default function AuthPage() {
   const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+  const [slideIndex, setSlideIndex] = useState(0);
 
+  // Auto-advance carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSlideIndex(prev => (prev + 1) % previewSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
   // Countdown timer for resend
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -137,9 +153,9 @@ export default function AuthPage() {
   if (showOtp) {
     return (
       <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
-        {/* Left side - Game Preview Image */}
+        {/* Left side - Game Preview Carousel */}
         <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
-          <img src={gamePreview} alt="FLM 26 Game Preview" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={gamePreview1} alt="FLM 26 Game Preview" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80" />
           <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,40%,8%)] via-transparent to-[hsl(220,40%,8%)]/50" />
           <div className="relative z-10 p-8 text-center space-y-4">
@@ -255,18 +271,47 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
-      {/* Left side - Game Preview Image (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
-        <img 
-          src={gamePreview} 
-          alt="FLM 26 Game Preview" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,40%,8%)] via-transparent to-[hsl(220,40%,8%)]/50" />
-        <div className="relative z-10 p-8 text-center space-y-4">
-          <h2 className="text-3xl font-black text-white drop-shadow-lg">Gerencie. Compita. Conquiste.</h2>
-          <p className="text-white/70 text-sm max-w-sm mx-auto">Construa seu clube do zero, escale táticas em tempo real e dispute ligas online contra outros managers.</p>
+      {/* Left side - Image Carousel (responsive) */}
+      <div className="relative w-full h-48 sm:h-56 lg:h-auto lg:w-1/2 lg:flex items-center justify-center overflow-hidden">
+        {previewSlides.map((slide, i) => (
+          <img 
+            key={i}
+            src={slide.src} 
+            alt={slide.title}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === slideIndex ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80 hidden lg:block" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(220,40%,8%)] lg:bg-gradient-to-t lg:from-[hsl(220,40%,8%)] lg:via-transparent lg:to-[hsl(220,40%,8%)]/50" />
+        
+        <div className="relative z-10 p-4 lg:p-8 text-center space-y-2 lg:space-y-4 flex flex-col items-center justify-end lg:justify-center h-full">
+          <h2 className="text-lg lg:text-3xl font-black text-white drop-shadow-lg">{previewSlides[slideIndex].title}</h2>
+          <p className="text-white/70 text-[11px] lg:text-sm max-w-sm mx-auto hidden sm:block">{previewSlides[slideIndex].desc}</p>
+          
+          {/* Navigation */}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setSlideIndex(prev => (prev - 1 + previewSlides.length) % previewSlides.length)}
+              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex gap-1.5">
+              {previewSlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSlideIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${i === slideIndex ? 'bg-primary w-5' : 'bg-white/40 hover:bg-white/60'}`}
+                />
+              ))}
+            </div>
+            <button 
+              onClick={() => setSlideIndex(prev => (prev + 1) % previewSlides.length)}
+              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -282,9 +327,6 @@ export default function AuthPage() {
             FLM 26
           </h1>
           <p className="text-muted-foreground text-sm">Football League Manager 2026</p>
-          <p className="text-[11px] text-muted-foreground/60 lg:hidden">
-            Construa seu clube do zero. Gerencie elenco, táticas, finanças e conquiste títulos.
-          </p>
         </div>
 
         {/* Login Card */}
