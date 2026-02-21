@@ -923,6 +923,184 @@ export type Database = {
           },
         ]
       }
+      transfer_listings: {
+        Row: {
+          asking_price: number
+          buyer_club_name: string | null
+          buyer_id: string | null
+          cooldown_until: string | null
+          created_at: string
+          id: string
+          league_id: string | null
+          listed_at: string
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position: string
+          seller_club_name: string
+          seller_id: string
+          sold_at: string | null
+          status: string
+          transfer_count: number
+        }
+        Insert: {
+          asking_price: number
+          buyer_club_name?: string | null
+          buyer_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          league_id?: string | null
+          listed_at?: string
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position?: string
+          seller_club_name?: string
+          seller_id: string
+          sold_at?: string | null
+          status?: string
+          transfer_count?: number
+        }
+        Update: {
+          asking_price?: number
+          buyer_club_name?: string | null
+          buyer_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          league_id?: string | null
+          listed_at?: string
+          player_age?: number
+          player_data?: Json
+          player_name?: string
+          player_overall?: number
+          player_position?: string
+          seller_club_name?: string
+          seller_id?: string
+          sold_at?: string | null
+          status?: string
+          transfer_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_listings_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfer_log: {
+        Row: {
+          created_at: string
+          from_club_name: string
+          from_user_id: string
+          id: string
+          player_name: string
+          player_overall: number
+          price: number
+          salary: number
+          to_club_name: string
+          to_user_id: string
+          transfer_type: string
+        }
+        Insert: {
+          created_at?: string
+          from_club_name?: string
+          from_user_id: string
+          id?: string
+          player_name: string
+          player_overall: number
+          price: number
+          salary?: number
+          to_club_name?: string
+          to_user_id: string
+          transfer_type?: string
+        }
+        Update: {
+          created_at?: string
+          from_club_name?: string
+          from_user_id?: string
+          id?: string
+          player_name?: string
+          player_overall?: number
+          price?: number
+          salary?: number
+          to_club_name?: string
+          to_user_id?: string
+          transfer_type?: string
+        }
+        Relationships: []
+      }
+      transfer_offers: {
+        Row: {
+          bonus_assists: number
+          bonus_games: number
+          bonus_goals: number
+          bonus_titles: number
+          buyer_club_name: string
+          buyer_id: string
+          created_at: string
+          id: string
+          listing_id: string
+          offered_contract_years: number
+          offered_price: number
+          offered_salary: number
+          rejection_reason: string | null
+          responded_at: string | null
+          signing_bonus: number
+          status: string
+        }
+        Insert: {
+          bonus_assists?: number
+          bonus_games?: number
+          bonus_goals?: number
+          bonus_titles?: number
+          buyer_club_name?: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          listing_id: string
+          offered_contract_years?: number
+          offered_price: number
+          offered_salary?: number
+          rejection_reason?: string | null
+          responded_at?: string | null
+          signing_bonus?: number
+          status?: string
+        }
+        Update: {
+          bonus_assists?: number
+          bonus_games?: number
+          bonus_goals?: number
+          bonus_titles?: number
+          buyer_club_name?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          listing_id?: string
+          offered_contract_years?: number
+          offered_price?: number
+          offered_salary?: number
+          rejection_reason?: string | null
+          responded_at?: string | null
+          signing_bonus?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "transfer_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_presence: {
         Row: {
           is_online: boolean
