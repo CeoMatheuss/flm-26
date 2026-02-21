@@ -181,8 +181,9 @@ export function generateFreeAgents(count: number): Player[] {
   });
 }
 
-export function getPlayerValue(player: Player): number {
-  // Exponential value based on OVR tiers
+/** Valor fixo baseado em atributos e idade */
+export function getPlayerBaseValue(player: Player): number {
+  // Valor fixo baseado em OVR (atributos)
   let baseValue: number;
   if (player.overall >= 85) baseValue = player.overall * 80000;
   else if (player.overall >= 75) baseValue = player.overall * 40000;
@@ -190,18 +191,41 @@ export function getPlayerValue(player: Player): number {
   else if (player.overall >= 55) baseValue = player.overall * 10000;
   else baseValue = player.overall * 5000;
 
-  // Age curve: peak value 23-27, young premium, old discount
+  // Curva de idade: pico 23-27, jovem premium, velho desconto
   let ageFactor: number;
-  if (player.age <= 20) ageFactor = 1.5;      // wonderkid premium
+  if (player.age <= 20) ageFactor = 1.5;
   else if (player.age <= 22) ageFactor = 1.4;
-  else if (player.age <= 24) ageFactor = 1.3;  // rising star
-  else if (player.age <= 27) ageFactor = 1.2;  // prime
-  else if (player.age <= 29) ageFactor = 1.0;  // mature
-  else if (player.age <= 31) ageFactor = 0.7;  // declining
-  else if (player.age <= 33) ageFactor = 0.4;  // veteran
-  else ageFactor = 0.2;                         // twilight
+  else if (player.age <= 24) ageFactor = 1.3;
+  else if (player.age <= 27) ageFactor = 1.2;
+  else if (player.age <= 29) ageFactor = 1.0;
+  else if (player.age <= 31) ageFactor = 0.7;
+  else if (player.age <= 33) ageFactor = 0.4;
+  else ageFactor = 0.2;
 
   return Math.floor(baseValue * ageFactor);
+}
+
+/** Calcula bônus variável: +10% por sequência de vitórias / boa colocação, -10% se perdendo */
+export function getPlayerVariableBonus(winStreak: number, leaguePosition?: number, totalTeams?: number): number {
+  let bonus = 0;
+  // +10% por cada 3 vitórias seguidas (máx +30%)
+  if (winStreak >= 3) bonus += Math.min(30, Math.floor(winStreak / 3) * 10);
+  // -10% por cada 3 derrotas seguidas (winStreak negativo)
+  if (winStreak <= -3) bonus += Math.max(-30, Math.ceil(winStreak / 3) * 10);
+  // Colocação na liga: top 25% = +10%, bottom 25% = -10%
+  if (leaguePosition != null && totalTeams != null && totalTeams > 1) {
+    const ratio = leaguePosition / totalTeams;
+    if (ratio <= 0.25) bonus += 10;
+    else if (ratio >= 0.75) bonus -= 10;
+  }
+  return bonus;
+}
+
+/** Valor total = fixo + variável (%) */
+export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosition?: number, totalTeams?: number): number {
+  const baseValue = getPlayerBaseValue(player);
+  const variablePercent = getPlayerVariableBonus(winStreak, leaguePosition, totalTeams);
+  return Math.floor(baseValue * (1 + variablePercent / 100));
 }
 
 export function generateScoutReport(player: Player, scoutAccuracy: number): ScoutReport {

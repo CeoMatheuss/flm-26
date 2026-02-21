@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutReport } from '@/types/game';
 import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useState } from 'react';
-import { getPlayerValue } from '@/utils/playerGenerator';
+import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue } from '@/utils/playerGenerator';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
@@ -203,115 +204,130 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
           </div>
         </div>
 
-        {/* Career Stats - hidden for free agents */}
-        {!isFreeAgent && (
-          <div>
-            <p className="text-xs font-semibold mb-1.5">🏆 Estatísticas da Carreira</p>
-            <div className="grid grid-cols-4 gap-1.5 text-xs">
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-[10px] text-muted-foreground">Jogos</p>
-                <p className="font-bold">{player.gamesPlayed}</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
-                <p className="font-bold">{player.goals}</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
-                <p className="font-bold">{player.assists}</p>
-              </div>
-              <div className="bg-muted/30 rounded p-2 text-center">
-                <p className="text-[10px] text-muted-foreground">★ Média</p>
-                <p className={`font-bold ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
-                  {avgRating ? avgRating.toFixed(1) : '—'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Match Rating */}
-        {!isFreeAgent && player.matchRating != null && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Nota última partida:</span>
-            <span className={`font-bold ${player.matchRating >= 7 ? 'text-emerald-400' : player.matchRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
-              ★ {player.matchRating.toFixed(1)}
-            </span>
-          </div>
-        )}
-
-        {/* Stamina & Morale - hidden for free agents */}
+        {/* Tabs: Atributos / Estatísticas */}
         {!isFreeAgent && (
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-                <span>⚡ Energia</span>
-                <span className={player.stamina < 60 ? 'text-destructive' : ''}>{player.stamina}%</span>
-              </div>
-              <Progress value={player.stamina} className="h-1.5" />
-            </div>
-            <div>
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-                <span>😊 Moral</span>
-                <span>{player.morale}%</span>
-              </div>
-              <Progress value={player.morale} className="h-1.5" />
-            </div>
-          </div>
-        )}
+          <Tabs defaultValue="attributes" className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="attributes" className="text-[10px]">📊 Atributos</TabsTrigger>
+              <TabsTrigger value="stats" className="text-[10px]">📈 Estatísticas</TabsTrigger>
+            </TabsList>
 
-        {/* All Attributes - hidden for free agents */}
-        {!isFreeAgent && (
-          <div>
-            <p className="text-xs font-semibold mb-1.5">📊 Atributos</p>
-            {/* Highlight goalkeeping for GK */}
-            {player.position === 'GOL' && player.attributes.goalkeeping != null && (
-              <div className="mb-2 p-2 rounded-lg bg-primary/10 border border-primary/30">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
-                  <span className={`text-sm font-bold ${getAttrColor(player.attributes.goalkeeping)}`}>{player.attributes.goalkeeping}</span>
-                </div>
-                <Progress value={player.attributes.goalkeeping} className="h-1.5 mt-1" />
-              </div>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {Object.entries(player.attributes).filter(([key, val]) => val != null && !(player.position === 'GOL' && key === 'goalkeeping')).map(([key, val]) => (
-                <div key={key} className="bg-muted/30 rounded p-1.5">
+            <TabsContent value="attributes" className="space-y-3 mt-2">
+              {/* Goalkeeping highlight */}
+              {player.position === 'GOL' && player.attributes.goalkeeping != null && (
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
-                    <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                    <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
+                    <span className={`text-sm font-bold ${getAttrColor(player.attributes.goalkeeping)}`}>{player.attributes.goalkeeping}</span>
                   </div>
-                  <Progress value={val as number} className="h-1 mt-0.5" />
+                  <Progress value={player.attributes.goalkeeping} className="h-1.5 mt-1" />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {Object.entries(player.attributes).filter(([key, val]) => val != null && !(player.position === 'GOL' && key === 'goalkeeping')).map(([key, val]) => (
+                  <div key={key} className="bg-muted/30 rounded p-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
+                      <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                    </div>
+                    <Progress value={val as number} className="h-1 mt-0.5" />
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
 
-        {/* History */}
-        <div>
-          <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
-          {player.history && player.history.length > 0 ? (
-            <div className="space-y-1">
-              {player.history.map((h, i) => (
-                <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
-                  <span className="font-semibold">{h.club}</span>
-                  <span className="text-muted-foreground">
-                    T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}
-                  </span>
-                  <span className="ml-auto">{h.games}j</span>
-                  <span>⚽{h.goals}</span>
-                  <span>🅰️{h.assists}</span>
-                  {h.avgRating > 0 && (
-                    <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>
-                  )}
+            <TabsContent value="stats" className="space-y-3 mt-2">
+              {/* Career Stats */}
+              <div>
+                <p className="text-xs font-semibold mb-1.5">🏆 Números da Carreira</p>
+                <div className="grid grid-cols-4 gap-1.5 text-xs">
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">Jogos</p>
+                    <p className="font-bold text-lg">{player.gamesPlayed}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
+                    <p className="font-bold text-lg">{player.goals}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
+                    <p className="font-bold text-lg">{player.assists}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">★ Média</p>
+                    <p className={`font-bold text-lg ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                      {avgRating ? avgRating.toFixed(1) : '—'}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[10px] text-muted-foreground bg-muted/20 rounded px-2 py-1.5">Sem histórico de clubes anteriores.</p>
-          )}
-        </div>
+                {player.gamesPlayed > 0 && (
+                  <div className="grid grid-cols-2 gap-1.5 mt-1.5 text-[10px]">
+                    <div className="bg-muted/20 rounded p-1.5 text-center">
+                      <span className="text-muted-foreground">Gols/Jogo: </span>
+                      <span className="font-bold">{(player.goals / player.gamesPlayed).toFixed(2)}</span>
+                    </div>
+                    <div className="bg-muted/20 rounded p-1.5 text-center">
+                      <span className="text-muted-foreground">Assist/Jogo: </span>
+                      <span className="font-bold">{(player.assists / player.gamesPlayed).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Match Rating */}
+              {player.matchRating != null && (
+                <div className="flex items-center gap-2 text-xs bg-muted/20 rounded p-2">
+                  <span className="text-muted-foreground">Nota última partida:</span>
+                  <span className={`font-bold text-sm ${player.matchRating >= 7 ? 'text-emerald-400' : player.matchRating >= 5.5 ? 'text-primary' : 'text-destructive'}`}>
+                    ★ {player.matchRating.toFixed(1)}
+                  </span>
+                </div>
+              )}
+
+              {/* Transfer History */}
+              <div>
+                <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
+                {player.history && player.history.length > 0 ? (
+                  <div className="space-y-1">
+                    {player.history.map((h, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
+                        <span className="font-semibold">{h.club}</span>
+                        <span className="text-muted-foreground">
+                          T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}
+                        </span>
+                        <span className="ml-auto">{h.games}j</span>
+                        <span>⚽{h.goals}</span>
+                        <span>🅰️{h.assists}</span>
+                        {h.avgRating > 0 && (
+                          <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground bg-muted/20 rounded px-2 py-1.5">Sem histórico de clubes anteriores.</p>
+                )}
+              </div>
+
+              {/* Player Value */}
+              <div>
+                <p className="text-xs font-semibold mb-1.5">💰 Valor de Mercado</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">Valor Fixo (atributos)</p>
+                    <p className="font-bold text-sm text-emerald-400">R${(getPlayerBaseValue(player) / 1000).toFixed(0)}k</p>
+                  </div>
+                  <div className="bg-muted/30 rounded p-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">Valor Total (estimado)</p>
+                    <p className="font-bold text-sm text-primary">R${(getPlayerValue(player) / 1000).toFixed(0)}k</p>
+                  </div>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">O valor variável (±10%) depende da sequência de vitórias/derrotas e colocação na liga.</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
 
         {/* Injury */}
         {player.injury && (
