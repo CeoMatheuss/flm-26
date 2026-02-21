@@ -221,9 +221,8 @@ export function useGame(initialState?: GameState, userId?: string) {
 
       return {
         ...prev,
-        matches: prev.matches.map(m =>
-          m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m
-        ),
+        // Remove played BOT FC matches — history is stored server-side in match_history
+        matches: prev.matches.filter(m => m.id !== matchId),
         players: prev.players.map(p => ({
           ...p,
           morale: Math.min(100, Math.max(20, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
