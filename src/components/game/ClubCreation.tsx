@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -164,202 +164,221 @@ export function ClubCreation({ userId, onComplete }: Props) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
-      <Card className="w-full max-w-lg max-h-[95vh] overflow-y-auto">
-        <CardHeader className="text-center pb-2">
-          <img src={flmLogo} alt="FLM 26" className="w-12 h-12 mx-auto mb-1" />
-          <CardTitle className="text-lg sm:text-xl">Criar Seu Clube</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Configure a identidade do seu time</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Club Name */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Nome do Clube</Label>
-            <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
+      <Card className="w-full max-w-lg max-h-[95vh] overflow-y-auto border-primary/20">
+        {/* Header with Preview */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-4 pt-4 pb-3">
+          <div className="flex items-center gap-3 mb-3">
+            <img src={flmLogo} alt="FLM 26" className="w-8 h-8" />
+            <div>
+              <h2 className="text-base font-bold">Criar Seu Clube</h2>
+              <p className="text-[10px] text-muted-foreground">Configure a identidade do seu time</p>
+            </div>
           </div>
-
-          {/* Country */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Globe className="h-3 w-3" /> País do Clube</Label>
-            <button
-              onClick={() => setCountryOpen(!countryOpen)}
-              className="w-full h-10 px-3 rounded-lg border border-border bg-background flex items-center justify-between hover:border-primary/50 transition-colors"
-            >
-              <span className="flex items-center gap-2 text-sm">
-                <span className="text-lg">{selectedCountry?.flag}</span>
-                <span className="font-medium">{selectedCountry?.name}</span>
-              </span>
-              {countryOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-            </button>
-            {countryOpen && (
-              <div className="border border-border rounded-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                <ScrollArea className="h-[180px]">
-                  <div className="p-1 space-y-0.5">
-                    {countries.map(c => (
-                      <button
-                        key={c.code}
-                        onClick={() => { setCountry(c.code); setCountryOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                          country === c.code ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <span className="text-lg">{c.flag}</span>
-                        <span>{c.name}</span>
-                        {country === c.code && <span className="ml-auto text-xs">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
+          {/* Live Preview - always visible */}
+          <div className="rounded-xl p-3 border border-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-center gap-0.5">
+                {useCustomLogo && customLogoUrl ? (
+                  <img src={customLogoUrl} alt="Logo" className="w-14 h-14 rounded-lg object-cover" />
+                ) : (
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={56} />
+                )}
               </div>
-            )}
+              <div className="text-center flex-1 min-w-0">
+                <p className="font-bold text-sm truncate" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
+                <p className="text-[9px] text-muted-foreground truncate">
+                  {selectedCountry?.flag} {selectedCountry?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uni 1" size={40} />
+                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uni 2" size={40} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="space-y-4 pt-4">
+          {/* SECTION 1: Info Básica */}
+          <div className="space-y-3">
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Shield className="h-3 w-3" /> Informações Básicas
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Nome do Clube</Label>
+                <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-8 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Nome do Estádio</Label>
+                <Input placeholder="Ex: Arena do Dragão" value={stadiumName} onChange={e => setStadiumName(e.target.value)} maxLength={40} className="h-8 text-sm" />
+              </div>
+            </div>
+
+            {/* Country */}
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> País</Label>
+              <button
+                onClick={() => setCountryOpen(!countryOpen)}
+                className="w-full h-9 px-3 rounded-lg border border-border bg-background flex items-center justify-between hover:border-primary/50 transition-colors text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-base">{selectedCountry?.flag}</span>
+                  <span className="font-medium text-sm">{selectedCountry?.name}</span>
+                </span>
+                {countryOpen ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+              {countryOpen && (
+                <div className="border border-border rounded-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                  <ScrollArea className="h-[150px]">
+                    <div className="p-1 grid grid-cols-2 gap-0.5">
+                      {countries.map(c => (
+                        <button
+                          key={c.code}
+                          onClick={() => { setCountry(c.code); setCountryOpen(false); }}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                            country === c.code ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className="text-sm">{c.flag}</span>
+                          <span className="truncate">{c.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Stadium Name */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5">🏟️ Nome do Estádio</Label>
-            <Input placeholder="Ex: Arena do Dragão" value={stadiumName} onChange={e => setStadiumName(e.target.value)} maxLength={40} className="h-9 text-sm" />
-          </div>
+          <div className="border-t border-border" />
 
-          {/* Colors */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Cores do Clube</Label>
+          {/* SECTION 2: Cores */}
+          <div className="space-y-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Palette className="h-3 w-3" /> Cores do Clube
+            </h3>
             <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-2 pb-2">
+              <div className="flex gap-1.5 pb-1">
                 {presetColors.map((c, i) => (
                   <button
                     key={i}
                     onClick={() => { setPrimaryColor(c.primary); setSecondaryColor(c.secondary); setDetailColor(c.detail); }}
-                    className={`shrink-0 h-10 w-16 rounded-lg border-2 transition-all flex overflow-hidden ${primaryColor === c.primary && secondaryColor === c.secondary ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                    className={`shrink-0 h-8 w-14 rounded-lg border-2 transition-all flex overflow-hidden ${primaryColor === c.primary && secondaryColor === c.secondary ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
                   >
                     <div className="flex-1" style={{ backgroundColor: c.primary }} />
                     <div className="flex-1" style={{ backgroundColor: c.secondary }} />
-                    <div className="w-2" style={{ backgroundColor: c.detail }} />
+                    <div className="w-1.5" style={{ backgroundColor: c.detail }} />
                   </button>
                 ))}
               </div>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Principal</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-0.5">
+                <Label className="text-[9px] text-muted-foreground">Principal</Label>
                 <div className="flex items-center gap-1">
-                  <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: primaryColor }} />
+                  <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: primaryColor }} />
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Secundária</Label>
+              <div className="space-y-0.5">
+                <Label className="text-[9px] text-muted-foreground">Secundária</Label>
                 <div className="flex items-center gap-1">
-                  <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: secondaryColor }} />
+                  <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: secondaryColor }} />
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Detalhes</Label>
+              <div className="space-y-0.5">
+                <Label className="text-[9px] text-muted-foreground">Detalhes</Label>
                 <div className="flex items-center gap-1">
-                  <input type="color" value={detailColor} onChange={e => setDetailColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: detailColor }} />
+                  <input type="color" value={detailColor} onChange={e => setDetailColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: detailColor }} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Shield Shape */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Forma do Escudo</Label>
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-2 pb-2">
-                {shieldShapes.map(shape => (
+          <div className="border-t border-border" />
+
+          {/* SECTION 3: Escudo */}
+          <div className="space-y-3">
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Shield className="h-3 w-3" /> Personalizar Escudo
+            </h3>
+
+            {/* Shape */}
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Forma</Label>
+              <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex gap-1.5 pb-1">
+                  {shieldShapes.map(shape => (
+                    <button
+                      key={shape}
+                      onClick={() => setSelectedShape(shape)}
+                      className={`shrink-0 p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0.5 min-w-[50px] ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    >
+                      <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={shape} size={30} />
+                      <span className="text-[7px] font-medium text-muted-foreground">{shapeNames[shape]}</span>
+                    </button>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
+
+            {/* Pattern */}
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Padrão</Label>
+              <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
+                {shieldPatterns.map(pattern => (
                   <button
-                    key={shape}
-                    onClick={() => setSelectedShape(shape)}
-                    className={`shrink-0 p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 min-w-[60px] ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    key={pattern}
+                    onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
+                    className={`p-0.5 rounded-md border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-1 ring-primary/30' : 'border-border hover:border-primary/50'}`}
                   >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={shape} size={36} />
-                    <span className="text-[8px] font-medium text-muted-foreground">{shapeNames[shape]}</span>
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} size={24} />
                   </button>
                 ))}
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
-
-          {/* Shield Pattern */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Padrão do Escudo</Label>
-            <div className="grid grid-cols-6 sm:grid-cols-13 gap-1">
-              {shieldPatterns.map(pattern => (
-                <button
-                  key={pattern}
-                  onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
-                  className={`p-0.5 rounded-lg border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
-                >
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} icon={selectedIcon} size={28} />
-                </button>
-              ))}
             </div>
-          </div>
 
-          {/* Shield Icon */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5"><Sparkles className="h-3 w-3" /> Ícone do Escudo</Label>
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-1.5 pb-2">
+            {/* Icon */}
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Emblema Central</Label>
+              <div className="grid grid-cols-7 sm:grid-cols-9 gap-1">
                 {shieldIcons.map(icon => (
                   <button
                     key={icon}
                     onClick={() => { setSelectedIcon(icon); setUseCustomLogo(false); }}
-                    className={`shrink-0 p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0.5 min-w-[52px] ${selectedIcon === icon && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    className={`p-1 rounded-md border-2 transition-all flex flex-col items-center gap-0 aspect-square ${selectedIcon === icon && !useCustomLogo ? 'border-primary ring-1 ring-primary/30 bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={selectedShape} icon={icon} size={32} />
-                    <span className="text-[7px] font-medium text-muted-foreground leading-tight">{shieldIconLabels[icon].split(' ')[0]}</span>
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={selectedShape} icon={icon} size={26} />
+                    <span className="text-[6px] font-medium text-muted-foreground leading-none mt-0.5">{shieldIconLabels[icon].split(' ').pop()}</span>
                   </button>
                 ))}
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            </div>
           </div>
+
+          <div className="border-t border-border" />
 
           {/* Upload Logo */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs h-8 gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-[10px] h-7 gap-1">
               <Upload className="h-3 w-3" />
-              {uploading ? 'Enviando...' : 'Upload Logo Personalizado'}
+              {uploading ? 'Enviando...' : 'Upload Logo'}
             </Button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             {useCustomLogo && customLogoUrl && (
               <div className="flex items-center gap-2">
-                <img src={customLogoUrl} alt="Logo" className="w-8 h-8 rounded object-cover border border-primary" />
-                <span className="text-[10px] text-emerald-500 font-medium">✓ Logo personalizado</span>
+                <img src={customLogoUrl} alt="Logo" className="w-7 h-7 rounded object-cover border border-primary" />
+                <span className="text-[9px] text-emerald-500 font-medium">✓ Logo personalizado</span>
               </div>
             )}
           </div>
 
-          {/* Preview */}
-          <div className="border border-border rounded-xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}18, ${secondaryColor}18)` }}>
-            <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1.5">
-              <Shirt className="h-3 w-3" /> Prévia do Clube
-            </p>
-            <div className="flex items-center justify-center gap-4 sm:gap-6">
-              <div className="flex flex-col items-center gap-1">
-                {useCustomLogo && customLogoUrl ? (
-                  <img src={customLogoUrl} alt="Logo" className="w-[68px] h-[68px] rounded-lg object-cover" />
-                ) : (
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={68} />
-                )}
-                <span className="text-[8px] text-muted-foreground">Escudo</span>
-              </div>
-              <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={58} />
-              <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={58} />
-            </div>
-            <div className="text-center">
-              <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
-              <p className="text-[10px] text-muted-foreground">
-                {selectedCountry?.flag} {selectedCountry?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
-              </p>
-            </div>
-          </div>
-
-          <Button onClick={handleSubmit} className="w-full" disabled={!clubName.trim()}>
+          <Button onClick={handleSubmit} className="w-full h-10" disabled={!clubName.trim()}>
             Criar Clube e Começar 🏆
           </Button>
         </CardContent>
