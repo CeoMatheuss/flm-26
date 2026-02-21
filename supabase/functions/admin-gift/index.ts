@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { giftType, targetUserId, banPassword, banReason, banMonths, playerOverall, playerPosition, playerDestination, playerMinPrice } = body;
+    const { giftType, targetUserId, banPassword, banReason, banMonths, playerOverall, playerPosition, playerDestination, playerMinPrice, playerAge: requestedAge } = body;
 
     // ========== GAME BAN ==========
     if (giftType === 'game_ban') {
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
       const lastNames = ['Pereira', 'Araújo', 'Barbosa', 'Ribeiro', 'Martins', 'Cardoso', 'Santos', 'Silva', 'Oliveira', 'Souza', 'Lima', 'Costa', 'Almeida', 'Ferreira', 'Rodrigues', 'Nunes', 'Gomes', 'Dias', 'Mendes', 'Rocha'];
       
       const playerName = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-      const playerAge = Math.floor(Math.random() * 13 + 18); // 18-30
+      const playerAge = (requestedAge && typeof requestedAge === 'number' && requestedAge >= 16 && requestedAge <= 38) ? requestedAge : Math.floor(Math.random() * 13 + 18); // 18-30
 
       // Simple attribute generation
       const variance = () => Math.floor(Math.random() * 16 - 8);
