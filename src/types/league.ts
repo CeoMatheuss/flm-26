@@ -78,7 +78,7 @@ export const countryContinents: Record<string, string> = {
 export const leaguesByCountry: Record<string, LeagueTeam[]> = {
   // ===== SOUTH AMERICA =====
   BR: [
-    t('Fla United', '🔴', 86), t('Palmeiras FC', '🌴', 84), t('Atlético MG', '🐓', 80),
+    t('Palmeiras FC', '🌴', 84), t('Atlético MG', '🐓', 80),
     t('Corinthians SP', '🦅', 78), t('São Paulo EC', '🏟️', 77), t('Internacional RS', '🔴', 76),
     t('Grêmio RS', '⚡', 75), t('Botafogo RJ', '⭐', 74), t('Fluminense RJ', '🟢', 73),
     t('Santos FC', '🐟', 72), t('Cruzeiro MG', '🌟', 71), t('Fortaleza EC', '🦁', 70),
