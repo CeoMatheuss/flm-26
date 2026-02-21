@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import flmLogo from '@/assets/flm26-logo.png';
 import gamePreview from '@/assets/game-preview.jpg';
-import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw } from 'lucide-react';
+
+const RESEND_COOLDOWN = 60; // seconds
 
 const features = [
   { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores' },
@@ -30,6 +32,20 @@ export default function AuthPage() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const startResendTimer = useCallback(() => {
+    setResendTimer(RESEND_COOLDOWN);
+  }, []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -50,8 +66,8 @@ export default function AuthPage() {
       if (error.message === 'Email not confirmed') {
         setPendingEmail(email);
         setShowOtp(true);
+        startResendTimer();
         toast.info('Email ainda não confirmado. Digite o código enviado para seu email.');
-        // Resend OTP
         await supabase.auth.resend({ type: 'signup', email });
       } else {
         toast.error(error.message);
@@ -80,6 +96,7 @@ export default function AuthPage() {
     } else {
       setPendingEmail(email);
       setShowOtp(true);
+      startResendTimer();
       toast.success('Código de verificação enviado para seu email!');
     }
     setLoading(false);
@@ -105,12 +122,14 @@ export default function AuthPage() {
   };
 
   const handleResendCode = async () => {
+    if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
     if (error) {
       toast.error('Erro ao reenviar código. Tente novamente.');
     } else {
       toast.success('Novo código enviado para ' + pendingEmail);
+      startResendTimer();
     }
     setLoading(false);
   };
@@ -142,9 +161,9 @@ export default function AuthPage() {
             </p>
             <p className="text-sm font-bold text-primary">{pendingEmail}</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-5">
             {/* Email illustration */}
-            <div className="relative mx-auto w-48 h-32 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex flex-col items-center justify-center gap-2 overflow-hidden">
+            <div className="relative mx-auto w-56 h-36 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex flex-col items-center justify-center gap-2 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-8 bg-primary/30 flex items-center justify-center">
                 <span className="text-[10px] font-bold text-primary-foreground/80 tracking-wider">FLM 26 ⚽</span>
               </div>
@@ -159,7 +178,24 @@ export default function AuthPage() {
                   </div>
                 ))}
               </div>
-              <span className="text-[8px] text-muted-foreground">Válido por 60 minutos</span>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[8px] text-muted-foreground">Válido por 60 minutos</span>
+              </div>
+            </div>
+
+            {/* Info box */}
+            <div className="bg-primary/5 border border-primary/15 rounded-lg p-3 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-semibold">Como funciona?</span>
+              </div>
+              <ul className="text-[11px] text-muted-foreground space-y-1 ml-6 list-disc">
+                <li>Enviamos um código de <strong>6 dígitos</strong> para seu email</li>
+                <li>O código é válido por <strong>60 minutos</strong></li>
+                <li>Verifique a pasta de <strong>spam/lixo eletrônico</strong></li>
+                <li>Você pode reenviar o código após o tempo de espera</li>
+              </ul>
             </div>
 
             {/* OTP Input */}
@@ -188,17 +224,25 @@ export default function AuthPage() {
               {loading ? 'Verificando...' : 'Verificar Código'}
             </Button>
 
+            {/* Resend with timer */}
             <div className="text-center space-y-2">
               <p className="text-xs text-muted-foreground">Não recebeu o código?</p>
-              <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary">
-                Reenviar código
-              </Button>
+              {resendTimer > 0 ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Reenviar em <strong className="text-primary">{resendTimer}s</strong></span>
+                </div>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary gap-1">
+                  <RefreshCw className="w-3 h-3" /> Reenviar código
+                </Button>
+              )}
             </div>
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setShowOtp(false); setOtpCode(''); }}
+              onClick={() => { setShowOtp(false); setOtpCode(''); setResendTimer(0); }}
               className="w-full text-xs text-muted-foreground gap-1"
             >
               <ArrowLeft className="w-3 h-3" /> Voltar ao login
