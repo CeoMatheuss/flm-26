@@ -8,6 +8,7 @@ import { Player } from '@/types/game';
 import { generateFreeAgents } from '@/utils/playerGenerator';
 import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle } from 'lucide-react';
 import stickerPackImg from '@/assets/sticker-pack.png';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PackOption {
   id: string;
@@ -97,11 +98,12 @@ const posColors: Record<string, string> = {
 interface Props {
   budget: number;
   onBuyPack: (players: Player[], cost: number) => void;
+  userId?: string;
 }
 
 type RevealPhase = 'closed' | 'opening' | 'player-reveal' | 'done';
 
-export function PacotinhosTab({ budget, onBuyPack }: Props) {
+export function PacotinhosTab({ budget, onBuyPack, userId }: Props) {
   const [showResult, setShowResult] = useState(false);
   const [revealPhase, setRevealPhase] = useState<RevealPhase>('closed');
   const [generatedPlayers, setGeneratedPlayers] = useState<Player[]>([]);
@@ -154,8 +156,21 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
       startAttrReveal(0);
     }, 1500);
 
-    if (option.premium) {
-      setIsPremiumUnlocked(true);
+    // Activate premium for ANY pack purchase (30 days from now)
+    if (userId) {
+      const activatePremium = async () => {
+        // Check if already has active premium
+        const { data: existing } = await supabase.from('premium_users')
+          .select('id').eq('user_id', userId).eq('status', 'active').maybeSingle();
+        if (existing) {
+          // Renew: update activated_at to now
+          await supabase.from('premium_users').update({ activated_at: new Date().toISOString() }).eq('id', existing.id);
+        } else {
+          await supabase.from('premium_users').insert([{ user_id: userId, status: 'active' }]);
+        }
+        setIsPremiumUnlocked(true);
+      };
+      activatePremium();
     }
 
     onBuyPack(players, finalPrice);
@@ -231,7 +246,7 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
           {isPremiumUnlocked && (
             <div className="text-center">
               <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-[10px]">
-                <Crown className="h-3 w-3 mr-1" /> Premium Desbloqueado!
+                <Crown className="h-3 w-3 mr-1" /> PREMIUM ATIVADO! (30 dias)
               </Badge>
             </div>
           )}
@@ -421,7 +436,7 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
               {isPremiumUnlocked && (
                 <div className="text-center">
                   <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-[10px]">
-                    👑 Você desbloqueou status Premium!
+                    👑 PREMIUM ATIVADO! Válido por 30 dias
                   </Badge>
                 </div>
               )}
