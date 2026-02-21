@@ -16,7 +16,7 @@ import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap
 const previewSlides = [
   { src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
   { src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
-  { src: gamePreview3, title: 'FLM 26 — Football League Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' },
+  { src: gamePreview3, title: 'FLM 26 — Football Life Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' },
 ];
 
 const RESEND_COOLDOWN = 60; // seconds
@@ -326,7 +326,7 @@ export default function AuthPage() {
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter bg-gradient-to-r from-white to-primary bg-clip-text text-transparent">
             FLM 26
           </h1>
-          <p className="text-muted-foreground text-sm">Football League Manager 2026</p>
+          <p className="text-muted-foreground text-sm">Football Life Manager 2026</p>
         </div>
 
         {/* Login Card */}
