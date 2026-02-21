@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, Shield, Palette } from 'lucide-react';
+import { Upload, Shield, Palette, Shirt } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -14,6 +15,7 @@ export interface ClubConfig {
   stadiumName: string;
   primaryColor: string;
   secondaryColor: string;
+  detailColor: string;
   logoUrl: string;
   shieldPattern?: string;
   shieldShape?: string;
@@ -26,14 +28,16 @@ interface Props {
 }
 
 const presetColors = [
-  { primary: '#DC2626', secondary: '#1F2937' },   // Red/Dark
-  { primary: '#2563EB', secondary: '#FFFFFF' },    // Blue/White
-  { primary: '#EAB308', secondary: '#16A34A' },    // Gold/Green
-  { primary: '#111827', secondary: '#FFFFFF' },    // Black/White
-  { primary: '#16A34A', secondary: '#FFFFFF' },    // Green/White
-  { primary: '#7C3AED', secondary: '#EAB308' },    // Purple/Gold
-  { primary: '#EA580C', secondary: '#111827' },    // Orange/Black
-  { primary: '#DB2777', secondary: '#2563EB' },    // Pink/Blue
+  { primary: '#DC2626', secondary: '#1F2937', detail: '#FFD700' },
+  { primary: '#2563EB', secondary: '#FFFFFF', detail: '#DC2626' },
+  { primary: '#EAB308', secondary: '#16A34A', detail: '#FFFFFF' },
+  { primary: '#111827', secondary: '#FFFFFF', detail: '#DC2626' },
+  { primary: '#16A34A', secondary: '#FFFFFF', detail: '#EAB308' },
+  { primary: '#7C3AED', secondary: '#EAB308', detail: '#FFFFFF' },
+  { primary: '#EA580C', secondary: '#111827', detail: '#FFFFFF' },
+  { primary: '#DB2777', secondary: '#2563EB', detail: '#FFD700' },
+  { primary: '#0EA5E9', secondary: '#FFFFFF', detail: '#111827' },
+  { primary: '#831843', secondary: '#FFD700', detail: '#FFFFFF' },
 ];
 
 const countries = [
@@ -49,13 +53,41 @@ const countries = [
   { code: 'MX', name: 'México', flag: '🇲🇽' },
   { code: 'CO', name: 'Colômbia', flag: '🇨🇴' },
   { code: 'JP', name: 'Japão', flag: '🇯🇵' },
+  { code: 'US', name: 'EUA', flag: '🇺🇸' },
+  { code: 'CL', name: 'Chile', flag: '🇨🇱' },
+  { code: 'UY', name: 'Uruguai', flag: '🇺🇾' },
+  { code: 'TR', name: 'Turquia', flag: '🇹🇷' },
+  { code: 'KR', name: 'Coreia do Sul', flag: '🇰🇷' },
+  { code: 'SA', name: 'Arábia Saudita', flag: '🇸🇦' },
 ];
+
+function UniformPreview({ primary, secondary, detail, size = 80 }: { primary: string; secondary: string; detail: string; size?: number }) {
+  const s = size;
+  return (
+    <svg width={s} height={s * 1.2} viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      {/* Shirt body */}
+      <path d="M25 25 L15 35 L15 50 L25 45 L25 95 L75 95 L75 45 L85 50 L85 35 L75 25 L65 15 Q50 20 35 15 L25 25 Z" fill={primary} stroke={detail} strokeWidth="2" />
+      {/* Sleeves detail */}
+      <path d="M25 25 L15 35 L15 50 L25 45 Z" fill={secondary} opacity={0.6} />
+      <path d="M75 25 L85 35 L85 50 L75 45 Z" fill={secondary} opacity={0.6} />
+      {/* Collar */}
+      <path d="M35 15 Q50 22 65 15 Q60 20 50 22 Q40 20 35 15" fill={detail} />
+      {/* Center stripe */}
+      <rect x="46" y="25" width="8" height="70" fill={secondary} opacity={0.3} rx="2" />
+      {/* Shorts */}
+      <path d="M30 95 L30 115 L48 115 L50 100 L52 115 L70 115 L70 95 Z" fill={secondary} stroke={detail} strokeWidth="1.5" />
+      {/* Shorts detail line */}
+      <line x1="30" y1="100" x2="70" y2="100" stroke={detail} strokeWidth="1" opacity={0.5} />
+    </svg>
+  );
+}
 
 export function ClubCreation({ userId, onComplete }: Props) {
   const [clubName, setClubName] = useState('');
   const [stadiumName, setStadiumName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#2563EB');
   const [secondaryColor, setSecondaryColor] = useState('#FFFFFF');
+  const [detailColor, setDetailColor] = useState('#DC2626');
   const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('classic');
   const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
   const [customLogoUrl, setCustomLogoUrl] = useState('');
@@ -67,27 +99,14 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Arquivo muito grande (máx 2MB)');
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      toast.error('Apenas imagens são permitidas');
-      return;
-    }
+    if (file.size > 2 * 1024 * 1024) { toast.error('Arquivo muito grande (máx 2MB)'); return; }
+    if (!file.type.startsWith('image/')) { toast.error('Apenas imagens são permitidas'); return; }
 
     setUploading(true);
     const ext = file.name.split('.').pop();
     const path = `${userId}/logo.${ext}`;
-
     const { error } = await supabase.storage.from('club-logos').upload(path, file, { upsert: true });
-    if (error) {
-      toast.error('Erro ao enviar logo');
-      setUploading(false);
-      return;
-    }
-
+    if (error) { toast.error('Erro ao enviar logo'); setUploading(false); return; }
     const { data } = supabase.storage.from('club-logos').getPublicUrl(path);
     setCustomLogoUrl(data.publicUrl);
     setUseCustomLogo(true);
@@ -96,23 +115,15 @@ export function ClubCreation({ userId, onComplete }: Props) {
   };
 
   const handleSubmit = () => {
-    if (!clubName.trim()) {
-      toast.error('Digite o nome do clube');
-      return;
-    }
-    if (clubName.trim().length > 30) {
-      toast.error('Nome do clube muito longo (máx 30 caracteres)');
-      return;
-    }
-    if (stadiumName.trim().length > 40) {
-      toast.error('Nome do estádio muito longo (máx 40 caracteres)');
-      return;
-    }
+    if (!clubName.trim()) { toast.error('Digite o nome do clube'); return; }
+    if (clubName.trim().length > 30) { toast.error('Nome do clube muito longo (máx 30 caracteres)'); return; }
+    if (stadiumName.trim().length > 40) { toast.error('Nome do estádio muito longo (máx 40 caracteres)'); return; }
     onComplete({
       name: clubName.trim(),
       stadiumName: stadiumName.trim() || 'Estádio Municipal',
       primaryColor,
       secondaryColor,
+      detailColor,
       logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
       shieldPattern: useCustomLogo ? undefined : selectedPattern,
       shieldShape: useCustomLogo ? undefined : selectedShape,
@@ -120,9 +131,15 @@ export function ClubCreation({ userId, onComplete }: Props) {
     });
   };
 
+  const shapeNames: Record<ShieldShape, string> = {
+    classic: 'Clássico', rounded: 'Redondo', pointed: 'Pontudo', circle: 'Círculo',
+    pentagon: 'Pentágono', gothic: 'Gótico', hexagon: 'Hexágono', 'diamond-shield': 'Diamante',
+    badge: 'Badge', crest: 'Brasão',
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-lg max-h-[95vh] overflow-y-auto">
         <CardHeader className="text-center pb-2">
           <img src={flmLogo} alt="FLM 26" className="w-12 h-12 mx-auto mb-1" />
           <CardTitle className="text-lg sm:text-xl">Criar Seu Clube</CardTitle>
@@ -135,21 +152,24 @@ export function ClubCreation({ userId, onComplete }: Props) {
             <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
           </div>
 
-          {/* Country */}
+          {/* Country - horizontal scrollable */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5">🌍 País do Clube</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {countries.map(c => (
-                <button
-                  key={c.code}
-                  onClick={() => setCountry(c.code)}
-                  className={`h-10 rounded-lg border-2 transition-all flex items-center gap-2 px-3 text-xs ${country === c.code ? 'border-primary ring-2 ring-primary/30 scale-[1.02] bg-primary/10' : 'border-border hover:border-primary/50'}`}
-                >
-                  <span className="text-lg">{c.flag}</span>
-                  <span className="font-medium truncate">{c.name}</span>
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 pb-2">
+                {countries.map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => setCountry(c.code)}
+                    className={`shrink-0 h-12 rounded-xl border-2 transition-all flex flex-col items-center justify-center px-3 min-w-[72px] ${country === c.code ? 'border-primary ring-2 ring-primary/30 bg-primary/10 scale-[1.03]' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <span className="text-xl leading-none">{c.flag}</span>
+                    <span className="text-[9px] font-medium mt-0.5">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
 
           {/* Stadium Name */}
@@ -161,31 +181,42 @@ export function ClubCreation({ userId, onComplete }: Props) {
           {/* Colors */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Cores do Clube</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {presetColors.map((c, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setPrimaryColor(c.primary); setSecondaryColor(c.secondary); }}
-                  className={`h-10 rounded-lg border-2 transition-all flex overflow-hidden ${primaryColor === c.primary && secondaryColor === c.secondary ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
-                >
-                  <div className="flex-1" style={{ backgroundColor: c.primary }} />
-                  <div className="flex-1" style={{ backgroundColor: c.secondary }} />
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-2">
-              <div className="flex-1 space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Cor Principal</Label>
-                <div className="flex items-center gap-1.5">
-                  <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-6 rounded" style={{ backgroundColor: primaryColor }} />
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 pb-2">
+                {presetColors.map((c, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setPrimaryColor(c.primary); setSecondaryColor(c.secondary); setDetailColor(c.detail); }}
+                    className={`shrink-0 h-10 w-16 rounded-lg border-2 transition-all flex overflow-hidden ${primaryColor === c.primary && secondaryColor === c.secondary ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <div className="flex-1" style={{ backgroundColor: c.primary }} />
+                    <div className="flex-1" style={{ backgroundColor: c.secondary }} />
+                    <div className="w-2" style={{ backgroundColor: c.detail }} />
+                  </button>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Principal</Label>
+                <div className="flex items-center gap-1">
+                  <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: primaryColor }} />
                 </div>
               </div>
-              <div className="flex-1 space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Cor Secundária</Label>
-                <div className="flex items-center gap-1.5">
-                  <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-6 rounded" style={{ backgroundColor: secondaryColor }} />
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Secundária</Label>
+                <div className="flex items-center gap-1">
+                  <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: secondaryColor }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Detalhes</Label>
+                <div className="flex items-center gap-1">
+                  <input type="color" value={detailColor} onChange={e => setDetailColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                  <div className="flex-1 h-5 rounded" style={{ backgroundColor: detailColor }} />
                 </div>
               </div>
             </div>
@@ -194,30 +225,34 @@ export function ClubCreation({ userId, onComplete }: Props) {
           {/* Shield Shape */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Shield className="h-3 w-3" /> Forma do Escudo</Label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {shieldShapes.map(shape => (
-                <button
-                  key={shape}
-                  onClick={() => setSelectedShape(shape)}
-                  className={`p-1.5 rounded-lg border-2 transition-all flex items-center justify-center ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
-                >
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern="classic" shape={shape} size={36} />
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 pb-2">
+                {shieldShapes.map(shape => (
+                  <button
+                    key={shape}
+                    onClick={() => setSelectedShape(shape)}
+                    className={`shrink-0 p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 min-w-[60px] ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="classic" shape={shape} size={36} />
+                    <span className="text-[8px] font-medium text-muted-foreground">{shapeNames[shape]}</span>
+                  </button>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
 
-          {/* Shield Pattern Selection */}
+          {/* Shield Pattern */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Padrão do Escudo</Label>
-            <div className="grid grid-cols-8 gap-1.5">
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
               {shieldPatterns.map(pattern => (
                 <button
                   key={pattern}
                   onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
-                  className={`p-1 rounded-lg border-2 transition-all flex items-center justify-center ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                  className={`p-1 rounded-lg border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
                 >
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={pattern} shape={selectedShape} size={32} />
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} size={30} />
                 </button>
               ))}
             </div>
@@ -237,17 +272,33 @@ export function ClubCreation({ userId, onComplete }: Props) {
             </div>
           </div>
 
-          {/* Preview */}
-          <div className="border border-border rounded-lg p-4 text-center space-y-2" style={{ background: `linear-gradient(135deg, ${primaryColor}20, ${secondaryColor}20)` }}>
-            <div className="flex justify-center">
-              {useCustomLogo && customLogoUrl ? (
-                <img src={customLogoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
-              ) : (
-                <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} pattern={selectedPattern} shape={selectedShape} size={72} />
-              )}
+          {/* Preview: Shield + Uniform side by side */}
+          <div className="border border-border rounded-xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+            <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1.5">
+              <Shirt className="h-3 w-3" /> Prévia do Clube
+            </p>
+            <div className="flex items-center justify-center gap-6">
+              {/* Shield */}
+              <div className="flex flex-col items-center gap-1">
+                {useCustomLogo && customLogoUrl ? (
+                  <img src={customLogoUrl} alt="Logo" className="w-[72px] h-[72px] rounded-lg object-cover" />
+                ) : (
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} size={72} />
+                )}
+                <span className="text-[9px] text-muted-foreground">Escudo</span>
+              </div>
+              {/* Uniform */}
+              <div className="flex flex-col items-center gap-1">
+                <UniformPreview primary={primaryColor} secondary={secondaryColor} detail={detailColor} size={72} />
+                <span className="text-[9px] text-muted-foreground">Uniforme</span>
+              </div>
             </div>
-            <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">🏟️ {stadiumName || 'Estádio Municipal'}</p>
+            <div className="text-center">
+              <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {countries.find(c => c.code === country)?.flag} {countries.find(c => c.code === country)?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
+              </p>
+            </div>
           </div>
 
           <Button onClick={handleSubmit} className="w-full" disabled={!clubName.trim()}>
