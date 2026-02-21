@@ -172,69 +172,79 @@ export function ClubCreation({ userId, onComplete }: Props) {
   // ===== CONFIRMATION PAGE =====
   if (showConfirmation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
-        <Card className="w-full max-w-md border-primary/20">
-          <CardContent className="pt-6 space-y-6">
+      <div className="min-h-screen flex items-center justify-center bg-background p-2 sm:p-4">
+        <Card className="w-full max-w-md max-h-[95vh] overflow-y-auto border-primary/20">
+          <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-5 px-3 sm:px-6">
             {/* Title */}
-            <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold">Confirme seu Clube</h2>
-              <p className="text-xs text-muted-foreground">Verifique se está tudo certo antes de criar</p>
+            <div className="text-center space-y-0.5">
+              <h2 className="text-base sm:text-lg font-bold">Confirme seu Clube</h2>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Verifique se está tudo certo antes de criar</p>
             </div>
 
             {/* Shield + Name */}
-            <div className="flex flex-col items-center gap-3 py-4 rounded-xl border border-border" style={{ background: `linear-gradient(180deg, ${primaryColor}12, ${secondaryColor}08)` }}>
+            <div className="flex flex-col items-center gap-2 sm:gap-3 py-3 sm:py-4 rounded-xl border border-border" style={{ background: `linear-gradient(180deg, ${primaryColor}12, ${secondaryColor}08)` }}>
               {useCustomLogo && customLogoUrl ? (
-                <img src={customLogoUrl} alt="Logo" className="w-24 h-24 rounded-xl object-cover shadow-lg" />
+                <img src={customLogoUrl} alt="Logo" className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl object-cover shadow-lg" />
               ) : (
-                <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={96} />
+                <div className="block sm:hidden">
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={72} />
+                </div>
+              )}
+              {!useCustomLogo && (
+                <div className="hidden sm:block">
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={96} />
+                </div>
               )}
               <div className="text-center space-y-0.5">
-                <p className="text-xl font-bold" style={{ color: primaryColor }}>{displayName}</p>
-                <p className="text-sm text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
+                <p className="text-base sm:text-xl font-bold" style={{ color: primaryColor }}>{displayName}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
               </div>
             </div>
 
-            {/* Stadium */}
-            <div className="rounded-lg border border-border p-3 flex items-center gap-3">
-              <span className="text-2xl">🏟️</span>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Estádio</p>
-                <p className="font-bold text-sm">{displayStadium}</p>
+            {/* Stadium + Uniforms row on mobile */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              {/* Stadium */}
+              <div className="rounded-lg border border-border p-2.5 sm:p-3 flex items-center gap-2.5 sm:flex-1">
+                <span className="text-xl sm:text-2xl">🏟️</span>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Estádio</p>
+                  <p className="font-bold text-xs sm:text-sm truncate">{displayStadium}</p>
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div className="rounded-lg border border-border p-2.5 sm:p-3 flex items-center justify-center gap-3 sm:flex-1">
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">1ª</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-border" style={{ backgroundColor: secondaryColor }} />
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">2ª</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-border" style={{ backgroundColor: detailColor }} />
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">Det</span>
+                </div>
               </div>
             </div>
 
             {/* Uniforms */}
-            <div className="rounded-lg border border-border p-4">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold text-center mb-3">Uniformes</p>
-              <div className="flex items-center justify-center gap-8">
-                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={72} />
-                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={72} />
-              </div>
-            </div>
-
-            {/* Colors row */}
-            <div className="flex items-center justify-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
-                <span className="text-[10px] text-muted-foreground">Principal</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: secondaryColor }} />
-                <span className="text-[10px] text-muted-foreground">Secundária</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: detailColor }} />
-                <span className="text-[10px] text-muted-foreground">Detalhe</span>
+            <div className="rounded-lg border border-border p-3 sm:p-4">
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-semibold text-center mb-2 sm:mb-3">Uniformes</p>
+              <div className="flex items-center justify-center gap-6 sm:gap-8">
+                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={56} />
+                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={56} />
               </div>
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowConfirmation(false)} className="flex-1 gap-2">
-                <ArrowLeft className="h-4 w-4" /> Voltar e Editar
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-2">
+              <Button variant="outline" onClick={() => setShowConfirmation(false)} className="sm:flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Voltar e Editar
               </Button>
-              <Button onClick={handleConfirm} className="flex-1 gap-2">
-                <Check className="h-4 w-4" /> Confirmar e Criar
+              <Button onClick={handleConfirm} className="sm:flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Confirmar e Criar
               </Button>
             </div>
           </CardContent>
