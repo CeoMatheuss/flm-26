@@ -1197,6 +1197,11 @@ export function useGame(initialState?: GameState, userId?: string) {
     });
   }, [addFinance]);
 
+  const addBonus = useCallback((amount: number, description: string) => {
+    setClub(prev => ({ ...prev, budget: prev.budget + amount }));
+    addFinance('receita', 'Bônus', amount, description);
+  }, [addFinance]);
+
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
@@ -1209,6 +1214,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers,
+    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers, addBonus,
   };
 }
