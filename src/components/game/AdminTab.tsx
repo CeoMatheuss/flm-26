@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
-  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy
+  Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
+  AlertTriangle, Eye, EyeOff, Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -72,6 +73,12 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [userSearch, setUserSearch] = useState('');
   const [giftUserId, setGiftUserId] = useState('');
   const [giftType, setGiftType] = useState<'premium' | 'moderator' | 'unban'>('premium');
+  const [abuseAlerts, setAbuseAlerts] = useState<Array<{
+    id: string; user_id: string; alert_type: string; severity: string;
+    title: string; description: string; details: any; status: string;
+    reviewed_by: string | null; reviewed_at: string | null; created_at: string;
+  }>>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
 
   useEffect(() => {
     const check = async () => {
@@ -121,11 +128,88 @@ export function AdminTab({ userId, isFounder }: Props) {
     setVerifying(false);
   };
 
+  const loadAbuseAlerts = useCallback(async () => {
+    setAlertsLoading(true);
+    const { data } = await supabase.from('abuse_alerts').select('*').order('created_at', { ascending: false }).limit(100);
+    if (data) setAbuseAlerts(data as any[]);
+    setAlertsLoading(false);
+  }, []);
+
+  const runAbuseDetection = useCallback(async () => {
+    setAlertsLoading(true);
+    try {
+      // Detect suspicious auction patterns: same user bidding unusually high
+      const { data: auctions } = await supabase.from('player_auctions').select('*').eq('status', 'active');
+      if (auctions) {
+        for (const a of auctions) {
+          if (a.current_bid > a.min_price * 5 && a.current_bidder_id) {
+            // Check if bidder and seller have traded before
+            const existing = abuseAlerts.find(al => al.details?.auction_id === a.id);
+            if (!existing) {
+              await supabase.from('abuse_alerts').insert([{
+                user_id: a.current_bidder_id,
+                alert_type: 'suspicious_auction',
+                severity: a.current_bid > a.min_price * 10 ? 'high' : 'medium',
+                title: `Lance suspeito em leilão`,
+                description: `${a.player_name} (OVR ${a.player_overall}) - Lance de R$ ${a.current_bid.toLocaleString()} vs mínimo R$ ${a.min_price.toLocaleString()} (${Math.round(a.current_bid / a.min_price)}x)`,
+                details: { auction_id: a.id, seller_id: a.seller_id, bid_ratio: Math.round(a.current_bid / a.min_price) },
+              }]);
+            }
+          }
+        }
+      }
+
+      // Detect rapid trade proposals between same users
+      const { data: proposals } = await supabase.from('trade_proposals').select('*').order('created_at', { ascending: false }).limit(200);
+      if (proposals) {
+        const pairCount: Record<string, number> = {};
+        const pairValue: Record<string, number> = {};
+        for (const p of proposals) {
+          const key = [p.sender_id, p.receiver_id].sort().join('-');
+          pairCount[key] = (pairCount[key] || 0) + 1;
+          pairValue[key] = (pairValue[key] || 0) + p.price;
+        }
+        for (const [key, count] of Object.entries(pairCount)) {
+          if (count >= 5) {
+            const [userA, userB] = key.split('-');
+            const existing = abuseAlerts.find(al => al.details?.pair_key === key && al.alert_type === 'suspicious_transfer');
+            if (!existing) {
+              await supabase.from('abuse_alerts').insert([{
+                user_id: userA,
+                alert_type: 'suspicious_transfer',
+                severity: count >= 10 ? 'high' : 'medium',
+                title: `Transferências repetidas entre mesmos clubes`,
+                description: `${count} propostas entre os mesmos 2 jogadores. Valor total: R$ ${(pairValue[key] || 0).toLocaleString()}`,
+                details: { pair_key: key, user_a: userA, user_b: userB, count, total_value: pairValue[key] },
+              }]);
+            }
+          }
+        }
+      }
+
+      toast.success('Varredura anti-abuso concluída!');
+    } catch {
+      toast.error('Erro na varredura');
+    }
+    await loadAbuseAlerts();
+    setAlertsLoading(false);
+  }, [abuseAlerts]);
+
+  const reviewAlert = async (alertId: string, action: 'reviewed' | 'dismissed') => {
+    await supabase.from('abuse_alerts').update({
+      status: action,
+      reviewed_by: userId,
+      reviewed_at: new Date().toISOString(),
+    }).eq('id', alertId);
+    toast.success(action === 'reviewed' ? 'Alerta revisado' : 'Alerta descartado');
+    loadAbuseAlerts();
+  };
+
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts()]);
     setLoading(false);
-  }, []);
+  }, [loadAbuseAlerts]);
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
@@ -401,11 +485,12 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Admin Tabs */}
       <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
-        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-5' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-6' : 'grid-cols-5'}`}>
           {isFounder && <TabsTrigger value="team" className="text-xs gap-1"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
           <TabsTrigger value="users" className="text-xs gap-1"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
           <TabsTrigger value="premium" className="text-xs gap-1"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
           <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
+          <TabsTrigger value="abuse" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
           <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
         </TabsList>
 
@@ -725,6 +810,116 @@ export function AdminTab({ userId, isFounder }: Props) {
                         <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10" onClick={() => unbanUser(b.id)} disabled={loading}>
                           <CheckCircle className="h-3 w-3 mr-1" /> Desbanir
                         </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Abuse Detection Tab */}
+        <TabsContent value="abuse" className="space-y-3 mt-3">
+          <Card className="border-orange-500/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-400" />
+                  Sistema Anti-Abuso
+                </CardTitle>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={runAbuseDetection} disabled={alertsLoading} className="h-7 px-2 text-[10px] gap-1">
+                    <Activity className={`h-3 w-3 ${alertsLoading ? 'animate-spin' : ''}`} /> Varredura
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={loadAbuseAlerts} disabled={alertsLoading} className="h-7 px-2 text-[10px]">
+                    <RefreshCw className={`h-3 w-3 ${alertsLoading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Detecta transferências anormais, lances suspeitos e manipulações entre clubes.</p>
+            </CardHeader>
+          </Card>
+
+          {/* Stats summary */}
+          <div className="grid grid-cols-3 gap-2">
+            <Card className="p-2 text-center border-red-500/20">
+              <p className="text-lg font-bold text-red-400">{abuseAlerts.filter(a => a.severity === 'high' && a.status === 'pending').length}</p>
+              <p className="text-[9px] text-muted-foreground">Alta Prioridade</p>
+            </Card>
+            <Card className="p-2 text-center border-orange-500/20">
+              <p className="text-lg font-bold text-orange-400">{abuseAlerts.filter(a => a.status === 'pending').length}</p>
+              <p className="text-[9px] text-muted-foreground">Pendentes</p>
+            </Card>
+            <Card className="p-2 text-center border-green-500/20">
+              <p className="text-lg font-bold text-green-400">{abuseAlerts.filter(a => a.status === 'reviewed').length}</p>
+              <p className="text-[9px] text-muted-foreground">Revisados</p>
+            </Card>
+          </div>
+
+          {/* Alerts list */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-400" />
+                Alertas ({abuseAlerts.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {abuseAlerts.length === 0 ? (
+                <div className="text-center py-6">
+                  <CheckCircle className="h-6 w-6 mx-auto text-green-400 mb-2" />
+                  <p className="text-xs text-muted-foreground">Nenhum alerta de abuso. Execute uma varredura para verificar.</p>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-2">
+                    {abuseAlerts.map(alert => (
+                      <div key={alert.id} className={`p-3 rounded-lg border ${
+                        alert.severity === 'high' ? 'border-red-500/30 bg-red-500/5' :
+                        alert.severity === 'medium' ? 'border-orange-500/30 bg-orange-500/5' :
+                        'border-yellow-500/30 bg-yellow-500/5'
+                      }`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Badge variant="outline" className={`text-[8px] ${
+                                alert.severity === 'high' ? 'text-red-400 border-red-500/30' :
+                                alert.severity === 'medium' ? 'text-orange-400 border-orange-500/30' :
+                                'text-yellow-400 border-yellow-500/30'
+                              }`}>
+                                {alert.severity === 'high' ? '🔴 ALTO' : alert.severity === 'medium' ? '🟠 MÉDIO' : '🟡 BAIXO'}
+                              </Badge>
+                              <Badge variant="outline" className="text-[8px]">
+                                {alert.alert_type === 'suspicious_transfer' ? '💱 Transferência' :
+                                 alert.alert_type === 'suspicious_auction' ? '🔨 Leilão' :
+                                 alert.alert_type === 'salary_manipulation' ? '💰 Salário' : '⚠️ Outro'}
+                              </Badge>
+                              <Badge variant="outline" className={`text-[8px] ${
+                                alert.status === 'pending' ? 'text-yellow-400 border-yellow-500/30' :
+                                alert.status === 'reviewed' ? 'text-green-400 border-green-500/30' :
+                                'text-muted-foreground'
+                              }`}>
+                                {alert.status === 'pending' ? '⏳ Pendente' : alert.status === 'reviewed' ? '✅ Revisado' : '🚫 Descartado'}
+                              </Badge>
+                            </div>
+                            <p className="text-xs font-semibold">{alert.title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{alert.description}</p>
+                            <p className="text-[9px] font-mono text-muted-foreground mt-1">
+                              ID: {alert.user_id.slice(0, 12)}... • {new Date(alert.created_at).toLocaleString('pt-BR')}
+                            </p>
+                          </div>
+                          {alert.status === 'pending' && (
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10" onClick={() => reviewAlert(alert.id, 'reviewed')}>
+                                <Eye className="h-3 w-3 mr-1" /> Revisar
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-muted text-muted-foreground hover:bg-muted/20" onClick={() => reviewAlert(alert.id, 'dismissed')}>
+                                <EyeOff className="h-3 w-3 mr-1" /> Descartar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

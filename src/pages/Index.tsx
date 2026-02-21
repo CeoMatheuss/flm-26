@@ -47,7 +47,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -167,10 +167,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const toggleGroup = useCallback((group: string) => {
-    setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
-  }, []);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
@@ -359,82 +355,30 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
-                {/* ▸ Partidas */}
-                <DropdownMenuItem onClick={() => toggleGroup('partidas')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['partidas'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} ⚽ Partidas
-                </DropdownMenuItem>
-                {expandedGroups['partidas'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs pl-6"><Swords className="h-3.5 w-3.5" /> Amistosos</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('calendar')} className="gap-2 text-xs pl-6"><Calendar className="h-3.5 w-3.5" /> Calendário</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Time */}
-                <DropdownMenuItem onClick={() => toggleGroup('time')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['time'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} 👥 Time
-                </DropdownMenuItem>
-                {expandedGroups['time'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('squad')} className="gap-2 text-xs pl-6"><Users className="h-3.5 w-3.5" /> Elenco</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('tactics')} className="gap-2 text-xs pl-6"><Target className="h-3.5 w-3.5" /> Táticas</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2 text-xs pl-6"><Dumbbell className="h-3.5 w-3.5" /> Treinos</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs pl-6"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs pl-6"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Clube */}
-                <DropdownMenuItem onClick={() => toggleGroup('clube')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['clube'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} 🏟️ Clube
-                </DropdownMenuItem>
-                {expandedGroups['clube'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs pl-6"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('stadium')} className="gap-2 text-xs pl-6"><Landmark className="h-3.5 w-3.5" /> Estádio</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs pl-6"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs pl-6"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs pl-6"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs pl-6"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs pl-6"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Mercado */}
-                <DropdownMenuItem onClick={() => toggleGroup('mercado')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['mercado'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} 💰 Mercado
-                </DropdownMenuItem>
-                {expandedGroups['mercado'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('market')} className="gap-2 text-xs pl-6"><ShoppingCart className="h-3.5 w-3.5" /> Transferências</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs pl-6"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Social */}
-                <DropdownMenuItem onClick={() => toggleGroup('social')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['social'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} 💬 Social
-                </DropdownMenuItem>
-                {expandedGroups['social'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs pl-6"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('newspaper')} className="gap-2 text-xs pl-6"><Newspaper className="h-3.5 w-3.5" /> Jornal</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('feed')} className="gap-2 text-xs pl-6"><Rss className="h-3.5 w-3.5" /> Feed do Clube</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Conquistas */}
-                <DropdownMenuItem onClick={() => toggleGroup('conquistas')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['conquistas'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} 🏆 Conquistas
-                </DropdownMenuItem>
-                {expandedGroups['conquistas'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2 text-xs pl-6"><Medal className="h-3.5 w-3.5" /> Conquistas</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2 text-xs pl-6"><Trophy className="h-3.5 w-3.5" /> Troféus</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('ranking')} className="gap-2 text-xs pl-6"><BarChart3 className="h-3.5 w-3.5" /> Ranking</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2 text-xs pl-6"><User className="h-3.5 w-3.5" /> Perfil do Clube</DropdownMenuItem>
-                </>}
-
-                {/* ▸ Sistema */}
-                <DropdownMenuItem onClick={() => toggleGroup('sistema')} className="gap-2 text-xs font-semibold text-primary">
-                  {expandedGroups['sistema'] ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} ⚙️ Sistema
-                </DropdownMenuItem>
-                {expandedGroups['sistema'] && <>
-                  <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs pl-6"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs pl-6"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs pl-6"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2 text-xs pl-6"><BookOpen className="h-3.5 w-3.5" /> Tutorial</DropdownMenuItem>
-                  {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs pl-6"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
-                </>}
+                <DropdownMenuItem onClick={() => setActiveTab('squad')} className="gap-2 text-xs"><Users className="h-3.5 w-3.5" /> Elenco</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('tactics')} className="gap-2 text-xs"><Target className="h-3.5 w-3.5" /> Táticas</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('stadium')} className="gap-2 text-xs"><Landmark className="h-3.5 w-3.5" /> Estádio</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('newspaper')} className="gap-2 text-xs"><Newspaper className="h-3.5 w-3.5" /> Jornal</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('feed')} className="gap-2 text-xs"><Rss className="h-3.5 w-3.5" /> Feed do Clube</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2 text-xs"><Medal className="h-3.5 w-3.5" /> Conquistas</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2 text-xs"><Trophy className="h-3.5 w-3.5" /> Troféus</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('ranking')} className="gap-2 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Ranking</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2 text-xs"><User className="h-3.5 w-3.5" /> Perfil do Clube</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('season')} className="gap-2 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Temporada</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('settings')} className="gap-2 text-xs"><Settings className="h-3.5 w-3.5" /> Config. Clube</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Tutorial</DropdownMenuItem>
+                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
 
