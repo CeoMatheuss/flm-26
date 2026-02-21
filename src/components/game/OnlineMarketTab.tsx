@@ -66,10 +66,12 @@ interface Props {
   loanedPlayers?: LoanedPlayer[];
   onLoanOut?: (playerId: string) => void;
   onLoanIn?: (player: Player) => void;
+  onListedPlayer?: () => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
   const [listings, setListings] = useState<TransferListing[]>([]);
+  const [activeMarketTab, setActiveMarketTab] = useState('browse');
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -169,6 +171,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
     } else {
       toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
       loadListings();
+      setActiveMarketTab('browse');
+      onListedPlayer?.();
     }
     setLoading(false);
   };
@@ -487,7 +491,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="browse" className="w-full">
+      <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="browse" className="text-[10px] sm:text-xs">🌐 Mercado</TabsTrigger>
           <TabsTrigger value="list" className="text-[10px] sm:text-xs">📋 Listar</TabsTrigger>
