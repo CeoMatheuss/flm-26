@@ -215,7 +215,7 @@ function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, 
       drawPlayers(awayBase, '#ef4444', -attackShift);
 
       // Linha de passe animada (quando evento de passe recente)
-      if (lastEvent && (lastEvent.type === 'possession' || lastEvent.type === 'through_ball' || lastEvent.type === 'dribble_ok')) {
+      if (lastEvent && ['possession', 'through_ball', 'dribble_ok', 'crossing', 'long_pass', 'pressing', 'throw_in', 'free_kick'].includes(lastEvent.type)) {
         const bx = ballPosRef.current.x * W, by = ballPosRef.current.y * H;
         const tx = targetBallRef.current.x * W, ty = targetBallRef.current.y * H;
         const progress = Math.min(1, (t % 1));
@@ -312,11 +312,12 @@ function MatchViewer({ matchState, onExit }: {
 
   const eventColor = (type: string) => {
     if (type === 'foot_goal' || type === 'header_goal' || type === 'penalty_goal') return 'text-emerald-400 font-bold';
-    if (['great_save', 'woodwork', 'corner_danger'].includes(type)) return 'text-yellow-400';
+    if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss'].includes(type)) return 'text-yellow-400';
     if (type === 'yellow_card') return 'text-yellow-300';
     if (type === 'red_card') return 'text-red-400';
     if (['midfield_foul', 'foul'].includes(type)) return 'text-orange-400';
-    if (['dribble_ok', 'through_ball', 'possession'].includes(type)) return 'text-blue-300/70';
+    if (['dribble_ok', 'through_ball', 'possession', 'crossing', 'long_pass', 'pressing', 'throw_in', 'free_kick', 'gk_distribution'].includes(type)) return 'text-blue-300/70';
+    if (type === 'tackle') return 'text-cyan-400';
     if (type === 'halftime') return 'text-primary font-semibold';
     if (type === 'final_whistle') return 'text-primary font-bold';
     if (type === 'kickoff') return 'text-blue-400 font-medium';
@@ -423,7 +424,7 @@ function MatchViewer({ matchState, onExit }: {
               {visibleEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">Aguardando lances...</p>
               )}
-              {[...visibleEvents].reverse().slice(0, 25).map((ev, i) => (
+              {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
                 <div
                   key={i}
                   className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${
