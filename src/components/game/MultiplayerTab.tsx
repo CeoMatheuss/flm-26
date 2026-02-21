@@ -433,7 +433,7 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
                 <ShieldCrest
                   primaryColor={getTeamColor(selectedTeam.club_name)}
                   secondaryColor="#ffffff"
-                  pattern="classic"
+                  pattern="solid"
                   shape="classic"
                   size={36}
                 />
@@ -584,7 +584,7 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
                       <ShieldCrest
                         primaryColor={getTeamColor(m.club_name)}
                         secondaryColor="#ffffff"
-                        pattern="classic"
+                        pattern="solid"
                         shape="classic"
                         size={18}
                       />
