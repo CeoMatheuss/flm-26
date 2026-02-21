@@ -29,6 +29,7 @@ interface LiveMatchFromDB {
 interface Props {
   club: Club;
   userId?: string;
+  onGoToFriendly?: () => void;
 }
 
 type MatchStatus = 'live' | 'finished' | 'none';
@@ -38,7 +39,7 @@ type MatchStatus = 'live' | 'finished' | 'none';
  * Sempre renderizado no topo do dashboard. Nunca removido.
  * Consome dados do backend (live_matches table) e club.matches (scheduled/finished).
  */
-export function MatchDashboardCard({ club, userId }: Props) {
+export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
   const navigate = useNavigate();
   const [liveMatch, setLiveMatch] = useState<LiveMatchFromDB | null>(null);
   const [currentMinute, setCurrentMinute] = useState(0);
@@ -224,7 +225,12 @@ export function MatchDashboardCard({ club, userId }: Props) {
           <div className="text-center py-4">
             <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-bold text-sm">Nenhuma partida agendada</p>
-            <p className="text-xs text-muted-foreground mt-1">Gere um amistoso na aba Amistosos!</p>
+            <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra o BOT FC!</p>
+            {onGoToFriendly && (
+              <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
+                <Swords className="h-3.5 w-3.5" /> Ir para Amistoso
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
