@@ -139,8 +139,13 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
                     {i + 1}
                   </TableCell>
                   <TableCell>
-                    <span className="mr-2">{team.logo}</span>
-                    {team.name}
+                    <button
+                      onClick={() => setViewingTeam(team)}
+                      className="flex items-center gap-1 hover:underline hover:text-primary transition-colors text-left"
+                    >
+                      <span className="mr-1">{team.logo}</span>
+                      {team.name}
+                    </button>
                   </TableCell>
                   <TableCell className="text-center">{team.played}</TableCell>
                   <TableCell className="text-center">{team.wins}</TableCell>
