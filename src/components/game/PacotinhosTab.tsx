@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Player } from '@/types/game';
 import { generateFreeAgents } from '@/utils/playerGenerator';
-import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap } from 'lucide-react';
+import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle } from 'lucide-react';
 import stickerPackImg from '@/assets/sticker-pack.png';
 
 interface PackOption {
@@ -19,6 +19,8 @@ interface PackOption {
   color: string;
   borderColor: string;
   premium?: boolean;
+  minOvr: number;
+  maxOvr: number;
 }
 
 const packOptions: PackOption[] = [
@@ -27,6 +29,8 @@ const packOptions: PackOption[] = [
     name: 'Básico',
     quantity: 1,
     price: 10000,
+    minOvr: 50,
+    maxOvr: 65,
     icon: <Gift className="h-5 w-5" />,
     color: 'from-blue-500/20 to-blue-600/5',
     borderColor: 'border-blue-500/40',
@@ -36,6 +40,8 @@ const packOptions: PackOption[] = [
     name: 'Duplo',
     quantity: 2,
     price: 18000,
+    minOvr: 52,
+    maxOvr: 70,
     icon: <Star className="h-5 w-5" />,
     color: 'from-purple-500/20 to-purple-600/5',
     borderColor: 'border-purple-500/40',
@@ -45,6 +51,8 @@ const packOptions: PackOption[] = [
     name: 'Premium',
     quantity: 4,
     price: 35000,
+    minOvr: 55,
+    maxOvr: 75,
     icon: <Sparkles className="h-5 w-5" />,
     color: 'from-amber-500/20 to-amber-600/5',
     borderColor: 'border-amber-500/40',
@@ -56,6 +64,8 @@ const packOptions: PackOption[] = [
     price: 60000,
     discount: 20,
     premium: true,
+    minOvr: 58,
+    maxOvr: 80,
     icon: <Crown className="h-5 w-5" />,
     color: 'from-yellow-500/20 to-yellow-600/5',
     borderColor: 'border-yellow-500/40',
@@ -99,12 +109,13 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
   const [revealedAttrCount, setRevealedAttrCount] = useState(0);
   const [packShake, setPackShake] = useState(false);
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const currentPlayer = generatedPlayers[currentPlayerIdx];
 
-  const generatePackPlayer = useCallback((): Player => {
+  const generatePackPlayer = useCallback((minOvr: number, maxOvr: number): Player => {
     const [base] = generateFreeAgents(1);
-    const ovr = 50 + Math.floor(Math.random() * 26); // 50-75
+    const ovr = minOvr + Math.floor(Math.random() * (maxOvr - minOvr + 1));
     const diff = ovr - base.overall;
     base.overall = ovr;
     base.age = 17;
@@ -125,7 +136,7 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
 
     const players: Player[] = [];
     for (let i = 0; i < option.quantity; i++) {
-      players.push(generatePackPlayer());
+      players.push(generatePackPlayer(option.minOvr, option.maxOvr));
     }
 
     setGeneratedPlayers(players);
@@ -200,6 +211,9 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Gift className="h-4 w-4 text-primary" /> Pacotinhos de Figurinha
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-auto" onClick={() => setShowHelp(true)}>
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </Button>
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">
             Todos os jogadores têm <span className="font-bold text-primary">17 anos</span>. Abra e descubra atributo por atributo!
@@ -416,6 +430,51 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Help Dialog */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <HelpCircle className="h-4 w-4 text-primary" /> Como funcionam os Pacotinhos?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-xs text-muted-foreground">
+            <p>🎁 Cada pacotinho contém <span className="font-bold text-foreground">jogadores promessas de 17 anos</span> com atributos aleatórios que são revelados um a um!</p>
+            
+            <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border">
+              <p className="font-bold text-foreground text-[11px]">📈 Quanto melhor o pacote, maiores as chances!</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-3 w-3 text-blue-400 shrink-0" />
+                  <span><span className="font-semibold text-foreground">Básico</span> — Jogadores comuns, bom para começar</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-3 w-3 text-purple-400 shrink-0" />
+                  <span><span className="font-semibold text-foreground">Duplo</span> — Chances melhores de jogadores bons</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
+                  <span><span className="font-semibold text-foreground">Premium</span> — Alta chance de promessas fortes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Crown className="h-3 w-3 text-yellow-400 shrink-0" />
+                  <span><span className="font-semibold text-foreground">Elite</span> — As melhores chances! Pode vir craque ⭐</span>
+                </div>
+              </div>
+            </div>
+
+            <p>⚡ Pacotes mais caros têm <span className="font-bold text-primary">ranges de OVR mais altos</span>, ou seja, a probabilidade de vir um jogador forte é muito maior!</p>
+            
+            <p>👑 Comprando o pacote <span className="font-bold text-yellow-400">Elite</span>, você desbloqueia o status <span className="font-bold text-yellow-400">Premium</span>!</p>
+            
+            <p>🔥 O Elite está com <span className="font-bold text-red-400">20% de desconto</span> de lançamento — aproveite!</p>
+          </div>
+          <div className="text-center pt-1">
+            <Button size="sm" onClick={() => setShowHelp(false)} className="text-xs">Entendi!</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
