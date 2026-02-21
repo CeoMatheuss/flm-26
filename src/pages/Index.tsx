@@ -53,7 +53,7 @@ import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSig
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useEffect, useCallback, useState, useMemo } from 'react';
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
@@ -312,13 +312,20 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     if (!silent) toast.success('Jogo salvo!');
   }, [game, userId]);
 
-  // Auto-save every 30 seconds
+  // Auto-save on every state change (debounced 2s) + fallback every 30s
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameState = game.getFullState();
+
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Debounced save: triggers 2s after any state change
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
       saveGame(true);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [saveGame]);
+    }, 2000);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [gameState, saveGame]);
 
   return (
     <div className="min-h-screen bg-background">
