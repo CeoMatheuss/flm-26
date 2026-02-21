@@ -14,6 +14,7 @@ interface SquadPlayer {
   age: number;
   isLoanedOut: boolean;
   isLoanedIn: boolean;
+  overall?: number;
 }
 
 interface Props {
@@ -106,31 +107,47 @@ export function SellerTeamView({ sellerId, sellerClubName, sellerShield, onBack 
         </CardContent>
       </Card>
 
-      {/* Squad */}
+      {/* Squad - simplified: name, position, age, status */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4" /> Elenco
-            <Badge variant="outline" className="text-[9px] ml-2">OVR oculto</Badge>
+            <Users className="h-4 w-4" /> Elenco Completo
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
-            {sortedSquad.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 hover:bg-muted/40 transition-colors">
-                <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position] || 'bg-muted'}`}>{p.position}</span>
-                <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
-                <span className="text-[10px] text-muted-foreground">{p.age} anos</span>
-                <span className="text-xs font-bold w-8 text-right text-muted-foreground">???</span>
-                {p.isLoanedIn && (
-                  <Badge variant="outline" className="text-[7px] border-blue-500/30 text-blue-400 px-1 py-0">EMPRESTADO</Badge>
-                )}
-                {p.isLoanedOut && (
-                  <Badge variant="outline" className="text-[7px] border-orange-500/30 text-orange-400 px-1 py-0">CEDIDO</Badge>
-                )}
-              </div>
-            ))}
+            {(() => {
+              const startersByPos: Record<string, number> = {};
+              const starterIds = new Set<string>();
+              const maxStarters: Record<string, number> = { GOL: 1, ZAG: 2, LAT: 2, VOL: 2, MEI: 2, ATA: 2 };
+              for (const p of sortedSquad) {
+                const current = startersByPos[p.position] || 0;
+                if (current < (maxStarters[p.position] || 2)) {
+                  startersByPos[p.position] = current + 1;
+                  starterIds.add(p.id);
+                }
+              }
+              return sortedSquad.map((p, i) => {
+                const isStarter = starterIds.has(p.id);
+                return (
+                  <div key={p.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position] || 'bg-muted'}`}>{p.position}</span>
+                    <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{p.age} anos</span>
+                    <Badge variant={isStarter ? 'default' : 'outline'} className="text-[8px] px-1.5 h-4">
+                      {isStarter ? 'Titular' : 'Reserva'}
+                    </Badge>
+                    {p.isLoanedIn && (
+                      <Badge variant="outline" className="text-[7px] border-blue-500/30 text-blue-400 px-1 py-0">EMPRESTADO</Badge>
+                    )}
+                    {p.isLoanedOut && (
+                      <Badge variant="outline" className="text-[7px] border-orange-500/30 text-orange-400 px-1 py-0">CEDIDO</Badge>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </div>
           {squad.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador encontrado.</p>

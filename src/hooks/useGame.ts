@@ -120,12 +120,12 @@ export function useGame(initialState?: GameState, userId?: string) {
    const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
    const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
    const [ranking, setRanking] = useState(() => {
-     if (initialState?.rankingVersion && initialState.rankingVersion >= 2) return initialState.ranking ?? 1000;
-     return 1000; // Reset ranking for v2
+     if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.ranking ?? 0;
+     return 0; // Reset ranking for v3 — all teams start at 0
    });
    const [rankingHistory, setRankingHistory] = useState<RankingHistory[]>(() => {
-     if (initialState?.rankingVersion && initialState.rankingVersion >= 2) return initialState.rankingHistory ?? [];
-     return []; // Reset history for v2
+     if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.rankingHistory ?? [];
+     return []; // Reset history for v3
    });
    const [friendliesPlayedToday, setFriendliesPlayedToday] = useState(initialState?.friendliesPlayedToday ?? 0);
    const [friendliesPlayedSeason, setFriendliesPlayedSeason] = useState(initialState?.friendliesPlayedSeason ?? 0);
@@ -1065,7 +1065,7 @@ export function useGame(initialState?: GameState, userId?: string) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 2, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 3, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
   }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
