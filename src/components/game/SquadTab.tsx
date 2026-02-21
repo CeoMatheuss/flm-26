@@ -541,9 +541,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
                       {/* Actions */}
                       <div className="flex items-center gap-0.5 shrink-0">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
-                          <BedDouble className="h-3.5 w-3.5" />
-                        </Button>
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onListForSale(player.id); }} title="Transferir">
                           <Tag className="h-3.5 w-3.5" />
                         </Button>
