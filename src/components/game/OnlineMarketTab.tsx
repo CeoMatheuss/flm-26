@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
@@ -83,6 +83,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
   const [bonusGames, setBonusGames] = useState(0);
   const [bonusTitles, setBonusTitles] = useState(0);
   const [signingBonus, setSigningBonus] = useState(0);
+  const [showBonusHelp, setShowBonusHelp] = useState(false);
 
   const loadListings = useCallback(async () => {
     const { data } = await supabase
@@ -342,22 +343,31 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <p className="text-xs font-semibold text-muted-foreground">🎯 Bônus por desempenho (R$ por ocorrência)</p>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-relaxed p-3">
-                      <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
-                      <p>• <strong>Luvas:</strong> Pagamento único na assinatura. Aumenta a chance de aceite se o salário for menor que o atual.</p>
-                      <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação e desempenho individual. Valores altos podem tornar o jogador "fominha" (tenta finalizar mais, prejudicando o coletivo).</p>
-                      <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada, sem efeito fominha.</p>
-                      <p>• <strong>Bônus por título:</strong> Grande motivação, sem efeito fominha.</p>
-                      <p className="mt-1 text-muted-foreground">Bônus compensam salários menores e influenciam o comportamento em campo!</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <button
+                  type="button"
+                  className="h-4 w-4 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center"
+                  onClick={() => setShowBonusHelp(!showBonusHelp)}
+                >
+                  <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                </button>
               </div>
+              {showBonusHelp && (
+                <div className="relative bg-muted/40 border border-border rounded-lg p-3 mb-2 text-[10px] leading-relaxed">
+                  <button
+                    type="button"
+                    className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center"
+                    onClick={() => setShowBonusHelp(false)}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
+                  <p>• <strong>Luvas:</strong> Pagamento único na assinatura. Aumenta a chance de aceite se o salário for menor que o atual.</p>
+                  <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação e desempenho individual. Valores altos podem tornar o jogador "fominha" (tenta finalizar mais, prejudicando o coletivo).</p>
+                  <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada, sem efeito fominha.</p>
+                  <p>• <strong>Bônus por título:</strong> Grande motivação, sem efeito fominha.</p>
+                  <p className="mt-1 text-muted-foreground">Bônus compensam salários menores e influenciam o comportamento em campo!</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[10px] text-muted-foreground">⚽ Por gol</label>
