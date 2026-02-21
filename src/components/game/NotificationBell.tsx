@@ -115,12 +115,22 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   if (isNewClub) {
     notifications.push({
       id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns pela criação do ${clubName}! 🎉 Monte seu elenco, defina táticas e leve seu clube ao topo!`,
+      message: `Parabéns pela criação do ${clubName}! 🎉 Você agora é o Manager de um clube profissional. Seu objetivo: construir um time vencedor, conquistar ligas online e subir de divisão!`,
       type: 'success',
     });
     notifications.push({
-      id: 'welcome_tips', icon: '💡', title: 'Primeiros passos',
-      message: '1️⃣ Formação em Táticas • 2️⃣ Amistosos • 3️⃣ CT e Base • 4️⃣ Mercado • 5️⃣ Liga Online',
+      id: 'welcome_tips', icon: '💡', title: '📋 Primeiros passos — Guia do Manager',
+      message: '1️⃣ Táticas → Monte sua formação e escalação\n2️⃣ Partidas → Jogue amistosos vs BOT para ganhar experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online e dispute a temporada!',
+      type: 'info',
+    });
+    notifications.push({
+      id: 'welcome_save', icon: '💾', title: 'Auto-Save Ativado!',
+      message: 'Suas ações são salvas automaticamente a cada 30 segundos. Outros managers podem ver seu clube no mercado e te desafiar para amistosos online!',
+      type: 'info',
+    });
+    notifications.push({
+      id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online',
+      message: 'O FLM 26 é multiplayer! Tudo que você faz é visível para outros jogadores: transferências, escalação, resultados. Construa sua reputação!',
       type: 'info',
     });
   }
