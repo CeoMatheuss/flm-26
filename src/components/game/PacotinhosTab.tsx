@@ -318,9 +318,6 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
             <div className="space-y-3">
               {/* Player header */}
               <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg border-2 shrink-0 ${getOvrColor(currentPlayer.overall)} bg-background`}>
-                  {revealedAttrCount >= ATTR_LABELS.length ? currentPlayer.overall : '?'}
-                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[currentPlayer.position]}`}>
@@ -398,12 +395,8 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
                 <div className="grid gap-1.5 max-h-48 overflow-y-auto">
                   {generatedPlayers.map(p => (
                     <div key={p.id} className="flex items-center gap-2 p-2 rounded border bg-card text-xs">
-                      <span className={`font-bold ${p.overall >= 70 ? 'text-yellow-400' : p.overall >= 60 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
-                        {p.overall}
-                      </span>
                       <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
                       <span className="font-semibold truncate">{p.name}</span>
-                      {p.overall >= 70 && <span>⭐</span>}
                     </div>
                   ))}
                 </div>
