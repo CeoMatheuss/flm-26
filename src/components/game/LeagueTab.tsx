@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Globe, Trophy, Target } from 'lucide-react';
 import { LeaguesOverview } from './LeaguesOverview';
-import { TeamViewModal } from './TeamViewModal';
 
 interface Props {
   teams: LeagueTeam[];
@@ -18,7 +17,6 @@ interface Props {
 
 export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
   const [showAllLeagues, setShowAllLeagues] = useState(false);
-  const [viewingTeam, setViewingTeam] = useState<LeagueTeam | null>(null);
 
   const sorted = useMemo(() => 
     [...teams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)),
@@ -90,16 +88,8 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
     return <LeaguesOverview currentCountry={country} clubName={clubName} onBack={() => setShowAllLeagues(false)} />;
   }
 
-  if (viewingTeam) {
-    return (
-      <TeamViewModal
-        team={viewingTeam}
-        isUserTeam={viewingTeam.name === clubName}
-        userPlayers={viewingTeam.name === clubName ? clubPlayers : undefined}
-        onBack={() => setViewingTeam(null)}
-      />
-    );
-  }
+
+
 
 
   return (
@@ -138,13 +128,10 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
                     {i + 1}
                   </TableCell>
                   <TableCell>
-                    <button
-                      onClick={() => setViewingTeam(team)}
-                      className="flex items-center gap-1 hover:underline hover:text-primary transition-colors text-left"
-                    >
+                    <span className="flex items-center gap-1">
                       <span className="mr-1">{team.logo}</span>
                       {team.name}
-                    </button>
+                    </span>
                   </TableCell>
                   <TableCell className="text-center">{team.played}</TableCell>
                   <TableCell className="text-center">{team.wins}</TableCell>
