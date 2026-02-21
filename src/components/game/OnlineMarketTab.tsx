@@ -77,6 +77,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const [activeMarketTab, setActiveMarketTab] = useState('browse');
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
+  const [loanListings, setLoanListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
@@ -133,10 +134,20 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
     }
   }, [userId]);
 
+  const loadLoanListings = useCallback(async () => {
+    const { data } = await supabase
+      .from('loan_listings')
+      .select('*')
+      .eq('status', 'active')
+      .order('listed_at', { ascending: false });
+    if (data) setLoanListings(data);
+  }, []);
+
   useEffect(() => {
     loadListings();
     loadMyOffers();
     loadIncomingOffers();
+    loadLoanListings();
 
     const ch1 = supabase.channel('transfer-listings')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_listings' }, () => { loadListings(); loadIncomingOffers(); })
@@ -146,8 +157,12 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_offers' }, () => { loadMyOffers(); loadIncomingOffers(); })
       .subscribe();
 
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, [loadListings, loadMyOffers, loadIncomingOffers]);
+    const ch3 = supabase.channel('loan-listings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_listings' }, () => { loadLoanListings(); })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); };
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
@@ -648,10 +663,41 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
           )}
         </TabsContent>
 
-        {/* LOANS */}
+        {/* LOANS - ONLINE */}
         <TabsContent value="loans" className="space-y-3">
-          <h3 className="font-semibold text-sm">🔄 Empréstimos</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm">🔄 Mercado de Empréstimos</h3>
+            <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1">
+              <RefreshCw className="h-3 w-3" /> Atualizar
+            </Button>
+          </div>
 
+          {/* My active loan listings */}
+          {loanListings.filter(l => l.seller_id === userId).length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground">Seus jogadores no mercado de empréstimo:</p>
+              {loanListings.filter(l => l.seller_id === userId).map(l => (
+                <Card key={l.id} className="border-cyan-500/30">
+                  <CardContent className="p-2 flex items-center gap-2">
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[l.player_position] || 'bg-muted'}`}>{l.player_position}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{l.player_name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                    </div>
+                    <Button size="sm" variant="destructive" className="h-6 px-2 text-[9px]" onClick={async () => {
+                      const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
+                      if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                      else { toast.success('Retirado do mercado de empréstimos!'); loadLoanListings(); }
+                    }}>
+                      <X className="h-3 w-3 mr-0.5" /> Retirar
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Active loaned players (accepted loans) */}
           {loanedPlayers.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-[10px] font-semibold text-muted-foreground">Empréstimos ativos:</p>
@@ -672,18 +718,19 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             </div>
           )}
 
+          {/* List player for loan */}
           {onLoanOut && (
             <div className="space-y-1.5">
               <p className="text-[10px] font-semibold text-muted-foreground">Emprestar jogador (máx 3 cedidos):</p>
               <ScrollArea className="max-h-[40vh]">
                 <div className="space-y-1">
-                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id)).map(player => (
+                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id) && !loanListings.some(l => l.seller_id === userId && (l.player_data as any)?.id === p.id)).map(player => (
                     <Card key={player.id} className="hover:border-cyan-500/30 transition-colors">
                       <CardContent className="p-2 flex items-center gap-2">
                         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{player.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
+                          <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • R${((player.salary || 0) / 1000).toFixed(0)}k/mês</p>
                         </div>
                         <Button size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => onLoanOut(player.id)} disabled={players.length <= 11 || loanedPlayers.filter(l => l.direction === 'out').length >= 3}>
                           <ArrowLeftRight className="h-3 w-3 mr-0.5" /> Emprestar
@@ -696,8 +743,51 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             </div>
           )}
 
-          {loanedPlayers.length === 0 && (
-            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhum empréstimo ativo.</CardContent></Card>
+          {/* Browse other users' loan listings */}
+          {loanListings.filter(l => l.seller_id !== userId).length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-semibold text-emerald-400">Jogadores disponíveis para empréstimo:</p>
+              <ScrollArea className="max-h-[40vh]">
+                <div className="space-y-1">
+                  {loanListings.filter(l => l.seller_id !== userId).map(l => (
+                    <Card key={l.id} className="hover:border-emerald-500/30 transition-colors">
+                      <CardContent className="p-2 flex items-center gap-2">
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[l.player_position] || 'bg-muted'}`}>{l.player_position}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{l.player_name}</p>
+                          <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • {l.seller_club_name}</p>
+                          <p className="text-[10px] text-muted-foreground">Salário: R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                        </div>
+                        <Button size="sm" variant="default" className="h-6 px-2 text-[9px]" onClick={async () => {
+                          if (loanedPlayers.filter(lp => lp.direction === 'in').length >= 3) {
+                            toast.error('Limite de 3 empréstimos recebidos!');
+                            return;
+                          }
+                          const res = await supabase.functions.invoke('process-transfer', {
+                            body: { action: 'loan-accept', listingId: l.id, clubName },
+                          });
+                          if (res.error || res.data?.error) {
+                            toast.error(res.data?.error || 'Erro ao aceitar empréstimo');
+                          } else {
+                            toast.success(`${l.player_name} emprestado para o seu clube!`);
+                            if (onLoanIn && res.data?.playerData) {
+                              onLoanIn(res.data.playerData);
+                            }
+                            loadLoanListings();
+                          }
+                        }}>
+                          <Check className="h-3 w-3 mr-0.5" /> Aceitar
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {loanListings.length === 0 && loanedPlayers.length === 0 && (
+            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhum empréstimo no mercado.</CardContent></Card>
           )}
         </TabsContent>
 

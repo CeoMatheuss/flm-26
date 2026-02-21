@@ -414,6 +414,136 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: 'Jogador retirado do mercado.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: LIST PLAYER FOR LOAN
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'loan-list') {
+      const { playerData, playerName, playerPosition, playerOverall, playerAge, salary, clubName, sellerShield } = body;
+
+      if (!playerName || typeof playerName !== 'string' || playerName.length > 100) {
+        return new Response(JSON.stringify({ error: 'Nome do jogador inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (!playerData || typeof playerData !== 'object') {
+        return new Response(JSON.stringify({ error: 'Dados do jogador inválidos' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Check max simultaneous loan listings per user (limit 3)
+      const { count: activeCount } = await adminClient
+        .from('loan_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('seller_id', userId)
+        .eq('status', 'active');
+
+      if ((activeCount ?? 0) >= 3) {
+        return new Response(JSON.stringify({ error: 'Limite de 3 jogadores para empréstimo.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const { data: listing, error: listError } = await adminClient
+        .from('loan_listings')
+        .insert({
+          seller_id: userId,
+          seller_club_name: (clubName || '').slice(0, 50),
+          seller_shield: sellerShield || null,
+          player_data: playerData,
+          player_name: playerName.slice(0, 100),
+          player_position: (playerPosition || 'MEI').slice(0, 3),
+          player_overall: Math.min(99, Math.max(1, playerOverall)),
+          player_age: Math.min(45, Math.max(15, playerAge)),
+          salary: Math.max(0, salary || 0),
+        })
+        .select()
+        .single();
+
+      if (listError) {
+        console.error('loan-list error:', listError.message);
+        return new Response(JSON.stringify({ error: 'Erro ao listar jogador para empréstimo.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      return new Response(JSON.stringify({ success: true, listing }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: ACCEPT LOAN (another user takes the loaned player)
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'loan-accept') {
+      const { listingId, clubName } = body;
+
+      if (!listingId || typeof listingId !== 'string') {
+        return new Response(JSON.stringify({ error: 'Listing ID inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const { data: listing } = await adminClient
+        .from('loan_listings')
+        .select('*')
+        .eq('id', listingId)
+        .eq('status', 'active')
+        .single();
+
+      if (!listing) {
+        return new Response(JSON.stringify({ error: 'Empréstimo não encontrado ou já encerrado' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      if (listing.seller_id === userId) {
+        return new Response(JSON.stringify({ error: 'Você não pode aceitar seu próprio empréstimo' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Check max loans in for buyer (limit 3)
+      const { count: loansIn } = await adminClient
+        .from('loan_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('buyer_id', userId)
+        .eq('status', 'accepted');
+
+      if ((loansIn ?? 0) >= 3) {
+        return new Response(JSON.stringify({ error: 'Limite de 3 empréstimos recebidos atingido.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const now = new Date();
+
+      await adminClient.from('loan_listings').update({
+        status: 'accepted',
+        buyer_id: userId,
+        buyer_club_name: (clubName || '').slice(0, 50),
+        accepted_at: now.toISOString(),
+      }).eq('id', listingId);
+
+      // Create journal entry
+      await adminClient.from('journal_updates').insert({
+        user_id: listing.seller_id,
+        title: `📰 ${listing.player_name} emprestado!`,
+        content: `🔄 EMPRÉSTIMO CONFIRMADO!\n\n${listing.player_name} (${listing.player_position}, ${listing.player_age}a, OVR ${listing.player_overall}) foi emprestado pelo ${listing.seller_club_name} para o ${clubName || 'Clube'} por 1 temporada.\n\nO clube receptor arcará com o salário de R$${((listing.salary || 0) / 1000).toFixed(0)}k/mês.`,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `Empréstimo aceito! ${listing.player_name} foi emprestado.`,
+        playerData: listing.player_data,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: CANCEL LOAN LISTING
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'loan-delist') {
+      const { listingId } = body;
+
+      const { data: listing } = await adminClient
+        .from('loan_listings')
+        .select('seller_id, player_name')
+        .eq('id', listingId)
+        .single();
+
+      if (!listing || listing.seller_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Empréstimo não encontrado ou sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      await adminClient.from('loan_listings').update({
+        status: 'cancelled',
+      }).eq('id', listingId);
+
+      return new Response(JSON.stringify({ success: true, message: `${listing.player_name} retirado do mercado de empréstimos.` }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     return new Response(JSON.stringify({ error: 'Ação desconhecida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err) {
