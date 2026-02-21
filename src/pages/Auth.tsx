@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import flmLogo from '@/assets/flm26-logo.png';
 import gamePreview from '@/assets/game-preview.jpg';
-import { Trophy, Users, Target, Swords, TrendingUp, Star, Shield, Zap, Globe, GraduationCap } from 'lucide-react';
+import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 const features = [
   { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores' },
@@ -26,6 +27,9 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -42,7 +46,17 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message);
+    if (error) {
+      if (error.message === 'Email not confirmed') {
+        setPendingEmail(email);
+        setShowOtp(true);
+        toast.info('Email ainda não confirmado. Digite o código enviado para seu email.');
+        // Resend OTP
+        await supabase.auth.resend({ type: 'signup', email });
+      } else {
+        toast.error(error.message);
+      }
+    }
     setLoading(false);
   };
 
@@ -61,10 +75,127 @@ export default function AuthPage() {
         data: { display_name: displayName || 'Manager' },
       },
     });
-    if (error) toast.error(error.message);
-    else toast.success('Conta criada! Verifique seu email para confirmar.');
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setPendingEmail(email);
+      setShowOtp(true);
+      toast.success('Código de verificação enviado para seu email!');
+    }
     setLoading(false);
   };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      toast.error('Digite o código completo de 6 dígitos');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: pendingEmail,
+      token: otpCode,
+      type: 'signup',
+    });
+    if (error) {
+      toast.error('Código inválido ou expirado. Tente novamente.');
+    } else {
+      toast.success('🎉 Email verificado com sucesso! Bem-vindo ao FLM 26!');
+    }
+    setLoading(false);
+  };
+
+  const handleResendCode = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
+    if (error) {
+      toast.error('Erro ao reenviar código. Tente novamente.');
+    } else {
+      toast.success('Novo código enviado para ' + pendingEmail);
+    }
+    setLoading(false);
+  };
+
+  // OTP Verification Screen
+  if (showOtp) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background p-4">
+        <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl">
+          <CardHeader className="text-center space-y-4 pb-2">
+            <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Mail className="w-10 h-10 text-primary" />
+            </div>
+            <CardTitle className="text-xl">Verifique seu Email</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Enviamos um código de 6 dígitos para
+            </p>
+            <p className="text-sm font-bold text-primary">{pendingEmail}</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Email illustration */}
+            <div className="relative mx-auto w-48 h-32 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex flex-col items-center justify-center gap-2 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-8 bg-primary/30 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-primary-foreground/80 tracking-wider">FLM 26 ⚽</span>
+              </div>
+              <div className="mt-4 flex items-center gap-1">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <span className="text-xs font-bold">Código de Verificação</span>
+              </div>
+              <div className="flex gap-1">
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="w-5 h-6 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-primary">•</span>
+                  </div>
+                ))}
+              </div>
+              <span className="text-[8px] text-muted-foreground">Válido por 60 minutos</span>
+            </div>
+
+            {/* OTP Input */}
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <span className="mx-2 text-muted-foreground">-</span>
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              onClick={handleVerifyOtp}
+              disabled={loading || otpCode.length !== 6}
+              className="w-full h-12 font-semibold text-sm gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {loading ? 'Verificando...' : 'Verificar Código'}
+            </Button>
+
+            <div className="text-center space-y-2">
+              <p className="text-xs text-muted-foreground">Não recebeu o código?</p>
+              <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary">
+                Reenviar código
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowOtp(false); setOtpCode(''); }}
+              className="w-full text-xs text-muted-foreground gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" /> Voltar ao login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
