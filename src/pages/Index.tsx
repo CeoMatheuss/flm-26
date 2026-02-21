@@ -328,6 +328,31 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     };
   }, [gameState, saveGame]);
 
+  // Auto-sync squad + infrastructure to league every 10 seconds
+  useEffect(() => {
+    if (!mp.currentLeague) return;
+    const clubMeta = {
+      stadiumName: game.club.stadiumName,
+      stadiumLevel: game.infrastructure.stadium.level,
+      trainingCenterLevel: game.infrastructure.trainingCenter.level,
+      physiotherapyLevel: game.infrastructure.physiotherapy.level,
+      youthAcademyLevel: game.infrastructure.youthAcademy.level,
+      primaryColor: game.club.primaryColor,
+      secondaryColor: game.club.secondaryColor,
+      shieldPattern: game.club.shieldPattern,
+      shieldShape: game.club.shieldShape,
+      country: game.club.country,
+      reputation: game.club.reputation,
+      fans: game.club.fans,
+    };
+    // Sync immediately on mount and then every 10 seconds
+    mp.syncSquad(game.club.players, game.tactics, clubMeta);
+    const interval = setInterval(() => {
+      mp.syncSquad(game.club.players, game.tactics, clubMeta);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, game.infrastructure.trainingCenter.level, game.infrastructure.physiotherapy.level, game.infrastructure.youthAcademy.level]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="min-h-screen bg-background">
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onComplete={() => {

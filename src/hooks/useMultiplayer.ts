@@ -366,9 +366,11 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     toast.success(accept ? 'Proposta aceita!' : 'Proposta rejeitada.');
   }, []);
 
-  // Sync squad to league
-  const syncSquad = useCallback(async (players: any[], tactics: any) => {
+  // Sync squad to league (includes club metadata for profile viewing)
+  const syncSquad = useCallback(async (players: any[], tactics: any, clubMeta?: any) => {
     if (!currentLeague) return;
+    
+    const squadPayload = clubMeta ? { players, clubMeta } : players;
     
     const { data: existing } = await supabase
       .from('league_squads')
@@ -379,13 +381,12 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
     if (existing) {
       await supabase.from('league_squads')
-        .update({ squad_data: players, tactics_data: tactics, updated_at: new Date().toISOString() })
+        .update({ squad_data: squadPayload, tactics_data: tactics, updated_at: new Date().toISOString() })
         .eq('id', existing.id);
     } else {
       await supabase.from('league_squads')
-        .insert([{ league_id: currentLeague.id, user_id: userId, squad_data: players, tactics_data: tactics }]);
+        .insert([{ league_id: currentLeague.id, user_id: userId, squad_data: squadPayload, tactics_data: tactics }]);
     }
-    toast.success('Elenco sincronizado com a liga!');
   }, [currentLeague, userId]);
 
   // Start season (owner only) - now with 30 rounds and date scheduling

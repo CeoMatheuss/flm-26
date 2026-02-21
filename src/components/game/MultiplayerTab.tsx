@@ -41,7 +41,7 @@ interface Props {
   onSendPrivateMessage: (receiverId: string, content: string) => void;
   onSendProposal: (receiverId: string, playerName: string, price: number, type: string, message?: string, loanDuration?: number) => void;
   onRespondProposal: (proposalId: string, accept: boolean) => void;
-  onSyncSquad?: (players: any[], tactics: any) => void;
+  onSyncSquad?: (players: any[], tactics: any, clubMeta?: any) => void;
   onStartSeason?: () => void;
   onSimulateRound?: (round: number) => void;
   onEndSeason?: () => void;
