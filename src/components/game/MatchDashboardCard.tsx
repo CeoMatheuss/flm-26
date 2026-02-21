@@ -30,7 +30,7 @@ interface Props {
   club: Club;
 }
 
-type MatchStatus = 'scheduled' | 'live' | 'finished' | 'none';
+type MatchStatus = 'live' | 'finished' | 'none';
 
 /**
  * matchDashboardCard — BLOCO FIXO OBRIGATÓRIO
@@ -91,14 +91,12 @@ export function MatchDashboardCard({ club }: Props) {
   }, []);
 
   // Determine match status and data
-  const nextMatch = club.matches.find(m => !m.played);
+  // NOTE: Do NOT show pending bot friendlies as "scheduled" — they are on-demand only
   const lastFinished = [...club.matches].filter(m => m.played).pop();
 
   let status: MatchStatus = 'none';
   if (liveMatch) {
     status = 'live';
-  } else if (nextMatch) {
-    status = 'scheduled';
   } else if (lastFinished) {
     status = 'finished';
   }
@@ -106,53 +104,41 @@ export function MatchDashboardCard({ club }: Props) {
   // Resolve display data
   const homeTeamName = status === 'live'
     ? liveMatch!.home_team
-    : status === 'scheduled'
-      ? (nextMatch!.isHome !== false ? club.name : nextMatch!.opponent)
-      : status === 'finished'
-        ? (lastFinished!.isHome !== false ? club.name : lastFinished!.opponent)
-        : club.name;
+    : status === 'finished'
+      ? (lastFinished!.isHome !== false ? club.name : lastFinished!.opponent)
+      : club.name;
 
   const awayTeamName = status === 'live'
     ? liveMatch!.away_team
-    : status === 'scheduled'
-      ? (nextMatch!.isHome !== false ? nextMatch!.opponent : club.name)
-      : status === 'finished'
-        ? (lastFinished!.isHome !== false ? lastFinished!.opponent : club.name)
-        : '—';
+    : status === 'finished'
+      ? (lastFinished!.isHome !== false ? lastFinished!.opponent : club.name)
+      : '—';
 
   const competition = status === 'live'
     ? (liveMatch!.competition || 'Amistoso')
     : 'Amistoso';
 
-  const matchDate = status === 'scheduled'
-    ? nextMatch!.date
-    : status === 'finished'
-      ? lastFinished!.date
-      : '—';
+  const matchDate = status === 'finished'
+    ? lastFinished!.date
+    : '—';
 
   const venueName = status === 'live'
     ? (liveMatch!.stadium_name || club.stadiumName)
-    : status === 'scheduled'
-      ? (nextMatch!.stadium || club.stadiumName)
-      : status === 'finished'
-        ? (lastFinished!.stadium || club.stadiumName)
-        : club.stadiumName;
+    : status === 'finished'
+      ? (lastFinished!.stadium || club.stadiumName)
+      : club.stadiumName;
 
   const venueCapacity = status === 'live'
     ? (liveMatch!.stadium_capacity || null)
-    : status === 'scheduled'
-      ? (nextMatch!.stadiumCapacity || null)
-      : status === 'finished'
-        ? (lastFinished!.stadiumCapacity || null)
-        : null;
+    : status === 'finished'
+      ? (lastFinished!.stadiumCapacity || null)
+      : null;
 
   const isHome = status === 'live'
     ? liveMatch!.is_home
-    : status === 'scheduled'
-      ? (nextMatch!.isHome !== false)
-      : status === 'finished'
-        ? (lastFinished!.isHome !== false)
-        : true;
+    : status === 'finished'
+      ? (lastFinished!.isHome !== false)
+      : true;
 
   // Border color based on status
   const borderClass = status === 'live'
@@ -194,17 +180,7 @@ export function MatchDashboardCard({ club }: Props) {
               <span className="text-muted-foreground font-bold">Última Partida</span>
               <Badge variant="secondary" className="text-[9px] ml-auto">Encerrada</Badge>
             </>
-          ) : (
-            <>
-              <Target className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-              <span className="text-muted-foreground font-bold">
-                {status === 'scheduled' ? 'Próxima Partida' : 'Partida'}
-              </span>
-              {status === 'scheduled' && (
-                <Badge variant="outline" className="text-[9px] ml-auto">Agendada</Badge>
-              )}
-            </>
-          )}
+          ) : null}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
