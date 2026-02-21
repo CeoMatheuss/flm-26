@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Newspaper, ChevronDown, ChevronUp, ArrowLeft, Megaphone } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   club: Club;
@@ -100,7 +101,15 @@ function generateAllNews(club: Club, events: GameEvent[], infrastructure?: Infra
 
 export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
   const allNews = generateAllNews(club, events, infrastructure);
+  const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
 
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(20);
+      if (data) setAdminUpdates(data as any[]);
+    };
+    fetchUpdates();
+  }, []);
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -114,6 +123,29 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         <Badge variant="outline" className="text-[9px]">{allNews.length} notícias</Badge>
       </div>
 
+      {/* Admin Updates */}
+      {adminUpdates.length > 0 && (
+        <div className="space-y-2">
+          {adminUpdates.map(u => (
+            <Card key={u.id} className="border-primary/30 bg-primary/5">
+              <CardContent className="p-3 flex items-start gap-2">
+                <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
+                    <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                  <p className="text-xs font-semibold mt-1">{u.title}</p>
+                  <p className="text-xs leading-snug text-muted-foreground">{u.content}</p>
+                </div>
+                <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* News */}
       <div className="space-y-2">
         {allNews.map((item, i) => (
           <Card key={i} className="border-border">
