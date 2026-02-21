@@ -21,7 +21,7 @@ export const initialClub: Club = {
   name: 'FLM 26',
   stadiumName: 'Arena FLM',
   ticketPrice: 30,
-  budget: 2500000,
+  budget: 1000000,
   fans: 500,
   reputation: 65,
   stats: { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },

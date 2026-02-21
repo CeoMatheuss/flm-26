@@ -87,6 +87,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   // Player generator state
   const [genOverall, setGenOverall] = useState('60');
   const [genPosition, setGenPosition] = useState('random');
+  const [genAge, setGenAge] = useState('random');
   const [genDestination, setGenDestination] = useState<'market' | 'auction'>('market');
   const estimatedPrice = useMemo(() => {
     const o = Math.max(40, Math.min(99, Number(genOverall) || 60));
@@ -1190,7 +1191,7 @@ export function AdminTab({ userId, isFounder }: Props) {
                 <p className="text-[10px] text-muted-foreground">Gere um jogador com OVR específico e coloque no mercado ou leilão.</p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="text-[9px] text-muted-foreground">Overall (40-99)</label>
                     <Input type="number" min="40" max="99" value={genOverall} onChange={e => setGenOverall(e.target.value)} className="text-xs h-8" />
@@ -1207,6 +1208,18 @@ export function AdminTab({ userId, isFounder }: Props) {
                         <SelectItem value="VOL" className="text-xs">⚙️ VOL</SelectItem>
                         <SelectItem value="MEI" className="text-xs">🎯 MEI</SelectItem>
                         <SelectItem value="ATA" className="text-xs">⚽ ATA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-muted-foreground">Idade</label>
+                    <Select value={genAge} onValueChange={setGenAge}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="random" className="text-xs">🎲 Aleatória</SelectItem>
+                        {Array.from({ length: 23 }, (_, i) => i + 16).map(age => (
+                          <SelectItem key={age} value={String(age)} className="text-xs">{age} anos</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1239,10 +1252,11 @@ export function AdminTab({ userId, isFounder }: Props) {
                       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                        body: JSON.stringify({
+                      body: JSON.stringify({
                           giftType: 'generate_player',
                           playerOverall: Number(genOverall),
                           playerPosition: genPosition === 'random' ? undefined : genPosition,
+                          playerAge: genAge === 'random' ? undefined : Number(genAge),
                           playerDestination: genDestination,
                         }),
                       });

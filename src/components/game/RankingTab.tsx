@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Shield, Star, Flame, BarChart3, RefreshCw, Globe } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Shield, Star, Flame, BarChart3, RefreshCw, Globe, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,7 +44,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
       .from('global_ranking')
       .select('*')
       .order('ranking_points', { ascending: false })
-      .limit(200);
+      .limit(500);
 
     if (!error && data) {
       setRankings(data as RankingEntry[]);
@@ -97,18 +97,6 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   const totalGames = stats.wins + stats.draws + stats.losses;
   const winRate = totalGames > 0 ? Math.round((stats.wins / totalGames) * 100) : 0;
-
-  const getChangeIcon = (change: number) => {
-    if (change > 0) return <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />;
-    if (change < 0) return <TrendingDown className="h-3.5 w-3.5 text-destructive" />;
-    return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
-  };
-
-  const getChangeText = (change: number) => {
-    if (change > 0) return <span className="text-emerald-400 font-mono text-xs">+{change}</span>;
-    if (change < 0) return <span className="text-destructive font-mono text-xs">{change}</span>;
-    return <span className="text-muted-foreground font-mono text-xs">→</span>;
-  };
 
   return (
     <div className="space-y-4">
@@ -181,9 +169,14 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
           <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Globe className="h-3.5 w-3.5" /> Classificação Global
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={fetchRankings} disabled={loading} className="h-7 px-2">
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[9px] gap-1">
+              <Users className="h-3 w-3" /> {rankings.length} times
+            </Badge>
+            <Button variant="ghost" size="sm" onClick={fetchRankings} disabled={loading} className="h-7 px-2">
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="px-2 sm:px-4 pb-4">
           {loading && rankings.length === 0 ? (
@@ -198,11 +191,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                     <th className="text-left py-2 px-1 w-8">#</th>
                     <th className="text-left py-2 px-1">Clube</th>
                     <th className="text-right py-2 px-1">Pts</th>
-                    <th className="text-center py-2 px-1">J</th>
                     <th className="text-center py-2 px-1 hidden sm:table-cell">V</th>
                     <th className="text-center py-2 px-1 hidden sm:table-cell">E</th>
                     <th className="text-center py-2 px-1 hidden sm:table-cell">D</th>
-                    <th className="text-center py-2 px-1">Var</th>
                     <th className="text-left py-2 px-1 hidden sm:table-cell">Competição</th>
                   </tr>
                 </thead>
@@ -229,16 +220,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                           {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
                         </td>
                         <td className="py-2 px-1 text-right font-bold">{entry.ranking_points}</td>
-                        <td className="py-2 px-1 text-center text-muted-foreground">{entry.games_played}</td>
                         <td className="py-2 px-1 text-center text-emerald-400 hidden sm:table-cell">{entry.wins}</td>
                         <td className="py-2 px-1 text-center text-primary hidden sm:table-cell">{entry.draws}</td>
                         <td className="py-2 px-1 text-center text-destructive hidden sm:table-cell">{entry.losses}</td>
-                        <td className="py-2 px-1 text-center">
-                          <div className="flex items-center justify-center gap-0.5">
-                            {getChangeIcon(entry.last_change)}
-                            {getChangeText(entry.last_change)}
-                          </div>
-                        </td>
                         <td className="py-2 px-1 text-muted-foreground truncate max-w-[80px] hidden sm:table-cell">{entry.current_competition}</td>
                       </tr>
                     );
