@@ -344,9 +344,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} infrastructure={game.infrastructure} isNewClub={isNewClub} userId={userId} />
-            <Button size="sm" variant="outline" onClick={() => saveGame()} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
-              <Save className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Salvar</span>
-            </Button>
             <Button size="sm" variant="destructive" onClick={onSignOut} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
               <LogOut className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Sair</span>
             </Button>

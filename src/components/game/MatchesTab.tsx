@@ -57,6 +57,7 @@ export function MatchesTab({
 }: Props) {
   const navigate = useNavigate();
   const canGenerate = !alreadyPlayedToday;
+  const canPlay = !alreadyPlayedToday;
   const nextMatch = matches.find(m => !m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
 
@@ -151,8 +152,8 @@ export function MatchesTab({
                           <Badge variant="outline" className="ml-2 text-[8px]">OVR ~{(nextMatch as any).opponentStrength}</Badge>
                         )}
                       </div>
-                      <Button size="sm" onClick={() => goToMatch(nextMatch)} className="h-7 px-3 text-xs gap-1">
-                        <Play className="h-3 w-3" /> Jogar
+                      <Button size="sm" onClick={() => goToMatch(nextMatch)} disabled={!canPlay} className="h-7 px-3 text-xs gap-1">
+                        <Play className="h-3 w-3" /> {canPlay ? 'Jogar' : 'Bloqueado'}
                       </Button>
                     </div>
                     <p className="text-[9px] text-muted-foreground mt-1">
