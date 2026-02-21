@@ -202,7 +202,7 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
             <Gift className="h-4 w-4 text-primary" /> Pacotinhos de Figurinha
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">
-            Todos os jogadores têm <span className="font-bold text-primary">17 anos</span> e OVR entre <span className="font-bold">50-75</span>. Abra e descubra atributo por atributo!
+            Todos os jogadores têm <span className="font-bold text-primary">17 anos</span>. Abra e descubra atributo por atributo!
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -250,10 +250,6 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Idade:</span>
                         <span className="font-semibold">17 anos</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground">OVR:</span>
-                        <span className="font-semibold">50-75</span>
                       </div>
                     </div>
 
@@ -318,6 +314,9 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
             <div className="space-y-3">
               {/* Player header */}
               <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg border-2 shrink-0 ${getOvrColor(currentPlayer.overall)} bg-background`}>
+                  {revealedAttrCount >= ATTR_LABELS.length ? currentPlayer.overall : '?'}
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[currentPlayer.position]}`}>
@@ -395,8 +394,12 @@ export function PacotinhosTab({ budget, onBuyPack }: Props) {
                 <div className="grid gap-1.5 max-h-48 overflow-y-auto">
                   {generatedPlayers.map(p => (
                     <div key={p.id} className="flex items-center gap-2 p-2 rounded border bg-card text-xs">
+                      <span className={`font-bold ${p.overall >= 70 ? 'text-yellow-400' : p.overall >= 60 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                        {p.overall}
+                      </span>
                       <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
                       <span className="font-semibold truncate">{p.name}</span>
+                      {p.overall >= 70 && <span>⭐</span>}
                     </div>
                   ))}
                 </div>
