@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, Trophy, Landmark, Star, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Landmark, Star, ShoppingCart, Building2, Heart, GraduationCap, Home } from 'lucide-react';
 import { ShieldCrest, ShieldShape } from './ShieldCrest';
 import { generatePlayer } from '@/utils/playerGenerator';
 import { supabase } from '@/integrations/supabase/client';
+import { getStadiumCapacity } from '@/types/infrastructure';
 import type { Player } from '@/types/game';
 import type { LeagueMember, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
 
@@ -36,6 +37,21 @@ function getTeamColor(name: string): string {
   return `hsl(${h}, 70%, 55%)`;
 }
 
+interface ClubMeta {
+  stadiumName?: string;
+  stadiumLevel?: number;
+  trainingCenterLevel?: number;
+  physiotherapyLevel?: number;
+  youthAcademyLevel?: number;
+  primaryColor?: string;
+  secondaryColor?: string;
+  shieldPattern?: string;
+  shieldShape?: string;
+  country?: string;
+  reputation?: number;
+  fans?: number;
+}
+
 export function ClubProfilePage({ member, members, userId, leagueMatches, leagueSquads, clubShield, onBack }: Props) {
   const [transferPlayerNames, setTransferPlayerNames] = useState<Set<string>>(new Set());
   const [loanPlayerNames, setLoanPlayerNames] = useState<Set<string>>(new Set());
@@ -64,8 +80,8 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     if (!isBot) fetchListings();
   }, [member.user_id, isBot]);
 
-  // Get squad
-  const squad = useMemo(() => {
+  // Parse squad data - now supports { players, clubMeta } format
+  const { squad, clubMeta } = useMemo(() => {
     if (isBot) {
       const strength = Math.max(40, Math.min(85, member.reputation));
       const minOvr = Math.max(40, strength - 15);
@@ -79,24 +95,50 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           players.push(generatePlayer([minOvr, maxOvr], [18, 34], pos));
         }
       }
-      return players;
+      const botMeta: ClubMeta = {
+        stadiumName: `Estádio ${member.club_name}`,
+        stadiumLevel: Math.max(1, Math.min(5, Math.floor(member.reputation / 20))),
+        trainingCenterLevel: Math.max(0, Math.min(5, Math.floor(member.reputation / 25))),
+        physiotherapyLevel: Math.max(0, Math.min(4, Math.floor(member.reputation / 30))),
+        youthAcademyLevel: Math.max(0, Math.min(10, Math.floor(member.reputation / 10))),
+        fans: Math.floor(member.reputation * 1000),
+      };
+      return { squad: players, clubMeta: botMeta };
     }
 
     // Real player - check league squads
     const squadData = leagueSquads.find(s => s.user_id === member.user_id);
-    if (squadData?.squad_data && Array.isArray(squadData.squad_data)) {
-      return (squadData.squad_data as any[]).map((p: any) => ({
-        id: p.id || crypto.randomUUID(),
-        name: p.name || 'Desconhecido',
-        position: p.position || 'MEI',
-        age: p.age || 20,
-        overall: p.overall || 50,
-        goals: p.goals || 0,
-        assists: p.assists || 0,
-      })) as Player[];
+    if (squadData?.squad_data) {
+      // New format: { players, clubMeta }
+      const raw = squadData.squad_data as any;
+      if (raw.players && Array.isArray(raw.players)) {
+        const players = raw.players.map((p: any) => ({
+          id: p.id || crypto.randomUUID(),
+          name: p.name || 'Desconhecido',
+          position: p.position || 'MEI',
+          age: p.age || 20,
+          overall: p.overall || 50,
+          goals: p.goals || 0,
+          assists: p.assists || 0,
+        })) as Player[];
+        return { squad: players, clubMeta: (raw.clubMeta || {}) as ClubMeta };
+      }
+      // Old format: array of players
+      if (Array.isArray(raw)) {
+        const players = raw.map((p: any) => ({
+          id: p.id || crypto.randomUUID(),
+          name: p.name || 'Desconhecido',
+          position: p.position || 'MEI',
+          age: p.age || 20,
+          overall: p.overall || 50,
+          goals: p.goals || 0,
+          assists: p.assists || 0,
+        })) as Player[];
+        return { squad: players, clubMeta: {} as ClubMeta };
+      }
     }
 
-    return [];
+    return { squad: [] as Player[], clubMeta: {} as ClubMeta };
   }, [member, isBot, leagueSquads]);
 
   const sortedPlayers = [...squad].sort((a, b) => {
@@ -147,6 +189,16 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
       .sort((a, b) => (a.round || 0) - (b.round || 0));
   }, [leagueMatches, member.user_id]);
 
+  // Shield data
+  const shieldData = isUserTeam && clubShield ? clubShield : (clubMeta.primaryColor ? {
+    primaryColor: clubMeta.primaryColor,
+    secondaryColor: clubMeta.secondaryColor || '#ffffff',
+    pattern: clubMeta.shieldPattern || 'solid',
+    shape: clubMeta.shieldShape || 'classic',
+  } : null);
+
+  const stadiumCapacity = clubMeta.stadiumLevel ? getStadiumCapacity(clubMeta.stadiumLevel) : null;
+
   return (
     <div className="space-y-4">
       <Button variant="outline" size="sm" onClick={onBack} className="gap-1.5">
@@ -157,13 +209,13 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            {isUserTeam && clubShield ? (
+            {shieldData ? (
               <ShieldCrest
-                primaryColor={clubShield.primaryColor}
-                secondaryColor={clubShield.secondaryColor}
-                pattern={clubShield.pattern}
-                shape={clubShield.shape as ShieldShape}
-                size={40}
+                primaryColor={shieldData.primaryColor}
+                secondaryColor={shieldData.secondaryColor}
+                pattern={shieldData.pattern}
+                shape={shieldData.shape as ShieldShape}
+                size={48}
               />
             ) : (
               <ShieldCrest
@@ -171,7 +223,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 secondaryColor="#ffffff"
                 pattern="solid"
                 shape="classic"
-                size={40}
+                size={48}
               />
             )}
             <div>
@@ -180,8 +232,12 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 {isBot && <Badge variant="secondary" className="text-[8px]">BOT</Badge>}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Reputação: {member.reputation} • {squad.length} jogadores
+                Reputação: {clubMeta.reputation ?? member.reputation} • {squad.length} jogadores
+                {clubMeta.fans ? ` • ${(clubMeta.fans / 1000).toFixed(0)}k torcedores` : ''}
               </p>
+              {clubMeta.country && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">🌍 {clubMeta.country}</p>
+              )}
             </div>
           </div>
 
@@ -235,6 +291,75 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         </CardContent>
       </Card>
 
+      {/* Infrastructure */}
+      {(clubMeta.stadiumLevel != null || clubMeta.trainingCenterLevel != null) && (
+        <Card className="border-amber-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-amber-400" /> Infraestrutura
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Stadium */}
+              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-xs font-semibold">Estádio</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate">{clubMeta.stadiumName || 'Estádio'}</p>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-bold text-emerald-400">Nível {clubMeta.stadiumLevel ?? 1}</span>
+                  {stadiumCapacity && <span className="text-[9px] text-muted-foreground">• {stadiumCapacity.toLocaleString()} lug.</span>}
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${((clubMeta.stadiumLevel ?? 1) / 15) * 100}%` }} />
+                </div>
+              </div>
+
+              {/* Training Center */}
+              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="text-xs font-semibold">CT</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Centro de Treinamento</p>
+                <span className="text-xs font-bold text-blue-400">Nível {clubMeta.trainingCenterLevel ?? 0}</span>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${((clubMeta.trainingCenterLevel ?? 0) / 10) * 100}%` }} />
+                </div>
+              </div>
+
+              {/* Physiotherapy */}
+              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-3.5 w-3.5 text-rose-400" />
+                  <span className="text-xs font-semibold">Fisioterapia</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Departamento Médico</p>
+                <span className="text-xs font-bold text-rose-400">Nível {clubMeta.physiotherapyLevel ?? 0}</span>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-rose-500 rounded-full" style={{ width: `${((clubMeta.physiotherapyLevel ?? 0) / 10) * 100}%` }} />
+                </div>
+              </div>
+
+              {/* Youth Academy */}
+              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <GraduationCap className="h-3.5 w-3.5 text-purple-400" />
+                  <span className="text-xs font-semibold">Base</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Categorias de Base</p>
+                <span className="text-xs font-bold text-purple-400">Nível {clubMeta.youthAcademyLevel ?? 0}</span>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500 rounded-full" style={{ width: `${((clubMeta.youthAcademyLevel ?? 0) / 30) * 100}%` }} />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Squad */}
       <Card>
         <CardHeader className="pb-2">
@@ -244,7 +369,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         </CardHeader>
         <CardContent>
           {sortedPlayers.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">Elenco não disponível</p>
+            <p className="text-xs text-muted-foreground text-center py-4">Elenco não disponível — aguardando sincronização</p>
           ) : (
             <div className="space-y-1">
               {sortedPlayers.map((p, i) => {
