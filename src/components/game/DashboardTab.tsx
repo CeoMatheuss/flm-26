@@ -12,9 +12,10 @@ interface Props {
   events: GameEvent[];
   infrastructure?: Infrastructure;
   onOpenNewspaper?: () => void;
+  userId?: string;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, userId }: Props) {
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
 
@@ -61,7 +62,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* === BLOCO FIXO OBRIGATÓRIO — PARTIDA === */}
-      <MatchDashboardCard club={club} />
+      <MatchDashboardCard club={club} userId={userId} />
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">

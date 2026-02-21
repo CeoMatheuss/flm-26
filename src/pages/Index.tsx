@@ -397,7 +397,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} userId={userId} /></TabsContent>
           <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
           <TabsContent value="squad">
             <SquadTab
