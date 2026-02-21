@@ -29,7 +29,7 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shadow-sm">
         <div className="flex items-center gap-2">
