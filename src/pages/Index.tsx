@@ -24,6 +24,7 @@ import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { AuctionTab } from '@/components/game/AuctionTab';
 import { OnlineFriendliesTab } from '@/components/game/OnlineFriendliesTab';
+import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { AdminTab } from '@/components/game/AdminTab';
 import { ClubFeedTab } from '@/components/game/ClubFeedTab';
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
@@ -462,23 +463,45 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="market">
-            <MarketTab
-              marketPlayers={game.marketPlayers}
-              freeAgents={game.freeAgents}
-              clubPlayers={game.club.players}
-              budget={game.club.budget}
-              clubName={game.club.name}
-              listedForSale={game.listedForSale}
-              scoutReports={game.club.scoutReports || []}
-              loanedPlayers={game.loanedPlayers}
-              onBuy={game.buyPlayer}
-              onSell={game.sellPlayer}
-              onSignFreeAgent={game.signFreeAgent}
-              onRefresh={game.refreshMarket}
-              onRefreshFreeAgents={game.refreshFreeAgents}
-              onLoanOut={game.loanOutPlayer}
-              onLoanIn={game.loanInPlayer}
-            />
+            <Tabs defaultValue="online" className="w-full">
+              <TabsList className="grid grid-cols-2 w-full mb-2">
+                <TabsTrigger value="online" className="text-[10px] sm:text-xs">🌐 Mercado Online</TabsTrigger>
+                <TabsTrigger value="local" className="text-[10px] sm:text-xs">🏪 Mercado Local</TabsTrigger>
+              </TabsList>
+              <TabsContent value="online">
+                <OnlineMarketTab
+                  userId={userId}
+                  clubName={game.club.name}
+                  players={game.club.players}
+                  budget={game.club.budget}
+                  onPlayerSold={(playerId, price) => {
+                    game.sellPlayer(game.club.players.find(p => p.id === playerId)!);
+                  }}
+                  onPlayerBought={(playerData, price, salary, contractYears) => {
+                    game.buyPlayer({ ...playerData, salary, contract: contractYears });
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value="local">
+                <MarketTab
+                  marketPlayers={game.marketPlayers}
+                  freeAgents={game.freeAgents}
+                  clubPlayers={game.club.players}
+                  budget={game.club.budget}
+                  clubName={game.club.name}
+                  listedForSale={game.listedForSale}
+                  scoutReports={game.club.scoutReports || []}
+                  loanedPlayers={game.loanedPlayers}
+                  onBuy={game.buyPlayer}
+                  onSell={game.sellPlayer}
+                  onSignFreeAgent={game.signFreeAgent}
+                  onRefresh={game.refreshMarket}
+                  onRefreshFreeAgents={game.refreshFreeAgents}
+                  onLoanOut={game.loanOutPlayer}
+                  onLoanIn={game.loanInPlayer}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
           <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
           
