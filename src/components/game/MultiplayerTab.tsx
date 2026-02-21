@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { ClubProfilePage } from './ClubProfilePage';
 import { LeaguesOverview } from './LeaguesOverview';
 import { ShieldCrest, ShieldShape, ShieldPattern } from './ShieldCrest';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -259,7 +260,7 @@ function LeagueView(props: Props) {
         </TabsList>
 
         <TabsContent value="standings">
-          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} clubShield={props.clubShield} />
+          <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
@@ -345,7 +346,8 @@ function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: 
 }
 
 // === STANDINGS ===
-function StandingsView({ members, userId, division, leagueMatches, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
+function StandingsView({ members, userId, division, leagueMatches, leagueSquads, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; leagueSquads: LeagueSquad[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
+  const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
   const sorted = [...members].sort((a, b) => 
     b.points - a.points || 
     (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || 
@@ -398,6 +400,19 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
     return '';
   };
 
+  if (selectedTeam) {
+    return (
+      <ClubProfilePage
+        member={selectedTeam}
+        members={sorted}
+        userId={userId}
+        leagueMatches={leagueMatches}
+        leagueSquads={leagueSquads}
+        clubShield={clubShield}
+        onBack={() => setSelectedTeam(null)}
+      />
+    );
+  }
 
   return (
     <Card>
@@ -456,7 +471,7 @@ function StandingsView({ members, userId, division, leagueMatches, clubShield }:
                         size={18}
                       />
                     )}
-                    <span className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline">{m.club_name}</span>
+                    <button onClick={() => setSelectedTeam(m)} className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline cursor-pointer">{m.club_name}</button>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
                 </TableCell>
