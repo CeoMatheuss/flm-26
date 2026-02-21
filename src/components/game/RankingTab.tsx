@@ -19,12 +19,12 @@ interface Props {
 }
 
 function getRankTier(rating: number): { name: string; color: string; icon: string; min: number; max: number } {
-  if (rating >= 2000) return { name: 'Lendário', color: 'text-amber-400', icon: '👑', min: 2000, max: 2500 };
-  if (rating >= 1700) return { name: 'Elite', color: 'text-purple-400', icon: '💎', min: 1700, max: 2000 };
-  if (rating >= 1400) return { name: 'Ouro', color: 'text-yellow-400', icon: '🥇', min: 1400, max: 1700 };
-  if (rating >= 1100) return { name: 'Prata', color: 'text-slate-300', icon: '🥈', min: 1100, max: 1400 };
-  if (rating >= 800) return { name: 'Bronze', color: 'text-orange-400', icon: '🥉', min: 800, max: 1100 };
-  return { name: 'Ferro', color: 'text-gray-400', icon: '⚙️', min: 500, max: 800 };
+  if (rating >= 1500) return { name: 'Lendário', color: 'text-amber-400', icon: '👑', min: 1500, max: 2000 };
+  if (rating >= 1200) return { name: 'Elite', color: 'text-purple-400', icon: '💎', min: 1200, max: 1500 };
+  if (rating >= 900) return { name: 'Ouro', color: 'text-yellow-400', icon: '🥇', min: 900, max: 1200 };
+  if (rating >= 600) return { name: 'Prata', color: 'text-slate-300', icon: '🥈', min: 600, max: 900 };
+  if (rating >= 300) return { name: 'Bronze', color: 'text-orange-400', icon: '🥉', min: 300, max: 600 };
+  return { name: 'Ferro', color: 'text-gray-400', icon: '⚙️', min: 0, max: 300 };
 }
 
 export function RankingTab({ rating, rankingHistory, clubName, stats, season }: Props) {
@@ -175,12 +175,12 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
         <CardContent className="px-4 pb-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
-              { name: 'Ferro', icon: '⚙️', range: '500-799', color: 'text-gray-400' },
-              { name: 'Bronze', icon: '🥉', range: '800-1099', color: 'text-orange-400' },
-              { name: 'Prata', icon: '🥈', range: '1100-1399', color: 'text-slate-300' },
-              { name: 'Ouro', icon: '🥇', range: '1400-1699', color: 'text-yellow-400' },
-              { name: 'Elite', icon: '💎', range: '1700-1999', color: 'text-purple-400' },
-              { name: 'Lendário', icon: '👑', range: '2000+', color: 'text-amber-400' },
+              { name: 'Ferro', icon: '⚙️', range: '0-299', color: 'text-gray-400' },
+              { name: 'Bronze', icon: '🥉', range: '300-599', color: 'text-orange-400' },
+              { name: 'Prata', icon: '🥈', range: '600-899', color: 'text-slate-300' },
+              { name: 'Ouro', icon: '🥇', range: '900-1199', color: 'text-yellow-400' },
+              { name: 'Elite', icon: '💎', range: '1200-1499', color: 'text-purple-400' },
+              { name: 'Lendário', icon: '👑', range: '1500+', color: 'text-amber-400' },
             ].map(t => (
               <div key={t.name} className={`flex items-center gap-2 p-2 rounded bg-muted/30 ${rating >= parseInt(t.range) ? 'ring-1 ring-primary/30' : ''}`}>
                 <span className="text-sm">{t.icon}</span>
