@@ -1172,6 +1172,14 @@ export function useGame(initialState?: GameState, userId?: string) {
     setClub(prev => ({ ...prev, players }));
   }, []);
 
+  const addPackPlayers = useCallback((newPlayers: Player[], cost: number) => {
+    setClub(prev => {
+      if (prev.budget < cost) return prev;
+      addFinance('despesa', 'Pacotinhos', cost, `${newPlayers.length} jogadores de pacotinhos`);
+      return { ...prev, budget: prev.budget - cost, players: [...prev.players, ...newPlayers.map(p => ({ ...p, contract: 2 }))] };
+    });
+  }, [addFinance]);
+
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
     sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
@@ -1184,6 +1192,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers,
+    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers,
   };
 }

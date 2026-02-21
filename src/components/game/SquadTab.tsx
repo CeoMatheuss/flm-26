@@ -508,7 +508,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
-                          <button className="font-semibold text-xs sm:text-sm truncate text-left hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setViewingPlayer(player); }}>{player.name}</button>
+                          <Button variant="link" size="sm" className="h-auto p-0 font-semibold text-xs sm:text-sm truncate text-left hover:text-primary" onClick={(e) => { e.stopPropagation(); setViewingPlayer(player); }}>
+                            {player.name}
+                          </Button>
                           {player.personality && personalityLabels[player.personality] && (
                             <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
                           )}

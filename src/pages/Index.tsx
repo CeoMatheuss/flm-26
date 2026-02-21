@@ -33,6 +33,7 @@ import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { RankingTab } from '@/components/game/RankingTab';
+import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { initialClub } from '@/data/initialData';
@@ -48,7 +49,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar, Gift } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -376,6 +377,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('pacotinhos')} className="gap-2 text-xs"><Gift className="h-3.5 w-3.5" /> Pacotinhos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Amistoso</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2 text-xs"><Medal className="h-3.5 w-3.5" /> Conquistas</DropdownMenuItem>
@@ -596,6 +598,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </TabsContent>
           <TabsContent value="auction">
             <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />
+          </TabsContent>
+          <TabsContent value="pacotinhos">
+            <PacotinhosTab
+              budget={game.club.budget}
+              onBuyPack={(newPlayers, cost) => {
+                game.addPackPlayers(newPlayers, cost);
+              }}
+            />
           </TabsContent>
           <TabsContent value="feed">
             <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
