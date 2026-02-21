@@ -233,6 +233,12 @@ export function PacotinhosTab({ budget, onBuyPack, userId }: Props) {
           <p className="text-[10px] text-muted-foreground">
             Todos os jogadores têm <span className="font-bold text-primary">17 anos</span>. Abra e descubra atributo por atributo!
           </p>
+          <div className="mt-1 flex items-center gap-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1.5">
+            <Crown className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+            <span className="text-[10px] text-yellow-300 font-semibold">
+              Compre qualquer pacotinho e ganhe <span className="text-yellow-400">PREMIUM por 30 dias!</span>
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-center py-2">
