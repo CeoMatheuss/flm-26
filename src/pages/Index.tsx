@@ -3,7 +3,7 @@ import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
-import { MarketTab } from '@/components/game/MarketTab';
+
 import { TacticsTab } from '@/components/game/TacticsTab';
 import { LeagueTab } from '@/components/game/LeagueTab';
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
@@ -11,10 +11,10 @@ import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
-import { SeasonTab } from '@/components/game/SeasonTab';
+
 import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
-import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
+
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
