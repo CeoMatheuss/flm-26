@@ -107,7 +107,8 @@ Deno.serve(async (req) => {
         .single();
 
       if (listError) {
-        return new Response(JSON.stringify({ error: 'Erro ao listar jogador: ' + listError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.error('list error:', listError.message);
+        return new Response(JSON.stringify({ error: 'Erro ao listar jogador. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       return new Response(JSON.stringify({ success: true, listing }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -205,7 +206,8 @@ Deno.serve(async (req) => {
         .single();
 
       if (offerError) {
-        return new Response(JSON.stringify({ error: 'Erro ao enviar proposta: ' + offerError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.error('offer error:', offerError.message);
+        return new Response(JSON.stringify({ error: 'Erro ao enviar proposta. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       return new Response(JSON.stringify({ success: true, offer }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
