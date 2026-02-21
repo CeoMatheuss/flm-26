@@ -599,6 +599,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           <TabsContent value="pacotinhos">
             <PacotinhosTab
               budget={game.club.budget}
+              userId={userId}
               onBuyPack={(newPlayers, cost) => {
                 game.addPackPlayers(newPlayers, cost);
               }}
