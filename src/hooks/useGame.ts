@@ -533,7 +533,7 @@ export function useGame(initialState?: GameState, userId?: string) {
           });
         }
 
-        setEvents(ev => [...extraEvents, ...newEvents.map(e => ({ ...e, resolved: true })), ...ev].slice(0, 100));
+        setEvents(ev => [...extraEvents, ...newEvents.map(e => ({ ...e, resolved: true })), ...ev].slice(0, 20));
 
         return {
           ...prev,
@@ -947,7 +947,7 @@ export function useGame(initialState?: GameState, userId?: string) {
         resolved: true,
       });
     }
-    setEvents(prev => [...seasonAwardsEvents, ...prev].slice(0, 100));
+    setEvents(prev => [...seasonAwardsEvents, ...prev].slice(0, 20));
 
     // Trophies
     const newTrophies: import('@/types/clubProfile').Trophy[] = [];
@@ -1019,7 +1019,7 @@ export function useGame(initialState?: GameState, userId?: string) {
       });
 
       if (unhappyEvents.length > 0) {
-        setEvents(ev => [...unhappyEvents, ...ev].slice(0, 100));
+        setEvents(ev => [...unhappyEvents, ...ev].slice(0, 20));
       }
 
       return {
