@@ -436,7 +436,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                   toast.error(res.data?.error || 'Erro ao listar jogador');
                 } else {
                   toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
-                  game.listForSale(playerId);
+                  setActiveTab('market');
                 }
               }}
               onLoanOut={game.loanOutPlayer}
