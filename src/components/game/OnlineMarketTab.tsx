@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
@@ -267,6 +267,146 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
   const otherListings = listings.filter(l => l.seller_id !== userId);
   const listablePlayers = players.filter(p => !myListings.some(l => l.player_data?.id === p.id));
 
+  // If negotiating, show full negotiation page
+  if (offerDialogId) {
+    const listing = listings.find(l => l.id === offerDialogId);
+    if (!listing) { setOfferDialogId(null); return null; }
+    const currentSalary = listing.player_data?.salary || 500;
+
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setOfferDialogId(null)}>
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Mercado
+        </Button>
+
+        <Card className="border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Send className="h-4 w-4 text-primary" /> Negociar — {listing.player_name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Player info */}
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
+                <div>
+                  <p className="text-sm font-bold">{listing.player_name}</p>
+                  <p className="text-xs text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
+                </div>
+              </div>
+              <p className="text-xs mt-2">Preço pedido: <span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span> • Salário atual: <span className="font-bold">R${currentSalary}/mês</span></p>
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Valor oferecido ao clube (R$)</label>
+              <Input type="number" value={offerPrice} onChange={e => setOfferPrice(Math.max(0, Number(e.target.value)))} className="h-9 text-xs mt-1" />
+              <div className="flex gap-1 mt-1.5">
+                {[0.8, 1.0, 1.2, 1.5].map(mult => (
+                  <Button key={mult} size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => setOfferPrice(Math.floor(listing.asking_price * mult))}>
+                    {mult === 1 ? '100%' : `${Math.round(mult * 100)}%`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Salary */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">💰 Salário mensal (R$) — atual: R${currentSalary}</label>
+              <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-9 text-xs mt-1" />
+              {offerSalary < currentSalary && (
+                <p className="text-[10px] text-orange-400 mt-0.5">⚠️ Salário inferior ao atual — menor chance de aceite</p>
+              )}
+            </div>
+
+            {/* Contract */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">📄 Duração do contrato</label>
+              <div className="flex gap-1 mt-1">
+                {[1, 2, 3, 4, 5].map(y => (
+                  <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-7 px-3 text-xs" onClick={() => setOfferYears(y)}>
+                    {y} ano{y > 1 ? 's' : ''}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Signing Bonus */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><Gift className="h-3.5 w-3.5" /> Luvas / Bônus de assinatura (R$)</label>
+              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-9 text-xs mt-1" />
+            </div>
+
+            {/* Performance Bonuses */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <p className="text-xs font-semibold text-muted-foreground">🎯 Bônus por desempenho (R$ por ocorrência)</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-relaxed p-3">
+                      <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
+                      <p>• <strong>Luvas:</strong> Pagamento único na assinatura. Aumenta a chance de aceite se o salário for menor que o atual.</p>
+                      <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação e desempenho individual. Valores altos podem tornar o jogador "fominha" (tenta finalizar mais, prejudicando o coletivo).</p>
+                      <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada, sem efeito fominha.</p>
+                      <p>• <strong>Bônus por título:</strong> Grande motivação, sem efeito fominha.</p>
+                      <p className="mt-1 text-muted-foreground">Bônus compensam salários menores e influenciam o comportamento em campo!</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">⚽ Por gol</label>
+                  <Input type="number" value={bonusGoals} onChange={e => setBonusGoals(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">🅰️ Por assistência</label>
+                  <Input type="number" value={bonusAssists} onChange={e => setBonusAssists(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">🏟️ Por jogo</label>
+                  <Input type="number" value={bonusGames} onChange={e => setBonusGames(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">🏆 Por título</label>
+                  <Input type="number" value={bonusTitles} onChange={e => setBonusTitles(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+                </div>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-primary/10 rounded-lg p-3 text-xs">
+              <p className="font-bold text-primary mb-1">📊 Resumo da proposta:</p>
+              <p>💵 Valor ao clube: R${(offerPrice / 1000).toFixed(0)}k</p>
+              <p>💰 Salário: R${offerSalary}/mês ({offerSalary >= currentSalary ? '✅ ≥ atual' : '⚠️ < atual'})</p>
+              <p>📄 Contrato: {offerYears} ano{offerYears > 1 ? 's' : ''}</p>
+              {signingBonus > 0 && <p>🎁 Luvas: R${(signingBonus / 1000).toFixed(0)}k</p>}
+              {(bonusGoals + bonusAssists + bonusGames + bonusTitles) > 0 && (
+                <p>🎯 Bônus: {[bonusGoals > 0 && `⚽R$${bonusGoals}`, bonusAssists > 0 && `🅰️R$${bonusAssists}`, bonusGames > 0 && `🏟️R$${bonusGames}`, bonusTitles > 0 && `🏆R$${(bonusTitles / 1000).toFixed(0)}k`].filter(Boolean).join(' • ')}</p>
+              )}
+              {bonusGoals > 50000 && (
+                <p className="text-orange-400 mt-1">⚠️ Bônus por gol elevado pode tornar o jogador "fominha"</p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-10 text-xs" onClick={() => setOfferDialogId(null)}>
+                Cancelar
+              </Button>
+              <Button className="flex-1 h-10 text-xs" onClick={() => makeOffer(listing)} disabled={loading || offerPrice <= 0 || budget < offerPrice}>
+                <Send className="h-3.5 w-3.5 mr-1.5" /> Enviar Proposta
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="browse" className="w-full">
@@ -467,11 +607,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                       </div>
 
                       <div className="flex gap-1.5">
-                        <Button size="sm" className="flex-1 h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700" onClick={() => respondOffer(offer.id, true, listing)} disabled={loading}>
-                          <Check className="h-3 w-3 mr-1" /> Aceitar
+                        <Button size="sm" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, true, listing)}>
+                          <Check className="h-3 w-3" /> Aceitar
                         </Button>
-                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-[10px]" onClick={() => respondOffer(offer.id, false)} disabled={loading}>
-                          <X className="h-3 w-3 mr-1" /> Recusar
+                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, false)}>
+                          <X className="h-3 w-3" /> Recusar
                         </Button>
                       </div>
                     </CardContent>
@@ -525,116 +665,6 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
           )}
         </TabsContent>
       </Tabs>
-
-      {/* OFFER DIALOG */}
-      <Dialog open={!!offerDialogId} onOpenChange={(o) => !o && setOfferDialogId(null)}>
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-sm">Fazer Proposta</DialogTitle>
-          </DialogHeader>
-          {(() => {
-            const listing = listings.find(l => l.id === offerDialogId);
-            if (!listing) return null;
-            const currentSalary = listing.player_data?.salary || 500;
-            return (
-              <div className="space-y-3">
-                <div className="bg-muted/30 rounded-lg p-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
-                    <div>
-                      <p className="text-xs font-bold">{listing.player_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
-                    </div>
-                  </div>
-                  <p className="text-[10px] mt-1">Preço pedido: <span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span> • Salário atual: <span className="font-bold">R${currentSalary}/mês</span></p>
-                </div>
-
-                {/* Price */}
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3 w-3" /> Valor oferecido ao clube (R$)</label>
-                  <Input type="number" value={offerPrice} onChange={e => setOfferPrice(Math.max(0, Number(e.target.value)))} className="h-8 text-xs mt-1" />
-                  <div className="flex gap-1 mt-1">
-                    {[0.8, 1.0, 1.2, 1.5].map(mult => (
-                      <Button key={mult} size="sm" variant="outline" className="h-5 px-1.5 text-[8px]" onClick={() => setOfferPrice(Math.floor(listing.asking_price * mult))}>
-                        {mult === 1 ? '100%' : `${Math.round(mult * 100)}%`}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Salary */}
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground">💰 Salário mensal (R$) — atual: R${currentSalary}</label>
-                  <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-8 text-xs mt-1" />
-                  {offerSalary < currentSalary && (
-                    <p className="text-[9px] text-orange-400 mt-0.5">⚠️ Salário inferior ao atual — menor chance de aceite</p>
-                  )}
-                </div>
-
-                {/* Contract */}
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground">📄 Duração do contrato</label>
-                  <div className="flex gap-1 mt-1">
-                    {[1, 2, 3, 4, 5].map(y => (
-                      <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-6 px-2 text-[10px]" onClick={() => setOfferYears(y)}>
-                        {y} ano{y > 1 ? 's' : ''}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Signing Bonus */}
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1"><Gift className="h-3 w-3" /> Luvas / Bônus de assinatura (R$)</label>
-                  <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-8 text-xs mt-1" />
-                </div>
-
-                {/* Performance Bonuses */}
-                <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-1">🎯 Bônus por desempenho (R$ por ocorrência)</p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div>
-                      <label className="text-[9px] text-muted-foreground">⚽ Por gol</label>
-                      <Input type="number" value={bonusGoals} onChange={e => setBonusGoals(Math.max(0, Number(e.target.value)))} className="h-7 text-[10px]" />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-muted-foreground">🅰️ Por assistência</label>
-                      <Input type="number" value={bonusAssists} onChange={e => setBonusAssists(Math.max(0, Number(e.target.value)))} className="h-7 text-[10px]" />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-muted-foreground">🏟️ Por jogo</label>
-                      <Input type="number" value={bonusGames} onChange={e => setBonusGames(Math.max(0, Number(e.target.value)))} className="h-7 text-[10px]" />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-muted-foreground">🏆 Por título</label>
-                      <Input type="number" value={bonusTitles} onChange={e => setBonusTitles(Math.max(0, Number(e.target.value)))} className="h-7 text-[10px]" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-primary/10 rounded-lg p-2 text-[10px]">
-                  <p className="font-bold text-primary mb-1">📊 Resumo da proposta:</p>
-                  <p>💵 Valor ao clube: R${(offerPrice / 1000).toFixed(0)}k</p>
-                  <p>💰 Salário: R${offerSalary}/mês ({offerSalary >= currentSalary ? '✅ ≥ atual' : '⚠️ < atual'})</p>
-                  <p>📄 Contrato: {offerYears} ano{offerYears > 1 ? 's' : ''}</p>
-                  {signingBonus > 0 && <p>🎁 Luvas: R${(signingBonus / 1000).toFixed(0)}k</p>}
-                  {(bonusGoals + bonusAssists + bonusGames + bonusTitles) > 0 && (
-                    <p>🎯 Bônus: {[bonusGoals > 0 && `⚽R$${bonusGoals}`, bonusAssists > 0 && `🅰️R$${bonusAssists}`, bonusGames > 0 && `🏟️R$${bonusGames}`, bonusTitles > 0 && `🏆R$${(bonusTitles / 1000).toFixed(0)}k`].filter(Boolean).join(' • ')}</p>
-                  )}
-                  {bonusGoals > 50000 && (
-                    <p className="text-orange-400 mt-1">⚠️ Bônus por gol elevado pode tornar o jogador "fominha"</p>
-                  )}
-                </div>
-
-                <Button className="w-full h-9 text-xs" onClick={() => makeOffer(listing)} disabled={loading || offerPrice <= 0 || budget < offerPrice}>
-                  <Send className="h-3.5 w-3.5 mr-1.5" /> Enviar Proposta
-                </Button>
-              </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
