@@ -296,20 +296,32 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                   <p className="text-xs text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
                 </div>
               </div>
-              <p className="text-xs mt-2">Preço pedido: <span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span> • Salário atual: <span className="font-bold">R${currentSalary}/mês</span></p>
+              <div className="grid grid-cols-4 gap-1.5 mt-2 text-[10px]">
+                <div className="bg-muted/30 rounded p-1 text-center">
+                  <p className="text-muted-foreground">Jogos</p>
+                  <p className="font-bold">{listing.player_data?.gamesPlayed ?? 0}</p>
+                </div>
+                <div className="bg-muted/30 rounded p-1 text-center">
+                  <p className="text-muted-foreground">⚽ Gols</p>
+                  <p className="font-bold">{listing.player_data?.goals ?? 0}</p>
+                </div>
+                <div className="bg-muted/30 rounded p-1 text-center">
+                  <p className="text-muted-foreground">🅰️ Assist.</p>
+                  <p className="font-bold">{listing.player_data?.assists ?? 0}</p>
+                </div>
+                <div className="bg-muted/30 rounded p-1 text-center">
+                  <p className="text-muted-foreground">Preço</p>
+                  <p className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+                </div>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-1">Salário atual: R${currentSalary}/mês</p>
             </div>
 
-            {/* Price */}
+            {/* Price - fixed */}
             <div>
-              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Valor oferecido ao clube (R$)</label>
-              <Input type="number" value={offerPrice} onChange={e => setOfferPrice(Math.max(0, Number(e.target.value)))} className="h-9 text-xs mt-1" />
-              <div className="flex gap-1 mt-1.5">
-                {[0.8, 1.0, 1.2, 1.5].map(mult => (
-                  <Button key={mult} size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => setOfferPrice(Math.floor(listing.asking_price * mult))}>
-                    {mult === 1 ? '100%' : `${Math.round(mult * 100)}%`}
-                  </Button>
-                ))}
-              </div>
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Valor da transferência (R$)</label>
+              <p className="text-lg font-bold text-emerald-400 mt-1">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+              <p className="text-[9px] text-muted-foreground">Preço fixo baseado nos atributos do jogador</p>
             </div>
 
             {/* Salary */}
@@ -391,7 +403,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
             {/* Summary */}
             <div className="bg-primary/10 rounded-lg p-3 text-xs">
               <p className="font-bold text-primary mb-1">📊 Resumo da proposta:</p>
-              <p>💵 Valor ao clube: R${(offerPrice / 1000).toFixed(0)}k</p>
+              <p>💵 Valor ao clube: R${(listing.asking_price / 1000).toFixed(0)}k (fixo)</p>
               <p>💰 Salário: R${offerSalary}/mês ({offerSalary >= currentSalary ? '✅ ≥ atual' : '⚠️ < atual'})</p>
               <p>📄 Contrato: {offerYears} ano{offerYears > 1 ? 's' : ''}</p>
               {signingBonus > 0 && <p>🎁 Luvas: R${(signingBonus / 1000).toFixed(0)}k</p>}
@@ -444,7 +456,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
           ) : (
             <ScrollArea className="max-h-[60vh]">
               <div className="space-y-1.5">
-                {otherListings.map(listing => (
+                 {otherListings.map(listing => {
+                  const pd = listing.player_data;
+                  return (
                   <Card key={listing.id} className="hover:border-primary/30 transition-colors">
                     <CardContent className="p-2 sm:p-3">
                       <div className="flex items-center gap-2">
@@ -452,6 +466,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-xs truncate">{listing.player_name}</p>
                           <p className="text-[10px] text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
+                          <p className="text-[9px] text-muted-foreground">
+                            {pd?.gamesPlayed ?? 0}j • ⚽{pd?.goals ?? 0} • 🅰️{pd?.assists ?? 0}
+                          </p>
                         </div>
                         {listing.transfer_count > 2 && (
                           <Badge variant="outline" className="text-[8px] border-yellow-500/30 text-yellow-400 shrink-0">
@@ -473,7 +490,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                 })}
               </div>
             </ScrollArea>
           )}
