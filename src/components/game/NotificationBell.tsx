@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, X, ChevronDown, CheckCheck, Check, XCircle, Maximize2 } from 'lucide-react';
+import { Bell, Check, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Player } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
@@ -271,22 +269,16 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     setReadIds(notifications.map(n => n.id));
   };
 
-  // Auto-mark all as read when bell is opened
+  // Open full page directly when bell is clicked
   const handleOpen = () => {
-    const wasOpen = open;
-    setOpen(!open);
-    if (!wasOpen) {
-      // Mark all non-action notifications as read on open
-      const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
-      setReadIds(prev => {
-        const newIds = nonActionIds.filter(id => !prev.includes(id));
-        return newIds.length > 0 ? [...prev, ...newIds] : prev;
-      });
-    }
+    setFullPage(prev => !prev);
+    // Mark all non-action notifications as read on open
+    const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
+    setReadIds(prev => {
+      const newIds = nonActionIds.filter(id => !prev.includes(id));
+      return newIds.length > 0 ? [...prev, ...newIds] : prev;
+    });
   };
-
-  const typeBorder = { danger: 'border-l-destructive', warning: 'border-l-yellow-400', info: 'border-l-primary', success: 'border-l-emerald-400' };
-  const typeBg = { danger: 'bg-destructive/10', warning: 'bg-yellow-400/5', info: 'bg-primary/5', success: 'bg-emerald-400/10' };
 
   return (
     <div className="relative">
@@ -298,91 +290,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
           </Badge>
         )}
       </Button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setOpen(false)} />
-          <Card className="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-11 left-2 sm:left-auto w-auto sm:w-[420px] z-50 shadow-2xl border-border/80">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-card">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">🔔</span>
-                  <p className="text-sm font-bold">Notificações</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {unreadCount > 0 && (
-                    <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1" onClick={markAllAsRead}>
-                      <CheckCheck className="h-3 w-3" /> Ler todas
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1" onClick={() => { setOpen(false); setFullPage(true); }}>
-                    <Maximize2 className="h-3 w-3" /> Expandir
-                  </Button>
-                  <Badge variant="outline" className="text-[10px] h-5">{notifications.length}</Badge>
-                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-1 hover:bg-destructive/20" onClick={() => setOpen(false)}>
-                    <X className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-              <ScrollArea className="max-h-[400px]">
-                {notifications.length === 0 ? (
-                  <div className="text-center py-8 px-3">
-                    <p className="text-2xl mb-2">✅</p>
-                    <p className="text-xs text-muted-foreground">Tudo em ordem, Manager!</p>
-                  </div>
-                ) : (
-                  <div className="p-2 space-y-1.5">
-                    {displayedNotifications.map(n => {
-                      const isRead = readIds.includes(n.id);
-                      return (
-                        <div
-                          key={n.id}
-                          className={`p-2.5 rounded-lg border-l-[3px] ${typeBorder[n.type]} ${typeBg[n.type]} ${isRead && !n.actions ? 'opacity-50' : ''}`}
-                        >
-                          <div className="flex items-center gap-2 mb-0.5" onClick={() => !n.actions && markAsRead(n.id)}>
-                            <span className="text-sm">{n.icon}</span>
-                            <p className="text-[11px] font-bold flex-1">{n.title}</p>
-                            {!isRead && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
-                          </div>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed ml-6 whitespace-pre-line">{n.message}</p>
-                          {n.actions && (
-                            <div className="flex gap-1.5 ml-6 mt-2">
-                              {n.actions.map((action, i) => (
-                                <Button
-                                  key={i}
-                                  size="sm"
-                                  variant={action.variant}
-                                  className="h-7 text-[10px] gap-1 flex-1"
-                                  onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-                                  disabled={respondingId !== null}
-                                >
-                                  {action.icon} {action.label}
-                                </Button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {hasMore && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs gap-1 mt-1"
-                        onClick={() => setShowAll(!showAll)}
-                      >
-                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAll ? 'rotate-180' : ''}`} />
-                        {showAll ? 'Recolher' : `Ver todas (${notifications.length})`}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </>
-      )}
 
       {fullPage && (
         <NotificationFullPage
