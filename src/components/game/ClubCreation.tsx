@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe } from 'lucide-react';
-import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape } from './ShieldCrest';
+import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles } from 'lucide-react';
+import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
 export interface ClubConfig {
@@ -19,6 +19,7 @@ export interface ClubConfig {
   logoUrl: string;
   shieldPattern?: string;
   shieldShape?: string;
+  shieldIcon?: string;
   country: string;
 }
 
@@ -68,8 +69,6 @@ function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, s
   pattern: 'solid' | 'stripes' | 'halves'; label: string; size?: number;
 }) {
   const dim = size;
-  const slvColor = secondaryColor;
-
   const renderShirtPattern = () => {
     switch (pattern) {
       case 'stripes':
@@ -87,8 +86,8 @@ function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, s
     <div className="flex flex-col items-center gap-0.5">
       <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
         <svg viewBox="0 0 100 120" className="w-full h-full">
-          <rect x="6" y="8" width="14" height="22" rx="2" fill={slvColor} />
-          <rect x="80" y="8" width="14" height="22" rx="2" fill={slvColor} />
+          <rect x="6" y="8" width="14" height="22" rx="2" fill={secondaryColor} />
+          <rect x="80" y="8" width="14" height="22" rx="2" fill={secondaryColor} />
           <rect x="20" y="6" width="60" height="56" rx="2" fill={shirtColor} />
           {renderShirtPattern()}
           <polygon points="44,6 50,14 56,6" fill={detailColor} />
@@ -114,6 +113,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [detailColor, setDetailColor] = useState('#DC2626');
   const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('classic');
   const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
+  const [selectedIcon, setSelectedIcon] = useState<ShieldIcon>('star');
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -128,7 +128,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { toast.error('Arquivo muito grande (máx 2MB)'); return; }
     if (!file.type.startsWith('image/')) { toast.error('Apenas imagens são permitidas'); return; }
-
     setUploading(true);
     const ext = file.name.split('.').pop();
     const path = `${userId}/logo.${ext}`;
@@ -148,12 +147,11 @@ export function ClubCreation({ userId, onComplete }: Props) {
     onComplete({
       name: clubName.trim(),
       stadiumName: stadiumName.trim() || 'Estádio Municipal',
-      primaryColor,
-      secondaryColor,
-      detailColor,
+      primaryColor, secondaryColor, detailColor,
       logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
       shieldPattern: useCustomLogo ? undefined : selectedPattern,
       shieldShape: useCustomLogo ? undefined : selectedShape,
+      shieldIcon: useCustomLogo ? undefined : selectedIcon,
       country,
     });
   };
@@ -179,7 +177,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
             <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
           </div>
 
-          {/* Country - Button that opens scrollable panel */}
+          {/* Country */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Globe className="h-3 w-3" /> País do Clube</Label>
             <button
@@ -201,9 +199,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
                         key={c.code}
                         onClick={() => { setCountry(c.code); setCountryOpen(false); }}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                          country === c.code
-                            ? 'bg-primary/10 text-primary font-semibold'
-                            : 'hover:bg-muted/50'
+                          country === c.code ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'
                         }`}
                       >
                         <span className="text-lg">{c.flag}</span>
@@ -290,66 +286,70 @@ export function ClubCreation({ userId, onComplete }: Props) {
           {/* Shield Pattern */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5"><Palette className="h-3 w-3" /> Padrão do Escudo</Label>
-            <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+            <div className="grid grid-cols-6 sm:grid-cols-13 gap-1">
               {shieldPatterns.map(pattern => (
                 <button
                   key={pattern}
                   onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
-                  className={`p-1 rounded-lg border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
+                  className={`p-0.5 rounded-lg border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
                 >
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} size={30} />
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} icon={selectedIcon} size={28} />
                 </button>
               ))}
             </div>
-
-            <div className="flex items-center gap-2 pt-1">
-              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs h-8 gap-1.5">
-                <Upload className="h-3 w-3" />
-                {uploading ? 'Enviando...' : 'Upload Logo'}
-              </Button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-              {useCustomLogo && customLogoUrl && (
-                <div className="flex items-center gap-2">
-                  <img src={customLogoUrl} alt="Logo" className="w-8 h-8 rounded object-cover border border-primary" />
-                  <span className="text-[10px] text-emerald-500 font-medium">✓ Logo personalizado</span>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Preview: Shield + Uniform 1 + Uniform 2 */}
-          <div className="border border-border rounded-xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+          {/* Shield Icon */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold flex items-center gap-1.5"><Sparkles className="h-3 w-3" /> Ícone do Escudo</Label>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-1.5 pb-2">
+                {shieldIcons.map(icon => (
+                  <button
+                    key={icon}
+                    onClick={() => { setSelectedIcon(icon); setUseCustomLogo(false); }}
+                    className={`shrink-0 p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0.5 min-w-[52px] ${selectedIcon === icon && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="classic" shape={selectedShape} icon={icon} size={32} />
+                    <span className="text-[7px] font-medium text-muted-foreground leading-tight">{shieldIconLabels[icon].split(' ')[0]}</span>
+                  </button>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+
+          {/* Upload Logo */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs h-8 gap-1.5">
+              <Upload className="h-3 w-3" />
+              {uploading ? 'Enviando...' : 'Upload Logo Personalizado'}
+            </Button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+            {useCustomLogo && customLogoUrl && (
+              <div className="flex items-center gap-2">
+                <img src={customLogoUrl} alt="Logo" className="w-8 h-8 rounded object-cover border border-primary" />
+                <span className="text-[10px] text-emerald-500 font-medium">✓ Logo personalizado</span>
+              </div>
+            )}
+          </div>
+
+          {/* Preview */}
+          <div className="border border-border rounded-xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}18, ${secondaryColor}18)` }}>
             <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1.5">
               <Shirt className="h-3 w-3" /> Prévia do Clube
             </p>
             <div className="flex items-center justify-center gap-4 sm:gap-6">
-              {/* Shield */}
               <div className="flex flex-col items-center gap-1">
                 {useCustomLogo && customLogoUrl ? (
-                  <img src={customLogoUrl} alt="Logo" className="w-[64px] h-[64px] rounded-lg object-cover" />
+                  <img src={customLogoUrl} alt="Logo" className="w-[68px] h-[68px] rounded-lg object-cover" />
                 ) : (
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} size={64} />
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={68} />
                 )}
                 <span className="text-[8px] text-muted-foreground">Escudo</span>
               </div>
-              {/* Uniform 1 - Home */}
-              <KitPreview
-                shirtColor={primaryColor}
-                secondaryColor={secondaryColor}
-                detailColor={detailColor}
-                pattern="stripes"
-                label="Uniforme 1"
-                size={60}
-              />
-              {/* Uniform 2 - Away (inverted colors) */}
-              <KitPreview
-                shirtColor={secondaryColor}
-                secondaryColor={primaryColor}
-                detailColor={detailColor}
-                pattern="solid"
-                label="Uniforme 2"
-                size={60}
-              />
+              <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={58} />
+              <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={58} />
             </div>
             <div className="text-center">
               <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
