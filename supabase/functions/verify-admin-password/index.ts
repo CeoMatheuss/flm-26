@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       .eq('success', false)
       .gte('attempted_at', fifteenMinAgo);
 
-    if ((failedCount ?? 0) >= 5) {
+    if ((failedCount ?? 0) >= 500) {
       return new Response(JSON.stringify({ 
         error: 'Acesso bloqueado temporariamente. Muitas tentativas incorretas. Tente novamente em 15 minutos.',
         blocked: true 
