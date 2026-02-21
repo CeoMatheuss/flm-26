@@ -31,6 +31,8 @@ interface FriendlyInvite {
   match_date: string;
 }
 
+const STORAGE_KEY = 'flm26_read_notifications';
+
 interface Props {
   players: Player[];
   budget: number;
@@ -43,11 +45,21 @@ interface Props {
 
 export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub, userId }: Props) {
   const [open, setOpen] = useState(false);
-  const [readIds, setReadIds] = useState<string[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [showAll, setShowAll] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const PREVIEW_COUNT = 5;
+
+  // Persist read IDs to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds));
+  }, [readIds]);
 
   const loadInvites = useCallback(async () => {
     const { data } = await supabase
@@ -85,8 +97,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   // Friendly invite notifications
   pendingInvites.forEach(invite => {
     const isHome = invite.home_team_id === userId;
-    const stadium = isHome ? invite.receiver_stadium : invite.sender_stadium;
-    const capacity = isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity;
     const dateStr = new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
     notifications.push({
@@ -115,22 +125,17 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   if (isNewClub) {
     notifications.push({
       id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns pela criação do ${clubName}! 🎉 Você agora é o Manager de um clube profissional. Seu objetivo: construir um time vencedor, conquistar ligas online e subir de divisão!`,
+      message: `Parabéns, Manager! Você acaba de fundar o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores: transferências, escalação, resultados.\n\nSuas ações são salvas automaticamente a cada 30 segundos. Boa sorte e divirta-se!`,
       type: 'success',
     });
     notifications.push({
-      id: 'welcome_tips', icon: '💡', title: '📋 Primeiros passos — Guia do Manager',
-      message: '1️⃣ Táticas → Monte sua formação e escalação\n2️⃣ Partidas → Jogue amistosos vs BOT para ganhar experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online e dispute a temporada!',
+      id: 'welcome_tips', icon: '💡', title: '📋 Guia Completo do Manager',
+      message: '1️⃣ Táticas → Monte sua formação e escalação ideal\n2️⃣ Partidas → Jogue 1 amistoso diário vs BOT FC para experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens talentos\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online com temporadas de 30 dias\n6️⃣ Pacotinhos → Abra pacotes e descubra promessas de 17 anos\n7️⃣ Leilão → Dispute jogadores raros contra outros managers\n8️⃣ Uniformes → Personalize o visual do seu clube',
       type: 'info',
     });
     notifications.push({
-      id: 'welcome_save', icon: '💾', title: 'Auto-Save Ativado!',
-      message: 'Suas ações são salvas automaticamente a cada 30 segundos. Outros managers podem ver seu clube no mercado e te desafiar para amistosos online!',
-      type: 'info',
-    });
-    notifications.push({
-      id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online',
-      message: 'O FLM 26 é multiplayer! Tudo que você faz é visível para outros jogadores: transferências, escalação, resultados. Construa sua reputação!',
+      id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online & Competitivo',
+      message: 'Temporadas de 30 dias com 1 rodada por dia. Ao final, os melhores sobem de divisão e os piores caem. Construa sua reputação, suba no ranking e conquiste troféus!\n\n⚽ Amistosos online contra outros managers\n🏆 Ligas automáticas por país\n💰 Mercado de transferências em tempo real\n📊 Ranking global de reputação',
       type: 'info',
     });
   }
@@ -204,12 +209,26 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     setReadIds(notifications.map(n => n.id));
   };
 
+  // Auto-mark all as read when bell is opened
+  const handleOpen = () => {
+    const wasOpen = open;
+    setOpen(!open);
+    if (!wasOpen) {
+      // Mark all non-action notifications as read on open
+      const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
+      setReadIds(prev => {
+        const newIds = nonActionIds.filter(id => !prev.includes(id));
+        return newIds.length > 0 ? [...prev, ...newIds] : prev;
+      });
+    }
+  };
+
   const typeBorder = { danger: 'border-l-destructive', warning: 'border-l-yellow-400', info: 'border-l-primary', success: 'border-l-emerald-400' };
   const typeBg = { danger: 'bg-destructive/10', warning: 'bg-yellow-400/5', info: 'bg-primary/5', success: 'bg-emerald-400/10' };
 
   return (
     <div className="relative">
-      <Button size="sm" variant="ghost" className="h-8 sm:h-9 px-2.5 relative" onClick={() => setOpen(!open)}>
+      <Button size="sm" variant="ghost" className="h-8 sm:h-9 px-2.5 relative" onClick={handleOpen}>
         <Bell className={`h-5 w-5 ${urgentCount > 0 ? 'text-destructive' : ''}`} />
         {unreadCount > 0 && (
           <Badge variant="destructive" className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold animate-pulse">
@@ -260,7 +279,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
                             <p className="text-[11px] font-bold flex-1">{n.title}</p>
                             {!isRead && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
                           </div>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed ml-6">{n.message}</p>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed ml-6 whitespace-pre-line">{n.message}</p>
                           {n.actions && (
                             <div className="flex gap-1.5 ml-6 mt-2">
                               {n.actions.map((action, i) => (

@@ -60,19 +60,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper }: 
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Welcome Message */}
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
-        <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-          <div className="text-2xl">👋</div>
-          <div>
-            <p className="text-sm sm:text-base font-bold">Bem-vindo ao {club.name}!</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
-              Temporada {totalGames > 0 ? `em andamento • ${totalGames} jogos disputados` : 'iniciando — jogue seu primeiro amistoso na aba Partidas!'}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* === BLOCO FIXO OBRIGATÓRIO — PARTIDA === */}
       <MatchDashboardCard club={club} />
 
