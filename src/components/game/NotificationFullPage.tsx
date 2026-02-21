@@ -21,17 +21,17 @@ interface Props {
   respondingId: string | null;
 }
 
-const typeBorder = { danger: 'border-l-destructive', warning: 'border-l-yellow-400', info: 'border-l-primary', success: 'border-l-emerald-400' };
-const typeBg = { danger: 'bg-destructive/10', warning: 'bg-yellow-400/5', info: 'bg-primary/5', success: 'bg-emerald-400/10' };
+const typeBorder = { danger: 'border-l-red-500', warning: 'border-l-yellow-400', info: 'border-l-blue-400', success: 'border-l-emerald-400' };
+const typeBg = { danger: 'bg-red-500/15', warning: 'bg-yellow-400/15', info: 'bg-blue-400/10', success: 'bg-emerald-400/15' };
 const typeLabel = { danger: '⚠️ Urgente', warning: '⚡ Atenção', info: 'ℹ️ Info', success: '✅ Sucesso' };
 
 export function NotificationFullPage({ notifications, readIds, onMarkRead, onMarkAllRead, onClose, respondingId }: Props) {
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+    <div className="fixed inset-0 z-[100] bg-[hsl(220,25%,12%)] flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(220,25%,22%)] bg-[hsl(220,28%,16%)] shadow-md">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔔</span>
           <h2 className="text-base font-bold">Central de Notificações</h2>
@@ -66,18 +66,18 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
               return (
                 <div
                   key={n.id}
-                  className={`p-4 rounded-xl border-l-4 ${typeBorder[n.type]} ${typeBg[n.type]} ${isRead && !n.actions ? 'opacity-50' : ''} transition-opacity cursor-pointer`}
+                  className={`p-4 rounded-xl border-l-4 ${typeBorder[n.type]} ${typeBg[n.type]} bg-[hsl(220,25%,16%)] ${isRead && !n.actions ? 'opacity-60' : ''} transition-opacity cursor-pointer hover:bg-[hsl(220,25%,19%)]`}
                   onClick={() => !n.actions && onMarkRead(n.id)}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl mt-0.5">{n.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-bold">{n.title}</p>
-                        <Badge variant="outline" className="text-[9px] h-4">{typeLabel[n.type]}</Badge>
+                        <p className="text-sm font-bold text-white">{n.title}</p>
+                        <Badge variant="outline" className="text-[9px] h-4 border-[hsl(220,25%,30%)] text-[hsl(210,40%,80%)]">{typeLabel[n.type]}</Badge>
                         {!isRead && <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shrink-0" />}
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{n.message}</p>
+                      <p className="text-xs text-[hsl(210,20%,72%)] leading-relaxed whitespace-pre-line">{n.message}</p>
                       {n.actions && (
                         <div className="flex gap-2 mt-3">
                           {n.actions.map((action, i) => (
