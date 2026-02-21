@@ -315,6 +315,51 @@ export type Database = {
           },
         ]
       }
+      global_ranking: {
+        Row: {
+          club_name: string
+          created_at: string
+          current_competition: string
+          draws: number
+          games_played: number
+          id: string
+          last_change: number
+          losses: number
+          ranking_points: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          club_name?: string
+          created_at?: string
+          current_competition?: string
+          draws?: number
+          games_played?: number
+          id?: string
+          last_change?: number
+          losses?: number
+          ranking_points?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          club_name?: string
+          created_at?: string
+          current_competition?: string
+          draws?: number
+          games_played?: number
+          id?: string
+          last_change?: number
+          losses?: number
+          ranking_points?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       journal_updates: {
         Row: {
           content: string
