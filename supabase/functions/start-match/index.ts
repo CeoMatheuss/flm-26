@@ -159,22 +159,22 @@ function simulateFullMatch(
 
   // ── EVENTOS DE SUPORTE ────────────────────────────────────────────
   const cardMins: number[] = [];
-  for (let i = 0; i < 1 + Math.floor(rng() * 3); i++) {
-    const m = pickUnique(allGamePool.filter(m => m >= 20)); if (m > 0) cardMins.push(m);
+  for (let i = 0; i < 2 + Math.floor(rng() * 4); i++) {
+    const m = pickUnique(allGamePool.filter(m => m >= 15)); if (m > 0) cardMins.push(m);
   }
   const subMins: number[] = [];
-  for (let i = 0; i < 2 + Math.floor(rng() * 2); i++) {
+  for (let i = 0; i < 2 + Math.floor(rng() * 3); i++) {
     const m = pickUnique(secondHalfPool.filter(m => m >= 55)); if (m > 0) subMins.push(m);
   }
   const chanceMins: number[] = [];
-  for (let i = 0; i < 3 + Math.floor(rng() * 4); i++) {
+  for (let i = 0; i < 5 + Math.floor(rng() * 5); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
 
-  // Eventos de construção de jogada (posse/passe) para preencher os vazios
+  // Eventos de construção — preencher TODOS os minutos restantes
   const possessionMins: number[] = [];
   for (let m = 1; m <= 90; m++) {
-    if (!usedMinutes.has(m) && m !== 45 && m !== 46 && rng() < 0.38) {
+    if (!usedMinutes.has(m) && m !== 45 && m !== 46) {
       usedMinutes.add(m); possessionMins.push(m);
     }
   }
@@ -188,14 +188,41 @@ function simulateFullMatch(
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
+    const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
     const buildups = [
-      `${p1} recebe no meio, avança e toca para ${p2} em boa posição`,
-      `Troca de passes rápida do ${tName}: ${p1} para ${p2} pela esquerda`,
-      `${p1} cruza a linha do meio e lança ${p2} nas costas da defesa`,
-      `Combinação rápida entre ${p1} e ${p2} abre espaço no ataque`,
+      `${p1} recebe no meio-campo, gira sobre o marcador e toca para ${p2} que avança em velocidade pela meia-esquerda. ${p2} abre para ${p3} na ponta que cruza na área`,
+      `Troca de passes rápida do ${tName}: ${p1} para ${p2}, tabela pelo centro, a bola volta limpa para ${p1} que avança livre pelo corredor central e encontra ${p3} na entrada da área`,
+      `${p1} desarma no meio-campo e aciona ${p2} no contra-ataque fulminante! ${p2} avança em alta velocidade, dribla um adversário e encontra ${p3} sozinho dentro da área`,
+      `Combinação magistral entre ${p1} e ${p2}: parede no meio, ${p2} lança ${p3} nas costas da defesa com um passe de classe mundial. ${p3} domina no peito e fica cara a cara com o goleiro`,
+      `${p1} recebe pressão de dois marcadores mas consegue sair com categoria, rola para ${p2} que dá um lindo lançamento de primeira para ${p3} invadindo a grande área pelo lado direito`,
+      `Jogada ensaiada do ${tName}! ${p1} cobra a falta curta para ${p2}, que devolve de calcanhar para ${p3}. A defesa fica perdida e ${p3} aparece livre na marca do pênalti`,
     ];
     return pick(buildups);
   }
+
+  // ── NARRAÇÕES DE GOL EXPANDIDAS ─────────────────────────────────
+  const goalNarrations = {
+    home: (scorer: string, goalType: string, assistName: string | undefined, tName: string, opp: string, score: string) => {
+      const assistText = assistName ? ` Assistência BRILHANTE de ${assistName}, que deixou tudo mastigado!` : '';
+      const celebrations = [
+        `A torcida EXPLODE nas arquibancadas! ${scorer} corre para o setor onde está a organizada, tira a camisa e gira no ar! LOUCURA no estádio! Os companheiros pulam em cima dele formando um monte humano!`,
+        `${scorer} desliza de joelhos no gramado molhado, fecha os olhos e aponta para o céu com as duas mãos! Lágrimas de emoção! A equipe inteira corre para abraçá-lo na comemoração mais efusiva da partida!`,
+        `QUE GOLAÇO! ${scorer} sai correndo feito louco pela lateral do campo, os reservas invadem o gramado para festejar! O técnico faz gestos para a torcida e o estádio vem abaixo! Momento ÉPICO!`,
+        `O estádio treme! ${scorer} faz o famoso gesto do coração com as mãos voltado para a câmera, enquanto fogos de artifício estouram atrás da arquibancada! Festa completa!`,
+        `ARREPIANTE! ${scorer} abraça o bandeirinha de escanteio, os torcedores mais próximos jogam copos de cerveja para o alto e o estádio inteiro canta o nome dele em uníssono!`,
+      ];
+      return `⚽ GOOOOOOL DO ${tName.toUpperCase()}!!! ${scorer} finaliza com um ${goalType} ESPETACULAR e a bola morre no fundo das redes! O goleiro do ${opp} ficou estátua!${assistText} ${pick(celebrations)} [${score}]`;
+    },
+    away: (scorer: string, goalType: string, assistName: string | undefined, tName: string, opp: string, score: string) => {
+      const assistText = assistName ? ` Passe decisivo de ${assistName}!` : '';
+      const descs = [
+        `⚽ GOL DO ${tName.toUpperCase()}! ${scorer} aparece como um fantasma na área e finaliza com ${goalType} certeiro! A defesa do ${opp} foi pega no cochilo e o goleiro nem se mexeu! ${scorer} comemora com os punhos cerrados enquanto a torcida mandante fica em silêncio sepulcral!${assistText} [${score}]`,
+        `⚽ GOL DO ${tName.toUpperCase()}! Contra-ataque mortal! ${scorer} recebe em velocidade, ajusta o corpo e solta um ${goalType} impossível de defender! O estádio emudece enquanto ${scorer} celebra provocando os torcedores adversários!${assistText} [${score}]`,
+        `⚽ GOL DO ${tName.toUpperCase()}! Jogada trabalhada com maestria! ${scorer} finaliza com ${goalType} no cantinho e o goleiro do ${opp} só olha a bola entrar! Gelo no estádio! ${scorer} corre em direção ao banco de reservas e é recebido com festa!${assistText} [${score}]`,
+      ];
+      return pick(descs);
+    },
+  };
 
   // GOLS — CASA
   for (const m of homeGoalMins) {
@@ -207,7 +234,7 @@ function simulateFullMatch(
 
     if (rng() < goalProb) {
       currentHome++;
-      const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio espetacular', 'toque de primeira na área', 'chute cruzado de pé direito', 'trivela precisa'];
+      const goalTypes = ['chute rasteiro no canto inferior esquerdo', 'chute colocado no ângulo superior direito', 'voleio espetacular de primeira', 'toque de primeira na saída do goleiro', 'chute cruzado de pé direito sem chance para o arqueiro', 'trivela precisa no cantinho', 'cabeçada certeira no segundo pau', 'chute de longe que desviou na defesa e entrou', 'finalização seca de meia-altura'];
       const goalType = pick(goalTypes);
       let assistName: string | undefined;
       if (scorer) {
@@ -220,22 +247,24 @@ function simulateFullMatch(
         }
       }
       stats.shots[0]++; stats.shotsOnTarget[0]++;
-      const assistText = assistName ? ` Assistência de ${assistName}!` : '';
-      const cel = pick(['🎉 Corre para a torcida e desliza de joelhos!', '🤩 A equipe inteira pula em cima!', '👐 Aponta para o céu, torcida em êxtase!', '🫂 Abraça o técnico na beira do campo!']);
       const buildup = buildupDesc('home', homeTeam);
       allPlanned.push({
         minute: m, type: 'foot_goal', team: 'home', isGoal: true,
         playerName: scorer?.name, assistName, goalType,
         animType: 'goal', ballX: 0.95, ballY: 0.5,
-        description: `⚽ GOL DO ${homeTeam.toUpperCase()}! ${buildup}... ${scorer?.name || 'Jogador'} finaliza com ${goalType}! ${cel}${assistText} [${currentHome}x${currentAway}]`,
+        description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${currentHome}x${currentAway}`)}`,
       });
     } else {
       stats.shots[0]++; stats.shotsOnTarget[0]++; stats.saves[1]++;
       if (gk) gk.rating = Math.min(10, gk.rating + 0.4);
+      const saveDescs = [
+        `🧤 DEFESAÇA MONUMENTAL! ${gk?.name || 'Goleiro'} do ${awayTeam} se estica todo e voa no ângulo direito para fazer uma defesa que desafia a gravidade! A bola estava no cantinho, sem chance, mas ele apareceu com um reflexo sobrehumano! O estádio inteiro aplaudiu de pé!`,
+        `🧤 INACREDITÁVEL! ${gk?.name || 'Goleiro'} do ${awayTeam} faz milagre! O chute veio rasteiro no canto esquerdo, parecia gol certo, mas ele se jogou e espalmou com a ponta dos dedos! Tudo o que o ${homeTeam} NÃO precisava! Que goleiro!`,
+        `🧤 ERA GOL! Mas ${gk?.name || 'Goleiro'} do ${awayTeam} pensou diferente! Defesa reflexa de altíssimo nível, com a mão trocada, que salvou o time! Os atacantes do ${homeTeam} colocam as mãos na cabeça sem acreditar!`,
+      ];
       allPlanned.push({
         minute: m, type: 'great_save', team: 'home', animType: 'save', ballX: 0.92, ballY: 0.5,
-        description: `🧤 DEFESAÇA! ${gk?.name || 'Goleiro'} do ${awayTeam} voa no ângulo e salva o time! Incrível!`,
-        playerName: gk?.name,
+        description: pick(saveDescs), playerName: gk?.name,
       });
     }
   }
@@ -250,7 +279,7 @@ function simulateFullMatch(
 
     if (rng() < goalProb) {
       currentAway++;
-      const goalType = pick(['chute rasteiro', 'chute no canto', 'cabeceio preciso', 'contra-ataque fulminante', 'chute de fora da área']);
+      const goalType = pick(['chute rasteiro cruzado', 'chute seco no canto inferior', 'cabeceio preciso no segundo pau', 'contra-ataque fulminante com toque na saída do goleiro', 'chute de fora da área que desviou na barreira', 'finalização de primeira após cruzamento perfeito']);
       let assistName: string | undefined;
       if (scorer) {
         scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
@@ -262,26 +291,29 @@ function simulateFullMatch(
         }
       }
       stats.shots[1]++; stats.shotsOnTarget[1]++;
-      const assistText = assistName ? ` Assistência de ${assistName}!` : '';
       const buildup = buildupDesc('away', awayTeam);
       allPlanned.push({
         minute: m, type: 'foot_goal', team: 'away', isGoal: true,
         playerName: scorer?.name, assistName, goalType,
         animType: 'goal', ballX: 0.05, ballY: 0.5,
-        description: `⚽ GOL DO ${awayTeam.toUpperCase()}! ${buildup}... ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistText} [${currentHome}x${currentAway}]`,
+        description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${currentHome}x${currentAway}`)}`,
       });
     } else {
       stats.shots[1]++; stats.shotsOnTarget[1]++; stats.saves[0]++;
       if (gk) gk.rating = Math.min(10, gk.rating + 0.4);
+      const saveDescs = [
+        `🧤 GRANDE DEFESA! ${gk?.name || 'Goleiro'} do ${homeTeam} se agiganta e fecha o ângulo com uma defesa espetacular! O ${awayTeam} quase marcou mas encontrou um muro no gol!`,
+        `🧤 MILAGRE DE ${(gk?.name || 'Goleiro').toUpperCase()}! O chute do ${awayTeam} ia certeiro no canto, mas o goleiro do ${homeTeam} voou como um gato e espalmou! Defesa de outro mundo!`,
+        `🧤 QUE GOLEIRO! ${gk?.name || 'Goleiro'} do ${homeTeam} faz defesa dupla! Primeiro espalmou o chute, depois se levantou e bloqueou o rebote! O ${awayTeam} não acredita!`,
+      ];
       allPlanned.push({
         minute: m, type: 'great_save', team: 'away', animType: 'save', ballX: 0.05, ballY: 0.5,
-        description: `🧤 GRANDE DEFESA! ${gk?.name || 'Goleiro'} do ${homeTeam} salva! O ${awayTeam} quase marcou!`,
-        playerName: gk?.name,
+        description: pick(saveDescs), playerName: gk?.name,
       });
     }
   }
 
-  // CARTÕES
+  // CARTÕES — narrações expandidas
   for (const m of cardMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
@@ -292,46 +324,82 @@ function simulateFullMatch(
     const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const oppName = oppPool.length > 0 ? pick(oppPool).name : 'Adversário';
     stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
+    const cardDescs = [
+      `🟨 CARTÃO AMARELO! ${pName} do ${tName} chega atrasado em ${oppName} do ${opp} com uma entrada desleal pelo lado! O árbitro não hesita e vai direto ao bolso! ${pName} reclama mas o juiz é firme na decisão. Cuidado, na próxima é expulsão!`,
+      `🟨 AMARELO para ${pName}! Falta violenta no meio-campo em ${oppName} do ${opp}! O jogador entrou com a sola da chuteira e acertou a canela do adversário! O árbitro mostra o cartão e avisa que não vai tolerar esse tipo de jogo duro!`,
+      `🟨 O árbitro para o jogo e mostra o CARTÃO AMARELO para ${pName} do ${tName}! Falta tática clara em ${oppName} que ia saindo em contra-ataque promissor! ${pName} sabia o que estava fazendo — falta profissional para impedir o avanço do ${opp}!`,
+      `🟨 ${pName} do ${tName} derruba ${oppName} com um carrinho por trás! O árbitro corre em direção ao lance, apita e puxa o amarelo! A torcida do ${opp} protesta pedindo vermelho, mas o juiz mantém a decisão!`,
+    ];
     allPlanned.push({
       minute: m, type: 'yellow_card', team, animType: 'card',
       playerName: pName,
-      description: `🟨 CARTÃO AMARELO! ${pName} do ${tName} faz falta em ${oppName} do ${opp}. O árbitro não hesita!`,
+      description: pick(cardDescs),
     });
   }
 
-  // SUBSTITUIÇÕES — com nomes dos jogadores
+  // SUBSTITUIÇÕES — com contexto tático
   for (const m of subMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const onPitch = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const playerOut = onPitch.length > 1 ? onPitch[Math.floor(rng() * (onPitch.length - 1)) + 1] : onPitch[0]; // skip GK
+    const playerOut = onPitch.length > 1 ? onPitch[Math.floor(rng() * (onPitch.length - 1)) + 1] : onPitch[0];
     const playerInName = team === 'home'
       ? `Reserva ${Math.floor(rng() * 7 + 12)}`
       : (awayTeam === 'BOT FC' ? `BOT #${Math.floor(rng() * 5 + 12)}` : `Reserva ${Math.floor(rng() * 7 + 12)}`);
     const outName = playerOut?.name || 'Jogador';
     if (playerOut) playerOut.isOnPitch = false;
+    const subDescs = [
+      `🔄 SUBSTITUIÇÃO no ${tName}! O técnico pede a troca: sai ${outName}, que recebe aplausos da torcida e entra ${playerInName} com sangue nos olhos! O treinador quer dar fôlego novo ao time para os minutos decisivos!`,
+      `🔄 Mexida tática no ${tName}! ${outName} dá lugar a ${playerInName}. O jogador que sai caminha devagar, visivelmente cansado, e bate palmas para a torcida enquanto o substituto entra correndo e já pede a bola!`,
+      `🔄 O técnico do ${tName} não está satisfeito e faz a alteração: sai ${outName}, entra ${playerInName}! Mudança estratégica pensando nos últimos minutos da partida. ${outName} aperta a mão do companheiro e segue para o banco.`,
+    ];
     allPlanned.push({
       minute: m, type: 'substitution', team, animType: 'sub',
       playerName: outName,
-      description: `🔄 SUBSTITUIÇÃO no ${tName}! Sai ${outName}, entra ${playerInName}. O técnico busca fôlego novo!`,
+      description: pick(subDescs),
     });
   }
 
-  // GRANDES CHANCES
+  // GRANDES CHANCES — narrações dramatizadas
   for (const m of chanceMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
+    const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
+    const p2 = pool.filter(p => p.name !== pName).length > 0 ? pick(pool.filter(p => p.name !== pName)).name : pName;
     stats.shots[teamIdx]++;
-    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap']);
+    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss']);
     const descs: Record<string, string[]> = {
-      woodwork: [`📐 TRAVE! ${pName} do ${tName} chuta perfeito e a bola explode na madeira! Que azar!`, `📐 TRAVESSÃO! ${pName} cabeceia forte mas a bola voltou do ferro!`],
-      great_save: [`🧤 Defesa incrível! ${pName} do ${tName} ficou cara a cara mas o goleiro fechou o ângulo!`, `🧤 ${pName} chuta forte mas o goleiro espalma com categoria!`],
-      corner_danger: [`🚩 Escanteio perigoso do ${tName}! ${pName} sobe mas cabeceia para fora!`, `🚩 Cobrança de canto muito perigosa, a bola passa raspando!`],
-      offside_trap: [`⛳ Impedimento anulado! ${pName} do ${tName} estava em posição irregular. Que decepção!`, `⛳ O árbitro levanta a bandeira: impedimento de ${pName}. Gol anulado!`],
+      woodwork: [
+        `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área que bate com violência na trave direita e volta para o campo! O estádio inteiro colocou a mão na cabeça! Por centímetros o ${tName} não abre o placar! Que azar!`,
+        `📐 TRAVESSÃO! ${pName} cabeceia com potência após cruzamento de ${p2}, a bola sobe e bate no ferro com uma violência absurda! Todo mundo achou que era gol! O goleiro do ${opp} só olhou e agradeceu!`,
+        `📐 NA TRAVE E PARA FORA! ${pName} do ${tName} recebe na entrada da área, ajeita e chuta colocado! A bola faz uma curva perfeita, beija a trave esquerda e sai pela linha de fundo! O goleiro estava batido!`,
+      ],
+      great_save: [
+        `🧤 Defesa FENOMENAL! ${pName} do ${tName} ficou cara a cara com o goleiro do ${opp}, chutou rasteiro no canto, mas o arqueiro se esticou todo e fez uma defesa de cinema! Que reflexo absurdo! A torcida aplaude o goleiro adversário!`,
+        `🧤 ${pName} chuta forte de primeira! A bola ia como um foguete no ângulo superior direito, mas o goleiro do ${opp} dá um salto felino e espalma com a ponta dos dedos! MILAGRE no gol! ${pName} não acredita!`,
+        `🧤 QUASE! ${pName} do ${tName} finaliza de voleio após passe genial de ${p2}, mas o goleiro do ${opp} faz defesa providencial com os pés! O rebote é afastado pela zaga!`,
+      ],
+      corner_danger: [
+        `🚩 Escanteio PERIGOSÍSSIMO do ${tName}! A bola vem fechada na primeira trave, ${pName} sobe mais alto que todo mundo mas o cabeceio vai raspando a trave! A defesa do ${opp} respira aliviada mas tremendo!`,
+        `🚩 Cobrança de escanteio perfeita! ${p2} cobra com efeito, ${pName} aparece na segunda trave completamente livre, mas cabeceia para cima! Chance claríssima desperdiçada! O técnico coloca as mãos na cabeça!`,
+        `🚩 Escanteio curto do ${tName}! ${p2} tabela com ${pName}, cruza na área, a bola desvia na primeira trave e quase engana o goleiro! Que confusão na grande área do ${opp}!`,
+      ],
+      offside_trap: [
+        `⛳ IMPEDIMENTO! ${pName} do ${tName} havia marcado um golaço com um chute certeiro no ângulo, mas o bandeirinha levanta a bandeira: posição irregular por centímetros! A torcida protesta furiosa! O VAR não está disponível!`,
+        `⛳ O árbitro levanta a bandeira: impedimento de ${pName} do ${tName}! A jogada estava linda, ${p2} fez o lançamento perfeito, mas ${pName} se adiantou por menos de um metro! Que decepção para o ${tName}!`,
+      ],
+      long_shot_miss: [
+        `💨 ${pName} do ${tName} arrisca de MUITO LONGE! A bola sai girando e desviando no ar, passa raspando a trave direita e vai para fora! Tinha veneno nesse chute! O goleiro do ${opp} só acompanhou com os olhos!`,
+        `💨 Chute de longa distância! ${pName} pega a sobra na entrada da área e solta o pé! A bola sobe demais e vai por cima do gol! Faltou pontaria, mas a intenção era boa!`,
+      ],
+      header_miss: [
+        `👤 ${pName} do ${tName} sobe de cabeça após cruzamento de ${p2} mas cabeceia fraco! A bola vai mansinha para as mãos do goleiro! Era para fazer mais nessa jogada! O técnico grita instruções da beira do campo!`,
+        `👤 Cruzamento perfeito na cabeça de ${pName}! Ele estava completamente sozinho mas cabeceou torto e a bola foi para fora sem perigo! DESPERDIÇOU uma chance incrível!`,
+      ],
     };
     if (evType === 'great_save') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     if (evType === 'corner_danger') stats.corners[teamIdx]++;
@@ -342,27 +410,37 @@ function simulateFullMatch(
     });
   }
 
-  // POSSE/PASSES (preenche os minutos vazios — lances encadeados)
+  // POSSE/PASSES/TACKLES/CRUZAMENTOS — eventos variados para CADA minuto vazio
   for (const m of possessionMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
+    const def = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
     stats.passes[teamIdx]++;
-    const bx = team === 'home' ? 0.4 + rng() * 0.3 : 0.3 + rng() * 0.3;
+    const bx = team === 'home' ? 0.35 + rng() * 0.35 : 0.3 + rng() * 0.35;
 
     const posTypes = [
-      { type: 'possession', desc: `⚽ ${tName} trabalha bem a bola. ${p1} toca curto para ${p2} que busca espaço no meio.`, anim: 'pass' as const },
-      { type: 'dribble_ok', desc: `✨ ${p1} faz uma jogada individual bonita e avança pelo corredor!`, anim: 'pass' as const },
-      { type: 'through_ball', desc: `🏃 ${tName} tenta o contra-ataque! ${p1} lança ${p2} nas costas da marcação do ${opp}!`, anim: 'pass' as const },
-      { type: 'midfield_foul', desc: `⚠️ Falta de ${p1} no meio. Árbitro marca e orienta o jogo.`, anim: 'foul' as const },
-      { type: 'possession', desc: `📐 ${p1} triangula com ${p2} e tenta abrir a defesa do ${opp} pelo lado.`, anim: 'pass' as const },
+      { type: 'possession', desc: `⚽ ${tName} mantém a posse no campo ofensivo. ${p1} recebe de costas, gira sobre ${def} com classe e toca curto para ${p2} que busca o espaço entre as linhas. O time trabalha a bola com paciência procurando a brecha na defesa do ${opp}.`, anim: 'pass' as const },
+      { type: 'dribble_ok', desc: `✨ Jogada INDIVIDUAL espetacular! ${p1} do ${tName} recebe na ponta esquerda, faz um corte seco para dentro deixando ${def} no chão, e avança em direção à área! A torcida se levanta!`, anim: 'pass' as const },
+      { type: 'through_ball', desc: `🏃 Lançamento longo do ${tName}! ${p1} vê a movimentação de ${p2} e manda um bolão perfeito nas costas da zaga do ${opp}! ${p2} controla no peito e avança em velocidade! A defesa corre desesperada para fechar!`, anim: 'pass' as const },
+      { type: 'midfield_foul', desc: `⚠️ Falta de ${p1} do ${tName} em ${def} do ${opp} no meio-campo! Entrada forte por baixo que acerta a canela do adversário! O árbitro marca rapidamente e chama ${p1} para uma conversa séria. Jogo fica quente!`, anim: 'foul' as const },
+      { type: 'possession', desc: `📐 Triangulação perfeita do ${tName}! ${p1} toca para ${p2}, recebe de volta em tabela e tenta abrir a defesa compacta do ${opp} pelo lado direito. A bola circula com inteligência buscando o desequilíbrio.`, anim: 'pass' as const },
+      { type: 'tackle', desc: `💪 DESARME ESPETACULAR de ${def} do ${opp}! ${p1} do ${tName} vinha conduzindo em velocidade pelo meio, mas ${def} chegou com o tempo perfeito e tirou a bola com uma entrada limpa e precisa! O público aplaude a jogada defensiva!`, anim: 'pass' as const },
+      { type: 'crossing', desc: `↗️ Cruzamento do ${tName}! ${p1} recebe na ponta e cruza na área, mas a defesa do ${opp} afasta de cabeça! ${def} sobe mais alto e manda para escanteio! O ${tName} pressiona!`, anim: 'pass' as const },
+      { type: 'long_pass', desc: `🎯 Lindo passe longo de ${p1} do ${tName}! A bola cruza todo o campo e chega limpa nos pés de ${p2} do outro lado! Mudança de jogo inteligente que pegou a defesa do ${opp} desprevenida!`, anim: 'pass' as const },
+      { type: 'pressing', desc: `🔥 Pressão alta do ${tName}! ${p1} e ${p2} fecham a saída de bola do ${opp}! ${def} tenta sair jogando mas quase perde a bola na defesa! O ${tName} sufoca e não deixa o adversário respirar!`, anim: 'pass' as const },
+      { type: 'gk_distribution', desc: `🧤 Reposição rápida do goleiro do ${tName}! A bola sai pela lateral e o goleiro lança longo para ${p1} que tenta disputar a bola no alto com ${def} do ${opp}. Jogo segue disputado no meio-campo.`, anim: 'pass' as const },
+      { type: 'throw_in', desc: `📍 Lateral para o ${tName}. ${p1} cobra rápido para ${p2} que tenta ganhar a linha de fundo. ${def} do ${opp} acompanha de perto e faz o corte! Disputa intensa na lateral do campo!`, anim: 'pass' as const },
+      { type: 'free_kick', desc: `🎯 Falta para o ${tName} em boa posição! ${p1} se posiciona para a cobrança... cruza na área mas ${def} do ${opp} aparece na primeira trave e afasta o perigo com firmeza!`, anim: 'pass' as const },
     ];
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
+    if (chosen.type === 'tackle') stats.tackles[teamIdx === 0 ? 1 : 0]++;
     allPlanned.push({
       minute: m, type: chosen.type, team, animType: chosen.anim, playerName: p1,
       ballX: bx, ballY: 0.2 + rng() * 0.6,
