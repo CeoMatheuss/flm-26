@@ -329,7 +329,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} />
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onComplete={() => {
+        game.addBonus(500000, 'Recompensa por completar o Tutorial');
+        toast.success('🎉 Tutorial completo! Você ganhou R$500.000!');
+      }} />
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
