@@ -485,44 +485,72 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </Card>
           )}
 
-          <div className="grid gap-1.5">
-            {sorted.map(player => (
-              <Card key={player.id} className={`overflow-hidden hover:border-primary/30 transition-colors cursor-pointer ${player.injury ? 'border-red-500/40 bg-red-500/5' : player.contract <= 1 ? 'border-destructive/30' : ''}`} onClick={() => setSelectedPlayer(player)}>
-                <CardContent className="p-2 sm:p-3">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                    <button className="flex-1 font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); setViewingPlayer(player); }}>{player.name}</button>
-                    {player.personality && personalityLabels[player.personality] && (
-                      <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
-                    )}
-                    {player.position === 'GOL' && player.attributes.goalkeeping != null && (
-                      <span className="text-[8px] shrink-0 text-muted-foreground" title="Defesa de Goleiro">🧤{player.attributes.goalkeeping}</span>
-                    )}
-                    {player.injury && (
-                      <Badge variant="destructive" className="text-[8px] px-1 h-4 gap-0.5 shrink-0">
-                        <HeartPulse className="h-2.5 w-2.5" />
-                        {player.injury.weeksRemaining}j
-                      </Badge>
-                    )}
-                    {!player.injury && getDevIcon(player)}
-                    <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{player.age}a</span>
-                    <span className={`text-[10px] shrink-0 hidden sm:inline ${player.contract <= 1 ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>📄{player.contract}a</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">💰{(player.salary / 1000).toFixed(0)}k</span>
-                    <span className="text-[8px] text-emerald-400 shrink-0 hidden sm:inline">💎{(getPlayerBaseValue(player) / 1000).toFixed(0)}k</span>
-                    <div className="w-10 shrink-0 hidden sm:block" title={`Treino: ${player.trainingProgress}/10 jogos`}>
-                      <Progress value={player.trainingProgress * 10} className="h-1" />
+          <div className="grid gap-2">
+            {sorted.map(player => {
+              const avgRating = player.seasonRatings && player.seasonRatings.length > 0
+                ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length)
+                : null;
+              return (
+                <Card key={player.id} className={`overflow-hidden hover:border-primary/30 transition-colors cursor-pointer ${player.injury ? 'border-red-500/40 bg-red-500/5' : player.contract <= 1 ? 'border-destructive/30' : ''}`} onClick={() => setSelectedPlayer(player)}>
+                  <CardContent className="p-2.5 sm:p-3">
+                    <div className="flex items-center gap-2">
+                      {/* OVR circle */}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
+                        player.overall >= 80 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' :
+                        player.overall >= 70 ? 'border-primary bg-primary/10 text-primary' :
+                        player.overall >= 60 ? 'border-yellow-500 bg-yellow-500/10 text-yellow-400' :
+                        'border-muted-foreground bg-muted/20 text-muted-foreground'
+                      }`}>
+                        {player.overall}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
+                          <button className="font-semibold text-xs sm:text-sm truncate text-left hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setViewingPlayer(player); }}>{player.name}</button>
+                          {player.personality && personalityLabels[player.personality] && (
+                            <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
+                          )}
+                          {player.injury && (
+                            <Badge variant="destructive" className="text-[8px] px-1 h-4 gap-0.5 shrink-0">
+                              <HeartPulse className="h-2.5 w-2.5" />
+                              {player.injury.weeksRemaining}j
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                          <span>{player.age}a</span>
+                          <span>💰{(player.salary / 1000).toFixed(0)}k</span>
+                          <span className={player.contract <= 1 ? 'text-destructive font-bold' : ''}>📄{player.contract}a</span>
+                          {player.gamesPlayed > 0 && <span>⚽{player.goals} 🅰️{player.assists}</span>}
+                          {avgRating && <span className={avgRating >= 7 ? 'text-emerald-400 font-bold' : avgRating >= 5.5 ? 'text-primary' : 'text-destructive'}>★{avgRating.toFixed(1)}</span>}
+                          {!player.injury && getDevIcon(player)}
+                        </div>
+                      </div>
+
+                      {/* Energy bar */}
+                      <div className="w-8 shrink-0 flex flex-col items-center gap-0.5">
+                        <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${player.stamina >= 70 ? 'bg-emerald-500' : player.stamina >= 40 ? 'bg-yellow-500' : 'bg-destructive'}`} style={{ width: `${player.stamina}%` }} />
+                        </div>
+                        <span className="text-[8px] text-muted-foreground">{player.stamina}%</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
+                          <BedDouble className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onListForSale(player.id); }} title="Transferir">
+                          <Tag className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <span className="text-sm sm:text-lg font-bold shrink-0">{player.overall}</span>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onRest(player.id); }} title="Descansar">
-                      <BedDouble className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); onListForSale(player.id); }} title="Colocar na lista de transferência">
-                      <Tag className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
