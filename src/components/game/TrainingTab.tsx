@@ -14,7 +14,7 @@ import { TrainingHelpButton } from './TrainingHelpPanel';
 import type { TrainingFocusKey, TrainingIntensity, PlayerTrainingConfig, WeeklyTrainingResult } from '@/training/TrainingTypes';
 import { focusLabels, focusToAttr, intensityConfig, positionRecommendations } from '@/training/TrainingTypes';
 import { getTrainingManager, defaultStaff, type StaffConfig } from '@/training/TrainingManager';
-import { Wifi } from 'lucide-react';
+
 
 // Re-export for backward compatibility (useGame still uses TrainingFocus type)
 export type TrainingFocus = TrainingFocusKey;
@@ -38,28 +38,61 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-// ── Mini subcomponent: modo online ────────────────────────────────────────────
-function TrainingOnlineMode({ players, intensity }: { players: Player[]; intensity: TrainingIntensity }) {
-  const intCfg = intensityConfig[intensity];
-  const starters = players.slice(0, 11);
+// ── Mini subcomponent: relatório de desempenho ───────────────────────────────
+function TrainingInsights({ players, trainingFocus }: { players: Player[]; trainingFocus: Record<string, TrainingFocusKey> }) {
+  const activeTraining = players.filter(p => trainingFocus[p.id] && trainingFocus[p.id] !== 'none');
+  const youngTalents = players.filter(p => p.age <= 22).sort((a, b) => b.overall - a.overall).slice(0, 3);
+  const veterans = players.filter(p => p.age >= 30).sort((a, b) => b.overall - a.overall).slice(0, 3);
+  const lowStamina = players.filter(p => (p.stamina ?? 100) < 60).sort((a, b) => (a.stamina ?? 100) - (b.stamina ?? 100)).slice(0, 3);
+  const topPlayers = [...players].sort((a, b) => b.overall - a.overall).slice(0, 3);
+
   return (
-    <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-2">
+    <div className="rounded-lg border border-border/40 bg-muted/10 p-3 space-y-3">
       <div className="flex items-center justify-center gap-2 text-xs">
-        <Wifi className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-        <span className="text-emerald-400 font-bold">Modo Online — Treino ao Vivo</span>
+        <TrendingUp className="h-3.5 w-3.5 text-primary" />
+        <span className="font-bold text-primary">Relatório de Desempenho</span>
       </div>
-      <p className="text-[9px] text-muted-foreground text-center">
-        Intensidade: {intCfg.emoji} {intCfg.label} • {starters.length} jogadores em campo
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+          <p className="text-[8px] font-bold text-emerald-400 uppercase mb-1.5">🌱 Jovens Promissores</p>
+          {youngTalents.length > 0 ? youngTalents.map(p => (
+            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
+              <span className="truncate">{p.name.split(' ').pop()}</span>
+              <span className="text-muted-foreground">{p.age}a • {p.overall}</span>
+            </div>
+          )) : <p className="text-[8px] text-muted-foreground">Nenhum sub-22</p>}
+        </div>
+        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+          <p className="text-[8px] font-bold text-yellow-400 uppercase mb-1.5">⭐ Top do Elenco</p>
+          {topPlayers.map(p => (
+            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
+              <span className="truncate">{p.name.split(' ').pop()}</span>
+              <Badge variant="outline" className="text-[7px] h-4">{p.overall}</Badge>
+            </div>
+          ))}
+        </div>
+        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+          <p className="text-[8px] font-bold text-amber-400 uppercase mb-1.5">🏅 Veteranos (30+)</p>
+          {veterans.length > 0 ? veterans.map(p => (
+            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
+              <span className="truncate">{p.name.split(' ').pop()}</span>
+              <span className="text-muted-foreground">{p.age}a</span>
+            </div>
+          )) : <p className="text-[8px] text-muted-foreground">Nenhum 30+</p>}
+        </div>
+        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+          <p className="text-[8px] font-bold text-red-400 uppercase mb-1.5">😓 Cansados</p>
+          {lowStamina.length > 0 ? lowStamina.map(p => (
+            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
+              <span className="truncate">{p.name.split(' ').pop()}</span>
+              <span className="text-destructive">{p.stamina ?? 100}%</span>
+            </div>
+          )) : <p className="text-[8px] text-emerald-400">Todos descansados ✓</p>}
+        </div>
+      </div>
+      <p className="text-[8px] text-muted-foreground text-center">
+        {activeTraining.length} jogador(es) em foco de treino ativo
       </p>
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-        {starters.map(p => (
-          <div key={p.id} className="text-center p-1.5 rounded bg-card/50 border border-border/30">
-            <p className="text-[8px] font-bold truncate">{p.name.split(' ').pop()}</p>
-            <Badge variant="outline" className="text-[7px] mt-0.5">{p.position}</Badge>
-            <p className="text-[8px] text-muted-foreground mt-0.5">OVR {p.overall}</p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -335,29 +368,19 @@ export function TrainingTab({
             </div>
           )}
 
-          {/* Botão processar semana */}
-          <Button
-            className="w-full gap-2 h-9"
-            onClick={handleProcessWeek}
-            disabled={processing}
-          >
-            <Calendar className="h-4 w-4" />
-            {processing ? 'Processando...' : 'Processar Semana de Treinos'}
-          </Button>
-
-          {/* Modo Online */}
+          {/* Relatório de Desempenho */}
           <Button
             variant="outline"
             size="sm"
             className="w-full gap-2 text-xs h-8"
             onClick={() => setShowPitch(v => !v)}
           >
-            <Wifi className="h-3.5 w-3.5" />
-            {showPitch ? 'Ocultar Modo Online' : 'Ver Treino Online'}
+            <TrendingUp className="h-3.5 w-3.5" />
+            {showPitch ? 'Ocultar Relatório' : 'Ver Relatório de Desempenho'}
           </Button>
 
           {showPitch && (
-            <TrainingOnlineMode players={healthy.slice(0, 11)} intensity={globalIntensity} />
+            <TrainingInsights players={healthy} trainingFocus={trainingFocus} />
           )}
         </CardContent>
       </Card>
