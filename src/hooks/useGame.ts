@@ -95,6 +95,23 @@ export function useGame(initialState?: GameState, userId?: string) {
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
   const [trainingFocus, setTrainingFocus] = useState<Record<string, TrainingFocus>>(initialState?.trainingFocus ?? {});
   const [listedForSale, setListedForSale] = useState<string[]>([]);
+
+  // Load active listings from database on mount
+  useEffect(() => {
+    if (!userId) return;
+    const loadActiveListings = async () => {
+      const { data } = await supabase
+        .from('transfer_listings')
+        .select('player_data')
+        .eq('seller_id', userId)
+        .eq('status', 'active');
+      if (data && data.length > 0) {
+        const ids = data.map((d: any) => d.player_data?.id).filter(Boolean);
+        setListedForSale(ids);
+      }
+    };
+    loadActiveListings();
+  }, [userId]);
    const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
    const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
    const [lastMatchReport, setLastMatchReport] = useState<MatchReport | undefined>(initialState?.lastMatchReport);

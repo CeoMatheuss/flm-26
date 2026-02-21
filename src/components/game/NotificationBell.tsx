@@ -32,6 +32,14 @@ interface FriendlyInvite {
   match_date: string;
 }
 
+interface SoldListing {
+  id: string;
+  player_name: string;
+  buyer_club_name: string | null;
+  asking_price: number;
+  sold_at: string | null;
+}
+
 const STORAGE_KEY = 'flm26_read_notifications';
 
 interface Props {
@@ -55,6 +63,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   });
   const [showAll, setShowAll] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
+  const [soldListings, setSoldListings] = useState<SoldListing[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const PREVIEW_COUNT = 5;
 
@@ -91,14 +100,32 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     if (data) setPendingInvites(data as unknown as FriendlyInvite[]);
   }, [userId]);
 
+  const loadSoldListings = useCallback(async () => {
+    // Load recently sold listings (last 7 days) where I was the seller
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('transfer_listings')
+      .select('id, player_name, buyer_club_name, asking_price, sold_at')
+      .eq('seller_id', userId)
+      .eq('status', 'sold')
+      .gte('sold_at', sevenDaysAgo)
+      .order('sold_at', { ascending: false });
+    if (data) setSoldListings(data as SoldListing[]);
+  }, [userId]);
+
   useEffect(() => {
     loadInvites();
+    loadSoldListings();
     const channel = supabase
       .channel('bell-friendly-invites')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadInvites]);
+    const channel2 = supabase
+      .channel('bell-sold-listings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_listings' }, () => loadSoldListings())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); supabase.removeChannel(channel2); };
+  }, [loadInvites, loadSoldListings]);
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setRespondingId(inviteId);
@@ -142,7 +169,18 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   });
 
-  // Welcome messages always show — read state prevents them from being "unread"
+  // Sold player notifications
+  soldListings.forEach(sold => {
+    const dateStr = sold.sold_at ? new Date(sold.sold_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+    notifications.push({
+      id: `sold-${sold.id}`,
+      icon: '💰',
+      title: `${sold.player_name} vendido!`,
+      message: `${sold.player_name} foi comprado por ${sold.buyer_club_name || 'outro clube'} por R$${(sold.asking_price / 1000).toFixed(0)}k! 📅 ${dateStr}`,
+      type: 'success',
+    });
+  });
+
   notifications.push({
     id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
     message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores: transferências, escalação, resultados.\n\nSuas ações são salvas automaticamente a cada 30 segundos. Boa sorte e divirta-se!`,
