@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Trophy, Target, Eye } from 'lucide-react';
+import { Globe, Trophy, Target } from 'lucide-react';
 import { LeaguesOverview } from './LeaguesOverview';
 import { TeamViewModal } from './TeamViewModal';
 
@@ -129,7 +129,6 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
                 <TableHead className="text-center w-10">GC</TableHead>
                 <TableHead className="text-center w-10">SG</TableHead>
                 <TableHead className="text-center w-12 font-bold">P</TableHead>
-                <TableHead className="w-8"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -155,11 +154,6 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
                   <TableCell className="text-center">{team.goalsAgainst}</TableCell>
                   <TableCell className="text-center">{team.goalsFor - team.goalsAgainst}</TableCell>
                   <TableCell className="text-center font-bold">{team.points}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setViewingTeam(team)}>
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
