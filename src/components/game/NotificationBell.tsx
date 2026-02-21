@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, X, ChevronDown, CheckCheck, Check, XCircle } from 'lucide-react';
+import { Bell, X, ChevronDown, CheckCheck, Check, XCircle, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Player } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { NotificationFullPage } from './NotificationFullPage';
 
 interface Notification {
   id: string;
@@ -45,6 +46,7 @@ interface Props {
 
 export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub, userId }: Props) {
   const [open, setOpen] = useState(false);
+  const [fullPage, setFullPage] = useState(false);
   const [readIds, setReadIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -56,7 +58,25 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const PREVIEW_COUNT = 5;
 
-  // Persist read IDs to localStorage
+  // Load read IDs from Supabase on mount
+  useEffect(() => {
+    if (!userId) return;
+    const loadSaved = async () => {
+      const { data } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
+      if (data?.club_data && typeof data.club_data === 'object' && 'readNotificationIds' in (data.club_data as any)) {
+        const saved = (data.club_data as any).readNotificationIds as string[];
+        if (saved?.length) {
+          setReadIds(prev => {
+            const merged = Array.from(new Set([...prev, ...saved]));
+            return merged;
+          });
+        }
+      }
+    };
+    loadSaved();
+  }, [userId]);
+
+  // Persist read IDs to localStorage + Supabase
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds));
   }, [readIds]);
@@ -122,23 +142,27 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   });
 
-  if (isNewClub) {
-    notifications.push({
-      id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns, Manager! Você acaba de fundar o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores: transferências, escalação, resultados.\n\nSuas ações são salvas automaticamente a cada 30 segundos. Boa sorte e divirta-se!`,
-      type: 'success',
-    });
-    notifications.push({
-      id: 'welcome_tips', icon: '💡', title: '📋 Guia Completo do Manager',
-      message: '1️⃣ Táticas → Monte sua formação e escalação ideal\n2️⃣ Partidas → Jogue 1 amistoso diário vs BOT FC para experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens talentos\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online com temporadas de 30 dias\n6️⃣ Pacotinhos → Abra pacotes e descubra promessas de 17 anos\n7️⃣ Leilão → Dispute jogadores raros contra outros managers\n8️⃣ Uniformes → Personalize o visual do seu clube',
-      type: 'info',
-    });
-    notifications.push({
-      id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online & Competitivo',
-      message: 'Temporadas de 30 dias com 1 rodada por dia. Ao final, os melhores sobem de divisão e os piores caem. Construa sua reputação, suba no ranking e conquiste troféus!\n\n⚽ Amistosos online contra outros managers\n🏆 Ligas automáticas por país\n💰 Mercado de transferências em tempo real\n📊 Ranking global de reputação',
-      type: 'info',
-    });
-  }
+  // Welcome messages always show — read state prevents them from being "unread"
+  notifications.push({
+    id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
+    message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores: transferências, escalação, resultados.\n\nSuas ações são salvas automaticamente a cada 30 segundos. Boa sorte e divirta-se!`,
+    type: 'success',
+  });
+  notifications.push({
+    id: 'welcome_tips', icon: '💡', title: '📋 Guia Completo do Manager',
+    message: '1️⃣ Táticas → Monte sua formação e escalação ideal\n2️⃣ Partidas → Jogue 1 amistoso diário vs BOT FC para experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens talentos\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online com temporadas de 30 dias\n6️⃣ Pacotinhos → Abra pacotes e descubra promessas de 17 anos\n7️⃣ Leilão → Dispute jogadores raros contra outros managers\n8️⃣ Uniformes → Personalize o visual do seu clube',
+    type: 'info',
+  });
+  notifications.push({
+    id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online & Competitivo',
+    message: 'Temporadas de 30 dias com 1 rodada por dia. Ao final, os melhores sobem de divisão e os piores caem. Construa sua reputação, suba no ranking e conquiste troféus!\n\n⚽ Amistosos online contra outros managers\n🏆 Ligas automáticas por país\n💰 Mercado de transferências em tempo real\n📊 Ranking global de reputação',
+    type: 'info',
+  });
+  notifications.push({
+    id: 'welcome_save', icon: '💾', title: 'Auto-Save Ativo',
+    message: 'Seu progresso é salvo automaticamente a cada 30 segundos. Pode sair tranquilo — quando voltar, tudo estará como deixou! As notificações lidas também são salvas.',
+    type: 'success',
+  });
 
   const expiring = players.filter(p => p.contract <= 1);
   if (expiring.length > 0) {
@@ -253,6 +277,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
                       <CheckCheck className="h-3 w-3" /> Ler todas
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1" onClick={() => { setOpen(false); setFullPage(true); }}>
+                    <Maximize2 className="h-3 w-3" /> Expandir
+                  </Button>
                   <Badge variant="outline" className="text-[10px] h-5">{notifications.length}</Badge>
                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-1 hover:bg-destructive/20" onClick={() => setOpen(false)}>
                     <X className="h-4 w-4 text-destructive" />
@@ -317,6 +344,17 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
             </CardContent>
           </Card>
         </>
+      )}
+
+      {fullPage && (
+        <NotificationFullPage
+          notifications={notifications}
+          readIds={readIds}
+          onMarkRead={markAsRead}
+          onMarkAllRead={markAllAsRead}
+          onClose={() => setFullPage(false)}
+          respondingId={respondingId}
+        />
       )}
     </div>
   );
