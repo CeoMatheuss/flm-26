@@ -14,7 +14,7 @@ import { TrainingHelpButton } from './TrainingHelpPanel';
 import type { TrainingFocusKey, TrainingIntensity, PlayerTrainingConfig, WeeklyTrainingResult } from '@/training/TrainingTypes';
 import { focusLabels, focusToAttr, intensityConfig, positionRecommendations } from '@/training/TrainingTypes';
 import { getTrainingManager, defaultStaff, type StaffConfig } from '@/training/TrainingManager';
-import { useTraining2DRenderer } from '@/training/Training2DRenderer';
+import { Wifi } from 'lucide-react';
 
 // Re-export for backward compatibility (useGame still uses TrainingFocus type)
 export type TrainingFocus = TrainingFocusKey;
@@ -38,18 +38,29 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-// ── Mini subcomponent: campo 2D ────────────────────────────────────────────
-function TrainingPitch({ players, intensity }: { players: Player[]; intensity: TrainingIntensity }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useTraining2DRenderer(canvasRef as React.RefObject<HTMLCanvasElement>, players.slice(0, 11), intensity);
+// ── Mini subcomponent: modo online ────────────────────────────────────────────
+function TrainingOnlineMode({ players, intensity }: { players: Player[]; intensity: TrainingIntensity }) {
+  const intCfg = intensityConfig[intensity];
+  const starters = players.slice(0, 11);
   return (
-    <canvas
-      ref={canvasRef}
-      width={320}
-      height={180}
-      className="w-full rounded-lg border border-border/40"
-      style={{ imageRendering: 'crisp-edges' }}
-    />
+    <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-2">
+      <div className="flex items-center justify-center gap-2 text-xs">
+        <Wifi className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+        <span className="text-emerald-400 font-bold">Modo Online — Treino ao Vivo</span>
+      </div>
+      <p className="text-[9px] text-muted-foreground text-center">
+        Intensidade: {intCfg.emoji} {intCfg.label} • {starters.length} jogadores em campo
+      </p>
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+        {starters.map(p => (
+          <div key={p.id} className="text-center p-1.5 rounded bg-card/50 border border-border/30">
+            <p className="text-[8px] font-bold truncate">{p.name.split(' ').pop()}</p>
+            <Badge variant="outline" className="text-[7px] mt-0.5">{p.position}</Badge>
+            <p className="text-[8px] text-muted-foreground mt-0.5">OVR {p.overall}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -334,22 +345,19 @@ export function TrainingTab({
             {processing ? 'Processando...' : 'Processar Semana de Treinos'}
           </Button>
 
-          {/* Visualização 2D */}
+          {/* Modo Online */}
           <Button
             variant="outline"
             size="sm"
             className="w-full gap-2 text-xs h-8"
             onClick={() => setShowPitch(v => !v)}
           >
-            <Play className="h-3.5 w-3.5" />
-            {showPitch ? 'Ocultar Campo 2D' : 'Ver Treino ao Vivo (2D)'}
+            <Wifi className="h-3.5 w-3.5" />
+            {showPitch ? 'Ocultar Modo Online' : 'Ver Treino Online'}
           </Button>
 
           {showPitch && (
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground text-center">Simulação visual • Intensidade: {intensityConfig[globalIntensity].emoji} {intensityConfig[globalIntensity].label}</p>
-              <TrainingPitch players={healthy.slice(0, 11)} intensity={globalIntensity} />
-            </div>
+            <TrainingOnlineMode players={healthy.slice(0, 11)} intensity={globalIntensity} />
           )}
         </CardContent>
       </Card>
