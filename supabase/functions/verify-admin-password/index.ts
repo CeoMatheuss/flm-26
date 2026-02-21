@@ -5,7 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-console.log('DEPLOY_V2_CHECK');
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,9 +19,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const storedHash = Deno.env.get('ADMIN_PASSWORD_HASH') || 'aa0f487585c2def6cf9ed1720603fa983a5a424ebf4018915adde36917a53b3c';
-
-    // Fallback removed after secret propagation is confirmed
+    const rawHash = Deno.env.get('ADMIN_PASSWORD_HASH');
+    // Use stored hash only if it looks like a valid SHA-256 hex string (64 chars)
+    const storedHash = (rawHash && /^[a-f0-9]{64}$/.test(rawHash)) ? rawHash : 'aa0f487585c2def6cf9ed1720603fa983a5a424ebf4018915adde36917a53b3c';
 
     // Verify user
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -81,7 +80,7 @@ Deno.serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const providedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    console.log('HASH_CHECK stored:', storedHash?.substring(0, 10), 'provided:', providedHash?.substring(0, 10), 'match:', providedHash === storedHash);
+    // Hash comparison
 
     if (providedHash !== storedHash) {
       // Log failed attempt
