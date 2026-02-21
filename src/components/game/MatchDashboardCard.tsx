@@ -228,7 +228,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
             <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra AI FC!</p>
             {onGoToFriendly && (
               <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
-                <Swords className="h-3.5 w-3.5" /> Ir para Amistoso
+                <Swords className="h-3.5 w-3.5" /> Ir para Amistosos
               </Button>
             )}
           </div>
