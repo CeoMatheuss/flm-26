@@ -575,6 +575,63 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_listings: {
+        Row: {
+          accepted_at: string | null
+          buyer_club_name: string | null
+          buyer_id: string | null
+          created_at: string
+          id: string
+          listed_at: string
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position: string
+          salary: number
+          seller_club_name: string
+          seller_id: string
+          seller_shield: Json | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          buyer_club_name?: string | null
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          listed_at?: string
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position?: string
+          salary?: number
+          seller_club_name?: string
+          seller_id: string
+          seller_shield?: Json | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          buyer_club_name?: string | null
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          listed_at?: string
+          player_age?: number
+          player_data?: Json
+          player_name?: string
+          player_overall?: number
+          player_position?: string
+          salary?: number
+          seller_club_name?: string
+          seller_id?: string
+          seller_shield?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       match_history: {
         Row: {
           away_goals: number

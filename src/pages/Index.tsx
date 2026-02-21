@@ -511,7 +511,29 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 game.buyPlayer({ ...playerData, salary, contract: contractYears });
               }}
               loanedPlayers={game.loanedPlayers}
-              onLoanOut={game.loanOutPlayer}
+              onLoanOut={async (playerId: string) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                if (!player) return;
+                if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
+                const res = await supabase.functions.invoke('process-transfer', {
+                  body: {
+                    action: 'loan-list',
+                    playerData: player,
+                    playerName: player.name,
+                    playerPosition: player.position,
+                    playerOverall: player.overall,
+                    playerAge: player.age,
+                    salary: player.salary || 0,
+                    clubName: game.club.name,
+                    sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+                  },
+                });
+                if (res.error || res.data?.error) {
+                  toast.error(res.data?.error || 'Erro ao listar para empréstimo');
+                } else {
+                  toast.success(`${player.name} listado no mercado de empréstimos!`);
+                }
+              }}
               onLoanIn={game.loanInPlayer}
               onListedPlayer={() => setActiveTab('market')}
             />
