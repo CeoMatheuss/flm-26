@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2 } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 import { useState, useEffect, useMemo } from 'react';
@@ -28,6 +28,7 @@ interface LiveMatchFromDB {
 
 interface Props {
   club: Club;
+  userId?: string;
 }
 
 type MatchStatus = 'live' | 'finished' | 'none';
@@ -37,12 +38,40 @@ type MatchStatus = 'live' | 'finished' | 'none';
  * Sempre renderizado no topo do dashboard. Nunca removido.
  * Consome dados do backend (live_matches table) e club.matches (scheduled/finished).
  */
-export function MatchDashboardCard({ club }: Props) {
+export function MatchDashboardCard({ club, userId }: Props) {
   const navigate = useNavigate();
   const [liveMatch, setLiveMatch] = useState<LiveMatchFromDB | null>(null);
   const [currentMinute, setCurrentMinute] = useState(0);
   const [currentHomeGoals, setCurrentHomeGoals] = useState(0);
   const [currentAwayGoals, setCurrentAwayGoals] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
+  const [premiumDaysLeft, setPremiumDaysLeft] = useState(0);
+
+  // Check premium status
+  useEffect(() => {
+    if (!userId) return;
+    const checkPremium = async () => {
+      const { data } = await supabase
+        .from('premium_users')
+        .select('activated_at, status')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (data) {
+        const activatedAt = new Date(data.activated_at).getTime();
+        const now = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const remaining = thirtyDaysMs - (now - activatedAt);
+        if (remaining > 0) {
+          setIsPremium(true);
+          setPremiumDaysLeft(Math.ceil(remaining / (24 * 60 * 60 * 1000)));
+        } else {
+          setIsPremium(false);
+        }
+      }
+    };
+    checkPremium();
+  }, [userId]);
 
   // Poll DB for active live match
   useEffect(() => {
@@ -166,6 +195,13 @@ export function MatchDashboardCard({ club }: Props) {
 
   return (
     <Card className={`border-2 ${borderClass}`}>
+      {isPremium && (
+        <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 flex items-center justify-center gap-2">
+          <Crown className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+          <span className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-widest">Premium</span>
+          <span className="text-[8px] sm:text-[9px] text-yellow-400/70">({premiumDaysLeft} dias restantes)</span>
+        </div>
+      )}
       <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
         <CardTitle className="text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
           {status === 'live' ? (
