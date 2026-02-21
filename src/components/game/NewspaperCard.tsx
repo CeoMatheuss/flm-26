@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Newspaper, ChevronDown, ChevronUp, ExternalLink, Megaphone } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   club: Club;
@@ -152,9 +153,18 @@ const categoryColors: Record<string, string> = {
 
 export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const main = generateHeadline(club, events, infrastructure);
   const secondary = generateSecondaryNews(club, events, infrastructure);
   const displayedNews = expanded ? secondary : secondary.slice(0, 3);
+
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(5);
+      if (data) setAdminUpdates(data as any[]);
+    };
+    fetchUpdates();
+  }, []);
 
   return (
     <Card className="border-border bg-card overflow-hidden">
@@ -176,6 +186,22 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: 
           <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1">{main.headline}</h3>
           <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-snug">{main.subtitle}</p>
         </div>
+
+        {/* Admin Updates */}
+        {adminUpdates.length > 0 && (
+          <div className="space-y-1.5">
+            {adminUpdates.slice(0, 2).map(u => (
+              <div key={u.id} className="flex items-start gap-1.5 p-1.5 rounded bg-primary/5 border border-primary/20">
+                <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug">{u.content}</p>
+                </div>
+                <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Secondary news */}
         {displayedNews.length > 0 && (

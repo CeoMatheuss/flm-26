@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 interface PendingUser {
@@ -79,6 +80,10 @@ export function AdminTab({ userId, isFounder }: Props) {
     reviewed_by: string | null; reviewed_at: string | null; created_at: string;
   }>>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [journalContent, setJournalContent] = useState('');
+  const [journalTitle, setJournalTitle] = useState('Atualização');
+  const [journalUpdates, setJournalUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
+  const [journalLoading, setJournalLoading] = useState(false);
 
   useEffect(() => {
     const check = async () => {
@@ -205,11 +210,38 @@ export function AdminTab({ userId, isFounder }: Props) {
     loadAbuseAlerts();
   };
 
+  const loadJournalUpdates = useCallback(async () => {
+    setJournalLoading(true);
+    const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(50);
+    if (data) setJournalUpdates(data as any[]);
+    setJournalLoading(false);
+  }, []);
+
+  const postJournalUpdate = async () => {
+    if (!journalContent.trim()) return toast.error('Digite a mensagem');
+    if (journalContent.length > 500) return toast.error('Mensagem muito longa (max 500 caracteres)');
+    setJournalLoading(true);
+    const { error } = await supabase.from('journal_updates').insert([{
+      user_id: userId,
+      title: journalTitle.trim() || 'Atualização',
+      content: journalContent.trim(),
+    }]);
+    if (error) toast.error('Erro ao publicar');
+    else { toast.success('📰 Atualização publicada no Jornal!'); setJournalContent(''); setJournalTitle('Atualização'); loadJournalUpdates(); }
+    setJournalLoading(false);
+  };
+
+  const deleteJournalUpdate = async (id: string) => {
+    const { error } = await supabase.from('journal_updates').delete().eq('id', id);
+    if (error) toast.error('Erro ao deletar');
+    else { toast.success('Atualização removida'); loadJournalUpdates(); }
+  };
+
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadJournalUpdates()]);
     setLoading(false);
-  }, [loadAbuseAlerts]);
+  }, [loadAbuseAlerts, loadJournalUpdates]);
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
@@ -485,12 +517,13 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Admin Tabs */}
       <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
-        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-6' : 'grid-cols-5'}`}>
+        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-7' : 'grid-cols-6'}`}>
           {isFounder && <TabsTrigger value="team" className="text-xs gap-1"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
           <TabsTrigger value="users" className="text-xs gap-1"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
           <TabsTrigger value="premium" className="text-xs gap-1"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
           <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
           <TabsTrigger value="abuse" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
+          <TabsTrigger value="journal" className="text-xs gap-1"><Newspaper className="h-3 w-3" /> Jornal</TabsTrigger>
           <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
         </TabsList>
 
@@ -920,6 +953,74 @@ export function AdminTab({ userId, isFounder }: Props) {
                             </div>
                           )}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Journal Tab */}
+        <TabsContent value="journal" className="space-y-3 mt-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Newspaper className="h-4 w-4" /> Publicar Atualização no Jornal
+              </CardTitle>
+              <p className="text-[10px] text-muted-foreground">A mensagem aparecerá no Jornal de todos os jogadores.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                placeholder="Título (ex: Atualização, Manutenção, Novidade)"
+                value={journalTitle}
+                onChange={e => setJournalTitle(e.target.value)}
+                maxLength={100}
+                className="h-8 text-xs"
+              />
+              <Textarea
+                placeholder="Escreva a mensagem que aparecerá no jornal..."
+                value={journalContent}
+                onChange={e => setJournalContent(e.target.value)}
+                maxLength={500}
+                className="text-xs min-h-[80px]"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">{journalContent.length}/500</span>
+                <Button size="sm" className="h-7 text-xs gap-1" onClick={postJournalUpdate} disabled={journalLoading}>
+                  <Newspaper className="h-3 w-3" /> Publicar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Atualizações Publicadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {journalUpdates.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atualização publicada</p>
+              ) : (
+                <ScrollArea className="max-h-[300px]">
+                  <div className="space-y-2">
+                    {journalUpdates.map(u => (
+                      <div key={u.id} className="flex items-start justify-between gap-2 p-2 rounded bg-muted/20 group">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="secondary" className="text-[8px]">📢 {u.title}</Badge>
+                            <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">{u.content}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
+                          onClick={() => deleteJournalUpdate(u.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
