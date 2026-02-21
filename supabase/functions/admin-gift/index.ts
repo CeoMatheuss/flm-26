@@ -15,8 +15,14 @@ async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Pre-compute the expected ban password hash at startup
-const BAN_PASSWORD_HASH_PROMISE = hashPassword('BAN112828');
+// Use stored hash from secrets
+async function getBanPasswordHash(): Promise<string> {
+  const stored = Deno.env.get('BAN_PASSWORD_HASH');
+  if (stored && /^[a-f0-9]{64}$/.test(stored)) return stored;
+  // Fallback: hash a default (should be replaced via secrets)
+  return hashPassword('CHANGE_ME_NOW');
+}
+const BAN_PASSWORD_HASH_PROMISE = getBanPasswordHash();
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
