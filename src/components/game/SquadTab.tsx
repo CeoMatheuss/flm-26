@@ -264,15 +264,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <div>
                   <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
                   {player.history && player.history.length > 0 ? (
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {player.history.map((h, i) => (
-                        <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
-                          <span className="font-semibold">{h.club}</span>
-                          <span className="text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `–T${h.seasonEnd}` : ' (atual)'}</span>
-                          <span className="ml-auto">{h.games}j</span>
-                          <span>⚽{h.goals}</span>
-                          <span>🅰️{h.assists}</span>
-                          {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
+                        <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded-lg px-2.5 py-2 border border-border/30">
+                          <div className="h-6 w-6 rounded-full bg-muted/50 flex items-center justify-center text-[10px] shrink-0">🛡️</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-xs truncate">{h.club}</p>
+                            <p className="text-[9px] text-muted-foreground">
+                              Temporada {h.seasonStart}{h.seasonEnd ? ` – ${h.seasonEnd}` : ' (atual)'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 text-[10px]">
+                            <span>{h.games}j</span>
+                            <span>⚽{h.goals}</span>
+                            <span>🅰️{h.assists}</span>
+                            {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
+                          </div>
                         </div>
                       ))}
                     </div>
