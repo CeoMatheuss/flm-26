@@ -161,7 +161,25 @@ Deno.serve(async (req) => {
         personality: 'dedicado',
       };
 
-      const minPrice = Number(playerMinPrice) || Math.floor(ovr * ovr * 100);
+      // Calculate price based on OVR + age (same logic as getPlayerBaseValue)
+      const getBaseValue = (o: number) => {
+        if (o >= 85) return o * 80000;
+        if (o >= 75) return o * 40000;
+        if (o >= 65) return o * 20000;
+        if (o >= 55) return o * 10000;
+        return o * 5000;
+      };
+      const getAgeMultiplier = (a: number) => {
+        if (a <= 20) return 1.5;
+        if (a <= 22) return 1.4;
+        if (a <= 24) return 1.3;
+        if (a <= 27) return 1.2;
+        if (a <= 29) return 1.0;
+        if (a <= 31) return 0.7;
+        if (a <= 33) return 0.4;
+        return 0.2;
+      };
+      const minPrice = Math.floor(getBaseValue(ovr) * getAgeMultiplier(playerAge));
 
       if (dest === 'market') {
         const { error } = await adminClient.from('transfer_listings').insert({
