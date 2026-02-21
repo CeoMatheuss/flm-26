@@ -14,9 +14,9 @@ import gamePreview3 from '@/assets/game-preview-3.jpg';
 import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const previewSlides = [
-  { src: gamePreview1, title: 'Gerencie. Compita. Conquiste.', desc: 'Construa seu clube do zero, escale táticas em tempo real e dispute ligas online.' },
-  { src: gamePreview2, title: 'Táticas em Tempo Real', desc: 'Escalação visual 2D com controle total da formação e estratégia do seu time.' },
-  { src: gamePreview3, title: 'Mercado de Transferências', desc: 'Compre, venda e negocie jogadores no mercado online com outros managers.' },
+  { src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
+  { src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
+  { src: gamePreview3, title: 'FLM 26 — Football League Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' },
 ];
 
 const RESEND_COOLDOWN = 60; // seconds
