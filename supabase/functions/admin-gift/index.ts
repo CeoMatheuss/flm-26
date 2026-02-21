@@ -7,9 +7,6 @@ const corsHeaders = {
 
 const FOUNDER_EMAIL = 'fcmsistemas7@gmail.com';
 
-// SHA-256 hash of "BAN112828"
-const BAN_PASSWORD_HASH = '5a1d3c3c0e3f2b1a0d9e8f7c6b5a4d3c2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a';
-
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -17,6 +14,9 @@ async function hashPassword(password: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+// Pre-compute the expected ban password hash at startup
+const BAN_PASSWORD_HASH_PROMISE = hashPassword('BAN112828');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
       // Verify ban password
       const providedHash = await hashPassword(banPassword);
-      const expectedHash = await hashPassword('BAN112828');
+      const expectedHash = await BAN_PASSWORD_HASH_PROMISE;
 
       if (providedHash !== expectedHash) {
         return new Response(JSON.stringify({ error: 'Senha de banimento incorreta!' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
