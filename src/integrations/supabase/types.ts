@@ -964,6 +964,7 @@ export type Database = {
           player_position: string
           seller_club_name: string
           seller_id: string
+          seller_shield: Json | null
           sold_at: string | null
           status: string
           transfer_count: number
@@ -984,6 +985,7 @@ export type Database = {
           player_position?: string
           seller_club_name?: string
           seller_id: string
+          seller_shield?: Json | null
           sold_at?: string | null
           status?: string
           transfer_count?: number
@@ -1004,6 +1006,7 @@ export type Database = {
           player_position?: string
           seller_club_name?: string
           seller_id?: string
+          seller_shield?: Json | null
           sold_at?: string | null
           status?: string
           transfer_count?: number
