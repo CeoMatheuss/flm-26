@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,11 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [genOverall, setGenOverall] = useState('60');
   const [genPosition, setGenPosition] = useState('random');
   const [genDestination, setGenDestination] = useState<'market' | 'auction'>('market');
-  const [genMinPrice, setGenMinPrice] = useState('');
+  const estimatedPrice = useMemo(() => {
+    const o = Math.max(40, Math.min(99, Number(genOverall) || 60));
+    const base = o >= 85 ? o * 80000 : o >= 75 ? o * 40000 : o >= 65 ? o * 20000 : o >= 55 ? o * 10000 : o * 5000;
+    return Math.floor(base * 1.3); // age 23-24 avg
+  }, [genOverall]);
   const [generating, setGenerating] = useState(false);
   // Game ban state
   const [gameBanUserId, setGameBanUserId] = useState('');
@@ -1218,10 +1222,10 @@ export function AdminTab({ userId, isFounder }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Preço Mínimo (opcional)</label>
-                    <Input type="number" placeholder="Auto" value={genMinPrice} onChange={e => setGenMinPrice(e.target.value)} className="text-xs h-8" />
-                  </div>
+                   <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-muted-foreground">Valor estimado:</span>
+                      <span className="text-xs font-bold text-yellow-400">R${estimatedPrice.toLocaleString('pt-BR')}</span>
+                    </div>
                 </div>
                 <Button
                   size="sm"
@@ -1240,7 +1244,6 @@ export function AdminTab({ userId, isFounder }: Props) {
                           playerOverall: Number(genOverall),
                           playerPosition: genPosition === 'random' ? undefined : genPosition,
                           playerDestination: genDestination,
-                          playerMinPrice: genMinPrice ? Number(genMinPrice) : undefined,
                         }),
                       });
                       const result = await res.json();
