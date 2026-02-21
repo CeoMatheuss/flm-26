@@ -111,7 +111,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [primaryColor, setPrimaryColor] = useState('#2563EB');
   const [secondaryColor, setSecondaryColor] = useState('#FFFFFF');
   const [detailColor, setDetailColor] = useState('#DC2626');
-  const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('classic');
+  const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('solid');
   const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
   const [selectedIcon, setSelectedIcon] = useState<ShieldIcon>('star');
   const [customLogoUrl, setCustomLogoUrl] = useState('');
@@ -274,7 +274,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
                     onClick={() => setSelectedShape(shape)}
                     className={`shrink-0 p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 min-w-[60px] ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="classic" shape={shape} size={36} />
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={shape} size={36} />
                     <span className="text-[8px] font-medium text-muted-foreground">{shapeNames[shape]}</span>
                   </button>
                 ))}
@@ -310,7 +310,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
                     onClick={() => { setSelectedIcon(icon); setUseCustomLogo(false); }}
                     className={`shrink-0 p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0.5 min-w-[52px] ${selectedIcon === icon && !useCustomLogo ? 'border-primary ring-2 ring-primary/30 scale-105 bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="classic" shape={selectedShape} icon={icon} size={32} />
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={selectedShape} icon={icon} size={32} />
                     <span className="text-[7px] font-medium text-muted-foreground leading-tight">{shieldIconLabels[icon].split(' ')[0]}</span>
                   </button>
                 ))}

@@ -391,7 +391,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
                     <div className="space-y-1.5">
                       {pd.history.map((h: any, i: number) => (
                         <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded-lg px-2.5 py-2 border border-border/30">
-                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="classic" shape="classic" size={24} /></div>
+                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={24} /></div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-xs truncate">{h.club}</p>
                             <p className="text-[9px] text-muted-foreground">

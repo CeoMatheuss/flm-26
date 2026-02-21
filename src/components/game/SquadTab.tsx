@@ -268,7 +268,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     <div className="space-y-1.5">
                       {player.history.map((h, i) => (
                         <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded-lg px-2.5 py-2 border border-border/30">
-                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="classic" shape="classic" size={24} /></div>
+                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={24} /></div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-xs truncate">{h.club}</p>
                             <p className="text-[9px] text-muted-foreground">
@@ -442,7 +442,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     <div className="space-y-1">
                       {selectedPlayer.history.map((h, i) => (
                         <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded px-2 py-1.5">
-                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="classic" shape="classic" size={18} /></div>
+                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={18} /></div>
                           <span className="font-semibold">{h.club}</span>
                           <span className="text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `-T${h.seasonEnd}` : ''}</span>
                           <span className="ml-auto">{h.games}j</span>

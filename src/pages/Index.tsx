@@ -486,7 +486,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               clubShield={{
                 primaryColor: game.club.primaryColor || '#1a365d',
                 secondaryColor: game.club.secondaryColor || '#f6e05e',
-                pattern: game.club.shieldPattern || 'classic',
+                pattern: game.club.shieldPattern || 'solid',
                 shape: game.club.shieldShape || 'classic',
               }}
               onEnterLeague={mp.enterLeague}
