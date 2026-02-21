@@ -28,7 +28,7 @@ export const shieldIcons = [
   'none', 'star', 'double-star', 'triple-star', 'ball', 'lion', 'eagle-icon', 'crown-icon', 'sword',
   'crossed-swords', 'laurel', 'tower', 'anchor', 'flame-icon', 'diamond-icon',
   'shield-icon', 'wing', 'trident', 'compass', 'horse', 'wolf', 'dragon',
-  'letter-F', 'letter-C', 'letter-A', 'letter-S',
+  'trophy', 'boot', 'goal-net', 'whistle',
 ] as const;
 export type ShieldIcon = typeof shieldIcons[number];
 
@@ -39,7 +39,7 @@ export const shieldIconLabels: Record<ShieldIcon, string> = {
   anchor: '⚓ Âncora', 'flame-icon': '🔥 Chama', 'diamond-icon': '💎 Diamante',
   'shield-icon': '🛡 Escudo', wing: '🪽 Asa', trident: '🔱 Tridente',
   compass: '🧭 Bússola', horse: '🐴 Cavalo', wolf: '🐺 Lobo', dragon: '🐉 Dragão',
-  'letter-F': 'F', 'letter-C': 'C', 'letter-A': 'A', 'letter-S': 'S',
+  trophy: '🏆 Troféu', boot: '👟 Chuteira', 'goal-net': '🥅 Gol', whistle: '📣 Apito',
 };
 
 const shieldPaths: Record<ShieldShape, (s: number) => string> = {
@@ -255,12 +255,43 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
           <circle cx={h + s * 0.03} cy={cy - s * 0.04} r={s * 0.012} fill={sc} />
         </>
       );
-    case 'letter-F':
-    case 'letter-C':
-    case 'letter-A':
-    case 'letter-S':
-      const letter = icon.split('-')[1].toUpperCase();
-      return <text x={h} y={cy + s * 0.08} textAnchor="middle" fill={dc} fontSize={s * 0.3} fontWeight="bold" fontFamily="serif">{letter}</text>;
+    case 'trophy':
+      return (
+        <>
+          <rect x={h - s * 0.04} y={cy + s * 0.04} width={s * 0.08} height={s * 0.06} fill={dc} rx={s * 0.005} />
+          <rect x={h - s * 0.02} y={cy + s * 0.1} width={s * 0.04} height={s * 0.03} fill={dc} />
+          <path d={`M${h - s * 0.08},${cy - s * 0.1} L${h - s * 0.07},${cy + s * 0.04} Q${h},${cy + s * 0.08} ${h + s * 0.07},${cy + s * 0.04} L${h + s * 0.08},${cy - s * 0.1} Z`} fill={dc} />
+          <path d={`M${h - s * 0.08},${cy - s * 0.06} Q${h - s * 0.14},${cy - s * 0.04} ${h - s * 0.12},${cy + s * 0.02}`} fill="none" stroke={dc} strokeWidth={s * 0.02} strokeLinecap="round" />
+          <path d={`M${h + s * 0.08},${cy - s * 0.06} Q${h + s * 0.14},${cy - s * 0.04} ${h + s * 0.12},${cy + s * 0.02}`} fill="none" stroke={dc} strokeWidth={s * 0.02} strokeLinecap="round" />
+        </>
+      );
+    case 'boot':
+      return (
+        <>
+          <path d={`M${h - s * 0.04},${cy - s * 0.1} L${h - s * 0.04},${cy + s * 0.06} L${h + s * 0.1},${cy + s * 0.06} L${h + s * 0.1},${cy + s * 0.02} L${h + s * 0.02},${cy + s * 0.02} L${h + s * 0.02},${cy - s * 0.1} Z`} fill={dc} />
+          <rect x={h + s * 0.06} y={cy + s * 0.06} width={s * 0.02} height={s * 0.03} fill={dc} />
+          <rect x={h - s * 0.02} y={cy + s * 0.06} width={s * 0.02} height={s * 0.03} fill={dc} />
+        </>
+      );
+    case 'goal-net':
+      return (
+        <>
+          <rect x={h - s * 0.1} y={cy - s * 0.08} width={s * 0.2} height={s * 0.16} fill="none" stroke={dc} strokeWidth={s * 0.025} rx={s * 0.01} />
+          <line x1={h - s * 0.1} y1={cy} x2={h + s * 0.1} y2={cy} stroke={dc} strokeWidth={s * 0.012} />
+          <line x1={h - s * 0.033} y1={cy - s * 0.08} x2={h - s * 0.033} y2={cy + s * 0.08} stroke={dc} strokeWidth={s * 0.012} />
+          <line x1={h + s * 0.033} y1={cy - s * 0.08} x2={h + s * 0.033} y2={cy + s * 0.08} stroke={dc} strokeWidth={s * 0.012} />
+          <circle cx={h + s * 0.06} cy={cy + s * 0.03} r={s * 0.025} fill={dc} opacity={0.6} />
+        </>
+      );
+    case 'whistle':
+      return (
+        <>
+          <circle cx={h - s * 0.04} cy={cy} r={s * 0.06} fill={dc} />
+          <rect x={h - s * 0.04} y={cy - s * 0.025} width={s * 0.14} height={s * 0.05} fill={dc} rx={s * 0.02} />
+          <circle cx={h - s * 0.04} cy={cy} r={s * 0.025} fill={sc} />
+          <line x1={h + s * 0.08} y1={cy - s * 0.02} x2={h + s * 0.12} y2={cy - s * 0.08} stroke={dc} strokeWidth={s * 0.015} strokeLinecap="round" />
+        </>
+      );
     default:
       return null;
   }
