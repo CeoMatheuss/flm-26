@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Check, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -271,13 +272,18 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   // Open full page directly when bell is clicked
   const handleOpen = () => {
-    setFullPage(prev => !prev);
-    // Mark all non-action notifications as read on open
-    const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
-    setReadIds(prev => {
-      const newIds = nonActionIds.filter(id => !prev.includes(id));
-      return newIds.length > 0 ? [...prev, ...newIds] : prev;
-    });
+    try {
+      setFullPage(prev => !prev);
+      // Mark all non-action notifications as read on open
+      const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
+      setReadIds(prev => {
+        const newIds = nonActionIds.filter(id => !prev.includes(id));
+        return newIds.length > 0 ? [...prev, ...newIds] : prev;
+      });
+    } catch (error) {
+      console.error("Error opening notifications:", error);
+      toast.error("Erro ao abrir notificações");
+    }
   };
 
   return (
@@ -291,7 +297,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
         )}
       </Button>
 
-      {fullPage && (
+      {fullPage && createPortal(
         <NotificationFullPage
           notifications={notifications}
           readIds={readIds}
@@ -299,7 +305,8 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
           onMarkAllRead={markAllAsRead}
           onClose={() => setFullPage(false)}
           respondingId={respondingId}
-        />
+        />,
+        document.body
       )}
     </div>
   );
