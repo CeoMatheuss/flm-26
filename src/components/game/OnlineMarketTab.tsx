@@ -301,6 +301,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
         sellerClubName={viewingSellerId.name}
         sellerShield={viewingSellerId.shield}
         onBack={() => setViewingSellerId(null)}
+        budget={budget}
+        clubName={clubName}
       />
     );
   }

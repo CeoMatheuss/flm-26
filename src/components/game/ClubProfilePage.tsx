@@ -1,13 +1,46 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Trophy, Landmark, Star, ShoppingCart, Building2, Heart, GraduationCap, Home, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Users, Trophy, Landmark, Star, ShoppingCart, Building2, Heart, GraduationCap, Home, Calendar, ArrowLeft, Send, DollarSign, Gift, HelpCircle, X, Eye } from 'lucide-react';
 import { ShieldCrest, ShieldShape } from './ShieldCrest';
 import { generatePlayer } from '@/utils/playerGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { getStadiumCapacity } from '@/types/infrastructure';
+import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { LeagueMember, LeagueMatch, LeagueSquad } from '@/hooks/useMultiplayer';
+
+interface TransferListing {
+  id: string;
+  seller_id: string;
+  seller_club_name: string;
+  player_name: string;
+  player_position: string;
+  player_overall: number;
+  player_age: number;
+  player_data: any;
+  asking_price: number;
+  status: string;
+  transfer_count: number;
+}
+
+interface LoanListing {
+  id: string;
+  seller_id: string;
+  seller_club_name: string;
+  player_name: string;
+  player_position: string;
+  player_overall: number;
+  player_age: number;
+  player_data: any;
+  salary: number;
+  status: string;
+}
 
 interface Props {
   member: LeagueMember;
@@ -17,6 +50,10 @@ interface Props {
   leagueSquads: LeagueSquad[];
   clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string };
   onBack: () => void;
+  // Optional: for buying directly
+  budget?: number;
+  clubName?: string;
+  onPlayerBought?: (playerData: any, price: number, salary: number, contractYears: number) => void;
 }
 
 const posColors: Record<string, string> = {
@@ -28,6 +65,9 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
+const posLabels: Record<string, string> = {
+  GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
+};
 
 function getTeamColor(name: string): string {
   let hash = 0;
@@ -55,33 +95,39 @@ interface ClubMeta {
   trophies?: { title: string; season: number; date: string }[];
 }
 
-export function ClubProfilePage({ member, members, userId, leagueMatches, leagueSquads, clubShield, onBack }: Props) {
-  const [transferPlayerNames, setTransferPlayerNames] = useState<Set<string>>(new Set());
-  const [loanPlayerNames, setLoanPlayerNames] = useState<Set<string>>(new Set());
+export function ClubProfilePage({ member, members, userId, leagueMatches, leagueSquads, clubShield, onBack, budget, clubName, onPlayerBought }: Props) {
+  const [transferListings, setTransferListings] = useState<TransferListing[]>([]);
+  const [loanListings, setLoanListings] = useState<LoanListing[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
+  const [negotiatingListing, setNegotiatingListing] = useState<TransferListing | null>(null);
 
   const isBot = member.user_id.startsWith('bot_');
   const isUserTeam = member.user_id === userId;
+  const canBuy = !isUserTeam && !isBot && budget != null && clubName != null && onPlayerBought != null;
 
   // Fetch transfer/loan listings for this club
   useEffect(() => {
     async function fetchListings() {
       const { data: transfers } = await supabase
         .from('transfer_listings')
-        .select('player_name')
+        .select('*')
         .eq('seller_id', member.user_id)
         .eq('status', 'active');
 
       const { data: loans } = await supabase
         .from('loan_listings')
-        .select('player_name')
+        .select('*')
         .eq('seller_id', member.user_id)
         .eq('status', 'active');
 
-      if (transfers) setTransferPlayerNames(new Set(transfers.map(t => t.player_name)));
-      if (loans) setLoanPlayerNames(new Set(loans.map(l => l.player_name)));
+      if (transfers) setTransferListings(transfers as unknown as TransferListing[]);
+      if (loans) setLoanListings(loans as unknown as LoanListing[]);
     }
     if (!isBot) fetchListings();
   }, [member.user_id, isBot]);
+
+  const transferPlayerNames = useMemo(() => new Set(transferListings.map(t => t.player_name)), [transferListings]);
+  const loanPlayerNames = useMemo(() => new Set(loanListings.map(l => l.player_name)), [loanListings]);
 
   // Parse squad data
   const { squad, clubMeta } = useMemo(() => {
@@ -109,7 +155,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
       return { squad: players, clubMeta: botMeta };
     }
 
-    // Real player - check league squads
     const squadData = leagueSquads.find(s => s.user_id === member.user_id);
     if (squadData?.squad_data) {
       const raw = squadData.squad_data as any;
@@ -122,7 +167,9 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           overall: p.overall || 50,
           goals: p.goals || 0,
           assists: p.assists || 0,
-        })) as Player[];
+          gamesPlayed: p.gamesPlayed || 0,
+          seasonRatings: p.seasonRatings || [],
+        })) as any[];
         return { squad: players, clubMeta: (raw.clubMeta || {}) as ClubMeta };
       }
       if (Array.isArray(raw)) {
@@ -134,15 +181,17 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           overall: p.overall || 50,
           goals: p.goals || 0,
           assists: p.assists || 0,
-        })) as Player[];
+          gamesPlayed: p.gamesPlayed || 0,
+          seasonRatings: p.seasonRatings || [],
+        })) as any[];
         return { squad: players, clubMeta: {} as ClubMeta };
       }
     }
 
-    return { squad: [] as Player[], clubMeta: {} as ClubMeta };
+    return { squad: [] as any[], clubMeta: {} as ClubMeta };
   }, [member, isBot, leagueSquads]);
 
-  const sortedPlayers = [...squad].sort((a, b) => {
+  const sortedPlayers = [...squad].sort((a: any, b: any) => {
     const pA = posOrder.indexOf(a.position);
     const pB = posOrder.indexOf(b.position);
     if (pA !== pB) return pA - pB;
@@ -196,31 +245,46 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
   const stadiumCapacity = clubMeta.stadiumLevel ? getStadiumCapacity(clubMeta.stadiumLevel) : null;
   const trophies = clubMeta.trophies || [];
 
+  // Find listing for a player by name
+  const getListingForPlayer = (playerName: string) => transferListings.find(l => l.player_name === playerName);
+  const getLoanForPlayer = (playerName: string) => loanListings.find(l => l.player_name === playerName);
+
+  // If negotiating a player purchase
+  if (negotiatingListing) {
+    return (
+      <NegotiationView
+        listing={negotiatingListing}
+        budget={budget || 0}
+        clubName={clubName || ''}
+        onBack={() => setNegotiatingListing(null)}
+        onSuccess={() => {
+          setNegotiatingListing(null);
+          // Refresh listings
+          supabase.from('transfer_listings').select('*').eq('seller_id', member.user_id).eq('status', 'active')
+            .then(({ data }) => { if (data) setTransferListings(data as unknown as TransferListing[]); });
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onBack}>
+        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+      </Button>
+
       {/* Club Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             {shieldData ? (
-              <ShieldCrest
-                primaryColor={shieldData.primaryColor}
-                secondaryColor={shieldData.secondaryColor}
-                pattern={shieldData.pattern}
-                shape={shieldData.shape as ShieldShape}
-                size={48}
-              />
+              <ShieldCrest primaryColor={shieldData.primaryColor} secondaryColor={shieldData.secondaryColor} pattern={shieldData.pattern} shape={shieldData.shape as ShieldShape} size={56} />
             ) : (
-              <ShieldCrest
-                primaryColor={getTeamColor(member.club_name)}
-                secondaryColor="#ffffff"
-                pattern="solid"
-                shape="classic"
-                size={48}
-              />
+              <ShieldCrest primaryColor={getTeamColor(member.club_name)} secondaryColor="#ffffff" pattern="solid" shape="classic" size={56} />
             )}
             <div>
-              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <h2 className="text-xl font-bold flex items-center gap-2">
                 {member.club_name}
                 {isBot && <Badge variant="secondary" className="text-[8px]">BOT</Badge>}
               </h2>
@@ -228,9 +292,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 Reputação: {clubMeta.reputation ?? member.reputation} • {squad.length} jogadores
                 {clubMeta.fans ? ` • ${clubMeta.fans.toLocaleString()} torcedores` : ''}
               </p>
-              {clubMeta.country && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">🌍 {clubMeta.country}</p>
-              )}
+              {clubMeta.country && <p className="text-[10px] text-muted-foreground mt-0.5">🌍 {clubMeta.country}</p>}
             </div>
           </div>
 
@@ -255,7 +317,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
             )}
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats */}
           <div className="grid grid-cols-4 gap-2 mb-3">
             <div className="bg-muted/30 rounded p-2 text-center">
               <p className="text-lg font-bold">{member.points}</p>
@@ -339,56 +401,10 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Home className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-xs font-semibold">Estádio</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground truncate">{clubMeta.stadiumName || 'Estádio'}</p>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-emerald-400">Nível {clubMeta.stadiumLevel ?? 1}</span>
-                  {stadiumCapacity && <span className="text-[9px] text-muted-foreground">• {stadiumCapacity.toLocaleString()} lug.</span>}
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${((clubMeta.stadiumLevel ?? 1) / 15) * 100}%` }} />
-                </div>
-              </div>
-
-              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5 text-blue-400" />
-                  <span className="text-xs font-semibold">CT</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Centro de Treinamento</p>
-                <span className="text-xs font-bold text-blue-400">Nível {clubMeta.trainingCenterLevel ?? 0}</span>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${((clubMeta.trainingCenterLevel ?? 0) / 10) * 100}%` }} />
-                </div>
-              </div>
-
-              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-3.5 w-3.5 text-rose-400" />
-                  <span className="text-xs font-semibold">Fisioterapia</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Departamento Médico</p>
-                <span className="text-xs font-bold text-rose-400">Nível {clubMeta.physiotherapyLevel ?? 0}</span>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-500 rounded-full" style={{ width: `${((clubMeta.physiotherapyLevel ?? 0) / 10) * 100}%` }} />
-                </div>
-              </div>
-
-              <div className="bg-muted/20 rounded-lg p-3 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <GraduationCap className="h-3.5 w-3.5 text-purple-400" />
-                  <span className="text-xs font-semibold">Base</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Categorias de Base</p>
-                <span className="text-xs font-bold text-purple-400">Nível {clubMeta.youthAcademyLevel ?? 0}</span>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500 rounded-full" style={{ width: `${((clubMeta.youthAcademyLevel ?? 0) / 30) * 100}%` }} />
-                </div>
-              </div>
+              <InfraItem icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" sublabel={clubMeta.stadiumName || 'Estádio'} level={clubMeta.stadiumLevel ?? 1} maxLevel={15} color="emerald" extra={stadiumCapacity ? `${stadiumCapacity.toLocaleString()} lug.` : undefined} />
+              <InfraItem icon={<Building2 className="h-3.5 w-3.5 text-blue-400" />} label="CT" sublabel="Centro de Treinamento" level={clubMeta.trainingCenterLevel ?? 0} maxLevel={10} color="blue" />
+              <InfraItem icon={<Heart className="h-3.5 w-3.5 text-rose-400" />} label="Fisioterapia" sublabel="Departamento Médico" level={clubMeta.physiotherapyLevel ?? 0} maxLevel={10} color="rose" />
+              <InfraItem icon={<GraduationCap className="h-3.5 w-3.5 text-purple-400" />} label="Base" sublabel="Categorias de Base" level={clubMeta.youthAcademyLevel ?? 0} maxLevel={30} color="purple" />
             </div>
           </CardContent>
         </Card>
@@ -398,7 +414,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4" /> Elenco
+            <Users className="h-4 w-4" /> Elenco ({sortedPlayers.length} jogadores)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -406,17 +422,23 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
             <p className="text-xs text-muted-foreground text-center py-4">Elenco não disponível — aguardando sincronização</p>
           ) : (
             <div className="space-y-1">
-              {sortedPlayers.map((p, i) => {
+              {sortedPlayers.map((p: any, i: number) => {
                 const isStarter = starterIds.has(p.id);
                 const isOnTransfer = transferPlayerNames.has(p.name);
                 const isOnLoan = loanPlayerNames.has(p.name);
+                const listing = isOnTransfer ? getListingForPlayer(p.name) : null;
+                const loan = isOnLoan ? getLoanForPlayer(p.name) : null;
 
                 return (
-                  <div key={p.id} className={`flex items-center gap-2 py-1.5 px-2 rounded transition-colors ${
-                    isOnTransfer ? 'bg-amber-500/10 border border-amber-500/20' :
-                    isOnLoan ? 'bg-blue-500/10 border border-blue-500/20' :
-                    'bg-muted/20 hover:bg-muted/40'
-                  }`}>
+                  <button
+                    key={p.id}
+                    className={`w-full flex items-center gap-2 py-2 px-2.5 rounded transition-colors text-left ${
+                      isOnTransfer ? 'bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15' :
+                      isOnLoan ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15' :
+                      'bg-muted/20 hover:bg-muted/40'
+                    }`}
+                    onClick={() => setSelectedPlayer({ ...p, listing, loan })}
+                  >
                     <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
                     <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
                     <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
@@ -434,7 +456,8 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                     <Badge variant={isStarter ? 'default' : 'outline'} className="text-[8px] px-1.5 h-4">
                       {isStarter ? 'Titular' : 'Reserva'}
                     </Badge>
-                  </div>
+                    <Eye className="h-3 w-3 text-muted-foreground/50" />
+                  </button>
                 );
               })}
             </div>
@@ -472,6 +495,275 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           </CardContent>
         </Card>
       )}
+
+      {/* Player Detail Dialog */}
+      <PlayerDetailDialog
+        player={selectedPlayer}
+        open={!!selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+        canBuy={canBuy}
+        isUserTeam={isUserTeam}
+        onBuy={(listing) => {
+          setSelectedPlayer(null);
+          setNegotiatingListing(listing);
+        }}
+      />
+    </div>
+  );
+}
+
+// === Infrastructure Item ===
+function InfraItem({ icon, label, sublabel, level, maxLevel, color, extra }: {
+  icon: React.ReactNode; label: string; sublabel: string; level: number; maxLevel: number; color: string; extra?: string;
+}) {
+  return (
+    <div className="bg-muted/20 rounded-lg p-3 space-y-1">
+      <div className="flex items-center gap-1.5">
+        {icon}
+        <span className="text-xs font-semibold">{label}</span>
+      </div>
+      <p className="text-[10px] text-muted-foreground truncate">{sublabel}</p>
+      <div className="flex items-center gap-1">
+        <span className={`text-xs font-bold text-${color}-400`}>Nível {level}</span>
+        {extra && <span className="text-[9px] text-muted-foreground">• {extra}</span>}
+      </div>
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full bg-${color}-500 rounded-full`} style={{ width: `${(level / maxLevel) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+// === Player Detail Dialog ===
+function PlayerDetailDialog({ player, open, onClose, canBuy, isUserTeam, onBuy }: {
+  player: any; open: boolean; onClose: () => void;
+  canBuy: boolean; isUserTeam: boolean;
+  onBuy: (listing: TransferListing) => void;
+}) {
+  if (!player) return null;
+
+  const avgRating = player.seasonRatings?.length > 0
+    ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length)
+    : null;
+
+  const listing = player.listing as TransferListing | null;
+  const loan = player.loan as LoanListing | null;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
+            {player.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Basic Info */}
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">Posição</p>
+            <p className="font-semibold">{posLabels[player.position] || player.position}</p>
+          </div>
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">Idade</p>
+            <p className="font-semibold">{player.age} anos</p>
+          </div>
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">★ Média</p>
+            <p className={`font-bold ${avgRating && avgRating >= 7 ? 'text-emerald-400' : avgRating && avgRating >= 5.5 ? 'text-primary' : 'text-muted-foreground'}`}>
+              {avgRating ? avgRating.toFixed(1) : '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* Career Stats */}
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">Jogos</p>
+            <p className="font-bold text-lg">{player.gamesPlayed ?? 0}</p>
+          </div>
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
+            <p className="font-bold text-lg">{player.goals ?? 0}</p>
+          </div>
+          <div className="bg-muted/30 rounded p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
+            <p className="font-bold text-lg">{player.assists ?? 0}</p>
+          </div>
+        </div>
+
+        {/* Transfer Status */}
+        {listing && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <ShoppingCart className="h-4 w-4 text-amber-400" />
+              <span className="text-xs font-bold text-amber-400">À VENDA</span>
+            </div>
+            <p className="text-xs">Preço: <span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span></p>
+            <p className="text-[10px] text-muted-foreground">OVR {listing.player_overall} • {listing.player_age} anos</p>
+            {canBuy && (
+              <Button size="sm" className="w-full mt-2 gap-1.5" onClick={() => onBuy(listing)}>
+                <Send className="h-3.5 w-3.5" /> Fazer Proposta
+              </Button>
+            )}
+          </div>
+        )}
+
+        {loan && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🔄</span>
+              <span className="text-xs font-bold text-blue-400">DISPONÍVEL PARA EMPRÉSTIMO</span>
+            </div>
+            <p className="text-xs mt-1">Salário: <span className="font-bold">R${(loan.salary / 1000).toFixed(0)}k/mês</span></p>
+          </div>
+        )}
+
+        {!listing && !loan && !isUserTeam && (
+          <p className="text-[10px] text-muted-foreground text-center py-2">Este jogador não está disponível para transferência.</p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// === Negotiation View ===
+function NegotiationView({ listing, budget, clubName, onBack, onSuccess }: {
+  listing: TransferListing; budget: number; clubName: string; onBack: () => void; onSuccess: () => void;
+}) {
+  const [offerSalary, setOfferSalary] = useState(listing.player_data?.salary || 500);
+  const [offerYears, setOfferYears] = useState(2);
+  const [signingBonus, setSigningBonus] = useState(0);
+  const [bonusGoals, setBonusGoals] = useState(0);
+  const [bonusAssists, setBonusAssists] = useState(0);
+  const [bonusGames, setBonusGames] = useState(0);
+  const [bonusTitles, setBonusTitles] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const currentSalary = listing.player_data?.salary || 500;
+
+  const makeOffer = async () => {
+    if (budget < listing.asking_price) { toast.error('Orçamento insuficiente!'); return; }
+    setLoading(true);
+    const res = await supabase.functions.invoke('process-transfer', {
+      body: {
+        action: 'offer',
+        listingId: listing.id,
+        offeredPrice: listing.asking_price,
+        offeredSalary: offerSalary,
+        contractYears: offerYears,
+        bonusGoals, bonusAssists, bonusGames, bonusTitles, signingBonus,
+        clubName,
+      },
+    });
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error || 'Erro ao enviar proposta');
+    } else {
+      toast.success(`Proposta enviada para ${listing.player_name}!`);
+      onSuccess();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={onBack}>
+        <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Perfil
+      </Button>
+
+      <Card className="border-primary/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Send className="h-4 w-4 text-primary" /> Negociar — {listing.player_name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Player header */}
+          <div className="flex items-center gap-2 bg-muted/30 rounded-lg p-3">
+            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
+            <div>
+              <p className="text-sm font-bold">{listing.player_name}</p>
+              <p className="text-xs text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="text-[10px] text-muted-foreground">Preço</p>
+              <p className="font-bold text-sm text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+            </div>
+          </div>
+
+          {/* Price - fixed */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Valor da transferência (R$)</label>
+            <p className="text-lg font-bold text-emerald-400 mt-1">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+            <p className="text-[9px] text-muted-foreground">Preço fixo baseado nos atributos do jogador</p>
+          </div>
+
+          {/* Salary */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">💰 Salário mensal (R$) — atual: R${currentSalary}</label>
+            <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-9 text-xs mt-1" />
+            {offerSalary < currentSalary && <p className="text-[10px] text-orange-400 mt-0.5">⚠️ Salário inferior ao atual — menor chance de aceite</p>}
+          </div>
+
+          {/* Contract */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">📄 Duração do contrato</label>
+            <div className="flex gap-1 mt-1">
+              {[1, 2, 3, 4, 5].map(y => (
+                <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-7 px-3 text-xs" onClick={() => setOfferYears(y)}>
+                  {y} ano{y > 1 ? 's' : ''}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Signing Bonus */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><Gift className="h-3.5 w-3.5" /> Luvas (R$)</label>
+            <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-9 text-xs mt-1" />
+          </div>
+
+          {/* Performance Bonuses */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2">🎯 Bônus por desempenho (R$)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-muted-foreground">⚽ Por gol</label>
+                <Input type="number" value={bonusGoals} onChange={e => setBonusGoals(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground">🅰️ Por assistência</label>
+                <Input type="number" value={bonusAssists} onChange={e => setBonusAssists(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground">🏟️ Por jogo</label>
+                <Input type="number" value={bonusGames} onChange={e => setBonusGames(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground">🏆 Por título</label>
+                <Input type="number" value={bonusTitles} onChange={e => setBonusTitles(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
+              </div>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-primary/10 rounded-lg p-3 text-xs">
+            <p className="font-bold text-primary mb-1">📊 Resumo da proposta:</p>
+            <p>💵 Valor: R${(listing.asking_price / 1000).toFixed(0)}k</p>
+            <p>💰 Salário: R${offerSalary}/mês {offerSalary >= currentSalary ? '✅' : '⚠️'}</p>
+            <p>📄 Contrato: {offerYears} ano{offerYears > 1 ? 's' : ''}</p>
+            {signingBonus > 0 && <p>🎁 Luvas: R${(signingBonus / 1000).toFixed(0)}k</p>}
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-10 text-xs" onClick={onBack}>Cancelar</Button>
+            <Button className="flex-1 h-10 text-xs" onClick={makeOffer} disabled={loading || budget < listing.asking_price}>
+              <Send className="h-3.5 w-3.5 mr-1.5" /> Enviar Proposta
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
