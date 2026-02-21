@@ -118,7 +118,19 @@ export default function AuthPage() {
   // OTP Verification Screen
   if (showOtp) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background p-4">
+      <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
+        {/* Left side - Game Preview Image */}
+        <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
+          <img src={gamePreview} alt="FLM 26 Game Preview" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,40%,8%)] via-transparent to-[hsl(220,40%,8%)]/50" />
+          <div className="relative z-10 p-8 text-center space-y-4">
+            <h2 className="text-3xl font-black text-white drop-shadow-lg">Quase lá! ⚽</h2>
+            <p className="text-white/70 text-sm max-w-sm mx-auto">Confirme seu email e comece a construir seu império no futebol.</p>
+          </div>
+        </div>
+        {/* Right side - OTP Form */}
+        <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl">
           <CardHeader className="text-center space-y-4 pb-2">
             <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
@@ -193,6 +205,7 @@ export default function AuthPage() {
             </Button>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
