@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles } from 'lucide-react';
+import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles, ArrowLeft, Check } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -68,7 +68,6 @@ function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, s
   shirtColor: string; secondaryColor: string; detailColor: string;
   pattern: 'solid' | 'stripes' | 'halves'; label: string; size?: number;
 }) {
-  const dim = size;
   const renderShirtPattern = () => {
     switch (pattern) {
       case 'stripes':
@@ -83,8 +82,8 @@ function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, s
   };
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
+    <div className="flex flex-col items-center gap-1">
+      <div style={{ width: size, height: size * 1.2 }} className="flex-shrink-0">
         <svg viewBox="0 0 100 120" className="w-full h-full">
           <rect x="6" y="8" width="14" height="22" rx="2" fill={secondaryColor} />
           <rect x="80" y="8" width="14" height="22" rx="2" fill={secondaryColor} />
@@ -100,7 +99,7 @@ function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, s
           <rect x="54" y="100" width="16" height="4" rx="1" fill="#222" />
         </svg>
       </div>
-      <span className="text-[8px] font-medium text-muted-foreground">{label}</span>
+      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -119,6 +118,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [uploading, setUploading] = useState(false);
   const [country, setCountry] = useState('BR');
   const [countryOpen, setCountryOpen] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const selectedCountry = countries.find(c => c.code === country);
@@ -140,10 +140,14 @@ export function ClubCreation({ userId, onComplete }: Props) {
     setUploading(false);
   };
 
-  const handleSubmit = () => {
+  const handleGoToConfirm = () => {
     if (!clubName.trim()) { toast.error('Digite o nome do clube'); return; }
     if (clubName.trim().length > 30) { toast.error('Nome do clube muito longo (máx 30 caracteres)'); return; }
     if (stadiumName.trim().length > 40) { toast.error('Nome do estádio muito longo (máx 40 caracteres)'); return; }
+    setShowConfirmation(true);
+  };
+
+  const handleConfirm = () => {
     onComplete({
       name: clubName.trim(),
       stadiumName: stadiumName.trim() || 'Estádio Municipal',
@@ -162,38 +166,94 @@ export function ClubCreation({ userId, onComplete }: Props) {
     badge: 'Badge', crest: 'Brasão',
   };
 
+  const displayStadium = stadiumName.trim() || 'Estádio Municipal';
+  const displayName = clubName.trim() || 'Seu Clube';
+
+  // ===== CONFIRMATION PAGE =====
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
+        <Card className="w-full max-w-md border-primary/20">
+          <CardContent className="pt-6 space-y-6">
+            {/* Title */}
+            <div className="text-center space-y-1">
+              <h2 className="text-lg font-bold">Confirme seu Clube</h2>
+              <p className="text-xs text-muted-foreground">Verifique se está tudo certo antes de criar</p>
+            </div>
+
+            {/* Shield + Name */}
+            <div className="flex flex-col items-center gap-3 py-4 rounded-xl border border-border" style={{ background: `linear-gradient(180deg, ${primaryColor}12, ${secondaryColor}08)` }}>
+              {useCustomLogo && customLogoUrl ? (
+                <img src={customLogoUrl} alt="Logo" className="w-24 h-24 rounded-xl object-cover shadow-lg" />
+              ) : (
+                <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={96} />
+              )}
+              <div className="text-center space-y-0.5">
+                <p className="text-xl font-bold" style={{ color: primaryColor }}>{displayName}</p>
+                <p className="text-sm text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
+              </div>
+            </div>
+
+            {/* Stadium */}
+            <div className="rounded-lg border border-border p-3 flex items-center gap-3">
+              <span className="text-2xl">🏟️</span>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Estádio</p>
+                <p className="font-bold text-sm">{displayStadium}</p>
+              </div>
+            </div>
+
+            {/* Uniforms */}
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold text-center mb-3">Uniformes</p>
+              <div className="flex items-center justify-center gap-8">
+                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={72} />
+                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={72} />
+              </div>
+            </div>
+
+            {/* Colors row */}
+            <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
+                <span className="text-[10px] text-muted-foreground">Principal</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: secondaryColor }} />
+                <span className="text-[10px] text-muted-foreground">Secundária</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: detailColor }} />
+                <span className="text-[10px] text-muted-foreground">Detalhe</span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowConfirmation(false)} className="flex-1 gap-2">
+                <ArrowLeft className="h-4 w-4" /> Voltar e Editar
+              </Button>
+              <Button onClick={handleConfirm} className="flex-1 gap-2">
+                <Check className="h-4 w-4" /> Confirmar e Criar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ===== EDITOR PAGE =====
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
       <Card className="w-full max-w-lg max-h-[95vh] overflow-y-auto border-primary/20">
-        {/* Header with Preview */}
+        {/* Header */}
         <div className="sticky top-0 z-10 bg-card border-b border-border px-4 pt-4 pb-3">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3">
             <img src={flmLogo} alt="FLM 26" className="w-8 h-8" />
             <div>
               <h2 className="text-base font-bold">Criar Seu Clube</h2>
               <p className="text-[10px] text-muted-foreground">Configure a identidade do seu time</p>
-            </div>
-          </div>
-          {/* Live Preview - always visible */}
-          <div className="rounded-xl p-3 border border-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex flex-col items-center gap-0.5">
-                {useCustomLogo && customLogoUrl ? (
-                  <img src={customLogoUrl} alt="Logo" className="w-14 h-14 rounded-lg object-cover" />
-                ) : (
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={56} />
-                )}
-              </div>
-              <div className="text-center flex-1 min-w-0">
-                <p className="font-bold text-sm truncate" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
-                <p className="text-[9px] text-muted-foreground truncate">
-                  {selectedCountry?.flag} {selectedCountry?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uni 1" size={40} />
-                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uni 2" size={40} />
-              </div>
             </div>
           </div>
         </div>
@@ -378,8 +438,36 @@ export function ClubCreation({ userId, onComplete }: Props) {
             )}
           </div>
 
-          <Button onClick={handleSubmit} className="w-full h-10" disabled={!clubName.trim()}>
-            Criar Clube e Começar 🏆
+          {/* Preview */}
+          <div className="rounded-xl p-4 border border-border space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}12, ${secondaryColor}08)` }}>
+            <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest">
+              <Shirt className="h-3 w-3 inline mr-1" /> Prévia do Clube
+            </p>
+            <div className="flex flex-col items-center gap-3">
+              {/* Shield */}
+              <div className="flex flex-col items-center gap-1">
+                {useCustomLogo && customLogoUrl ? (
+                  <img src={customLogoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
+                ) : (
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={64} />
+                )}
+              </div>
+              {/* Name & Info */}
+              <div className="text-center space-y-0.5">
+                <p className="font-bold text-base" style={{ color: primaryColor }}>{displayName}</p>
+                <p className="text-xs text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">🏟️ {displayStadium}</p>
+              </div>
+              {/* Uniforms */}
+              <div className="flex items-center gap-6 pt-1">
+                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={56} />
+                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={56} />
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={handleGoToConfirm} className="w-full h-10" disabled={!clubName.trim()}>
+            Avançar para Confirmação →
           </Button>
         </CardContent>
       </Card>
