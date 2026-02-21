@@ -472,6 +472,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               clubName={game.club.name}
               players={game.club.players}
               budget={game.club.budget}
+              clubShield={game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null}
               onPlayerSold={(playerId, price) => {
                 game.sellPlayer(game.club.players.find(p => p.id === playerId)!);
               }}

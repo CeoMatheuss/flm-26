@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
+import { SellerTeamView } from './SellerTeamView';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
@@ -18,6 +19,7 @@ interface TransferListing {
   id: string;
   seller_id: string;
   seller_club_name: string;
+  seller_shield?: any;
   player_data: any;
   player_name: string;
   player_position: string;
@@ -61,6 +63,7 @@ interface Props {
   clubName: string;
   players: Player[];
   budget: number;
+  clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape?: string } | null;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
   loanedPlayers?: LoanedPlayer[];
@@ -69,13 +72,14 @@ interface Props {
   onListedPlayer?: () => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
   const [listings, setListings] = useState<TransferListing[]>([]);
   const [activeMarketTab, setActiveMarketTab] = useState('browse');
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
+  const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
@@ -163,6 +167,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
         playerAge: player.age,
         askingPrice,
         clubName,
+        sellerShield: clubShield || null,
       },
     });
 
@@ -272,6 +277,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
   const myListings = listings.filter(l => l.seller_id === userId);
   const otherListings = listings.filter(l => l.seller_id !== userId);
   const listablePlayers = players.filter(p => !myListings.some(l => l.player_data?.id === p.id));
+
+  // If viewing seller's team
+  if (viewingSellerId) {
+    return (
+      <SellerTeamView
+        sellerId={viewingSellerId.id}
+        sellerClubName={viewingSellerId.name}
+        sellerShield={viewingSellerId.shield}
+        onBack={() => setViewingSellerId(null)}
+      />
+    );
+  }
 
   // If negotiating, show full negotiation page
   if (offerDialogId) {
@@ -516,18 +533,32 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
           ) : (
             <ScrollArea className="max-h-[60vh]">
               <div className="space-y-1.5">
-                 {otherListings.map(listing => {
+               {otherListings.map(listing => {
                   const pd = listing.player_data;
+                  const shield = listing.seller_shield as any;
                   return (
                   <Card key={listing.id} className="hover:border-primary/30 transition-colors">
                     <CardContent className="p-2 sm:p-3">
                       <div className="flex items-center gap-2">
+                        {/* Seller shield */}
+                        <div className="shrink-0">
+                          {shield ? (
+                            <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={24} />
+                          ) : (
+                            <span className="text-sm">⚽</span>
+                          )}
+                        </div>
                         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-xs truncate">{listing.player_name}</p>
-                          <p className="text-[10px] text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
+                          <button
+                            className="text-[10px] text-primary hover:underline cursor-pointer truncate block"
+                            onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
+                          >
+                            {listing.seller_club_name || 'Clube'}
+                          </button>
                           <p className="text-[9px] text-muted-foreground">
-                            {pd?.gamesPlayed ?? 0}j • ⚽{pd?.goals ?? 0} • 🅰️{pd?.assists ?? 0}
+                            {listing.player_age}a • OVR {listing.player_overall} • {pd?.gamesPlayed ?? 0}j • ⚽{pd?.goals ?? 0} • 🅰️{pd?.assists ?? 0}
                           </p>
                         </div>
                         {listing.transfer_count > 2 && (
@@ -539,14 +570,24 @@ export function OnlineMarketTab({ userId, clubName, players, budget, onPlayerSol
                           <p className="text-[9px] text-muted-foreground">Preço</p>
                           <p className="text-xs font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
                         </div>
-                        <Button
-                          size="sm"
-                          className="h-7 px-2 text-[10px]"
-                          onClick={() => openOfferDialog(listing)}
-                          disabled={loading || budget < listing.asking_price * 0.5}
-                        >
-                          <Send className="h-3 w-3 mr-1" /> Proposta
-                        </Button>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            className="h-6 px-2 text-[9px]"
+                            onClick={() => openOfferDialog(listing)}
+                            disabled={loading || budget < listing.asking_price * 0.5}
+                          >
+                            <Send className="h-3 w-3 mr-0.5" /> Proposta
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[9px]"
+                            onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
+                          >
+                            <Eye className="h-3 w-3 mr-0.5" /> Ver Time
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     // ACTION: LIST PLAYER FOR SALE
     // ═══════════════════════════════════════════════════════════════
     if (action === 'list') {
-      const { playerData, playerName, playerPosition, playerOverall, playerAge, askingPrice, clubName, leagueId } = body;
+      const { playerData, playerName, playerPosition, playerOverall, playerAge, askingPrice, clubName, leagueId, sellerShield } = body;
 
       // Validate inputs
       if (!playerName || typeof playerName !== 'string' || playerName.length > 100) {
@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
         .insert({
           seller_id: userId,
           seller_club_name: (clubName || '').slice(0, 50),
+          seller_shield: sellerShield || null,
           league_id: leagueId || null,
           player_data: playerData,
           player_name: playerName.slice(0, 100),
