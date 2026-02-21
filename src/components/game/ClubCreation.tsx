@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Shield, Palette, Shirt } from 'lucide-react';
+import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -39,6 +38,8 @@ const presetColors = [
   { primary: '#DB2777', secondary: '#2563EB', detail: '#FFD700' },
   { primary: '#0EA5E9', secondary: '#FFFFFF', detail: '#111827' },
   { primary: '#831843', secondary: '#FFD700', detail: '#FFFFFF' },
+  { primary: '#059669', secondary: '#111827', detail: '#FFD700' },
+  { primary: '#4338CA', secondary: '#F59E0B', detail: '#FFFFFF' },
 ];
 
 const countries = [
@@ -62,39 +63,49 @@ const countries = [
   { code: 'SA', name: 'Arábia Saudita', flag: '🇸🇦' },
 ];
 
-function UniformPreview({ primary, secondary, detail, size = 80 }: { primary: string; secondary: string; detail: string; size?: number }) {
+function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, size = 64 }: {
+  shirtColor: string; secondaryColor: string; detailColor: string;
+  pattern: 'solid' | 'stripes' | 'halves'; label: string; size?: number;
+}) {
   const dim = size;
-  const uid = `cp-${Math.random().toString(36).slice(2, 8)}`;
+  const slvColor = secondaryColor;
+
+  const renderShirtPattern = () => {
+    switch (pattern) {
+      case 'stripes':
+        return [28, 36, 44, 52, 60, 68].map(x => (
+          <rect key={x} x={x} y="6" width="4" height="56" fill={secondaryColor} opacity="0.5" />
+        ));
+      case 'halves':
+        return <rect x="50" y="6" width="30" height="56" fill={secondaryColor} opacity="0.6" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
-      <svg viewBox="0 0 100 120" className="w-full h-full">
-        {/* Left sleeve */}
-        <rect x="6" y="8" width="14" height="22" rx="2" fill={secondary} />
-        {/* Right sleeve */}
-        <rect x="80" y="8" width="14" height="22" rx="2" fill={secondary} />
-        {/* Body */}
-        <rect x="20" y="6" width="60" height="56" rx="2" fill={primary} />
-        {/* Stripes pattern */}
-        {[28, 36, 44, 52, 60, 68].map(x => (
-          <rect key={x} x={x} y="6" width="4" height="56" fill={secondary} opacity="0.3" />
-        ))}
-        {/* Collar V */}
-        <polygon points="44,6 50,14 56,6" fill={detail} />
-        {/* Number */}
-        <text x="50" y="44" textAnchor="middle" fontSize="14" fontWeight="bold" fill={detail} fontFamily="monospace">10</text>
-        {/* Shorts */}
-        <rect x="28" y="64" width="20" height="16" rx="2" fill={secondary} />
-        <rect x="52" y="64" width="20" height="16" rx="2" fill={secondary} />
-        {/* Socks */}
-        <rect x="30" y="82" width="16" height="18" rx="2" fill={primary} />
-        <rect x="54" y="82" width="16" height="18" rx="2" fill={primary} />
-        {/* Shoes */}
-        <rect x="30" y="100" width="16" height="4" rx="1" fill="#222" />
-        <rect x="54" y="100" width="16" height="4" rx="1" fill="#222" />
-      </svg>
+    <div className="flex flex-col items-center gap-0.5">
+      <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
+        <svg viewBox="0 0 100 120" className="w-full h-full">
+          <rect x="6" y="8" width="14" height="22" rx="2" fill={slvColor} />
+          <rect x="80" y="8" width="14" height="22" rx="2" fill={slvColor} />
+          <rect x="20" y="6" width="60" height="56" rx="2" fill={shirtColor} />
+          {renderShirtPattern()}
+          <polygon points="44,6 50,14 56,6" fill={detailColor} />
+          <text x="50" y="44" textAnchor="middle" fontSize="14" fontWeight="bold" fill={detailColor} fontFamily="monospace">10</text>
+          <rect x="28" y="64" width="20" height="16" rx="2" fill={secondaryColor} />
+          <rect x="52" y="64" width="20" height="16" rx="2" fill={secondaryColor} />
+          <rect x="30" y="82" width="16" height="18" rx="2" fill={shirtColor} />
+          <rect x="54" y="82" width="16" height="18" rx="2" fill={shirtColor} />
+          <rect x="30" y="100" width="16" height="4" rx="1" fill="#222" />
+          <rect x="54" y="100" width="16" height="4" rx="1" fill="#222" />
+        </svg>
+      </div>
+      <span className="text-[8px] font-medium text-muted-foreground">{label}</span>
     </div>
   );
 }
+
 export function ClubCreation({ userId, onComplete }: Props) {
   const [clubName, setClubName] = useState('');
   const [stadiumName, setStadiumName] = useState('');
@@ -107,7 +118,10 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [country, setCountry] = useState('BR');
+  const [countryOpen, setCountryOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const selectedCountry = countries.find(c => c.code === country);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -165,31 +179,42 @@ export function ClubCreation({ userId, onComplete }: Props) {
             <Input placeholder="Ex: Atlético Estrela" value={clubName} onChange={e => setClubName(e.target.value)} maxLength={30} className="h-9 text-sm" />
           </div>
 
-          {/* Country - Select dropdown */}
+          {/* Country - Button that opens scrollable panel */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1.5">🌍 País do Clube</Label>
-            <Select value={country} onValueChange={setCountry}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Escolha o país">
-                  {countries.find(c => c.code === country) && (
-                    <span className="flex items-center gap-2">
-                      <span>{countries.find(c => c.code === country)?.flag}</span>
-                      <span>{countries.find(c => c.code === country)?.name}</span>
-                    </span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="max-h-[240px]">
-                {countries.map(c => (
-                  <SelectItem key={c.code} value={c.code} className="text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="text-lg">{c.flag}</span>
-                      <span>{c.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-semibold flex items-center gap-1.5"><Globe className="h-3 w-3" /> País do Clube</Label>
+            <button
+              onClick={() => setCountryOpen(!countryOpen)}
+              className="w-full h-10 px-3 rounded-lg border border-border bg-background flex items-center justify-between hover:border-primary/50 transition-colors"
+            >
+              <span className="flex items-center gap-2 text-sm">
+                <span className="text-lg">{selectedCountry?.flag}</span>
+                <span className="font-medium">{selectedCountry?.name}</span>
+              </span>
+              {countryOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </button>
+            {countryOpen && (
+              <div className="border border-border rounded-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                <ScrollArea className="h-[180px]">
+                  <div className="p-1 space-y-0.5">
+                    {countries.map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => { setCountry(c.code); setCountryOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                          country === c.code
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        <span className="text-lg">{c.flag}</span>
+                        <span>{c.name}</span>
+                        {country === c.code && <span className="ml-auto text-xs">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </div>
 
           {/* Stadium Name */}
@@ -292,31 +317,44 @@ export function ClubCreation({ userId, onComplete }: Props) {
             </div>
           </div>
 
-          {/* Preview: Shield + Uniform side by side */}
+          {/* Preview: Shield + Uniform 1 + Uniform 2 */}
           <div className="border border-border rounded-xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
             <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1.5">
               <Shirt className="h-3 w-3" /> Prévia do Clube
             </p>
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center justify-center gap-4 sm:gap-6">
               {/* Shield */}
               <div className="flex flex-col items-center gap-1">
                 {useCustomLogo && customLogoUrl ? (
-                  <img src={customLogoUrl} alt="Logo" className="w-[72px] h-[72px] rounded-lg object-cover" />
+                  <img src={customLogoUrl} alt="Logo" className="w-[64px] h-[64px] rounded-lg object-cover" />
                 ) : (
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} size={72} />
+                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} size={64} />
                 )}
-                <span className="text-[9px] text-muted-foreground">Escudo</span>
+                <span className="text-[8px] text-muted-foreground">Escudo</span>
               </div>
-              {/* Uniform */}
-              <div className="flex flex-col items-center gap-1">
-                <UniformPreview primary={primaryColor} secondary={secondaryColor} detail={detailColor} size={72} />
-                <span className="text-[9px] text-muted-foreground">Uniforme</span>
-              </div>
+              {/* Uniform 1 - Home */}
+              <KitPreview
+                shirtColor={primaryColor}
+                secondaryColor={secondaryColor}
+                detailColor={detailColor}
+                pattern="stripes"
+                label="Uniforme 1"
+                size={60}
+              />
+              {/* Uniform 2 - Away (inverted colors) */}
+              <KitPreview
+                shirtColor={secondaryColor}
+                secondaryColor={primaryColor}
+                detailColor={detailColor}
+                pattern="solid"
+                label="Uniforme 2"
+                size={60}
+              />
             </div>
             <div className="text-center">
               <p className="font-bold text-sm sm:text-base" style={{ color: primaryColor }}>{clubName || 'Seu Clube'}</p>
               <p className="text-[10px] text-muted-foreground">
-                {countries.find(c => c.code === country)?.flag} {countries.find(c => c.code === country)?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
+                {selectedCountry?.flag} {selectedCountry?.name} • 🏟️ {stadiumName || 'Estádio Municipal'}
               </p>
             </div>
           </div>
