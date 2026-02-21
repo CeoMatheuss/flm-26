@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, Trophy, Landmark, Star, ShoppingCart, Building2, Heart, GraduationCap, Home } from 'lucide-react';
+import { Users, Trophy, Landmark, Star, ShoppingCart, Building2, Heart, GraduationCap, Home, Calendar } from 'lucide-react';
 import { ShieldCrest, ShieldShape } from './ShieldCrest';
 import { generatePlayer } from '@/utils/playerGenerator';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +49,10 @@ interface ClubMeta {
   country?: string;
   reputation?: number;
   fans?: number;
+  foundedSeason?: number;
+  ownerName?: string;
+  motto?: string;
+  trophies?: { title: string; season: number; date: string }[];
 }
 
 export function ClubProfilePage({ member, members, userId, leagueMatches, leagueSquads, clubShield, onBack }: Props) {
@@ -80,7 +83,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     if (!isBot) fetchListings();
   }, [member.user_id, isBot]);
 
-  // Parse squad data - now supports { players, clubMeta } format
+  // Parse squad data
   const { squad, clubMeta } = useMemo(() => {
     if (isBot) {
       const strength = Math.max(40, Math.min(85, member.reputation));
@@ -101,7 +104,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         trainingCenterLevel: Math.max(0, Math.min(5, Math.floor(member.reputation / 25))),
         physiotherapyLevel: Math.max(0, Math.min(4, Math.floor(member.reputation / 30))),
         youthAcademyLevel: Math.max(0, Math.min(10, Math.floor(member.reputation / 10))),
-        fans: Math.floor(member.reputation * 1000),
+        fans: 500,
       };
       return { squad: players, clubMeta: botMeta };
     }
@@ -109,7 +112,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     // Real player - check league squads
     const squadData = leagueSquads.find(s => s.user_id === member.user_id);
     if (squadData?.squad_data) {
-      // New format: { players, clubMeta }
       const raw = squadData.squad_data as any;
       if (raw.players && Array.isArray(raw.players)) {
         const players = raw.players.map((p: any) => ({
@@ -123,7 +125,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         })) as Player[];
         return { squad: players, clubMeta: (raw.clubMeta || {}) as ClubMeta };
       }
-      // Old format: array of players
       if (Array.isArray(raw)) {
         const players = raw.map((p: any) => ({
           id: p.id || crypto.randomUUID(),
@@ -148,7 +149,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     return (b.overall || 0) - (a.overall || 0);
   });
 
-  // Determine starters (first 11 by position)
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
     const byPos: Record<string, number> = {};
@@ -163,11 +163,9 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     return ids;
   }, [sortedPlayers]);
 
-  // Stats
   const sg = member.goals_for - member.goals_against;
   const winRate = member.played > 0 ? Math.round((member.wins / member.played) * 100) : 0;
 
-  // Last 5 form
   const last5 = useMemo(() => {
     const teamMatches = leagueMatches
       .filter(m => m.status === 'played' && (m.home_user_id === member.user_id || m.away_user_id === member.user_id))
@@ -182,14 +180,12 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     });
   }, [leagueMatches, member.user_id]);
 
-  // Match history
   const matchHistory = useMemo(() => {
     return leagueMatches
       .filter(m => m.status === 'played' && (m.home_user_id === member.user_id || m.away_user_id === member.user_id))
       .sort((a, b) => (a.round || 0) - (b.round || 0));
   }, [leagueMatches, member.user_id]);
 
-  // Shield data
   const shieldData = isUserTeam && clubShield ? clubShield : (clubMeta.primaryColor ? {
     primaryColor: clubMeta.primaryColor,
     secondaryColor: clubMeta.secondaryColor || '#ffffff',
@@ -198,13 +194,10 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
   } : null);
 
   const stadiumCapacity = clubMeta.stadiumLevel ? getStadiumCapacity(clubMeta.stadiumLevel) : null;
+  const trophies = clubMeta.trophies || [];
 
   return (
     <div className="space-y-4">
-      <Button variant="outline" size="sm" onClick={onBack} className="gap-1.5">
-        <ArrowLeft className="h-3.5 w-3.5" /> Voltar à Tabela
-      </Button>
-
       {/* Club Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardContent className="p-4 sm:p-6">
@@ -233,12 +226,33 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
               </h2>
               <p className="text-xs text-muted-foreground">
                 Reputação: {clubMeta.reputation ?? member.reputation} • {squad.length} jogadores
-                {clubMeta.fans ? ` • ${(clubMeta.fans / 1000).toFixed(0)}k torcedores` : ''}
+                {clubMeta.fans ? ` • ${clubMeta.fans.toLocaleString()} torcedores` : ''}
               </p>
               {clubMeta.country && (
                 <p className="text-[10px] text-muted-foreground mt-0.5">🌍 {clubMeta.country}</p>
               )}
             </div>
+          </div>
+
+          {/* Foundation & Owner */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {clubMeta.foundedSeason && (
+              <div className="flex items-center gap-1 bg-muted/30 rounded px-2 py-1">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground">Fundado na Temporada {clubMeta.foundedSeason}</span>
+              </div>
+            )}
+            {clubMeta.ownerName && (
+              <div className="flex items-center gap-1 bg-muted/30 rounded px-2 py-1">
+                <Star className="h-3 w-3 text-amber-400" />
+                <span className="text-[10px] text-muted-foreground">Dono: {clubMeta.ownerName}</span>
+              </div>
+            )}
+            {clubMeta.motto && (
+              <div className="bg-muted/30 rounded px-2 py-1">
+                <span className="text-[10px] text-muted-foreground italic">"{clubMeta.motto}"</span>
+              </div>
+            )}
           </div>
 
           {/* Stats Grid */}
@@ -291,6 +305,30 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         </CardContent>
       </Card>
 
+      {/* Trophies */}
+      {trophies.length > 0 && (
+        <Card className="border-yellow-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" /> Troféus ({trophies.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {trophies.map((t, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-amber-500/5 rounded-lg p-2.5 border border-yellow-500/20">
+                  <span className="text-xl">🏆</span>
+                  <div>
+                    <p className="text-xs font-semibold">{t.title}</p>
+                    <p className="text-[10px] text-muted-foreground">Temporada {t.season} • {t.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Infrastructure */}
       {(clubMeta.stadiumLevel != null || clubMeta.trainingCenterLevel != null) && (
         <Card className="border-amber-500/20">
@@ -301,7 +339,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              {/* Stadium */}
               <div className="bg-muted/20 rounded-lg p-3 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <Home className="h-3.5 w-3.5 text-emerald-400" />
@@ -317,7 +354,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 </div>
               </div>
 
-              {/* Training Center */}
               <div className="bg-muted/20 rounded-lg p-3 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <Building2 className="h-3.5 w-3.5 text-blue-400" />
@@ -330,7 +366,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 </div>
               </div>
 
-              {/* Physiotherapy */}
               <div className="bg-muted/20 rounded-lg p-3 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <Heart className="h-3.5 w-3.5 text-rose-400" />
@@ -343,7 +378,6 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 </div>
               </div>
 
-              {/* Youth Academy */}
               <div className="bg-muted/20 rounded-lg p-3 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <GraduationCap className="h-3.5 w-3.5 text-purple-400" />

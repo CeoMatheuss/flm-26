@@ -344,6 +344,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       country: game.club.country,
       reputation: game.club.reputation,
       fans: game.club.fans,
+      foundedSeason: game.clubProfile.foundedSeason,
+      ownerName: game.clubProfile.ownerName,
+      motto: game.clubProfile.motto,
+      trophies: game.clubProfile.trophies || [],
     };
     // Sync immediately on mount and then every 10 seconds
     mp.syncSquad(game.club.players, game.tactics, clubMeta);
