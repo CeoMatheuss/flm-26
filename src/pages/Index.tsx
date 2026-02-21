@@ -414,7 +414,31 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               trainingLevel={game.infrastructure.trainingCenter.level}
               onRest={game.restPlayer}
               onRenewContract={game.renewContract}
-              onListForSale={game.listForSale}
+              onListForSale={async (playerId: string) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                if (!player) return;
+                if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para vender!'); return; }
+                const askingPrice = (await import('@/utils/playerGenerator')).getPlayerValue(player);
+                const res = await supabase.functions.invoke('process-transfer', {
+                  body: {
+                    action: 'list',
+                    playerData: player,
+                    playerName: player.name,
+                    playerPosition: player.position,
+                    playerOverall: player.overall,
+                    playerAge: player.age,
+                    askingPrice,
+                    clubName: game.club.name,
+                    sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+                  },
+                });
+                if (res.error || res.data?.error) {
+                  toast.error(res.data?.error || 'Erro ao listar jogador');
+                } else {
+                  toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
+                  game.listForSale(playerId);
+                }
+              }}
               onLoanOut={game.loanOutPlayer}
               onChangeNumber={game.changeShirtNumber}
               canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
