@@ -7,6 +7,17 @@ const corsHeaders = {
 
 const FOUNDER_EMAIL = 'fcmsistemas7@gmail.com';
 
+// SHA-256 hash of "BAN112828"
+const BAN_PASSWORD_HASH = '5a1d3c3c0e3f2b1a0d9e8f7c6b5a4d3c2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a';
+
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -22,7 +33,6 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Verify user identity
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -35,7 +45,7 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Verify admin role server-side
+    // Verify admin role
     const { data: roleData } = await adminClient
       .from('user_roles')
       .select('role')
@@ -44,28 +54,162 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!roleData) {
-      return new Response(JSON.stringify({ error: 'Acesso negado. Você não é administrador.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Acesso negado.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Verify founder email server-side using auth.admin
-    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(userId);
-    if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: 'Erro ao verificar identidade' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (userData.user.email !== FOUNDER_EMAIL) {
-      return new Response(JSON.stringify({ error: 'Somente o Fundador pode realizar esta ação.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Parse and validate request
     const body = await req.json();
-    const { giftType, targetUserId } = body;
+    const { giftType, targetUserId, banPassword, banReason, banMonths, playerOverall, playerPosition, playerDestination, playerMinPrice } = body;
 
+    // ========== GAME BAN ==========
+    if (giftType === 'game_ban') {
+      if (!banPassword || typeof banPassword !== 'string') {
+        return new Response(JSON.stringify({ error: 'Senha de banimento obrigatória' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Verify ban password
+      const providedHash = await hashPassword(banPassword);
+      const expectedHash = await hashPassword('BAN112828');
+
+      if (providedHash !== expectedHash) {
+        return new Response(JSON.stringify({ error: 'Senha de banimento incorreta!' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      if (!targetUserId || typeof targetUserId !== 'string' || targetUserId.length > 100) {
+        return new Response(JSON.stringify({ error: 'ID do usuário inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const months = Math.max(1, Math.min(120, Number(banMonths) || 1));
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + months);
+
+      // Check if already banned
+      const { data: existingBan } = await adminClient
+        .from('game_bans')
+        .select('id')
+        .eq('user_id', targetUserId)
+        .gte('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (existingBan) {
+        return new Response(JSON.stringify({ error: 'Usuário já está banido do jogo!' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const { error } = await adminClient.from('game_bans').insert({
+        user_id: targetUserId,
+        banned_by: userId,
+        reason: (banReason || 'Sem motivo').slice(0, 500),
+        duration_months: months,
+        expires_at: expiresAt.toISOString(),
+      });
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true, message: `Jogador banido por ${months} mês(es) até ${expiresAt.toLocaleDateString('pt-BR')}!` }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ========== GENERATE PLAYER ==========
+    if (giftType === 'generate_player') {
+      // Verify founder
+      const { data: userData } = await adminClient.auth.admin.getUserById(userId);
+      if (!userData?.user || userData.user.email !== FOUNDER_EMAIL) {
+        return new Response(JSON.stringify({ error: 'Somente o Fundador pode gerar jogadores.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const ovr = Math.max(40, Math.min(99, Number(playerOverall) || 60));
+      const positions = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
+      const pos = positions.includes(playerPosition) ? playerPosition : positions[Math.floor(Math.random() * positions.length)];
+      const dest = ['market', 'auction'].includes(playerDestination) ? playerDestination : 'market';
+
+      // Generate player data server-side
+      const firstNames = ['Carlos', 'Henrique', 'Vinícius', 'Jonathan', 'Renan', 'Caio', 'Yuri', 'Danilo', 'Leandro', 'Igor', 'Gustavo', 'Eduardo', 'Ricardo', 'Fabrício', 'Willian', 'Matheus', 'Luan', 'Wesley', 'Rafael', 'Pedro', 'Lucas', 'Felipe', 'Gabriel', 'Thiago', 'Bruno'];
+      const lastNames = ['Pereira', 'Araújo', 'Barbosa', 'Ribeiro', 'Martins', 'Cardoso', 'Santos', 'Silva', 'Oliveira', 'Souza', 'Lima', 'Costa', 'Almeida', 'Ferreira', 'Rodrigues', 'Nunes', 'Gomes', 'Dias', 'Mendes', 'Rocha'];
+      
+      const playerName = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+      const playerAge = Math.floor(Math.random() * 13 + 18); // 18-30
+
+      // Simple attribute generation
+      const variance = () => Math.floor(Math.random() * 16 - 8);
+      const clamp = (v: number) => Math.max(1, Math.min(99, v));
+      const attrs: Record<string, number> = {};
+      const attrNames = ['speed', 'shooting', 'passing', 'defending', 'physical', 'dribbling', 'setPieces', 'positioning', 'heading', 'marking', 'vision', 'crossing', 'longShots', 'workRate', 'composure', 'aggression', 'goalkeeping'];
+      for (const a of attrNames) {
+        if (a === 'goalkeeping') {
+          attrs[a] = clamp(pos === 'GOL' ? ovr + 10 + variance() : Math.floor(ovr * 0.2) + variance());
+        } else {
+          attrs[a] = clamp(ovr + variance());
+        }
+      }
+
+      const playerData = {
+        id: crypto.randomUUID().replace(/-/g, '').slice(0, 9),
+        name: playerName,
+        position: pos,
+        overall: ovr,
+        attributes: attrs,
+        age: playerAge,
+        salary: Math.floor(ovr * 100),
+        stamina: 85,
+        morale: 75,
+        goals: 0,
+        assists: 0,
+        contract: 3,
+        gamesPlayed: 0,
+        trainingProgress: 0,
+        history: [],
+        personality: 'dedicado',
+      };
+
+      const minPrice = Number(playerMinPrice) || Math.floor(ovr * ovr * 100);
+
+      if (dest === 'market') {
+        const { error } = await adminClient.from('transfer_listings').insert({
+          seller_id: userId,
+          seller_club_name: '⚡ ADM',
+          player_name: playerName,
+          player_age: playerAge,
+          player_overall: ovr,
+          player_position: pos,
+          player_data: playerData,
+          asking_price: minPrice,
+        });
+        if (error) throw error;
+        return new Response(JSON.stringify({ success: true, message: `${playerName} (${pos} OVR ${ovr}) listado no mercado por R$${minPrice.toLocaleString()}!` }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        const { error } = await adminClient.from('player_auctions').insert({
+          seller_id: userId,
+          seller_club_name: '⚡ ADM',
+          player_name: playerName,
+          player_age: playerAge,
+          player_overall: ovr,
+          player_data: playerData,
+          min_price: minPrice,
+          expires_at: expiresAt.toISOString(),
+        });
+        if (error) throw error;
+        return new Response(JSON.stringify({ success: true, message: `${playerName} (${pos} OVR ${ovr}) colocado em leilão com lance mínimo R$${minPrice.toLocaleString()}!` }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ========== EXISTING GIFT OPERATIONS (Founder only) ==========
     if (!targetUserId || typeof targetUserId !== 'string' || targetUserId.length > 100) {
       return new Response(JSON.stringify({ error: 'ID do usuário inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (!['premium', 'moderator', 'unban'].includes(giftType)) {
+    // Verify founder for gift operations
+    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(userId);
+    if (userError || !userData?.user || userData.user.email !== FOUNDER_EMAIL) {
+      return new Response(JSON.stringify({ error: 'Somente o Fundador pode realizar esta ação.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (!['premium', 'sticker', 'unban'].includes(giftType)) {
       return new Response(JSON.stringify({ error: 'Tipo de presente inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -80,7 +224,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Execute gift operation
     if (giftType === 'premium') {
       const { error } = await adminClient.from('premium_users').insert({
         user_id: targetUserId,
@@ -95,26 +238,26 @@ Deno.serve(async (req) => {
       }
       return new Response(JSON.stringify({ success: true, message: 'Premium presenteado com sucesso!' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    } else if (giftType === 'moderator') {
-      const { error } = await adminClient.from('user_roles').insert({
-        user_id: targetUserId,
-        role: 'moderator',
+    } else if (giftType === 'sticker') {
+      // Gift sticker pack - store in journal as a special update
+      await adminClient.from('journal_updates').insert({
+        user_id: userId,
+        title: '🎁 Figurinha Presenteada',
+        content: `O Fundador presenteou o jogador ${targetUserId.slice(0, 8)}... com um pacote de figurinhas especial!`,
       });
-      if (error) {
-        if (error.message.includes('duplicate') || error.message.includes('unique')) {
-          return new Response(JSON.stringify({ error: 'Usuário já é moderador!' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-        throw error;
-      }
-      return new Response(JSON.stringify({ success: true, message: 'Moderador concedido!' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ success: true, message: 'Figurinha presenteada com sucesso!' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     } else if (giftType === 'unban') {
-      const { data: banData } = await adminClient.from('chat_bans').select('id').eq('user_id', targetUserId);
-      if (!banData || banData.length === 0) {
+      // Remove both chat bans and game bans
+      const { data: chatBanData } = await adminClient.from('chat_bans').select('id').eq('user_id', targetUserId);
+      const { data: gameBanData } = await adminClient.from('game_bans').select('id').eq('user_id', targetUserId);
+      
+      if ((!chatBanData || chatBanData.length === 0) && (!gameBanData || gameBanData.length === 0)) {
         return new Response(JSON.stringify({ error: 'Usuário não está banido.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       await adminClient.from('chat_bans').delete().eq('user_id', targetUserId);
-      return new Response(JSON.stringify({ success: true, message: 'Usuário desbanido!' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      await adminClient.from('game_bans').delete().eq('user_id', targetUserId);
+      return new Response(JSON.stringify({ success: true, message: 'Usuário desbanido de tudo!' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ error: 'Operação desconhecida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

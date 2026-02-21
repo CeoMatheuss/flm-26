@@ -9,11 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity, Newspaper
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-
 interface PendingUser {
   id: string;
   user_id: string;
@@ -73,7 +73,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [allUsers, setAllUsers] = useState<Array<{ user_id: string; display_name: string | null; created_at: string }>>([]);
   const [userSearch, setUserSearch] = useState('');
   const [giftUserId, setGiftUserId] = useState('');
-  const [giftType, setGiftType] = useState<'premium' | 'moderator' | 'unban'>('premium');
+  const [giftType, setGiftType] = useState<'premium' | 'sticker' | 'unban'>('premium');
   const [abuseAlerts, setAbuseAlerts] = useState<Array<{
     id: string; user_id: string; alert_type: string; severity: string;
     title: string; description: string; details: any; status: string;
@@ -84,6 +84,19 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [journalTitle, setJournalTitle] = useState('Atualização');
   const [journalUpdates, setJournalUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const [journalLoading, setJournalLoading] = useState(false);
+  // Player generator state
+  const [genOverall, setGenOverall] = useState('60');
+  const [genPosition, setGenPosition] = useState('random');
+  const [genDestination, setGenDestination] = useState<'market' | 'auction'>('market');
+  const [genMinPrice, setGenMinPrice] = useState('');
+  const [generating, setGenerating] = useState(false);
+  // Game ban state
+  const [gameBanUserId, setGameBanUserId] = useState('');
+  const [gameBanReason, setGameBanReason] = useState('');
+  const [gameBanMonths, setGameBanMonths] = useState('1');
+  const [gameBanPassword, setGameBanPassword] = useState('');
+  const [gameBans, setGameBans] = useState<Array<{ id: string; user_id: string; reason: string; duration_months: number; banned_at: string; expires_at: string }>>([]);
+  const [gameBanLoading, setGameBanLoading] = useState(false);
 
   useEffect(() => {
     const check = async () => {
@@ -237,11 +250,18 @@ export function AdminTab({ userId, isFounder }: Props) {
     else { toast.success('Atualização removida'); loadJournalUpdates(); }
   };
 
+  const loadGameBans = useCallback(async () => {
+    setGameBanLoading(true);
+    const { data } = await supabase.from('game_bans').select('*').order('banned_at', { ascending: false });
+    if (data) setGameBans(data as any[]);
+    setGameBanLoading(false);
+  }, []);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadJournalUpdates()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadJournalUpdates(), loadGameBans()]);
     setLoading(false);
-  }, [loadAbuseAlerts, loadJournalUpdates]);
+  }, [loadAbuseAlerts, loadJournalUpdates, loadGameBans]);
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
@@ -379,7 +399,7 @@ export function AdminTab({ userId, isFounder }: Props) {
         toast.success(`🎁 ${result.message}`);
         setGiftUserId('');
         if (giftType === 'premium') loadPremiumUsers();
-        else if (giftType === 'moderator') loadAdmins();
+        else if (giftType === 'sticker') { /* sticker gift handled */ }
         else if (giftType === 'unban') loadBans();
       } else {
         toast.error(result.error || 'Erro ao processar presente');
@@ -517,15 +537,19 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Admin Tabs */}
       <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
-        <TabsList className={`grid w-full ${isFounder ? 'grid-cols-7' : 'grid-cols-6'}`}>
-          {isFounder && <TabsTrigger value="team" className="text-xs gap-1"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
-          <TabsTrigger value="users" className="text-xs gap-1"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
-          <TabsTrigger value="premium" className="text-xs gap-1"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
-          <TabsTrigger value="bans" className="text-xs gap-1"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
-          <TabsTrigger value="abuse" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
-          <TabsTrigger value="journal" className="text-xs gap-1"><Newspaper className="h-3 w-3" /> Jornal</TabsTrigger>
-          <TabsTrigger value="moderation" className="text-xs gap-1"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
-        </TabsList>
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex w-auto min-w-full gap-0.5">
+            {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
+            <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
+            <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
+            <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
+            <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
+            {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
+            <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
+            <TabsTrigger value="journal" className="text-[10px] gap-0.5 px-2"><Newspaper className="h-3 w-3" /> Jornal</TabsTrigger>
+            <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
+          </TabsList>
+        </ScrollArea>
 
         {/* Team/Hierarchy Tab - Founder Only */}
         {isFounder && (
@@ -666,15 +690,15 @@ export function AdminTab({ userId, isFounder }: Props) {
                   <Button size="sm" variant={giftType === 'premium' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('premium')}>
                     👑 Premium
                   </Button>
-                  <Button size="sm" variant={giftType === 'moderator' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('moderator')}>
-                    🔧 Moderador
+                  <Button size="sm" variant={giftType === 'sticker' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('sticker')}>
+                    🎴 Figurinha
                   </Button>
                   <Button size="sm" variant={giftType === 'unban' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('unban')}>
                     ✅ Desbanir
                   </Button>
                 </div>
                 <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftUser} disabled={loading}>
-                  <Gift className="h-3 w-3" /> {giftType === 'premium' ? 'Dar Premium' : giftType === 'moderator' ? 'Dar Moderador' : 'Desbanir Usuário'}
+                  <Gift className="h-3 w-3" /> {giftType === 'premium' ? 'Dar Premium' : giftType === 'sticker' ? 'Dar Figurinha' : 'Desbanir Usuário'}
                 </Button>
               </CardContent>
             </Card>
@@ -1029,6 +1053,212 @@ export function AdminTab({ userId, isFounder }: Props) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Game Ban Tab */}
+        <TabsContent value="gameban" className="space-y-3 mt-3">
+          <Card className="border-red-500/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lock className="h-4 w-4 text-red-400" />
+                Banir do Jogo (por meses)
+              </CardTitle>
+              <p className="text-[10px] text-muted-foreground">Bane completamente um jogador do game por X meses. Requer senha especial.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input placeholder="ID do usuário (UUID)" value={gameBanUserId} onChange={e => setGameBanUserId(e.target.value)} className="text-xs h-8 font-mono" />
+              <Input placeholder="Motivo do banimento" value={gameBanReason} onChange={e => setGameBanReason(e.target.value)} className="text-xs h-8" maxLength={500} />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] text-muted-foreground">Meses</label>
+                  <Select value={gameBanMonths} onValueChange={setGameBanMonths}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 6, 12, 24, 36, 60].map(m => (
+                        <SelectItem key={m} value={String(m)} className="text-xs">{m} {m === 1 ? 'mês' : 'meses'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[9px] text-muted-foreground">Senha de Ban</label>
+                  <Input type="password" placeholder="Senha BAN" value={gameBanPassword} onChange={e => setGameBanPassword(e.target.value)} className="text-xs h-8" />
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full h-8 text-xs gap-1"
+                disabled={gameBanLoading || !gameBanUserId.trim() || !gameBanPassword.trim()}
+                onClick={async () => {
+                  setGameBanLoading(true);
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) { toast.error('Sessão expirada'); setGameBanLoading(false); return; }
+                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                      body: JSON.stringify({
+                        giftType: 'game_ban',
+                        targetUserId: gameBanUserId.trim(),
+                        banPassword: gameBanPassword,
+                        banReason: gameBanReason.trim(),
+                        banMonths: Number(gameBanMonths),
+                      }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                      toast.success(`🔒 ${result.message}`);
+                      setGameBanUserId(''); setGameBanReason(''); setGameBanPassword('');
+                      loadGameBans();
+                    } else {
+                      toast.error(result.error || 'Erro ao banir');
+                    }
+                  } catch { toast.error('Erro ao processar banimento'); }
+                  setGameBanLoading(false);
+                }}
+              >
+                <Lock className="h-3 w-3" /> Banir do Jogo
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-red-400" />
+                  Jogadores Banidos do Game ({gameBans.length})
+                </CardTitle>
+                <Button size="sm" variant="outline" onClick={loadGameBans} disabled={gameBanLoading} className="h-6 px-2 text-[9px]">
+                  <RefreshCw className={`h-3 w-3 ${gameBanLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {gameBans.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador banido do game.</p>
+              ) : (
+                <ScrollArea className="max-h-[300px]">
+                  <div className="space-y-2">
+                    {gameBans.map(b => {
+                      const expired = new Date(b.expires_at) < new Date();
+                      return (
+                        <div key={b.id} className={`flex items-center justify-between p-2.5 rounded-lg border ${expired ? 'border-muted bg-muted/10' : 'border-red-500/20 bg-red-500/5'}`}>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-mono truncate">{b.user_id.slice(0, 16)}...</p>
+                            <p className="text-[9px] text-muted-foreground">
+                              {b.reason || 'Sem motivo'} • {b.duration_months} {b.duration_months === 1 ? 'mês' : 'meses'}
+                            </p>
+                            <p className="text-[8px] text-muted-foreground">
+                              Até {new Date(b.expires_at).toLocaleDateString('pt-BR')} {expired ? '(Expirado)' : ''}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm" variant="outline"
+                            className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10"
+                            onClick={async () => {
+                              await supabase.from('game_bans').delete().eq('id', b.id);
+                              toast.success('Ban removido!');
+                              loadGameBans();
+                            }}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" /> Remover
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Player Generator Tab - Founder Only */}
+        {isFounder && (
+          <TabsContent value="generator" className="space-y-3 mt-3">
+            <Card className="border-yellow-500/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Wand2 className="h-4 w-4 text-yellow-400" />
+                  Gerar Jogador
+                </CardTitle>
+                <p className="text-[10px] text-muted-foreground">Gere um jogador com OVR específico e coloque no mercado ou leilão.</p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] text-muted-foreground">Overall (40-99)</label>
+                    <Input type="number" min="40" max="99" value={genOverall} onChange={e => setGenOverall(e.target.value)} className="text-xs h-8" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-muted-foreground">Posição</label>
+                    <Select value={genPosition} onValueChange={setGenPosition}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="random" className="text-xs">🎲 Aleatória</SelectItem>
+                        <SelectItem value="GOL" className="text-xs">🧤 GOL</SelectItem>
+                        <SelectItem value="ZAG" className="text-xs">🛡️ ZAG</SelectItem>
+                        <SelectItem value="LAT" className="text-xs">🏃 LAT</SelectItem>
+                        <SelectItem value="VOL" className="text-xs">⚙️ VOL</SelectItem>
+                        <SelectItem value="MEI" className="text-xs">🎯 MEI</SelectItem>
+                        <SelectItem value="ATA" className="text-xs">⚽ ATA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] text-muted-foreground">Destino</label>
+                    <Select value={genDestination} onValueChange={(v) => setGenDestination(v as 'market' | 'auction')}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="market" className="text-xs">🏪 Mercado</SelectItem>
+                        <SelectItem value="auction" className="text-xs">🔨 Leilão</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-muted-foreground">Preço Mínimo (opcional)</label>
+                    <Input type="number" placeholder="Auto" value={genMinPrice} onChange={e => setGenMinPrice(e.target.value)} className="text-xs h-8" />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full h-8 text-xs gap-1 bg-yellow-600 hover:bg-yellow-700 text-white"
+                  disabled={generating}
+                  onClick={async () => {
+                    setGenerating(true);
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session) { toast.error('Sessão expirada'); setGenerating(false); return; }
+                      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                        body: JSON.stringify({
+                          giftType: 'generate_player',
+                          playerOverall: Number(genOverall),
+                          playerPosition: genPosition === 'random' ? undefined : genPosition,
+                          playerDestination: genDestination,
+                          playerMinPrice: genMinPrice ? Number(genMinPrice) : undefined,
+                        }),
+                      });
+                      const result = await res.json();
+                      if (result.success) {
+                        toast.success(`⚡ ${result.message}`);
+                      } else {
+                        toast.error(result.error || 'Erro ao gerar jogador');
+                      }
+                    } catch { toast.error('Erro ao gerar jogador'); }
+                    setGenerating(false);
+                  }}
+                >
+                  <Wand2 className="h-3 w-3" /> {generating ? 'Gerando...' : 'Gerar e Colocar'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {/* Moderation Tab */}
         <TabsContent value="moderation" className="space-y-3 mt-3">

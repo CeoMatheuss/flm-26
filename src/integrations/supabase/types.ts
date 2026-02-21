@@ -193,6 +193,39 @@ export type Database = {
         }
         Relationships: []
       }
+      game_bans: {
+        Row: {
+          banned_at: string
+          banned_by: string
+          created_at: string
+          duration_months: number
+          expires_at: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          banned_by: string
+          created_at?: string
+          duration_months?: number
+          expires_at: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          banned_by?: string
+          created_at?: string
+          duration_months?: number
+          expires_at?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_saves: {
         Row: {
           club_data: Json
