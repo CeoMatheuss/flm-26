@@ -299,20 +299,61 @@ export function TacticsTab({ tactics, players, onUpdate }: Props) {
           <DialogHeader>
             <DialogTitle className="text-sm">{selectedPlayer?.name}</DialogTitle>
           </DialogHeader>
-          {selectedPlayer && (
+          {selectedPlayer && (() => {
+            const attrLabels: Record<string, { label: string; icon: string }> = {
+              speed: { label: 'Velocidade', icon: '⚡' },
+              shooting: { label: 'Finalização', icon: '🎯' },
+              passing: { label: 'Passe', icon: '📐' },
+              defending: { label: 'Defesa', icon: '🛡️' },
+              physical: { label: 'Físico', icon: '💪' },
+              dribbling: { label: 'Drible', icon: '🎨' },
+              setPieces: { label: 'Bola Parada', icon: '🎱' },
+              positioning: { label: 'Posicionamento', icon: '📍' },
+              heading: { label: 'Cabeceio', icon: '🗣️' },
+              marking: { label: 'Marcação', icon: '🔒' },
+              vision: { label: 'Visão de Jogo', icon: '👁️' },
+              crossing: { label: 'Cruzamento', icon: '🎯' },
+              longShots: { label: 'Chute de Longe', icon: '🚀' },
+              workRate: { label: 'Intensidade', icon: '🔥' },
+              composure: { label: 'Compostura', icon: '🧠' },
+              aggression: { label: 'Agressividade', icon: '⚔️' },
+              goalkeeping: { label: 'Defesa de Goleiro', icon: '🧤' },
+            };
+            const getAttrColor = (val: number) => {
+              if (val >= 80) return 'text-emerald-400';
+              if (val >= 60) return 'text-primary';
+              if (val >= 40) return 'text-yellow-400';
+              return 'text-red-400';
+            };
+            return (
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 <Badge>{selectedPlayer.position}</Badge>
                 <Badge variant="secondary">OVR {selectedPlayer.overall}</Badge>
                 <Badge variant="outline">{selectedPlayer.age} anos</Badge>
               </div>
-              <div className="grid grid-cols-2 gap-1 text-[11px]">
-                <span>Velocidade: {selectedPlayer.attributes.speed}</span>
-                <span>Finalização: {selectedPlayer.attributes.shooting}</span>
-                <span>Passe: {selectedPlayer.attributes.passing}</span>
-                <span>Defesa: {selectedPlayer.attributes.defending}</span>
-                <span>Físico: {selectedPlayer.attributes.physical}</span>
-                <span>Drible: {selectedPlayer.attributes.dribbling}</span>
+              {/* Goalkeeping highlight for GK */}
+              {selectedPlayer.position === 'GOL' && selectedPlayer.attributes.goalkeeping != null && (
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
+                    <span className={`text-sm font-bold ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
+                  </div>
+                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5 mt-1" />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto">
+                {Object.entries(selectedPlayer.attributes)
+                  .filter(([key, val]) => val != null && !(selectedPlayer.position === 'GOL' && key === 'goalkeeping'))
+                  .map(([key, val]) => (
+                  <div key={key} className="bg-muted/30 rounded p-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
+                      <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                    </div>
+                    <Progress value={val as number} className="h-1 mt-0.5" />
+                  </div>
+                ))}
               </div>
               <div className="space-y-1.5">
                 <p className="text-xs font-medium">Atribuir função:</p>
@@ -334,7 +375,8 @@ export function TacticsTab({ tactics, players, onUpdate }: Props) {
                 ))}
               </div>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
