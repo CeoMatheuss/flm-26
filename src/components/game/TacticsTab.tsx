@@ -332,6 +332,21 @@ export function TacticsTab({ tactics, players, onUpdate }: Props) {
                 <Badge variant="secondary">OVR {selectedPlayer.overall}</Badge>
                 <Badge variant="outline">{selectedPlayer.age} anos</Badge>
               </div>
+              {/* Energia e Moral */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Energia', icon: '⚡', value: selectedPlayer.stamina ?? 100 },
+                  { label: 'Moral', icon: '❤️', value: selectedPlayer.morale ?? 50 },
+                ].map(stat => (
+                  <div key={stat.label} className="bg-muted/30 rounded-lg p-2 border border-border/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[9px] text-muted-foreground">{stat.icon} {stat.label}</span>
+                      <span className={`text-[10px] font-bold ${stat.value >= 70 ? 'text-emerald-400' : stat.value >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>{stat.value}%</span>
+                    </div>
+                    <Progress value={stat.value} className="h-1.5" />
+                  </div>
+                ))}
+              </div>
               {/* Goalkeeping highlight for GK */}
               {selectedPlayer.position === 'GOL' && selectedPlayer.attributes.goalkeeping != null && (
                 <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
