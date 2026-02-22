@@ -315,6 +315,8 @@ function MatchViewer({ matchState, onExit }: {
     if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss'].includes(type)) return 'text-yellow-400';
     if (type === 'yellow_card') return 'text-yellow-300';
     if (type === 'red_card') return 'text-red-400';
+    if (type === 'penalty_miss') return 'text-red-400 font-bold';
+    if (type === 'dangerous_foul') return 'text-orange-500 font-semibold';
     if (['midfield_foul', 'foul'].includes(type)) return 'text-orange-400';
     if (['dribble_ok', 'through_ball', 'possession', 'crossing', 'long_pass', 'pressing', 'throw_in', 'free_kick', 'gk_distribution'].includes(type)) return 'text-blue-300/70';
     if (type === 'tackle') return 'text-cyan-400';
