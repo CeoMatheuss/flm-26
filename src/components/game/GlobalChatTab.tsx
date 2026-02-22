@@ -64,7 +64,7 @@ export function GlobalChatTab({ userId, displayName, clubName }: Props) {
     const msgChannel = supabase
       .channel('global-chat')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat_messages' }, (payload) => {
-        setMessages(prev => [...prev, payload.new as GlobalMsg].slice(-200));
+        setMessages(prev => [...prev, payload.new as GlobalMsg].slice(-50));
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'global_chat_messages' }, (payload) => {
         setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));

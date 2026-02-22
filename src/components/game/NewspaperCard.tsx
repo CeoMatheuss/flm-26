@@ -5,7 +5,7 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ChevronDown, ChevronUp, ExternalLink, Megaphone } from 'lucide-react';
+import { Newspaper, ExternalLink, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
@@ -152,11 +152,9 @@ const categoryColors: Record<string, string> = {
 };
 
 export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: Props) {
-  const [expanded, setExpanded] = useState(false);
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const main = generateHeadline(club, events, infrastructure);
-  const secondary = generateSecondaryNews(club, events, infrastructure);
-  const displayedNews = expanded ? secondary : secondary.slice(0, 3);
+  const secondary = generateSecondaryNews(club, events, infrastructure).slice(0, 4);
 
   useEffect(() => {
     const fetchUpdates = async () => {
@@ -204,9 +202,9 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: 
         )}
 
         {/* Secondary news */}
-        {displayedNews.length > 0 && (
+        {secondary.length > 0 && (
           <div className="space-y-1.5">
-            {displayedNews.map((item, i) => (
+            {secondary.map((item, i) => (
               <div key={i} className="flex items-start gap-1.5">
                 <span className="text-[8px] text-primary font-bold mt-0.5">▸</span>
                 <div className="flex-1 min-w-0">
@@ -220,33 +218,16 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: 
           </div>
         )}
 
-        <div className="flex gap-2">
-          {/* Ver Mais / Ver Menos */}
-          {secondary.length > 3 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 h-7 text-[10px] sm:text-xs gap-1"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? (
-                <><ChevronUp className="h-3 w-3" /> Ver Menos</>
-              ) : (
-                <><ChevronDown className="h-3 w-3" /> Ver Mais ({secondary.length - 3})</>
-              )}
-            </Button>
-          )}
-          {onOpenFullPage && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-7 text-[10px] sm:text-xs gap-1"
-              onClick={onOpenFullPage}
-            >
-              <ExternalLink className="h-3 w-3" /> Jornal Completo
-            </Button>
-          )}
-        </div>
+        {onOpenFullPage && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full h-7 text-[10px] sm:text-xs gap-1"
+            onClick={onOpenFullPage}
+          >
+            <ExternalLink className="h-3 w-3" /> Jornal Completo
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
