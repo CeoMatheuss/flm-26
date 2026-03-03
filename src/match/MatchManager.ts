@@ -219,7 +219,7 @@ export class MatchManager {
     };
 
     tick();
-    this._tickInterval = window.setInterval(tick, 1000);
+    this._tickInterval = window.setInterval(tick, 500);
   }
 
   private _stopTick(): void {

@@ -779,6 +779,59 @@ export type Database = {
         }
         Relationships: []
       }
+      match_reports: {
+        Row: {
+          away_goals: number
+          away_team: string
+          competition: string
+          created_at: string
+          home_goals: number
+          home_team: string
+          id: string
+          match_history_id: string | null
+          ranking_impact: number
+          report_data: Json
+          result: string
+          user_id: string
+        }
+        Insert: {
+          away_goals?: number
+          away_team: string
+          competition?: string
+          created_at?: string
+          home_goals?: number
+          home_team: string
+          id?: string
+          match_history_id?: string | null
+          ranking_impact?: number
+          report_data?: Json
+          result?: string
+          user_id: string
+        }
+        Update: {
+          away_goals?: number
+          away_team?: string
+          competition?: string
+          created_at?: string
+          home_goals?: number
+          home_team?: string
+          id?: string
+          match_history_id?: string | null
+          ranking_impact?: number
+          report_data?: Json
+          result?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_reports_match_history_id_fkey"
+            columns: ["match_history_id"]
+            isOneToOne: false
+            referencedRelation: "match_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiplayer_leagues: {
         Row: {
           auto_created: boolean
@@ -1292,6 +1345,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          icon: string
+          id: string
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          icon?: string
+          id?: string
+          message: string
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          icon?: string
+          id?: string
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_presence: {
         Row: {

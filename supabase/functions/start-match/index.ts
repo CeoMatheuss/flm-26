@@ -59,13 +59,126 @@ function poissonSample(lambda: number): number {
 }
 
 /**
+ * Generate post-game report data from simulation results
+ */
+function generateReport(
+  homeTeam: string, awayTeam: string, homeGoals: number, awayGoals: number,
+  stats: any, playerRatings: Record<string, number>, goalScorers: any[],
+  manOfTheMatch: string | undefined, isHome: boolean, competition: string,
+  homeStrength: number, awayStrength: number, tactics: any, stadiumCapacity: number,
+  homePlayers: SimPlayer[], awayPlayers: SimPlayer[]
+) {
+  const isUserHome = isHome;
+  const userGoals = isUserHome ? homeGoals : awayGoals;
+  const oppGoals = isUserHome ? awayGoals : homeGoals;
+  const userTeam = isUserHome ? homeTeam : awayTeam;
+  const oppTeam = isUserHome ? awayTeam : homeTeam;
+  const idx = isUserHome ? 0 : 1;
+  const oppIdx = isUserHome ? 1 : 0;
+
+  // Result type
+  let result = 'draw';
+  let resultType = 'draw';
+  if (userGoals > oppGoals) {
+    result = 'win';
+    resultType = userGoals - oppGoals >= 3 ? 'rout_win' : userGoals - oppGoals >= 2 ? 'solid_win' : 'narrow_win';
+  } else if (userGoals < oppGoals) {
+    result = 'loss';
+    resultType = oppGoals - userGoals >= 3 ? 'rout_loss' : oppGoals - userGoals >= 2 ? 'solid_loss' : 'narrow_loss';
+  }
+
+  // Ranking impact
+  const strengthDiff = homeStrength - awayStrength;
+  let rankingChange = 0;
+  if (result === 'win') {
+    rankingChange = Math.max(3, 10 - Math.floor(strengthDiff / 5));
+    if (resultType === 'rout_win') rankingChange += 3;
+  } else if (result === 'loss') {
+    rankingChange = -Math.max(3, 10 + Math.floor(strengthDiff / 5));
+    if (resultType === 'rout_loss') rankingChange -= 2;
+  } else {
+    rankingChange = strengthDiff > 10 ? -2 : strengthDiff < -10 ? 3 : 0;
+  }
+  // Friendlies give less ranking impact
+  if (competition === 'Amistoso') rankingChange = Math.round(rankingChange * 0.5);
+
+  // Positives
+  const positives: string[] = [];
+  if (stats.possession[idx] >= 55) positives.push(`Domínio na posse de bola (${stats.possession[idx]}%)`);
+  if (stats.shotsOnTarget[idx] >= 5) positives.push(`Eficiência ofensiva: ${stats.shotsOnTarget[idx]} finalizações no gol`);
+  if (oppGoals === 0) positives.push('Defesa sólida — Clean Sheet! 🧤');
+  if (userGoals >= 3) positives.push(`Ataque avassalador com ${userGoals} gols marcados`);
+  if (stats.passes[idx] >= 250) positives.push(`Circulação de bola eficiente (${stats.passes[idx]} passes)`);
+  if (stats.tackles[idx] >= 10) positives.push(`Marcação agressiva com ${stats.tackles[idx]} desarmes`);
+  if (positives.length === 0) positives.push('Equipe mostrou garra e determinação');
+
+  // Negatives
+  const negatives: string[] = [];
+  if (stats.possession[idx] < 45) negatives.push(`Posse de bola baixa (${stats.possession[idx]}%)`);
+  if (stats.fouls[idx] >= 15) negatives.push(`Jogo duro demais: ${stats.fouls[idx]} faltas cometidas`);
+  if (oppGoals >= 3) negatives.push(`Defesa vulnerável: sofreu ${oppGoals} gols`);
+  if (stats.yellowCards[idx] >= 3) negatives.push(`Indisciplina: ${stats.yellowCards[idx]} cartões amarelos`);
+  if (stats.shots[idx] <= 3) negatives.push('Poucas finalizações — falta de criatividade ofensiva');
+  if (negatives.length === 0 && result !== 'win') negatives.push('Faltou eficiência nos momentos decisivos');
+
+  // Individual highlights
+  const sortedByRating = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away')).sort((a, b) => b.rating - a.rating);
+  const bestPlayer = sortedByRating[0];
+  const worstPlayer = sortedByRating[sortedByRating.length - 1];
+  
+  const topScorer = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away') && p.goals > 0).sort((a, b) => b.goals - a.goals)[0];
+  const topAssister = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away') && p.assists > 0).sort((a, b) => b.assists - a.assists)[0];
+
+  // Tactical analysis
+  const pressing = tactics?.pressing || 'medio';
+  const playStyle = tactics?.playStyle || 'equilibrado';
+  const tacticalNotes: string[] = [];
+  if (pressing === 'ultra-alto' || pressing === 'alto') {
+    tacticalNotes.push(stats.tackles[idx] >= 8 ? 'Pressing alto foi eficaz — muitas bolas recuperadas no campo ofensivo' : 'Pressing alto não surtiu o efeito desejado');
+  }
+  if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
+  if (playStyle === 'posse') tacticalNotes.push(stats.possession[idx] >= 55 ? 'Posse de bola controlou o ritmo' : 'Posse sem objetividade');
+  if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
+
+  // Financial impact
+  const attendance = Math.floor(stadiumCapacity * (0.5 + rng() * 0.45));
+  const ticketRevenue = attendance * (50 + Math.floor(rng() * 30));
+  
+  // Morale change
+  let moraleChange = 0;
+  if (result === 'win') moraleChange = resultType === 'rout_win' ? 15 : 10;
+  else if (result === 'loss') moraleChange = resultType === 'rout_loss' ? -15 : -8;
+  else moraleChange = strengthDiff > 10 ? -3 : 2;
+
+  return {
+    result,
+    resultType,
+    rankingChange,
+    report: {
+      general: { competition, userTeam, oppTeam, userGoals, oppGoals, resultType, isHome },
+      positives,
+      negatives,
+      highlights: {
+        bestPlayer: bestPlayer ? { name: bestPlayer.name, position: bestPlayer.position, rating: Math.round(bestPlayer.rating * 10) / 10, goals: bestPlayer.goals, assists: bestPlayer.assists } : null,
+        worstPlayer: worstPlayer && worstPlayer.id !== bestPlayer?.id ? { name: worstPlayer.name, position: worstPlayer.position, rating: Math.round(worstPlayer.rating * 10) / 10 } : null,
+        topScorer: topScorer ? { name: topScorer.name, goals: topScorer.goals } : null,
+        topAssister: topAssister ? { name: topAssister.name, assists: topAssister.assists } : null,
+        manOfTheMatch,
+      },
+      tactical: tacticalNotes,
+      impacts: {
+        moraleChange,
+        rankingChange,
+        attendance,
+        revenue: ticketRevenue,
+        fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5,
+      },
+    },
+  };
+}
+
+/**
  * SIMULAÇÃO COMPLETA v2 — Placar determinístico via Poisson (sem double-check)
- * 
- * CORREÇÕES:
- * 1. Poisson determina placar FINAL diretamente — sem goalProb secondary check
- * 2. Eventos de pênalti e faltas perigosas adicionados
- * 3. competition passado corretamente
- * 4. awayStrength validado/clampado no servidor
  */
 function simulateFullMatch(
   homeTeam: string, awayTeam: string, homePlayers: any[],
@@ -133,7 +246,6 @@ function simulateFullMatch(
   const homeMidAvg = homeMidfielders.length > 0 ? homeMidfielders.reduce((s, p) => s + (p.passing + p.vision) / 2, 0) / homeMidfielders.length : 50;
   const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + p.shooting, 0) / homeAttackers.length : 50;
 
-  // Away positional averages
   const awayDefenders = away.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
   const awayAttackers = away.filter(p => ['ATA'].includes(p.position));
   const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + p.defending, 0) / awayDefenders.length : 50;
@@ -146,7 +258,6 @@ function simulateFullMatch(
   };
 
   // ── RESULTADO FINAL (Poisson) — DETERMINÍSTICO ─────────────────
-  // Attack vs opposing defense determines goal expectancy
   const homeAttackVsDefense = (homeAtkAvg + homeMidAvg * 0.5) / Math.max(1, awayDefAvg);
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
   
@@ -160,7 +271,6 @@ function simulateFullMatch(
     0.2, 3.0
   );
   
-  // Poisson is the SOLE determinant — no secondary goalProb check
   const totalHomeGoals = poissonSample(homeExpected);
   const totalAwayGoals = poissonSample(awayExpected);
 
@@ -187,16 +297,14 @@ function simulateFullMatch(
   for (let g = 0; g < totalAwayGoals; g++) { const m = pickUnique(allGamePool); if (m > 0) awayGoalMins.push(m); }
 
   // ── PENALTY EVENTS ────────────────────────────────────────────────
-  // Determine if penalties happen based on pressing, aggression, attack pressure
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = (pressingMod - 0.9) * 0.15 + 0.08; // Higher pressing = more penalty chances
+  const penaltyChance = (pressingMod - 0.9) * 0.15 + 0.08;
   
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
       const team: 'home' | 'away' = rng() < 0.55 ? 'home' : 'away';
       const m = pickUnique(allGamePool.filter(m => m >= 20));
       if (m > 0) {
-        // Penalty conversion based on kicker composure vs GK
         const kicker = team === 'home'
           ? pickByAttr(home.filter(p => p.isOnPitch), 'setPieces')
           : pickByAttr(away.filter(p => p.isOnPitch), 'setPieces');
@@ -236,7 +344,6 @@ function simulateFullMatch(
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
 
-  // Fill remaining minutes with possession events
   const possessionMins: number[] = [];
   for (let m = 1; m <= 90; m++) {
     if (!usedMinutes.has(m) && m !== 45 && m !== 46) {
@@ -247,8 +354,6 @@ function simulateFullMatch(
   // ── EVENT BUILDER ────────────────────────────────────────────────
   const allPlanned: SimEvent[] = [];
   let currentHome = 0, currentAway = 0;
-
-  // Track penalty goals separately — they add to total score
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
 
   function buildupDesc(team: 'home' | 'away', tName: string): string {
@@ -267,7 +372,6 @@ function simulateFullMatch(
     return pick(buildups);
   }
 
-  // ── GOAL NARRATIONS ─────────────────────────────────────────────
   const goalNarrations = {
     home: (scorer: string, goalType: string, assistName: string | undefined, tName: string, opp: string, score: string) => {
       const assistText = assistName ? ` Assistência BRILHANTE de ${assistName}, que deixou tudo mastigado!` : '';
@@ -291,7 +395,7 @@ function simulateFullMatch(
     },
   };
 
-  // ── HOME GOALS — all Poisson goals are GUARANTEED to convert ──
+  // ── HOME GOALS ──
   for (const m of homeGoalMins) {
     currentHome++;
     const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
@@ -317,7 +421,7 @@ function simulateFullMatch(
     });
   }
 
-  // ── AWAY GOALS — all Poisson goals GUARANTEED ──
+  // ── AWAY GOALS ──
   for (const m of awayGoalMins) {
     currentAway++;
     const scorer = pickByAttr(away.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
@@ -356,7 +460,6 @@ function simulateFullMatch(
     const fouler = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'aggression');
     const fouledPlayer = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'dribbling', 'ATA');
     
-    // Foul description
     const foulDescs = [
       `🔴 PÊNALTI PARA O ${tName.toUpperCase()}! ${fouler?.name || 'Defensor'} do ${opp} derruba ${fouledPlayer?.name || 'atacante'} dentro da grande área com uma entrada irresponsável! O árbitro aponta para a marca da cal sem hesitar! Toda a torcida do ${tName} se levanta!`,
       `🔴 PÊNALTI! ${fouledPlayer?.name || 'Atacante'} do ${tName} invade a área pelo lado direito, dribla um defensor e é derrubado por ${fouler?.name || 'zagueiro'} do ${opp}! Penalidade máxima! O estádio explode!`,
@@ -575,7 +678,6 @@ function simulateFullMatch(
 
   const finalEvents: SimEvent[] = [];
 
-  // Estimated crowd based on stadium capacity
   const estimatedCrowd = Math.floor(Math.min(50000, 2000 + rng() * 8000 + homeStrength * 100));
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
@@ -600,7 +702,6 @@ function simulateFullMatch(
   }
 
   const addedTime2 = 1 + Math.floor(rng() * 5);
-  // Final score = Poisson goals + penalty goals
   const finalHomeGoals = currentHome;
   const finalAwayGoals = currentAway;
   
@@ -634,8 +735,22 @@ function simulateFullMatch(
   const homePlayers_sorted = allPlayers.filter(p => p.team === 'home').sort((a, b) => b.rating - a.rating);
   const manOfTheMatch = homePlayers_sorted.length > 0 ? homePlayers_sorted[0].name : undefined;
 
+  // Generate post-game report
+  const reportResult = generateReport(
+    homeTeam, awayTeam, finalHomeGoals, finalAwayGoals,
+    stats, playerRatings, goalScorers, manOfTheMatch,
+    isHome, competition, homeStrength, awayStrength, tactics,
+    estimatedCrowd, [...home, ...away], [...home, ...away]
+  );
+
   console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length} | Penalties: ${penaltyMins.length}`);
-  return { events: finalEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals, stats, playerRatings, goalScorers, manOfTheMatch };
+  return { 
+    events: finalEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals, 
+    stats, playerRatings, goalScorers, manOfTheMatch,
+    reportData: reportResult.report,
+    result: reportResult.result,
+    rankingChange: reportResult.rankingChange,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -673,7 +788,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Server-side validation: clamp strength values
     const validatedHomeStrength = clamp(Number(homeStrength) || 60, 20, 99);
     const validatedAwayStrength = clamp(Number(awayStrength) || 60, 20, 99);
 
@@ -691,7 +805,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Já existe uma partida em andamento', matchDbId: existing.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Simulate with validated strengths and competition
     const validCompetition = typeof competition === 'string' && competition.length <= 50 ? competition : 'Amistoso';
     const result = simulateFullMatch(
       homeTeam, awayTeam, homePlayers || [],
@@ -700,7 +813,6 @@ Deno.serve(async (req) => {
       validCompetition
     );
 
-    // Duration: 12 minutes real-time (720 seconds)
     const durationSeconds = 720;
     const now = new Date();
 
@@ -739,7 +851,7 @@ Deno.serve(async (req) => {
     }
 
     // Save to match_history immediately (permanent record)
-    await adminClient.from('match_history').insert({
+    const { data: historyRow } = await adminClient.from('match_history').insert({
       user_id: userId,
       live_match_id: match.id,
       match_type: validCompetition === 'Amistoso' ? 'friendly' : 'competitive',
@@ -758,7 +870,39 @@ Deno.serve(async (req) => {
       home_players: (homePlayers || []).slice(0, 11).map((p: any) => ({ id: p.id, name: p.name, position: p.position, overall: p.overall })),
       goal_scorers: result.goalScorers,
       man_of_the_match: result.manOfTheMatch || null,
-    });
+    }).select('id').single();
+
+    // Save match report
+    if (historyRow) {
+      await adminClient.from('match_reports').insert({
+        user_id: userId,
+        match_history_id: historyRow.id,
+        competition: validCompetition,
+        home_team: homeTeam,
+        away_team: awayTeam,
+        home_goals: result.homeGoals,
+        away_goals: result.awayGoals,
+        result: result.result,
+        report_data: result.reportData,
+        ranking_impact: result.rankingChange,
+      });
+
+      // Save notification for post-game report
+      const resultEmoji = result.result === 'win' ? '🏆' : result.result === 'loss' ? '😞' : '🤝';
+      const userTeam = (isHome !== false) ? homeTeam : awayTeam;
+      const oppTeam = (isHome !== false) ? awayTeam : homeTeam;
+      const userGoals = (isHome !== false) ? result.homeGoals : result.awayGoals;
+      const oppGoals = (isHome !== false) ? result.awayGoals : result.homeGoals;
+      
+      await adminClient.from('user_notifications').insert({
+        user_id: userId,
+        type: result.result === 'win' ? 'success' : result.result === 'loss' ? 'danger' : 'info',
+        title: `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam}`,
+        message: `${validCompetition} • ${result.reportData.positives[0] || 'Partida encerrada'} • Ranking: ${result.rankingChange > 0 ? '+' : ''}${result.rankingChange} pts`,
+        icon: resultEmoji,
+        data: { matchHistoryId: historyRow.id, reportData: result.reportData },
+      });
+    }
 
     return new Response(JSON.stringify({
       success: true,
@@ -766,6 +910,9 @@ Deno.serve(async (req) => {
       startedAt: now.toISOString(),
       durationSeconds,
       totalEvents: result.events.length,
+      reportData: result.reportData,
+      result: result.result,
+      rankingChange: result.rankingChange,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err) {
