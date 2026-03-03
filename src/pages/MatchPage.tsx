@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react';
 import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
+import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 
 interface MatchPageState {
   homeTeam: string;
@@ -623,11 +624,28 @@ function MatchViewer({ matchState, onExit }: {
             </Card>
           )}
 
+          {/* Post-game report */}
+          {matchState.matchDbId && (
+            <PostGameReportButton matchDbId={matchState.matchDbId} />
+          )}
+
           <Button className="w-full gap-2" onClick={onExit}>
             <ArrowLeft className="h-4 w-4" /> Voltar ao Dashboard
           </Button>
         </div>
       )}
     </div>
+  );
+}
+
+function PostGameReportButton({ matchDbId }: { matchDbId: string }) {
+  const [showReport, setShowReport] = useState(false);
+  return (
+    <>
+      <Button variant="outline" className="w-full gap-2" onClick={() => setShowReport(true)}>
+        📊 Ver Relatório Pós-Jogo
+      </Button>
+      {showReport && <PostGameReportModal matchDbId={matchDbId} onClose={() => setShowReport(false)} />}
+    </>
   );
 }
