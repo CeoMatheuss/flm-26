@@ -236,7 +236,6 @@ function MatchViewer({ matchState, onExit }: {
         awayGoals={isFinished ? finalAwayGoals : awayGoals}
         visibleEvents={visibleEvents}
         isFinished={isFinished}
-        goalFlash={goalFlash}
         formation={config.competition ? undefined : '4-4-2'}
       />
 
