@@ -1093,33 +1093,8 @@ export function useGame(initialState?: GameState, userId?: string) {
            d1.getDate() === d2.getDate();
   }, []);
 
-  // Compute if user already played today based on real timestamps (24h rule)
-  const alreadyPlayedToday = useMemo(() => {
-    if (!lastFriendlyDate) return false;
-    const lastDate = new Date(lastFriendlyDate);
-    const now = new Date();
-    const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
-    return diffHours < 24;
-  }, [lastFriendlyDate]);
-
-  // On mount, sync from DB
-  useEffect(() => {
-    if (!userId) return;
-    supabase.from('game_saves')
-      .select('last_match_timestamp')
-      .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.last_match_timestamp) {
-          const dbTs = data.last_match_timestamp as string;
-          const diffHours = (Date.now() - new Date(dbTs).getTime()) / (1000 * 60 * 60);
-          if (diffHours < 24) {
-            setLastFriendlyDate(dbTs);
-            setFriendliesPlayedToday(1);
-          }
-        }
-      });
-  }, [userId]);
+  // Friendly matches are unlimited — alreadyPlayedToday always false
+  const alreadyPlayedToday = false;
 
   const generateFriendly = useCallback(async () => {
     const now = new Date();
