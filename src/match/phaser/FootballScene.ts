@@ -66,6 +66,8 @@ export class FootballScene extends Phaser.Scene {
   private _lastProcessedCount = 0;
   private _goalFlashTimer = 0;
   private _eventAnimTimer = 0;
+  private clockText!: Phaser.GameObjects.Text;
+  private scoreText!: Phaser.GameObjects.Text;
 
   // Pitch dimensions in world coords
   private PW = 800;
@@ -97,6 +99,24 @@ export class FootballScene extends Phaser.Scene {
     this.ball.setDepth(50);
 
     this.positionBall(0.5, 0.5);
+
+    // Clock & score HUD (inside Phaser scene)
+    this.clockText = this.add.text(this.PW / 2, 10, "0'", {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#ffffff',
+      backgroundColor: '#00000088',
+      padding: { x: 8, y: 3 },
+    }).setOrigin(0.5, 0).setDepth(200);
+
+    this.scoreText = this.add.text(this.PW / 2, 28, '0 × 0', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#00000066',
+      padding: { x: 10, y: 3 },
+    }).setOrigin(0.5, 0).setDepth(200);
 
     // Handle resize
     this.scale.on('resize', this.handleResize, this);
@@ -403,7 +423,14 @@ export class FootballScene extends Phaser.Scene {
     // Update goal flash
     this.updateGoalFlash(dt);
 
-    // Finished overlay dimming handled by React
+    // Update HUD
+    if (this.clockText) {
+      const minuteLabel = this._isFinished ? '90+' : `${this._currentMinute}'`;
+      this.clockText.setText(minuteLabel);
+    }
+    if (this.scoreText) {
+      this.scoreText.setText(`${this._homeGoals} × ${this._awayGoals}`);
+    }
   }
 
   private updateBall(dt: number, t: number) {
