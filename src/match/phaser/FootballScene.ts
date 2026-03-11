@@ -423,7 +423,14 @@ export class FootballScene extends Phaser.Scene {
     // Update goal flash
     this.updateGoalFlash(dt);
 
-    // Finished overlay dimming handled by React
+    // Update HUD
+    if (this.clockText) {
+      const minuteLabel = this._isFinished ? '90+' : `${this._currentMinute}'`;
+      this.clockText.setText(minuteLabel);
+    }
+    if (this.scoreText) {
+      this.scoreText.setText(`${this._homeGoals} × ${this._awayGoals}`);
+    }
   }
 
   private updateBall(dt: number, t: number) {
