@@ -66,6 +66,8 @@ export class FootballScene extends Phaser.Scene {
   private _lastProcessedCount = 0;
   private _goalFlashTimer = 0;
   private _eventAnimTimer = 0;
+  private clockText!: Phaser.GameObjects.Text;
+  private scoreText!: Phaser.GameObjects.Text;
 
   // Pitch dimensions in world coords
   private PW = 800;

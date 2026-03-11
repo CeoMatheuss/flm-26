@@ -1124,34 +1124,7 @@ export function useGame(initialState?: GameState, userId?: string) {
   const generateFriendly = useCallback(async () => {
     const now = new Date();
     
-    // Server-side check: fetch last_match_timestamp from DB
-    if (userId) {
-      const { data } = await supabase
-        .from('game_saves')
-        .select('last_match_timestamp')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (data?.last_match_timestamp) {
-        const dbLastMatch = new Date(data.last_match_timestamp as string);
-        const diffHours = (now.getTime() - dbLastMatch.getTime()) / (1000 * 60 * 60);
-        if (diffHours < 24) {
-          toast.error('Você já jogou hoje. Volte amanhã.');
-          setLastFriendlyDate(data.last_match_timestamp as string);
-          setFriendliesPlayedToday(1);
-          return;
-        }
-      }
-    }
-    
-    // Client-side fallback check
-    if (lastFriendlyDate) {
-      const lastDate = new Date(lastFriendlyDate);
-      const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
-      if (diffHours < 24) {
-        toast.error('Você já jogou hoje. Volte amanhã.');
-        return;
-      }
-    }
+    // Friendly matches are now unlimited — no daily limit
     // Check if there's already an unplayed friendly
     const hasUnplayed = club.matches.some(m => !m.played);
     if (hasUnplayed) {
