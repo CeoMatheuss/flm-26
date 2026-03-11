@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react';
 import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
+import { PhaserMatchView } from '@/match/phaser/PhaserMatchView';
 
 interface MatchPageState {
   homeTeam: string;
