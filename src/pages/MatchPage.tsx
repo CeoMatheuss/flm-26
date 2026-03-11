@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react';
 import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
+import { PhaserMatchView } from '@/match/phaser/PhaserMatchView';
 
 interface MatchPageState {
   homeTeam: string;
@@ -101,247 +102,7 @@ export default function MatchPage() {
   return <MatchViewer matchState={matchState} onExit={() => navigate('/', { replace: true })} />;
 }
 
-// ── PITCH 2D — Visual animado com posição real da bola ──────────
-// SYNC FIX: Ball moves continuously between events using time-based interpolation.
-// Players shift dynamically based on attacking/defending state.
-// Animation runs at 60fps independently of React state updates.
-function Pitch2DView({ currentMinute, homeTeam, awayTeam, homeGoals, awayGoals, visibleEvents, isFinished, goalFlash }: {
-  currentMinute: number;
-  homeTeam: string;
-  awayTeam: string;
-  homeGoals: number;
-  awayGoals: number;
-  visibleEvents: SimEvent[];
-  isFinished: boolean;
-  goalFlash: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-  const ballPosRef = useRef({ x: 0.5, y: 0.5 });
-  const targetBallRef = useRef({ x: 0.5, y: 0.5 });
-  // Store the latest event for continuous reference in the animation loop
-  const latestEventRef = useRef<SimEvent | null>(null);
-  const eventsLenRef = useRef(0);
-  const minuteRef = useRef(0);
-  const goalFlashRef = useRef(false);
-  const finishedRef = useRef(false);
-
-  const seed = useCallback((n: number) => {
-    const x = Math.sin(n * 9301 + 49297) * 233280;
-    return x - Math.floor(x);
-  }, []);
-
-  // Update refs when props change (avoids re-creating animation loop)
-  useEffect(() => {
-    minuteRef.current = currentMinute;
-    goalFlashRef.current = goalFlash;
-    finishedRef.current = isFinished;
-  }, [currentMinute, goalFlash, isFinished]);
-
-  // Update ball target when events change
-  useEffect(() => {
-    const lastEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
-    latestEventRef.current = lastEvent;
-    eventsLenRef.current = visibleEvents.length;
-
-    if (!lastEvent) { targetBallRef.current = { x: 0.5, y: 0.5 }; return; }
-
-    if ((lastEvent as any).ballX !== undefined) {
-      targetBallRef.current = {
-        x: (lastEvent as any).ballX,
-        y: (lastEvent as any).ballY ?? (0.2 + seed(currentMinute * 7) * 0.6),
-      };
-    } else if (lastEvent.isGoal) {
-      targetBallRef.current = { x: lastEvent.team === 'home' ? 0.94 : 0.06, y: 0.5 };
-    } else if (lastEvent.type === 'halftime' || lastEvent.type === 'final_whistle' || lastEvent.type === 'kickoff') {
-      targetBallRef.current = { x: 0.5, y: 0.5 };
-    } else if (lastEvent.team === 'home') {
-      targetBallRef.current = { x: 0.55 + seed(currentMinute * 3) * 0.3, y: 0.2 + seed(currentMinute * 7) * 0.6 };
-    } else {
-      targetBallRef.current = { x: 0.15 + seed(currentMinute * 3) * 0.3, y: 0.2 + seed(currentMinute * 7) * 0.6 };
-    }
-  }, [visibleEvents, currentMinute, seed]);
-
-  // Single persistent animation loop — never destroyed until unmount
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const W = canvas.width, H = canvas.height;
-
-    const homeBase = [
-      { x: 0.06, y: 0.5 },
-      { x: 0.18, y: 0.15 }, { x: 0.18, y: 0.38 }, { x: 0.18, y: 0.62 }, { x: 0.18, y: 0.85 },
-      { x: 0.38, y: 0.15 }, { x: 0.35, y: 0.38 }, { x: 0.35, y: 0.62 }, { x: 0.38, y: 0.85 },
-      { x: 0.48, y: 0.35 }, { x: 0.48, y: 0.65 },
-    ];
-    const awayBase = homeBase.map(p => ({ x: 1 - p.x, y: p.y }));
-
-    // Continuous ball drift — moves the ball slightly even BETWEEN events
-    // so the pitch never looks frozen
-    let driftAngle = 0;
-    let lastDriftTime = Date.now();
-
-    const draw = () => {
-      const t = Date.now() * 0.001;
-      const minute = minuteRef.current;
-      const lastEvent = latestEventRef.current;
-      const isGoalFlash = goalFlashRef.current;
-      const isDone = finishedRef.current;
-
-      // ── CONTINUOUS BALL MOVEMENT ──
-      // Between events, add a slow organic drift so the ball is always moving
-      const now = Date.now();
-      const dtDrift = (now - lastDriftTime) / 1000;
-      lastDriftTime = now;
-
-      if (!isDone) {
-        driftAngle += dtDrift * 0.8;
-        // Small circular drift around target
-        const driftR = 0.02;
-        const driftX = targetBallRef.current.x + Math.sin(driftAngle) * driftR;
-        const driftY = targetBallRef.current.y + Math.cos(driftAngle * 0.7) * driftR * 0.6;
-        // Lerp toward drifting target
-        const spd = 0.06;
-        ballPosRef.current.x += (driftX - ballPosRef.current.x) * spd;
-        ballPosRef.current.y += (driftY - ballPosRef.current.y) * spd;
-      } else {
-        const spd = 0.08;
-        ballPosRef.current.x += (targetBallRef.current.x - ballPosRef.current.x) * spd;
-        ballPosRef.current.y += (targetBallRef.current.y - ballPosRef.current.y) * spd;
-      }
-
-      ctx.clearRect(0, 0, W, H);
-
-      // Campo
-      ctx.fillStyle = '#1a6b3c';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = 'rgba(255,255,255,0.018)';
-      for (let i = 0; i < 10; i++) {
-        if (i % 2 === 0) ctx.fillRect(i * (W / 10), 0, W / 10, H);
-      }
-
-      // Linhas
-      ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-      ctx.lineWidth = 1.4;
-      ctx.strokeRect(4, 4, W - 8, H - 8);
-      ctx.beginPath(); ctx.moveTo(W / 2, 4); ctx.lineTo(W / 2, H - 4); ctx.stroke();
-      ctx.beginPath(); ctx.arc(W / 2, H / 2, 40, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeRect(4, H * 0.25, W * 0.15, H * 0.5);
-      ctx.strokeRect(W - 4 - W * 0.15, H * 0.25, W * 0.15, H * 0.5);
-      ctx.strokeRect(4, H * 0.38, W * 0.06, H * 0.24);
-      ctx.strokeRect(W - 4 - W * 0.06, H * 0.38, W * 0.06, H * 0.24);
-      ctx.beginPath(); ctx.arc(W / 2, H / 2, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill();
-
-      // Goal flash highlight
-      if (isGoalFlash) {
-        ctx.fillStyle = 'rgba(255,220,0,0.12)';
-        ctx.fillRect(0, 0, W, H);
-      }
-
-      // Dynamic player shifts based on ball position (attack/defend)
-      const ballX = ballPosRef.current.x;
-      const attackShiftHome = (ballX - 0.5) * 0.12; // players push forward when ball is forward
-      const attackShiftAway = (0.5 - ballX) * 0.12;
-
-      const drawPlayers = (bases: { x: number; y: number }[], color: string, teamShift: number) => {
-        bases.forEach((p, i) => {
-          // Organic jitter + time-based movement
-          const jx = Math.sin(t * 1.3 + i * 2.1) * 0.015 + Math.sin(t * 0.5 + i) * 0.008;
-          const jy = Math.cos(t * 1.1 + i * 1.7) * 0.015 + Math.cos(t * 0.4 + i) * 0.008;
-          // Closest player attraction toward ball
-          const dx = ballX - p.x;
-          const dy = ballPosRef.current.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const attract = dist < 0.25 ? 0.03 * (1 - dist / 0.25) : 0;
-          const px = (p.x + teamShift + jx + dx * attract) * W;
-          const py = (p.y + jy + dy * attract) * H;
-
-          ctx.beginPath(); ctx.ellipse(px + 1, py + 3, 5, 2, 0, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fill();
-          ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2);
-          ctx.fillStyle = color; ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.2; ctx.stroke();
-        });
-      };
-
-      drawPlayers(homeBase, '#3b82f6', attackShiftHome);
-      drawPlayers(awayBase, '#ef4444', attackShiftAway);
-
-      // Pass line animation
-      if (lastEvent && ['possession', 'through_ball', 'dribble_ok', 'crossing', 'long_pass', 'pressing', 'throw_in', 'free_kick'].includes(lastEvent.type)) {
-        const bx = ballPosRef.current.x * W, by = ballPosRef.current.y * H;
-        const tx = targetBallRef.current.x * W, ty = targetBallRef.current.y * H;
-        const progress = Math.min(1, (t % 1));
-        ctx.save();
-        ctx.strokeStyle = `rgba(255,255,255,${0.2 * (1 - progress)})`;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
-      }
-
-      // Shot line for dangerous moments
-      if (lastEvent && ['great_save', 'woodwork', 'long_shot_miss', 'header_miss', 'penalty_miss'].includes(lastEvent.type)) {
-        const bx = ballPosRef.current.x * W, by = ballPosRef.current.y * H;
-        const goalX = (lastEvent.team === 'home' ? 0.96 : 0.04) * W;
-        const goalY = H * 0.5;
-        const progress = (t * 2) % 1;
-        ctx.save();
-        ctx.strokeStyle = `rgba(255,100,100,${0.3 * (1 - progress)})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(goalX, goalY); ctx.stroke();
-        ctx.restore();
-      }
-
-      // Bola
-      const bx = ballPosRef.current.x * W, by = ballPosRef.current.y * H;
-      ctx.beginPath(); ctx.ellipse(bx + 1, by + 2.5, 4.5, 1.8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.32)'; ctx.fill();
-      ctx.beginPath(); ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff'; ctx.fill();
-      ctx.strokeStyle = '#333'; ctx.lineWidth = 0.8; ctx.stroke();
-      ctx.beginPath(); ctx.arc(bx - 1.2, by - 1.2, 1.5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fill();
-
-      // Goal pulse animation
-      if (isGoalFlash) {
-        const pulse = (Math.sin(t * 8) + 1) / 2;
-        ctx.beginPath(); ctx.arc(bx, by, 10 + pulse * 20, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,220,0,${0.6 * (1 - pulse)})`; ctx.lineWidth = 2; ctx.stroke();
-      }
-
-      // Always keep animating (even when "finished" we show final state)
-      animRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => cancelAnimationFrame(animRef.current);
-  }, [seed]); // Only depend on seed — refs handle everything else
-
-  return (
-    <Card className="p-1.5 overflow-hidden">
-      <div className="relative w-full aspect-[5/3]">
-        <canvas ref={canvasRef} width={500} height={300} className="w-full h-full rounded-lg" />
-        <div className="absolute top-1 left-2 right-2 flex justify-between items-center pointer-events-none">
-          <span className="text-[8px] font-bold text-blue-300 drop-shadow-md">{homeTeam}</span>
-          <span className={`text-[11px] font-mono font-black drop-shadow-md transition-all ${goalFlash ? 'text-yellow-300 scale-110' : 'text-white'}`}>
-            {homeGoals} x {awayGoals}
-          </span>
-          <span className="text-[8px] font-bold text-red-300 drop-shadow-md">{awayTeam}</span>
-        </div>
-        {isFinished && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-            <span className="text-white font-bold text-lg tracking-widest animate-fade-in">FIM DE JOGO</span>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
+// Old canvas-based Pitch2DView replaced by PhaserMatchView
 
 // ── MATCH VIEWER ──────────────────────────────────────────────────
 function MatchViewer({ matchState, onExit }: {
@@ -466,8 +227,8 @@ function MatchViewer({ matchState, onExit }: {
         </div>
       )}
 
-      {/* 2D Pitch */}
-      <Pitch2DView
+      {/* 2D Pitch — Phaser */}
+      <PhaserMatchView
         currentMinute={currentMinute}
         homeTeam={homeTeam}
         awayTeam={awayTeam}
@@ -476,6 +237,7 @@ function MatchViewer({ matchState, onExit }: {
         visibleEvents={visibleEvents}
         isFinished={isFinished}
         goalFlash={goalFlash}
+        formation={config.competition ? undefined : '4-4-2'}
       />
 
       {/* Tabs: Lances + Stats */}
