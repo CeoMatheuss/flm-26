@@ -227,8 +227,8 @@ function MatchViewer({ matchState, onExit }: {
         </div>
       )}
 
-      {/* 2D Pitch */}
-      <Pitch2DView
+      {/* 2D Pitch — Phaser */}
+      <PhaserMatchView
         currentMinute={currentMinute}
         homeTeam={homeTeam}
         awayTeam={awayTeam}
@@ -237,6 +237,7 @@ function MatchViewer({ matchState, onExit }: {
         visibleEvents={visibleEvents}
         isFinished={isFinished}
         goalFlash={goalFlash}
+        formation={state?.tactics?.formation}
       />
 
       {/* Tabs: Lances + Stats */}
