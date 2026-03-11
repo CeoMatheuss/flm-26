@@ -110,7 +110,7 @@ function MatchViewer({ matchState, onExit }: {
   onExit: () => void;
 }) {
   const { phase, snapshot, config, stats, lockedResult } = matchState;
-  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent } = snapshot;
+  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent, progress } = snapshot;
   const { homeTeam, awayTeam, stadiumName, stadiumCapacity } = config;
 
   const isFinished = phase === 'finished';
@@ -237,7 +237,20 @@ function MatchViewer({ matchState, onExit }: {
         visibleEvents={visibleEvents}
         isFinished={isFinished}
         formation={config.competition ? undefined : '4-4-2'}
+        possession={stats.possession}
+        progress={progress}
+        phase={phase}
       />
+
+      {/* Live info bar */}
+      {!isFinished && (
+        <div className="flex items-center justify-between text-[9px] text-muted-foreground px-1">
+          <span>📊 {visibleEvents.length} lances</span>
+          <span>⚡ {stats.shots[0] + stats.shots[1]} finalizações</span>
+          <span>🎯 {stats.shotsOnTarget[0] + stats.shotsOnTarget[1]} no gol</span>
+          <span>🟡 {stats.yellowCards[0] + stats.yellowCards[1]} cartões</span>
+        </div>
+      )}
 
       {/* Tabs: Lances + Stats */}
       <Tabs defaultValue="events" className="space-y-1">

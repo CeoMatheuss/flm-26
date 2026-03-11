@@ -18,7 +18,7 @@ import { EMPTY_STATS } from './SimulationEngine';
 
 const INITIAL_STATE: MatchManagerState = {
   phase: 'loading',
-  snapshot: { currentMinute: 0, visibleEvents: [], homeGoals: 0, awayGoals: 0, isComplete: false, latestEvent: null },
+  snapshot: { currentMinute: 0, visibleEvents: [], homeGoals: 0, awayGoals: 0, isComplete: false, latestEvent: null, progress: 0, elapsedMs: 0, totalMs: 0 },
   config: { homeTeam: '', awayTeam: '', stadiumName: '', stadiumCapacity: 0, isHome: true, competition: '' },
   stats: { ...EMPTY_STATS },
   matchDbId: null,

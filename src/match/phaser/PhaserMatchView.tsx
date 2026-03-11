@@ -17,11 +17,14 @@ interface PhaserMatchViewProps {
   visibleEvents: SimEvent[];
   isFinished: boolean;
   formation?: string;
+  possession?: [number, number];
+  progress?: number;
+  phase?: string;
 }
 
 function PhaserMatchViewInner({
   currentMinute, homeTeam, awayTeam, homeGoals, awayGoals,
-  visibleEvents, isFinished, formation,
+  visibleEvents, isFinished, formation, possession, progress, phase,
 }: PhaserMatchViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -71,8 +74,11 @@ function PhaserMatchViewInner({
       homeTeam,
       awayTeam,
       formation,
+      possession,
+      progress,
+      phase,
     });
-  }, [visibleEvents, currentMinute, homeGoals, awayGoals, isFinished, homeTeam, awayTeam, formation]);
+  }, [visibleEvents, currentMinute, homeGoals, awayGoals, isFinished, homeTeam, awayTeam, formation, possession, progress, phase]);
 
   return (
     <div className="w-full rounded-xl overflow-hidden border border-border/30 shadow-lg bg-[#0f1a0f]">

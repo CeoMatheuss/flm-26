@@ -49,6 +49,9 @@ export interface SimulationSnapshot {
   awayGoals: number;
   isComplete: boolean;
   latestEvent: SimEvent | null;
+  progress: number; // 0-1 progress through match
+  elapsedMs: number;
+  totalMs: number;
 }
 
 export class SimulationEngine {
@@ -58,11 +61,13 @@ export class SimulationEngine {
   private _durationMs = 0;
   private _finalHomeGoals = 0;
   private _finalAwayGoals = 0;
+  private _lastLoggedMinute = -1;
 
   get allEvents(): SimEvent[] { return this._allEvents; }
   get maxGameMinute(): number { return this._maxGameMinute; }
   get finalHomeGoals(): number { return this._finalHomeGoals; }
   get finalAwayGoals(): number { return this._finalAwayGoals; }
+  get isLoaded(): boolean { return this._durationMs > 0 && this._allEvents.length > 0; }
 
   /**
    * Load server-generated match data.
@@ -77,19 +82,43 @@ export class SimulationEngine {
     this._maxGameMinute = events.length > 0
       ? Math.max(...events.map(e => e.minute))
       : 90;
-    console.log(`[SimEngine] Loaded ${events.length} events, max minute: ${this._maxGameMinute}`);
+    this._lastLoggedMinute = -1;
+
+    const now = Date.now();
+    const elapsed = now - this._startTime;
+    console.log(`[SimEngine] Loaded ${events.length} events, max minute: ${this._maxGameMinute}, duration: ${durationSeconds}s`);
+    console.log(`[SimEngine] startTime: ${new Date(this._startTime).toISOString()}, now: ${new Date(now).toISOString()}, elapsed: ${Math.round(elapsed / 1000)}s`);
+    
+    // Safety: if startTime is in the future (clock skew), adjust
+    if (this._startTime > now + 5000) {
+      console.warn(`[SimEngine] startTime is in the future! Adjusting to now.`);
+      this._startTime = now;
+    }
   }
 
   /**
    * Get current snapshot based on real elapsed time.
-   * Pure function — no side effects, no state mutation.
+   * Pure function — no side effects, no state mutation (except debug logging).
    */
   getSnapshot(): SimulationSnapshot {
+    if (!this.isLoaded) {
+      return {
+        currentMinute: 0, visibleEvents: [], homeGoals: 0, awayGoals: 0,
+        isComplete: false, latestEvent: null, progress: 0, elapsedMs: 0, totalMs: 0,
+      };
+    }
+
     const now = Date.now();
     const elapsed = now - this._startTime;
-    const progress = Math.min(1, elapsed / this._durationMs);
+    const progress = Math.min(1, Math.max(0, elapsed / this._durationMs));
     const currentMinute = Math.floor(progress * this._maxGameMinute);
-    const isComplete = now >= this._startTime + this._durationMs;
+    const isComplete = elapsed >= this._durationMs;
+
+    // Debug: log every 5 minutes
+    if (currentMinute !== this._lastLoggedMinute && currentMinute % 5 === 0) {
+      console.log(`[SimEngine] Minute ${currentMinute}, progress: ${(progress * 100).toFixed(1)}%, elapsed: ${Math.round(elapsed / 1000)}s/${Math.round(this._durationMs / 1000)}s`);
+      this._lastLoggedMinute = currentMinute;
+    }
 
     const visibleEvents = this._allEvents.filter(e => e.minute <= currentMinute);
 
@@ -103,7 +132,7 @@ export class SimulationEngine {
 
     const latestEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
 
-    return { currentMinute, visibleEvents, homeGoals, awayGoals, isComplete, latestEvent };
+    return { currentMinute, visibleEvents, homeGoals, awayGoals, isComplete, latestEvent, progress, elapsedMs: elapsed, totalMs: this._durationMs };
   }
 
   /**
@@ -117,6 +146,9 @@ export class SimulationEngine {
       awayGoals: this._finalAwayGoals,
       isComplete: true,
       latestEvent: this._allEvents.length > 0 ? this._allEvents[this._allEvents.length - 1] : null,
+      progress: 1,
+      elapsedMs: this._durationMs,
+      totalMs: this._durationMs,
     };
   }
 
@@ -127,5 +159,6 @@ export class SimulationEngine {
     this._durationMs = 0;
     this._finalHomeGoals = 0;
     this._finalAwayGoals = 0;
+    this._lastLoggedMinute = -1;
   }
 }

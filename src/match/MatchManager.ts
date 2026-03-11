@@ -9,6 +9,10 @@
  * - Cliente apenas revela eventos baseado no tempo real
  * - Finalização só ocorre UMA vez via MatchResultLocker
  * - Nenhum módulo externo pode modificar placar
+ * 
+ * FIX: Tick interval reduced to 250ms for smoother progression.
+ * FIX: Added requestAnimationFrame-based tick for continuous updates.
+ * FIX: Added safety checks for stalled simulation.
  */
 
 import { MatchStateController } from './MatchStateController';
@@ -36,6 +40,8 @@ export interface MatchManagerState {
 
 export type MatchPhase = 'loading' | 'pre_match' | 'first_half' | 'halftime' | 'second_half' | 'finished' | 'error';
 
+const TICK_INTERVAL_MS = 250; // 4 updates per second for smooth progression
+
 export class MatchManager {
   readonly stateController = new MatchStateController();
   readonly engine = new SimulationEngine();
@@ -45,30 +51,26 @@ export class MatchManager {
   private _stats: MatchStats = { ...EMPTY_STATS };
   private _matchDbId: string | null = null;
   private _tickInterval: number | null = null;
+  private _rafId: number | null = null;
   private _onUpdate: ((state: MatchManagerState) => void) | null = null;
   private _navigateFn: ((path: string, opts: any) => void) | null = null;
+  private _lastEmitTime = 0;
 
   get config(): MatchConfig { return this._config; }
   get matchDbId(): string | null { return this._matchDbId; }
 
-  /**
-   * Set callback for state updates (used by React hook)
-   */
   setUpdateCallback(fn: (state: MatchManagerState) => void): void {
     this._onUpdate = fn;
+    // Immediately emit current state so UI gets data right away
+    if (fn && this.engine.isLoaded) {
+      this._emitUpdate();
+    }
   }
 
-  /**
-   * Set navigation function — called by useMatchManager after the match finishes
-   * so MatchResultLocker can navigate to '/' with the result in location.state.
-   */
   setNavigateFn(fn: (path: string, opts: any) => void): void {
     this._navigateFn = fn;
   }
 
-  /**
-   * Initialize from an existing live match in DB (reconnect scenario)
-   */
   async loadFromDb(matchDbId: string): Promise<boolean> {
     console.log('[MatchManager] loadFromDb() — loading match:', matchDbId);
     try {
@@ -94,8 +96,11 @@ export class MatchManager {
       };
       this._stats = (data.stats as any) || { ...EMPTY_STATS };
 
+      const events = (data.events as any) || [];
+      console.log(`[MatchManager] Match loaded: ${data.home_team} vs ${data.away_team}, events: ${events.length}, status: ${data.status}, duration: ${data.duration_seconds}s`);
+
       this.engine.load(
-        (data.events as any) || [],
+        events,
         data.home_goals,
         data.away_goals,
         data.started_at,
@@ -103,7 +108,6 @@ export class MatchManager {
       );
 
       if (data.status === 'finished') {
-        // Already finished — go directly to FINISHED state
         this.stateController.start();
         this.stateController.finish();
         this.resultLocker.lock(data.home_goals, data.away_goals, data.id);
@@ -114,6 +118,7 @@ export class MatchManager {
       // Match is live — start ticking
       this.stateController.start();
       this._startTick();
+      console.log('[MatchManager] Tick started, match is live');
       return true;
     } catch (err) {
       console.error('[MatchManager] Load exception:', err);
@@ -121,9 +126,6 @@ export class MatchManager {
     }
   }
 
-  /**
-   * Start a new match via the server Edge Function
-   */
   async startNewMatch(params: {
     homeTeam: string; awayTeam: string; homePlayers: any[];
     homeStrength: number; awayStrength: number; matchId: string;
@@ -133,10 +135,7 @@ export class MatchManager {
     try {
       const resp = await supabase.functions.invoke('start-match', { body: params });
 
-      // supabase-js marks non-2xx as resp.error, but the JSON body may still
-      // contain matchDbId (e.g. 409 "already in progress"). Parse it first.
       if (resp.error) {
-        // Try to extract the body from the FunctionsHttpError context
         let errBody: any = null;
         try {
           if (resp.error && typeof (resp.error as any).context?.json === 'function') {
@@ -144,10 +143,10 @@ export class MatchManager {
           } else if (resp.data) {
             errBody = resp.data;
           }
-        } catch { /* ignore parse errors */ }
+        } catch { /* ignore */ }
 
         if (errBody?.matchDbId) {
-          console.log('[MatchManager] Partida existente detectada, carregando:', errBody.matchDbId);
+          console.log('[MatchManager] Existing match detected, loading:', errBody.matchDbId);
           await this.loadFromDb(errBody.matchDbId);
           return { success: true };
         }
@@ -159,15 +158,13 @@ export class MatchManager {
       const result = resp.data;
       if (!result?.success) {
         if (result?.matchDbId) {
-          // Match already exists — load it
-          console.log('[MatchManager] Carregando partida existente:', result.matchDbId);
+          console.log('[MatchManager] Loading existing match:', result.matchDbId);
           await this.loadFromDb(result.matchDbId);
           return { success: true };
         }
         return { success: false, error: result?.error || 'Erro ao iniciar partida.' };
       }
 
-      // Load the newly created match
       await this.loadFromDb(result.matchDbId);
       return { success: true };
     } catch (err) {
@@ -175,9 +172,6 @@ export class MatchManager {
     }
   }
 
-  /**
-   * Check for any active match in DB and load it
-   */
   async findActiveMatch(): Promise<boolean> {
     const { data } = await supabase
       .from('live_matches')
@@ -192,10 +186,12 @@ export class MatchManager {
   }
 
   /**
-   * Start the tick loop that reveals events based on elapsed time
+   * Start the tick loop — uses BOTH setInterval (reliable) and RAF (smooth)
    */
   private _startTick(): void {
     if (this._tickInterval) return;
+
+    console.log('[MatchManager] Starting tick loop');
 
     const tick = () => {
       if (this.stateController.isFinished) return;
@@ -203,7 +199,6 @@ export class MatchManager {
       const snapshot = this.engine.getSnapshot();
 
       if (snapshot.isComplete && !this.resultLocker.isLocked) {
-        // Time's up — lock and finish
         const finalSnap = this.engine.getFinalSnapshot();
         const locked = this.resultLocker.lock(
           finalSnap.homeGoals, finalSnap.awayGoals, this._matchDbId!
@@ -218,8 +213,24 @@ export class MatchManager {
       this._emitUpdate();
     };
 
+    // Immediate first tick
     tick();
-    this._tickInterval = window.setInterval(tick, 500);
+
+    // Reliable interval-based tick
+    this._tickInterval = window.setInterval(tick, TICK_INTERVAL_MS);
+
+    // Also use RAF for smoother visual updates
+    const rafTick = () => {
+      if (this.stateController.isFinished || !this._tickInterval) return;
+      
+      const now = Date.now();
+      // Only emit via RAF if interval hasn't emitted recently (avoid double-updates)
+      if (now - this._lastEmitTime > 100) {
+        this._emitUpdate();
+      }
+      this._rafId = requestAnimationFrame(rafTick);
+    };
+    this._rafId = requestAnimationFrame(rafTick);
   }
 
   private _stopTick(): void {
@@ -227,11 +238,14 @@ export class MatchManager {
       clearInterval(this._tickInterval);
       this._tickInterval = null;
     }
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+    // One final update to ensure finished state is emitted
+    this._emitUpdate();
   }
 
-  /**
-   * Get the current full state
-   */
   getState(): MatchManagerState {
     const snapshot = this.stateController.isFinished
       ? this.engine.getFinalSnapshot()
@@ -258,23 +272,17 @@ export class MatchManager {
   }
 
   private _emitUpdate(): void {
+    this._lastEmitTime = Date.now();
     if (this._onUpdate) {
       this._onUpdate(this.getState());
     }
   }
 
-  /**
-   * Cleanup — call when unmounting
-   */
   destroy(): void {
     this._stopTick();
     this._onUpdate = null;
-    // Don't clear _navigateFn here — it may still be needed for persist() calls in flight
   }
 
-  /**
-   * Full reset for new match
-   */
   reset(): void {
     this._stopTick();
     this.stateController.reset();
@@ -285,10 +293,6 @@ export class MatchManager {
     this._matchDbId = null;
   }
 
-  /**
-   * Hard reset — resets singleton state completely for a new match.
-   * Must be called before startNewMatch or loadFromDb when a previous match existed.
-   */
   hardReset(): void {
     console.log('[MatchManager] hardReset() — clearing all state');
     this._stopTick();
@@ -299,20 +303,17 @@ export class MatchManager {
     this._stats = { ...EMPTY_STATS };
     this._matchDbId = null;
     this._onUpdate = null;
+    this._lastEmitTime = 0;
   }
 }
 
-// Singleton for app-wide access
+// Singleton
 let _instance: MatchManager | null = null;
 export function getMatchManager(): MatchManager {
   if (!_instance) _instance = new MatchManager();
   return _instance;
 }
 
-/**
- * Reset and return the singleton — use when navigating TO /match
- * to guarantee a clean state even if a previous match was left mid-session.
- */
 export function resetAndGetMatchManager(): MatchManager {
   if (_instance) {
     _instance.hardReset();
