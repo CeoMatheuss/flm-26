@@ -237,7 +237,7 @@ function MatchViewer({ matchState, onExit }: {
         visibleEvents={visibleEvents}
         isFinished={isFinished}
         goalFlash={goalFlash}
-        formation={state?.tactics?.formation}
+        formation={config.competition ? undefined : '4-4-2'}
       />
 
       {/* Tabs: Lances + Stats */}
