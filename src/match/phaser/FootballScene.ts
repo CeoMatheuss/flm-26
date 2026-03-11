@@ -100,6 +100,24 @@ export class FootballScene extends Phaser.Scene {
 
     this.positionBall(0.5, 0.5);
 
+    // Clock & score HUD (inside Phaser scene)
+    this.clockText = this.add.text(this.PW / 2, 10, "0'", {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#ffffff',
+      backgroundColor: '#00000088',
+      padding: { x: 8, y: 3 },
+    }).setOrigin(0.5, 0).setDepth(200);
+
+    this.scoreText = this.add.text(this.PW / 2, 28, '0 × 0', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#00000066',
+      padding: { x: 10, y: 3 },
+    }).setOrigin(0.5, 0).setDepth(200);
+
     // Handle resize
     this.scale.on('resize', this.handleResize, this);
   }
