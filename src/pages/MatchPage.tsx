@@ -110,7 +110,7 @@ function MatchViewer({ matchState, onExit }: {
   onExit: () => void;
 }) {
   const { phase, snapshot, config, stats, lockedResult } = matchState;
-  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent } = snapshot;
+  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent, progress } = snapshot;
   const { homeTeam, awayTeam, stadiumName, stadiumCapacity } = config;
 
   const isFinished = phase === 'finished';
