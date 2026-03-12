@@ -231,25 +231,14 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
           {showSigningMain && (
-            <div className="relative w-full h-16 sm:h-20 rounded-lg overflow-hidden mb-2 bg-muted">
-              <img src={signingImg} alt="Contratação" className="w-full h-full object-contain object-center" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
-              <div className="absolute bottom-2 left-2 right-2">
-                <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[main.category] || 'bg-primary'}`}>
-                  {main.category}
-                </span>
-                <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1 text-white drop-shadow-lg">{main.headline}</h3>
-              </div>
+            <div className="w-full rounded-lg mb-2 bg-muted/40 border border-border/40 py-1">
+              <img src={signingImg} alt="Contratação" className="w-3/5 sm:w-1/2 h-auto mx-auto block" />
             </div>
           )}
-          {!showSigningMain && (
-            <>
-              <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
-                {main.category}
-              </span>
-              <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1">{main.headline}</h3>
-            </>
-          )}
+          <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
+            {main.category}
+          </span>
+          <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1">{main.headline}</h3>
           <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-snug">{main.subtitle}</p>
         </div>
 
