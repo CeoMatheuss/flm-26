@@ -353,8 +353,28 @@ function simulateFullMatch(
 
   // ── EVENT BUILDER ────────────────────────────────────────────────
   const allPlanned: SimEvent[] = [];
-  let currentHome = 0, currentAway = 0;
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
+
+  // Build chronological score tracker for correct running scores
+  const allGoalEvents: { minute: number; team: 'home' | 'away'; isPenalty: boolean }[] = [];
+  for (const m of homeGoalMins) allGoalEvents.push({ minute: m, team: 'home', isPenalty: false });
+  for (const m of awayGoalMins) allGoalEvents.push({ minute: m, team: 'away', isPenalty: false });
+  for (const pen of penaltyMins) {
+    if (pen.isGoal) allGoalEvents.push({ minute: pen.minute, team: pen.team, isPenalty: true });
+  }
+  allGoalEvents.sort((a, b) => a.minute - b.minute);
+
+  // Pre-compute running score at each minute
+  function getScoreAtMinute(minute: number, includeSelf: boolean): [number, number] {
+    let h = 0, a = 0;
+    for (const g of allGoalEvents) {
+      if (g.minute < minute || (includeSelf && g.minute === minute)) {
+        if (g.team === 'home') h++;
+        else a++;
+      }
+    }
+    return [h, a];
+  }
 
   function buildupDesc(team: 'home' | 'away', tName: string): string {
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
