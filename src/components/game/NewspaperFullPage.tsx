@@ -281,22 +281,38 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
       {/* Admin Updates */}
       {adminUpdates.length > 0 && (
         <div className="space-y-2">
-          {adminUpdates.map(u => (
-            <Card key={u.id} className="border-primary/30 bg-primary/5">
-              <CardContent className="p-3 flex items-start gap-2">
-                <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
-                    <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+          {adminUpdates.map(u => {
+            const showSigningUpdate = shouldShowSigningImage('ATUALIZAÇÃO', u.title, u.content);
+
+            return (
+              <Card key={u.id} className="border-primary/30 bg-primary/5 overflow-hidden">
+                <CardContent className="p-0">
+                  {showSigningUpdate && (
+                    <div className="relative w-full h-20 overflow-hidden">
+                      <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-top opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                      <div className="absolute bottom-2 left-3">
+                        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">MERCADO</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-3 flex items-start gap-2">
+                    <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
+                        <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+                      </div>
+                      <p className="text-xs font-semibold mt-1">{u.title}</p>
+                      <p className="text-xs leading-snug text-muted-foreground whitespace-pre-line">{u.content}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
                   </div>
-                  <p className="text-xs font-semibold mt-1">{u.title}</p>
-                  <p className="text-xs leading-snug text-muted-foreground">{u.content}</p>
-                </div>
-                <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
