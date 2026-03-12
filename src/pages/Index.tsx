@@ -271,7 +271,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const showAdmin = isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
-  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number } | null>(null);
+  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
 
   // Calculate streaks for FansTab
   const { winStreak, loseStreak } = useMemo(() => {
@@ -365,6 +365,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         primaryColor={game.club.primaryColor || '#2563EB'}
         secondaryColor={game.club.secondaryColor || '#FFF'}
         clubName={game.club.name}
+        eventType={signingPlayer?.eventType || 'signing'}
+        extraInfo={signingPlayer?.extraInfo}
       />
       <header className="border-b border-border/30 bg-gradient-to-r from-card/95 via-card/80 to-card/95 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
@@ -486,7 +488,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               clubName={game.club.name}
               trainingLevel={game.infrastructure.trainingCenter.level}
               onRest={game.restPlayer}
-              onRenewContract={game.renewContract}
+              onRenewContract={(playerId, newSalary, newDuration) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                game.renewContract(playerId, newSalary, newDuration);
+                if (player) {
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês` });
+                }
+              }}
               onListForSale={async (playerId: string) => {
                 const player = game.club.players.find(p => p.id === playerId);
                 if (!player) return;
@@ -511,7 +519,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                   toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
                 }
               }}
-              onLoanOut={game.loanOutPlayer}
+              onLoanOut={(playerId) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                game.loanOutPlayer(playerId);
+                if (player) {
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'loan', extraInfo: `Emprestado por 1 temporada` });
+                }
+              }}
               onChangeNumber={game.changeShirtNumber}
               canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
               userId={userId}

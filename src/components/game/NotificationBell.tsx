@@ -293,30 +293,27 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   return (
     <div className="relative">
-      {/* Bell Button — fully transparent, no bg film */}
       <button
         onClick={handleOpen}
-        className="relative flex items-center justify-center h-9 w-9 rounded-lg bg-transparent hover:bg-white/5 transition-colors duration-200"
+        className="relative flex items-center justify-center h-9 w-9 bg-transparent transition-colors duration-200"
       >
         <Bell
-          className={`h-5 w-5 transition-all duration-200 ${
+          className={`h-5 w-5 ${
             urgentCount > 0
-              ? 'text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]'
+              ? 'text-red-500'
               : unreadCount > 0
-                ? 'text-primary drop-shadow-[0_0_6px_rgba(234,179,8,0.4)]'
-                : 'text-foreground'
+                ? 'text-yellow-400'
+                : 'text-white'
           }`}
+          strokeWidth={2.5}
         />
-        
-        {/* Badge */}
         {unreadCount > 0 && (
           <span className={`
             absolute -top-1.5 -right-1.5 flex items-center justify-center
             min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black
-            shadow-lg
             ${urgentCount > 0 
-              ? 'bg-red-500 text-white shadow-red-500/50' 
-              : 'bg-primary text-primary-foreground shadow-primary/40'
+              ? 'bg-red-500 text-white' 
+              : 'bg-yellow-400 text-black'
             }
           `}>
             {unreadCount > 99 ? '99+' : unreadCount}
