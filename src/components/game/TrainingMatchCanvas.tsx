@@ -1204,7 +1204,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           // Draw players with running indicator during sprint
           for (let i = 0; i < 11; i++) {
             const isRunningForward = (caCycle === 2 || caCycle === 3) && i >= 8;
-            const pSize = isRunningForward ? 9 : 8;
+            const pSize = isRunningForward ? 6 : 5;
             drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight,
               i === 0 ? 'GK' : isRunningForward ? '⚡' : `${i + 1}`, pSize);
           }
