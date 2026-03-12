@@ -352,8 +352,28 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, game.infrastructure.trainingCenter.level, game.infrastructure.physiotherapy.level, game.infrastructure.youthAcademy.level]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Check for new approved updates to show announcement
+  useEffect(() => {
+    const checkNewUpdates = async () => {
+      const lastSeen = localStorage.getItem('flm-last-update-seen') || '2000-01-01';
+      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).gt('approved_at', lastSeen).order('approved_at', { ascending: false }).limit(1);
+      if (data && data.length > 0) {
+        setAnnouncementUpdate(data[0]);
+      }
+    };
+    checkNewUpdates();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
+      <UpdateAnnouncementModal
+        update={announcementUpdate}
+        open={!!announcementUpdate}
+        onClose={() => {
+          if (announcementUpdate?.approved_at) localStorage.setItem('flm-last-update-seen', announcementUpdate.approved_at);
+          setAnnouncementUpdate(null);
+        }}
+      />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {
         game.addBonus(500000, 'Recompensa por completar o Tutorial');
         toast.success('🎉 Tutorial completo! Você ganhou R$500.000!');
