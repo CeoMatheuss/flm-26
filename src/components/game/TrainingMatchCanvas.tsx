@@ -307,12 +307,12 @@ const FORMATIONS: Record<DrillId, { teamA: { x: number; y: number }[]; teamB: { 
     ],
     teamB: [
       { x: 0.96, y: 0.50 },  // GK
-      // Wall (4 players) — closer to the kicker
-      { x: 0.76, y: 0.42 }, { x: 0.76, y: 0.47 }, { x: 0.76, y: 0.53 }, { x: 0.76, y: 0.58 },
+      // Wall (4 players) — further back, closer to the goal
+      { x: 0.82, y: 0.42 }, { x: 0.82, y: 0.47 }, { x: 0.82, y: 0.53 }, { x: 0.82, y: 0.58 },
       // Defenders marking attackers
-      { x: 0.83, y: 0.28 }, { x: 0.83, y: 0.72 },
-      { x: 0.88, y: 0.38 }, { x: 0.88, y: 0.62 },
-      { x: 0.80, y: 0.32 }, { x: 0.80, y: 0.68 },
+      { x: 0.86, y: 0.28 }, { x: 0.86, y: 0.72 },
+      { x: 0.90, y: 0.38 }, { x: 0.90, y: 0.62 },
+      { x: 0.84, y: 0.32 }, { x: 0.84, y: 0.68 },
     ],
   },
   crossing: {
