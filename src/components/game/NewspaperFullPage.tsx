@@ -328,39 +328,6 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         </Button>
       </div>
 
-      {/* Admin Updates */}
-      {adminUpdates.length > 0 && (
-        <div className="space-y-2">
-          {adminUpdates.map(u => {
-            const showSigningUpdate = shouldShowSigningImage('ATUALIZAÇÃO', u.title, u.content);
-
-            return (
-              <Card key={u.id} className="border-primary/30 bg-primary/5 overflow-hidden">
-                <CardContent className="p-0">
-                  {showSigningUpdate && (
-                    <div className="w-full overflow-hidden rounded-t-lg">
-                      <img src={signingImg} alt="Transferência" className="w-full h-auto opacity-70 rounded-t-lg" />
-                    </div>
-                  )}
-
-                  <div className="p-3 flex items-start gap-2">
-                    <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
-                        <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
-                      </div>
-                      <p className="text-xs font-semibold mt-1">{u.title}</p>
-                      <p className="text-xs leading-snug text-muted-foreground whitespace-pre-line">{u.content}</p>
-                    </div>
-                    <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-8">

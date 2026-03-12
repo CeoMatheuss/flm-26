@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
 import { GameEvent } from '@/types/events';
 import { Club } from '@/types/game';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ExternalLink, Megaphone } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Newspaper, ExternalLink } from 'lucide-react';
 
 interface Props {
   club: Club;
