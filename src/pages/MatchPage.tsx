@@ -101,7 +101,24 @@ export default function MatchPage() {
     return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
   }
 
-  return <MatchViewer matchState={state} onExit={() => navigate('/', { replace: true })} />;
+  const handleExit = () => {
+    if (state.phase === 'finished' && state.matchDbId) {
+      navigate('/', {
+        replace: true,
+        state: {
+          serverMatchResult: {
+            matchDbId: state.matchDbId,
+            homeGoals: state.homeGoals,
+            awayGoals: state.awayGoals,
+          },
+        },
+      });
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
+
+  return <MatchViewer matchState={state} onExit={handleExit} />;
 }
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
