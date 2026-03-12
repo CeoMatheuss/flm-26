@@ -64,6 +64,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const driftRef = useRef(0);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -320,7 +322,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       if (frame < totalFrames + 40) {
         animRef.current = requestAnimationFrame(animate);
       } else {
-        onComplete?.();
+        onCompleteRef.current?.();
       }
     };
 
@@ -329,7 +331,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
     return () => {
       cancelAnimationFrame(animRef.current);
     };
-  }, [type, team, playerName, onComplete, currentMinute]);
+  }, [type, team, playerName, currentMinute]);
 
   return (
     <canvas
