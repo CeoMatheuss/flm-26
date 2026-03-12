@@ -387,6 +387,26 @@ export function TrainingTab({
         </CardContent>
       </Card>
 
+      {/* ── Treino 2D Tático ─────────────────────────────────── */}
+      <Card className="border-border/30">
+        <CardHeader className="pb-0 pt-3 px-3">
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between h-8 px-1"
+            onClick={() => setShowTraining2D(v => !v)}
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <Gamepad2 className="h-4 w-4 text-primary" /> Treino Tático 2D
+            </span>
+            {showTraining2D ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {showTraining2D && (
+          <CardContent className="px-3 pb-3 pt-2">
+            <TrainingMatchCanvas clubName="Meu Clube" />
+          </CardContent>
+        )}
+
       {/* ── Resultado da última semana ─────────────────────────────── */}
       {showResult && lastResult && (
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
