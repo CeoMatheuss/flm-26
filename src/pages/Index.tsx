@@ -19,7 +19,7 @@ import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { FansTab } from '@/components/game/FansTab';
-import { TrainingTab } from '@/components/game/TrainingTab';
+import { TrainingWrapper } from '@/components/game/TrainingWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { AuctionTab } from '@/components/game/AuctionTab';
