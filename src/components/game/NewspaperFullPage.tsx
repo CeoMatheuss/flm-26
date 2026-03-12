@@ -331,8 +331,8 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                 <Card key={item.id} className="border-border overflow-hidden">
                   <CardContent className="p-0">
                     {showSigningVisual && (
-                      <div className="relative w-full h-24 overflow-hidden">
-                        <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-top opacity-60" />
+                      <div className="relative w-full aspect-[16/6] overflow-hidden bg-muted">
+                        <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-center opacity-60" />
                         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                         <div className="absolute bottom-2 left-3">
                           <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
