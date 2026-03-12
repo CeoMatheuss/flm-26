@@ -231,8 +231,8 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
           {showSigningMain && (
-            <div className="relative w-full max-h-20 sm:max-h-24 rounded-lg overflow-hidden mb-2 bg-muted">
-              <img src={signingImg} alt="Contratação" className="w-full h-auto block" />
+            <div className="relative w-full h-16 sm:h-20 rounded-lg overflow-hidden mb-2 bg-muted">
+              <img src={signingImg} alt="Contratação" className="w-full h-full object-contain object-center" />
               <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
               <div className="absolute bottom-2 left-2 right-2">
                 <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[main.category] || 'bg-primary'}`}>
@@ -262,8 +262,8 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               return (
                 <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
                   {showSigningUpdate && (
-                    <div className="relative w-full max-h-14 overflow-hidden bg-muted">
-                      <img src={signingImg} alt="Transferência" className="w-full h-auto block opacity-60" />
+                    <div className="relative w-full h-12 overflow-hidden bg-muted">
+                      <img src={signingImg} alt="Transferência" className="w-full h-full object-contain object-center opacity-60" />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                       <div className="absolute bottom-1.5 left-2">
                         <span className="text-[7px] font-bold text-white px-1 py-0.5 rounded bg-primary/80">MERCADO</span>
