@@ -649,10 +649,7 @@ export function useGame(initialState?: GameState, userId?: string) {
       return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    addFeedItem(createFeedItem('transfer_in', `Reforço: ${player.name}`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) foi contratado por R$ ${(value / 1000).toFixed(0)}k!`, '🛒', {
-      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
-    }));
-  }, [addFinance, addFeedItem]);
+  }, [addFinance]);
 
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
