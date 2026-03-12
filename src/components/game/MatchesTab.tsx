@@ -176,10 +176,8 @@ export function MatchesTab({
         </div>
       </TabsContent>
 
-      {/* ── TREINO 2D ─────────────────────────────────────────── */}
-      <TabsContent value="training">
-        <TrainingMatchCanvas clubName={clubName} />
-      </TabsContent>
+
+
 
       {/* ── ONLINE ─────────────────────────────────────────────── */}
       <TabsContent value="online">
