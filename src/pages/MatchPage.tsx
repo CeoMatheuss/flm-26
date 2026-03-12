@@ -42,12 +42,14 @@ export default function MatchPage() {
       setError(null);
       try {
         if (state?.liveMatchDbId) {
+          setLoadingMsg('Reconectando à partida');
           const ok = await loadFromDb(state.liveMatchDbId);
           if (!ok) setError('Partida não encontrada.');
           setLoading(false);
           return;
         }
         if (state) {
+          setLoadingMsg('Simulando partida no servidor');
           const result = await startNewMatch({
             homeTeam: state.homeTeam,
             awayTeam: state.awayTeam,
@@ -65,6 +67,7 @@ export default function MatchPage() {
           setLoading(false);
           return;
         }
+        setLoadingMsg('Buscando partida ativa');
         const found = await findActiveMatch();
         if (!found) { navigate('/', { replace: true }); return; }
         setLoading(false);
