@@ -660,10 +660,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     });
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
-    addFeedItem(createFeedItem('free_agent_signed', `Livre: ${player.name} assinou!`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) assinou como agente livre.`, '✍️', {
-      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
-    }));
-  }, [addFinance, addFeedItem]);
+  }, [addFinance]);
 
   const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;
