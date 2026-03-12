@@ -229,22 +229,25 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
         </Card>
       )}
 
-      {/* 2D Highlight clip — only for key moments */}
-      {activeHighlight && (
-        <div className="animate-fade-in">
-          <Card className="p-2 border-yellow-400/30 bg-yellow-400/5">
+      {/* 2D Canvas — always visible. Shows highlight or idle state */}
+      {!isFinished && (
+        <Card className={`p-2 transition-all duration-300 ${activeHighlight ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-border/10 bg-muted/5'}`}>
+          {activeHighlight && (
             <div className="text-center mb-1">
               <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
             </div>
-            <HighlightMiniCanvas
-              type={getHighlightType(activeHighlight.type)}
-              team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
-              playerName={activeHighlight.playerName}
-              onComplete={() => setTimeout(() => setActiveHighlight(null), 2000)}
-            />
+          )}
+          <HighlightMiniCanvas
+            type={activeHighlight ? getHighlightType(activeHighlight.type) : 'idle'}
+            team={activeHighlight ? (activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team) : 'home'}
+            playerName={activeHighlight?.playerName}
+            currentMinute={currentMinute}
+            onComplete={activeHighlight ? () => setTimeout(() => setActiveHighlight(null), 1500) : undefined}
+          />
+          {activeHighlight && (
             <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
-          </Card>
-        </div>
+          )}
+        </Card>
       )}
 
       {/* Commentary — latest event */}
