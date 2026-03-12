@@ -58,6 +58,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
