@@ -82,12 +82,10 @@ export default function MatchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-sm text-muted-foreground">Preparando partida no servidor...</p>
-        </div>
-      </div>
+      <GameLoadingScreen
+        message={loadingMsg}
+        subMessage={state ? `${state.homeTeam} vs ${state.awayTeam}` : undefined}
+      />
     );
   }
   if (error) {
