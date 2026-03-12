@@ -166,6 +166,7 @@ const categoryColors: Record<string, string> = {
   PRESTÍGIO: 'bg-amber-500/80',
   LESÕES: 'bg-orange-500/80',
   RENOVAÇÃO: 'bg-blue-600/80',
+  CONTRATAÇÃO: 'bg-emerald-600/80',
   EMPRÉSTIMO: 'bg-amber-500/80',
 };
 
