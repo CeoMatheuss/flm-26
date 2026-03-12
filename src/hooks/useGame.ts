@@ -789,10 +789,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
     toast.success(`${prospect.name} promovido ao time principal!`);
-    addFeedItem(createFeedItem('youth_promoted', `⭐ ${prospect.name} promovido!`, `${prospect.name} (${prospect.position}, ${prospect.age} anos, OVR ${prospect.overall}) saiu da base para o profissional!`, '🌟', {
-      playerData: { name: prospect.name, overall: prospect.overall, age: prospect.age, position: prospect.position },
-    }));
-  }, [youthProspects, addFeedItem]);
+  }, [youthProspects]);
 
   const renameClub = useCallback((newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
