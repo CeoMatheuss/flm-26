@@ -522,6 +522,7 @@ export function AdminTab({ userId, isFounder }: Props) {
             <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
             {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
             <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
+            <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
             <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
           </TabsList>
         </ScrollArea>
