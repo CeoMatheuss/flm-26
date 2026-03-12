@@ -100,6 +100,102 @@ export function useMatchSimulation() {
   const intervalRef = useRef<number | null>(null);
   const persistedRef = useRef(false);
 
+  // Compute stats dynamically from visible events
+  const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
+    const s: MatchStats = {
+      possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0],
+      corners: [0, 0], fouls: [0, 0], yellowCards: [0, 0],
+      redCards: [0, 0], passes: [0, 0], tackles: [0, 0],
+      saves: [0, 0], offsides: [0, 0],
+    };
+    let homeActions = 0, awayActions = 0;
+
+    for (const ev of events) {
+      const idx = ev.team === 'home' ? 0 : ev.team === 'away' ? 1 : -1;
+      if (idx === -1) continue;
+      const opp = idx === 0 ? 1 : 0;
+
+      // Possession tracking
+      if (ev.team === 'home') homeActions++;
+      else if (ev.team === 'away') awayActions++;
+
+      // Goal events = shot + on target
+      if (ev.isGoal) {
+        s.shots[idx]++;
+        s.shotsOnTarget[idx]++;
+      }
+
+      // Chance events
+      switch (ev.type) {
+        case 'woodwork':
+          s.shots[idx]++;
+          s.shotsOnTarget[idx]++;
+          break;
+        case 'great_save':
+          s.shots[idx]++;
+          s.shotsOnTarget[idx]++;
+          s.saves[opp]++;
+          break;
+        case 'corner_danger':
+          s.corners[idx]++;
+          break;
+        case 'offside_trap':
+          s.offsides[idx]++;
+          break;
+        case 'long_shot_miss':
+        case 'header_miss':
+          s.shots[idx]++;
+          break;
+        case 'yellow_card':
+          s.fouls[idx]++;
+          s.yellowCards[idx]++;
+          break;
+        case 'red_card':
+          s.fouls[idx]++;
+          s.redCards[idx]++;
+          break;
+        case 'dangerous_foul':
+          s.fouls[opp]++;
+          break;
+        case 'midfield_foul':
+        case 'foul':
+          s.fouls[idx]++;
+          break;
+        case 'tackle':
+          s.tackles[opp]++;
+          break;
+        case 'penalty_miss':
+          s.shots[idx]++;
+          s.shotsOnTarget[idx]++;
+          s.saves[opp]++;
+          break;
+        // Possession/pass events
+        case 'possession':
+        case 'dribble_ok':
+        case 'through_ball':
+        case 'crossing':
+        case 'long_pass':
+        case 'pressing':
+        case 'gk_distribution':
+        case 'throw_in':
+        case 'free_kick':
+          s.passes[idx]++;
+          break;
+      }
+    }
+
+    // Compute possession from action counts
+    const total = homeActions + awayActions;
+    if (total > 0) {
+      s.possession = [
+        Math.round((homeActions / total) * 100),
+        Math.round((awayActions / total) * 100),
+      ];
+    }
+
+    return s;
+  }, []);
+
   // Core tick function — reads time, computes visible events
   const tick = useCallback(() => {
     const data = dataRef.current;
@@ -127,6 +223,9 @@ export function useMatchSimulation() {
 
     const latestEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
 
+    // Compute stats progressively from revealed events
+    const liveStats = isComplete ? data.stats : computeStatsFromEvents(visibleEvents);
+
     // Determine phase
     let phase: MatchState['phase'] = 'live';
     if (isComplete) {
@@ -147,7 +246,7 @@ export function useMatchSimulation() {
       awayGoals,
       visibleEvents,
       latestEvent,
-      stats: data.stats,
+      stats: liveStats,
       stadiumName: data.stadiumName,
       matchDbId: data.matchDbId,
       errorMsg: null,
