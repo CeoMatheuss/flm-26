@@ -5,7 +5,7 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown } from 'lucide-react';
+import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown, SmilePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import signingImg from '@/assets/transfer-signing.jpg';
@@ -135,6 +135,8 @@ function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: I
   return news;
 }
 
+const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
+
 export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const [savedEntries, setSavedEntries] = useState<SavedEntry[]>([]);
@@ -142,6 +144,8 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
   const [narrating, setNarrating] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [expandedNarration, setExpandedNarration] = useState<string | null>(null);
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Record<string, string[]>>({}); // entryId -> emojis user reacted with
 
   // Save current news to DB and fetch history
   const saveAndLoad = useCallback(async () => {
@@ -186,7 +190,27 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (data) setSavedEntries(data as SavedEntry[]);
+      if (data) {
+        setSavedEntries(data as SavedEntry[]);
+        
+        // Load user reactions
+        const entryIds = (data as SavedEntry[]).map(e => e.id);
+        if (entryIds.length > 0) {
+          const { data: rxns } = await supabase
+            .from('newspaper_reactions')
+            .select('entry_id, emoji')
+            .eq('user_id', user.id)
+            .in('entry_id', entryIds);
+          if (rxns) {
+            const map: Record<string, string[]> = {};
+            (rxns as any[]).forEach(r => {
+              if (!map[r.entry_id]) map[r.entry_id] = [];
+              map[r.entry_id].push(r.emoji);
+            });
+            setReactions(map);
+          }
+        }
+      }
 
       // Load admin updates
       const { data: updates } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(20);
@@ -197,6 +221,36 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
       setLoading(false);
     }
   }, [club, events, infrastructure]);
+
+  const toggleReaction = useCallback(async (entryId: string, emoji: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const current = reactions[entryId] || [];
+    const hasIt = current.includes(emoji);
+
+    if (hasIt) {
+      await supabase
+        .from('newspaper_reactions')
+        .delete()
+        .eq('entry_id', entryId)
+        .eq('user_id', user.id)
+        .eq('emoji', emoji);
+      setReactions(prev => ({
+        ...prev,
+        [entryId]: (prev[entryId] || []).filter(e => e !== emoji),
+      }));
+    } else {
+      await supabase
+        .from('newspaper_reactions')
+        .insert({ entry_id: entryId, user_id: user.id, emoji });
+      setReactions(prev => ({
+        ...prev,
+        [entryId]: [...(prev[entryId] || []), emoji],
+      }));
+    }
+    setShowReactionPicker(null);
+  }, [reactions]);
 
   useEffect(() => {
     saveAndLoad();
@@ -362,7 +416,40 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                         </span>
                       </div>
                     </div>
-                  </div>
+                      {/* Reaction bar */}
+                      <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-border/30">
+                        {(reactions[item.id] || []).map(emoji => (
+                          <button
+                            key={emoji}
+                            onClick={() => toggleReaction(item.id, emoji)}
+                            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)}
+                            className="p-1 rounded hover:bg-muted transition-colors"
+                          >
+                            <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                          {showReactionPicker === item.id && (
+                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                              {REACT_EMOJIS.map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => toggleReaction(item.id, emoji)}
+                                  className={`text-sm p-1 rounded hover:bg-muted transition-colors ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               );

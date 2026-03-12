@@ -26,7 +26,7 @@ import { AuctionTab } from '@/components/game/AuctionTab';
 import { OnlineFriendliesTab } from '@/components/game/OnlineFriendliesTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { AdminTab } from '@/components/game/AdminTab';
-import { ClubFeedTab } from '@/components/game/ClubFeedTab';
+
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
@@ -49,7 +49,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar, Gift, Star, TrendingUp, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Shield, Medal, User, Home, BarChart3, Calendar, Gift, Star, TrendingUp, ChevronRight } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -716,18 +716,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>
           <TabsContent value="journal">
-            <Tabs defaultValue="news" className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="news" className="text-xs gap-1"><Newspaper className="h-3 w-3" /> Notícias</TabsTrigger>
-                <TabsTrigger value="feed" className="text-xs gap-1"><Rss className="h-3 w-3" /> Feed do Clube</TabsTrigger>
-              </TabsList>
-              <TabsContent value="news">
-                <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
-              </TabsContent>
-              <TabsContent value="feed">
-                <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
-              </TabsContent>
-            </Tabs>
+            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="newspaper">
             <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
@@ -746,9 +735,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 game.addPackPlayers(newPlayers, cost);
               }}
             />
-          </TabsContent>
-          <TabsContent value="feed">
-            <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
           </TabsContent>
           <TabsContent value="achievements">
             <AchievementsTab achievements={game.achievements} />

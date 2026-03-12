@@ -11,7 +11,7 @@ import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
-import { FeedItem, createFeedItem } from '@/types/feed';
+
 import { Achievement, checkAchievements } from '@/types/achievements';
 import { MatchReport, generateMatchReport, InterviewScenario, generateInterviewScenario, InterviewChoice } from '@/types/matchReport';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
@@ -47,7 +47,7 @@ export interface GameState {
   events: GameEvent[];
   loanedPlayers?: LoanedPlayer[];
   trainingFocus?: Record<string, TrainingFocus>;
-  feedItems?: FeedItem[];
+  
   achievements?: Achievement[];
   lastMatchReport?: MatchReport;
   clubProfile?: ClubProfile;
@@ -113,7 +113,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     };
     loadActiveListings();
   }, [userId]);
-   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
    const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
    const [lastMatchReport, setLastMatchReport] = useState<MatchReport | undefined>(initialState?.lastMatchReport);
    const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
@@ -121,11 +120,11 @@ export function useGame(initialState?: GameState, userId?: string) {
    const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
    const [ranking, setRanking] = useState(() => {
      if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.ranking ?? 0;
-     return 0; // Reset ranking for v3 — all teams start at 0
+     return 0;
    });
    const [rankingHistory, setRankingHistory] = useState<RankingHistory[]>(() => {
      if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.rankingHistory ?? [];
-     return []; // Reset history for v3
+     return [];
    });
    const [friendliesPlayedToday, setFriendliesPlayedToday] = useState(initialState?.friendliesPlayedToday ?? 0);
    const [friendliesPlayedSeason, setFriendliesPlayedSeason] = useState(initialState?.friendliesPlayedSeason ?? 0);
@@ -133,15 +132,6 @@ export function useGame(initialState?: GameState, userId?: string) {
 
    const MAX_FRIENDLIES_PER_DAY = 1;
 
-  const addFeedItem = useCallback((item: FeedItem) => {
-    setFeedItems(prev => [item, ...prev].slice(0, 50));
-  }, []);
-
-  const reactToFeed = useCallback((itemId: string, emoji: string) => {
-    setFeedItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, userReaction: item.userReaction === emoji ? undefined : emoji } : item
-    ));
-  }, []);
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
   }, []);
@@ -659,10 +649,7 @@ export function useGame(initialState?: GameState, userId?: string) {
       return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    addFeedItem(createFeedItem('transfer_in', `Reforço: ${player.name}`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) foi contratado por R$ ${(value / 1000).toFixed(0)}k!`, '🛒', {
-      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
-    }));
-  }, [addFinance, addFeedItem]);
+  }, [addFinance]);
 
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
@@ -673,10 +660,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     });
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
-    addFeedItem(createFeedItem('free_agent_signed', `Livre: ${player.name} assinou!`, `${player.name} (${player.position}, ${player.age} anos, OVR ${player.overall}) assinou como agente livre.`, '✍️', {
-      playerData: { name: player.name, overall: player.overall, age: player.age, position: player.position },
-    }));
-  }, [addFinance, addFeedItem]);
+  }, [addFinance]);
 
   const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;
@@ -789,14 +773,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     const desc = isStadium
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
-    addFeedItem(createFeedItem(
-      isStadium ? 'stadium_upgrade' : 'facility_upgrade',
-      `🏗️ ${label} → Nível ${newLevel}`,
-      desc,
-      isStadium ? '🏟️' : '🔧',
-      { facilityData: { name: label, level: newLevel } }
-    ));
-  }, [addFinance, infrastructure, club.budget, addFeedItem]);
+  }, [addFinance, infrastructure, club.budget]);
 
   const promoteYouth = useCallback((youthId: string) => {
     const prospect = youthProspects.find(p => p.id === youthId);
@@ -812,10 +789,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     setClub(prev => ({ ...prev, players: [...prev.players, player] }));
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
     toast.success(`${prospect.name} promovido ao time principal!`);
-    addFeedItem(createFeedItem('youth_promoted', `⭐ ${prospect.name} promovido!`, `${prospect.name} (${prospect.position}, ${prospect.age} anos, OVR ${prospect.overall}) saiu da base para o profissional!`, '🌟', {
-      playerData: { name: prospect.name, overall: prospect.overall, age: prospect.age, position: prospect.position },
-    }));
-  }, [youthProspects, addFeedItem]);
+  }, [youthProspects]);
 
   const renameClub = useCallback((newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
@@ -1065,8 +1039,8 @@ export function useGame(initialState?: GameState, userId?: string) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 3, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 3, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
@@ -1159,7 +1133,7 @@ export function useGame(initialState?: GameState, userId?: string) {
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
+    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus,
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
     friendliesPlayedToday, friendliesPlayedSeason,
     alreadyPlayedToday, lastFriendlyDate,
@@ -1169,6 +1143,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers, addBonus,
+    upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers, addBonus,
   };
 }
