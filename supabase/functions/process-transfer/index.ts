@@ -310,13 +310,26 @@ Deno.serve(async (req) => {
         else if (personality === 'ambicioso' && offeredSalary <= currentSalary) reason = 'Jogador recusou: ambicioso, espera um salário maior.';
         else reason = 'Jogador recusou: não se interessou pela proposta.';
 
+        // Build agent message for the buyer
+        const suggestedSalary = Math.round(currentSalary * 1.25);
+        const agentMessage = `Aqui é o empresário de ${listing.player_name}. ${reason} Para fecharmos negócio, sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus de assinatura. O jogador pode reconsiderar com melhores condições.`;
+
         await adminClient.from('transfer_offers').update({
           status: 'player_rejected',
-          rejection_reason: reason,
+          rejection_reason: agentMessage,
           responded_at: new Date().toISOString(),
         }).eq('id', offerId);
 
-        return new Response(JSON.stringify({ success: true, playerAccepted: false, reason }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        // Notify the buyer about the player rejection with agent message
+        await adminClient.from('user_notifications').insert({
+          user_id: offer.buyer_id,
+          icon: '🤵',
+          title: `Empresário de ${listing.player_name} respondeu`,
+          message: agentMessage,
+          type: 'warning',
+        });
+
+        return new Response(JSON.stringify({ success: true, playerAccepted: false, reason: agentMessage }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // Player accepted! Complete the transfer
