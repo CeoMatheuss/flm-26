@@ -508,8 +508,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 if (res.error || res.data?.error) {
                   toast.error(res.data?.error || 'Erro ao listar jogador');
                 } else {
-                  toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
-                  setActiveTab('market');
+                  // Auto-sell: immediately remove player and credit budget
+                  game.sellPlayer(player);
+                  toast.success(`${player.name} vendido por R$${(askingPrice / 1000).toFixed(0)}k! 💰`);
                 }
               }}
               onLoanOut={game.loanOutPlayer}

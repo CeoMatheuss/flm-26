@@ -28,14 +28,15 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
 
   // Attendance calculation
   const baseAttendance = Math.min(totalFans * 0.15, stadiumCapacity);
-  const streakMultiplier = winStreak >= 4 ? 1.5 : winStreak >= 3 ? 1.3 : winStreak >= 2 ? 1.15 : loseStreak >= 5 ? 0.5 : loseStreak >= 4 ? 0.65 : loseStreak >= 3 ? 0.8 : 1;
+  const streakMultiplier = winStreak >= 4 ? 1.5 : winStreak >= 3 ? 1.3 : winStreak >= 2 ? 1.15 : loseStreak >= 6 ? 0.5 : loseStreak >= 5 ? 0.6 : loseStreak >= 4 ? 0.75 : loseStreak >= 3 ? 0.85 : 1;
   const priceMultiplier = ticketPrice > 100 ? 0.7 : ticketPrice > 60 ? 0.85 : ticketPrice < 15 ? 1.2 : 1;
   const reputationBonus = club.reputation / 100;
   const estimatedAttendance = Math.min(stadiumCapacity, Math.floor(baseAttendance * streakMultiplier * priceMultiplier * (0.7 + reputationBonus * 0.5)));
   const occupancy = stadiumCapacity > 0 ? Math.round((estimatedAttendance / stadiumCapacity) * 100) : 0;
 
-  const fanMood = winStreak >= 4 ? 'Eufórica 🔥' : winStreak >= 3 ? 'Empolgada 😄' : winStreak >= 2 ? 'Animada 🙂' : loseStreak >= 5 ? 'Revoltada 😡' : loseStreak >= 4 ? 'Insatisfeita 😤' : loseStreak >= 3 ? 'Preocupada 😟' : 'Estável 😐';
-  const moodColor = winStreak >= 3 ? 'text-emerald-400' : loseStreak >= 4 ? 'text-destructive' : 'text-primary';
+  // More tolerant mood: crisis only after 5+ losses
+  const fanMood = winStreak >= 4 ? 'Eufórica 🔥' : winStreak >= 3 ? 'Empolgada 😄' : winStreak >= 2 ? 'Animada 🙂' : loseStreak >= 6 ? 'Revoltada 😡' : loseStreak >= 5 ? 'Insatisfeita 😤' : loseStreak >= 4 ? 'Preocupada 😟' : loseStreak >= 3 ? 'Inquieta 😐' : 'Estável 😊';
+  const moodColor = winStreak >= 3 ? 'text-emerald-400' : loseStreak >= 5 ? 'text-destructive' : loseStreak >= 3 ? 'text-primary' : 'text-foreground';
 
   const fanCategories = [
     { name: 'Fanáticas/Organizadas', count: fanaticas, icon: Flame, color: 'text-red-400', desc: 'Presentes em TODOS os jogos, fazem festa nas arquibancadas' },

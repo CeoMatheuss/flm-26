@@ -23,8 +23,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const last5 = club.matches.filter(m => m.played).slice(-5);
   const recentWins = last5.filter(m => m.result && m.result.home > m.result.away).length;
   const recentLosses = last5.filter(m => m.result && m.result.home < m.result.away).length;
-  const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentLosses >= 4 ? 'Revoltada 😡' : recentLosses >= 3 ? 'Insatisfeita 😤' : 'Estável 😐';
-  const fanMoodColor = recentWins >= 3 ? 'text-emerald-400' : recentLosses >= 3 ? 'text-destructive' : 'text-primary';
+  // More tolerant thresholds: crisis only after 5+ losses in last 5 matches (effectively all 5)
+  const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentWins >= 2 ? 'Animada 🙂' : recentLosses >= 5 ? 'Revoltada 😡' : recentLosses >= 4 ? 'Insatisfeita 😤' : recentLosses >= 3 ? 'Preocupada 😟' : 'Estável 😐';
+  const fanMoodColor = recentWins >= 3 ? 'text-emerald-400' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
 
   const playedMatches = club.matches.filter(m => m.played);
   let streak = 0;
