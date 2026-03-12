@@ -282,18 +282,21 @@ const FORMATIONS: Record<DrillId, { teamA: { x: number; y: number }[]; teamB: { 
   },
   freekicks: {
     teamA: [
-      { x: 0.55, y: 0.50 },  // Cobrador
-      { x: 0.75, y: 0.32 }, { x: 0.78, y: 0.45 }, { x: 0.80, y: 0.62 }, { x: 0.75, y: 0.72 },
-      { x: 0.58, y: 0.25 }, { x: 0.58, y: 0.75 },
-      { x: 0.30, y: 0.30 }, { x: 0.30, y: 0.50 }, { x: 0.30, y: 0.70 }, { x: 0.10, y: 0.50 },
+      { x: 0.68, y: 0.50 },  // Cobrador — closer to goal
+      // Attackers in/near the box
+      { x: 0.82, y: 0.30 }, { x: 0.84, y: 0.45 }, { x: 0.84, y: 0.58 }, { x: 0.82, y: 0.72 },
+      { x: 0.72, y: 0.25 }, { x: 0.72, y: 0.75 },
+      // Defenders stay back
+      { x: 0.30, y: 0.30 }, { x: 0.30, y: 0.50 }, { x: 0.30, y: 0.70 }, { x: 0.08, y: 0.50 },
     ],
     teamB: [
       { x: 0.96, y: 0.50 },  // GK
-      // Wall (4 players in a line)
-      { x: 0.68, y: 0.43 }, { x: 0.68, y: 0.47 }, { x: 0.68, y: 0.53 }, { x: 0.68, y: 0.57 },
-      { x: 0.82, y: 0.25 }, { x: 0.82, y: 0.75 },
-      { x: 0.85, y: 0.38 }, { x: 0.85, y: 0.62 },
-      { x: 0.78, y: 0.30 }, { x: 0.78, y: 0.70 },
+      // Wall (4 players) — closer to the kicker
+      { x: 0.76, y: 0.42 }, { x: 0.76, y: 0.47 }, { x: 0.76, y: 0.53 }, { x: 0.76, y: 0.58 },
+      // Defenders marking attackers
+      { x: 0.83, y: 0.28 }, { x: 0.83, y: 0.72 },
+      { x: 0.88, y: 0.38 }, { x: 0.88, y: 0.62 },
+      { x: 0.80, y: 0.32 }, { x: 0.80, y: 0.68 },
     ],
   },
   crossing: {
