@@ -167,6 +167,8 @@ const categoryColors: Record<string, string> = {
   PASSES: 'bg-purple-500/80',
   PRESTÍGIO: 'bg-amber-500/80',
   LESÕES: 'bg-orange-500/80',
+  RENOVAÇÃO: 'bg-blue-600/80',
+  EMPRÉSTIMO: 'bg-amber-500/80',
 };
 
 export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, isNewClub, clubCreatedAt }: Props) {
