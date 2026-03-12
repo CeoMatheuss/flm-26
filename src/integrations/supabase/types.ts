@@ -362,24 +362,36 @@ export type Database = {
       }
       journal_updates: {
         Row: {
+          approved: boolean
+          approved_at: string | null
+          benefits: string[] | null
           content: string
           created_at: string
           id: string
           title: string
+          update_type: string
           user_id: string
         }
         Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          benefits?: string[] | null
           content: string
           created_at?: string
           id?: string
           title?: string
+          update_type?: string
           user_id: string
         }
         Update: {
+          approved?: boolean
+          approved_at?: string | null
+          benefits?: string[] | null
           content?: string
           created_at?: string
           id?: string
           title?: string
+          update_type?: string
           user_id?: string
         }
         Relationships: []
