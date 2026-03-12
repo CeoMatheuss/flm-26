@@ -81,7 +81,7 @@ function normalizeNewsValue(value: string): string {
 
 function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
   const normalizedCategory = normalizeNewsValue(category || '');
-  if (['mercado', 'elenco', 'emprestimo', 'renovacao', 'fundacao'].includes(normalizedCategory)) {
+  if (['mercado', 'elenco', 'emprestimo', 'renovacao', 'fundacao', 'contratacao'].includes(normalizedCategory)) {
     return true;
   }
 
