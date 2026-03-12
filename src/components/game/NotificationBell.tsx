@@ -71,6 +71,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [soldListings, setSoldListings] = useState<SoldListing[]>([]);
   const [boughtListings, setBoughtListings] = useState<BoughtListing[]>([]);
+  const [dbNotifications, setDbNotifications] = useState<Array<{ id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
   useEffect(() => {
