@@ -113,7 +113,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     };
     loadActiveListings();
   }, [userId]);
-   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialState?.feedItems ?? []);
    const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
    const [lastMatchReport, setLastMatchReport] = useState<MatchReport | undefined>(initialState?.lastMatchReport);
    const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
@@ -121,11 +120,11 @@ export function useGame(initialState?: GameState, userId?: string) {
    const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
    const [ranking, setRanking] = useState(() => {
      if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.ranking ?? 0;
-     return 0; // Reset ranking for v3 — all teams start at 0
+     return 0;
    });
    const [rankingHistory, setRankingHistory] = useState<RankingHistory[]>(() => {
      if (initialState?.rankingVersion && initialState.rankingVersion >= 3) return initialState.rankingHistory ?? [];
-     return []; // Reset history for v3
+     return [];
    });
    const [friendliesPlayedToday, setFriendliesPlayedToday] = useState(initialState?.friendliesPlayedToday ?? 0);
    const [friendliesPlayedSeason, setFriendliesPlayedSeason] = useState(initialState?.friendliesPlayedSeason ?? 0);
@@ -133,15 +132,6 @@ export function useGame(initialState?: GameState, userId?: string) {
 
    const MAX_FRIENDLIES_PER_DAY = 1;
 
-  const addFeedItem = useCallback((item: FeedItem) => {
-    setFeedItems(prev => [item, ...prev].slice(0, 50));
-  }, []);
-
-  const reactToFeed = useCallback((itemId: string, emoji: string) => {
-    setFeedItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, userReaction: item.userReaction === emoji ? undefined : emoji } : item
-    ));
-  }, []);
   const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
     setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
   }, []);
