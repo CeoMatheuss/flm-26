@@ -406,6 +406,7 @@ export function TrainingTab({
             <TrainingMatchCanvas clubName="Meu Clube" />
           </CardContent>
         )}
+      </Card>
 
       {/* ── Resultado da última semana ─────────────────────────────── */}
       {showResult && lastResult && (
