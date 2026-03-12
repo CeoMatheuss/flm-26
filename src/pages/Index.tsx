@@ -716,6 +716,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>
           <TabsContent value="updates"><UpdatesTab /></TabsContent>
+          <TabsContent value="settings"><SettingsTab /></TabsContent>
           <TabsContent value="chat">
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>
