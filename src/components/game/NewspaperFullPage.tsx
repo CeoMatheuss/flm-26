@@ -58,6 +58,37 @@ interface SavedEntry {
   created_at: string;
 }
 
+const transferNewsKeywords = [
+  'vendido',
+  'venda',
+  'contratado',
+  'contratacao',
+  'transferencia',
+  'emprestado',
+  'emprestimo',
+  'renovacao',
+  'renovou',
+  'assinou',
+  'proposta aceita',
+];
+
+function normalizeNewsValue(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
+  const normalizedCategory = normalizeNewsValue(category || '');
+  if (['mercado', 'elenco', 'emprestimo', 'renovacao', 'fundacao'].includes(normalizedCategory)) {
+    return true;
+  }
+
+  const combinedText = normalizeNewsValue(texts.filter(Boolean).join(' '));
+  return transferNewsKeywords.some(keyword => combinedText.includes(keyword));
+}
+
 function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category: string; isEvent?: boolean }[] {
   const news: { text: string; category: string; isEvent?: boolean }[] = [];
 
