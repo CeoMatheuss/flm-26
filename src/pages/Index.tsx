@@ -366,33 +366,54 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         secondaryColor={game.club.secondaryColor || '#FFF'}
         clubName={game.club.name}
       />
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+      <header className="border-b border-border/30 bg-gradient-to-r from-card/95 via-card/80 to-card/95 backdrop-blur-md sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
+          {/* Club Identity */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {game.club.shieldPattern ? (
-              <ShieldCrest primaryColor={game.club.primaryColor || '#2563EB'} secondaryColor={game.club.secondaryColor || '#FFF'} pattern={game.club.shieldPattern} shape={(game.club as any).shieldShape || 'classic'} size={40} className="shrink-0" />
-            ) : game.club.logoUrl ? (
-              <img src={game.club.logoUrl} alt={game.club.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 object-cover" />
-            ) : (
-              <img src={flmLogo} alt="FLM 26" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0" />
-            )}
+            <div className="relative">
+              {game.club.shieldPattern ? (
+                <ShieldCrest primaryColor={game.club.primaryColor || '#2563EB'} secondaryColor={game.club.secondaryColor || '#FFF'} pattern={game.club.shieldPattern} shape={(game.club as any).shieldShape || 'classic'} size={36} className="shrink-0" />
+              ) : game.club.logoUrl ? (
+                <img src={game.club.logoUrl} alt={game.club.name} className="w-9 h-9 rounded-lg shrink-0 object-cover" />
+              ) : (
+                <img src={flmLogo} alt="FLM 26" className="w-9 h-9 rounded-lg shrink-0" />
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-card" title="Online" />
+            </div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg font-bold truncate">
-                {game.club.name}
-              </h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                T{game.season.currentSeason} • {game.club.stats.points}pts • <span className="text-primary font-semibold">R$ {(game.club.budget / 1000000).toFixed(1)}M</span>
-              </p>
+              <h1 className="text-sm sm:text-base font-bold truncate leading-tight">{game.club.name}</h1>
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
+                <span className="game-badge bg-accent text-foreground">T{game.season.currentSeason}</span>
+                <span>{game.club.stats.points}pts</span>
+                <span className="text-primary font-bold">R${(game.club.budget / 1000000).toFixed(1)}M</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+
+          {/* Quick Stats - Hidden on very small screens */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-1 text-[10px]">
+              <Users className="h-3 w-3 text-muted-foreground" />
+              <span className="text-muted-foreground">{game.club.players.length}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px]">
+              <Star className="h-3 w-3 text-primary" />
+              <span className="text-muted-foreground">{game.club.reputation}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px]">
+              <Trophy className="h-3 w-3 text-primary" />
+              <span className="text-muted-foreground">{game.club.stats.wins}V</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <NotificationBell players={game.club.players} budget={game.club.budget} listedPlayers={game.listedForSale} clubName={game.club.name} infrastructure={game.infrastructure} isNewClub={isNewClub} userId={userId} />
-            <Button size="sm" variant="destructive" onClick={onSignOut} className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
-              <LogOut className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Sair</span>
+            <Button size="sm" variant="ghost" onClick={onSignOut} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
-        {/* Live match banner is now handled by MatchDashboardCard in the dashboard tab via DB polling */}
       </header>
 
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
