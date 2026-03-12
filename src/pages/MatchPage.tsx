@@ -1,9 +1,6 @@
 /**
  * MatchPage — Text-based match simulation with 2D highlight clips.
- * 
- * Lightweight: no Phaser, no heavy game engine.
- * Events flow as text narration. Key moments (goals, penalties, woodwork,
- * great saves, corners) trigger a mini <canvas> 2D animation.
+ * Uses the new simple useMatchSimulation hook.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -15,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Film, LogOut, BarChart3 } from 'lucide-react';
-import { useMatchManager, SimEvent, MatchStats } from '@/match';
+import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
@@ -37,98 +34,103 @@ interface MatchPageState {
 export default function MatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as MatchPageState | null;
-  const [loading, setLoading] = useState(true);
+  const locState = location.state as MatchPageState | null;
+  const [initDone, setInitDone] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
-  const [error, setError] = useState<string | null>(null);
 
-  const { state: matchState, startNewMatch, loadFromDb, findActiveMatch, destroy } = useMatchManager();
+  const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
 
   useEffect(() => {
+    let cancelled = false;
     const init = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        if (state?.liveMatchDbId) {
-          setLoadingMsg('Reconectando à partida');
-          const ok = await loadFromDb(state.liveMatchDbId);
-          if (!ok) setError('Partida não encontrada.');
-          setLoading(false);
-          return;
-        }
-        if (state) {
-          setLoadingMsg('Simulando partida no servidor');
-          const result = await startNewMatch({
-            homeTeam: state.homeTeam,
-            awayTeam: state.awayTeam,
-            homePlayers: state.homePlayers,
-            homeStrength: state.homeStrength,
-            awayStrength: state.awayStrength,
-            matchId: state.matchId,
-            tactics: state.tactics,
-            stadiumName: state.stadiumName,
-            stadiumCapacity: state.stadiumCapacity,
-            isHome: state.isHome,
-            competition: 'Amistoso',
-          });
-          if (!result.success) setError(result.error || 'Erro ao iniciar partida.');
-          setLoading(false);
-          return;
-        }
+      if (locState?.liveMatchDbId) {
+        setLoadingMsg('Reconectando à partida');
+        await loadMatch(locState.liveMatchDbId);
+      } else if (locState) {
+        setLoadingMsg('Simulando partida no servidor');
+        await startMatch({
+          homeTeam: locState.homeTeam,
+          awayTeam: locState.awayTeam,
+          homePlayers: locState.homePlayers,
+          homeStrength: locState.homeStrength,
+          awayStrength: locState.awayStrength,
+          matchId: locState.matchId,
+          tactics: locState.tactics,
+          stadiumName: locState.stadiumName,
+          stadiumCapacity: locState.stadiumCapacity,
+          isHome: locState.isHome,
+          competition: 'Amistoso',
+        });
+      } else {
         setLoadingMsg('Buscando partida ativa');
         const found = await findActiveMatch();
-        if (!found) { navigate('/', { replace: true }); return; }
-        setLoading(false);
-      } catch {
-        setError('Erro inesperado ao carregar partida.');
-        setLoading(false);
+        if (!found && !cancelled) {
+          navigate('/', { replace: true });
+          return;
+        }
       }
+      if (!cancelled) setInitDone(true);
     };
     init();
-    return () => destroy();
+    return () => { cancelled = true; destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) {
+  if (!initDone || state.phase === 'loading') {
     return (
       <GameLoadingScreen
         message={loadingMsg}
-        subMessage={state ? `${state.homeTeam} vs ${state.awayTeam}` : undefined}
+        subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined}
       />
     );
   }
-  if (error) {
+
+  if (state.phase === 'error') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-sm w-full">
           <CardContent className="p-6 text-center space-y-3">
-            <p className="text-sm text-destructive">{error}</p>
-            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>
+            <p className="text-sm text-destructive">{state.errorMsg || 'Erro ao carregar partida.'}</p>
+            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>  
           </CardContent>
         </Card>
       </div>
     );
   }
-  if (matchState.phase === 'loading') return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
 
-  return <MatchViewer matchState={matchState} onExit={() => navigate('/', { replace: true })} />;
+  if (state.phase === 'idle') {
+    return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
+  }
+
+  const handleExit = () => {
+    if (state.phase === 'finished' && state.matchDbId) {
+      navigate('/', {
+        replace: true,
+        state: {
+          serverMatchResult: {
+            matchDbId: state.matchDbId,
+            homeGoals: state.homeGoals,
+            awayGoals: state.awayGoals,
+          },
+        },
+      });
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
+
+  return <MatchViewer matchState={state} onExit={handleExit} />;
 }
 
-/* ── MATCH VIEWER (text-based + highlights) ────────────────── */
+/* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-function MatchViewer({ matchState, onExit }: {
-  matchState: import('@/match').MatchManagerState;
-  onExit: () => void;
-}) {
-  const { phase, snapshot, config, stats, lockedResult, matchDbId } = matchState;
-  const { currentMinute, visibleEvents, homeGoals, awayGoals, latestEvent, progress } = snapshot;
-  const { homeTeam, awayTeam, stadiumName } = config;
+function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: () => void }) {
+  const {
+    phase, currentMinute, progress, homeTeam, awayTeam,
+    homeGoals, awayGoals, visibleEvents, latestEvent, stats, stadiumName, matchDbId,
+  } = matchState;
 
   const isFinished = phase === 'finished';
   const isHalftime = phase === 'halftime';
-  const finalHomeGoals = lockedResult?.homeGoals ?? homeGoals;
-  const finalAwayGoals = lockedResult?.awayGoals ?? awayGoals;
-  const displayHome = isFinished ? finalHomeGoals : homeGoals;
-  const displayAway = isFinished ? finalAwayGoals : awayGoals;
 
   // Goal flash
   const [goalFlash, setGoalFlash] = useState(false);
@@ -145,7 +147,6 @@ function MatchViewer({ matchState, onExit }: {
   // Active highlight
   const [activeHighlight, setActiveHighlight] = useState<SimEvent | null>(null);
   const lastHighlightMinute = useRef(-1);
-
   useEffect(() => {
     if (!latestEvent) return;
     if (isHighlightEvent(latestEvent.type) && latestEvent.minute !== lastHighlightMinute.current) {
@@ -157,20 +158,16 @@ function MatchViewer({ matchState, onExit }: {
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (eventsRef.current) {
-      eventsRef.current.scrollTop = 0;
-    }
+    if (eventsRef.current) eventsRef.current.scrollTop = 0;
   }, [visibleEvents.length]);
 
   const phaseLabel = () => {
     if (isFinished) return 'FIM';
     if (isHalftime) return 'INT';
-    if (phase === 'first_half') return '1ºT';
-    if (phase === 'second_half') return '2ºT';
-    return '...';
+    if (currentMinute <= 45) return '1ºT';
+    return '2ºT';
   };
 
-  // Compute possession from events
   const possession = computePossession(visibleEvents, stats);
 
   return (
@@ -193,9 +190,9 @@ function MatchViewer({ matchState, onExit }: {
         <div className="flex items-center gap-3 justify-center">
           <p className="text-xs sm:text-sm font-bold truncate text-right flex-1">{homeTeam}</p>
           <div className={`text-3xl sm:text-4xl font-black font-mono px-4 py-1.5 rounded-lg min-w-[90px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-105' : 'bg-muted/30'}`}>
-            {displayHome}
+            {homeGoals}
             <span className="text-muted-foreground text-base mx-1">×</span>
-            {displayAway}
+            {awayGoals}
           </div>
           <p className="text-xs sm:text-sm font-bold truncate text-left flex-1">{awayTeam}</p>
         </div>
@@ -326,8 +323,8 @@ function MatchViewer({ matchState, onExit }: {
           stats={stats}
           homeTeam={homeTeam}
           awayTeam={awayTeam}
-          finalHomeGoals={finalHomeGoals}
-          finalAwayGoals={finalAwayGoals}
+          finalHomeGoals={homeGoals}
+          finalAwayGoals={awayGoals}
           visibleEvents={visibleEvents}
           matchDbId={matchDbId}
           onExit={onExit}
@@ -517,8 +514,8 @@ function getEventBg(ev: SimEvent): string {
   if (['halftime', 'kickoff', 'final_whistle'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
   if (['yellow_card', 'red_card'].includes(ev.type)) return 'bg-yellow-500/5 border border-yellow-500/10';
   if (isHighlightEvent(ev.type)) return 'bg-yellow-400/5';
-  if (ev.team === 'home') return 'bg-blue-500/3';
-  if (ev.team === 'away') return 'bg-red-500/3';
+  if (ev.team === 'home') return 'bg-blue-500/[0.03]';
+  if (ev.team === 'away') return 'bg-red-500/[0.03]';
   return 'bg-muted/5';
 }
 
