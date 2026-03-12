@@ -126,10 +126,23 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     if (data) setBoughtListings(data as BoughtListing[]);
   }, [userId]);
 
+  const loadDbNotifications = useCallback(async () => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('user_notifications')
+      .select('id, icon, title, message, type, read_at, created_at')
+      .eq('user_id', userId)
+      .gte('created_at', sevenDaysAgo)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (data) setDbNotifications(data);
+  }, [userId]);
+
   useEffect(() => {
     loadInvites();
     loadSoldListings();
     loadBoughtListings();
+    loadDbNotifications();
     const channel = supabase
       .channel('bell-friendly-invites')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
@@ -138,8 +151,12 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       .channel('bell-sold-listings')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_listings' }, () => { loadSoldListings(); loadBoughtListings(); })
       .subscribe();
-    return () => { supabase.removeChannel(channel); supabase.removeChannel(channel2); };
-  }, [loadInvites, loadSoldListings, loadBoughtListings]);
+    const channel3 = supabase
+      .channel('bell-user-notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_notifications' }, () => loadDbNotifications())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); supabase.removeChannel(channel2); supabase.removeChannel(channel3); };
+  }, [loadInvites, loadSoldListings, loadBoughtListings, loadDbNotifications]);
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setRespondingId(inviteId);
