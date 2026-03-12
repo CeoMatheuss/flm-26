@@ -1039,8 +1039,8 @@ export function useGame(initialState?: GameState, userId?: string) {
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
   const getFullState = useCallback((): GameState => ({
-    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 3, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
-  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, feedItems, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
+    club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingVersion: 3, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate,
+  }), [club, tactics, leagueTeams, finances, marketPlayers, freeAgents, infrastructure, youthProspects, youthInvestment, season, sponsors, sponsorOffers, events, loanedPlayers, trainingFocus, achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory, friendliesPlayedToday, friendliesPlayedSeason, lastFriendlyDate]);
 
   const changeShirtNumber = useCallback((playerId: string, number: number) => {
     setClub(prev => ({
