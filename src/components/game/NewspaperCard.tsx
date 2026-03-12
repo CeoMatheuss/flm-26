@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import signingImg from '@/assets/signing-bg.jpg';
 
 interface Props {
   club: Club;
