@@ -321,6 +321,7 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                       </span>
                     </div>
                   </div>
+                </div>
                 </CardContent>
               </Card>
             ))}
