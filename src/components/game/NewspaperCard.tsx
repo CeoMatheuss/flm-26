@@ -262,8 +262,8 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               return (
                 <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
                   {showSigningUpdate && (
-                    <div className="relative w-full aspect-[16/5] overflow-hidden bg-muted">
-                      <img src={signingImg} alt="Transferência" className="w-full h-full object-contain object-center opacity-60" />
+                    <div className="relative w-full overflow-hidden bg-muted">
+                      <img src={signingImg} alt="Transferência" className="w-full h-auto block opacity-60" />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                       <div className="absolute bottom-1.5 left-2">
                         <span className="text-[7px] font-bold text-white px-1 py-0.5 rounded bg-primary/80">MERCADO</span>
