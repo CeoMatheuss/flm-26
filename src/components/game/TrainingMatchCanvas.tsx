@@ -494,8 +494,9 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
       drillsCompleted: kickNumRef.current,
       goalsScored: scoreRef.current[0],
       bestMoment: events.length > 0 ? events[events.length - 1].message : 'Treino completo!',
+      drill: selectedDrill,
     });
-  }, [events, onFinish]);
+  }, [events, onFinish, selectedDrill]);
 
   // ── Canvas render loop ─────────────────────────────────────────────────
   useEffect(() => {
