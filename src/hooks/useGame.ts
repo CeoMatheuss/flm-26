@@ -11,7 +11,7 @@ import { initialClub, generateSeasonMatches } from '@/data/initialData';
 import { generateMarketPlayers, getPlayerValue, generateYouthBatch, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { GameEvent, generateRandomEvents } from '@/types/events';
 import { toast } from 'sonner';
-import { FeedItem, createFeedItem } from '@/types/feed';
+
 import { Achievement, checkAchievements } from '@/types/achievements';
 import { MatchReport, generateMatchReport, InterviewScenario, generateInterviewScenario, InterviewChoice } from '@/types/matchReport';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
