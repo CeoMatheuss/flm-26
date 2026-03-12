@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import signingImg from '@/assets/transfer-signing.jpg';
 
 interface Props {
   club: Club;
@@ -18,36 +17,6 @@ interface Props {
   clubCreatedAt?: number;
 }
 
-const transferNewsKeywords = [
-  'vendido',
-  'venda',
-  'contratado',
-  'contratacao',
-  'transferencia',
-  'emprestado',
-  'emprestimo',
-  'renovacao',
-  'renovou',
-  'assinou',
-  'proposta aceita',
-];
-
-function normalizeNewsValue(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
-  const normalizedCategory = normalizeNewsValue(category || '');
-  if (['mercado', 'fundacao', 'elenco', 'emprestimo', 'renovacao'].includes(normalizedCategory)) {
-    return true;
-  }
-
-  const combinedText = normalizeNewsValue(texts.filter(Boolean).join(' '));
-  return transferNewsKeywords.some(keyword => combinedText.includes(keyword));
-}
 
 function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infrastructure, isNewClub?: boolean, clubCreatedAt?: number): { headline: string; subtitle: string; category: string } {
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
@@ -206,7 +175,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const main = generateHeadline(club, events, infrastructure, isNewClub, clubCreatedAt);
   const secondary = generateSecondaryNews(club, events, infrastructure).slice(0, 4);
-  const showSigningMain = shouldShowSigningImage(main.category, main.headline, main.subtitle);
+  
 
   useEffect(() => {
     const fetchUpdates = async () => {
@@ -230,12 +199,6 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
       <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2">
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
-          {showSigningMain && (
-            <div className="relative w-full rounded-lg overflow-hidden mb-2">
-              <img src={signingImg} alt="Contratação" className="w-full h-auto rounded-lg" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card/70 via-transparent to-transparent rounded-lg" />
-            </div>
-          )}
           <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
             {main.category}
           </span>
@@ -246,28 +209,18 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Admin Updates */}
         {adminUpdates.length > 0 && (
           <div className="space-y-1.5">
-            {adminUpdates.slice(0, 2).map(u => {
-              const showSigningUpdate = shouldShowSigningImage('ATUALIZAÇÃO', u.title, u.content);
-
-              return (
-                <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
-                  {showSigningUpdate && (
-                    <div className="w-full overflow-hidden rounded-t">
-                      <img src={signingImg} alt="Transferência" className="w-full h-auto opacity-70 rounded-t" />
-                    </div>
-                  )}
-
-                  <div className="flex items-start gap-1.5 p-1.5">
-                    <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
-                      <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug whitespace-pre-line">{u.content}</p>
-                    </div>
-                    <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
+            {adminUpdates.slice(0, 2).map(u => (
+              <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
+                <div className="flex items-start gap-1.5 p-1.5">
+                  <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
+                    <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug whitespace-pre-line">{u.content}</p>
                   </div>
+                  <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -295,7 +248,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
             className="w-full h-7 text-[10px] sm:text-xs gap-1"
             onClick={onOpenFullPage}
           >
-            <ExternalLink className="h-3 w-3" /> Jornal Completo
+            <ExternalLink className="h-3 w-3" /> Ver Mais no Jornal
           </Button>
         )}
       </CardContent>
