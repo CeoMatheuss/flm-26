@@ -33,6 +33,8 @@ import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { RankingTab } from '@/components/game/RankingTab';
+import { SettingsTab } from '@/components/game/SettingsTab';
+import { UpdateAnnouncementModal } from '@/components/game/UpdateAnnouncementModal';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
@@ -161,6 +163,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
+  const [announcementUpdate, setAnnouncementUpdate] = useState<any>(null);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
@@ -349,8 +352,28 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, game.infrastructure.trainingCenter.level, game.infrastructure.physiotherapy.level, game.infrastructure.youthAcademy.level]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Check for new approved updates to show announcement
+  useEffect(() => {
+    const checkNewUpdates = async () => {
+      const lastSeen = localStorage.getItem('flm-last-update-seen') || '2000-01-01';
+      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).gt('approved_at', lastSeen).order('approved_at', { ascending: false }).limit(1);
+      if (data && data.length > 0) {
+        setAnnouncementUpdate(data[0]);
+      }
+    };
+    checkNewUpdates();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
+      <UpdateAnnouncementModal
+        update={announcementUpdate}
+        open={!!announcementUpdate}
+        onClose={() => {
+          if (announcementUpdate?.approved_at) localStorage.setItem('flm-last-update-seen', announcementUpdate.approved_at);
+          setAnnouncementUpdate(null);
+        }}
+      />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {
         game.addBonus(500000, 'Recompensa por completar o Tutorial');
         toast.success('🎉 Tutorial completo! Você ganhou R$500.000!');
@@ -463,8 +486,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
                 <div className="my-1.5 border-t border-border/20" />
                 <p className="menu-category">⚙️ Sistema</p>
+                <DropdownMenuItem onClick={() => setActiveTab('settings')} className="menu-item"><Settings className="h-3.5 w-3.5 text-primary/70" /> Configurações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="menu-item"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowTutorial(true)} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
                 {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -712,6 +737,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
           <TabsContent value="rules"><RulesTab /></TabsContent>
           <TabsContent value="updates"><UpdatesTab /></TabsContent>
+          <TabsContent value="settings"><SettingsTab /></TabsContent>
           <TabsContent value="chat">
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>

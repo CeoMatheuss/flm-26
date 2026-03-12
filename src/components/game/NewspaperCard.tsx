@@ -179,7 +179,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
 
   useEffect(() => {
     const fetchUpdates = async () => {
-      const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(5);
+      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(5);
       if (data) setAdminUpdates(data as any[]);
     };
     fetchUpdates();
