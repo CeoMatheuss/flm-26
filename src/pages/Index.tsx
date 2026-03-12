@@ -538,7 +538,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 const player = game.club.players.find(p => p.id === playerId);
                 game.renewContract(playerId, newSalary, newDuration);
                 if (player) {
-                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês` });
+                  const extra = `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês`;
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: extra });
+                  saveSigningNews(player.name, player.position, player.overall, player.age, 'renewal', extra);
                 }
               }}
               onListForSale={async (playerId: string) => {
