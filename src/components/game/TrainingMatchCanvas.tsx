@@ -265,12 +265,22 @@ function getTimedEvents(drillId: DrillId): DrillEvent[] {
     { icon: '⚽', message: 'Roubou na entrada da área e chutou, gol!', isGoal: true },
   ];
   return [
-    { icon: '⚽', message: 'Golaço! Finalização no ângulo!', isGoal: true },
+    { icon: '⚽', message: 'Jogada ensaiada, gol de primeira!', isGoal: true },
     { icon: '🧤', message: 'Goleiro espalmou no canto!', isGoal: false },
-    { icon: '💨', message: 'Drible incrível, passou por dois!', isGoal: false },
+    { icon: '💨', message: 'Drible desconcertante, passou por dois!', isGoal: false },
     { icon: '🎯', message: 'Passe genial em profundidade!', isGoal: false },
     { icon: '📐', message: 'Bola explodiu no travessão!', isGoal: false },
-    { icon: '⚽', message: 'Toque de letra e gol!', isGoal: true },
+    { icon: '⚽', message: 'Toque de letra na pequena área, gol!', isGoal: true },
+    { icon: '🦶', message: 'Desarme perfeito no meio-campo!', isGoal: false },
+    { icon: '⚽', message: 'Tabela na entrada da área, golaço!', isGoal: true },
+    { icon: '🧤', message: 'Defesa espetacular, mão trocada!', isGoal: false },
+    { icon: '💨', message: 'Jogada individual pela ponta esquerda!', isGoal: false },
+    { icon: '⚽', message: 'Chute de fora da área no ângulo!', isGoal: true },
+    { icon: '🦶', message: 'Zagueiro cortou de cabeça na pequena área!', isGoal: false },
+    { icon: '🎯', message: 'Cruzamento na medida, cabeceio raspou!', isGoal: false },
+    { icon: '⚽', message: 'Pivô segurou, girou e finalizou, gol!', isGoal: true },
+    { icon: '⚠️', message: 'Falta dura no meio-campo!', isGoal: false },
+    { icon: '💨', message: 'Triangulação rápida na intermediária!', isGoal: false },
   ];
 }
 
