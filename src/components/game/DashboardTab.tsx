@@ -6,6 +6,7 @@ import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap,
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
+import { TournamentDashboardCard } from './TournamentDashboardCard';
 
 interface Props {
   club: Club;
@@ -86,6 +87,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </div>
         ))}
       </div>
+
+      {/* Active Tournaments */}
+      <TournamentDashboardCard />
 
       {/* Newspaper */}
       <NewspaperCard club={club} events={events} infrastructure={infrastructure} onOpenFullPage={onOpenNewspaper} />
