@@ -6,6 +6,7 @@ import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap,
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
+import { TournamentDashboardCard } from './TournamentDashboardCard';
 
 interface Props {
   club: Club;
