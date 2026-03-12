@@ -352,16 +352,12 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, game.infrastructure.trainingCenter.level, game.infrastructure.physiotherapy.level, game.infrastructure.youthAcademy.level]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check for new approved updates to show announcement
+  // Show changelog when game version changes
   useEffect(() => {
-    const checkNewUpdates = async () => {
-      const lastSeen = localStorage.getItem('flm-last-update-seen') || '2000-01-01';
-      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).gt('approved_at', lastSeen).order('approved_at', { ascending: false }).limit(1);
-      if (data && data.length > 0) {
-        setAnnouncementUpdate(data[0]);
-      }
-    };
-    checkNewUpdates();
+    const lastSeenVersion = localStorage.getItem('flm-last-version-seen');
+    if (lastSeenVersion !== GAME_VERSION) {
+      setShowChangelog(true);
+    }
   }, []);
 
   return (
