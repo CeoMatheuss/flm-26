@@ -245,12 +245,18 @@ function getTimedEvents(drillId: DrillId): DrillEvent[] {
     { icon: '⚡', message: 'Contra-ataque 3 contra 2!', isGoal: false },
   ];
   if (drillId === 'pressing') return [
-    { icon: '⚽', message: 'Pressing resultou em gol!', isGoal: true },
-    { icon: '🔥', message: 'Roubou a bola no campo ofensivo!', isGoal: false },
-    { icon: '🦶', message: 'Interceptou o passe na frente!', isGoal: false },
-    { icon: '⚠️', message: 'Falta tática para parar o contra-ataque!', isGoal: false },
-    { icon: '⚽', message: 'Forçou o erro e marcou!', isGoal: true },
-    { icon: '🔥', message: 'Marcação alta recuperou a posse!', isGoal: false },
+    { icon: '⚽', message: 'Pressing alto! Roubou e finalizou, gol!', isGoal: true },
+    { icon: '🔥', message: 'Cercou o zagueiro e roubou no campo dele!', isGoal: false },
+    { icon: '🦶', message: 'Interceptou o passe curto na saída!', isGoal: false },
+    { icon: '⚠️', message: 'Falta tática na intermediária!', isGoal: false },
+    { icon: '⚽', message: 'Desarme no meio, tabela e gol!', isGoal: true },
+    { icon: '🔥', message: 'Bloco alto fechou os espaços!', isGoal: false },
+    { icon: '🧤', message: 'Goleiro saiu rápido e cortou perigo!', isGoal: false },
+    { icon: '⚽', message: 'Pressão coletiva! Erro forçado, gol!', isGoal: true },
+    { icon: '💨', message: 'Linha alta encurralou adversário na lateral!', isGoal: false },
+    { icon: '🦶', message: 'Carrinho certeiro recuperou a posse!', isGoal: false },
+    { icon: '⚡', message: 'Transição imediata após roubar a bola!', isGoal: false },
+    { icon: '⚽', message: 'Roubou na entrada da área e chutou, gol!', isGoal: true },
   ];
   return [
     { icon: '⚽', message: 'Golaço! Finalização no ângulo!', isGoal: true },
