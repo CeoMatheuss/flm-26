@@ -58,6 +58,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -270,6 +271,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const showAdmin = isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
+  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number } | null>(null);
 
   // Calculate streaks for FansTab
   const { winStreak, loseStreak } = useMemo(() => {
@@ -349,10 +351,21 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onComplete={() => {
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {
         game.addBonus(500000, 'Recompensa por completar o Tutorial');
         toast.success('🎉 Tutorial completo! Você ganhou R$500.000!');
       }} />
+      <PlayerSigningModal
+        open={!!signingPlayer}
+        onClose={() => setSigningPlayer(null)}
+        playerName={signingPlayer?.name || ''}
+        playerPosition={signingPlayer?.position || ''}
+        playerOverall={signingPlayer?.overall || 0}
+        playerAge={signingPlayer?.age || 0}
+        primaryColor={game.club.primaryColor || '#2563EB'}
+        secondaryColor={game.club.secondaryColor || '#FFF'}
+        clubName={game.club.name}
+      />
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -548,6 +561,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               }}
               onPlayerBought={(playerData, price, salary, contractYears) => {
                 game.buyPlayer({ ...playerData, salary, contract: contractYears });
+                setSigningPlayer({ name: playerData.name, position: playerData.position, overall: playerData.overall, age: playerData.age });
               }}
               loanedPlayers={game.loanedPlayers}
               onLoanOut={async (playerId: string) => {
