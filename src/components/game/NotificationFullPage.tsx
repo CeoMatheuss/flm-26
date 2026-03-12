@@ -66,7 +66,7 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
   // Group notifications
   const urgent = notifications.filter(n => n.type === 'danger' || n.actions);
   const attention = notifications.filter(n => n.type === 'warning' && !n.actions);
-  const info = notifications.filter(n => (n.type === 'info' || n.type === 'success') && !n.actions && n.type !== 'danger');
+  const info = notifications.filter(n => (n.type === 'info' || n.type === 'success') && !n.actions);
 
   const renderNotification = (n: Notification) => {
     const isRead = readIds.includes(n.id);
