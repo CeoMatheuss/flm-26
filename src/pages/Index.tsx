@@ -19,7 +19,7 @@ import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { FansTab } from '@/components/game/FansTab';
-import { TrainingTab } from '@/components/game/TrainingTab';
+import { TrainingWrapper } from '@/components/game/TrainingWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { AuctionTab } from '@/components/game/AuctionTab';
@@ -586,7 +586,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="training">
-            <TrainingTab
+            <TrainingWrapper
               players={game.club.players}
               infrastructure={game.infrastructure}
               trainingFocus={game.trainingFocus}
@@ -594,6 +594,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               tactics={game.tactics}
               onPlayersUpdate={game.updatePlayers}
               currentWeek={game.season.currentWeek}
+              clubName={game.club.name}
             />
           </TabsContent>
           <TabsContent value="matches">
