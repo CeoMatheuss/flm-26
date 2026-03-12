@@ -1,14 +1,15 @@
 /**
  * TrainingWrapper — Container with two sub-tabs: Treinos (regular) and Treinos 2D.
  */
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Player } from '@/types/game';
 import type { Infrastructure } from '@/types/infrastructure';
 import type { TacticsConfig } from '@/types/tactics';
 import type { TrainingFocusKey } from '@/training/TrainingTypes';
 import { TrainingTab } from './TrainingTab';
-import { TrainingMatchCanvas } from './TrainingMatchCanvas';
+import { TrainingMatchCanvas, TrainingReport } from './TrainingMatchCanvas';
 import { Dumbbell, Gamepad2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   players: Player[];
@@ -21,11 +22,42 @@ interface Props {
   clubName?: string;
 }
 
+const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
+  penalties: { shooting: 1, setPieces: 1 },
+  freekicks: { setPieces: 2, shooting: 1 },
+  crossing: { heading: 1, passing: 1 },
+  counterattack: { speed: 1, passing: 1 },
+  pressing: { marking: 1, speed: 1 },
+  tactical: { passing: 1, marking: 1 },
+};
+
 export function TrainingWrapper({
   players, infrastructure, trainingFocus, onSetTrainingFocus,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube',
 }: Props) {
   const [activeTab, setActiveTab] = useState<'training' | 'training2d'>('training');
+
+  const handleTrainingFinish = useCallback((report: TrainingReport) => {
+    if (!onPlayersUpdate || !report.drill) return;
+
+    const bonuses = DRILL_BONUS_MAP[report.drill] || {};
+    if (Object.keys(bonuses).length === 0) return;
+
+    // Apply temporary bonuses (last 3 matches worth of time ~2h)
+    const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
+    const updated = players.map(p => ({
+      ...p,
+      trainingBonuses: {
+        ...p.trainingBonuses,
+        ...bonuses,
+        expiresAt,
+      },
+    }));
+
+    onPlayersUpdate(updated);
+    const bonusNames = Object.entries(bonuses).map(([k, v]) => `+${v} ${k}`).join(', ');
+    toast.success(`🎯 Treino 2D aplicou bônus: ${bonusNames} para o próximo jogo!`);
+  }, [players, onPlayersUpdate]);
 
   return (
     <div className="space-y-3">
@@ -65,7 +97,7 @@ export function TrainingWrapper({
           currentWeek={currentWeek}
         />
       ) : (
-        <TrainingMatchCanvas clubName={clubName} players={players} />
+        <TrainingMatchCanvas clubName={clubName} players={players} onFinish={handleTrainingFinish} />
       )}
     </div>
   );
