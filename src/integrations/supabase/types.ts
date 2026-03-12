@@ -139,6 +139,222 @@ export type Database = {
           },
         ]
       }
+      custom_tournament_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string
+          created_at: string
+          home_goals: number | null
+          home_team_id: string
+          id: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          scheduled_at: string | null
+          stage: string | null
+          status: string
+          tournament_id: string
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id: string
+          id?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string | null
+          stage?: string | null
+          status?: string
+          tournament_id: string
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id?: string
+          id?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string | null
+          stage?: string | null
+          status?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_tournament_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "custom_tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_tournament_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "custom_tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "custom_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_tournament_teams: {
+        Row: {
+          bot_name: string | null
+          bot_squad: Json | null
+          bot_strength: number | null
+          club_logo: string | null
+          club_name: string
+          draws: number
+          eliminated: boolean
+          goals_against: number
+          goals_for: number
+          group_letter: string | null
+          id: string
+          is_bot: boolean
+          joined_at: string
+          losses: number
+          played: number
+          points: number
+          tournament_id: string
+          user_id: string | null
+          wins: number
+        }
+        Insert: {
+          bot_name?: string | null
+          bot_squad?: Json | null
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name?: string
+          draws?: number
+          eliminated?: boolean
+          goals_against?: number
+          goals_for?: number
+          group_letter?: string | null
+          id?: string
+          is_bot?: boolean
+          joined_at?: string
+          losses?: number
+          played?: number
+          points?: number
+          tournament_id: string
+          user_id?: string | null
+          wins?: number
+        }
+        Update: {
+          bot_name?: string | null
+          bot_squad?: Json | null
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name?: string
+          draws?: number
+          eliminated?: boolean
+          goals_against?: number
+          goals_for?: number
+          group_letter?: string | null
+          id?: string
+          is_bot?: boolean
+          joined_at?: string
+          losses?: number
+          played?: number
+          points?: number
+          tournament_id?: string
+          user_id?: string | null
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_tournament_teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "custom_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_tournaments: {
+        Row: {
+          country: string | null
+          created_at: string
+          created_by: string
+          current_round: number
+          description: string | null
+          format: string
+          id: string
+          match_duration_seconds: number
+          match_interval_hours: number
+          match_time: string | null
+          max_teams: number
+          name: string
+          prize_1st: number
+          prize_2nd: number
+          prize_3rd: number
+          rules_text: string | null
+          season: number
+          start_date: string | null
+          status: string
+          total_rounds: number
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          created_by: string
+          current_round?: number
+          description?: string | null
+          format?: string
+          id?: string
+          match_duration_seconds?: number
+          match_interval_hours?: number
+          match_time?: string | null
+          max_teams?: number
+          name: string
+          prize_1st?: number
+          prize_2nd?: number
+          prize_3rd?: number
+          rules_text?: string | null
+          season?: number
+          start_date?: string | null
+          status?: string
+          total_rounds?: number
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          current_round?: number
+          description?: string | null
+          format?: string
+          id?: string
+          match_duration_seconds?: number
+          match_interval_hours?: number
+          match_time?: string | null
+          max_teams?: number
+          name?: string
+          prize_1st?: number
+          prize_2nd?: number
+          prize_3rd?: number
+          rules_text?: string | null
+          season?: number
+          start_date?: string | null
+          status?: string
+          total_rounds?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friendly_invites: {
         Row: {
           created_at: string
