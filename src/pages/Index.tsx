@@ -34,7 +34,7 @@ import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
-import { UpdateAnnouncementModal } from '@/components/game/UpdateAnnouncementModal';
+import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
