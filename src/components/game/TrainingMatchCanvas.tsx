@@ -454,7 +454,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
     const ka = kickAnimRef.current;
     ka.active = true; ka.t = 0; ka.result = result;
     ka.showingLabel = false; ka.labelTimer = 0;
-    ka.ballStartX = drill === 'penalties' ? 0.78 : 0.57;
+    ka.ballStartX = drill === 'penalties' ? 0.78 : 0.70;
     ka.ballStartY = 0.5; ka.gkStartY = 0.5;
     phaseRef.current = 'kicking';
     setPhase('kicking');
