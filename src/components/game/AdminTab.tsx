@@ -80,12 +80,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     reviewed_by: string | null; reviewed_at: string | null; created_at: string;
   }>>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
-  const [journalContent, setJournalContent] = useState('');
-  const [journalTitle, setJournalTitle] = useState('Atualização');
-  const [journalUpdateType, setJournalUpdateType] = useState('info');
-  const [journalBenefits, setJournalBenefits] = useState('');
-  const [journalUpdates, setJournalUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string; approved: boolean; update_type: string; benefits: string[] }>>([]);
-  const [journalLoading, setJournalLoading] = useState(false);
   // Player generator state
   const [genOverall, setGenOverall] = useState('60');
   const [genPosition, setGenPosition] = useState('random');
