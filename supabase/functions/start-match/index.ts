@@ -489,16 +489,18 @@ function simulateFullMatch(
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     
     if (pen.isGoal) {
-      if (team === 'home') { currentHome++; penaltyHomeGoals++; }
-      else { currentAway++; penaltyAwayGoals++; }
+      if (team === 'home') penaltyHomeGoals++;
+      else penaltyAwayGoals++;
+      
+      const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
       
       if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.0); }
       stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++;
       
       const penGoalDescs = [
-        `⚽🎯 GOOOOL DE PÊNALTI! ${kicker?.name || 'Cobrador'} do ${tName} bate com frieza no canto esquerdo! ${gk?.name || 'Goleiro'} até adivinha o lado mas a bola entra com força! PLACAR: ${currentHome}x${currentAway}! A torcida vai à loucura!`,
-        `⚽🎯 CONVERTEU! ${kicker?.name || 'Cobrador'} pega a bola com confiança, toma distância, corre e chuta forte no meio do gol! ${gk?.name || 'Goleiro'} se joga para o lado e a bola entra! ${currentHome}x${currentAway}! Nervos de aço!`,
-        `⚽🎯 GOOOL! ${kicker?.name || 'Cobrador'} do ${tName} cobra com classe! Paradinha na corrida, ${gk?.name || 'Goleiro'} se antecipa para a direita e a bola vai no canto oposto! Implacável! ${currentHome}x${currentAway}!`,
+        `⚽🎯 GOOOOL DE PÊNALTI! ${kicker?.name || 'Cobrador'} do ${tName} bate com frieza no canto esquerdo! ${gk?.name || 'Goleiro'} até adivinha o lado mas a bola entra com força! PLACAR: ${scoreH}x${scoreA}! A torcida vai à loucura!`,
+        `⚽🎯 CONVERTEU! ${kicker?.name || 'Cobrador'} pega a bola com confiança, toma distância, corre e chuta forte no meio do gol! ${gk?.name || 'Goleiro'} se joga para o lado e a bola entra! ${scoreH}x${scoreA}! Nervos de aço!`,
+        `⚽🎯 GOOOL! ${kicker?.name || 'Cobrador'} do ${tName} cobra com classe! Paradinha na corrida, ${gk?.name || 'Goleiro'} se antecipa para a direita e a bola vai no canto oposto! Implacável! ${scoreH}x${scoreA}!`,
       ];
       
       allPlanned.push({
