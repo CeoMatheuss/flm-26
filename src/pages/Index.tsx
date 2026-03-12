@@ -646,6 +646,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               onPlayerBought={(playerData, price, salary, contractYears) => {
                 game.buyPlayer({ ...playerData, salary, contract: contractYears });
                 setSigningPlayer({ name: playerData.name, position: playerData.position, overall: playerData.overall, age: playerData.age });
+                saveSigningNews(playerData.name, playerData.position, playerData.overall, playerData.age, 'signing');
               }}
               loanedPlayers={game.loanedPlayers}
               onLoanOut={async (playerId: string) => {
