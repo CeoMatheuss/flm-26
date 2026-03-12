@@ -511,7 +511,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <DropdownMenuItem onClick={() => setActiveTab('updates')} className="menu-item"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowTutorial(true)} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
-                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
 
