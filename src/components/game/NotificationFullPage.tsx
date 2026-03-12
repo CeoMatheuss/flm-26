@@ -69,9 +69,21 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
   const attention = notifications.filter(n => n.type === 'warning' && !n.actions);
   const info = notifications.filter(n => (n.type === 'info' || n.type === 'success') && !n.actions);
 
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   const renderNotification = (n: Notification) => {
     const isRead = readIds.includes(n.id);
     const config = typeConfig[n.type];
+    const isLong = n.message.length > 80;
+    const isExpanded = expandedIds.has(n.id);
 
     return (
       <div
@@ -101,7 +113,18 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
                 <span className={`h-2 w-2 rounded-full ${config.dot} animate-pulse flex-shrink-0`} />
               )}
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{n.message}</p>
+            <p className={`text-xs text-muted-foreground leading-relaxed whitespace-pre-line ${isLong && !isExpanded ? 'line-clamp-2' : ''}`}>
+              {n.message}
+            </p>
+            {isLong && (
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleExpand(n.id); }}
+                className="flex items-center gap-0.5 text-[10px] text-primary font-medium mt-1 hover:underline"
+              >
+                {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {isExpanded ? 'Recolher' : 'Expandir'}
+              </button>
+            )}
             
             {/* Action buttons */}
             {n.actions && (

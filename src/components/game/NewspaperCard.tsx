@@ -208,7 +208,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               </div>
             </div>
           )}
-          {main.category !== 'MERCADO' && main.category !== 'FUNDAÇÃO' && main.category !== 'ELENCO' && (
+          {!(['MERCADO', 'FUNDAÇÃO', 'ELENCO', 'EMPRÉSTIMO', 'RENOVAÇÃO'].includes(main.category)) && (
             <>
               <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
                 {main.category}
