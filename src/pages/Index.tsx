@@ -349,7 +349,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onComplete={() => {
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {
         game.addBonus(500000, 'Recompensa por completar o Tutorial');
         toast.success('🎉 Tutorial completo! Você ganhou R$500.000!');
       }} />
