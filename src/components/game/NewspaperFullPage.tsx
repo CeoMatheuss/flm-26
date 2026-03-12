@@ -289,7 +289,7 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                 <CardContent className="p-0">
                   {showSigningUpdate && (
                     <div className="relative w-full aspect-[16/6] overflow-hidden bg-muted">
-                      <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-center opacity-60" />
+                      <img src={signingImg} alt="Transferência" className="w-full h-full object-contain object-center opacity-60" />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                       <div className="absolute bottom-2 left-3">
                         <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">MERCADO</span>
@@ -332,7 +332,7 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                   <CardContent className="p-0">
                     {showSigningVisual && (
                       <div className="relative w-full aspect-[16/6] overflow-hidden bg-muted">
-                        <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-center opacity-60" />
+                        <img src={signingImg} alt="Transferência" className="w-full h-full object-contain object-center opacity-60" />
                         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                         <div className="absolute bottom-2 left-3">
                           <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
