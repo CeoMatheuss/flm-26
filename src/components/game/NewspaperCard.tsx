@@ -205,7 +205,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const main = generateHeadline(club, events, infrastructure, isNewClub, clubCreatedAt);
   const secondary = generateSecondaryNews(club, events, infrastructure).slice(0, 4);
-  const showSigningMain = shouldShowSigningImage(main.category, main.headline, main.subtitle);
+  
 
   useEffect(() => {
     const fetchUpdates = async () => {
