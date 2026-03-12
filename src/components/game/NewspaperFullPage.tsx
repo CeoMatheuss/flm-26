@@ -58,6 +58,37 @@ interface SavedEntry {
   created_at: string;
 }
 
+const transferNewsKeywords = [
+  'vendido',
+  'venda',
+  'contratado',
+  'contratacao',
+  'transferencia',
+  'emprestado',
+  'emprestimo',
+  'renovacao',
+  'renovou',
+  'assinou',
+  'proposta aceita',
+];
+
+function normalizeNewsValue(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
+  const normalizedCategory = normalizeNewsValue(category || '');
+  if (['mercado', 'elenco', 'emprestimo', 'renovacao', 'fundacao'].includes(normalizedCategory)) {
+    return true;
+  }
+
+  const combinedText = normalizeNewsValue(texts.filter(Boolean).join(' '));
+  return transferNewsKeywords.some(keyword => combinedText.includes(keyword));
+}
+
 function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category: string; isEvent?: boolean }[] {
   const news: { text: string; category: string; isEvent?: boolean }[] = [];
 
@@ -250,22 +281,38 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
       {/* Admin Updates */}
       {adminUpdates.length > 0 && (
         <div className="space-y-2">
-          {adminUpdates.map(u => (
-            <Card key={u.id} className="border-primary/30 bg-primary/5">
-              <CardContent className="p-3 flex items-start gap-2">
-                <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
-                    <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+          {adminUpdates.map(u => {
+            const showSigningUpdate = shouldShowSigningImage('ATUALIZAÇÃO', u.title, u.content);
+
+            return (
+              <Card key={u.id} className="border-primary/30 bg-primary/5 overflow-hidden">
+                <CardContent className="p-0">
+                  {showSigningUpdate && (
+                    <div className="relative w-full h-20 overflow-hidden">
+                      <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-top opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                      <div className="absolute bottom-2 left-3">
+                        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">MERCADO</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-3 flex items-start gap-2">
+                    <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-primary/80">ATUALIZAÇÃO</span>
+                        <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
+                      </div>
+                      <p className="text-xs font-semibold mt-1">{u.title}</p>
+                      <p className="text-xs leading-snug text-muted-foreground whitespace-pre-line">{u.content}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
                   </div>
-                  <p className="text-xs font-semibold mt-1">{u.title}</p>
-                  <p className="text-xs leading-snug text-muted-foreground">{u.content}</p>
-                </div>
-                <Badge variant="outline" className="text-[7px] shrink-0 border-primary/30 text-primary">ADM</Badge>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -277,57 +324,61 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         <>
           {/* News from DB */}
           <div className="space-y-2">
-            {visibleEntries.map((item) => (
-              <Card key={item.id} className="border-border overflow-hidden">
-                <CardContent className="p-0">
-                {(['MERCADO', 'ELENCO', 'EMPRÉSTIMO', 'RENOVAÇÃO'].includes(item.category) || item.text.toLowerCase().includes('vendido') || item.text.toLowerCase().includes('contratado') || item.text.toLowerCase().includes('emprestado') || item.text.toLowerCase().includes('renovação') || item.text.toLowerCase().includes('renovou')) && (
-                    <div className="relative w-full h-24 overflow-hidden">
-                      <img src={signingImg} alt="" className="w-full h-full object-cover object-top opacity-60" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
-                      <div className="absolute bottom-2 left-3">
-                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                          {item.category}
+            {visibleEntries.map((item) => {
+              const showSigningVisual = shouldShowSigningImage(item.category, item.text);
+
+              return (
+                <Card key={item.id} className="border-border overflow-hidden">
+                  <CardContent className="p-0">
+                    {showSigningVisual && (
+                      <div className="relative w-full h-24 overflow-hidden">
+                        <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-top opacity-60" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                        <div className="absolute bottom-2 left-3">
+                          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                            {item.category}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <div className="flex items-start gap-2">
+                        {!showSigningVisual && (
+                          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                            {item.category}
+                          </span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs leading-snug">{item.text}</p>
+                        {item.narration && (
+                          <div
+                            className="mt-1.5 cursor-pointer"
+                            onClick={() => setExpandedNarration(expandedNarration === item.id ? null : item.id)}
+                          >
+                            <div className="flex items-center gap-1 text-[9px] text-primary font-medium">
+                              <Sparkles className="h-2.5 w-2.5" />
+                              <span>Narração IA</span>
+                            </div>
+                            {expandedNarration === item.id && (
+                              <p className="text-[10px] leading-snug text-muted-foreground mt-1 italic border-l-2 border-primary/30 pl-2">
+                                {item.narration}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end shrink-0 gap-1">
+                        {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
+                        <span className="text-[8px] text-muted-foreground">
+                          {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
-                  )}
-                  <div className="p-3">
-                    <div className="flex items-start gap-2">
-                      {!(['MERCADO', 'ELENCO', 'EMPRÉSTIMO', 'RENOVAÇÃO'].includes(item.category) || item.text.toLowerCase().includes('vendido') || item.text.toLowerCase().includes('contratado') || item.text.toLowerCase().includes('emprestado') || item.text.toLowerCase().includes('renovação') || item.text.toLowerCase().includes('renovou')) && (
-                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                          {item.category}
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs leading-snug">{item.text}</p>
-                      {item.narration && (
-                        <div
-                          className="mt-1.5 cursor-pointer"
-                          onClick={() => setExpandedNarration(expandedNarration === item.id ? null : item.id)}
-                        >
-                          <div className="flex items-center gap-1 text-[9px] text-primary font-medium">
-                            <Sparkles className="h-2.5 w-2.5" />
-                            <span>Narração IA</span>
-                          </div>
-                          {expandedNarration === item.id && (
-                            <p className="text-[10px] leading-snug text-muted-foreground mt-1 italic border-l-2 border-primary/30 pl-2">
-                              {item.narration}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end shrink-0 gap-1">
-                      {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
-                      <span className="text-[8px] text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
                   </div>
-                </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {savedEntries.length > 30 && !showMore && (
