@@ -716,18 +716,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>
           <TabsContent value="journal">
-            <Tabs defaultValue="news" className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="news" className="text-xs gap-1"><Newspaper className="h-3 w-3" /> Notícias</TabsTrigger>
-                <TabsTrigger value="feed" className="text-xs gap-1"><Rss className="h-3 w-3" /> Feed do Clube</TabsTrigger>
-              </TabsList>
-              <TabsContent value="news">
-                <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
-              </TabsContent>
-              <TabsContent value="feed">
-                <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
-              </TabsContent>
-            </Tabs>
+            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="newspaper">
             <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
