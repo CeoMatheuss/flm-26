@@ -211,9 +211,6 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         }
       }
 
-      // Load admin updates
-      const { data: updates } = await supabase.from('journal_updates').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(20);
-      if (updates) setAdminUpdates(updates as any[]);
     } catch (err) {
       console.error('Error loading newspaper:', err);
     } finally {
