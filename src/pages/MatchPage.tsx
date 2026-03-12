@@ -100,7 +100,7 @@ export default function MatchPage() {
       </div>
     );
   }
-  if (matchState.phase === 'loading') return null;
+  if (matchState.phase === 'loading') return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
 
   return <MatchViewer matchState={matchState} onExit={() => navigate('/', { replace: true })} />;
 }
