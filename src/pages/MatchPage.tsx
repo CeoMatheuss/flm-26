@@ -10,6 +10,7 @@ import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react'
 import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { PhaserMatchView } from '@/match/phaser/PhaserMatchView';
+import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 
 interface MatchPageState {
   homeTeam: string;
