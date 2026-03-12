@@ -736,9 +736,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               }}
             />
           </TabsContent>
-          <TabsContent value="feed">
-            <ClubFeedTab feedItems={game.feedItems} onReact={game.reactToFeed} />
-          </TabsContent>
           <TabsContent value="achievements">
             <AchievementsTab achievements={game.achievements} />
           </TabsContent>
