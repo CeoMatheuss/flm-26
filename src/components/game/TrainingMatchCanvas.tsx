@@ -29,6 +29,7 @@ export interface TrainingReport {
   drillsCompleted: number;
   goalsScored: number;
   bestMoment: string;
+  drill?: string;
 }
 
 const DRILL_OPTIONS = [
