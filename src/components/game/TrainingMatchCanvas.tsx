@@ -637,7 +637,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           // Kicker runs up
           const kickerRunT = Math.min(t * 2.5, 1);
           const kickerX = lerp(ka.ballStartX - 0.04, ka.ballStartX + 0.02, easeInOut(kickerRunT));
-          drawPlayer(kickerX * W, 0.5 * H, COLORS.teamA, COLORS.teamALight, '⚡', 10);
+          drawPlayer(kickerX * W, 0.5 * H, COLORS.teamA, COLORS.teamALight, '⚡', 7);
 
           // GK dives after delay
           const gkDiveT = Math.max(0, (t - 0.25) / 0.5);
