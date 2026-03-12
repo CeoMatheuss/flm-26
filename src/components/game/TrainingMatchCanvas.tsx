@@ -711,7 +711,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           const gp = formation.teamB[0];
           const gkBob = Math.sin(drift * 3) * 3;
           drawPlayer(gp.x * W, gp.y * H + gkBob, COLORS.teamBGK, COLORS.teamBGKLight, 'GK', 9);
-          const spotX = drill === 'penalties' ? 0.78 : 0.57;
+          const spotX = drill === 'penalties' ? 0.78 : 0.70;
           drawBall(spotX * W, 0.5 * H);
         }
 
