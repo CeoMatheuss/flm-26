@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dumbbell, Target, Users, TrendingUp, Calendar, Play, AlertTriangle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Dumbbell, Target, Users, TrendingUp, Calendar, Play, AlertTriangle, ChevronDown, ChevronUp, Info, Gamepad2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TrainingHelpButton } from './TrainingHelpPanel';
+import { TrainingMatchCanvas } from './TrainingMatchCanvas';
 
 import type { TrainingFocusKey, TrainingIntensity, PlayerTrainingConfig, WeeklyTrainingResult } from '@/training/TrainingTypes';
 import { focusLabels, focusToAttr, intensityConfig, positionRecommendations } from '@/training/TrainingTypes';
