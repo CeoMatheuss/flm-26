@@ -276,6 +276,32 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
 
+  // Save signing news to newspaper
+  const saveSigningNews = useCallback(async (playerName: string, position: string, overall: number, age: number, eventType: 'signing' | 'renewal' | 'loan' = 'signing', extraInfo?: string) => {
+    try {
+      const typeLabels: Record<string, string> = { signing: 'CONTRATAÇÃO', renewal: 'RENOVAÇÃO', loan: 'EMPRÉSTIMO' };
+      const typeEmojis: Record<string, string> = { signing: '✍️', renewal: '🔄', loan: '🤝' };
+      const category = typeLabels[eventType] || 'MERCADO';
+      const emoji = typeEmojis[eventType] || '⚽';
+      let text = '';
+      if (eventType === 'signing') {
+        text = `${emoji} ${playerName} (${position}, OVR ${overall}, ${age} anos) é o novo reforço do ${game.club.name}!`;
+      } else if (eventType === 'renewal') {
+        text = `${emoji} ${playerName} (${position}, OVR ${overall}) renovou com o ${game.club.name}. ${extraInfo || ''}`;
+      } else {
+        text = `${emoji} ${playerName} (${position}, OVR ${overall}) foi emprestado pelo ${game.club.name}. ${extraInfo || ''}`;
+      }
+      await supabase.from('newspaper_entries').insert([{
+        user_id: userId,
+        text: text.trim(),
+        category,
+        is_event: true,
+      }]);
+    } catch (err) {
+      console.error('Error saving signing news:', err);
+    }
+  }, [userId, game.club.name]);
+
   // Calculate streaks for FansTab
   const { winStreak, loseStreak } = useMemo(() => {
     const playedMatches = game.club.matches.filter(m => m.played);
