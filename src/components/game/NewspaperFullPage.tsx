@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import signingImg from '@/assets/newspaper-transfer-banner-16x9.jpg';
+import signingImg from '@/assets/transfer-signing.jpg';
 
 interface Props {
   club: Club;
@@ -288,8 +288,8 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
               <Card key={u.id} className="border-primary/30 bg-primary/5 overflow-hidden">
                 <CardContent className="p-0">
                   {showSigningUpdate && (
-                    <div className="w-full bg-muted/40 border-b border-border/40 py-1">
-                      <img src={signingImg} alt="Transferência" className="w-1/2 sm:w-2/5 h-auto mx-auto block opacity-80" />
+                    <div className="w-full overflow-hidden rounded-t-lg">
+                      <img src={signingImg} alt="Transferência" className="w-full h-auto opacity-70 rounded-t-lg" />
                     </div>
                   )}
 
@@ -327,8 +327,8 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                 <Card key={item.id} className="border-border overflow-hidden">
                   <CardContent className="p-0">
                     {showSigningVisual && (
-                      <div className="w-full bg-muted/40 border-b border-border/40 py-1">
-                        <img src={signingImg} alt="Transferência" className="w-1/2 sm:w-2/5 h-auto mx-auto block opacity-80" />
+                      <div className="w-full overflow-hidden">
+                        <img src={signingImg} alt="Transferência" className="w-full h-auto opacity-70" />
                       </div>
                     )}
                     <div className="p-3">

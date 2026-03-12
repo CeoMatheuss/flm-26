@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import signingImg from '@/assets/newspaper-transfer-banner-16x9.jpg';
+import signingImg from '@/assets/transfer-signing.jpg';
 
 interface Props {
   club: Club;
@@ -231,8 +231,9 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
           {showSigningMain && (
-            <div className="w-full rounded-lg mb-2 bg-muted/40 border border-border/40 py-1">
-              <img src={signingImg} alt="Contratação" className="w-3/5 sm:w-1/2 h-auto mx-auto block" />
+            <div className="relative w-full rounded-lg overflow-hidden mb-2">
+              <img src={signingImg} alt="Contratação" className="w-full h-auto rounded-lg" />
+              <div className="absolute inset-0 bg-gradient-to-t from-card/70 via-transparent to-transparent rounded-lg" />
             </div>
           )}
           <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
@@ -251,8 +252,8 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               return (
                 <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
                   {showSigningUpdate && (
-                    <div className="w-full bg-muted/40 border-b border-border/40 py-1">
-                      <img src={signingImg} alt="Transferência" className="w-1/2 sm:w-2/5 h-auto mx-auto block opacity-80" />
+                    <div className="w-full overflow-hidden rounded-t">
+                      <img src={signingImg} alt="Transferência" className="w-full h-auto opacity-70 rounded-t" />
                     </div>
                   )}
 
