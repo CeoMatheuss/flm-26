@@ -724,8 +724,8 @@ function simulateFullMatch(
   }
 
   const addedTime2 = 1 + Math.floor(rng() * 5);
-  const finalHomeGoals = currentHome;
-  const finalAwayGoals = currentAway;
+  const finalHomeGoals = totalHomeGoals + penaltyHomeGoals;
+  const finalAwayGoals = totalAwayGoals + penaltyAwayGoals;
   
   finalEvents.push({
     minute: 90, type: 'added_time', team: 'neutral', animType: 'halftime', ballX: 0.5, ballY: 0.5,
