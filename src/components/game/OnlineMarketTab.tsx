@@ -850,7 +850,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
                         <Button size="sm" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, true, listing)}>
                           <Check className="h-3 w-3" /> Aceitar
                         </Button>
-                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, false)}>
+                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, false, listing)}>
                           <X className="h-3 w-3" /> Recusar
                         </Button>
                       </div>
