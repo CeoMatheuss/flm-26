@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe } from 'lucide-react';
+import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe, Dumbbell } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
+import { TrainingMatchCanvas } from './TrainingMatchCanvas';
 
 interface Props {
   matches: Match[];
