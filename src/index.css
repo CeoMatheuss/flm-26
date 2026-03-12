@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* FCM 26 - Dark Navy Blue Design System. All colors are HSL. */
+/* FLM 26 - Dark Navy Blue Design System. All colors are HSL. */
 
 @layer base {
   :root {
@@ -29,6 +29,9 @@
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
+
+    --success: 152 60% 42%;
+    --success-foreground: 210 40% 98%;
 
     --border: 220 25% 18%;
     --input: 220 25% 18%;
@@ -71,6 +74,9 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
+    --success: 152 60% 42%;
+    --success-foreground: 210 40% 98%;
+
     --border: 220 25% 18%;
     --input: 220 25% 18%;
     --ring: 42 90% 55%;
@@ -98,12 +104,85 @@
 
 @layer components {
   /* Enhanced card styling for game tabs */
-  .game-section-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/40 rounded-xl shadow-sm;
+  .game-card {
+    @apply bg-card/90 backdrop-blur-sm border border-border/30 rounded-xl shadow-lg shadow-black/10;
   }
-  
+
+  /* Primary accent card */
+  .game-card-accent {
+    @apply bg-card/90 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg shadow-primary/5;
+  }
+
+  /* Stat mini card */
+  .stat-card {
+    @apply bg-accent/60 border border-border/20 rounded-lg p-2.5 sm:p-3 transition-all duration-200 hover:bg-accent/80 hover:border-primary/20;
+  }
+
   /* Subtle gradient header for sections */
   .section-header {
-    @apply bg-gradient-to-r from-primary/5 to-transparent border-b border-border/30 px-4 py-3;
+    @apply bg-gradient-to-r from-primary/8 via-primary/3 to-transparent border-b border-border/20 px-4 py-3 rounded-t-xl;
+  }
+
+  /* Navigation tab pill style */
+  .nav-tab {
+    @apply relative flex flex-col sm:flex-row items-center gap-0.5 px-1.5 sm:px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-200;
+  }
+
+  .nav-tab[data-state="active"] {
+    @apply bg-primary/15 text-primary shadow-sm;
+  }
+
+  .nav-tab[data-state="inactive"] {
+    @apply text-muted-foreground hover:text-foreground hover:bg-accent/50;
+  }
+
+  /* Dropdown menu category label */
+  .menu-category {
+    @apply text-[9px] font-bold text-primary/60 uppercase tracking-widest px-3 py-1.5 select-none;
+  }
+
+  /* Dropdown menu item */
+  .menu-item {
+    @apply gap-2.5 text-xs rounded-lg py-2 px-2.5 cursor-pointer transition-colors hover:bg-primary/10 hover:text-primary;
+  }
+
+  /* Quick action button */
+  .quick-action {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all duration-200 cursor-pointer;
+  }
+
+  /* Badge-like indicator */
+  .game-badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold;
+  }
+
+  /* Smooth scrollbar */
+  .smooth-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .smooth-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 2px;
+  }
+
+  /* Glow effect for important elements */
+  .glow-primary {
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.25);
+  }
+
+  /* Progress bar improvement */
+  .progress-glow [data-state="complete"],
+  .progress-glow [role="progressbar"] > div {
+    box-shadow: 0 0 8px -2px hsl(var(--primary) / 0.5);
   }
 }
