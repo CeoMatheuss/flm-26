@@ -211,6 +211,15 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Erro ao enviar proposta. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
+      // Notify the seller about the new offer
+      await adminClient.from('user_notifications').insert({
+        user_id: listing.seller_id,
+        icon: '📩',
+        title: `Nova proposta por ${listing.player_name}!`,
+        message: `${(clubName || 'Um clube').slice(0, 50)} ofereceu R$${(Math.max(0, offeredPrice) / 1000).toFixed(0)}k por ${listing.player_name} (OVR ${listing.player_overall}). Salário: R$${Math.max(0, offeredSalary || 0)}/mês • Contrato: ${Math.min(5, Math.max(1, contractYears || 2))} anos. Confira na aba Propostas do Mercado!`,
+        type: 'warning',
+      });
+
       return new Response(JSON.stringify({ success: true, offer }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
