@@ -31,6 +31,7 @@ export default function MatchPage() {
   const location = useLocation();
   const state = location.state as MatchPageState | null;
   const [loading, setLoading] = useState(true);
+  const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
   const [error, setError] = useState<string | null>(null);
 
   const { state: matchState, startNewMatch, loadFromDb, findActiveMatch, destroy } = useMatchManager();
