@@ -10,6 +10,7 @@ import { ArrowLeft, Star, Film, LogOut, BarChart3, Loader2 } from 'lucide-react'
 import { useMatchManager, SimEvent, MatchStats, EMPTY_STATS } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { PhaserMatchView } from '@/match/phaser/PhaserMatchView';
+import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 
 interface MatchPageState {
   homeTeam: string;
@@ -30,6 +31,7 @@ export default function MatchPage() {
   const location = useLocation();
   const state = location.state as MatchPageState | null;
   const [loading, setLoading] = useState(true);
+  const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
   const [error, setError] = useState<string | null>(null);
 
   const { state: matchState, startNewMatch, loadFromDb, findActiveMatch, destroy } = useMatchManager();
@@ -40,12 +42,14 @@ export default function MatchPage() {
       setError(null);
       try {
         if (state?.liveMatchDbId) {
+          setLoadingMsg('Reconectando à partida');
           const ok = await loadFromDb(state.liveMatchDbId);
           if (!ok) setError('Partida não encontrada.');
           setLoading(false);
           return;
         }
         if (state) {
+          setLoadingMsg('Simulando partida no servidor');
           const result = await startNewMatch({
             homeTeam: state.homeTeam,
             awayTeam: state.awayTeam,
@@ -63,6 +67,7 @@ export default function MatchPage() {
           setLoading(false);
           return;
         }
+        setLoadingMsg('Buscando partida ativa');
         const found = await findActiveMatch();
         if (!found) { navigate('/', { replace: true }); return; }
         setLoading(false);
@@ -77,12 +82,10 @@ export default function MatchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-sm text-muted-foreground">Preparando partida no servidor...</p>
-        </div>
-      </div>
+      <GameLoadingScreen
+        message={loadingMsg}
+        subMessage={state ? `${state.homeTeam} vs ${state.awayTeam}` : undefined}
+      />
     );
   }
   if (error) {
@@ -97,7 +100,7 @@ export default function MatchPage() {
       </div>
     );
   }
-  if (matchState.phase === 'loading') return null;
+  if (matchState.phase === 'loading') return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
 
   return <MatchViewer matchState={matchState} onExit={() => navigate('/', { replace: true })} />;
 }

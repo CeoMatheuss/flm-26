@@ -57,19 +57,13 @@ import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import flmLogo from '@/assets/flm26-logo.png';
+import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <img src={flmLogo} alt="FLM 26" className="w-20 h-20 mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Carregando FLM 26...</p>
-        </div>
-      </div>
-    );
+    return <GameLoadingScreen message="Conectando ao servidor" subMessage="Verificando sua sessão" />;
   }
 
   if (!session) return <AuthPage />;
@@ -150,11 +144,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId]);
 
   if (!gameReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <img src={flmLogo} alt="FLM 26" className="w-16 h-16 animate-pulse" />
-      </div>
-    );
+    return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
   }
 
   if (!hasSave) {
