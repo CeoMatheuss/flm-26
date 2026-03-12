@@ -88,6 +88,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
+      {/* Active Tournaments */}
+      <TournamentDashboardCard />
+
       {/* Newspaper */}
       <NewspaperCard club={club} events={events} infrastructure={infrastructure} onOpenFullPage={onOpenNewspaper} />
 
