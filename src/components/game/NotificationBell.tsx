@@ -1,8 +1,9 @@
+/**
+ * NotificationBell — Redesigned bell icon + full-page notification center
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, Check, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Player } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,7 +61,6 @@ interface Props {
 }
 
 export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub, userId }: Props) {
-  const [open, setOpen] = useState(false);
   const [fullPage, setFullPage] = useState(false);
   const [readIds, setReadIds] = useState<string[]>(() => {
     try {
@@ -68,14 +68,11 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
-  const [showAll, setShowAll] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [soldListings, setSoldListings] = useState<SoldListing[]>([]);
   const [boughtListings, setBoughtListings] = useState<BoughtListing[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
-  const PREVIEW_COUNT = 5;
 
-  // Load read IDs from Supabase on mount
   useEffect(() => {
     if (!userId) return;
     const loadSaved = async () => {
@@ -83,17 +80,13 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       if (data?.club_data && typeof data.club_data === 'object' && 'readNotificationIds' in (data.club_data as any)) {
         const saved = (data.club_data as any).readNotificationIds as string[];
         if (saved?.length) {
-          setReadIds(prev => {
-            const merged = Array.from(new Set([...prev, ...saved]));
-            return merged;
-          });
+          setReadIds(prev => Array.from(new Set([...prev, ...saved])));
         }
       }
     };
     loadSaved();
   }, [userId]);
 
-  // Persist read IDs to localStorage + Supabase
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds));
   }, [readIds]);
@@ -165,7 +158,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   pendingInvites.forEach(invite => {
     const isHome = invite.home_team_id === userId;
     const dateStr = new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-
     notifications.push({
       id: `invite-${invite.id}`,
       icon: '⚔️',
@@ -173,64 +165,48 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       message: `📅 ${dateStr} • 🏟️ ${isHome ? invite.receiver_stadium : invite.sender_stadium} (${(isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity).toLocaleString()}) • ${isHome ? 'Você é mandante' : 'Você é visitante'}`,
       type: 'warning',
       actions: [
-        {
-          label: 'Aceitar',
-          icon: <Check className="h-3 w-3" />,
-          variant: 'default',
-          onClick: () => respondInvite(invite.id, true),
-        },
-        {
-          label: 'Recusar',
-          icon: <XCircle className="h-3 w-3" />,
-          variant: 'destructive',
-          onClick: () => respondInvite(invite.id, false),
-        },
+        { label: 'Aceitar', icon: <Check className="h-3 w-3" />, variant: 'default', onClick: () => respondInvite(invite.id, true) },
+        { label: 'Recusar', icon: <XCircle className="h-3 w-3" />, variant: 'destructive', onClick: () => respondInvite(invite.id, false) },
       ],
     });
   });
 
-  // Sold player notifications
   soldListings.forEach(sold => {
     const dateStr = sold.sold_at ? new Date(sold.sold_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
     notifications.push({
-      id: `sold-${sold.id}`,
-      icon: '💰',
-      title: `${sold.player_name} vendido!`,
-      message: `${sold.player_name} foi comprado por ${sold.buyer_club_name || 'outro clube'} por R$${(sold.asking_price / 1000).toFixed(0)}k! 📅 ${dateStr}`,
+      id: `sold-${sold.id}`, icon: '💰', title: `${sold.player_name} vendido!`,
+      message: `Comprado por ${sold.buyer_club_name || 'outro clube'} por R$${(sold.asking_price / 1000).toFixed(0)}k • ${dateStr}`,
       type: 'success',
     });
   });
 
-  // Bought player notifications
   boughtListings.forEach(bought => {
     const dateStr = bought.sold_at ? new Date(bought.sold_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
     notifications.push({
-      id: `bought-${bought.id}`,
-      icon: '🛒',
-      title: `${bought.player_name} contratado!`,
-      message: `Você comprou ${bought.player_name} do ${bought.seller_club_name} por R$${(bought.asking_price / 1000).toFixed(0)}k! 📅 ${dateStr}`,
+      id: `bought-${bought.id}`, icon: '🛒', title: `${bought.player_name} contratado!`,
+      message: `Comprado do ${bought.seller_club_name} por R$${(bought.asking_price / 1000).toFixed(0)}k • ${dateStr}`,
       type: 'success',
     });
   });
 
   notifications.push({
     id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
-    message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores: transferências, escalação, resultados.\n\nSuas ações são salvas automaticamente a cada 30 segundos. Boa sorte e divirta-se!`,
+    message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores.\n\nSuas ações são salvas automaticamente a cada 30 segundos.`,
     type: 'success',
   });
   notifications.push({
-    id: 'welcome_tips', icon: '💡', title: '📋 Guia Completo do Manager',
-    message: '1️⃣ Táticas → Monte sua formação e escalação ideal\n2️⃣ Partidas → Jogue 1 amistoso diário vs BOT FC para experiência\n3️⃣ CT & Base → Melhore infraestrutura e desenvolva jovens talentos\n4️⃣ Mercado Online → Compre e venda jogadores com outros managers\n5️⃣ Liga → Participe da liga online com temporadas de 30 dias\n6️⃣ Pacotinhos → Abra pacotes e descubra promessas de 17 anos\n7️⃣ Leilão → Dispute jogadores raros contra outros managers\n8️⃣ Uniformes → Personalize o visual do seu clube',
+    id: 'welcome_tips', icon: '💡', title: 'Guia Completo do Manager',
+    message: '1️⃣ Táticas → Monte sua formação ideal\n2️⃣ Partidas → Jogue amistosos para experiência\n3️⃣ CT & Base → Melhore infraestrutura\n4️⃣ Mercado → Compre e venda jogadores\n5️⃣ Liga → Participe da liga online\n6️⃣ Pacotinhos → Descubra promessas\n7️⃣ Leilão → Dispute jogadores raros\n8️⃣ Uniformes → Personalize seu clube',
     type: 'info',
   });
   notifications.push({
-    id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online & Competitivo',
-    message: 'Temporadas de 30 dias com 1 rodada por dia. Ao final, os melhores sobem de divisão e os piores caem. Construa sua reputação, suba no ranking e conquiste troféus!\n\n⚽ Amistosos online contra outros managers\n🏆 Ligas automáticas por país\n💰 Mercado de transferências em tempo real\n📊 Ranking global de reputação',
+    id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online',
+    message: 'Temporadas de 30 dias com 1 rodada por dia. Melhores sobem, piores caem. Construa sua reputação e conquiste troféus!',
     type: 'info',
   });
   notifications.push({
     id: 'welcome_save', icon: '💾', title: 'Auto-Save Ativo',
-    message: 'Seu progresso é salvo automaticamente a cada 30 segundos. Pode sair tranquilo — quando voltar, tudo estará como deixou! As notificações lidas também são salvas.',
+    message: 'Seu progresso é salvo automaticamente a cada 30 segundos. Pode sair tranquilo!',
     type: 'success',
   });
 
@@ -292,8 +268,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
   const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !readIds.includes(n.id)).length;
-  const displayedNotifications = showAll ? notifications : notifications.slice(0, PREVIEW_COUNT);
-  const hasMore = notifications.length > PREVIEW_COUNT;
 
   const markAsRead = (id: string) => {
     setReadIds(prev => prev.includes(id) ? prev : [...prev, id]);
@@ -303,11 +277,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     setReadIds(notifications.map(n => n.id));
   };
 
-  // Open full page directly when bell is clicked
   const handleOpen = () => {
     try {
       setFullPage(prev => !prev);
-      // Mark all non-action notifications as read on open
       const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
       setReadIds(prev => {
         const newIds = nonActionIds.filter(id => !prev.includes(id));
@@ -321,14 +293,37 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   return (
     <div className="relative">
-      <Button size="sm" variant="ghost" className="h-8 sm:h-9 px-2.5 relative" onClick={handleOpen}>
-        <Bell className={`h-5 w-5 ${urgentCount > 0 ? 'text-destructive' : ''}`} />
+      {/* Bell Button */}
+      <button
+        onClick={handleOpen}
+        className={`
+          relative flex items-center justify-center h-9 w-9 rounded-xl 
+          transition-all duration-300 ease-out
+          ${urgentCount > 0 
+            ? 'bg-destructive/15 text-destructive hover:bg-destructive/25 ring-1 ring-destructive/30' 
+            : unreadCount > 0
+              ? 'bg-primary/10 text-primary hover:bg-primary/20 ring-1 ring-primary/20'
+              : 'bg-accent/50 text-muted-foreground hover:bg-accent hover:text-foreground'
+          }
+        `}
+      >
+        <Bell className={`h-[18px] w-[18px] transition-transform duration-300 ${urgentCount > 0 ? 'animate-[bellShake_0.5s_ease-in-out_infinite_2s]' : ''}`} />
+        
+        {/* Badge */}
         {unreadCount > 0 && (
-          <Badge variant="destructive" className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold animate-pulse">
-            {unreadCount}
-          </Badge>
+          <span className={`
+            absolute -top-1 -right-1 flex items-center justify-center
+            min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
+            shadow-lg transition-all duration-300
+            ${urgentCount > 0 
+              ? 'bg-destructive text-destructive-foreground shadow-destructive/40' 
+              : 'bg-primary text-primary-foreground shadow-primary/30'
+            }
+          `}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
-      </Button>
+      </button>
 
       {fullPage && createPortal(
         <NotificationFullPage
