@@ -190,7 +190,27 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (data) setSavedEntries(data as SavedEntry[]);
+      if (data) {
+        setSavedEntries(data as SavedEntry[]);
+        
+        // Load user reactions
+        const entryIds = (data as SavedEntry[]).map(e => e.id);
+        if (entryIds.length > 0) {
+          const { data: rxns } = await supabase
+            .from('newspaper_reactions')
+            .select('entry_id, emoji')
+            .eq('user_id', user.id)
+            .in('entry_id', entryIds);
+          if (rxns) {
+            const map: Record<string, string[]> = {};
+            (rxns as any[]).forEach(r => {
+              if (!map[r.entry_id]) map[r.entry_id] = [];
+              map[r.entry_id].push(r.emoji);
+            });
+            setReactions(map);
+          }
+        }
+      }
 
       // Load admin updates
       const { data: updates } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(20);
@@ -201,6 +221,36 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
       setLoading(false);
     }
   }, [club, events, infrastructure]);
+
+  const toggleReaction = useCallback(async (entryId: string, emoji: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const current = reactions[entryId] || [];
+    const hasIt = current.includes(emoji);
+
+    if (hasIt) {
+      await supabase
+        .from('newspaper_reactions')
+        .delete()
+        .eq('entry_id', entryId)
+        .eq('user_id', user.id)
+        .eq('emoji', emoji);
+      setReactions(prev => ({
+        ...prev,
+        [entryId]: (prev[entryId] || []).filter(e => e !== emoji),
+      }));
+    } else {
+      await supabase
+        .from('newspaper_reactions')
+        .insert({ entry_id: entryId, user_id: user.id, emoji });
+      setReactions(prev => ({
+        ...prev,
+        [entryId]: [...(prev[entryId] || []), emoji],
+      }));
+    }
+    setShowReactionPicker(null);
+  }, [reactions]);
 
   useEffect(() => {
     saveAndLoad();
