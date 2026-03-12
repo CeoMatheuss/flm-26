@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import signingImg from '@/assets/signing-bg.jpg';
 
 interface Props {
   club: Club;
@@ -274,14 +275,28 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
           {/* News from DB */}
           <div className="space-y-2">
             {visibleEntries.map((item) => (
-              <Card key={item.id} className="border-border">
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-2">
-                    <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                      {item.category}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs leading-snug">{item.text}</p>
+              <Card key={item.id} className="border-border overflow-hidden">
+                <CardContent className="p-0">
+                  {(item.category === 'MERCADO' || item.category === 'ELENCO') && (
+                    <div className="relative w-full h-24 overflow-hidden">
+                      <img src={signingImg} alt="" className="w-full h-full object-cover object-top opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                      <div className="absolute bottom-2 left-3">
+                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                          {item.category}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <div className="flex items-start gap-2">
+                      {item.category !== 'MERCADO' && item.category !== 'ELENCO' && (
+                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                          {item.category}
+                        </span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs leading-snug">{item.text}</p>
                       {item.narration && (
                         <div
                           className="mt-1.5 cursor-pointer"
@@ -306,6 +321,7 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                       </span>
                     </div>
                   </div>
+                </div>
                 </CardContent>
               </Card>
             ))}

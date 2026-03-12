@@ -245,12 +245,32 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
 
   const respondOffer = async (offerId: string, accept: boolean, listing?: TransferListing) => {
     setLoading(true);
+
+    // Build a smart rejection reason with counter-offer hint
+    let rejectionReason = 'Recusada pelo clube vendedor.';
+    if (!accept && listing) {
+      const offer = incomingOffers.find(o => o.id === offerId);
+      if (offer) {
+        const askingPrice = listing.asking_price;
+        const offeredPrice = offer.offered_price;
+        const diff = askingPrice - offeredPrice;
+        const minAcceptable = Math.round(askingPrice * 0.85);
+        const suggestedSalary = Math.round((listing.player_data?.salary || 500) * 1.15);
+        
+        if (diff > 0) {
+          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos a proposta de R$${(offeredPrice / 1000).toFixed(0)}k pois está abaixo do valor desejado. Talvez aceitemos por R$${(minAcceptable / 1000).toFixed(0)}k+ com salário de R$${suggestedSalary}/mês e contrato de 3+ anos.`;
+        } else {
+          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos a proposta por condições insatisfatórias. Sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus por gols para fecharmos negócio.`;
+        }
+      }
+    }
+
     const res = await supabase.functions.invoke('process-transfer', {
       body: {
         action: 'respond',
         offerId,
         response: accept ? 'accepted' : 'rejected',
-        rejectionReason: accept ? null : 'Recusada pelo clube vendedor.',
+        rejectionReason: accept ? null : rejectionReason,
       },
     });
 
@@ -260,7 +280,6 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
       toast.warning(res.data.reason || 'Jogador recusou a proposta.');
     } else if (res.data?.playerAccepted === true) {
       toast.success(res.data.message || 'Transferência concluída!');
-      // Seller: remove player from squad, add money
       if (listing) {
         const offer = incomingOffers.find(o => o.id === offerId);
         if (offer) {
@@ -268,7 +287,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
         }
       }
     } else {
-      toast.success(accept ? 'Proposta aceita!' : 'Proposta recusada.');
+      toast.success(accept ? 'Proposta aceita!' : 'Proposta recusada. O empresário enviou uma contraproposta ao comprador.');
     }
 
     loadListings();
