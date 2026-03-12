@@ -586,7 +586,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             />
           </TabsContent>
           <TabsContent value="training">
-            <TrainingTab
+            <TrainingWrapper
               players={game.club.players}
               infrastructure={game.infrastructure}
               trainingFocus={game.trainingFocus}
@@ -594,6 +594,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               tactics={game.tactics}
               onPlayersUpdate={game.updatePlayers}
               currentWeek={game.season.currentWeek}
+              clubName={game.club.name}
             />
           </TabsContent>
           <TabsContent value="matches">
