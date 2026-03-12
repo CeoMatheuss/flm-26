@@ -1,4 +1,5 @@
-import { X, CheckCheck, Bell, AlertTriangle, Info, CheckCircle2, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { X, CheckCheck, Bell, AlertTriangle, Info, CheckCircle2, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
