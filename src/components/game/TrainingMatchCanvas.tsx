@@ -551,27 +551,26 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
       ctx.beginPath(); ctx.arc(W * 0.22, H / 2, 2.5, 0, Math.PI * 2); ctx.fill();
     };
 
-    const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 8) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.beginPath(); ctx.ellipse(x + 1, y + size * 0.7, size, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 5) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.beginPath(); ctx.ellipse(x + 0.5, y + size * 0.7, size * 0.9, size * 0.25, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = light; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = light; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.max(7, size - 1)}px Arial`;
+      ctx.font = `bold ${Math.max(5, size - 0.5)}px Arial`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, x, y + 0.5);
+      ctx.fillText(label, x, y + 0.3);
     };
 
     const drawBall = (x: number, y: number, scale = 1) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.beginPath(); ctx.ellipse(x + 1, y + 3 * scale, 5 * scale, 2 * scale, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.ellipse(x + 0.5, y + 2 * scale, 3.5 * scale, 1.5 * scale, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = COLORS.ball;
-      ctx.beginPath(); ctx.arc(x, y, 5 * scale, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#666'; ctx.lineWidth = 0.8; ctx.stroke();
-      // Pentagon pattern
+      ctx.beginPath(); ctx.arc(x, y, 3.5 * scale, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 0.6; ctx.stroke();
       ctx.fillStyle = '#333';
-      ctx.beginPath(); ctx.arc(x - 1, y - 1, 1.5 * scale, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x - 0.5, y - 0.5, 1 * scale, 0, Math.PI * 2); ctx.fill();
     };
 
     const drawLabel = (text: string, color: string, y: number) => {
