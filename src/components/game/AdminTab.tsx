@@ -224,42 +224,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     loadAbuseAlerts();
   };
 
-  const loadJournalUpdates = useCallback(async () => {
-    setJournalLoading(true);
-    const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(50);
-    if (data) setJournalUpdates(data as any[]);
-    setJournalLoading(false);
-  }, []);
-
-  const postJournalUpdate = async () => {
-    if (!journalContent.trim()) return toast.error('Digite a mensagem');
-    if (journalContent.length > 500) return toast.error('Mensagem muito longa (max 500 caracteres)');
-    const benefits = journalBenefits.trim() ? journalBenefits.split('\n').filter(b => b.trim()) : [];
-    setJournalLoading(true);
-    const { error } = await supabase.from('journal_updates').insert([{
-      user_id: userId,
-      title: journalTitle.trim() || 'Atualização',
-      content: journalContent.trim(),
-      approved: false,
-      update_type: journalUpdateType,
-      benefits,
-    }]);
-    if (error) toast.error('Erro ao criar');
-    else { toast.success('📋 Atualização criada! Aprove para publicar.'); setJournalContent(''); setJournalTitle('Atualização'); setJournalBenefits(''); setJournalUpdateType('info'); loadJournalUpdates(); }
-    setJournalLoading(false);
-  };
-
-  const approveUpdate = async (id: string) => {
-    const { error } = await supabase.from('journal_updates').update({ approved: true, approved_at: new Date().toISOString() }).eq('id', id);
-    if (error) toast.error('Erro ao aprovar');
-    else { toast.success('✅ Atualização aprovada e publicada!'); loadJournalUpdates(); }
-  };
-
-  const deleteJournalUpdate = async (id: string) => {
-    const { error } = await supabase.from('journal_updates').delete().eq('id', id);
-    if (error) toast.error('Erro ao deletar');
-    else { toast.success('Atualização removida'); loadJournalUpdates(); }
-  };
 
   const loadGameBans = useCallback(async () => {
     setGameBanLoading(true);
