@@ -1008,9 +1008,9 @@ export function AdminTab({ userId, isFounder }: Props) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Newspaper className="h-4 w-4" /> Publicar Atualização no Jornal
+                <Newspaper className="h-4 w-4" /> Criar Atualização
               </CardTitle>
-              <p className="text-[10px] text-muted-foreground">A mensagem aparecerá no Jornal de todos os jogadores.</p>
+              <p className="text-[10px] text-muted-foreground">A atualização só vai ao Jornal quando você aprovar.</p>
             </CardHeader>
             <CardContent className="space-y-2">
               <Input
@@ -1020,48 +1020,88 @@ export function AdminTab({ userId, isFounder }: Props) {
                 maxLength={100}
                 className="h-8 text-xs"
               />
+              <Select value={journalUpdateType} onValueChange={setJournalUpdateType}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feature">🚀 Nova Funcionalidade</SelectItem>
+                  <SelectItem value="improvement">⚡ Melhoria</SelectItem>
+                  <SelectItem value="fix">🔧 Correção</SelectItem>
+                  <SelectItem value="info">📢 Informação</SelectItem>
+                  <SelectItem value="event">🎉 Evento</SelectItem>
+                </SelectContent>
+              </Select>
               <Textarea
-                placeholder="Escreva a mensagem que aparecerá no jornal..."
+                placeholder="Escreva a mensagem da atualização..."
                 value={journalContent}
                 onChange={e => setJournalContent(e.target.value)}
                 maxLength={500}
                 className="text-xs min-h-[80px]"
               />
+              <Textarea
+                placeholder="Benefícios (um por linha, ex: Melhor performance)"
+                value={journalBenefits}
+                onChange={e => setJournalBenefits(e.target.value)}
+                className="text-xs min-h-[50px]"
+              />
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-muted-foreground">{journalContent.length}/500</span>
                 <Button size="sm" className="h-7 text-xs gap-1" onClick={postJournalUpdate} disabled={journalLoading}>
-                  <Newspaper className="h-3 w-3" /> Publicar
+                  <Newspaper className="h-3 w-3" /> Criar (Pendente)
                 </Button>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Atualizações Publicadas</CardTitle>
+              <CardTitle className="text-sm">Atualizações</CardTitle>
             </CardHeader>
             <CardContent>
               {journalUpdates.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atualização publicada</p>
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atualização criada</p>
               ) : (
-                <ScrollArea className="max-h-[300px]">
+                <ScrollArea className="max-h-[400px]">
                   <div className="space-y-2">
                     {journalUpdates.map(u => (
-                      <div key={u.id} className="flex items-start justify-between gap-2 p-2 rounded bg-muted/20 group">
+                      <div key={u.id} className={`flex items-start justify-between gap-2 p-2 rounded group ${u.approved ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-muted/20 border border-orange-500/20'}`}>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant={u.approved ? 'default' : 'outline'} className={`text-[8px] ${u.approved ? 'bg-emerald-600' : 'border-orange-500/50 text-orange-400'}`}>
+                              {u.approved ? '✅ Publicada' : '⏳ Pendente'}
+                            </Badge>
                             <Badge variant="secondary" className="text-[8px]">📢 {u.title}</Badge>
                             <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-1">{u.content}</p>
+                          {u.benefits && u.benefits.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {u.benefits.map((b: string, i: number) => (
+                                <p key={i} className="text-[9px] text-emerald-400">✓ {b}</p>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
-                          onClick={() => deleteJournalUpdate(u.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          {!u.approved && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-6 text-[10px] px-2 gap-1"
+                              onClick={() => approveUpdate(u.id)}
+                            >
+                              <CheckCircle className="h-3 w-3" /> Aprovar
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+                            onClick={() => deleteJournalUpdate(u.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
