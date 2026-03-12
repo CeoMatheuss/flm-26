@@ -363,11 +363,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   return (
     <div className="min-h-screen bg-background">
       <UpdateAnnouncementModal
-        update={announcementUpdate}
-        open={!!announcementUpdate}
+        open={showChangelog}
         onClose={() => {
-          if (announcementUpdate?.approved_at) localStorage.setItem('flm-last-update-seen', announcementUpdate.approved_at);
-          setAnnouncementUpdate(null);
+          localStorage.setItem('flm-last-version-seen', GAME_VERSION);
+          setShowChangelog(false);
         }}
       />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {

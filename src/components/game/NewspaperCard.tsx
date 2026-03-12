@@ -196,24 +196,6 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
           <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-snug">{main.subtitle}</p>
         </div>
 
-        {/* Admin Updates */}
-        {adminUpdates.length > 0 && (
-          <div className="space-y-1.5">
-            {adminUpdates.slice(0, 2).map(u => (
-              <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
-                <div className="flex items-start gap-1.5 p-1.5">
-                  <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
-                    <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug whitespace-pre-line">{u.content}</p>
-                  </div>
-                  <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Secondary news */}
         {secondary.length > 0 && (
           <div className="space-y-1.5">
