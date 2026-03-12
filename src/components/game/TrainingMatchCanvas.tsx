@@ -1013,117 +1013,207 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
             `${config.icon} ${clubName}`);
         }
 
-      // ── COUNTER-ATTACK (phased: defend → intercept → sprint → finish) ──
+      // ── COUNTER-ATTACK (continuous ball-reactive movement) ─────────
       } else if (drill === 'counterattack') {
         const s = spritesRef.current;
         const isRunning = phaseRef.current === 'running' || phaseRef.current === 'showing-result';
+        const caCycle = Math.floor((now - startTimeRef.current) / 4000) % 5;
+        const cycleT = ((now - startTimeRef.current) % 4000) / 4000; // 0→1 within cycle
 
-        if (isRunning && now - lastTargetRef.current > 1600) {
+        // ── Continuous target updates every frame-ish ──
+        if (isRunning && now - lastTargetRef.current > 600) {
           lastTargetRef.current = now;
-          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
           const f = FORMATIONS.counterattack;
+          const bx = s.ballX; const by = s.ballY;
 
           if (caCycle === 0) {
-            // Defending — opponent has ball, teamA compact
-            s.ballTX = 0.35 + Math.random() * 0.1;
-            s.ballTY = 0.3 + Math.random() * 0.4;
+            // DEFENDING: compact shape, players between ball and own goal
+            s.ballTX = 0.28 + cycleT * 0.12 + Math.sin(now * 0.001) * 0.04;
+            s.ballTY = 0.35 + Math.sin(now * 0.0015) * 0.15;
+            // Defenders form a line between ball and goal
             for (let i = 1; i < 5; i++) {
-              s.atx[i] = 0.18 + Math.random() * 0.06;
-              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.05;
+              s.atx[i] = Math.min(bx - 0.08, 0.22) + (Math.random() - 0.5) * 0.03;
+              s.aty[i] = f.teamA[i].y + (by - 0.5) * 0.15 + (Math.random() - 0.5) * 0.03;
             }
+            // Midfield tracks ball laterally
             for (let i = 5; i < 8; i++) {
-              s.atx[i] = 0.30 + Math.random() * 0.06;
-              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+              s.atx[i] = bx - 0.06 - Math.random() * 0.04;
+              s.aty[i] = by + (i - 6) * 0.18 + (Math.random() - 0.5) * 0.04;
             }
+            // Forwards wait high
             for (let i = 8; i < 11; i++) {
-              s.atx[i] = 0.50 + Math.random() * 0.05;
-              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.05;
+              s.atx[i] = 0.52 + Math.random() * 0.04;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.04;
             }
-            for (let i = 1; i < 11; i++) {
-              s.btx[i] = f.teamB[i].x - 0.15 - Math.random() * 0.08;
-              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.08;
+            // Opponents attack — move with ball
+            for (let i = 1; i < 4; i++) {
+              s.btx[i] = bx + 0.02 + Math.random() * 0.06;
+              s.bty[i] = by + (i - 2) * 0.15 + (Math.random() - 0.5) * 0.04;
             }
-          } else if (caCycle === 1) {
-            // Intercept
-            s.ballTX = 0.38 + Math.random() * 0.08;
-            s.ballTY = 0.25 + Math.random() * 0.5;
-            const winner = 5 + Math.floor(Math.random() * 3);
-            s.atx[winner] = s.ballTX - 0.02;
-            s.aty[winner] = s.ballTY;
-          } else if (caCycle === 2) {
-            // Launch — long ball forward
-            s.ballTX = 0.65 + Math.random() * 0.1;
-            s.ballTY = 0.3 + Math.random() * 0.4;
-            for (let i = 8; i < 11; i++) {
-              s.atx[i] = 0.68 + Math.random() * 0.14;
-              s.aty[i] = 0.20 + Math.random() * 0.6;
-            }
-            for (let i = 5; i < 8; i++) {
-              s.atx[i] = 0.50 + Math.random() * 0.10;
-              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.08;
-            }
-            for (let i = 1; i < 11; i++) {
-              s.btx[i] = f.teamB[i].x + 0.05;
+            for (let i = 4; i < 8; i++) {
+              s.btx[i] = bx - 0.10 + Math.random() * 0.08;
               s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.06;
             }
-          } else if (caCycle === 3) {
-            // Finish — near goal
-            s.ballTX = 0.82 + Math.random() * 0.08;
-            s.ballTY = 0.35 + Math.random() * 0.3;
             for (let i = 8; i < 11; i++) {
-              s.atx[i] = 0.82 + Math.random() * 0.08;
-              s.aty[i] = 0.30 + Math.random() * 0.4;
+              s.btx[i] = bx + 0.08 + Math.random() * 0.06;
+              s.bty[i] = 0.25 + Math.random() * 0.5;
             }
-            s.btx[1] = 0.86; s.bty[1] = 0.40;
-            s.btx[2] = 0.86; s.bty[2] = 0.60;
-          } else {
-            // Reset
-            for (let i = 0; i < 11; i++) {
-              s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * 0.04;
-              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.04;
-              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.04;
+          } else if (caCycle === 1) {
+            // INTERCEPT: midfielder rushes to ball, others react
+            const interceptX = 0.38 + Math.random() * 0.06;
+            const interceptY = 0.30 + Math.random() * 0.4;
+            s.ballTX = interceptX;
+            s.ballTY = interceptY;
+            // Closest midfielder charges to ball
+            const winner = 5 + Math.floor(Math.random() * 3);
+            s.atx[winner] = interceptX - 0.02;
+            s.aty[winner] = interceptY;
+            // Other mids push forward toward ball
+            for (let i = 5; i < 8; i++) {
+              if (i !== winner) {
+                s.atx[i] = interceptX + 0.02 + (Math.random() - 0.5) * 0.06;
+                s.aty[i] = interceptY + (i - 6) * 0.12;
+              }
+            }
+            // Forwards start their runs
+            for (let i = 8; i < 11; i++) {
+              s.atx[i] = 0.55 + cycleT * 0.08;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+            }
+            // Defenders hold
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = 0.25 + Math.random() * 0.04;
+              s.aty[i] = f.teamA[i].y;
+            }
+            // Opponents slow down / transition
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = s.bx[i] + 0.02;
+              s.bty[i] = s.by[i] + (Math.random() - 0.5) * 0.02;
+            }
+          } else if (caCycle === 2) {
+            // LAUNCH: ball flies forward, forwards sprint, opponents scramble back
+            const launchProgress = cycleT;
+            s.ballTX = 0.45 + launchProgress * 0.35;
+            s.ballTY = 0.30 + Math.sin(now * 0.002) * 0.15;
+            // Forwards sprint ahead of ball
+            for (let i = 8; i < 11; i++) {
+              s.atx[i] = s.ballTX + 0.02 + Math.random() * 0.06;
+              s.aty[i] = s.ballTY + (i - 9) * 0.15 + (Math.random() - 0.5) * 0.04;
+            }
+            // Midfield pushes up following
+            for (let i = 5; i < 8; i++) {
+              s.atx[i] = s.ballTX - 0.10 + Math.random() * 0.06;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+            }
+            // Defenders push up to halfway
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = 0.35 + launchProgress * 0.10;
+              s.aty[i] = f.teamA[i].y;
+            }
+            // Opponents sprint back toward their goal
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = Math.max(s.bx[i] + 0.03, 0.70 + Math.random() * 0.10);
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.05;
+            }
+          } else if (caCycle === 3) {
+            // FINISH: 3v2 near goal, ball toward goal area
+            s.ballTX = 0.82 + cycleT * 0.08;
+            s.ballTY = 0.38 + Math.sin(now * 0.003) * 0.12;
+            // Forwards converge near goal
+            s.atx[8] = s.ballTX - 0.02; s.aty[8] = s.ballTY - 0.08;
+            s.atx[9] = s.ballTX + 0.03; s.aty[9] = s.ballTY;
+            s.atx[10] = s.ballTX - 0.02; s.aty[10] = s.ballTY + 0.10;
+            // Midfield arrives as support
+            for (let i = 5; i < 8; i++) {
+              s.atx[i] = 0.70 + Math.random() * 0.06;
+              s.aty[i] = 0.25 + (i - 5) * 0.25;
+            }
+            // Only 2 defenders + GK
+            s.btx[1] = 0.87; s.bty[1] = s.ballTY - 0.06;
+            s.btx[2] = 0.87; s.bty[2] = s.ballTY + 0.08;
+            // GK reacts to ball
+            s.btx[0] = 0.96; s.bty[0] = s.ballTY;
+            // Rest retreat
+            for (let i = 3; i < 11; i++) {
+              s.btx[i] = 0.80 + Math.random() * 0.08;
               s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.04;
             }
-            s.ballTX = 0.50; s.ballTY = 0.50;
+          } else {
+            // RESET
+            for (let i = 0; i < 11; i++) {
+              s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * 0.03;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.03;
+              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.03;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.03;
+            }
+            s.ballTX = 0.45; s.ballTY = 0.50;
           }
         }
 
-        const caLerp = 0.04;
+        // Smooth lerp — faster for attack phases
+        const aLerp = (caCycle === 2 || caCycle === 3) ? 0.055 : 0.035;
+        const ballLerp = (caCycle === 2) ? 0.06 : 0.04;
         for (let i = 0; i < 11; i++) {
-          s.ax[i] = lerp(s.ax[i], s.atx[i], caLerp);
-          s.ay[i] = lerp(s.ay[i], s.aty[i], caLerp);
+          s.ax[i] = lerp(s.ax[i], s.atx[i], aLerp);
+          s.ay[i] = lerp(s.ay[i], s.aty[i], aLerp);
           s.bx[i] = lerp(s.bx[i], s.btx[i], 0.03);
           s.by[i] = lerp(s.by[i], s.bty[i], 0.03);
         }
-        s.ballX = lerp(s.ballX, s.ballTX, 0.045);
-        s.ballY = lerp(s.ballY, s.ballTY, 0.045);
+        s.ballX = lerp(s.ballX, s.ballTX, ballLerp);
+        s.ballY = lerp(s.ballY, s.ballTY, ballLerp);
 
         if (isRunning) {
-          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
+          // Visual overlays per phase
           if (caCycle === 0) {
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
-            ctx.fillRect(0, 0, W * 0.5, H);
+            // Red defensive tint
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.05)';
+            ctx.fillRect(0, 0, W * 0.45, H);
+          } else if (caCycle === 1) {
+            // Yellow intercept flash
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.04)';
+            ctx.fillRect(W * 0.2, 0, W * 0.3, H);
           } else if (caCycle === 2 || caCycle === 3) {
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.04)';
-            ctx.fillRect(W * 0.5, 0, W * 0.5, H);
-            // Arrow showing counter direction
-            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(W * 0.35, H / 2); ctx.lineTo(W * 0.85, H / 2);
-            ctx.lineTo(W * 0.80, H / 2 - 15);
-            ctx.moveTo(W * 0.85, H / 2); ctx.lineTo(W * 0.80, H / 2 + 15);
-            ctx.stroke();
+            // Green attack tint
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.05)';
+            ctx.fillRect(W * 0.45, 0, W * 0.55, H);
+            // Speed lines / arrow
+            const arrowAlpha = 0.08 + Math.sin(drift * 4) * 0.04;
+            ctx.strokeStyle = `rgba(255,255,255,${arrowAlpha})`;
+            ctx.lineWidth = 2;
+            for (let a = 0; a < 3; a++) {
+              const ay = H * 0.3 + a * (H * 0.2);
+              const ax = W * 0.40 + Math.sin(drift * 3 + a) * 20;
+              ctx.beginPath();
+              ctx.moveTo(ax, ay); ctx.lineTo(ax + 60, ay);
+              ctx.lineTo(ax + 52, ay - 6);
+              ctx.moveTo(ax + 60, ay); ctx.lineTo(ax + 52, ay + 6);
+              ctx.stroke();
+            }
           }
 
+          // Draw trail effect for ball during sprint phases
+          if (caCycle === 2 || caCycle === 3) {
+            for (let t = 3; t >= 1; t--) {
+              const trailAlpha = 0.06 * (4 - t);
+              ctx.fillStyle = `rgba(255,255,255,${trailAlpha})`;
+              ctx.beginPath();
+              ctx.arc(s.ballX * W - t * 4, s.ballY * H, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // Draw players with running indicator during sprint
           for (let i = 0; i < 11; i++) {
-            drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
+            const isRunningForward = (caCycle === 2 || caCycle === 3) && i >= 8;
+            const pSize = isRunningForward ? 9 : 8;
+            drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight,
+              i === 0 ? 'GK' : isRunningForward ? '⚡' : `${i + 1}`, pSize);
           }
           for (let i = 0; i < 11; i++) {
             drawPlayer(s.bx[i] * W, s.by[i] * H, i === 0 ? COLORS.teamBGK : COLORS.teamB,
               i === 0 ? COLORS.teamBGKLight : COLORS.teamBLight, i === 0 ? 'GK' : `${i + 1}`);
           }
-          drawBall(s.ballX * W, s.ballY * H);
+          drawBall(s.ballX * W, s.ballY * H, caCycle === 2 ? 1.2 : 1);
         } else {
           const f = FORMATIONS.counterattack;
           f.teamA.forEach((p, i) => {
@@ -1137,7 +1227,8 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           });
         }
 
-        if (isRunning && now - lastTimedEventRef.current > 5000 + Math.random() * 3500 && !timedEventActiveRef.current) {
+        // Events
+        if (isRunning && now - lastTimedEventRef.current > 5000 + Math.random() * 3000 && !timedEventActiveRef.current) {
           lastTimedEventRef.current = now;
           const pool = getTimedEvents('counterattack');
           const evt = pool[Math.floor(Math.random() * pool.length)];
@@ -1149,7 +1240,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
         }
         if (timedEventActiveRef.current) {
           const evt = timedEventActiveRef.current;
-          ctx.fillStyle = evt.isGoal ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.2)';
+          ctx.fillStyle = evt.isGoal ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.25)';
           ctx.fillRect(0, 0, W, H);
           drawLabel(`${evt.icon} ${evt.message}`, evt.isGoal ? '#10b981' : 'rgba(255,255,255,0.9)', H / 2);
           if (now - timedEventTimerRef.current > 2500) {
@@ -1164,10 +1255,9 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
             phaseRef.current = 'finished'; setPhase('finished');
             animRef.current = requestAnimationFrame(animate); return;
           }
-          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
-          const phaseLabel = ['Defendendo','Interceptação','Lançamento!','Finalização!','Reset'][caCycle];
+          const phaseLabel = ['🛡️ Defendendo','⚡ Interceptação','🚀 Lançamento!','🎯 Finalização!','🔄 Reset'][caCycle];
           drawHUD(`⏱ ${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`,
-            `⚽ ${scoreRef.current[0]} gols · ⚡ ${phaseLabel}`, `${config.icon} ${clubName}`);
+            `⚽ ${scoreRef.current[0]} gols · ${phaseLabel}`, `${config.icon} ${clubName}`);
         }
 
       // ── TACTICAL (generic timed 11v11) ─────────────────────────────
