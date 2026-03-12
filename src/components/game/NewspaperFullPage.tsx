@@ -416,7 +416,40 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                         </span>
                       </div>
                     </div>
-                  </div>
+                      {/* Reaction bar */}
+                      <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-border/30">
+                        {(reactions[item.id] || []).map(emoji => (
+                          <button
+                            key={emoji}
+                            onClick={() => toggleReaction(item.id, emoji)}
+                            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)}
+                            className="p-1 rounded hover:bg-muted transition-colors"
+                          >
+                            <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                          {showReactionPicker === item.id && (
+                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                              {REACT_EMOJIS.map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => toggleReaction(item.id, emoji)}
+                                  className={`text-sm p-1 rounded hover:bg-muted transition-colors ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               );
