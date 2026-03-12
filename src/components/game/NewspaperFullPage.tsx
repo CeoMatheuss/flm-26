@@ -138,7 +138,6 @@ function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: I
 const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
 
 export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
-  const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const [savedEntries, setSavedEntries] = useState<SavedEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [narrating, setNarrating] = useState(false);
