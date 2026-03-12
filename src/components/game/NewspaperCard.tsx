@@ -13,9 +13,11 @@ interface Props {
   events: GameEvent[];
   infrastructure?: Infrastructure;
   onOpenFullPage?: () => void;
+  isNewClub?: boolean;
+  clubCreatedAt?: number;
 }
 
-function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { headline: string; subtitle: string; category: string } {
+function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infrastructure, isNewClub?: boolean, clubCreatedAt?: number): { headline: string; subtitle: string; category: string } {
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
 
   // Check recent events first
@@ -71,9 +73,18 @@ function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infr
     }
   }
 
-  // Generate based on club state
+  // Only show pre-season for NEW clubs within 24h
   if (totalGames === 0) {
-    return { headline: `${club.name} SE PREPARA PARA A TEMPORADA`, subtitle: 'Pré-temporada em andamento. Torcida ansiosa pelo início.', category: 'PRÉ-TEMPORADA' };
+    const isWithin24h = isNewClub || (clubCreatedAt && (Date.now() - clubCreatedAt) < 24 * 60 * 60 * 1000);
+    if (isWithin24h) {
+      return { headline: `${club.name} NASCE! NOVO CLUBE NA CIDADE`, subtitle: 'A torcida celebra a fundação do clube. O início de uma grande história!', category: 'FUNDAÇÃO' };
+    }
+    // After 24h, show something more relevant
+    const topPlayer = [...club.players].sort((a, b) => b.overall - a.overall)[0];
+    if (topPlayer) {
+      return { headline: `${topPlayer.name} É A ESTRELA DO ${club.name.toUpperCase()}`, subtitle: `Com OVR ${topPlayer.overall}, o craque lidera o elenco rumo ao primeiro jogo.`, category: 'ELENCO' };
+    }
+    return { headline: `${club.name}: ELENCO FORMADO`, subtitle: `${club.players.length} jogadores prontos para entrar em campo.`, category: 'ELENCO' };
   }
 
   const winRate = club.stats.wins / totalGames;
@@ -106,7 +117,6 @@ function generateSecondaryNews(club: Club, events: GameEvent[], infrastructure?:
   if (club.fans > 20000) news.push({ text: `👥 Torcida cresce: ${club.fans.toLocaleString()} torcedores`, category: 'TORCIDA' });
   if (club.reputation >= 80) news.push({ text: `🌍 Reputação do clube atinge nível internacional`, category: 'PRESTÍGIO' });
   
-  // Stadium news
   if (infrastructure) {
     const cap = getStadiumCapacity(infrastructure.stadium.level);
     news.push({ text: `🏟️ ${club.stadiumName}: capacidade de ${cap.toLocaleString()} torcedores (Nv.${infrastructure.stadium.level})`, category: 'ESTÁDIO' });
@@ -118,10 +128,8 @@ function generateSecondaryNews(club: Club, events: GameEvent[], infrastructure?:
     }
   }
 
-  // Stats
   news.push({ text: `📊 Média de idade: ${avgAge} anos | Média OVR: ${avgOvr}`, category: 'ESTATÍSTICAS' });
 
-  // Add older events as smaller news
   events.slice(1, 6).forEach(ev => {
     news.push({ text: `${ev.icon} ${ev.title}`, category: ev.type.toUpperCase() });
   });
@@ -146,14 +154,23 @@ const categoryColors: Record<string, string> = {
   DESTAQUE: 'bg-emerald-500/80',
   CRISE: 'bg-destructive/80',
   'PRÉ-TEMPORADA': 'bg-primary/80',
+  FUNDAÇÃO: 'bg-emerald-600/80',
   LIDERANÇA: 'bg-yellow-500/80',
   PREMIAÇÃO: 'bg-amber-600/80',
   INSATISFAÇÃO: 'bg-red-700/80',
+  ELENCO: 'bg-primary/80',
+  GOLS: 'bg-emerald-500/80',
+  ESTATÍSTICAS: 'bg-muted-foreground/80',
+  ESTÁDIO: 'bg-cyan-500/80',
+  ESTRUTURA: 'bg-blue-500/80',
+  PASSES: 'bg-purple-500/80',
+  PRESTÍGIO: 'bg-amber-500/80',
+  LESÕES: 'bg-orange-500/80',
 };
 
-export function NewspaperCard({ club, events, infrastructure, onOpenFullPage }: Props) {
+export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, isNewClub, clubCreatedAt }: Props) {
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
-  const main = generateHeadline(club, events, infrastructure);
+  const main = generateHeadline(club, events, infrastructure, isNewClub, clubCreatedAt);
   const secondary = generateSecondaryNews(club, events, infrastructure).slice(0, 4);
 
   useEffect(() => {
