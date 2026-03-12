@@ -141,7 +141,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
   const assigned = assignPlayersToSlots(players, formation);
 
   return (
-    <div className="relative w-full aspect-[3/4] sm:aspect-[2/3] bg-emerald-800 rounded-xl overflow-hidden border border-emerald-600/30">
+    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[2/3] bg-emerald-800 rounded-xl overflow-hidden border border-emerald-600/30">
       {/* Pitch markings */}
       <div className="absolute inset-0">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-28 sm:h-28 border-2 border-emerald-600/40 rounded-full" />
