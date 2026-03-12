@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.process-transfer]
 verify_jwt = false
+
+[functions.generate-narration]
+verify_jwt = false
+
+[functions.get-seller-squad]
+verify_jwt = false
