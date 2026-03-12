@@ -1133,7 +1133,7 @@ export function useGame(initialState?: GameState, userId?: string) {
 
   return {
     club, tactics, leagueTeams, finances, marketPlayers, freeAgents, totalSalaries, infrastructure, youthProspects, youthInvestment, season, hasUnplayedMatches,
-    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus, feedItems,
+    sponsors, sponsorOffers, events, listedForSale, loanedPlayers, trainingFocus,
     achievements, lastMatchReport, clubProfile, ctRooms, youthPromotedCount, ranking, rankingHistory,
     friendliesPlayedToday, friendliesPlayedSeason,
     alreadyPlayedToday, lastFriendlyDate,
@@ -1143,6 +1143,6 @@ export function useGame(initialState?: GameState, userId?: string) {
     renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, renewContract, listForSale,
     loanOutPlayer, loanInPlayer, setPlayerTrainingFocus, changeShirtNumber,
-    reactToFeed, upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers, addBonus,
+    upgradeCTRoom, updateClubProfile, generateFriendly, generateFriendlyVs, updatePlayers, addPackPlayers, addBonus,
   };
 }
