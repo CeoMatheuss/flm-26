@@ -49,7 +49,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar, Gift } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, ShoppingCart, Target, Trophy, DollarSign, Save, LogOut, Building2, GraduationCap, CalendarDays, Handshake, Globe, MoreHorizontal, Settings, Search, Landmark, BookOpen, Sparkles, Heart, Dumbbell, MessageCircle, Newspaper, Gavel, Shirt, Rss, Shield, Medal, User, Home, BarChart3, Calendar, Gift, Star, TrendingUp, ChevronRight } from 'lucide-react';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
