@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Newspaper, ArrowLeft, Megaphone, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import signingImg from '@/assets/newspaper-transfer-banner-16x9.jpg';
+import signingImg from '@/assets/transfer-signing.jpg';
 
 interface Props {
   club: Club;
