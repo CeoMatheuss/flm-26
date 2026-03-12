@@ -45,6 +45,7 @@ const categoryColors: Record<string, string> = {
   ESTATÍSTICAS: 'bg-muted-foreground/80',
   ATUALIZAÇÃO: 'bg-primary/80',
   RENOVAÇÃO: 'bg-blue-600/80',
+  CONTRATAÇÃO: 'bg-emerald-600/80',
   EMPRÉSTIMO: 'bg-amber-500/80',
   FUNDAÇÃO: 'bg-emerald-600/80',
 };
