@@ -327,23 +327,15 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                 <Card key={item.id} className="border-border overflow-hidden">
                   <CardContent className="p-0">
                     {showSigningVisual && (
-                      <div className="relative w-full h-14 sm:h-16 overflow-hidden bg-muted">
-                        <img src={signingImg} alt="Transferência" className="w-full h-full object-contain object-center opacity-60" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
-                        <div className="absolute bottom-2 left-3">
-                          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                            {item.category}
-                          </span>
-                        </div>
+                      <div className="w-full bg-muted/40 border-b border-border/40 py-1">
+                        <img src={signingImg} alt="Transferência" className="w-1/2 sm:w-2/5 h-auto mx-auto block opacity-80" />
                       </div>
                     )}
                     <div className="p-3">
                       <div className="flex items-start gap-2">
-                        {!showSigningVisual && (
-                          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                            {item.category}
-                          </span>
-                        )}
+                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
+                          {item.category}
+                        </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs leading-snug">{item.text}</p>
                         {item.narration && (
