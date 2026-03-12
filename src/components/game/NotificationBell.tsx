@@ -207,7 +207,20 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   });
 
-  notifications.push({
+  // DB notifications (offers, agent messages, etc.)
+  dbNotifications.forEach(dbN => {
+    const typeMap: Record<string, 'warning' | 'info' | 'danger' | 'success'> = {
+      warning: 'warning', info: 'info', danger: 'danger', success: 'success',
+    };
+    notifications.push({
+      id: `db-${dbN.id}`,
+      icon: dbN.icon,
+      title: dbN.title,
+      message: dbN.message,
+      type: typeMap[dbN.type] || 'info',
+    });
+  });
+
     id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
     message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores.\n\nSuas ações são salvas automaticamente a cada 30 segundos.`,
     type: 'success',
