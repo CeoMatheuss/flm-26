@@ -571,7 +571,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 const player = game.club.players.find(p => p.id === playerId);
                 game.loanOutPlayer(playerId);
                 if (player) {
-                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'loan', extraInfo: `Emprestado por 1 temporada` });
+                  const extra = 'Emprestado por 1 temporada';
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'loan', extraInfo: extra });
+                  saveSigningNews(player.name, player.position, player.overall, player.age, 'loan', extra);
                 }
               }}
               onChangeNumber={game.changeShirtNumber}
