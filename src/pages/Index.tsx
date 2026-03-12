@@ -271,7 +271,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const showAdmin = isAdminRole;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
-  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number } | null>(null);
+  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
 
   // Calculate streaks for FansTab
   const { winStreak, loseStreak } = useMemo(() => {
