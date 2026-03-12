@@ -644,7 +644,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           const gkET = easeOut(Math.min(gkDiveT, 1));
           const gkY = lerp(ka.gkStartY, ka.result.gkDiveY, gkET);
           const gkX = GOAL.x - 0.015;
-          const gkSize = 9 + (gkET > 0.3 ? 3 : 0); // stretch when diving
+          const gkSize = 6 + (gkET > 0.3 ? 2 : 0);
           drawPlayer(gkX * W, gkY * H, COLORS.teamBGK, COLORS.teamBGKLight, 'GK', gkSize);
 
           // Ball flight
