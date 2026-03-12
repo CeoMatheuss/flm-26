@@ -196,7 +196,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
       <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2">
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
-          {(main.category === 'MERCADO' || main.category === 'FUNDAÇÃO' || main.category === 'ELENCO') && (
+          {(['MERCADO', 'FUNDAÇÃO', 'ELENCO', 'EMPRÉSTIMO', 'RENOVAÇÃO'].includes(main.category)) && (
             <div className="relative w-full h-28 sm:h-36 rounded-lg overflow-hidden mb-2">
               <img src={signingImg} alt="Contratação" className="w-full h-full object-cover object-top" />
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
@@ -208,7 +208,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               </div>
             </div>
           )}
-          {main.category !== 'MERCADO' && main.category !== 'FUNDAÇÃO' && main.category !== 'ELENCO' && (
+          {!(['MERCADO', 'FUNDAÇÃO', 'ELENCO', 'EMPRÉSTIMO', 'RENOVAÇÃO'].includes(main.category)) && (
             <>
               <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
                 {main.category}
