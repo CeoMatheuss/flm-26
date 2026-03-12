@@ -551,27 +551,26 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
       ctx.beginPath(); ctx.arc(W * 0.22, H / 2, 2.5, 0, Math.PI * 2); ctx.fill();
     };
 
-    const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 8) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.beginPath(); ctx.ellipse(x + 1, y + size * 0.7, size, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 5) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.beginPath(); ctx.ellipse(x + 0.5, y + size * 0.7, size * 0.9, size * 0.25, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = light; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = light; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.max(7, size - 1)}px Arial`;
+      ctx.font = `bold ${Math.max(5, size - 0.5)}px Arial`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, x, y + 0.5);
+      ctx.fillText(label, x, y + 0.3);
     };
 
     const drawBall = (x: number, y: number, scale = 1) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.beginPath(); ctx.ellipse(x + 1, y + 3 * scale, 5 * scale, 2 * scale, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.ellipse(x + 0.5, y + 2 * scale, 3.5 * scale, 1.5 * scale, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = COLORS.ball;
-      ctx.beginPath(); ctx.arc(x, y, 5 * scale, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#666'; ctx.lineWidth = 0.8; ctx.stroke();
-      // Pentagon pattern
+      ctx.beginPath(); ctx.arc(x, y, 3.5 * scale, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 0.6; ctx.stroke();
       ctx.fillStyle = '#333';
-      ctx.beginPath(); ctx.arc(x - 1, y - 1, 1.5 * scale, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x - 0.5, y - 0.5, 1 * scale, 0, Math.PI * 2); ctx.fill();
     };
 
     const drawLabel = (text: string, color: string, y: number) => {
@@ -638,14 +637,14 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           // Kicker runs up
           const kickerRunT = Math.min(t * 2.5, 1);
           const kickerX = lerp(ka.ballStartX - 0.04, ka.ballStartX + 0.02, easeInOut(kickerRunT));
-          drawPlayer(kickerX * W, 0.5 * H, COLORS.teamA, COLORS.teamALight, '⚡', 10);
+          drawPlayer(kickerX * W, 0.5 * H, COLORS.teamA, COLORS.teamALight, '⚡', 7);
 
           // GK dives after delay
           const gkDiveT = Math.max(0, (t - 0.25) / 0.5);
           const gkET = easeOut(Math.min(gkDiveT, 1));
           const gkY = lerp(ka.gkStartY, ka.result.gkDiveY, gkET);
           const gkX = GOAL.x - 0.015;
-          const gkSize = 9 + (gkET > 0.3 ? 3 : 0); // stretch when diving
+          const gkSize = 6 + (gkET > 0.3 ? 2 : 0);
           drawPlayer(gkX * W, gkY * H, COLORS.teamBGK, COLORS.teamBGKLight, 'GK', gkSize);
 
           // Ball flight
@@ -707,10 +706,10 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
         } else {
           // Idle: show kicker and GK in position
           const kp = formation.teamA[0];
-          drawPlayer(kp.x * W, kp.y * H, COLORS.teamA, COLORS.teamALight, '⚡', 10);
+          drawPlayer(kp.x * W, kp.y * H, COLORS.teamA, COLORS.teamALight, '⚡', 7);
           const gp = formation.teamB[0];
           const gkBob = Math.sin(drift * 3) * 3;
-          drawPlayer(gp.x * W, gp.y * H + gkBob, COLORS.teamBGK, COLORS.teamBGKLight, 'GK', 9);
+          drawPlayer(gp.x * W, gp.y * H + gkBob, COLORS.teamBGK, COLORS.teamBGKLight, 'GK', 6);
           const spotX = drill === 'penalties' ? 0.78 : 0.70;
           drawBall(spotX * W, 0.5 * H);
         }
@@ -1205,7 +1204,7 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           // Draw players with running indicator during sprint
           for (let i = 0; i < 11; i++) {
             const isRunningForward = (caCycle === 2 || caCycle === 3) && i >= 8;
-            const pSize = isRunningForward ? 9 : 8;
+            const pSize = isRunningForward ? 6 : 5;
             drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight,
               i === 0 ? 'GK' : isRunningForward ? '⚡' : `${i + 1}`, pSize);
           }
