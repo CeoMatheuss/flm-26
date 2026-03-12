@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe } from 'lucide-react';
+import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe, Dumbbell } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
+import { TrainingMatchCanvas } from './TrainingMatchCanvas';
 
 interface Props {
   matches: Match[];
@@ -85,6 +86,9 @@ export function MatchesTab({
       <TabsList className="w-full">
         <TabsTrigger value="bot" className="flex-1 text-xs gap-1.5">
           <Swords className="h-3.5 w-3.5" /> vs BOT
+        </TabsTrigger>
+        <TabsTrigger value="training" className="flex-1 text-xs gap-1.5">
+          <Dumbbell className="h-3.5 w-3.5" /> Treino 2D
         </TabsTrigger>
         <TabsTrigger value="online" className="flex-1 text-xs gap-1.5">
           <Globe className="h-3.5 w-3.5" /> Online
@@ -174,6 +178,11 @@ export function MatchesTab({
             </CardContent>
           </Card>
         </div>
+      </TabsContent>
+
+      {/* ── TREINO 2D ─────────────────────────────────────────── */}
+      <TabsContent value="training">
+        <TrainingMatchCanvas clubName={clubName} />
       </TabsContent>
 
       {/* ── ONLINE ─────────────────────────────────────────────── */}
