@@ -237,12 +237,18 @@ function getTimedEvents(drillId: DrillId): DrillEvent[] {
     { icon: '🧤', message: 'Goleiro deu soco na bola!', isGoal: false },
   ];
   if (drillId === 'counterattack') return [
-    { icon: '⚽', message: 'Arrancada fulminante e gol!', isGoal: true },
+    { icon: '⚽', message: 'Arrancada fulminante, tocou na saída do goleiro!', isGoal: true },
     { icon: '🎯', message: 'Lançamento perfeito em profundidade!', isGoal: false },
-    { icon: '🦶', message: 'Zagueiro travou na hora H!', isGoal: false },
-    { icon: '🧤', message: 'Goleiro fechou o ângulo!', isGoal: false },
-    { icon: '⚽', message: 'Tocou na saída do goleiro, gol!', isGoal: true },
-    { icon: '⚡', message: 'Contra-ataque 3 contra 2!', isGoal: false },
+    { icon: '🦶', message: 'Zagueiro travou com carrinho na hora H!', isGoal: false },
+    { icon: '🧤', message: 'Goleiro saiu rápido e fechou o ângulo!', isGoal: false },
+    { icon: '⚽', message: 'Contra-ataque 3x2, toque e gol!', isGoal: true },
+    { icon: '⚡', message: 'Transição rápida, cruzou rasteiro!', isGoal: false },
+    { icon: '⚽', message: 'Driblou o goleiro e empurrou pro gol!', isGoal: true },
+    { icon: '🦶', message: 'Último homem cortou o lançamento!', isGoal: false },
+    { icon: '⚡', message: 'Puxou contra-ataque do campo de defesa!', isGoal: false },
+    { icon: '⚽', message: 'Cavadinha na saída do goleiro, gol!', isGoal: true },
+    { icon: '🧤', message: 'Goleiro fez milagre no 1 contra 1!', isGoal: false },
+    { icon: '🎯', message: 'Passe de primeira na corrida!', isGoal: false },
   ];
   if (drillId === 'pressing') return [
     { icon: '⚽', message: 'Pressing alto! Roubou e finalizou, gol!', isGoal: true },
