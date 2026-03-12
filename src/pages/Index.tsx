@@ -34,7 +34,7 @@ import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
-import { UpdateAnnouncementModal } from '@/components/game/UpdateAnnouncementModal';
+import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
@@ -163,7 +163,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
-  const [announcementUpdate, setAnnouncementUpdate] = useState<any>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
@@ -352,26 +352,21 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, game.infrastructure.trainingCenter.level, game.infrastructure.physiotherapy.level, game.infrastructure.youthAcademy.level]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check for new approved updates to show announcement
+  // Show changelog when game version changes
   useEffect(() => {
-    const checkNewUpdates = async () => {
-      const lastSeen = localStorage.getItem('flm-last-update-seen') || '2000-01-01';
-      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).gt('approved_at', lastSeen).order('approved_at', { ascending: false }).limit(1);
-      if (data && data.length > 0) {
-        setAnnouncementUpdate(data[0]);
-      }
-    };
-    checkNewUpdates();
+    const lastSeenVersion = localStorage.getItem('flm-last-version-seen');
+    if (lastSeenVersion !== GAME_VERSION) {
+      setShowChangelog(true);
+    }
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <UpdateAnnouncementModal
-        update={announcementUpdate}
-        open={!!announcementUpdate}
+        open={showChangelog}
         onClose={() => {
-          if (announcementUpdate?.approved_at) localStorage.setItem('flm-last-update-seen', announcementUpdate.approved_at);
-          setAnnouncementUpdate(null);
+          localStorage.setItem('flm-last-version-seen', GAME_VERSION);
+          setShowChangelog(false);
         }}
       />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => {

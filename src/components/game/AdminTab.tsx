@@ -80,12 +80,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     reviewed_by: string | null; reviewed_at: string | null; created_at: string;
   }>>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
-  const [journalContent, setJournalContent] = useState('');
-  const [journalTitle, setJournalTitle] = useState('Atualização');
-  const [journalUpdateType, setJournalUpdateType] = useState('info');
-  const [journalBenefits, setJournalBenefits] = useState('');
-  const [journalUpdates, setJournalUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string; approved: boolean; update_type: string; benefits: string[] }>>([]);
-  const [journalLoading, setJournalLoading] = useState(false);
   // Player generator state
   const [genOverall, setGenOverall] = useState('60');
   const [genPosition, setGenPosition] = useState('random');
@@ -230,42 +224,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     loadAbuseAlerts();
   };
 
-  const loadJournalUpdates = useCallback(async () => {
-    setJournalLoading(true);
-    const { data } = await supabase.from('journal_updates').select('*').order('created_at', { ascending: false }).limit(50);
-    if (data) setJournalUpdates(data as any[]);
-    setJournalLoading(false);
-  }, []);
-
-  const postJournalUpdate = async () => {
-    if (!journalContent.trim()) return toast.error('Digite a mensagem');
-    if (journalContent.length > 500) return toast.error('Mensagem muito longa (max 500 caracteres)');
-    const benefits = journalBenefits.trim() ? journalBenefits.split('\n').filter(b => b.trim()) : [];
-    setJournalLoading(true);
-    const { error } = await supabase.from('journal_updates').insert([{
-      user_id: userId,
-      title: journalTitle.trim() || 'Atualização',
-      content: journalContent.trim(),
-      approved: false,
-      update_type: journalUpdateType,
-      benefits,
-    }]);
-    if (error) toast.error('Erro ao criar');
-    else { toast.success('📋 Atualização criada! Aprove para publicar.'); setJournalContent(''); setJournalTitle('Atualização'); setJournalBenefits(''); setJournalUpdateType('info'); loadJournalUpdates(); }
-    setJournalLoading(false);
-  };
-
-  const approveUpdate = async (id: string) => {
-    const { error } = await supabase.from('journal_updates').update({ approved: true, approved_at: new Date().toISOString() }).eq('id', id);
-    if (error) toast.error('Erro ao aprovar');
-    else { toast.success('✅ Atualização aprovada e publicada!'); loadJournalUpdates(); }
-  };
-
-  const deleteJournalUpdate = async (id: string) => {
-    const { error } = await supabase.from('journal_updates').delete().eq('id', id);
-    if (error) toast.error('Erro ao deletar');
-    else { toast.success('Atualização removida'); loadJournalUpdates(); }
-  };
 
   const loadGameBans = useCallback(async () => {
     setGameBanLoading(true);
@@ -276,9 +234,9 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadJournalUpdates(), loadGameBans()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadGameBans()]);
     setLoading(false);
-  }, [loadAbuseAlerts, loadJournalUpdates, loadGameBans]);
+  }, [loadAbuseAlerts, loadGameBans]);
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
@@ -563,7 +521,6 @@ export function AdminTab({ userId, isFounder }: Props) {
             <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
             {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
             <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
-            <TabsTrigger value="journal" className="text-[10px] gap-0.5 px-2"><Newspaper className="h-3 w-3" /> Jornal</TabsTrigger>
             <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
           </TabsList>
         </ScrollArea>
@@ -1003,113 +960,6 @@ export function AdminTab({ userId, isFounder }: Props) {
           </Card>
         </TabsContent>
 
-        {/* Journal Tab */}
-        <TabsContent value="journal" className="space-y-3 mt-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Newspaper className="h-4 w-4" /> Criar Atualização
-              </CardTitle>
-              <p className="text-[10px] text-muted-foreground">A atualização só vai ao Jornal quando você aprovar.</p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="Título (ex: Atualização, Manutenção, Novidade)"
-                value={journalTitle}
-                onChange={e => setJournalTitle(e.target.value)}
-                maxLength={100}
-                className="h-8 text-xs"
-              />
-              <Select value={journalUpdateType} onValueChange={setJournalUpdateType}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="feature">🚀 Nova Funcionalidade</SelectItem>
-                  <SelectItem value="improvement">⚡ Melhoria</SelectItem>
-                  <SelectItem value="fix">🔧 Correção</SelectItem>
-                  <SelectItem value="info">📢 Informação</SelectItem>
-                  <SelectItem value="event">🎉 Evento</SelectItem>
-                </SelectContent>
-              </Select>
-              <Textarea
-                placeholder="Escreva a mensagem da atualização..."
-                value={journalContent}
-                onChange={e => setJournalContent(e.target.value)}
-                maxLength={500}
-                className="text-xs min-h-[80px]"
-              />
-              <Textarea
-                placeholder="Benefícios (um por linha, ex: Melhor performance)"
-                value={journalBenefits}
-                onChange={e => setJournalBenefits(e.target.value)}
-                className="text-xs min-h-[50px]"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">{journalContent.length}/500</span>
-                <Button size="sm" className="h-7 text-xs gap-1" onClick={postJournalUpdate} disabled={journalLoading}>
-                  <Newspaper className="h-3 w-3" /> Criar (Pendente)
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Atualizações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {journalUpdates.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atualização criada</p>
-              ) : (
-                <ScrollArea className="max-h-[400px]">
-                  <div className="space-y-2">
-                    {journalUpdates.map(u => (
-                      <div key={u.id} className={`flex items-start justify-between gap-2 p-2 rounded group ${u.approved ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-muted/20 border border-orange-500/20'}`}>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <Badge variant={u.approved ? 'default' : 'outline'} className={`text-[8px] ${u.approved ? 'bg-emerald-600' : 'border-orange-500/50 text-orange-400'}`}>
-                              {u.approved ? '✅ Publicada' : '⏳ Pendente'}
-                            </Badge>
-                            <Badge variant="secondary" className="text-[8px]">📢 {u.title}</Badge>
-                            <span className="text-[8px] text-muted-foreground">{new Date(u.created_at).toLocaleString('pt-BR')}</span>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">{u.content}</p>
-                          {u.benefits && u.benefits.length > 0 && (
-                            <div className="mt-1 space-y-0.5">
-                              {u.benefits.map((b: string, i: number) => (
-                                <p key={i} className="text-[9px] text-emerald-400">✓ {b}</p>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-1 shrink-0">
-                          {!u.approved && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="h-6 text-[10px] px-2 gap-1"
-                              onClick={() => approveUpdate(u.id)}
-                            >
-                              <CheckCircle className="h-3 w-3" /> Aprovar
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
-                            onClick={() => deleteJournalUpdate(u.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Game Ban Tab */}
         <TabsContent value="gameban" className="space-y-3 mt-3">
