@@ -1013,20 +1013,176 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
             `${config.icon} ${clubName}`);
         }
 
-      // ── OTHER TIMED DRILLS (tactical, counterattack) ───────────────
+      // ── COUNTER-ATTACK (phased: defend → intercept → sprint → finish) ──
+      } else if (drill === 'counterattack') {
+        const s = spritesRef.current;
+        const isRunning = phaseRef.current === 'running' || phaseRef.current === 'showing-result';
+
+        if (isRunning && now - lastTargetRef.current > 1600) {
+          lastTargetRef.current = now;
+          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
+          const f = FORMATIONS.counterattack;
+
+          if (caCycle === 0) {
+            // Defending — opponent has ball, teamA compact
+            s.ballTX = 0.35 + Math.random() * 0.1;
+            s.ballTY = 0.3 + Math.random() * 0.4;
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = 0.18 + Math.random() * 0.06;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.05;
+            }
+            for (let i = 5; i < 8; i++) {
+              s.atx[i] = 0.30 + Math.random() * 0.06;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+            }
+            for (let i = 8; i < 11; i++) {
+              s.atx[i] = 0.50 + Math.random() * 0.05;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.05;
+            }
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = f.teamB[i].x - 0.15 - Math.random() * 0.08;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.08;
+            }
+          } else if (caCycle === 1) {
+            // Intercept
+            s.ballTX = 0.38 + Math.random() * 0.08;
+            s.ballTY = 0.25 + Math.random() * 0.5;
+            const winner = 5 + Math.floor(Math.random() * 3);
+            s.atx[winner] = s.ballTX - 0.02;
+            s.aty[winner] = s.ballTY;
+          } else if (caCycle === 2) {
+            // Launch — long ball forward
+            s.ballTX = 0.65 + Math.random() * 0.1;
+            s.ballTY = 0.3 + Math.random() * 0.4;
+            for (let i = 8; i < 11; i++) {
+              s.atx[i] = 0.68 + Math.random() * 0.14;
+              s.aty[i] = 0.20 + Math.random() * 0.6;
+            }
+            for (let i = 5; i < 8; i++) {
+              s.atx[i] = 0.50 + Math.random() * 0.10;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.08;
+            }
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = f.teamB[i].x + 0.05;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.06;
+            }
+          } else if (caCycle === 3) {
+            // Finish — near goal
+            s.ballTX = 0.82 + Math.random() * 0.08;
+            s.ballTY = 0.35 + Math.random() * 0.3;
+            for (let i = 8; i < 11; i++) {
+              s.atx[i] = 0.82 + Math.random() * 0.08;
+              s.aty[i] = 0.30 + Math.random() * 0.4;
+            }
+            s.btx[1] = 0.86; s.bty[1] = 0.40;
+            s.btx[2] = 0.86; s.bty[2] = 0.60;
+          } else {
+            // Reset
+            for (let i = 0; i < 11; i++) {
+              s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * 0.04;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.04;
+              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.04;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.04;
+            }
+            s.ballTX = 0.50; s.ballTY = 0.50;
+          }
+        }
+
+        const caLerp = 0.04;
+        for (let i = 0; i < 11; i++) {
+          s.ax[i] = lerp(s.ax[i], s.atx[i], caLerp);
+          s.ay[i] = lerp(s.ay[i], s.aty[i], caLerp);
+          s.bx[i] = lerp(s.bx[i], s.btx[i], 0.03);
+          s.by[i] = lerp(s.by[i], s.bty[i], 0.03);
+        }
+        s.ballX = lerp(s.ballX, s.ballTX, 0.045);
+        s.ballY = lerp(s.ballY, s.ballTY, 0.045);
+
+        if (isRunning) {
+          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
+          if (caCycle === 0) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
+            ctx.fillRect(0, 0, W * 0.5, H);
+          } else if (caCycle === 2 || caCycle === 3) {
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.04)';
+            ctx.fillRect(W * 0.5, 0, W * 0.5, H);
+            // Arrow showing counter direction
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(W * 0.35, H / 2); ctx.lineTo(W * 0.85, H / 2);
+            ctx.lineTo(W * 0.80, H / 2 - 15);
+            ctx.moveTo(W * 0.85, H / 2); ctx.lineTo(W * 0.80, H / 2 + 15);
+            ctx.stroke();
+          }
+
+          for (let i = 0; i < 11; i++) {
+            drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
+          }
+          for (let i = 0; i < 11; i++) {
+            drawPlayer(s.bx[i] * W, s.by[i] * H, i === 0 ? COLORS.teamBGK : COLORS.teamB,
+              i === 0 ? COLORS.teamBGKLight : COLORS.teamBLight, i === 0 ? 'GK' : `${i + 1}`);
+          }
+          drawBall(s.ballX * W, s.ballY * H);
+        } else {
+          const f = FORMATIONS.counterattack;
+          f.teamA.forEach((p, i) => {
+            drawPlayer(p.x * W + Math.sin(drift + i) * 1.5, p.y * H + Math.cos(drift + i * 0.7) * 1.5,
+              COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
+          });
+          f.teamB.forEach((p, i) => {
+            drawPlayer(p.x * W + Math.sin(drift + i + 3) * 1.5, p.y * H + Math.cos(drift + i * 0.9 + 2) * 1.5,
+              i === 0 ? COLORS.teamBGK : COLORS.teamB, i === 0 ? COLORS.teamBGKLight : COLORS.teamBLight,
+              i === 0 ? 'GK' : `${i + 1}`);
+          });
+        }
+
+        if (isRunning && now - lastTimedEventRef.current > 5000 + Math.random() * 3500 && !timedEventActiveRef.current) {
+          lastTimedEventRef.current = now;
+          const pool = getTimedEvents('counterattack');
+          const evt = pool[Math.floor(Math.random() * pool.length)];
+          timedEventActiveRef.current = evt; timedEventTimerRef.current = now;
+          kickNumRef.current++; setKickNum(kickNumRef.current);
+          if (evt.isGoal) { scoreRef.current[0]++; setScore([...scoreRef.current]); }
+          setEvents(prev => [...prev.slice(-9), evt]);
+          phaseRef.current = 'showing-result'; setPhase('showing-result');
+        }
+        if (timedEventActiveRef.current) {
+          const evt = timedEventActiveRef.current;
+          ctx.fillStyle = evt.isGoal ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.2)';
+          ctx.fillRect(0, 0, W, H);
+          drawLabel(`${evt.icon} ${evt.message}`, evt.isGoal ? '#10b981' : 'rgba(255,255,255,0.9)', H / 2);
+          if (now - timedEventTimerRef.current > 2500) {
+            timedEventActiveRef.current = null;
+            phaseRef.current = 'running'; setPhase('running');
+          }
+        }
+        if (isRunning) {
+          const sec = Math.floor((now - startTimeRef.current) / 1000);
+          setElapsed(sec);
+          if (sec >= config.duration) {
+            phaseRef.current = 'finished'; setPhase('finished');
+            animRef.current = requestAnimationFrame(animate); return;
+          }
+          const caCycle = Math.floor((now - startTimeRef.current) / 3500) % 5;
+          const phaseLabel = ['Defendendo','Interceptação','Lançamento!','Finalização!','Reset'][caCycle];
+          drawHUD(`⏱ ${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`,
+            `⚽ ${scoreRef.current[0]} gols · ⚡ ${phaseLabel}`, `${config.icon} ${clubName}`);
+        }
+
+      // ── TACTICAL (generic timed 11v11) ─────────────────────────────
       } else {
         const s = spritesRef.current;
         const isRunning = phaseRef.current === 'running' || phaseRef.current === 'showing-result';
-        const moveRange = drill === 'counterattack' ? 0.08 : 0.05;
 
         if (isRunning && now - lastTargetRef.current > 2500) {
           lastTargetRef.current = now;
           const f = FORMATIONS[drill];
           for (let i = 0; i < 11; i++) {
-            s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * moveRange;
-            s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * moveRange;
-            s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * moveRange;
-            s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * moveRange;
+            s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * 0.06;
+            s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+            s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.06;
+            s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.06;
           }
           const all = [...s.ax.map((x, i) => ({ x, y: s.ay[i] })), ...s.bx.map((x, i) => ({ x, y: s.by[i] }))];
           const tgt = all[Math.floor(Math.random() * all.length)];
@@ -1035,13 +1191,13 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
         }
 
         for (let i = 0; i < 11; i++) {
-          s.ax[i] = lerp(s.ax[i], s.atx[i], 0.02);
-          s.ay[i] = lerp(s.ay[i], s.aty[i], 0.02);
-          s.bx[i] = lerp(s.bx[i], s.btx[i], 0.02);
-          s.by[i] = lerp(s.by[i], s.bty[i], 0.02);
+          s.ax[i] = lerp(s.ax[i], s.atx[i], 0.022);
+          s.ay[i] = lerp(s.ay[i], s.aty[i], 0.022);
+          s.bx[i] = lerp(s.bx[i], s.btx[i], 0.022);
+          s.by[i] = lerp(s.by[i], s.bty[i], 0.022);
         }
-        s.ballX = lerp(s.ballX, s.ballTX, 0.025);
-        s.ballY = lerp(s.ballY, s.ballTY, 0.025);
+        s.ballX = lerp(s.ballX, s.ballTX, 0.028);
+        s.ballY = lerp(s.ballY, s.ballTY, 0.028);
 
         if (isRunning) {
           for (let i = 0; i < 11; i++) {
@@ -1065,43 +1221,35 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
           });
         }
 
-        // Timed events
-        if (isRunning && now - lastTimedEventRef.current > 6000 + Math.random() * 4000 && !timedEventActiveRef.current) {
+        if (isRunning && now - lastTimedEventRef.current > 5500 + Math.random() * 4000 && !timedEventActiveRef.current) {
           lastTimedEventRef.current = now;
           const pool = getTimedEvents(drill);
           const evt = pool[Math.floor(Math.random() * pool.length)];
-          timedEventActiveRef.current = evt;
-          timedEventTimerRef.current = now;
-          kickNumRef.current++;
-          setKickNum(kickNumRef.current);
+          timedEventActiveRef.current = evt; timedEventTimerRef.current = now;
+          kickNumRef.current++; setKickNum(kickNumRef.current);
           if (evt.isGoal) { scoreRef.current[0]++; setScore([...scoreRef.current]); }
           setEvents(prev => [...prev.slice(-9), evt]);
           phaseRef.current = 'showing-result'; setPhase('showing-result');
         }
-
         if (timedEventActiveRef.current) {
           const evt = timedEventActiveRef.current;
           ctx.fillStyle = evt.isGoal ? 'rgba(16,185,129,0.12)' : 'rgba(0,0,0,0.2)';
           ctx.fillRect(0, 0, W, H);
-          const col = evt.isGoal ? '#10b981' : 'rgba(255,255,255,0.9)';
-          drawLabel(`${evt.icon} ${evt.message}`, col, H / 2);
+          drawLabel(`${evt.icon} ${evt.message}`, evt.isGoal ? '#10b981' : 'rgba(255,255,255,0.9)', H / 2);
           if (now - timedEventTimerRef.current > 2500) {
             timedEventActiveRef.current = null;
             phaseRef.current = 'running'; setPhase('running');
           }
         }
-
         if (isRunning) {
           const sec = Math.floor((now - startTimeRef.current) / 1000);
           setElapsed(sec);
           if (sec >= config.duration) {
             phaseRef.current = 'finished'; setPhase('finished');
-            animRef.current = requestAnimationFrame(animate);
-            return;
+            animRef.current = requestAnimationFrame(animate); return;
           }
           drawHUD(`⏱ ${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`,
-            `⚽ ${scoreRef.current[0]} gols`,
-            `${config.icon} ${clubName}`);
+            `⚽ ${scoreRef.current[0]} gols`, `${config.icon} ${clubName}`);
         }
       }
 
