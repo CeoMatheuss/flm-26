@@ -79,16 +79,16 @@ export function SettingsTab() {
             >
               {/* Mini preview */}
               <div className="rounded-lg overflow-hidden mb-2.5 border border-border/50">
-                <div className="bg-[hsl(220,20%,97%)] p-2 space-y-1.5">
+                <div className="bg-[hsl(210,30%,98%)] p-2 space-y-1.5">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-[hsl(220,65%,45%)]" />
-                    <div className="h-1.5 w-12 rounded bg-[hsl(220,25%,12%)] opacity-80" />
+                    <div className="w-2 h-2 rounded-full bg-[hsl(217,91%,60%)]" />
+                    <div className="h-1.5 w-12 rounded bg-[hsl(222,47%,11%)] opacity-80" />
                   </div>
-                  <div className="h-1 w-full rounded bg-[hsl(220,18%,88%)]" />
-                  <div className="h-1 w-3/4 rounded bg-[hsl(220,18%,88%)]" />
+                  <div className="h-1 w-full rounded bg-[hsl(214,32%,91%)]" />
+                  <div className="h-1 w-3/4 rounded bg-[hsl(214,32%,91%)]" />
                   <div className="flex gap-1">
-                    <div className="h-4 flex-1 rounded bg-[hsl(220,20%,100%)] border border-[hsl(220,18%,88%)]" />
-                    <div className="h-4 flex-1 rounded bg-[hsl(220,20%,100%)] border border-[hsl(220,18%,88%)]" />
+                    <div className="h-4 flex-1 rounded bg-white border border-[hsl(214,32%,91%)]" />
+                    <div className="h-4 flex-1 rounded bg-white border border-[hsl(214,32%,91%)]" />
                   </div>
                 </div>
               </div>
