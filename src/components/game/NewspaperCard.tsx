@@ -231,8 +231,9 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
           {showSigningMain && (
-            <div className="w-full rounded-lg mb-2 bg-muted/40 border border-border/40 py-1">
-              <img src={signingImg} alt="Contratação" className="w-3/5 sm:w-1/2 h-auto mx-auto block" />
+            <div className="relative w-full rounded-lg overflow-hidden mb-2">
+              <img src={signingImg} alt="Contratação" className="w-full h-auto rounded-lg" />
+              <div className="absolute inset-0 bg-gradient-to-t from-card/70 via-transparent to-transparent rounded-lg" />
             </div>
           )}
           <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded text-center ${categoryColors[main.category] || 'bg-primary'}`}>
