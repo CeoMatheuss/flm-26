@@ -163,7 +163,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
-  const [announcementUpdate, setAnnouncementUpdate] = useState<any>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
