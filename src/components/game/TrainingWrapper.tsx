@@ -65,7 +65,7 @@ export function TrainingWrapper({
           currentWeek={currentWeek}
         />
       ) : (
-        <TrainingMatchCanvas clubName={clubName} />
+        <TrainingMatchCanvas clubName={clubName} players={players} />
       )}
     </div>
   );
