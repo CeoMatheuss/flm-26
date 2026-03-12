@@ -256,16 +256,32 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Admin Updates */}
         {adminUpdates.length > 0 && (
           <div className="space-y-1.5">
-            {adminUpdates.slice(0, 2).map(u => (
-              <div key={u.id} className="flex items-start gap-1.5 p-1.5 rounded bg-primary/5 border border-primary/20">
-                <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug">{u.content}</p>
+            {adminUpdates.slice(0, 2).map(u => {
+              const showSigningUpdate = shouldShowSigningImage('ATUALIZAÇÃO', u.title, u.content);
+
+              return (
+                <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
+                  {showSigningUpdate && (
+                    <div className="relative w-full h-16 overflow-hidden">
+                      <img src={signingImg} alt="Transferência" className="w-full h-full object-cover object-top opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                      <div className="absolute bottom-1.5 left-2">
+                        <span className="text-[7px] font-bold text-white px-1 py-0.5 rounded bg-primary/80">MERCADO</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-1.5 p-1.5">
+                    <Megaphone className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] sm:text-[11px] font-semibold text-primary">{u.title}</p>
+                      <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-snug whitespace-pre-line">{u.content}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0 border-primary/30 text-primary">ADM</Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
