@@ -288,7 +288,7 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
               <Card key={u.id} className="border-primary/30 bg-primary/5 overflow-hidden">
                 <CardContent className="p-0">
                   {showSigningUpdate && (
-                    <div className="relative w-full overflow-hidden bg-muted">
+                    <div className="relative w-full max-h-16 overflow-hidden bg-muted">
                       <img src={signingImg} alt="Transferência" className="w-full h-auto block opacity-60" />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                       <div className="absolute bottom-2 left-3">
