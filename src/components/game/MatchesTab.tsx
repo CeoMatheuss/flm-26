@@ -87,6 +87,9 @@ export function MatchesTab({
         <TabsTrigger value="bot" className="flex-1 text-xs gap-1.5">
           <Swords className="h-3.5 w-3.5" /> vs BOT
         </TabsTrigger>
+        <TabsTrigger value="training" className="flex-1 text-xs gap-1.5">
+          <Dumbbell className="h-3.5 w-3.5" /> Treino 2D
+        </TabsTrigger>
         <TabsTrigger value="online" className="flex-1 text-xs gap-1.5">
           <Globe className="h-3.5 w-3.5" /> Online
         </TabsTrigger>
