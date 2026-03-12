@@ -488,7 +488,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               clubName={game.club.name}
               trainingLevel={game.infrastructure.trainingCenter.level}
               onRest={game.restPlayer}
-              onRenewContract={game.renewContract}
+              onRenewContract={(playerId, newSalary, newDuration) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                game.renewContract(playerId, newSalary, newDuration);
+                if (player) {
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês` });
+                }
+              }}
               onListForSale={async (playerId: string) => {
                 const player = game.club.players.find(p => p.id === playerId);
                 if (!player) return;
@@ -513,7 +519,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                   toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
                 }
               }}
-              onLoanOut={game.loanOutPlayer}
+              onLoanOut={(playerId) => {
+                const player = game.club.players.find(p => p.id === playerId);
+                game.loanOutPlayer(playerId);
+                if (player) {
+                  setSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'loan', extraInfo: `Emprestado por 1 temporada` });
+                }
+              }}
               onChangeNumber={game.changeShirtNumber}
               canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
               userId={userId}
