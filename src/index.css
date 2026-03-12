@@ -95,3 +95,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Enhanced card styling for game tabs */
+  .game-section-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/40 rounded-xl shadow-sm;
+  }
+  
+  /* Subtle gradient header for sections */
+  .section-header {
+    @apply bg-gradient-to-r from-primary/5 to-transparent border-b border-border/30 px-4 py-3;
+  }
+}
