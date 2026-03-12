@@ -245,12 +245,18 @@ function getTimedEvents(drillId: DrillId): DrillEvent[] {
     { icon: '⚡', message: 'Contra-ataque 3 contra 2!', isGoal: false },
   ];
   if (drillId === 'pressing') return [
-    { icon: '⚽', message: 'Pressing resultou em gol!', isGoal: true },
-    { icon: '🔥', message: 'Roubou a bola no campo ofensivo!', isGoal: false },
-    { icon: '🦶', message: 'Interceptou o passe na frente!', isGoal: false },
-    { icon: '⚠️', message: 'Falta tática para parar o contra-ataque!', isGoal: false },
-    { icon: '⚽', message: 'Forçou o erro e marcou!', isGoal: true },
-    { icon: '🔥', message: 'Marcação alta recuperou a posse!', isGoal: false },
+    { icon: '⚽', message: 'Pressing alto! Roubou e finalizou, gol!', isGoal: true },
+    { icon: '🔥', message: 'Cercou o zagueiro e roubou no campo dele!', isGoal: false },
+    { icon: '🦶', message: 'Interceptou o passe curto na saída!', isGoal: false },
+    { icon: '⚠️', message: 'Falta tática na intermediária!', isGoal: false },
+    { icon: '⚽', message: 'Desarme no meio, tabela e gol!', isGoal: true },
+    { icon: '🔥', message: 'Bloco alto fechou os espaços!', isGoal: false },
+    { icon: '🧤', message: 'Goleiro saiu rápido e cortou perigo!', isGoal: false },
+    { icon: '⚽', message: 'Pressão coletiva! Erro forçado, gol!', isGoal: true },
+    { icon: '💨', message: 'Linha alta encurralou adversário na lateral!', isGoal: false },
+    { icon: '🦶', message: 'Carrinho certeiro recuperou a posse!', isGoal: false },
+    { icon: '⚡', message: 'Transição imediata após roubar a bola!', isGoal: false },
+    { icon: '⚽', message: 'Roubou na entrada da área e chutou, gol!', isGoal: true },
   ];
   return [
     { icon: '⚽', message: 'Golaço! Finalização no ângulo!', isGoal: true },
@@ -325,16 +331,22 @@ const FORMATIONS: Record<DrillId, { teamA: { x: number; y: number }[]; teamB: { 
   },
   pressing: {
     teamA: [
-      { x: 0.06, y: 0.50 },
-      { x: 0.28, y: 0.15 }, { x: 0.28, y: 0.38 }, { x: 0.28, y: 0.62 }, { x: 0.28, y: 0.85 },
-      { x: 0.48, y: 0.20 }, { x: 0.48, y: 0.42 }, { x: 0.48, y: 0.62 }, { x: 0.48, y: 0.82 },
-      { x: 0.58, y: 0.35 }, { x: 0.58, y: 0.65 },
+      { x: 0.06, y: 0.50 },  // GK
+      // High defensive line
+      { x: 0.32, y: 0.12 }, { x: 0.32, y: 0.38 }, { x: 0.32, y: 0.62 }, { x: 0.32, y: 0.88 },
+      // Aggressive midfield pressing zone
+      { x: 0.55, y: 0.18 }, { x: 0.55, y: 0.40 }, { x: 0.55, y: 0.60 }, { x: 0.55, y: 0.82 },
+      // Forwards pressing high
+      { x: 0.68, y: 0.35 }, { x: 0.68, y: 0.65 },
     ],
     teamB: [
-      { x: 0.96, y: 0.50 },
-      { x: 0.82, y: 0.20 }, { x: 0.82, y: 0.42 }, { x: 0.82, y: 0.62 }, { x: 0.82, y: 0.82 },
-      { x: 0.68, y: 0.25 }, { x: 0.68, y: 0.45 }, { x: 0.68, y: 0.65 }, { x: 0.68, y: 0.85 },
-      { x: 0.58, y: 0.40 }, { x: 0.58, y: 0.60 },
+      { x: 0.96, y: 0.50 },  // GK
+      // Defenders under pressure
+      { x: 0.82, y: 0.22 }, { x: 0.82, y: 0.42 }, { x: 0.82, y: 0.58 }, { x: 0.82, y: 0.78 },
+      // Midfield trying to escape
+      { x: 0.72, y: 0.30 }, { x: 0.72, y: 0.50 }, { x: 0.72, y: 0.70 },
+      // Forward outlets
+      { x: 0.45, y: 0.35 }, { x: 0.45, y: 0.65 }, { x: 0.40, y: 0.50 },
     ],
   },
   tactical: {
@@ -805,7 +817,184 @@ function TrainingMatchCanvasInner({ clubName, players, onFinish }: TrainingMatch
             `${config.icon} ${clubName}`);
         }
 
-      // ── OTHER TIMED DRILLS ─────────────────────────────────────────
+      // ── PRESSING DRILL (phased: build-up → press → steal → attack) ──
+      } else if (drill === 'pressing') {
+        const s = spritesRef.current;
+        const isRunning = phaseRef.current === 'running' || phaseRef.current === 'showing-result';
+
+        // Pressing phases cycle every ~4s
+        if (isRunning && now - lastTargetRef.current > 1800) {
+          lastTargetRef.current = now;
+          const pressCycle = Math.floor((now - startTimeRef.current) / 4000) % 4;
+          const f = FORMATIONS.pressing;
+
+          if (pressCycle === 0) {
+            // Phase 1: Opponent tries to build up — ball with their defenders
+            const ballCarrier = 1 + Math.floor(Math.random() * 4); // random defender
+            s.ballTX = s.bx[ballCarrier] + 0.02;
+            s.ballTY = s.by[ballCarrier];
+            // TeamA pushes forward aggressively (high line)
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = f.teamA[i].x + 0.12 + Math.random() * 0.06;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+            }
+            for (let i = 5; i < 9; i++) {
+              s.atx[i] = f.teamA[i].x + 0.14 + Math.random() * 0.05;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.08;
+            }
+            // Forwards press their defenders
+            s.atx[9] = s.bx[1] - 0.04; s.aty[9] = s.by[1] + (Math.random() - 0.5) * 0.04;
+            s.atx[10] = s.bx[4] - 0.04; s.aty[10] = s.by[4] + (Math.random() - 0.5) * 0.04;
+            // Opponents try to keep possession
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.04;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.04;
+            }
+          } else if (pressCycle === 1) {
+            // Phase 2: Intense pressing — players converge on ball
+            const ballX = s.ballX; const ballY = s.ballY;
+            // 2-3 nearest attackers rush toward ball
+            for (let i = 5; i < 11; i++) {
+              const dx = ballX - s.ax[i]; const dy = ballY - s.ay[i];
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 0.35) {
+                s.atx[i] = ballX - 0.03 + (Math.random() - 0.5) * 0.04;
+                s.aty[i] = ballY + (Math.random() - 0.5) * 0.06;
+              } else {
+                s.atx[i] = s.ax[i] + 0.06;
+                s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.06;
+              }
+            }
+            // Defenders hold high line
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = 0.45 + Math.random() * 0.06;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.05;
+            }
+            // Opponents panic, try to pass back
+            s.ballTX = 0.85 + Math.random() * 0.06;
+            s.ballTY = 0.3 + Math.random() * 0.4;
+            for (let i = 1; i < 8; i++) {
+              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.06;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.06;
+            }
+          } else if (pressCycle === 2) {
+            // Phase 3: Ball recovery — teamA wins possession
+            s.ballTX = 0.65 + Math.random() * 0.1;
+            s.ballTY = 0.3 + Math.random() * 0.4;
+            // Quick transition forward
+            for (let i = 5; i < 11; i++) {
+              s.atx[i] = 0.72 + Math.random() * 0.12;
+              s.aty[i] = 0.15 + Math.random() * 0.7;
+            }
+            for (let i = 1; i < 5; i++) {
+              s.atx[i] = 0.42 + Math.random() * 0.08;
+              s.aty[i] = f.teamA[i].y;
+            }
+            // Opponents retreat
+            for (let i = 1; i < 11; i++) {
+              s.btx[i] = f.teamB[i].x + 0.04;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.05;
+            }
+          } else {
+            // Phase 4: Reset — back to base pressing positions
+            for (let i = 0; i < 11; i++) {
+              s.atx[i] = f.teamA[i].x + (Math.random() - 0.5) * 0.04;
+              s.aty[i] = f.teamA[i].y + (Math.random() - 0.5) * 0.04;
+              s.btx[i] = f.teamB[i].x + (Math.random() - 0.5) * 0.04;
+              s.bty[i] = f.teamB[i].y + (Math.random() - 0.5) * 0.04;
+            }
+            s.ballTX = 0.72 + Math.random() * 0.10;
+            s.ballTY = 0.3 + Math.random() * 0.4;
+          }
+        }
+
+        // Faster lerp for pressing (more aggressive movement)
+        const pressLerp = 0.035;
+        for (let i = 0; i < 11; i++) {
+          s.ax[i] = lerp(s.ax[i], s.atx[i], pressLerp);
+          s.ay[i] = lerp(s.ay[i], s.aty[i], pressLerp);
+          s.bx[i] = lerp(s.bx[i], s.btx[i], 0.025);
+          s.by[i] = lerp(s.by[i], s.bty[i], 0.025);
+        }
+        s.ballX = lerp(s.ballX, s.ballTX, 0.03);
+        s.ballY = lerp(s.ballY, s.ballTY, 0.03);
+
+        // Draw pressing zone highlight
+        if (isRunning) {
+          // Highlight press zone
+          const pressCycle = Math.floor((now - startTimeRef.current) / 4000) % 4;
+          if (pressCycle === 1 || pressCycle === 0) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.06)';
+            ctx.fillRect(W * 0.55, 0, W * 0.45, H); // red tint on opponent half
+          }
+          if (pressCycle === 2) {
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.06)';
+            ctx.fillRect(W * 0.55, 0, W * 0.45, H); // green = ball won
+          }
+
+          for (let i = 0; i < 11; i++) {
+            drawPlayer(s.ax[i] * W, s.ay[i] * H, COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
+          }
+          for (let i = 0; i < 11; i++) {
+            drawPlayer(s.bx[i] * W, s.by[i] * H, i === 0 ? COLORS.teamBGK : COLORS.teamB,
+              i === 0 ? COLORS.teamBGKLight : COLORS.teamBLight, i === 0 ? 'GK' : `${i + 1}`);
+          }
+          drawBall(s.ballX * W, s.ballY * H);
+        } else {
+          const f = FORMATIONS.pressing;
+          f.teamA.forEach((p, i) => {
+            drawPlayer(p.x * W + Math.sin(drift + i) * 1.5, p.y * H + Math.cos(drift + i * 0.7) * 1.5,
+              COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
+          });
+          f.teamB.forEach((p, i) => {
+            drawPlayer(p.x * W + Math.sin(drift + i + 3) * 1.5, p.y * H + Math.cos(drift + i * 0.9 + 2) * 1.5,
+              i === 0 ? COLORS.teamBGK : COLORS.teamB, i === 0 ? COLORS.teamBGKLight : COLORS.teamBLight,
+              i === 0 ? 'GK' : `${i + 1}`);
+          });
+        }
+
+        // Pressing events (faster pace — every 5s)
+        if (isRunning && now - lastTimedEventRef.current > 4500 + Math.random() * 3000 && !timedEventActiveRef.current) {
+          lastTimedEventRef.current = now;
+          const pool = getTimedEvents('pressing');
+          const evt = pool[Math.floor(Math.random() * pool.length)];
+          timedEventActiveRef.current = evt;
+          timedEventTimerRef.current = now;
+          kickNumRef.current++;
+          setKickNum(kickNumRef.current);
+          if (evt.isGoal) { scoreRef.current[0]++; setScore([...scoreRef.current]); }
+          setEvents(prev => [...prev.slice(-9), evt]);
+          phaseRef.current = 'showing-result'; setPhase('showing-result');
+        }
+
+        if (timedEventActiveRef.current) {
+          const evt = timedEventActiveRef.current;
+          ctx.fillStyle = evt.isGoal ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.2)';
+          ctx.fillRect(0, 0, W, H);
+          const col = evt.isGoal ? '#10b981' : 'rgba(255,255,255,0.9)';
+          drawLabel(`${evt.icon} ${evt.message}`, col, H / 2);
+          if (now - timedEventTimerRef.current > 2500) {
+            timedEventActiveRef.current = null;
+            phaseRef.current = 'running'; setPhase('running');
+          }
+        }
+
+        if (isRunning) {
+          const sec = Math.floor((now - startTimeRef.current) / 1000);
+          setElapsed(sec);
+          if (sec >= config.duration) {
+            phaseRef.current = 'finished'; setPhase('finished');
+            animRef.current = requestAnimationFrame(animate);
+            return;
+          }
+          const pressCycle = Math.floor((now - startTimeRef.current) / 4000) % 4;
+          const phaseLabel = pressCycle === 0 ? 'Construção' : pressCycle === 1 ? 'Pressing!' : pressCycle === 2 ? 'Recuperação' : 'Reset';
+          drawHUD(`⏱ ${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`,
+            `⚽ ${scoreRef.current[0]} gols · 🔥 ${phaseLabel}`,
+            `${config.icon} ${clubName}`);
+        }
+
+      // ── OTHER TIMED DRILLS (tactical, counterattack) ───────────────
       } else {
         const s = spritesRef.current;
         const isRunning = phaseRef.current === 'running' || phaseRef.current === 'showing-result';
