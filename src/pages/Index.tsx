@@ -382,48 +382,64 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         {/* Live match banner is now handled by MatchDashboardCard in the dashboard tab via DB polling */}
       </header>
 
-      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center gap-1 mb-4 sm:mb-6">
+          <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 sm:h-10 px-2 shrink-0">
+                <Button variant="outline" size="sm" className="h-9 sm:h-10 px-2.5 shrink-0 border-border/40">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52 bg-card border-border z-50 max-h-[70vh] overflow-y-auto">
-                <DropdownMenuItem onClick={() => setActiveTab('calendar')} className="gap-2 text-xs"><Calendar className="h-3.5 w-3.5" /> Calendário</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2 text-xs"><Dumbbell className="h-3.5 w-3.5" /> Treinos</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Base</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2 text-xs"><Search className="h-3.5 w-3.5" /> Olheiros</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2 text-xs"><DollarSign className="h-3.5 w-3.5" /> Finanças</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('stadium')} className="gap-2 text-xs"><Landmark className="h-3.5 w-3.5" /> Estádio</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2 text-xs"><Building2 className="h-3.5 w-3.5" /> Infraestrutura</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2 text-xs"><Handshake className="h-3.5 w-3.5" /> Patrocínios</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2 text-xs"><Heart className="h-3.5 w-3.5" /> Torcida</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2 text-xs"><Home className="h-3.5 w-3.5" /> Salas do CT</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2 text-xs"><Shirt className="h-3.5 w-3.5" /> Uniformes</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2 text-xs"><Gavel className="h-3.5 w-3.5" /> Leilão</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('pacotinhos')} className="gap-2 text-xs"><Gift className="h-3.5 w-3.5" /> Pacotinhos</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Chat Global</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2 text-xs"><Swords className="h-3.5 w-3.5" /> Amistosos</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2 text-xs"><Medal className="h-3.5 w-3.5" /> Conquistas</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2 text-xs"><Trophy className="h-3.5 w-3.5" /> Troféus</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('ranking')} className="gap-2 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Ranking</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2 text-xs"><User className="h-3.5 w-3.5" /> Perfil do Clube</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2 text-xs"><Sparkles className="h-3.5 w-3.5" /> Atualizações</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2 text-xs"><BookOpen className="h-3.5 w-3.5" /> Tutorial</DropdownMenuItem>
-                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2 text-xs"><Shield className="h-3.5 w-3.5" /> Admin</DropdownMenuItem>}
+              <DropdownMenuContent align="start" className="w-56 bg-card border-border/50 z-50 max-h-[70vh] overflow-y-auto p-1.5">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Clube</p>
+                <DropdownMenuItem onClick={() => setActiveTab('calendar')} className="gap-2.5 text-xs rounded-md"><Calendar className="h-3.5 w-3.5 text-primary/70" /> Calendário</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('training')} className="gap-2.5 text-xs rounded-md"><Dumbbell className="h-3.5 w-3.5 text-primary/70" /> Treinos</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('youth')} className="gap-2.5 text-xs rounded-md"><GraduationCap className="h-3.5 w-3.5 text-primary/70" /> Base</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="gap-2.5 text-xs rounded-md"><Search className="h-3.5 w-3.5 text-primary/70" /> Olheiros</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('uniforms')} className="gap-2.5 text-xs rounded-md"><Shirt className="h-3.5 w-3.5 text-primary/70" /> Uniformes</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('clubprofile')} className="gap-2.5 text-xs rounded-md"><User className="h-3.5 w-3.5 text-primary/70" /> Perfil do Clube</DropdownMenuItem>
+
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Infraestrutura</p>
+                <DropdownMenuItem onClick={() => setActiveTab('stadium')} className="gap-2.5 text-xs rounded-md"><Landmark className="h-3.5 w-3.5 text-primary/70" /> Estádio</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('infra')} className="gap-2.5 text-xs rounded-md"><Building2 className="h-3.5 w-3.5 text-primary/70" /> Infraestrutura</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('ctrooms')} className="gap-2.5 text-xs rounded-md"><Home className="h-3.5 w-3.5 text-primary/70" /> Salas do CT</DropdownMenuItem>
+
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Finanças</p>
+                <DropdownMenuItem onClick={() => setActiveTab('finance')} className="gap-2.5 text-xs rounded-md"><DollarSign className="h-3.5 w-3.5 text-primary/70" /> Finanças</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('sponsors')} className="gap-2.5 text-xs rounded-md"><Handshake className="h-3.5 w-3.5 text-primary/70" /> Patrocínios</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('auction')} className="gap-2.5 text-xs rounded-md"><Gavel className="h-3.5 w-3.5 text-primary/70" /> Leilão</DropdownMenuItem>
+
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Comunidade</p>
+                <DropdownMenuItem onClick={() => setActiveTab('fans')} className="gap-2.5 text-xs rounded-md"><Heart className="h-3.5 w-3.5 text-primary/70" /> Torcida</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('chat')} className="gap-2.5 text-xs rounded-md"><MessageCircle className="h-3.5 w-3.5 text-primary/70" /> Chat Global</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('matches')} className="gap-2.5 text-xs rounded-md"><Swords className="h-3.5 w-3.5 text-primary/70" /> Amistosos</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('pacotinhos')} className="gap-2.5 text-xs rounded-md"><Gift className="h-3.5 w-3.5 text-primary/70" /> Pacotinhos</DropdownMenuItem>
+
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Conquistas</p>
+                <DropdownMenuItem onClick={() => setActiveTab('achievements')} className="gap-2.5 text-xs rounded-md"><Medal className="h-3.5 w-3.5 text-primary/70" /> Conquistas</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('trophies')} className="gap-2.5 text-xs rounded-md"><Trophy className="h-3.5 w-3.5 text-primary/70" /> Troféus</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('ranking')} className="gap-2.5 text-xs rounded-md"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Ranking</DropdownMenuItem>
+
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Sistema</p>
+                <DropdownMenuItem onClick={() => setActiveTab('updates')} className="gap-2.5 text-xs rounded-md"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowTutorial(true)} className="gap-2.5 text-xs rounded-md"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial</DropdownMenuItem>
+                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="gap-2.5 text-xs rounded-md"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Admin</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/50 p-1">
-              <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Dashboard</span></TabsTrigger>
-              <TabsTrigger value="journal" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Newspaper className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Jornal</span></TabsTrigger>
-              <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
-              <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
-              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><Globe className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
-              <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
+            <TabsList className="flex-1 grid grid-cols-6 h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/30 rounded-lg">
+              <TabsTrigger value="dashboard" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><LayoutDashboard className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Dashboard</span></TabsTrigger>
+              <TabsTrigger value="journal" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><Newspaper className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Jornal</span></TabsTrigger>
+              <TabsTrigger value="squad" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><Users className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Elenco</span></TabsTrigger>
+              <TabsTrigger value="tactics" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><Target className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Táticas</span></TabsTrigger>
+              <TabsTrigger value="league" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><Globe className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Liga</span></TabsTrigger>
+              <TabsTrigger value="market" className="gap-0.5 text-[10px] sm:text-xs px-1 sm:px-3 flex flex-col sm:flex-row items-center py-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md"><ShoppingCart className="h-3.5 w-3.5 sm:h-3 sm:w-3" /><span className="text-[8px] sm:text-xs leading-tight">Mercado</span></TabsTrigger>
             </TabsList>
           </div>
 
