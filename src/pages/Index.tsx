@@ -365,6 +365,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         primaryColor={game.club.primaryColor || '#2563EB'}
         secondaryColor={game.club.secondaryColor || '#FFF'}
         clubName={game.club.name}
+        eventType={signingPlayer?.eventType || 'signing'}
+        extraInfo={signingPlayer?.extraInfo}
       />
       <header className="border-b border-border/30 bg-gradient-to-r from-card/95 via-card/80 to-card/95 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
