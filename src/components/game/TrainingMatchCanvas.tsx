@@ -1,7 +1,6 @@
 /**
- * TrainingMatchCanvas — 2D training scrimmage visualization.
- * Now with drill type selection (penalties, free kicks, etc.)
- * and slower, more organic player/ball movement.
+ * TrainingMatchCanvas — 2D training drills with specific formations.
+ * Each drill type has its own player arrangement and animations.
  */
 
 import { useRef, useEffect, useState, useCallback, memo } from 'react';
@@ -12,8 +11,6 @@ import { Play, Square, RotateCcw, Dumbbell } from 'lucide-react';
 
 interface TrainingMatchCanvasProps {
   clubName: string;
-  primaryColor?: string;
-  secondaryColor?: string;
   onFinish?: (report: TrainingReport) => void;
 }
 
@@ -25,41 +22,15 @@ export interface TrainingReport {
 }
 
 const DRILL_OPTIONS = [
-  { id: 'tactical', name: 'Coletivo Tático', icon: '⚽', desc: 'Jogo completo com 22 jogadores', duration: 120 },
-  { id: 'penalties', name: 'Pênaltis', icon: '🥅', desc: 'Treino de cobranças de pênalti', duration: 90 },
-  { id: 'freekicks', name: 'Faltas', icon: '🎯', desc: 'Cobranças de falta e posicionamento', duration: 90 },
-  { id: 'crossing', name: 'Cruzamentos', icon: '↗️', desc: 'Cruzamentos e cabeceios na área', duration: 90 },
-  { id: 'counterattack', name: 'Contra-Ataque', icon: '⚡', desc: 'Transição rápida defesa-ataque', duration: 100 },
-  { id: 'pressing', name: 'Marcação Pressão', icon: '🔥', desc: 'Pressing alto e recuperação', duration: 100 },
+  { id: 'tactical', name: 'Coletivo Tático', icon: '⚽', desc: 'Jogo completo 11x11', duration: 120 },
+  { id: 'penalties', name: 'Pênaltis', icon: '🥅', desc: 'Cobranças de pênalti', duration: 90 },
+  { id: 'freekicks', name: 'Faltas', icon: '🎯', desc: 'Cobranças de falta', duration: 90 },
+  { id: 'crossing', name: 'Cruzamentos', icon: '↗️', desc: 'Cruzamentos e cabeceios', duration: 90 },
+  { id: 'counterattack', name: 'Contra-Ataque', icon: '⚡', desc: 'Transição rápida', duration: 100 },
+  { id: 'pressing', name: 'Marcação Pressão', icon: '🔥', desc: 'Pressing alto', duration: 100 },
 ] as const;
 
 type DrillId = typeof DRILL_OPTIONS[number]['id'];
-
-const PITCH_COLORS = {
-  pitch: '#1a6e38',
-  pitchLight: '#1f8244',
-  lines: 'rgba(255,255,255,0.45)',
-  ball: '#ffffff',
-  teamA: '#2563eb',
-  teamALight: '#60a5fa',
-  teamB: '#f59e0b',
-  teamBLight: '#fbbf24',
-};
-
-const TEAM_A_POS = [
-  { x: 0.06, y: 0.5 }, { x: 0.18, y: 0.15 }, { x: 0.18, y: 0.38 },
-  { x: 0.18, y: 0.62 }, { x: 0.18, y: 0.85 }, { x: 0.35, y: 0.15 },
-  { x: 0.35, y: 0.38 }, { x: 0.35, y: 0.62 }, { x: 0.35, y: 0.85 },
-  { x: 0.45, y: 0.35 }, { x: 0.45, y: 0.65 },
-];
-
-const TEAM_B_POS = [
-  { x: 0.94, y: 0.5 }, { x: 0.82, y: 0.15 }, { x: 0.82, y: 0.38 },
-  { x: 0.82, y: 0.62 }, { x: 0.82, y: 0.85 }, { x: 0.65, y: 0.15 },
-  { x: 0.65, y: 0.38 }, { x: 0.65, y: 0.62 }, { x: 0.65, y: 0.85 },
-  { x: 0.55, y: 0.35 }, { x: 0.55, y: 0.65 },
-];
-
 type TrainingPhase = 'select' | 'running' | 'drill-event' | 'finished';
 
 interface DrillEvent {
@@ -69,12 +40,118 @@ interface DrillEvent {
   isGoal?: boolean;
 }
 
-interface PlayerSprite {
-  x: number; y: number;
-  tx: number; ty: number;
-}
+interface Sprite { x: number; y: number; tx: number; ty: number; }
+
+const COLORS = {
+  pitch: '#1a6e38', pitchLight: '#1f8244', lines: 'rgba(255,255,255,0.45)',
+  ball: '#ffffff', teamA: '#2563eb', teamALight: '#60a5fa',
+  teamB: '#f59e0b', teamBLight: '#fbbf24',
+};
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// ── Formation layouts per drill ──────────────────────────────────────────
+function getFormation(drillId: DrillId): { teamA: { x: number; y: number }[]; teamB: { x: number; y: number }[] } {
+  switch (drillId) {
+    case 'penalties':
+      return {
+        // GK in goal, kicker at penalty spot, rest lined up at halfway
+        teamA: [
+          { x: 0.78, y: 0.5 },  // Cobrador na marca do pênalti
+          { x: 0.5, y: 0.15 }, { x: 0.5, y: 0.28 }, { x: 0.5, y: 0.41 },
+          { x: 0.5, y: 0.54 }, { x: 0.5, y: 0.67 }, { x: 0.5, y: 0.80 },
+          { x: 0.42, y: 0.20 }, { x: 0.42, y: 0.40 }, { x: 0.42, y: 0.60 }, { x: 0.42, y: 0.80 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.5 },  // Goleiro no gol
+          { x: 0.5, y: 0.10 }, { x: 0.5, y: 0.23 }, { x: 0.5, y: 0.36 },
+          { x: 0.5, y: 0.49 }, { x: 0.5, y: 0.62 }, { x: 0.5, y: 0.75 },
+          { x: 0.58, y: 0.25 }, { x: 0.58, y: 0.45 }, { x: 0.58, y: 0.65 }, { x: 0.58, y: 0.85 },
+        ],
+      };
+    case 'freekicks':
+      return {
+        // Kicker behind ball, wall of 4-5 players, GK, attackers near box
+        teamA: [
+          { x: 0.60, y: 0.50 },  // Cobrador atrás da bola
+          { x: 0.75, y: 0.30 }, { x: 0.75, y: 0.45 }, { x: 0.80, y: 0.60 }, { x: 0.80, y: 0.75 },
+          { x: 0.65, y: 0.20 }, { x: 0.65, y: 0.80 },
+          { x: 0.30, y: 0.30 }, { x: 0.30, y: 0.50 }, { x: 0.30, y: 0.70 }, { x: 0.15, y: 0.50 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.50 },  // Goleiro
+          // Barreira
+          { x: 0.72, y: 0.40 }, { x: 0.72, y: 0.46 }, { x: 0.72, y: 0.52 }, { x: 0.72, y: 0.58 },
+          { x: 0.82, y: 0.25 }, { x: 0.82, y: 0.75 },
+          { x: 0.85, y: 0.35 }, { x: 0.85, y: 0.65 },
+          { x: 0.78, y: 0.30 }, { x: 0.78, y: 0.70 },
+        ],
+      };
+    case 'crossing':
+      return {
+        // Crosser on the wing, attackers in the box, defenders marking
+        teamA: [
+          { x: 0.70, y: 0.08 },  // Cruzador na ponta
+          { x: 0.80, y: 0.35 }, { x: 0.80, y: 0.55 }, { x: 0.78, y: 0.70 },
+          { x: 0.55, y: 0.30 }, { x: 0.55, y: 0.50 }, { x: 0.55, y: 0.70 },
+          { x: 0.35, y: 0.25 }, { x: 0.35, y: 0.50 }, { x: 0.35, y: 0.75 }, { x: 0.10, y: 0.50 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.50 },  // Goleiro
+          { x: 0.82, y: 0.30 }, { x: 0.82, y: 0.50 }, { x: 0.82, y: 0.70 },
+          { x: 0.75, y: 0.25 }, { x: 0.75, y: 0.45 }, { x: 0.75, y: 0.65 },
+          { x: 0.60, y: 0.20 }, { x: 0.60, y: 0.40 }, { x: 0.60, y: 0.60 }, { x: 0.60, y: 0.80 },
+        ],
+      };
+    case 'counterattack':
+      return {
+        // Attackers sprinting forward, defenders retreating
+        teamA: [
+          { x: 0.06, y: 0.50 },
+          { x: 0.25, y: 0.20 }, { x: 0.25, y: 0.40 }, { x: 0.25, y: 0.60 }, { x: 0.25, y: 0.80 },
+          { x: 0.45, y: 0.25 }, { x: 0.45, y: 0.50 }, { x: 0.45, y: 0.75 },
+          { x: 0.60, y: 0.30 }, { x: 0.65, y: 0.50 }, { x: 0.60, y: 0.70 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.50 },
+          { x: 0.80, y: 0.20 }, { x: 0.80, y: 0.40 }, { x: 0.80, y: 0.60 }, { x: 0.80, y: 0.80 },
+          { x: 0.70, y: 0.30 }, { x: 0.70, y: 0.50 }, { x: 0.70, y: 0.70 },
+          { x: 0.55, y: 0.35 }, { x: 0.55, y: 0.65 }, { x: 0.50, y: 0.50 },
+        ],
+      };
+    case 'pressing':
+      return {
+        // High press: attackers pushed up, compact shape
+        teamA: [
+          { x: 0.06, y: 0.50 },
+          { x: 0.30, y: 0.15 }, { x: 0.30, y: 0.38 }, { x: 0.30, y: 0.62 }, { x: 0.30, y: 0.85 },
+          { x: 0.50, y: 0.20 }, { x: 0.50, y: 0.40 }, { x: 0.50, y: 0.60 }, { x: 0.50, y: 0.80 },
+          { x: 0.60, y: 0.35 }, { x: 0.60, y: 0.65 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.50 },
+          { x: 0.82, y: 0.20 }, { x: 0.82, y: 0.40 }, { x: 0.82, y: 0.60 }, { x: 0.82, y: 0.80 },
+          { x: 0.70, y: 0.25 }, { x: 0.70, y: 0.45 }, { x: 0.70, y: 0.65 }, { x: 0.70, y: 0.85 },
+          { x: 0.60, y: 0.40 }, { x: 0.60, y: 0.60 },
+        ],
+      };
+    default: // tactical 4-4-2
+      return {
+        teamA: [
+          { x: 0.06, y: 0.5 }, { x: 0.18, y: 0.15 }, { x: 0.18, y: 0.38 },
+          { x: 0.18, y: 0.62 }, { x: 0.18, y: 0.85 }, { x: 0.35, y: 0.15 },
+          { x: 0.35, y: 0.38 }, { x: 0.35, y: 0.62 }, { x: 0.35, y: 0.85 },
+          { x: 0.45, y: 0.35 }, { x: 0.45, y: 0.65 },
+        ],
+        teamB: [
+          { x: 0.94, y: 0.5 }, { x: 0.82, y: 0.15 }, { x: 0.82, y: 0.38 },
+          { x: 0.82, y: 0.62 }, { x: 0.82, y: 0.85 }, { x: 0.65, y: 0.15 },
+          { x: 0.65, y: 0.38 }, { x: 0.65, y: 0.62 }, { x: 0.65, y: 0.85 },
+          { x: 0.55, y: 0.35 }, { x: 0.55, y: 0.65 },
+        ],
+      };
+  }
+}
 
 function getEventsForDrill(drillId: DrillId): DrillEvent[] {
   switch (drillId) {
@@ -88,46 +165,78 @@ function getEventsForDrill(drillId: DrillId): DrillEvent[] {
       ];
     case 'freekicks':
       return [
-        { type: 'Golaço de Falta!', icon: '⚽', message: 'Bola no ângulo, sem chance pro goleiro!', isGoal: true },
+        { type: 'Golaço de Falta!', icon: '⚽', message: 'Bola no ângulo!', isGoal: true },
         { type: 'Na Barreira!', icon: '🧱', message: 'A barreira bloqueou o chute!' },
         { type: 'Defesa Espetacular!', icon: '🧤', message: 'Goleiro voou e espalmou!' },
-        { type: 'Bola na Trave!', icon: '📐', message: 'Quase! Bateu no ferro e voltou!' },
-        { type: 'Falta Cobrada!', icon: '⚽', message: 'Cruzou na área e o zagueiro afastou!' },
+        { type: 'Bola na Trave!', icon: '📐', message: 'Bateu no ferro e voltou!' },
+        { type: 'Cruzou na Área!', icon: '↗️', message: 'Zagueiro afastou de cabeça!' },
       ];
     case 'crossing':
       return [
-        { type: 'Gol de Cabeça!', icon: '⚽', message: 'Cabeceio certeiro no segundo pau!', isGoal: true },
-        { type: 'Cruzamento Perfeito', icon: '↗️', message: 'Bola na medida mas ninguém alcançou!' },
-        { type: 'Defesa no Alto!', icon: '🧤', message: 'Goleiro saiu bem e segurou firme!' },
-        { type: 'Gol de Voleio!', icon: '⚽', message: 'Finalizou de primeira no ar!', isGoal: true },
+        { type: 'Gol de Cabeça!', icon: '⚽', message: 'Cabeceio no segundo pau!', isGoal: true },
+        { type: 'Cruzamento Perfeito', icon: '↗️', message: 'Ninguém alcançou!' },
+        { type: 'Defesa no Alto!', icon: '🧤', message: 'Goleiro saiu e segurou!' },
+        { type: 'Gol de Voleio!', icon: '⚽', message: 'Finalizou de primeira!', isGoal: true },
         { type: 'Afastou!', icon: '🦶', message: 'Zagueiro cortou de cabeça!' },
       ];
     case 'counterattack':
       return [
-        { type: 'Gol no Contra-Ataque!', icon: '⚽', message: 'Arrancada e finalização certeira!', isGoal: true },
-        { type: 'Passe Genial', icon: '🎯', message: 'Lançamento perfeito em profundidade!' },
+        { type: 'Gol no Contra-Ataque!', icon: '⚽', message: 'Arrancada e gol!', isGoal: true },
+        { type: 'Passe Genial', icon: '🎯', message: 'Lançamento perfeito!' },
         { type: 'Desarme Salvador!', icon: '🦶', message: 'Zagueiro travou na hora H!' },
         { type: 'Grande Defesa!', icon: '🧤', message: 'Goleiro fechou o ângulo!' },
-        { type: 'Impedimento!', icon: '🏳️', message: 'Atacante saiu antes da hora!' },
+        { type: 'Impedimento!', icon: '🏳️', message: 'Atacante adiantado!' },
       ];
     case 'pressing':
       return [
-        { type: 'Recuperou e Finalizou!', icon: '⚽', message: 'Pressing resultou em gol!', isGoal: true },
-        { type: 'Desarme Alto!', icon: '🔥', message: 'Roubou a bola no campo ofensivo!' },
+        { type: 'Recuperou e Gol!', icon: '⚽', message: 'Pressing resultou em gol!', isGoal: true },
+        { type: 'Desarme Alto!', icon: '🔥', message: 'Roubou no campo ofensivo!' },
         { type: 'Interceptação!', icon: '🦶', message: 'Cortou o passe na frente!' },
-        { type: 'Falta Tática', icon: '⚠️', message: 'Parou o contra-ataque com falta!' },
+        { type: 'Falta Tática', icon: '⚠️', message: 'Parou o contra-ataque!' },
         { type: 'Gol após Pressão!', icon: '⚽', message: 'Forçou o erro e marcou!', isGoal: true },
       ];
-    default: // tactical
+    default:
       return [
-        { type: 'Golaço no Treino!', icon: '⚽', message: 'Finalização perfeita no ângulo!', isGoal: true },
-        { type: 'Grande Defesa', icon: '🧤', message: 'Goleiro espalmou no canto!' },
-        { type: 'Drible Incrível', icon: '💨', message: 'Passou por 2 marcadores!' },
+        { type: 'Golaço!', icon: '⚽', message: 'Finalização no ângulo!', isGoal: true },
+        { type: 'Grande Defesa', icon: '🧤', message: 'Espalmou no canto!' },
+        { type: 'Drible Incrível', icon: '💨', message: 'Passou por 2!' },
         { type: 'Passe Genial', icon: '🎯', message: 'Assistência de calcanhar!' },
-        { type: 'Desarme Firme', icon: '🦶', message: 'Recuperou a bola com estilo!' },
-        { type: 'Bola na Trave', icon: '📐', message: 'Quase! Bola explodiu no ferro!' },
-        { type: 'Golaço de Falta!', icon: '⚽', message: 'Cobrança certeira no ângulo!', isGoal: true },
+        { type: 'Bola na Trave', icon: '📐', message: 'Explodiu no ferro!' },
       ];
+  }
+}
+
+// ── Ball animation config per drill ──────────────────────────────────────
+function getBallBehavior(drillId: DrillId, phase: 'kick' | 'idle', t: number, W: number, H: number) {
+  switch (drillId) {
+    case 'penalties': {
+      if (phase === 'kick') {
+        // Ball goes from penalty spot toward goal
+        const bx = lerp(0.78 * W, 0.94 * W, t);
+        const by = lerp(0.5 * H, (0.35 + Math.random() * 0.01) * H, Math.min(t, 1));
+        return { x: bx, y: by };
+      }
+      return { x: 0.76 * W, y: 0.5 * H }; // resting at spot
+    }
+    case 'freekicks': {
+      if (phase === 'kick') {
+        const bx = lerp(0.62 * W, 0.94 * W, t);
+        const arc = Math.sin(t * Math.PI) * -30;
+        return { x: bx, y: 0.5 * H + arc };
+      }
+      return { x: 0.62 * W, y: 0.5 * H };
+    }
+    case 'crossing': {
+      if (phase === 'kick') {
+        const bx = lerp(0.70 * W, 0.82 * W, t);
+        const by = lerp(0.08 * H, 0.45 * H, t);
+        const arc = Math.sin(t * Math.PI) * -25;
+        return { x: bx, y: by + arc };
+      }
+      return { x: 0.68 * W, y: 0.10 * H };
+    }
+    default:
+      return null; // use sprite-based ball
   }
 }
 
@@ -147,18 +256,18 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
   const drillCountRef = useRef(0);
   const phaseRef = useRef<TrainingPhase>('select');
   const selectedDrillRef = useRef<DrillId>('tactical');
-
-  // Sprite-based movement for smoother animation
-  const spritesARef = useRef<PlayerSprite[]>([]);
-  const spritesBRef = useRef<PlayerSprite[]>([]);
-  const ballSpriteRef = useRef<PlayerSprite>({ x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 });
-  const lastTargetUpdateRef = useRef(0);
+  const spritesARef = useRef<Sprite[]>([]);
+  const spritesBRef = useRef<Sprite[]>([]);
+  const ballSpriteRef = useRef<Sprite>({ x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 });
+  const lastTargetRef = useRef(0);
+  const kickPhaseRef = useRef(0); // 0-1 for ball kick animation
 
   const drillConfig = DRILL_OPTIONS.find(d => d.id === selectedDrill)!;
 
-  const initSprites = useCallback(() => {
-    spritesARef.current = TEAM_A_POS.map(p => ({ x: p.x, y: p.y, tx: p.x, ty: p.y }));
-    spritesBRef.current = TEAM_B_POS.map(p => ({ x: p.x, y: p.y, tx: p.x, ty: p.y }));
+  const initSprites = useCallback((drill: DrillId) => {
+    const formation = getFormation(drill);
+    spritesARef.current = formation.teamA.map(p => ({ x: p.x, y: p.y, tx: p.x, ty: p.y }));
+    spritesBRef.current = formation.teamB.map(p => ({ x: p.x, y: p.y, tx: p.x, ty: p.y }));
     ballSpriteRef.current = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
   }, []);
 
@@ -175,8 +284,9 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
     startTimeRef.current = Date.now();
     lastEventRef.current = Date.now();
     activeEventRef.current = null;
-    lastTargetUpdateRef.current = 0;
-    initSprites();
+    lastTargetRef.current = 0;
+    kickPhaseRef.current = 0;
+    initSprites(selectedDrill);
   }, [selectedDrill, initSprites]);
 
   const stopTraining = useCallback(() => {
@@ -199,29 +309,39 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
     canvas.width = W;
     canvas.height = H;
 
-    if (spritesARef.current.length === 0) initSprites();
+    if (spritesARef.current.length === 0) {
+      initSprites(selectedDrillRef.current);
+    }
 
     let drift = 0;
 
     const drawPitch = () => {
       for (let i = 0; i < 10; i++) {
-        ctx.fillStyle = i % 2 === 0 ? PITCH_COLORS.pitch : PITCH_COLORS.pitchLight;
+        ctx.fillStyle = i % 2 === 0 ? COLORS.pitch : COLORS.pitchLight;
         ctx.fillRect(i * (W / 10), 0, W / 10 + 1, H);
       }
-      ctx.strokeStyle = PITCH_COLORS.lines;
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = COLORS.lines; ctx.lineWidth = 1.2;
       ctx.strokeRect(2, 2, W - 4, H - 4);
       ctx.beginPath(); ctx.moveTo(W / 2, 2); ctx.lineTo(W / 2, H - 2); ctx.stroke();
       ctx.beginPath(); ctx.arc(W / 2, H / 2, 35, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = PITCH_COLORS.lines;
+      ctx.fillStyle = COLORS.lines;
       ctx.beginPath(); ctx.arc(W / 2, H / 2, 2.5, 0, Math.PI * 2); ctx.fill();
+      // Penalty areas
       ctx.strokeRect(2, H / 2 - 55, 52, 110);
       ctx.strokeRect(2, H / 2 - 30, 22, 60);
       ctx.strokeRect(W - 54, H / 2 - 55, 52, 110);
       ctx.strokeRect(W - 24, H / 2 - 30, 22, 60);
+      // Goals
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.fillRect(0, H / 2 - 30, 8, 60);
       ctx.fillRect(W - 8, H / 2 - 30, 8, 60);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.strokeRect(0, H / 2 - 30, 8, 60);
+      ctx.strokeRect(W - 8, H / 2 - 30, 8, 60);
+      // Penalty spots
+      ctx.fillStyle = COLORS.lines;
+      ctx.beginPath(); ctx.arc(W * 0.08, H / 2, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W * 0.92, H / 2, 2, 0, Math.PI * 2); ctx.fill();
     };
 
     const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 7) => {
@@ -239,80 +359,101 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
     const drawBall = (x: number, y: number, scale = 1) => {
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.beginPath(); ctx.ellipse(x + 1, y + 3, 4.5 * scale, 1.8 * scale, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = PITCH_COLORS.ball;
+      ctx.fillStyle = COLORS.ball;
       ctx.beginPath(); ctx.arc(x, y, 4.5 * scale, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#444'; ctx.lineWidth = 0.8; ctx.stroke();
     };
 
     const animate = () => {
-      drift += 0.015; // slower base drift
+      drift += 0.012;
       ctx.clearRect(0, 0, W, H);
       drawPitch();
 
       const isRunning = phaseRef.current === 'running' || phaseRef.current === 'drill-event';
       const now = Date.now();
+      const drill = selectedDrillRef.current;
 
-      // Update targets every 2.5s for organic movement
-      if (isRunning && now - lastTargetUpdateRef.current > 2500) {
-        lastTargetUpdateRef.current = now;
+      // Determine movement range based on drill type
+      const moveRange = (drill === 'penalties' || drill === 'freekicks') ? 0.015 : 0.06;
+      const lerpSpeed = 0.02;
+
+      // Update targets periodically
+      if (isRunning && now - lastTargetRef.current > 3000) {
+        lastTargetRef.current = now;
+        const formation = getFormation(drill);
         spritesARef.current = spritesARef.current.map((sp, i) => ({
           ...sp,
-          tx: TEAM_A_POS[i].x + (Math.random() - 0.5) * 0.08,
-          ty: TEAM_A_POS[i].y + (Math.random() - 0.5) * 0.08,
+          tx: formation.teamA[i].x + (Math.random() - 0.5) * moveRange,
+          ty: formation.teamA[i].y + (Math.random() - 0.5) * moveRange,
         }));
         spritesBRef.current = spritesBRef.current.map((sp, i) => ({
           ...sp,
-          tx: TEAM_B_POS[i].x + (Math.random() - 0.5) * 0.08,
-          ty: TEAM_B_POS[i].y + (Math.random() - 0.5) * 0.08,
+          tx: formation.teamB[i].x + (Math.random() - 0.5) * moveRange,
+          ty: formation.teamB[i].y + (Math.random() - 0.5) * moveRange,
         }));
-        // Ball moves toward a random player
-        const allSprites = [...spritesARef.current, ...spritesBRef.current];
-        const target = allSprites[Math.floor(Math.random() * allSprites.length)];
-        ballSpriteRef.current.tx = target.x + (Math.random() - 0.5) * 0.05;
-        ballSpriteRef.current.ty = target.y + (Math.random() - 0.5) * 0.05;
+        // Ball follows a random player for tactical/counterattack/pressing
+        if (drill === 'tactical' || drill === 'counterattack' || drill === 'pressing') {
+          const all = [...spritesARef.current, ...spritesBRef.current];
+          const target = all[Math.floor(Math.random() * all.length)];
+          ballSpriteRef.current.tx = target.x + (Math.random() - 0.5) * 0.04;
+          ballSpriteRef.current.ty = target.y + (Math.random() - 0.5) * 0.04;
+        }
       }
 
-      // Lerp all sprites (slow, smooth)
-      const lerpSpeed = 0.025;
+      // Lerp sprites
       spritesARef.current = spritesARef.current.map(sp => ({
-        ...sp,
-        x: lerp(sp.x, sp.tx, lerpSpeed),
-        y: lerp(sp.y, sp.ty, lerpSpeed),
+        ...sp, x: lerp(sp.x, sp.tx, lerpSpeed), y: lerp(sp.y, sp.ty, lerpSpeed),
       }));
       spritesBRef.current = spritesBRef.current.map(sp => ({
-        ...sp,
-        x: lerp(sp.x, sp.tx, lerpSpeed),
-        y: lerp(sp.y, sp.ty, lerpSpeed),
+        ...sp, x: lerp(sp.x, sp.tx, lerpSpeed), y: lerp(sp.y, sp.ty, lerpSpeed),
       }));
-      const b = ballSpriteRef.current;
-      ballSpriteRef.current = { ...b, x: lerp(b.x, b.tx, 0.03), y: lerp(b.y, b.ty, 0.03) };
+      const bl = ballSpriteRef.current;
+      ballSpriteRef.current = { ...bl, x: lerp(bl.x, bl.tx, 0.025), y: lerp(bl.y, bl.ty, 0.025) };
 
-      // Idle drift for select/finished
+      // Draw sprites
       if (!isRunning) {
-        const idleDrift = 1.5;
-        TEAM_A_POS.forEach((p, i) => {
-          const dx = Math.sin(drift + i * 1.3) * idleDrift;
-          const dy = Math.cos(drift + i * 0.9) * idleDrift;
-          drawPlayer(p.x * W + dx, p.y * H + dy, PITCH_COLORS.teamA, PITCH_COLORS.teamALight, `${i + 1}`);
+        // Idle/select: gentle drift using formation positions
+        const formation = getFormation(drill);
+        formation.teamA.forEach((p, i) => {
+          const dx = Math.sin(drift + i * 1.3) * 1.5;
+          const dy = Math.cos(drift + i * 0.9) * 1.5;
+          drawPlayer(p.x * W + dx, p.y * H + dy, COLORS.teamA, COLORS.teamALight, i === 0 ? 'GK' : `${i + 1}`);
         });
-        TEAM_B_POS.forEach((p, i) => {
-          const dx = Math.sin(drift + i * 1.1 + 3) * idleDrift;
-          const dy = Math.cos(drift + i * 0.7 + 2) * idleDrift;
-          drawPlayer(p.x * W + dx, p.y * H + dy, PITCH_COLORS.teamB, PITCH_COLORS.teamBLight, `${i + 1}`);
+        formation.teamB.forEach((p, i) => {
+          const dx = Math.sin(drift + i * 1.1 + 3) * 1.5;
+          const dy = Math.cos(drift + i * 0.7 + 2) * 1.5;
+          drawPlayer(p.x * W + dx, p.y * H + dy, COLORS.teamB, COLORS.teamBLight, i === 0 ? 'GK' : `${i + 1}`);
         });
       } else {
-        // Draw from sprites
+        // Running: draw from sprites
         spritesARef.current.forEach((sp, i) => {
-          drawPlayer(sp.x * W, sp.y * H, PITCH_COLORS.teamA, PITCH_COLORS.teamALight, `${i + 1}`);
+          const label = (drill === 'penalties' && i === 0) ? '⚡' : (i === 0 && drill !== 'tactical' ? 'GK' : `${i + 1}`);
+          const size = (drill === 'penalties' && i === 0) ? 9 : 7;
+          drawPlayer(sp.x * W, sp.y * H, COLORS.teamA, COLORS.teamALight, label, size);
         });
         spritesBRef.current.forEach((sp, i) => {
-          drawPlayer(sp.x * W, sp.y * H, PITCH_COLORS.teamB, PITCH_COLORS.teamBLight, `${i + 1}`);
+          const label = i === 0 ? 'GK' : `${i + 1}`;
+          const size = i === 0 ? 9 : 7;
+          drawPlayer(sp.x * W, sp.y * H, COLORS.teamB, COLORS.teamBLight, label, size);
         });
+
         // Ball
-        drawBall(ballSpriteRef.current.x * W, ballSpriteRef.current.y * H);
+        const specialBall = getBallBehavior(drill, phaseRef.current === 'drill-event' ? 'kick' : 'idle', kickPhaseRef.current, W, H);
+        if (specialBall) {
+          drawBall(specialBall.x, specialBall.y);
+        } else {
+          drawBall(ballSpriteRef.current.x * W, ballSpriteRef.current.y * H);
+        }
+
+        // Advance kick phase during events
+        if (phaseRef.current === 'drill-event') {
+          kickPhaseRef.current = Math.min(1, kickPhaseRef.current + 0.02);
+        } else {
+          kickPhaseRef.current = 0;
+        }
       }
 
-      // Drill event overlay
+      // Event overlay
       const ev = activeEventRef.current;
       if (ev && phaseRef.current === 'drill-event') {
         ctx.fillStyle = ev.isGoal ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.25)';
@@ -326,6 +467,15 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.font = '10px Arial';
         ctx.fillText(ev.message, W / 2, H / 2 + 12);
+
+        // Goal flash
+        if (ev.isGoal && kickPhaseRef.current > 0.7) {
+          const flash = Math.sin(kickPhaseRef.current * 20) * 0.1;
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+        }
       }
 
       // Select overlay
@@ -338,7 +488,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
         ctx.fillText('🏋️ Treino Tático 2D', W / 2, H / 2 - 10);
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         ctx.font = '11px Arial';
-        ctx.fillText('Escolha o exercício e inicie', W / 2, H / 2 + 12);
+        ctx.fillText('Escolha o exercício abaixo', W / 2, H / 2 + 12);
       }
 
       // Finished overlay
@@ -354,11 +504,10 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
         ctx.fillText(`${goalsRef.current[0] + goalsRef.current[1]} gols · ${drillCountRef.current} lances`, W / 2, H / 2 + 10);
       }
 
-      // Timer & HUD
+      // HUD
       if (isRunning) {
         const sec = Math.floor((now - startTimeRef.current) / 1000);
         setElapsed(sec);
-
         const duration = DRILL_OPTIONS.find(d => d.id === selectedDrillRef.current)?.duration ?? 120;
         if (sec >= duration) {
           phaseRef.current = 'finished';
@@ -367,12 +516,13 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
           return;
         }
 
-        // Random events every ~7-10s
+        // Events every ~7-10s
         if (now - lastEventRef.current > 7000 + Math.random() * 3000) {
           lastEventRef.current = now;
           const pool = getEventsForDrill(selectedDrillRef.current);
           const evt = pool[Math.floor(Math.random() * pool.length)];
           activeEventRef.current = evt;
+          kickPhaseRef.current = 0;
           phaseRef.current = 'drill-event';
           setPhase('drill-event');
           setEvents(prev => [...prev.slice(-9), evt]);
@@ -385,11 +535,13 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
           }
           setTimeout(() => {
             activeEventRef.current = null;
+            kickPhaseRef.current = 0;
             phaseRef.current = 'running';
             setPhase('running');
           }, 2500);
         }
 
+        // HUD bar
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 0, W, 22);
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -403,7 +555,8 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
         ctx.textAlign = 'right';
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.font = '9px Arial';
-        ctx.fillText(clubName, W - 8, 11);
+        const drillLabel = DRILL_OPTIONS.find(d => d.id === selectedDrillRef.current)?.icon ?? '';
+        ctx.fillText(`${drillLabel} ${clubName}`, W - 8, 11);
       }
 
       animRef.current = requestAnimationFrame(animate);
@@ -413,11 +566,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
     return () => cancelAnimationFrame(animRef.current);
   }, [phase, clubName, initSprites]);
 
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (sec: number) => `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`;
 
   return (
     <Card className="border-primary/20">
@@ -433,7 +582,11 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
             {DRILL_OPTIONS.map(drill => (
               <button
                 key={drill.id}
-                onClick={() => setSelectedDrill(drill.id)}
+                onClick={() => {
+                  setSelectedDrill(drill.id);
+                  selectedDrillRef.current = drill.id;
+                  initSprites(drill.id);
+                }}
                 className={`text-left p-2 rounded-lg border transition-all ${
                   selectedDrill === drill.id
                     ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
@@ -457,7 +610,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
           style={{ aspectRatio: '480 / 280', imageRendering: 'auto' }}
         />
 
-        {/* Current drill badge */}
+        {/* Running badges */}
         {(phase === 'running' || phase === 'drill-event') && (
           <div className="flex items-center justify-between">
             <Badge variant="outline" className="text-[10px] gap-1">
@@ -472,7 +625,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
           </div>
         )}
 
-        {/* Progress bar */}
+        {/* Progress */}
         {(phase === 'running' || phase === 'drill-event') && (
           <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
             <div
@@ -482,7 +635,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
           </div>
         )}
 
-        {/* Events log */}
+        {/* Events */}
         {events.length > 0 && (
           <div className="max-h-[100px] overflow-y-auto space-y-0.5">
             {[...events].reverse().map((ev, i) => (
@@ -506,7 +659,7 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
             </Button>
           )}
           {phase === 'finished' && (
-            <Button onClick={() => { setPhase('select'); setEvents([]); }} className="flex-1 gap-2">
+            <Button onClick={() => { setPhase('select'); setEvents([]); initSprites(selectedDrill); }} className="flex-1 gap-2">
               <RotateCcw className="h-4 w-4" /> Escolher Outro Treino
             </Button>
           )}
@@ -529,10 +682,6 @@ function TrainingMatchCanvasInner({ clubName, onFinish }: TrainingMatchCanvasPro
             </div>
           </div>
         )}
-
-        <p className="text-[9px] text-muted-foreground text-center">
-          22 jogadores • Movimentação orgânica • Exercícios táticos
-        </p>
       </CardContent>
     </Card>
   );
