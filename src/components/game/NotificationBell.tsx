@@ -293,31 +293,30 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   return (
     <div className="relative">
-      {/* Bell Button */}
+      {/* Bell Button — fully transparent, no bg film */}
       <button
         onClick={handleOpen}
-        className={`
-          relative flex items-center justify-center h-9 w-9 rounded-xl 
-          transition-all duration-300 ease-out
-          ${urgentCount > 0 
-            ? 'bg-destructive/15 text-destructive hover:bg-destructive/25 ring-1 ring-destructive/30' 
-            : unreadCount > 0
-              ? 'bg-primary/10 text-primary hover:bg-primary/20 ring-1 ring-primary/20'
-              : 'bg-accent/50 text-muted-foreground hover:bg-accent hover:text-foreground'
-          }
-        `}
+        className="relative flex items-center justify-center h-9 w-9 rounded-lg bg-transparent hover:bg-white/5 transition-colors duration-200"
       >
-        <Bell className={`h-[18px] w-[18px] transition-transform duration-300 ${urgentCount > 0 ? 'animate-[bellShake_0.5s_ease-in-out_infinite_2s]' : ''}`} />
+        <Bell
+          className={`h-5 w-5 transition-all duration-200 ${
+            urgentCount > 0
+              ? 'text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]'
+              : unreadCount > 0
+                ? 'text-primary drop-shadow-[0_0_6px_rgba(234,179,8,0.4)]'
+                : 'text-foreground'
+          }`}
+        />
         
         {/* Badge */}
         {unreadCount > 0 && (
           <span className={`
-            absolute -top-1 -right-1 flex items-center justify-center
-            min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
-            shadow-lg transition-all duration-300
+            absolute -top-1.5 -right-1.5 flex items-center justify-center
+            min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black
+            shadow-lg
             ${urgentCount > 0 
-              ? 'bg-destructive text-destructive-foreground shadow-destructive/40' 
-              : 'bg-primary text-primary-foreground shadow-primary/30'
+              ? 'bg-red-500 text-white shadow-red-500/50' 
+              : 'bg-primary text-primary-foreground shadow-primary/40'
             }
           `}>
             {unreadCount > 99 ? '99+' : unreadCount}
