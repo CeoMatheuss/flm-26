@@ -144,11 +144,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId]);
 
   if (!gameReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <img src={flmLogo} alt="FLM 26" className="w-16 h-16 animate-pulse" />
-      </div>
-    );
+    return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
   }
 
   if (!hasSave) {
