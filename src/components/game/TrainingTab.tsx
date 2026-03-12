@@ -236,6 +236,7 @@ export function TrainingTab({
   const [showResult, setShowResult] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
+  const [showTraining2D, setShowTraining2D] = useState(false);
 
   const trainingLevel = infrastructure?.trainingCenter?.level ?? 1;
   const physioLevel = infrastructure?.physiotherapy?.level ?? 1;
