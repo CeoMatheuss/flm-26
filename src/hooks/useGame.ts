@@ -47,7 +47,7 @@ export interface GameState {
   events: GameEvent[];
   loanedPlayers?: LoanedPlayer[];
   trainingFocus?: Record<string, TrainingFocus>;
-  feedItems?: FeedItem[];
+  
   achievements?: Achievement[];
   lastMatchReport?: MatchReport;
   clubProfile?: ClubProfile;
