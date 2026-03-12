@@ -11,11 +11,13 @@ import flmLogo from '@/assets/flm26-logo.png';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
+import gamePreview4 from '@/assets/game-preview-4.jpg';
 import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const previewSlides = [
   { src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
   { src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
+  { src: gamePreview4, title: 'Categorias de Base', desc: 'Desenvolva jovens talentos na academia. Treinos 2D melhoram atributos e contribuem nas partidas.' },
   { src: gamePreview3, title: 'FLM 26 — Football Life Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' },
 ];
 

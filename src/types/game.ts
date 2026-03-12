@@ -84,6 +84,15 @@ export interface Player {
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
   personality?: PlayerPersonality;
+  trainingBonuses?: {
+    shooting?: number;
+    setPieces?: number;
+    heading?: number;
+    speed?: number;
+    marking?: number;
+    passing?: number;
+    expiresAt?: number; // timestamp
+  };
 }
 
 export interface Scout {
