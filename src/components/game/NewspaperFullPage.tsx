@@ -135,6 +135,8 @@ function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: I
   return news;
 }
 
+const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
+
 export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
   const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const [savedEntries, setSavedEntries] = useState<SavedEntry[]>([]);
@@ -142,6 +144,8 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
   const [narrating, setNarrating] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [expandedNarration, setExpandedNarration] = useState<string | null>(null);
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Record<string, string[]>>({}); // entryId -> emojis user reacted with
 
   // Save current news to DB and fetch history
   const saveAndLoad = useCallback(async () => {
