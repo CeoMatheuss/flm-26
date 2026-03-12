@@ -234,9 +234,9 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadJournalUpdates(), loadGameBans()]);
+    await Promise.all([loadPremiumUsers(), loadBans(), loadStats(), loadAdmins(), loadUsers(), loadAbuseAlerts(), loadGameBans()]);
     setLoading(false);
-  }, [loadAbuseAlerts, loadJournalUpdates, loadGameBans]);
+  }, [loadAbuseAlerts, loadGameBans]);
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('user_id, display_name, created_at').order('created_at', { ascending: false }).limit(100);
