@@ -231,7 +231,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
         {/* Main headline */}
         <div className="border-b border-border/50 pb-2">
           {showSigningMain && (
-            <div className="relative w-full rounded-lg overflow-hidden mb-2 bg-muted">
+            <div className="relative w-full max-h-20 sm:max-h-24 rounded-lg overflow-hidden mb-2 bg-muted">
               <img src={signingImg} alt="Contratação" className="w-full h-auto block" />
               <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
               <div className="absolute bottom-2 left-2 right-2">
@@ -262,7 +262,7 @@ export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, is
               return (
                 <div key={u.id} className="rounded bg-primary/5 border border-primary/20 overflow-hidden">
                   {showSigningUpdate && (
-                    <div className="relative w-full overflow-hidden bg-muted">
+                    <div className="relative w-full max-h-14 overflow-hidden bg-muted">
                       <img src={signingImg} alt="Transferência" className="w-full h-auto block opacity-60" />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
                       <div className="absolute bottom-1.5 left-2">
