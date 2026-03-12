@@ -18,6 +18,37 @@ interface Props {
   clubCreatedAt?: number;
 }
 
+const transferNewsKeywords = [
+  'vendido',
+  'venda',
+  'contratado',
+  'contratacao',
+  'transferencia',
+  'emprestado',
+  'emprestimo',
+  'renovacao',
+  'renovou',
+  'assinou',
+  'proposta aceita',
+];
+
+function normalizeNewsValue(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
+  const normalizedCategory = normalizeNewsValue(category || '');
+  if (['mercado', 'fundacao', 'elenco', 'emprestimo', 'renovacao'].includes(normalizedCategory)) {
+    return true;
+  }
+
+  const combinedText = normalizeNewsValue(texts.filter(Boolean).join(' '));
+  return transferNewsKeywords.some(keyword => combinedText.includes(keyword));
+}
+
 function generateHeadline(club: Club, events: GameEvent[], infrastructure?: Infrastructure, isNewClub?: boolean, clubCreatedAt?: number): { headline: string; subtitle: string; category: string } {
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
 
