@@ -773,14 +773,7 @@ export function useGame(initialState?: GameState, userId?: string) {
     const desc = isStadium
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
-    addFeedItem(createFeedItem(
-      isStadium ? 'stadium_upgrade' : 'facility_upgrade',
-      `🏗️ ${label} → Nível ${newLevel}`,
-      desc,
-      isStadium ? '🏟️' : '🔧',
-      { facilityData: { name: label, level: newLevel } }
-    ));
-  }, [addFinance, infrastructure, club.budget, addFeedItem]);
+  }, [addFinance, infrastructure, club.budget]);
 
   const promoteYouth = useCallback((youthId: string) => {
     const prospect = youthProspects.find(p => p.id === youthId);
