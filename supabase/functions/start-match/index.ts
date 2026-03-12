@@ -417,7 +417,7 @@ function simulateFullMatch(
 
   // ── HOME GOALS ──
   for (const m of homeGoalMins) {
-    currentHome++;
+    const [scoreH, scoreA] = getScoreAtMinute(m, true);
     const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto inferior esquerdo', 'chute colocado no ângulo superior direito', 'voleio espetacular de primeira', 'toque de primeira na saída do goleiro', 'chute cruzado de pé direito sem chance para o arqueiro', 'trivela precisa no cantinho', 'cabeçada certeira no segundo pau', 'chute de longe que desviou na defesa e entrou', 'finalização seca de meia-altura'];
     const goalType = pick(goalTypes);
@@ -437,7 +437,7 @@ function simulateFullMatch(
       minute: m, type: 'foot_goal', team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
-      description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${currentHome}x${currentAway}`)}`,
+      description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${scoreH}x${scoreA}`)}`,
     });
   }
 
