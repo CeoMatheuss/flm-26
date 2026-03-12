@@ -11,6 +11,34 @@ interface Update {
 
 const updates: Update[] = [
   {
+    version: '2.3.0',
+    date: '12/03/2026',
+    type: 'feature',
+    items: [
+      '🤵 Sistema de empresário: quando jogador recusa proposta, empresário envia contraproposta automática ao comprador',
+      '📩 Notificação no sininho quando chega uma nova proposta de compra nos seus jogadores',
+      '🔔 Botão expandir/recolher nas mensagens longas do sininho',
+      '📷 Foto de contratação aparece no jornal para vendas, renovações e empréstimos',
+      '✍️ Modal de cerimônia para renovações de contrato e empréstimos (além de contratações)',
+      '🎨 Cores do sininho mais fortes e vibrantes sem película cinza',
+      '🔧 Correção de erros em Edge Functions (narração IA e visualização de elenco adversário)',
+      '👑 Verificação de dono do jogo (FCMSISTEMAS7@GMAIL.COM) com acesso total ao sistema',
+    ],
+  },
+  {
+    version: '2.2.0',
+    date: '05/03/2026',
+    type: 'feature',
+    items: [
+      '💰 Mercado online com sistema completo de propostas e contrapropostas',
+      '🏷️ Listagem de jogadores com preço baseado em OVR, idade e posição',
+      '📊 Anti-abuso: limite de transferências entre mesmos clubes e alertas automáticos',
+      '🔒 Validação server-side de preços e dados de jogadores',
+      '🤝 Empréstimos online entre clubes com salário e condições',
+      '👁️ Visualização do elenco do vendedor antes de fazer proposta',
+    ],
+  },
+  {
     version: '2.1.0',
     date: '16/02/2026',
     type: 'feature',
