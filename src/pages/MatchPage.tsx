@@ -90,7 +90,7 @@ export default function MatchPage() {
         <Card className="max-w-sm w-full">
           <CardContent className="p-6 text-center space-y-3">
             <p className="text-sm text-destructive">{state.errorMsg || 'Erro ao carregar partida.'}</p>
-            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>
+            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>  
           </CardContent>
         </Card>
       </div>
