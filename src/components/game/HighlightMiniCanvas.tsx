@@ -322,7 +322,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       if (frame < totalFrames + 40) {
         animRef.current = requestAnimationFrame(animate);
       } else {
-        onComplete?.();
+        onCompleteRef.current?.();
       }
     };
 
@@ -331,7 +331,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
     return () => {
       cancelAnimationFrame(animRef.current);
     };
-  }, [type, team, playerName, onComplete, currentMinute]);
+  }, [type, team, playerName, currentMinute]);
 
   return (
     <canvas
