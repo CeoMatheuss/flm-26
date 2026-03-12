@@ -353,8 +353,28 @@ function simulateFullMatch(
 
   // ── EVENT BUILDER ────────────────────────────────────────────────
   const allPlanned: SimEvent[] = [];
-  let currentHome = 0, currentAway = 0;
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
+
+  // Build chronological score tracker for correct running scores
+  const allGoalEvents: { minute: number; team: 'home' | 'away'; isPenalty: boolean }[] = [];
+  for (const m of homeGoalMins) allGoalEvents.push({ minute: m, team: 'home', isPenalty: false });
+  for (const m of awayGoalMins) allGoalEvents.push({ minute: m, team: 'away', isPenalty: false });
+  for (const pen of penaltyMins) {
+    if (pen.isGoal) allGoalEvents.push({ minute: pen.minute, team: pen.team, isPenalty: true });
+  }
+  allGoalEvents.sort((a, b) => a.minute - b.minute);
+
+  // Pre-compute running score at each minute
+  function getScoreAtMinute(minute: number, includeSelf: boolean): [number, number] {
+    let h = 0, a = 0;
+    for (const g of allGoalEvents) {
+      if (g.minute < minute || (includeSelf && g.minute === minute)) {
+        if (g.team === 'home') h++;
+        else a++;
+      }
+    }
+    return [h, a];
+  }
 
   function buildupDesc(team: 'home' | 'away', tName: string): string {
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
@@ -397,7 +417,7 @@ function simulateFullMatch(
 
   // ── HOME GOALS ──
   for (const m of homeGoalMins) {
-    currentHome++;
+    const [scoreH, scoreA] = getScoreAtMinute(m, true);
     const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto inferior esquerdo', 'chute colocado no ângulo superior direito', 'voleio espetacular de primeira', 'toque de primeira na saída do goleiro', 'chute cruzado de pé direito sem chance para o arqueiro', 'trivela precisa no cantinho', 'cabeçada certeira no segundo pau', 'chute de longe que desviou na defesa e entrou', 'finalização seca de meia-altura'];
     const goalType = pick(goalTypes);
@@ -417,13 +437,13 @@ function simulateFullMatch(
       minute: m, type: 'foot_goal', team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
-      description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${currentHome}x${currentAway}`)}`,
+      description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${scoreH}x${scoreA}`)}`,
     });
   }
 
   // ── AWAY GOALS ──
   for (const m of awayGoalMins) {
-    currentAway++;
+    const [scoreH, scoreA] = getScoreAtMinute(m, true);
     const scorer = pickByAttr(away.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
     const goalType = pick(['chute rasteiro cruzado', 'chute seco no canto inferior', 'cabeceio preciso no segundo pau', 'contra-ataque fulminante com toque na saída do goleiro', 'chute de fora da área que desviou na barreira', 'finalização de primeira após cruzamento perfeito']);
     let assistName: string | undefined;
@@ -442,7 +462,7 @@ function simulateFullMatch(
       minute: m, type: 'foot_goal', team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
-      description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${currentHome}x${currentAway}`)}`,
+      description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${scoreH}x${scoreA}`)}`,
     });
   }
 
@@ -469,16 +489,18 @@ function simulateFullMatch(
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     
     if (pen.isGoal) {
-      if (team === 'home') { currentHome++; penaltyHomeGoals++; }
-      else { currentAway++; penaltyAwayGoals++; }
+      if (team === 'home') penaltyHomeGoals++;
+      else penaltyAwayGoals++;
+      
+      const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
       
       if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.0); }
       stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++;
       
       const penGoalDescs = [
-        `⚽🎯 GOOOOL DE PÊNALTI! ${kicker?.name || 'Cobrador'} do ${tName} bate com frieza no canto esquerdo! ${gk?.name || 'Goleiro'} até adivinha o lado mas a bola entra com força! PLACAR: ${currentHome}x${currentAway}! A torcida vai à loucura!`,
-        `⚽🎯 CONVERTEU! ${kicker?.name || 'Cobrador'} pega a bola com confiança, toma distância, corre e chuta forte no meio do gol! ${gk?.name || 'Goleiro'} se joga para o lado e a bola entra! ${currentHome}x${currentAway}! Nervos de aço!`,
-        `⚽🎯 GOOOL! ${kicker?.name || 'Cobrador'} do ${tName} cobra com classe! Paradinha na corrida, ${gk?.name || 'Goleiro'} se antecipa para a direita e a bola vai no canto oposto! Implacável! ${currentHome}x${currentAway}!`,
+        `⚽🎯 GOOOOL DE PÊNALTI! ${kicker?.name || 'Cobrador'} do ${tName} bate com frieza no canto esquerdo! ${gk?.name || 'Goleiro'} até adivinha o lado mas a bola entra com força! PLACAR: ${scoreH}x${scoreA}! A torcida vai à loucura!`,
+        `⚽🎯 CONVERTEU! ${kicker?.name || 'Cobrador'} pega a bola com confiança, toma distância, corre e chuta forte no meio do gol! ${gk?.name || 'Goleiro'} se joga para o lado e a bola entra! ${scoreH}x${scoreA}! Nervos de aço!`,
+        `⚽🎯 GOOOL! ${kicker?.name || 'Cobrador'} do ${tName} cobra com classe! Paradinha na corrida, ${gk?.name || 'Goleiro'} se antecipa para a direita e a bola vai no canto oposto! Implacável! ${scoreH}x${scoreA}!`,
       ];
       
       allPlanned.push({
@@ -702,8 +724,8 @@ function simulateFullMatch(
   }
 
   const addedTime2 = 1 + Math.floor(rng() * 5);
-  const finalHomeGoals = currentHome;
-  const finalAwayGoals = currentAway;
+  const finalHomeGoals = totalHomeGoals + penaltyHomeGoals;
+  const finalAwayGoals = totalAwayGoals + penaltyAwayGoals;
   
   finalEvents.push({
     minute: 90, type: 'added_time', team: 'neutral', animType: 'halftime', ballX: 0.5, ballY: 0.5,
