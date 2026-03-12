@@ -4,11 +4,8 @@
  * Provides reactive state from the MatchManager singleton.
  * All match logic flows through MatchManager — this hook only observes.
  * 
- * CORREÇÃO Bug #3 e #6:
- * - Ao montar, chama hardReset() no singleton para evitar estado residual
- *   de partidas anteriores.
- * - Registra o navigate do React Router no MatchManager para que
- *   MatchResultLocker possa navegar para '/' com o resultado via state.
+ * FIX: Use lazy ref initialization to prevent resetAndGetMatchManager()
+ * from being called on every render, which was killing the tick loop.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -27,14 +24,16 @@ const INITIAL_STATE: MatchManagerState = {
 
 export function useMatchManager() {
   const navigate = useNavigate();
-  // Use resetAndGetMatchManager to guarantee clean state on every /match mount
-  const managerRef = useRef<MatchManager>(resetAndGetMatchManager());
+  // Lazy ref: only call resetAndGetMatchManager ONCE on first mount
+  const managerRef = useRef<MatchManager | null>(null);
+  if (managerRef.current === null) {
+    managerRef.current = resetAndGetMatchManager();
+  }
   const [state, setState] = useState<MatchManagerState>(INITIAL_STATE);
 
   useEffect(() => {
-    const manager = managerRef.current;
+    const manager = managerRef.current!;
     manager.setUpdateCallback(setState);
-    // Register navigate so MatchResultLocker can pass result via location.state
     manager.setNavigateFn(navigate);
     return () => {
       manager.setUpdateCallback(() => {});
@@ -42,24 +41,24 @@ export function useMatchManager() {
   }, [navigate]);
 
   const startNewMatch = useCallback(async (params: Parameters<MatchManager['startNewMatch']>[0]) => {
-    return managerRef.current.startNewMatch(params);
+    return managerRef.current!.startNewMatch(params);
   }, []);
 
   const loadFromDb = useCallback(async (matchDbId: string) => {
-    return managerRef.current.loadFromDb(matchDbId);
+    return managerRef.current!.loadFromDb(matchDbId);
   }, []);
 
   const findActiveMatch = useCallback(async () => {
-    return managerRef.current.findActiveMatch();
+    return managerRef.current!.findActiveMatch();
   }, []);
 
   const destroy = useCallback(() => {
-    managerRef.current.destroy();
+    managerRef.current!.destroy();
   }, []);
 
   return {
     state,
-    manager: managerRef.current,
+    manager: managerRef.current!,
     startNewMatch,
     loadFromDb,
     findActiveMatch,
