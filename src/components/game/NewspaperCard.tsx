@@ -172,18 +172,8 @@ const categoryColors: Record<string, string> = {
 };
 
 export function NewspaperCard({ club, events, infrastructure, onOpenFullPage, isNewClub, clubCreatedAt }: Props) {
-  const [adminUpdates, setAdminUpdates] = useState<Array<{ id: string; title: string; content: string; created_at: string }>>([]);
   const main = generateHeadline(club, events, infrastructure, isNewClub, clubCreatedAt);
   const secondary = generateSecondaryNews(club, events, infrastructure).slice(0, 4);
-  
-
-  useEffect(() => {
-    const fetchUpdates = async () => {
-      const { data } = await supabase.from('journal_updates').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(5);
-      if (data) setAdminUpdates(data as any[]);
-    };
-    fetchUpdates();
-  }, []);
 
   return (
     <Card className="border-border bg-card overflow-hidden">
