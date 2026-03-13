@@ -956,16 +956,33 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
                 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
                   pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
                   accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                  awaiting_decision: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '⏳ Jogador decidindo...' },
                   rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
                   player_rejected: { bg: 'bg-orange-500/15', text: 'text-orange-400', label: '🚫 Jogador recusou' },
+                  player_accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Jogador aceitou!' },
                 };
-                const sc = statusConfig[offer.status] || statusConfig.pending;
+                const sc = statusConfig[offer.decision_status || offer.status] || statusConfig.pending;
+
+                // Calculate remaining time for awaiting_decision
+                const deadlineStr = offer.decision_deadline;
+                let timeLeft = '';
+                if (deadlineStr && (offer.decision_status === 'awaiting_decision' || offer.status === 'awaiting_decision')) {
+                  const remaining = new Date(deadlineStr).getTime() - Date.now();
+                  if (remaining > 0) {
+                    const hours = Math.floor(remaining / 3600000);
+                    const mins = Math.floor((remaining % 3600000) / 60000);
+                    timeLeft = `⏱️ ${hours}h${mins}m restantes`;
+                  } else {
+                    timeLeft = '⏱️ Decisão pendente...';
+                  }
+                }
 
                 return (
                   <div key={offer.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate">{listing?.player_name || 'Jogador'}</p>
                       <p className="text-[10px] text-muted-foreground">R${(offer.offered_price / 1000).toFixed(0)}k • Sal: R${offer.offered_salary}/mês</p>
+                      {timeLeft && <p className="text-[9px] text-blue-400 mt-0.5 flex items-center gap-1"><Timer className="h-3 w-3" /> {timeLeft}</p>}
                       {offer.rejection_reason && (
                         <p className="text-[9px] text-orange-400 mt-1 leading-relaxed">💬 {offer.rejection_reason}</p>
                       )}
