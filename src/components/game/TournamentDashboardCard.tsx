@@ -481,7 +481,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'groups' && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {groupLetters.map(letter => {
               const groupTeams = teams
                 .filter(t => t.group_letter === letter)
@@ -493,26 +493,28 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
                       <Target className="h-3 w-3 text-primary" /> Grupo {letter}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-2 pb-2">
-                    <table className="w-full text-[9px]">
+                  <CardContent className="px-1 pb-2 overflow-x-auto">
+                    <table className="w-full text-[9px] min-w-[280px]">
                       <thead>
                         <tr className="text-muted-foreground border-b border-border/20">
-                          <th className="text-left pl-1 py-0.5">#</th>
+                          <th className="text-left pl-1 py-0.5 w-5">#</th>
                           <th className="text-left py-0.5">Time</th>
-                          <th className="text-center py-0.5">J</th>
-                          <th className="text-center py-0.5">V</th>
-                          <th className="text-center py-0.5">E</th>
-                          <th className="text-center py-0.5">D</th>
-                          <th className="text-center py-0.5">GP</th>
-                          <th className="text-center py-0.5">GC</th>
-                          <th className="text-center py-0.5 font-bold">Pts</th>
+                          <th className="text-center py-0.5 w-6">J</th>
+                          <th className="text-center py-0.5 w-6">V</th>
+                          <th className="text-center py-0.5 w-6">E</th>
+                          <th className="text-center py-0.5 w-6">D</th>
+                          <th className="text-center py-0.5 w-6">GP</th>
+                          <th className="text-center py-0.5 w-6">GC</th>
+                          <th className="text-center py-0.5 w-7 font-bold">Pts</th>
                         </tr>
                       </thead>
                       <tbody>
                         {groupTeams.map((t, i) => (
                           <tr key={t.id} className={`${i < 2 ? 'bg-primary/5' : ''} border-t border-border/10`}>
-                            <td className="pl-1 py-1 font-bold">{i + 1}</td>
-                            <td className="py-1 truncate max-w-[80px] font-medium">{t.club_logo} {t.club_name}</td>
+                            <td className="pl-1 py-1 font-bold text-center">{i + 1}</td>
+                            <td className="py-1 font-medium">
+                              <span className="truncate block max-w-[100px]">{t.club_logo} {t.club_name}</span>
+                            </td>
                             <td className="text-center py-1">{t.played}</td>
                             <td className="text-center py-1 text-success">{t.wins}</td>
                             <td className="text-center py-1">{t.draws}</td>
