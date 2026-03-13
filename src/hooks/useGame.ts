@@ -1029,7 +1029,7 @@ export function useGame(initialState?: GameState, userId?: string) {
             trainingProgress: 0, injury: undefined, seasonsWithoutPlaying: swp,
           };
         })
-        .map(applyAgeDevelopment);
+        .map(applySeasonDevelopment);
       
       // Remove unhappy players (OVR >= 70, 2+ seasons without playing, contract expiring)
       const remaining = processedPlayers.filter(p => {
