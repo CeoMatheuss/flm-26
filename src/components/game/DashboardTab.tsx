@@ -1,12 +1,13 @@
+import { useState } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
-import { TournamentDashboardCard } from './TournamentDashboardCard';
+import { TournamentDashboardCard, TournamentExpandedView } from './TournamentDashboardCard';
 
 interface Props {
   club: Club;
@@ -18,15 +19,16 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId }: Props) {
+  const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
+
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
   const recentWins = last5.filter(m => m.result && m.result.home > m.result.away).length;
   const recentLosses = last5.filter(m => m.result && m.result.home < m.result.away).length;
-  // More tolerant thresholds: crisis only after 5+ losses in last 5 matches (effectively all 5)
   const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentWins >= 2 ? 'Animada 🙂' : recentLosses >= 5 ? 'Revoltada 😡' : recentLosses >= 4 ? 'Insatisfeita 😤' : recentLosses >= 3 ? 'Preocupada 😟' : 'Estável 😐';
-  const fanMoodColor = recentWins >= 3 ? 'text-emerald-400' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
+  const fanMoodColor = recentWins >= 3 ? 'text-success' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
 
   const playedMatches = club.matches.filter(m => m.played);
   let streak = 0;
@@ -43,24 +45,29 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   const recentEvents = events.slice(0, 5);
   const eventColors: Record<string, string> = {
-    injury: 'border-l-orange-500 bg-orange-500/5',
-    offer: 'border-l-blue-500 bg-blue-500/5',
-    protest: 'border-l-red-500 bg-red-500/5',
-    bonus: 'border-l-emerald-500 bg-emerald-500/5',
-    discovery: 'border-l-purple-500 bg-purple-500/5',
-    scandal: 'border-l-yellow-500 bg-yellow-500/5',
-    player_upgrade: 'border-l-emerald-500 bg-emerald-500/5',
-    fan_rage: 'border-l-red-500 bg-red-500/5',
-    stadium_upgrade: 'border-l-cyan-500 bg-cyan-500/5',
-    transfer_in: 'border-l-blue-400 bg-blue-400/5',
-    transfer_out: 'border-l-orange-400 bg-orange-400/5',
-    record: 'border-l-amber-500 bg-amber-500/5',
-    captain: 'border-l-yellow-500 bg-yellow-500/5',
-    derby: 'border-l-orange-600 bg-orange-600/5',
-    weather: 'border-l-sky-400 bg-sky-400/5',
-    season_awards: 'border-l-amber-500 bg-amber-500/5',
-    player_unhappy: 'border-l-red-600 bg-red-600/5',
+    injury: 'border-l-warning bg-warning/5',
+    offer: 'border-l-primary bg-primary/5',
+    protest: 'border-l-destructive bg-destructive/5',
+    bonus: 'border-l-success bg-success/5',
+    discovery: 'border-l-primary bg-primary/5',
+    scandal: 'border-l-warning bg-warning/5',
+    player_upgrade: 'border-l-success bg-success/5',
+    fan_rage: 'border-l-destructive bg-destructive/5',
+    stadium_upgrade: 'border-l-primary bg-primary/5',
+    transfer_in: 'border-l-primary bg-primary/5',
+    transfer_out: 'border-l-warning bg-warning/5',
+    record: 'border-l-warning bg-warning/5',
+    captain: 'border-l-warning bg-warning/5',
+    derby: 'border-l-warning bg-warning/5',
+    weather: 'border-l-primary bg-primary/5',
+    season_awards: 'border-l-warning bg-warning/5',
+    player_unhappy: 'border-l-destructive bg-destructive/5',
   };
+
+  // If tournament expanded, show full view
+  if (expandedTournament) {
+    return <TournamentExpandedView tournamentId={expandedTournament} onClose={() => setExpandedTournament(null)} />;
+  }
 
   const stats = [
     { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, color: 'text-primary' },
@@ -88,32 +95,33 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {/* Active Tournaments */}
-      <TournamentDashboardCard />
+      {/* Active Tournaments with expand */}
+      <TournamentDashboardCard onExpand={(id) => setExpandedTournament(id)} />
 
       {/* Newspaper */}
       <NewspaperCard club={club} events={events} infrastructure={infrastructure} onOpenFullPage={onOpenNewspaper} />
 
-      {/* Events Feed */}
-      {recentEvents.length > 0 && (
-        <Card className="game-card-accent">
-          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Zap className="h-3.5 w-3.5 text-primary" /> Eventos Recentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4 pb-3 space-y-1.5">
-            {recentEvents.map(ev => (
-              <div key={ev.id} className={`border-l-2 rounded-r-lg px-3 py-2 ${eventColors[ev.type] || 'border-l-border'} transition-colors`}>
-                <p className="text-xs sm:text-sm font-semibold">{ev.icon} {ev.title}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{ev.description}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Two-column layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Events Feed */}
+        {recentEvents.length > 0 && (
+          <Card className="game-card-accent">
+            <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+              <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-primary" /> Eventos Recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-4 pb-3 space-y-1.5">
+              {recentEvents.map(ev => (
+                <div key={ev.id} className={`border-l-2 rounded-r-lg px-3 py-2 ${eventColors[ev.type] || 'border-l-border'} transition-colors`}>
+                  <p className="text-xs sm:text-sm font-semibold">{ev.icon} {ev.title}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{ev.description}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Fan Mood Card */}
         <Card className="game-card-accent">
           <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
@@ -129,7 +137,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Sequência</span>
               <span className="text-xs font-bold flex items-center gap-1">
-                {streak >= 3 && streakType === 'W' && <Flame className="h-3 w-3 text-orange-400" />}
+                {streak >= 3 && streakType === 'W' && <Flame className="h-3 w-3 text-warning" />}
                 {streakLabel}
               </span>
             </div>
@@ -143,7 +151,10 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             </p>
           </CardContent>
         </Card>
+      </div>
 
+      {/* Performance + Infrastructure */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Performance */}
         <Card className="game-card">
           <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
@@ -155,19 +166,19 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             {totalGames > 0 ? (
               <>
                 <div className="flex gap-3 text-xs font-mono">
-                  <span className="game-badge bg-emerald-500/15 text-emerald-400">{club.stats.wins}V</span>
+                  <span className="game-badge bg-success/15 text-success">{club.stats.wins}V</span>
                   <span className="game-badge bg-primary/15 text-primary">{club.stats.draws}E</span>
                   <span className="game-badge bg-destructive/15 text-destructive">{club.stats.losses}D</span>
                   <span className="text-muted-foreground ml-auto text-[10px] self-center">{totalGames} jogos</span>
                 </div>
                 <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
-                  {club.stats.wins > 0 && <div className="bg-emerald-500 transition-all" style={{ flex: club.stats.wins }} />}
+                  {club.stats.wins > 0 && <div className="bg-success transition-all" style={{ flex: club.stats.wins }} />}
                   {club.stats.draws > 0 && <div className="bg-primary transition-all" style={{ flex: club.stats.draws }} />}
                   {club.stats.losses > 0 && <div className="bg-destructive transition-all" style={{ flex: club.stats.losses }} />}
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div className="stat-card text-center">
-                    <p className="text-lg font-bold text-emerald-400">{club.stats.goalsFor}</p>
+                    <p className="text-lg font-bold text-success">{club.stats.goalsFor}</p>
                     <p className="text-[8px] text-muted-foreground uppercase">Gols Pró</p>
                   </div>
                   <div className="stat-card text-center">
@@ -181,13 +192,51 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             )}
           </CardContent>
         </Card>
+
+        {/* Infrastructure Summary */}
+        <Card className="game-card">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-primary" /> Infraestrutura
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 px-3 sm:px-4 pb-3">
+            {infrastructure ? (
+              <>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Estádio', value: infrastructure.stadium?.level || 1, max: 10, icon: '🏟️' },
+                    { label: 'CT', value: infrastructure.trainingCenter?.level || 1, max: 10, icon: '⚽' },
+                    { label: 'DM', value: infrastructure.medicalCenter?.level || 1, max: 10, icon: '🏥' },
+                    { label: 'Academia', value: infrastructure.youthAcademy?.level || 1, max: 10, icon: '🎓' },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <span className="text-[10px] w-4">{item.icon}</span>
+                      <span className="text-[10px] text-muted-foreground w-16">{item.label}</span>
+                      <Progress value={(item.value / item.max) * 100} className="flex-1 h-1.5 progress-glow" />
+                      <span className="text-[9px] font-bold w-6 text-right">Lv.{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-[9px] bg-accent/30 rounded-lg px-2 py-1.5">
+                  <span className="text-muted-foreground">Capacidade do estádio</span>
+                  <span className="font-bold">{(infrastructure.stadium?.capacity || 5000).toLocaleString()}</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-4">Carregando...</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Last 5 Results */}
       {last5.length > 0 && (
         <Card className="game-card">
           <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">Últimos Resultados</CardTitle>
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Activity className="h-3.5 w-3.5 text-primary" /> Últimos Resultados
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-4 pb-3">
             <div className="flex gap-2 justify-center">
@@ -196,7 +245,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                 const w = r.home > r.away;
                 const d = r.home === r.away;
                 return (
-                  <div key={i} className={`w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all ${w ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : d ? 'bg-primary/15 text-primary border border-primary/20' : 'bg-destructive/15 text-destructive border border-destructive/20'}`}>
+                  <div key={i} className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold transition-all ${w ? 'bg-success/15 text-success border border-success/20 shadow-sm shadow-success/10' : d ? 'bg-primary/15 text-primary border border-primary/20' : 'bg-destructive/15 text-destructive border border-destructive/20'}`}>
+                    <span className="text-[7px] text-muted-foreground">{w ? 'V' : d ? 'E' : 'D'}</span>
                     {r.home}-{r.away}
                   </div>
                 );
@@ -216,8 +266,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <CardContent className="px-3 sm:px-4 pb-3">
           <div className="space-y-1.5">
             {[...club.players].sort((a, b) => b.overall - a.overall).slice(0, 5).map((player, i) => (
-              <div key={player.id} className="flex items-center gap-2 py-1 rounded-lg hover:bg-accent/30 px-1 transition-colors">
-                <span className="text-[10px] text-muted-foreground w-4 text-center font-mono">{i + 1}</span>
+              <div key={player.id} className="flex items-center gap-2 py-1.5 rounded-lg hover:bg-accent/30 px-2 transition-colors">
+                <span className={`text-[10px] w-4 text-center font-mono ${i === 0 ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{i === 0 ? '⭐' : i + 1}</span>
                 <span className="text-[9px] font-mono game-badge bg-primary/15 text-primary">{player.position}</span>
                 <span className="flex-1 text-xs font-medium truncate">{player.name}</span>
                 <span className="text-[10px] text-muted-foreground">{player.age}a</span>
