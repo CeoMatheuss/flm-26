@@ -350,20 +350,30 @@ export function AdminTournamentTab({ userId }: Props) {
     return groups;
   };
 
-  // ── Fetch ALL existing teams via edge function (bypasses RLS) ──
-  const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }>> => {
+  // ── Fetch ALL existing teams via backend function (bypasses RLS) ──
+  const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }> | null> => {
     try {
       const { data, error } = await supabase.functions.invoke('get-all-clubs', {
         body: { scope },
       });
+
       if (error) {
         console.error('Error fetching clubs:', error);
-        return [];
+        toast.error(`Falha ao buscar clubes: ${error.message}`);
+        return null;
       }
-      return data?.clubs || [];
+
+      if (data?.error) {
+        toast.error(`Falha ao buscar clubes: ${data.error}`);
+        return null;
+      }
+
+      const clubs = Array.isArray(data?.clubs) ? data.clubs : [];
+      return clubs;
     } catch (err) {
       console.error('Failed to fetch clubs:', err);
-      return [];
+      toast.error('Falha ao buscar clubes do sistema. Tente novamente.');
+      return null;
     }
   };
 
@@ -377,6 +387,22 @@ export function AdminTournamentTab({ userId }: Props) {
     const scope = formScope === 'world' ? 'Mundial' : formCountry;
 
     setLoading(true);
+
+    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    if (teamSource !== 'bots_only') {
+      const fetchedTeams = await fetchOnlineTeams(scope);
+      if (fetchedTeams === null) {
+        setLoading(false);
+        return;
+      }
+      onlineTeams = fetchedTeams;
+
+      if (teamSource === 'online_only' && onlineTeams.length < 2) {
+        toast.error('Não há clubes suficientes para criar campeonato apenas com times online.');
+        setLoading(false);
+        return;
+      }
+    }
 
     // 1. Create tournament
     const { data: tournamentData, error } = await supabase.from('custom_tournaments').insert([{
@@ -409,10 +435,9 @@ export function AdminTournamentTab({ userId }: Props) {
 
     // 2. Enroll online players if applicable (deduplicate by user_id)
     if (teamSource !== 'bots_only') {
-      const onlineTeams = await fetchOnlineTeams(scope);
       const enrollCount = Math.min(onlineTeams.length, maxTeams);
       const enrolledUserIds = new Set<string>();
-      
+
       for (let i = 0; i < enrollCount; i++) {
         const uid = onlineTeams[i].user_id;
         if (enrolledUserIds.has(uid)) continue;
