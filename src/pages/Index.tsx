@@ -430,6 +430,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               <h1 className="text-sm sm:text-base font-bold truncate leading-tight">{game.club.name}</h1>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
                 <span className="game-badge bg-accent text-foreground">T{game.season.currentSeason}</span>
+                <span className="game-badge bg-primary/15 text-primary">📅 Dia {game.season.currentWeek}/30</span>
                 <span>{game.club.stats.points}pts</span>
                 <span className="text-primary font-bold">R${(game.club.budget / 1000000).toFixed(1)}M</span>
               </div>
@@ -508,7 +509,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 <div className="my-1.5 border-t border-border/20" />
                 <p className="menu-category">⚙️ Sistema</p>
                 <DropdownMenuItem onClick={() => setActiveTab('settings')} className="menu-item"><Settings className="h-3.5 w-3.5 text-primary/70" /> Configurações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab('updates')} className="menu-item"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+                {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('updates')} className="menu-item"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => setShowTutorial(true)} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 {showAdmin && <DropdownMenuItem onClick={() => setActiveTab('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
               </DropdownMenuContent>
@@ -767,10 +768,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>
           <TabsContent value="journal">
-            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
+            <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="newspaper">
-            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
+            <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="uniforms">
             <UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} sponsors={game.sponsors} players={game.club.players} clubReputation={game.club.reputation} />
