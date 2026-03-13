@@ -419,7 +419,7 @@ export function AdminTournamentTab({ userId }: Props) {
       match_duration_seconds: Number(formDuration) || 720,
       match_interval_hours: Number(formInterval) || 24,
       start_date: startDateStr,
-      match_time: formMatchTime || '20:00',
+      match_time: matchTime,
       country: scope,
       rules_text: formRules.trim(),
       created_by: userId,
