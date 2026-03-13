@@ -91,7 +91,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       </div>
 
       {/* Active Tournaments */}
-      <TournamentDashboardCard />
+      <TournamentDashboardCard onExpand={onOpenTournament} />
 
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
