@@ -767,10 +767,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />
           </TabsContent>
           <TabsContent value="journal">
-            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
+            <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="newspaper">
-            <NewspaperFullPage club={game.club} events={game.events} infrastructure={game.infrastructure} onBack={() => setActiveTab('dashboard')} />
+            <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />
           </TabsContent>
           <TabsContent value="uniforms">
             <UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} sponsors={game.sponsors} players={game.club.players} clubReputation={game.club.reputation} />

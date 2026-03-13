@@ -99,7 +99,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       <TournamentDashboardCard onExpand={(id) => setExpandedTournament(id)} />
 
       {/* Newspaper */}
-      <NewspaperCard club={club} events={events} infrastructure={infrastructure} onOpenFullPage={onOpenNewspaper} />
+      <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
