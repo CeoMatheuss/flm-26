@@ -98,6 +98,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
   const [posFilter, setPosFilter] = useState('all');
   const [searchText, setSearchText] = useState('');
+  const [ovrMinFilter, setOvrMinFilter] = useState('');
+  const [ovrMaxFilter, setOvrMaxFilter] = useState('');
+  const [ageMinFilter, setAgeMinFilter] = useState('');
+  const [ageMaxFilter, setAgeMaxFilter] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
