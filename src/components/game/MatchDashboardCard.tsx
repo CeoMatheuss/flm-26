@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Component to show next tournament match when idle ── */
-function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: { userId?: string; clubName: string; onGoToFriendly?: () => void; onViewClub?: (name: string) => void }) {
   const [nextMatch, setNextMatch] = useState<{ home: string; away: string; date: string; tournament: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +83,16 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
     const hoursUntil = Math.floor(timeUntil / 3600000);
     const minsUntil = Math.floor((timeUntil % 3600000) / 60000);
 
+    // Parse date manually to avoid timezone shift
+    const formatMatchDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return {
+        dateFormatted: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        timeFormatted: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      };
+    };
+    const fmt = nextMatch.date ? formatMatchDate(nextMatch.date) : null;
+
     return (
       <div className="text-center py-3 space-y-2">
         <div className="flex items-center justify-center gap-1.5">
@@ -90,13 +100,13 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
           <p className="text-[10px] font-bold text-primary uppercase">{nextMatch.tournament}</p>
         </div>
         <Badge variant={isToday ? 'destructive' : 'secondary'} className="text-[9px]">
-          {isToday ? `⏰ HOJE às ${matchDate?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` :
-            matchDate ? `📅 ${matchDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Em breve'}
+          {isToday ? `⏰ HOJE às ${fmt?.timeFormatted}` :
+            fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
-          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.home}</p>
+          <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
           <span className="text-base font-black text-muted-foreground">VS</span>
-          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.away}</p>
+          <button onClick={() => onViewClub?.(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
         </div>
         {timeUntil > 0 && (
           <p className="text-[9px] text-muted-foreground">
@@ -147,6 +157,7 @@ interface Props {
   club: Club;
   userId?: string;
   onGoToFriendly?: () => void;
+  onViewClub?: (clubName: string) => void;
 }
 
 type MatchStatus = 'live' | 'finished' | 'none';
@@ -156,7 +167,7 @@ type MatchStatus = 'live' | 'finished' | 'none';
  * Sempre renderizado no topo do dashboard. Nunca removido.
  * Consome dados do backend (live_matches table) e club.matches (scheduled/finished).
  */
-export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
+export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }: Props) {
   const navigate = useNavigate();
   const [liveMatch, setLiveMatch] = useState<LiveMatchFromDB | null>(null);
   const [currentMinute, setCurrentMinute] = useState(0);
@@ -339,7 +350,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
         {status === 'none' ?
-        <NextTournamentMatch userId={userId} clubName={club.name} onGoToFriendly={onGoToFriendly} /> :
+        <NextTournamentMatch userId={userId} clubName={club.name} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} /> :
 
         <div className="space-y-3">
             {/* Info bar */}
@@ -382,7 +393,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
             <div className="flex items-center justify-between py-2">
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isHomeTeamClub)}
-                <p className="font-bold text-xs sm:text-sm truncate">{homeTeamName}</p>
+                <button onClick={() => onViewClub?.(homeTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{homeTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Mandante</p>
               </div>
 
@@ -411,7 +422,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
 
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isAwayTeamClub)}
-                <p className="font-bold text-xs sm:text-sm truncate">{awayTeamName}</p>
+                <button onClick={() => onViewClub?.(awayTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{awayTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Visitante</p>
               </div>
             </div>
