@@ -291,6 +291,17 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
     let filtered = list;
     if (posFilter !== 'all') filtered = filtered.filter(l => l.player_position === posFilter);
     if (searchText) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.toLowerCase()));
+    if (ovrMinFilter) filtered = filtered.filter(l => l.player_overall >= Number(ovrMinFilter));
+    if (ovrMaxFilter) filtered = filtered.filter(l => l.player_overall <= Number(ovrMaxFilter));
+    if (ageMinFilter) filtered = filtered.filter(l => l.player_age >= Number(ageMinFilter));
+    if (ageMaxFilter) filtered = filtered.filter(l => l.player_age <= Number(ageMaxFilter));
+    // Sort
+    if (sortBy === 'ovr_desc') filtered = [...filtered].sort((a, b) => b.player_overall - a.player_overall);
+    else if (sortBy === 'ovr_asc') filtered = [...filtered].sort((a, b) => a.player_overall - b.player_overall);
+    else if (sortBy === 'price_asc') filtered = [...filtered].sort((a, b) => a.asking_price - b.asking_price);
+    else if (sortBy === 'price_desc') filtered = [...filtered].sort((a, b) => b.asking_price - a.asking_price);
+    else if (sortBy === 'age_asc') filtered = [...filtered].sort((a, b) => a.player_age - b.player_age);
+    else if (sortBy === 'age_desc') filtered = [...filtered].sort((a, b) => b.player_age - a.player_age);
     return filtered;
   };
 
