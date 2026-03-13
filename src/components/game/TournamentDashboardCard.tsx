@@ -132,7 +132,7 @@ export function TournamentDashboardCard({ onExpand }: Props) {
             <div
               key={t.id}
               className="flex items-center gap-2 rounded-lg bg-accent/20 hover:bg-accent/40 px-2.5 py-2 transition-colors cursor-pointer"
-              onClick={() => setExpandedId(t.id)}
+              onClick={() => handleExpand(t.id)}
             >
               <Trophy className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">

@@ -298,7 +298,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           .order('scheduled_at', { ascending: true })
           .limit(100);
 
-        if (scheduledMatches && scheduledMatches.length > 0) {
+      if (scheduledMatches && scheduledMatches.length > 0) {
           const allTeamIds = new Set<string>();
           scheduledMatches.forEach(m => {
             allTeamIds.add(m.home_team_id);
@@ -307,11 +307,21 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
 
           const { data: allTeams } = await supabase
             .from('custom_tournament_teams')
-            .select('id, club_name, is_bot')
+            .select('id, club_name, is_bot, user_id')
             .in('id', [...allTeamIds]);
           const teamNameMap = new Map((allTeams || []).map(t => [t.id, t.club_name]));
+          const teamUserMap = new Map((allTeams || []).map(t => [t.id, t.user_id]));
 
-          const userScheduled: ScheduledMatch[] = scheduledMatches.map(m => ({
+          // Only show matches where the user's club is involved
+          const myTeamIds = new Set(
+            (allTeams || []).filter(t => t.user_id === userId).map(t => t.id)
+          );
+
+          const filteredMatches = scheduledMatches.filter(m =>
+            myTeamIds.has(m.home_team_id) || myTeamIds.has(m.away_team_id)
+          );
+
+          const userScheduled: ScheduledMatch[] = filteredMatches.map(m => ({
             id: m.id,
             home_team: teamNameMap.get(m.home_team_id) || '???',
             away_team: teamNameMap.get(m.away_team_id) || '???',

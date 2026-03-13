@@ -304,11 +304,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const filterListings = (list: TransferListing[]) => {
     let filtered = list;
     if (posFilter !== 'all') filtered = filtered.filter(l => l.player_position === posFilter);
-    if (searchText) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.toLowerCase()));
-    if (ovrMinFilter) filtered = filtered.filter(l => l.player_overall >= Number(ovrMinFilter));
-    if (ovrMaxFilter) filtered = filtered.filter(l => l.player_overall <= Number(ovrMaxFilter));
-    if (ageMinFilter) filtered = filtered.filter(l => l.player_age >= Number(ageMinFilter));
-    if (ageMaxFilter) filtered = filtered.filter(l => l.player_age <= Number(ageMaxFilter));
+    if (searchText.trim()) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.trim().toLowerCase()) || l.seller_club_name.toLowerCase().includes(searchText.trim().toLowerCase()));
+    const ovrMin = Number(ovrMinFilter);
+    const ovrMax = Number(ovrMaxFilter);
+    const ageMin = Number(ageMinFilter);
+    const ageMax = Number(ageMaxFilter);
+    if (ovrMinFilter && !isNaN(ovrMin) && ovrMin > 0) filtered = filtered.filter(l => l.player_overall >= ovrMin);
+    if (ovrMaxFilter && !isNaN(ovrMax) && ovrMax > 0) filtered = filtered.filter(l => l.player_overall <= ovrMax);
+    if (ageMinFilter && !isNaN(ageMin) && ageMin > 0) filtered = filtered.filter(l => l.player_age >= ageMin);
+    if (ageMaxFilter && !isNaN(ageMax) && ageMax > 0) filtered = filtered.filter(l => l.player_age <= ageMax);
     // Sort
     if (sortBy === 'ovr_desc') filtered = [...filtered].sort((a, b) => b.player_overall - a.player_overall);
     else if (sortBy === 'ovr_asc') filtered = [...filtered].sort((a, b) => a.player_overall - b.player_overall);
