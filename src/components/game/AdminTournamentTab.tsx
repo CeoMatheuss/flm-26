@@ -251,6 +251,13 @@ export function AdminTournamentTab({ userId }: Props) {
   }, [loadTournaments, loadPlayers]);
 
   // ── FIXTURE GENERATION ──────────────────────────────────────
+  // Parse YYYY-MM-DD as local date (avoids UTC timezone shift)
+  const parseLocalDate = (dateStr: string, time: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = time.split(':').map(Number);
+    return new Date(year, month - 1, day, hours || 0, minutes || 0);
+  };
+
   const generateLeagueFixtures = (teamIds: string[], totalRounds: number, startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const n = teamIds.length;
@@ -269,8 +276,7 @@ export function AdminTournamentTab({ userId }: Props) {
           if (home === 'BYE' || away === 'BYE') continue;
           const h = turn % 2 === 0 ? home : away;
           const a = turn % 2 === 0 ? away : home;
-          const date = new Date(startDate);
-          date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+          const date = parseLocalDate(startDate, matchTime);
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
           fixtures.push({ home_team_id: h, away_team_id: a, round: turn * roundsPerTurn + round + 1, stage: 'league', scheduled_at: date.toISOString() });
         }
@@ -291,8 +297,7 @@ export function AdminTournamentTab({ userId }: Props) {
     const stageName = stageNames[Math.min(totalRounds - 1, stageNames.length - 1)] || `R${shuffled.length}`;
     
     for (let i = 0; i < firstRoundPairs; i++) {
-      const date = new Date(startDate);
-      date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+      const date = parseLocalDate(startDate, matchTime);
       date.setTime(date.getTime() + i * intervalHours * 3600000);
       fixtures.push({ home_team_id: shuffled[i * 2], away_team_id: shuffled[i * 2 + 1], round: 1, stage: stageName, scheduled_at: date.toISOString() });
     }
@@ -315,8 +320,7 @@ export function AdminTournamentTab({ userId }: Props) {
           const home = padded[i];
           const away = padded[total - 1 - i];
           if (home === 'BYE' || away === 'BYE') continue;
-          const date = new Date(startDate);
-          date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+          const date = parseLocalDate(startDate, matchTime);
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
           fixtures.push({ home_team_id: home, away_team_id: away, round: round + 1, stage: `Grupo ${groupLetter}`, scheduled_at: date.toISOString() });
         }
