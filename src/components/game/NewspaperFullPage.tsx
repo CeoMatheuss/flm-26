@@ -122,7 +122,7 @@ export function NewspaperFullPage({ onBack }: Props) {
           <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
         <Badge variant="outline" className="text-[9px]">{entries.length} notícias</Badge>
-        <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global</Badge>
+        <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global-Online</Badge>
       </div>
 
       {loading ? (
