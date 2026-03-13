@@ -1,9 +1,11 @@
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
-import { Infrastructure } from '@/types/infrastructure';
+import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
+import { ClubProfile } from '@/types/clubProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
@@ -16,6 +18,9 @@ interface Props {
   onGoToFriendly?: () => void;
   userId?: string;
   onOpenTournament?: (tournamentId: string) => void;
+  clubProfile?: ClubProfile;
+  season?: number;
+  onViewClub?: (clubName: string) => void;
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament }: Props) {
