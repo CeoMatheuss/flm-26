@@ -369,100 +369,221 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Summary */}
-      <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Histórico de Partidas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="grid grid-cols-5 gap-1 text-center">
-            {[
-              { label: 'J', value: total, color: 'text-foreground' },
-              { label: 'V', value: wins, color: 'text-emerald-400' },
-              { label: 'E', value: draws, color: 'text-yellow-400' },
-              { label: 'D', value: losses, color: 'text-destructive' },
-              { label: 'GP', value: goalsFor, color: 'text-primary' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-muted/20 rounded p-1.5">
-                <p className={`text-sm font-black font-mono ${color}`}>{value}</p>
-                <p className="text-[9px] text-muted-foreground">{label}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
-            <span>GP {goalsFor}</span>
-            <span>·</span>
-            <span>GC {goalsAgainst}</span>
-            <span>·</span>
-            <span>SG {goalsFor - goalsAgainst > 0 ? '+' : ''}{goalsFor - goalsAgainst}</span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* View Toggle */}
+      <div className="flex gap-1 bg-muted/20 rounded-lg p-0.5">
+        <button
+          onClick={() => setActiveView('scheduled')}
+          className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            activeView === 'scheduled' ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          Agendadas ({scheduled.length})
+        </button>
+        <button
+          onClick={() => setActiveView('history')}
+          className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            activeView === 'history' ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          Histórico ({matches.length})
+        </button>
+      </div>
 
-      {/* Match list */}
-      <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[460px]">
-            <div className="divide-y divide-border/20">
-              {matches.map((match, idx) => {
-                const myGoals = match.is_home ? match.home_goals : match.away_goals;
-                const oppGoals = match.is_home ? match.away_goals : match.home_goals;
-                const oppName = match.is_home ? match.away_team : match.home_team;
-                const isWin = myGoals > oppGoals;
-                const isDraw = myGoals === oppGoals;
-                const isLatest = idx === 0;
+      {activeView === 'scheduled' ? (
+        <div className="space-y-3">
+          {scheduled.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center space-y-3">
+                <Clock className="h-10 w-10 text-muted-foreground mx-auto" />
+                <p className="text-sm font-medium">Nenhuma partida agendada</p>
+                <p className="text-xs text-muted-foreground">Participe de um campeonato para ter jogos agendados!</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    Partidas Agendadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-[10px] text-muted-foreground">
+                  {scheduled.length} jogo{scheduled.length !== 1 ? 's' : ''} agendado{scheduled.length !== 1 ? 's' : ''} • Jogos iniciam automaticamente no horário
+                </CardContent>
+              </Card>
 
-                return (
-                  <button
-                    key={match.id}
-                    onClick={() => setSelected(match)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/20 transition-colors text-left"
-                  >
-                    {/* Result badge */}
-                    <div className={`w-6 h-6 rounded flex items-center justify-center text-[9px] font-black shrink-0 ${
-                      isWin ? 'bg-emerald-500/20 text-emerald-400' :
-                      isDraw ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-destructive/20 text-destructive'
-                    }`}>
-                      {isWin ? 'V' : isDraw ? 'E' : 'D'}
+              <Card>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[460px]">
+                    <div className="divide-y divide-border/20">
+                      {scheduled.map((match) => {
+                        const isHome = match.home_team === clubName;
+                        const now = new Date();
+                        const matchDate = match.scheduled_at ? new Date(match.scheduled_at) : null;
+                        const isToday = matchDate && matchDate.toDateString() === now.toDateString();
+                        const isSoon = matchDate && (matchDate.getTime() - now.getTime()) < 3600000 && matchDate.getTime() > now.getTime();
+
+                        return (
+                          <div
+                            key={match.id}
+                            className={`flex items-center gap-3 px-3 py-3 transition-colors ${
+                              isSoon ? 'bg-primary/8 border-l-2 border-primary' : isToday ? 'bg-accent/20' : ''
+                            }`}
+                          >
+                            {/* Time */}
+                            <div className="w-16 shrink-0">
+                              {match.scheduled_at ? (
+                                <>
+                                  <p className="text-[10px] font-mono font-bold text-foreground">
+                                    {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                  <p className="text-[8px] text-muted-foreground">
+                                    {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-[9px] text-muted-foreground">A definir</p>
+                              )}
+                            </div>
+
+                            {/* Match info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                {isHome
+                                  ? <Home className="h-3 w-3 text-primary shrink-0" />
+                                  : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                <span className="text-xs font-bold truncate">{match.home_team}</span>
+                                <span className="text-[9px] text-primary font-bold shrink-0">vs</span>
+                                <span className="text-xs font-bold truncate">{match.away_team}</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[8px] text-muted-foreground">🏟️ {match.stadium_name}</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="outline" className="text-[7px] h-4">{match.tournament_name}</Badge>
+                                <span className="text-[8px] text-muted-foreground">{match.stage}</span>
+                                {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Date & competition */}
-                    <div className="w-16 shrink-0">
-                      <p className="text-[9px] font-mono text-muted-foreground">{formatDate(match.played_at)}</p>
-                      <p className="text-[8px] text-muted-foreground/60">{formatTime(match.played_at)}</p>
-                    </div>
-
-                    {/* Match info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        {match.is_home
-                          ? <Home className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
-                          : <Plane className="h-2.5 w-2.5 text-blue-400 shrink-0" />}
-                        <span className="text-xs font-medium truncate">vs {oppName}</span>
-                        {isLatest && <Badge variant="secondary" className="text-[7px] ml-1 shrink-0">Último</Badge>}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {matches.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center space-y-3">
+                <Calendar className="h-10 w-10 text-muted-foreground mx-auto" />
+                <p className="text-sm font-medium">Nenhuma partida registrada</p>
+                <p className="text-xs text-muted-foreground">Jogue seu primeiro amistoso para começar o histórico!</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Summary */}
+              <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Histórico de Partidas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid grid-cols-5 gap-1 text-center">
+                    {[
+                      { label: 'J', value: total, color: 'text-foreground' },
+                      { label: 'V', value: wins, color: 'text-success' },
+                      { label: 'E', value: draws, color: 'text-warning' },
+                      { label: 'D', value: losses, color: 'text-destructive' },
+                      { label: 'GP', value: goalsFor, color: 'text-primary' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="bg-muted/20 rounded p-1.5">
+                        <p className={`text-sm font-black font-mono ${color}`}>{value}</p>
+                        <p className="text-[9px] text-muted-foreground">{label}</p>
                       </div>
-                      <p className="text-[9px] text-muted-foreground truncate">{match.competition}</p>
-                    </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                    <span>GP {goalsFor}</span>
+                    <span>·</span>
+                    <span>GC {goalsAgainst}</span>
+                    <span>·</span>
+                    <span>SG {goalsFor - goalsAgainst > 0 ? '+' : ''}{goalsFor - goalsAgainst}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {/* Score */}
-                    <div className={`text-sm font-black font-mono shrink-0 ${
-                      isWin ? 'text-emerald-400' : isDraw ? 'text-yellow-400' : 'text-destructive'
-                    }`}>
-                      {match.home_goals}–{match.away_goals}
-                    </div>
+              {/* Match list */}
+              <Card>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[460px]">
+                    <div className="divide-y divide-border/20">
+                      {matches.map((match, idx) => {
+                        const myGoals = match.is_home ? match.home_goals : match.away_goals;
+                        const oppGoals = match.is_home ? match.away_goals : match.home_goals;
+                        const oppName = match.is_home ? match.away_team : match.home_team;
+                        const isWin = myGoals > oppGoals;
+                        const isDraw = myGoals === oppGoals;
+                        const isLatest = idx === 0;
 
-                    <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                        return (
+                          <button
+                            key={match.id}
+                            onClick={() => setSelected(match)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/20 transition-colors text-left"
+                          >
+                            <div className={`w-6 h-6 rounded flex items-center justify-center text-[9px] font-black shrink-0 ${
+                              isWin ? 'bg-success/20 text-success' :
+                              isDraw ? 'bg-warning/20 text-warning' :
+                              'bg-destructive/20 text-destructive'
+                            }`}>
+                              {isWin ? 'V' : isDraw ? 'E' : 'D'}
+                            </div>
+
+                            <div className="w-16 shrink-0">
+                              <p className="text-[9px] font-mono text-muted-foreground">{formatDate(match.played_at)}</p>
+                              <p className="text-[8px] text-muted-foreground/60">{formatTime(match.played_at)}</p>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                {match.is_home
+                                  ? <Home className="h-2.5 w-2.5 text-primary shrink-0" />
+                                  : <Plane className="h-2.5 w-2.5 text-muted-foreground shrink-0" />}
+                                <span className="text-xs font-medium truncate">vs {oppName}</span>
+                                {isLatest && <Badge variant="secondary" className="text-[7px] ml-1 shrink-0">Último</Badge>}
+                              </div>
+                              <p className="text-[9px] text-muted-foreground truncate">{match.competition}</p>
+                            </div>
+
+                            <div className={`text-sm font-black font-mono shrink-0 ${
+                              isWin ? 'text-success' : isDraw ? 'text-warning' : 'text-destructive'
+                            }`}>
+                              {match.home_goals}–{match.away_goals}
+                            </div>
+
+                            <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
