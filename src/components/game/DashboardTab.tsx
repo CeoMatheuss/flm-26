@@ -106,7 +106,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3 text-primary" />
                   <span className="text-muted-foreground">Fundação:</span>
-                  <span className="font-bold">T{clubProfile?.foundedSeason || season || 1}</span>
+                  <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Landmark className="h-3 w-3 text-primary" />
@@ -136,8 +136,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
               </div>
               {/* Instagram */}
               {clubProfile?.instagram ? (
-                <a href={`https://instagram.com/${clubProfile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5">
-                  <Instagram className="h-3 w-3" /> @{clubProfile.instagram.replace('@', '')}
+                <a href={clubProfile.instagram.startsWith('http') ? clubProfile.instagram : `https://instagram.com/${clubProfile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-pink-400 hover:underline mt-0.5">
+                  <Instagram className="h-3 w-3" /> {clubProfile.instagram.startsWith('http') ? clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1] ? `@${clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1]}` : clubProfile.instagram : `@${clubProfile.instagram.replace('@', '')}`}
                 </a>
               ) : (
                 <p className="text-[9px] text-muted-foreground/50 mt-0.5">📸 Vincule seu Instagram no Perfil do Clube</p>

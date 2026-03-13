@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCrest } from './ShieldCrest';
-import { Instagram, User, Edit3, Save, Quote, Calendar } from 'lucide-react';
+import { Instagram, User, Edit3, Save, Quote, Calendar, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -23,6 +23,25 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
     onSave(form);
     setEditing(false);
     toast.success('Perfil do clube atualizado!');
+  };
+
+  // Format instagram as link
+  const getInstagramUrl = (val: string) => {
+    if (!val) return '';
+    // If it's already a full URL
+    if (val.startsWith('http')) return val;
+    // If it's @username or just username
+    const username = val.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
+    return `https://instagram.com/${username}`;
+  };
+
+  const getInstagramDisplay = (val: string) => {
+    if (!val) return '';
+    if (val.startsWith('http')) {
+      const match = val.match(/instagram\.com\/([^/?]+)/);
+      return match ? `@${match[1]}` : val;
+    }
+    return val.startsWith('@') ? val : `@${val}`;
   };
 
   return (
@@ -60,7 +79,7 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
-              Dados do Dono
+              Dados do Clube
             </div>
             <Button size="sm" variant="outline" onClick={() => editing ? handleSave() : setEditing(true)} className="h-7 px-2 text-[10px] gap-1">
               {editing ? <><Save className="h-3 w-3" /> Salvar</> : <><Edit3 className="h-3 w-3" /> Editar</>}
@@ -71,12 +90,34 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
           {editing ? (
             <>
               <div>
-                <label className="text-[10px] text-muted-foreground font-medium">Nome do Dono/Manager</label>
-                <Input value={form.ownerName} onChange={e => setForm(f => ({ ...f, ownerName: e.target.value }))} placeholder="Seu nome" className="h-8 text-xs mt-1" />
+                <label className="text-[10px] text-muted-foreground font-medium">Nome do Presidente</label>
+                <Input value={form.ownerName} onChange={e => setForm(f => ({ ...f, ownerName: e.target.value }))} placeholder="Nome completo do presidente" className="h-8 text-xs mt-1" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground font-medium">Instagram do Time</label>
-                <Input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} placeholder="@seutime" className="h-8 text-xs mt-1" />
+                <label className="text-[10px] text-muted-foreground font-medium">Data de Fundação (DD/MM/AAAA)</label>
+                <Input 
+                  value={form.foundedDate || ''} 
+                  onChange={e => {
+                    let val = e.target.value.replace(/[^\d/]/g, '');
+                    // Auto-format DD/MM/YYYY
+                    if (val.length === 2 && !val.includes('/')) val += '/';
+                    if (val.length === 5 && val.split('/').length === 2) val += '/';
+                    if (val.length > 10) val = val.slice(0, 10);
+                    setForm(f => ({ ...f, foundedDate: val }));
+                  }} 
+                  placeholder="Ex: 15/03/2024" 
+                  className="h-8 text-xs mt-1" 
+                  maxLength={10}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground font-medium">Instagram (link ou @usuario)</label>
+                <Input 
+                  value={form.instagram} 
+                  onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} 
+                  placeholder="https://instagram.com/seutime ou @seutime" 
+                  className="h-8 text-xs mt-1" 
+                />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground font-medium">Bio do Clube</label>
@@ -92,17 +133,39 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
               <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20 border border-border/50">
                 <User className="h-4 w-4 text-primary shrink-0" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Manager</p>
+                  <p className="text-[10px] text-muted-foreground">Presidente</p>
                   <p className="text-xs font-bold">{profile.ownerName || 'Não definido'}</p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20 border border-border/50">
+                <Calendar className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Fundação</p>
+                  <p className="text-xs font-bold">{profile.foundedDate || `Temporada ${profile.foundedSeason || 1}`}</p>
+                </div>
+              </div>
               
-              {profile.instagram && (
-                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-pink-500/5 border border-pink-500/20">
+              {profile.instagram ? (
+                <a 
+                  href={getInstagramUrl(profile.instagram)} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2.5 rounded-lg bg-pink-500/5 border border-pink-500/20 hover:bg-pink-500/10 transition-colors"
+                >
                   <Instagram className="h-4 w-4 text-pink-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-muted-foreground">Instagram</p>
+                    <p className="text-xs font-bold text-pink-400 truncate">{getInstagramDisplay(profile.instagram)}</p>
+                  </div>
+                  <Link2 className="h-3 w-3 text-pink-400/50 shrink-0" />
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/10 border border-border/30">
+                  <Instagram className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                   <div>
                     <p className="text-[10px] text-muted-foreground">Instagram</p>
-                    <p className="text-xs font-bold text-pink-400">{profile.instagram}</p>
+                    <p className="text-[10px] text-muted-foreground/50">Clique em "Editar" para vincular</p>
                   </div>
                 </div>
               )}
@@ -126,14 +189,6 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
                   </div>
                 </div>
               )}
-
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20 border border-border/50">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Fundado na</p>
-                  <p className="text-xs font-bold">Temporada {profile.foundedSeason || 1}</p>
-                </div>
-              </div>
 
               {!profile.ownerName && !profile.instagram && (
                 <p className="text-[10px] text-muted-foreground text-center py-2">
