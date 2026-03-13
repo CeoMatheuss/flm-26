@@ -15,24 +15,24 @@ import gamePreview4 from '@/assets/game-preview-4.jpg';
 import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const previewSlides = [
-  { src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
-  { src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
-  { src: gamePreview4, title: 'Categorias de Base', desc: 'Desenvolva jovens talentos na academia. Treinos 2D melhoram atributos e contribuem nas partidas.' },
-  { src: gamePreview3, title: 'FLM 26 — Football Life Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' },
-];
+{ src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
+{ src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
+{ src: gamePreview4, title: 'Categorias de Base', desc: 'Desenvolva jovens talentos na academia. Treinos 2D melhoram atributos e contribuem nas partidas.' },
+{ src: gamePreview3, title: 'FLM 26 — Football Life Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' }];
+
 
 const RESEND_COOLDOWN = 60; // seconds
 
 const features = [
-  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores!' },
-  { icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas em tempo real' },
-  { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa no campo' },
-  { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e agentes livres' },
-  { icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas competitivas com amigos' },
-  { icon: GraduationCap, title: 'Base & Olheiros', desc: 'Desenvolva talentos e contrate scouts' },
-  { icon: Shield, title: 'Infraestrutura', desc: 'CT, fisioterapia, estádio e mais' },
-  { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
-];
+{ icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores!' },
+{ icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas em tempo real' },
+{ icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa no campo' },
+{ icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e agentes livres' },
+{ icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas competitivas com amigos' },
+{ icon: GraduationCap, title: 'Base & Olheiros', desc: 'Desenvolva talentos e contrate scouts' },
+{ icon: Shield, title: 'Infraestrutura', desc: 'CT, fisioterapia, estádio e mais' },
+{ icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' }];
+
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ export default function AuthPage() {
   // Auto-advance carousel
   useEffect(() => {
     const timer = setInterval(() => {
-      setSlideIndex(prev => (prev + 1) % previewSlides.length);
+      setSlideIndex((prev) => (prev + 1) % previewSlides.length);
     }, 5000);
     return () => clearInterval(timer);
   }, []);
@@ -56,7 +56,7 @@ export default function AuthPage() {
   useEffect(() => {
     if (resendTimer <= 0) return;
     const interval = setInterval(() => {
-      setResendTimer(prev => prev - 1);
+      setResendTimer((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(interval);
   }, [resendTimer]);
@@ -68,7 +68,7 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: window.location.origin
     });
     if (error) {
       toast.error('Erro ao entrar com Google');
@@ -105,8 +105,8 @@ export default function AuthPage() {
       email,
       password,
       options: {
-        data: { display_name: displayName || 'Manager' },
-      },
+        data: { display_name: displayName || 'Manager' }
+      }
     });
     if (error) {
       toast.error(error.message);
@@ -128,7 +128,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.verifyOtp({
       email: pendingEmail,
       token: otpCode,
-      type: 'signup',
+      type: 'signup'
     });
     if (error) {
       toast.error('Código inválido ou expirado. Tente novamente.');
@@ -189,11 +189,11 @@ export default function AuthPage() {
                 <span className="text-xs font-bold">Código de Verificação</span>
               </div>
               <div className="flex gap-1">
-                {[1,2,3,4,5,6].map(i => (
+                {[1, 2, 3, 4, 5, 6].map((i) =>
                   <div key={i} className="w-5 h-6 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
                     <span className="text-[10px] font-bold text-primary">•</span>
                   </div>
-                ))}
+                  )}
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-muted-foreground" />
@@ -233,10 +233,10 @@ export default function AuthPage() {
             </div>
 
             <Button
-              onClick={handleVerifyOtp}
-              disabled={loading || otpCode.length !== 6}
-              className="w-full h-12 font-semibold text-sm gap-2"
-            >
+                onClick={handleVerifyOtp}
+                disabled={loading || otpCode.length !== 6}
+                className="w-full h-12 font-semibold text-sm gap-2">
+                
               <CheckCircle2 className="w-4 h-4" />
               {loading ? 'Verificando...' : 'Verificar Código'}
             </Button>
@@ -244,45 +244,45 @@ export default function AuthPage() {
             {/* Resend with timer */}
             <div className="text-center space-y-2">
               <p className="text-xs text-muted-foreground">Não recebeu o código?</p>
-              {resendTimer > 0 ? (
+              {resendTimer > 0 ?
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5" />
                   <span>Reenviar em <strong className="text-primary">{resendTimer}s</strong></span>
-                </div>
-              ) : (
+                </div> :
+
                 <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary gap-1">
                   <RefreshCw className="w-3 h-3" /> Reenviar código
                 </Button>
-              )}
+                }
             </div>
 
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setShowOtp(false); setOtpCode(''); setResendTimer(0); }}
-              className="w-full text-xs text-muted-foreground gap-1"
-            >
+                variant="ghost"
+                size="sm"
+                onClick={() => {setShowOtp(false);setOtpCode('');setResendTimer(0);}}
+                className="w-full text-xs text-muted-foreground gap-1">
+                
               <ArrowLeft className="w-3 h-3" /> Voltar ao login
             </Button>
           </CardContent>
         </Card>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
       {/* Left side - Image Carousel (responsive) */}
       <div className="relative w-full h-48 sm:h-56 lg:h-auto lg:w-1/2 lg:flex items-center justify-center overflow-hidden">
-        {previewSlides.map((slide, i) => (
-          <img 
-            key={i}
-            src={slide.src} 
-            alt={slide.title}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === slideIndex ? 'opacity-100' : 'opacity-0'}`}
-          />
-        ))}
+        {previewSlides.map((slide, i) =>
+        <img
+          key={i}
+          src={slide.src}
+          alt={slide.title}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === slideIndex ? 'opacity-100' : 'opacity-0'}`} />
+
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80 hidden lg:block" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(220,40%,8%)] lg:bg-gradient-to-t lg:from-[hsl(220,40%,8%)] lg:via-transparent lg:to-[hsl(220,40%,8%)]/50" />
         
@@ -292,25 +292,25 @@ export default function AuthPage() {
           
           {/* Navigation */}
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setSlideIndex(prev => (prev - 1 + previewSlides.length) % previewSlides.length)}
-              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors"
-            >
+            <button
+              onClick={() => setSlideIndex((prev) => (prev - 1 + previewSlides.length) % previewSlides.length)}
+              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors">
+              
               <ChevronLeft className="h-4 w-4" />
             </button>
             <div className="flex gap-1.5">
-              {previewSlides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSlideIndex(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${i === slideIndex ? 'bg-primary w-5' : 'bg-white/40 hover:bg-white/60'}`}
-                />
-              ))}
+              {previewSlides.map((_, i) =>
+              <button
+                key={i}
+                onClick={() => setSlideIndex(i)}
+                className={`w-2 h-2 rounded-full transition-all ${i === slideIndex ? 'bg-primary w-5' : 'bg-white/40 hover:bg-white/60'}`} />
+
+              )}
             </div>
-            <button 
-              onClick={() => setSlideIndex(prev => (prev + 1) % previewSlides.length)}
-              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors"
-            >
+            <button
+              onClick={() => setSlideIndex((prev) => (prev + 1) % previewSlides.length)}
+              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors">
+              
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -342,8 +342,8 @@ export default function AuthPage() {
               onClick={handleGoogleLogin}
               disabled={loading}
               className="w-full h-12 gap-3 text-sm font-semibold"
-              variant="outline"
-            >
+              variant="outline">
+              
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -366,8 +366,8 @@ export default function AuthPage() {
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-3">
-                  <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" />
-                  <Input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required className="h-11" />
+                  <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                  <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
                   <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                     {loading ? 'Entrando...' : '🎮 Entrar'}
                   </Button>
@@ -376,9 +376,9 @@ export default function AuthPage() {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-3">
-                  <Input placeholder="Nome do Manager" value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-11" />
-                  <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" />
-                  <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-11" />
+                  <Input placeholder="Nome do Manager" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" />
+                  <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                  <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-11" />
                   <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                     {loading ? 'Criando...' : '🏆 Criar Conta'}
                   </Button>
@@ -390,23 +390,23 @@ export default function AuthPage() {
 
         {/* Features Grid */}
         <div className="w-full max-w-md">
-          <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades</p>
+          <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades-FLM-26</p>
           <div className="grid grid-cols-2 gap-2">
-            {features.map((f, i) => (
-              <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-colors">
+            {features.map((f, i) =>
+            <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-colors">
                 <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="text-xs font-bold truncate">{f.title}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">{f.desc}</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
           <p className="text-[10px] text-center text-muted-foreground/50 mt-4">
             FLM 26 © 2026 — Todos os direitos reservados
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
