@@ -186,7 +186,7 @@ export function AdminTournamentTab({ userId }: Props) {
   const [formDuration, setFormDuration] = useState('720');
   const [formInterval, setFormInterval] = useState('24');
   const [formStartDate, setFormStartDate] = useState('');
-  const [formMatchTime, setFormMatchTime] = useState('20:00');
+  const [formMatchTime, setFormMatchTime] = useState('');
   const [formCountry, setFormCountry] = useState('Brasil');
   const [formRules, setFormRules] = useState('');
 
