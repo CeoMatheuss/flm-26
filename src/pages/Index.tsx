@@ -232,9 +232,111 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       }
 
       // Clean finished live_match from DB to avoid re-processing
-      supabase.from('live_matches').delete().eq('match_id', matchDbId).then(() => {
+      // Also save match data to tournament if applicable
+      const saveTournamentData = async () => {
+        // Get full match data from live_matches before deleting
+        const { data: liveData } = await supabase
+          .from('live_matches')
+          .select('*')
+          .eq('match_id', matchDbId)
+          .maybeSingle();
+
+        if (liveData) {
+          // Check if this match belongs to a tournament
+          const { data: tournamentMatch } = await supabase
+            .from('custom_tournament_matches')
+            .select('id, tournament_id, home_team_id, away_team_id')
+            .eq('status', 'scheduled')
+            .limit(100);
+
+          if (tournamentMatch) {
+            // Find a match where the teams match
+            const tm = tournamentMatch.find(m => {
+              // Check by matching team names
+              return m.id; // we'll match by finding user's team
+            });
+
+            // Try to find by user's team membership
+            const { data: userTeams } = await supabase
+              .from('custom_tournament_teams')
+              .select('id, tournament_id')
+              .eq('user_id', userId || '')
+              .eq('is_bot', false);
+
+            if (userTeams && userTeams.length > 0) {
+              const teamIds = userTeams.map(t => t.id);
+              const tournamentIds = [...new Set(userTeams.map(t => t.tournament_id))];
+
+              const { data: scheduledTournamentMatches } = await supabase
+                .from('custom_tournament_matches')
+                .select('*')
+                .eq('status', 'scheduled')
+                .in('tournament_id', tournamentIds)
+                .order('scheduled_at', { ascending: true });
+
+              if (scheduledTournamentMatches) {
+                const nextMatch = scheduledTournamentMatches.find(m =>
+                  teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)
+                );
+
+                if (nextMatch) {
+                  const isUserHome = teamIds.includes(nextMatch.home_team_id);
+                  const matchData = {
+                    goal_scorers: liveData.events ? (liveData.events as any[]).filter((e: any) => e.type === 'goal' || e.type === 'penalty_goal') .map((e: any) => ({ name: e.player, team: e.team, minute: e.minute, assist: e.assist })) : [],
+                    player_ratings: liveData.player_ratings || {},
+                    home_players: liveData.home_players || [],
+                    stats: liveData.stats || {},
+                  };
+
+                  await supabase
+                    .from('custom_tournament_matches')
+                    .update({
+                      status: 'played',
+                      home_goals: isUserHome ? homeGoals : awayGoals,
+                      away_goals: isUserHome ? awayGoals : homeGoals,
+                      played_at: new Date().toISOString(),
+                      match_data: matchData as any,
+                    })
+                    .eq('id', nextMatch.id);
+
+                  // Update team stats
+                  const hGoals = isUserHome ? homeGoals : awayGoals;
+                  const aGoals = isUserHome ? awayGoals : homeGoals;
+
+                  // Update home team
+                  const homeTeam = userTeams.find(t => t.id === nextMatch.home_team_id) ? nextMatch.home_team_id : nextMatch.home_team_id;
+                  const awayTeam = nextMatch.away_team_id;
+
+                  for (const [teamId, gf, ga] of [[homeTeam, hGoals, aGoals], [awayTeam, aGoals, hGoals]] as [string, number, number][]) {
+                    const win = gf > ga ? 1 : 0;
+                    const draw = gf === ga ? 1 : 0;
+                    const loss = gf < ga ? 1 : 0;
+                    const { data: teamData } = await supabase.from('custom_tournament_teams').select('*').eq('id', teamId).single();
+                    if (teamData) {
+                      await supabase.from('custom_tournament_teams').update({
+                        played: teamData.played + 1,
+                        wins: teamData.wins + win,
+                        draws: teamData.draws + draw,
+                        losses: teamData.losses + loss,
+                        goals_for: teamData.goals_for + gf,
+                        goals_against: teamData.goals_against + ga,
+                        points: teamData.points + (win ? 3 : draw ? 1 : 0),
+                        eliminated: loss > 0 && (nextMatch.stage === 'Final' || nextMatch.stage === 'Semi' || nextMatch.stage === 'Quartas' || nextMatch.stage === 'Oitavas'),
+                      }).eq('id', teamId);
+                    }
+                  }
+
+                  console.log('[Index] Saved tournament match data for:', nextMatch.id);
+                }
+              }
+            }
+          }
+        }
+
+        await supabase.from('live_matches').delete().eq('match_id', matchDbId);
         console.log('[Index] Cleaned up live_match for match_id:', matchDbId);
-      });
+      };
+      saveTournamentData();
 
       navigate('/', { replace: true, state: {} });
       return;
