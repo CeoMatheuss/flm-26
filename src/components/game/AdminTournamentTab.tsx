@@ -350,9 +350,9 @@ export function AdminTournamentTab({ userId }: Props) {
     return groups;
   };
 
-  // ── Fetch online players from game_saves filtered by country ──
+  // ── Fetch ALL existing teams from game_saves (even offline) filtered by country ──
   const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }>> => {
-    // Get all game saves
+    // Get all game saves - these are all created teams regardless of online status
     const { data: saves } = await supabase.from('game_saves').select('user_id, club_data');
     if (!saves) return [];
 
