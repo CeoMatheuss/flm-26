@@ -468,8 +468,9 @@ function simulateFullMatch(
     }
     stats.shots[1]++; stats.shotsOnTarget[1]++;
     const buildup = buildupDesc('away', awayTeam);
+    const eventType = pickGoalEventType();
     allPlanned.push({
-      minute: m, type: 'foot_goal', team: 'away', isGoal: true,
+      minute: m, type: eventType, team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
       description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${scoreH}x${scoreA}`)}`,
