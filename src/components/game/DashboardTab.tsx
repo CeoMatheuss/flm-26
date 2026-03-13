@@ -207,7 +207,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   {[
                     { label: 'Estádio', value: infrastructure.stadium?.level || 1, max: 10, icon: '🏟️' },
                     { label: 'CT', value: infrastructure.trainingCenter?.level || 1, max: 10, icon: '⚽' },
-                    { label: 'DM', value: infrastructure.medicalCenter?.level || 1, max: 10, icon: '🏥' },
+                    { label: 'Fisioterapia', value: infrastructure.physiotherapy?.level || 1, max: 10, icon: '🏥' },
                     { label: 'Academia', value: infrastructure.youthAcademy?.level || 1, max: 10, icon: '🎓' },
                   ].map(item => (
                     <div key={item.label} className="flex items-center gap-2">
@@ -219,8 +219,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   ))}
                 </div>
                 <div className="flex items-center justify-between text-[9px] bg-accent/30 rounded-lg px-2 py-1.5">
-                  <span className="text-muted-foreground">Capacidade do estádio</span>
-                  <span className="font-bold">{(infrastructure.stadium?.capacity || 5000).toLocaleString()}</span>
+                  <span className="text-muted-foreground">Nível do estádio</span>
+                  <span className="font-bold">Lv.{infrastructure.stadium?.level || 1}</span>
                 </div>
               </>
             ) : (
