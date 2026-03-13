@@ -366,16 +366,62 @@ export function useMatchSimulation() {
       const resp = await supabase.functions.invoke('start-match', { body: params });
 
       if (resp.error) {
-        // Check if there's an existing match
-        let errBody: any = null;
+        // Try to extract matchDbId from error context (FunctionsHttpError)
+        let matchDbId: string | null = null;
         try {
-          if (resp.data) errBody = resp.data;
-        } catch { /* */ }
-        if (errBody?.matchDbId) {
-          await loadMatch(errBody.matchDbId);
+          // supabase-js v2: error.context is the raw Response
+          const ctx = (resp.error as any).context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json();
+            matchDbId = body?.matchDbId || null;
+          }
+        } catch { /* ignore parse errors */ }
+
+        // Fallback: check resp.data
+        if (!matchDbId && resp.data?.matchDbId) {
+          matchDbId = resp.data.matchDbId;
+        }
+
+        if (matchDbId) {
+          console.log('[Match] Existing match found, loading:', matchDbId);
+          await loadMatch(matchDbId);
           return { success: true };
         }
-        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida.' }));
+
+        // No recoverable match — try to clean up stale matches and retry once
+        console.warn('[Match] Start failed, attempting stale cleanup...');
+        const { data: staleMatches } = await supabase
+          .from('live_matches')
+          .select('id, status, started_at, duration_seconds')
+          .eq('status', 'live')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (staleMatches && staleMatches.length > 0) {
+          const stale = staleMatches[0];
+          const startTime = new Date(stale.started_at).getTime();
+          const elapsed = Date.now() - startTime;
+          const durationMs = (stale.duration_seconds || 720) * 1000;
+
+          if (elapsed > durationMs + 60000) {
+            // Match is past its duration + 1min grace — it's stale, delete it
+            console.log('[Match] Cleaning stale match:', stale.id);
+            await supabase.from('live_matches').delete().eq('id', stale.id);
+            // Retry the start
+            const retry = await supabase.functions.invoke('start-match', { body: params });
+            if (!retry.error && retry.data?.success) {
+              await loadMatch(retry.data.matchDbId);
+              return { success: true };
+            }
+          } else {
+            // Match is still within time — load it
+            console.log('[Match] Loading active match:', stale.id);
+            await loadMatch(stale.id);
+            return { success: true };
+          }
+        }
+
+        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
         return { success: false, error: 'Erro ao iniciar partida.' };
       }
 
@@ -391,8 +437,9 @@ export function useMatchSimulation() {
 
       await loadMatch(result.matchDbId);
       return { success: true };
-    } catch {
-      setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro inesperado.' }));
+    } catch (err) {
+      console.error('[Match] Unexpected error:', err);
+      setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro inesperado. Tente novamente.' }));
       return { success: false, error: 'Erro inesperado.' };
     }
   }, [loadMatch]);

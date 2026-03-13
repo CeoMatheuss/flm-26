@@ -9,6 +9,8 @@ export interface ClubProfile {
   instagram: string;
   bio: string;
   foundedSeason: number;
+  /** Foundation date as DD/MM/YYYY string */
+  foundedDate?: string;
   motto: string;
   trophies?: Trophy[];
 }
@@ -18,6 +20,7 @@ export const defaultClubProfile: ClubProfile = {
   instagram: '',
   bio: '',
   foundedSeason: 1,
+  foundedDate: '',
   motto: '',
   trophies: [],
 };
