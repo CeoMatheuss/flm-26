@@ -166,9 +166,31 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
+
+  // Check maintenance mode
+  useEffect(() => {
+    const checkMaintenance = async () => {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .maybeSingle();
+      if (data?.value) {
+        const val = data.value as any;
+        setIsMaintenanceMode(val.active === true);
+      }
+      setMaintenanceChecked(true);
+    };
+    checkMaintenance();
+    // Poll every 30s
+    const interval = setInterval(checkMaintenance, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Handle match result from MatchResultLocker via navigation state (Bug #1 fix)
   // MatchResultLocker navigates to '/' with serverMatchResult in state after persist().
