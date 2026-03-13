@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Component to show next tournament match when idle ── */
-function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: { userId?: string; clubName: string; onGoToFriendly?: () => void; onViewClub?: (name: string) => void }) {
   const [nextMatch, setNextMatch] = useState<{ home: string; away: string; date: string; tournament: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
