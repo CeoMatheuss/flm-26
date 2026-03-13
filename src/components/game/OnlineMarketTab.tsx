@@ -304,11 +304,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const filterListings = (list: TransferListing[]) => {
     let filtered = list;
     if (posFilter !== 'all') filtered = filtered.filter(l => l.player_position === posFilter);
-    if (searchText) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.toLowerCase()));
-    if (ovrMinFilter) filtered = filtered.filter(l => l.player_overall >= Number(ovrMinFilter));
-    if (ovrMaxFilter) filtered = filtered.filter(l => l.player_overall <= Number(ovrMaxFilter));
-    if (ageMinFilter) filtered = filtered.filter(l => l.player_age >= Number(ageMinFilter));
-    if (ageMaxFilter) filtered = filtered.filter(l => l.player_age <= Number(ageMaxFilter));
+    if (searchText.trim()) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.trim().toLowerCase()) || l.seller_club_name.toLowerCase().includes(searchText.trim().toLowerCase()));
+    const ovrMin = Number(ovrMinFilter);
+    const ovrMax = Number(ovrMaxFilter);
+    const ageMin = Number(ageMinFilter);
+    const ageMax = Number(ageMaxFilter);
+    if (ovrMinFilter && !isNaN(ovrMin) && ovrMin > 0) filtered = filtered.filter(l => l.player_overall >= ovrMin);
+    if (ovrMaxFilter && !isNaN(ovrMax) && ovrMax > 0) filtered = filtered.filter(l => l.player_overall <= ovrMax);
+    if (ageMinFilter && !isNaN(ageMin) && ageMin > 0) filtered = filtered.filter(l => l.player_age >= ageMin);
+    if (ageMaxFilter && !isNaN(ageMax) && ageMax > 0) filtered = filtered.filter(l => l.player_age <= ageMax);
     // Sort
     if (sortBy === 'ovr_desc') filtered = [...filtered].sort((a, b) => b.player_overall - a.player_overall);
     else if (sortBy === 'ovr_asc') filtered = [...filtered].sort((a, b) => a.player_overall - b.player_overall);
@@ -567,16 +571,16 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[120px]">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar jogador..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-8 pl-8 text-xs rounded-lg" />
+              <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-8 pl-8 text-xs rounded-lg" />
             </div>
-             <Select value={posFilter} onValueChange={setPosFilter}>
+             <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="h-8 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={v => { setSortBy(v); setCurrentPage(1); }}>
               <SelectTrigger className="h-8 w-[100px] text-[10px] rounded-lg"><SelectValue placeholder="Ordenar" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="recent">Recente</SelectItem>
@@ -590,10 +594,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             </Select>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => setOvrMinFilter(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => setOvrMaxFilter(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => setAgeMinFilter(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => setAgeMaxFilter(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
+            <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => { setOvrMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
+            <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => { setOvrMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
+            <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => { setAgeMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
+            <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => { setAgeMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
+            {(searchText || posFilter !== 'all' || ovrMinFilter || ovrMaxFilter || ageMinFilter || ageMaxFilter || sortBy !== 'recent') && (
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-[9px] text-destructive" onClick={() => {
+                setSearchText(''); setPosFilter('all'); setOvrMinFilter(''); setOvrMaxFilter('');
+                setAgeMinFilter(''); setAgeMaxFilter(''); setSortBy('recent'); setCurrentPage(1);
+              }}>
+                <X className="h-3 w-3 mr-0.5" /> Limpar
+              </Button>
+            )}
           </div>
 
           {(() => {

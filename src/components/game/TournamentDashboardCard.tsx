@@ -92,7 +92,16 @@ export function TournamentDashboardCard({ onExpand }: Props) {
 
   if (tournaments.length === 0) return null;
 
-  // If expanded, show full view inline
+  // Redirect to tournament tab via onExpand prop
+  const handleExpand = (id: string) => {
+    if (onExpand) {
+      onExpand(id);
+    } else {
+      setExpandedId(id);
+    }
+  };
+
+  // If expanded inline (fallback), show full view
   if (expandedId) {
     return <TournamentExpandedView tournamentId={expandedId} onClose={() => setExpandedId(null)} />;
   }
@@ -123,7 +132,7 @@ export function TournamentDashboardCard({ onExpand }: Props) {
             <div
               key={t.id}
               className="flex items-center gap-2 rounded-lg bg-accent/20 hover:bg-accent/40 px-2.5 py-2 transition-colors cursor-pointer"
-              onClick={() => setExpandedId(t.id)}
+              onClick={() => handleExpand(t.id)}
             >
               <Trophy className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">

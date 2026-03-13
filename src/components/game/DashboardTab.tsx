@@ -15,9 +15,10 @@ interface Props {
   onOpenNewspaper?: () => void;
   onGoToFriendly?: () => void;
   userId?: string;
+  onOpenTournament?: (tournamentId: string) => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament }: Props) {
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -90,7 +91,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       </div>
 
       {/* Active Tournaments */}
-      <TournamentDashboardCard />
+      <TournamentDashboardCard onExpand={onOpenTournament} />
 
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />

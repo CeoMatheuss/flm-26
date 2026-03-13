@@ -34,6 +34,8 @@ import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
+import { TournamentExpandedView } from '@/components/game/TournamentDashboardCard';
+import { SeasonTab } from '@/components/game/SeasonTab';
 import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
@@ -299,6 +301,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
+  const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
 
   // Save signing news to newspaper
   const saveSigningNews = useCallback(async (playerName: string, position: string, overall: number, age: number, eventType: 'signing' | 'renewal' | 'loan' = 'signing', extraInfo?: string) => {
@@ -505,6 +508,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
                 <p className="menu-category">⚽ Clube</p>
                 <DropdownMenuItem onClick={() => setActiveTab('calendar')} className="menu-item"><Calendar className="h-3.5 w-3.5 text-primary/70" /> Calendário <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab('season')} className="menu-item"><CalendarDays className="h-3.5 w-3.5 text-primary/70" /> Temporada <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('training')} className="menu-item"><Dumbbell className="h-3.5 w-3.5 text-primary/70" /> Treinos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('youth')} className="menu-item"><GraduationCap className="h-3.5 w-3.5 text-primary/70" /> Categorias de Base <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab('scouts')} className="menu-item"><Search className="h-3.5 w-3.5 text-primary/70" /> Olheiros <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
@@ -555,7 +559,23 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} /></TabsContent>
+          <TabsContent value="tournament">
+            {activeTournamentId ? (
+              <TournamentExpandedView tournamentId={activeTournamentId} onClose={() => { setActiveTournamentId(null); setActiveTab('dashboard'); }} />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
+            )}
+          </TabsContent>
+          <TabsContent value="season">
+            <SeasonTab
+              season={game.season}
+              leagueTeams={game.leagueTeams}
+              clubName={game.club.name}
+              hasUnplayedMatches={game.club.matches.some(m => !m.played)}
+              onEndSeason={game.endSeason}
+            />
+          </TabsContent>
           <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
           <TabsContent value="squad">
             <SquadTab
