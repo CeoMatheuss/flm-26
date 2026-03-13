@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure } from '@/types/infrastructure';
@@ -7,7 +6,7 @@ import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap,
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
-import { TournamentDashboardCard, TournamentExpandedView } from './TournamentDashboardCard';
+import { TournamentDashboardCard } from './TournamentDashboardCard';
 
 interface Props {
   club: Club;
@@ -19,7 +18,6 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId }: Props) {
-  const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -64,10 +62,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     player_unhappy: 'border-l-destructive bg-destructive/5',
   };
 
-  // If tournament expanded, show full view
-  if (expandedTournament) {
-    return <TournamentExpandedView tournamentId={expandedTournament} onClose={() => setExpandedTournament(null)} />;
-  }
 
   const stats = [
     { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, color: 'text-primary' },
@@ -95,8 +89,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {/* Active Tournaments with expand */}
-      <TournamentDashboardCard onExpand={(id) => setExpandedTournament(id)} />
+      {/* Active Tournaments */}
+      <TournamentDashboardCard />
 
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />

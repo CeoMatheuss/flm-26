@@ -55,10 +55,9 @@ interface Props {
 
 export function TournamentDashboardCard({ onExpand }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [teams, setTeams] = useState<TournamentTeam[]>([]);
-  const [matches, setMatches] = useState<TournamentMatch[]>([]);
-  const [view, setView] = useState<'standings' | 'calendar' | 'stats'>('standings');
+  const [teamsMap, setTeamsMap] = useState<Record<string, TournamentTeam[]>>({});
+  const [matchesMap, setMatchesMap] = useState<Record<string, TournamentMatch[]>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -67,123 +66,85 @@ export function TournamentDashboardCard({ onExpand }: Props) {
         .select('*')
         .in('status', ['in_progress', 'registration'])
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
       if (data && data.length > 0) {
         setTournaments(data as any);
-        setSelectedId(data[0].id);
+        // Load teams/matches for all tournaments
+        const ids = data.map(d => d.id);
+        const [teamsRes, matchesRes] = await Promise.all([
+          supabase.from('custom_tournament_teams').select('*').in('tournament_id', ids).order('points', { ascending: false }),
+          supabase.from('custom_tournament_matches').select('*').in('tournament_id', ids).order('round', { ascending: true }),
+        ]);
+        const tMap: Record<string, TournamentTeam[]> = {};
+        const mMap: Record<string, TournamentMatch[]> = {};
+        ids.forEach(id => { tMap[id] = []; mMap[id] = []; });
+        (teamsRes.data as any[] || []).forEach((t: any) => { if (tMap[t.tournament_id]) tMap[t.tournament_id].push(t); });
+        (matchesRes.data as any[] || []).forEach((m: any) => { if (mMap[m.tournament_id]) mMap[m.tournament_id].push(m); });
+        setTeamsMap(tMap);
+        setMatchesMap(mMap);
       }
     };
     load();
   }, []);
 
-  useEffect(() => {
-    if (!selectedId) return;
-    const loadData = async () => {
-      const [teamsRes, matchesRes] = await Promise.all([
-        supabase.from('custom_tournament_teams').select('*').eq('tournament_id', selectedId).order('points', { ascending: false }),
-        supabase.from('custom_tournament_matches').select('*').eq('tournament_id', selectedId).order('round', { ascending: true }),
-      ]);
-      if (teamsRes.data) setTeams(teamsRes.data as any);
-      if (matchesRes.data) setMatches(matchesRes.data as any);
-    };
-    loadData();
-  }, [selectedId]);
-
   if (tournaments.length === 0) return null;
 
-  const selected = tournaments.find(t => t.id === selectedId);
-  const getTeamName = (id: string) => teams.find(t => t.id === id)?.club_name || '???';
-  const getTeamLogo = (id: string) => teams.find(t => t.id === id)?.club_logo || '⚽';
-
-  const groupLetters = [...new Set(teams.filter(t => t.group_letter).map(t => t.group_letter!))].sort();
-  const hasGroups = groupLetters.length > 0;
-
-  const upcoming = matches.filter(m => m.status !== 'played').slice(0, 6);
-  const recent = matches.filter(m => m.status === 'played').slice(-4);
-  const totalPlayed = matches.filter(m => m.status === 'played').length;
-  const totalGoals = matches.filter(m => m.status === 'played').reduce((sum, m) => sum + (m.home_goals || 0) + (m.away_goals || 0), 0);
+  // If expanded, show full view inline
+  if (expandedId) {
+    return <TournamentExpandedView tournamentId={expandedId} onClose={() => setExpandedId(null)} />;
+  }
 
   const formatLabels: Record<string, string> = {
-    league: '🏟️ Liga',
-    knockout: '⚔️ Mata-mata',
-    group_knockout: '🏟️⚔️ Grupos',
+    league: 'Liga',
+    knockout: 'Mata-mata',
+    group_knockout: 'Grupos',
   };
 
-  const sortedTeams = [...teams].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
-  const topScorer = sortedTeams.length > 0 ? sortedTeams[0] : null;
-
   return (
-    <Card className="game-card-premium">
-      <CardContent className="px-3 py-2.5">
-        {selected && (
-          <div className="space-y-2">
-            {/* Header row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold truncate">{selected.name}</span>
-                <Badge variant="outline" className="text-[7px] text-primary border-primary/30">
-                  {formatLabels[selected.format] || selected.format}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-1">
-                {tournaments.length > 1 && (
-                  <div className="flex gap-0.5 mr-1">
-                    {tournaments.map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelectedId(t.id)}
-                        className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
-                          t.id === selectedId
-                            ? 'bg-primary/20 text-primary border border-primary/30'
-                            : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                        }`}
-                      >
-                        {t.name.slice(0, 8)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {onExpand && (
-                  <Button 
-                    size="sm" 
-                    variant="default" 
-                    className="h-7 px-3 text-[10px] font-bold"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      onExpand(selected.id);
-                    }}
-                  >
-                    Ver mais
-                  </Button>
-                )}
-              </div>
-            </div>
+    <Card className="game-card-accent">
+      <CardHeader className="section-header pb-1 px-3 pt-3">
+        <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <Trophy className="h-3.5 w-3.5 text-primary" /> Campeonatos Ativos
+          <Badge variant="outline" className="text-[8px] ml-auto">{tournaments.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-3 pb-3 space-y-1.5">
+        {tournaments.map(t => {
+          const teams = teamsMap[t.id] || [];
+          const matches = matchesMap[t.id] || [];
+          const played = matches.filter(m => m.status === 'played').length;
+          const sorted = [...teams].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+          const leader = sorted[0];
 
-            {/* Compact stats + top 3 */}
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1 text-[8px]">
-                <span className="bg-accent/40 rounded px-1.5 py-0.5">
-                  <Users className="h-2.5 w-2.5 inline mr-0.5" />{teams.length}
-                </span>
-                <span className="bg-accent/40 rounded px-1.5 py-0.5">
-                  ⚽ {totalPlayed}/{matches.length}
-                </span>
-                <span className="bg-accent/40 rounded px-1.5 py-0.5">
-                  🎯 {totalGoals} gols
-                </span>
+          return (
+            <div
+              key={t.id}
+              className="flex items-center gap-2 rounded-lg bg-accent/20 hover:bg-accent/40 px-2.5 py-2 transition-colors cursor-pointer"
+              onClick={() => setExpandedId(t.id)}
+            >
+              <Trophy className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold truncate">{t.name}</p>
+                <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
+                  <span>{formatLabels[t.format] || t.format}</span>
+                  <span>•</span>
+                  <span>{teams.length} times</span>
+                  <span>•</span>
+                  <span>{played}/{matches.length} jogos</span>
+                  {leader && (
+                    <>
+                      <span>•</span>
+                      <span className="text-primary font-bold">👑 {leader.club_name.slice(0, 10)}</span>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="ml-auto flex items-center gap-1 text-[8px]">
-                {sortedTeams.slice(0, 3).map((t, i) => (
-                  <span key={t.id} className={`truncate max-w-[50px] ${i === 0 ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}{t.club_name.slice(0, 6)}
-                  </span>
-                ))}
-              </div>
+              <Badge variant="outline" className={`text-[7px] shrink-0 ${t.status === 'in_progress' ? 'text-success border-success/30' : 'text-warning border-warning/30'}`}>
+                {t.status === 'in_progress' ? '🟢 Ativo' : '📋 Registro'}
+              </Badge>
             </div>
-          </div>
-        )}
+          );
+        })}
       </CardContent>
     </Card>
   );
