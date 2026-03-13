@@ -186,7 +186,7 @@ export function AdminTournamentTab({ userId }: Props) {
   const [formDuration, setFormDuration] = useState('720');
   const [formInterval, setFormInterval] = useState('24');
   const [formStartDate, setFormStartDate] = useState('');
-  const [formMatchTime, setFormMatchTime] = useState('20:00');
+  const [formMatchTime, setFormMatchTime] = useState('');
   const [formCountry, setFormCountry] = useState('Brasil');
   const [formRules, setFormRules] = useState('');
 
@@ -383,7 +383,9 @@ export function AdminTournamentTab({ userId }: Props) {
     const maxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
-    const startDateStr = formStartDate || new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const startDateStr = formStartDate || now.toISOString().split('T')[0];
+    const matchTime = formMatchTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const scope = formScope === 'world' ? 'Mundial' : formCountry;
 
     setLoading(true);
@@ -417,7 +419,7 @@ export function AdminTournamentTab({ userId }: Props) {
       match_duration_seconds: Number(formDuration) || 720,
       match_interval_hours: Number(formInterval) || 24,
       start_date: startDateStr,
-      match_time: formMatchTime || '20:00',
+      match_time: matchTime,
       country: scope,
       rules_text: formRules.trim(),
       created_by: userId,
@@ -516,12 +518,12 @@ export function AdminTournamentTab({ userId }: Props) {
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
     if (formFormat === 'league') {
-      fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
-      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
-      fixtures = generateGroupFixtures(groups, startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateGroupFixtures(groups, startDateStr, matchTime, Number(formInterval) || 24);
     }
 
     // 6. Insert fixtures
