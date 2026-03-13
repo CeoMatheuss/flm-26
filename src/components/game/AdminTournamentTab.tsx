@@ -546,6 +546,7 @@ export function AdminTournamentTab({ userId }: Props) {
     await supabase.from('custom_tournaments').update({ total_rounds: maxRound } as any).eq('id', tournament.id);
 
     // Send notifications to all enrolled real players
+    const formatLabelsNotif: Record<string, string> = { league: 'Liga', knockout: 'Mata-mata', group_knockout: 'Grupos' };
     const enrolledUsers = allTeamInserts.filter(t => !t.is_bot && t.user_id);
     if (enrolledUsers.length > 0) {
       const firstMatchDate = fixtures.length > 0
