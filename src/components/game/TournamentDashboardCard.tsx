@@ -345,7 +345,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
       </div>
 
       {/* Tab Content */}
-      <ScrollArea className="max-h-[60vh]">
+      <div className="pb-4">
         {activeTab === 'overview' && (
           <div className="space-y-3">
             {/* For league format show standings, for knockout show bracket summary */}
