@@ -119,7 +119,7 @@ export function useMatchSimulation() {
       if (ev.team === 'home') homeActions++;
       else if (ev.team === 'away') awayActions++;
 
-      // Goal events = shot + on target
+      // Goal events = shot + on target (includes new types)
       if (ev.isGoal) {
         s.shots[idx]++;
         s.shotsOnTarget[idx]++;
