@@ -250,14 +250,28 @@ function MatchDetailModal({ match, clubName, onClose }: {
 }
 
 // ── CALENDÁRIO PRINCIPAL ─────────────────────────────────────────
+interface ScheduledMatch {
+  id: string;
+  home_team: string;
+  away_team: string;
+  scheduled_at: string;
+  stage: string;
+  tournament_name: string;
+  stadium_name: string;
+}
+
 export function MatchCalendarTab({ userId, clubName }: Props) {
   const [matches, setMatches] = useState<MatchHistoryItem[]>([]);
+  const [scheduled, setScheduled] = useState<ScheduledMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
+  const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      
+      // Load match history
       const { data } = await supabase
         .from('match_history')
         .select('*')
@@ -265,10 +279,69 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .order('played_at', { ascending: false })
         .limit(100);
       setMatches((data as MatchHistoryItem[]) || []);
+
+      // Load scheduled tournament matches for this user
+      const { data: myTeams } = await supabase
+        .from('custom_tournament_teams')
+        .select('id, tournament_id, club_name')
+        .eq('user_id', userId);
+
+      if (myTeams && myTeams.length > 0) {
+        const teamIds = myTeams.map(t => t.id);
+        const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
+
+        // Get tournament names
+        const { data: tournaments } = await supabase
+          .from('custom_tournaments')
+          .select('id, name')
+          .in('id', tournamentIds);
+        const tournamentMap = new Map((tournaments || []).map(t => [t.id, t.name]));
+
+        // Get scheduled matches where user is home or away
+        const { data: scheduledMatches } = await supabase
+          .from('custom_tournament_matches')
+          .select('*')
+          .eq('status', 'scheduled')
+          .in('tournament_id', tournamentIds)
+          .order('scheduled_at', { ascending: true })
+          .limit(50);
+
+        if (scheduledMatches) {
+          // Get all team names for these matches
+          const allTeamIds = new Set<string>();
+          scheduledMatches.forEach(m => {
+            allTeamIds.add(m.home_team_id);
+            allTeamIds.add(m.away_team_id);
+          });
+
+          const { data: allTeams } = await supabase
+            .from('custom_tournament_teams')
+            .select('id, club_name, is_bot')
+            .in('id', [...allTeamIds]);
+          const teamNameMap = new Map((allTeams || []).map(t => [t.id, t.club_name]));
+
+          const userScheduled: ScheduledMatch[] = scheduledMatches
+            .filter(m => teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id))
+            .map(m => {
+              const isHome = teamIds.includes(m.home_team_id);
+              return {
+                id: m.id,
+                home_team: teamNameMap.get(m.home_team_id) || '???',
+                away_team: teamNameMap.get(m.away_team_id) || '???',
+                scheduled_at: m.scheduled_at || '',
+                stage: m.stage || `Rodada ${m.round}`,
+                tournament_name: tournamentMap.get(m.tournament_id) || 'Campeonato',
+                stadium_name: isHome ? `Estádio de ${clubName}` : `Estádio de ${teamNameMap.get(m.home_team_id) || 'Visitante'}`,
+              };
+            });
+          setScheduled(userScheduled);
+        }
+      }
+
       setLoading(false);
     };
     load();
-  }, [userId]);
+  }, [userId, clubName]);
 
   if (selected) {
     return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
@@ -279,18 +352,6 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
-    );
-  }
-
-  if (matches.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center space-y-3">
-          <Calendar className="h-10 w-10 text-muted-foreground mx-auto" />
-          <p className="text-sm font-medium">Nenhuma partida registrada</p>
-          <p className="text-xs text-muted-foreground">Jogue seu primeiro amistoso para começar o histórico!</p>
-        </CardContent>
-      </Card>
     );
   }
 
