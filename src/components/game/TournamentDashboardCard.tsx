@@ -173,7 +173,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [teams, setTeams] = useState<TournamentTeam[]>([]);
   const [matches, setMatches] = useState<TournamentMatch[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'calendar' | 'bracket'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'teams' | 'groups' | 'calendar' | 'bracket'>('overview');
 
   useEffect(() => {
     const load = async () => {
@@ -209,9 +209,10 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
 
   const tabs = [
     { key: 'overview' as const, label: 'Visão Geral', icon: TrendingUp },
+    { key: 'teams' as const, label: 'Times', icon: Users },
     ...(hasGroups ? [{ key: 'groups' as const, label: 'Grupos', icon: Target }] : []),
     { key: 'calendar' as const, label: 'Calendário', icon: Calendar },
-    ...(tournament.format === 'knockout' || tournament.format === 'group_knockout' ? [{ key: 'bracket' as const, label: 'Chaveamento', icon: Swords }] : []),
+    ...(tournament.format === 'knockout' || tournament.format === 'group_knockout' ? [{ key: 'bracket' as const, label: 'Chave', icon: Swords }] : []),
   ];
 
   return (
@@ -378,13 +379,46 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
           </div>
         )}
 
+        {activeTab === 'teams' && (
+          <Card className="game-card">
+            <CardHeader className="section-header pb-1 px-3 pt-2">
+              <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Users className="h-3 w-3" /> Todos os Times ({teams.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 pb-2">
+              <ScrollArea className="max-h-[50vh]">
+                <div className="space-y-0.5">
+                  {sortedTeams.map((t, i) => (
+                    <div key={t.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] ${i < 3 ? 'bg-primary/5' : i % 2 === 0 ? 'bg-accent/10' : ''}`}>
+                      <span className="w-5 text-center font-bold text-muted-foreground">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}</span>
+                      <span className="text-sm">{t.club_logo}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold truncate ${i < 3 ? 'text-primary' : ''}`}>{t.club_name}</p>
+                        <p className="text-[8px] text-muted-foreground">
+                          {t.played}J • {t.wins}V {t.draws}E {t.losses}D • {t.goals_for}GP {t.goals_against}GC • SG: {t.goals_for - t.goals_against}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-black text-primary text-xs">{t.points}</p>
+                        <p className="text-[7px] text-muted-foreground">pts</p>
+                      </div>
+                      {t.is_bot && <Badge variant="outline" className="text-[6px] px-1 py-0 h-3">🤖</Badge>}
+                      {t.group_letter && <Badge variant="secondary" className="text-[6px] px-1 py-0 h-3">G{t.group_letter}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === 'groups' && (
           <div className="space-y-2">
             {groupLetters.map(letter => {
               const groupTeams = teams
                 .filter(t => t.group_letter === letter)
                 .sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
-              const groupMatches = matches.filter(m => m.stage === `Grupo ${letter}`);
               return (
                 <Card key={letter} className="game-card-accent">
                   <CardHeader className="pb-1 px-3 pt-2">
@@ -392,7 +426,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
                       <Target className="h-3 w-3 text-primary" /> Grupo {letter}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-2 pb-2 space-y-2">
+                  <CardContent className="px-2 pb-2">
                     <table className="w-full text-[9px]">
                       <thead>
                         <tr className="text-muted-foreground border-b border-border/20">
@@ -423,19 +457,6 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
                         ))}
                       </tbody>
                     </table>
-                    {/* Group matches */}
-                    {groupMatches.length > 0 && (
-                      <div className="space-y-0.5">
-                        <p className="text-[7px] text-muted-foreground uppercase font-bold">Jogos do Grupo</p>
-                        {groupMatches.map(m => (
-                          <div key={m.id} className={`flex items-center justify-between p-1 rounded text-[8px] ${m.status === 'played' ? 'bg-success/5 border border-success/10' : 'border border-border/15'}`}>
-                            <span className="truncate max-w-[55px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
-                            <span className="font-bold">{m.status === 'played' ? `${m.home_goals} - ${m.away_goals}` : 'vs'}</span>
-                            <span className="truncate max-w-[55px] text-right">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               );

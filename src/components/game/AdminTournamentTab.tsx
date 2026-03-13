@@ -545,6 +545,37 @@ export function AdminTournamentTab({ userId }: Props) {
     const maxRound = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.round)) : 1;
     await supabase.from('custom_tournaments').update({ total_rounds: maxRound } as any).eq('id', tournament.id);
 
+    // Send notifications to all enrolled real players
+    const formatLabelsNotif: Record<string, string> = { league: 'Liga', knockout: 'Mata-mata', group_knockout: 'Grupos' };
+    const enrolledUsers = allTeamInserts.filter(t => !t.is_bot && t.user_id);
+    if (enrolledUsers.length > 0) {
+      const firstMatchDate = fixtures.length > 0
+        ? new Date(fixtures[0].scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : 'em breve';
+      
+      const notifications = enrolledUsers.map(t => ({
+        user_id: t.user_id,
+        type: 'info',
+        title: `🏆 Novo Campeonato: ${formName.trim()}`,
+        message: `Você foi inscrito no campeonato "${formName.trim()}" (${formatLabelsNotif[formFormat] || formFormat})!\n📅 Primeiro jogo: ${firstMatchDate}\n👥 ${allTeamInserts.length} times\n🥇 1º: R$${(Number(formPrize1) / 1e6).toFixed(1)}M\nBoa sorte!`,
+        icon: '🏆',
+        data: { tournamentId: tournament.id },
+      }));
+
+      // Insert in batches
+      for (let i = 0; i < notifications.length; i += 50) {
+        await supabase.from('user_notifications').insert(notifications.slice(i, i + 50));
+      }
+
+      // Add newspaper entry
+      await supabase.from('newspaper_entries').insert({
+        user_id: userId,
+        text: `🏆 NOVO CAMPEONATO: "${formName.trim()}" foi criado com ${allTeamInserts.length} times! Formato: ${formatLabelsNotif[formFormat] || formFormat}. Primeiro jogo: ${firstMatchDate}. Premiação: 🥇 R$${(Number(formPrize1) / 1e6).toFixed(1)}M | 🥈 R$${(Number(formPrize2) / 1e6).toFixed(1)}M | 🥉 R$${(Number(formPrize3) / 1e6).toFixed(1)}M`,
+        category: 'CAMPEONATO',
+        is_event: true,
+      });
+    }
+
     toast.success(`🏆 Campeonato "${formName}" criado! ${onlineCount} online + ${botCount} bots = ${teamList.length} times, ${fixtures.length} jogos!`);
     setShowCreate(false);
     setFormName(''); setFormDesc(''); setFormRules('');
