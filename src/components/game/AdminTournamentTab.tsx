@@ -386,6 +386,7 @@ export function AdminTournamentTab({ userId }: Props) {
     const now = new Date();
     const startDateStr = formStartDate || now.toISOString().split('T')[0];
     const matchTime = formMatchTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const scope = formScope === 'world' ? 'Mundial' : formCountry;
 
     setLoading(true);
 
