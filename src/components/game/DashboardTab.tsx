@@ -18,7 +18,6 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId }: Props) {
-  const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
