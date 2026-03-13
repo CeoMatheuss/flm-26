@@ -558,7 +558,23 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} /></TabsContent>
+          <TabsContent value="tournament">
+            {activeTournamentId ? (
+              <TournamentExpandedView tournamentId={activeTournamentId} onClose={() => { setActiveTournamentId(null); setActiveTab('dashboard'); }} />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
+            )}
+          </TabsContent>
+          <TabsContent value="season">
+            <SeasonTab
+              season={game.season}
+              leagueTeams={game.leagueTeams}
+              clubName={game.club.name}
+              hasUnplayedMatches={game.club.matches.some(m => !m.played)}
+              onEndSeason={game.endSeason}
+            />
+          </TabsContent>
           <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
           <TabsContent value="squad">
             <SquadTab
