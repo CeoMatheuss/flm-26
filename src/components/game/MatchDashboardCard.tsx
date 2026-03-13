@@ -83,6 +83,16 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
     const hoursUntil = Math.floor(timeUntil / 3600000);
     const minsUntil = Math.floor((timeUntil % 3600000) / 60000);
 
+    // Parse date manually to avoid timezone shift
+    const formatMatchDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return {
+        dateFormatted: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        timeFormatted: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      };
+    };
+    const fmt = nextMatch.date ? formatMatchDate(nextMatch.date) : null;
+
     return (
       <div className="text-center py-3 space-y-2">
         <div className="flex items-center justify-center gap-1.5">
@@ -90,13 +100,13 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
           <p className="text-[10px] font-bold text-primary uppercase">{nextMatch.tournament}</p>
         </div>
         <Badge variant={isToday ? 'destructive' : 'secondary'} className="text-[9px]">
-          {isToday ? `⏰ HOJE às ${matchDate?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` :
-            matchDate ? `📅 ${matchDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Em breve'}
+          {isToday ? `⏰ HOJE às ${fmt?.timeFormatted}` :
+            fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
-          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.home}</p>
+          <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
           <span className="text-base font-black text-muted-foreground">VS</span>
-          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.away}</p>
+          <button onClick={() => onViewClub?.(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
         </div>
         {timeUntil > 0 && (
           <p className="text-[9px] text-muted-foreground">
