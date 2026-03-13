@@ -220,6 +220,43 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         </div>
       </div>
 
+      {/* Welcome / Tournament Details Banner */}
+      <div className="rounded-xl border border-primary/20 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.02))' }}>
+        <div className="p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <p className="text-xs font-black">🏆 Bem-vindo ao {tournament.name}!</p>
+              <p className="text-[9px] text-muted-foreground">{tournament.description || 'Campeonato oficial do FLM 26'}</p>
+            </div>
+          </div>
+          {tournament.rules_text && (
+            <div className="rounded-lg p-2 text-[9px] leading-relaxed border border-border/20" style={{ background: 'hsl(var(--card))' }}>
+              📋 <span className="font-bold">Regras:</span> {tournament.rules_text}
+            </div>
+          )}
+          <div className="grid grid-cols-3 gap-1.5 text-center">
+            <div className="rounded-lg p-1.5" style={{ background: 'hsl(var(--card))' }}>
+              <p className="text-[8px] text-muted-foreground">🥇 1º lugar</p>
+              <p className="text-[10px] font-bold text-emerald-400">R${(tournament.prize_1st / 1e6).toFixed(1)}M</p>
+            </div>
+            <div className="rounded-lg p-1.5" style={{ background: 'hsl(var(--card))' }}>
+              <p className="text-[8px] text-muted-foreground">🥈 2º lugar</p>
+              <p className="text-[10px] font-bold text-blue-400">R${(tournament.prize_2nd / 1e6).toFixed(1)}M</p>
+            </div>
+            <div className="rounded-lg p-1.5" style={{ background: 'hsl(var(--card))' }}>
+              <p className="text-[8px] text-muted-foreground">🥉 3º lugar</p>
+              <p className="text-[10px] font-bold text-amber-400">R${(tournament.prize_3rd / 1e6).toFixed(1)}M</p>
+            </div>
+          </div>
+          {tournament.start_date && (
+            <p className="text-[9px] text-muted-foreground text-center">
+              📅 Início: {new Date(tournament.start_date).toLocaleDateString('pt-BR')} • ⏰ Horário: {tournament.match_time || '20:00'} • 🔄 Intervalo: {tournament.match_interval_hours}h entre jogos
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Stats banner */}
       <div className="grid grid-cols-5 gap-1.5">
         {[
