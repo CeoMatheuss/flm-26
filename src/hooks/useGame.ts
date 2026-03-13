@@ -824,30 +824,22 @@ export function useGame(initialState?: GameState, userId?: string) {
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
 
-    // Save infrastructure evolution to newspaper
+    // Save consolidated infrastructure news to newspaper (single entry)
     if (userId) {
       const facilityEmoji = facility === 'trainingCenter' ? '⚽' : facility === 'youthAcademy' ? '🎓' : facility === 'physiotherapy' ? '🏥' : '🏟️';
-      const newsText = `${facilityEmoji} ${club.name}: ${desc}`;
+      const fanReactions = [
+        '"Era hora de investir!"',
+        '"Com isso vamos longe!"',
+        '"Infraestrutura de primeiro mundo!"',
+        '"A diretoria está de parabéns!"',
+      ];
+      const fanComment = fanReactions[Math.floor(Math.random() * fanReactions.length)];
+      const newsText = `${facilityEmoji} ${club.name}: ${desc} — Torcida reage: ${fanComment}`;
       supabase.from('newspaper_entries').insert([{
         user_id: userId,
         text: newsText,
         category: 'EVOLUÇÃO',
         is_event: true,
-      }]).then(() => {});
-
-      // Fan comment about upgrade
-      const fanComments = [
-        `💬 A torcida do ${club.name} comemora o upgrade do ${label}! "Era hora de investir!"`,
-        `💬 Torcedores do ${club.name} estão empolgados com o novo ${label} nível ${newLevel}!`,
-        `💬 "Com esse ${label} novo, vamos longe!" - dizem torcedores do ${club.name}`,
-        `💬 Torcida organizada do ${club.name} celebra: "${label} de primeiro mundo!"`,
-      ];
-      const randomComment = fanComments[Math.floor(Math.random() * fanComments.length)];
-      supabase.from('newspaper_entries').insert([{
-        user_id: userId,
-        text: randomComment,
-        category: 'CANTEIRA',
-        is_event: false,
       }]).then(() => {});
     }
   }, [addFinance, infrastructure, club.budget, club.name, userId]);
