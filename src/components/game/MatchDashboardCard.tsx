@@ -2,12 +2,129 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2 } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+
+/* ── Component to show next tournament match when idle ── */
+function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+  const [nextMatch, setNextMatch] = useState<{ home: string; away: string; date: string; tournament: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) { setLoading(false); return; }
+    const load = async () => {
+      // Find user's tournament teams
+      const { data: myTeams } = await supabase
+        .from('custom_tournament_teams')
+        .select('id, tournament_id, club_name')
+        .eq('user_id', userId);
+
+      if (!myTeams || myTeams.length === 0) { setLoading(false); return; }
+
+      const teamIds = myTeams.map(t => t.id);
+      const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
+
+      // Find next scheduled match for any of user's teams
+      const { data: scheduledMatches } = await supabase
+        .from('custom_tournament_matches')
+        .select('home_team_id, away_team_id, scheduled_at, tournament_id')
+        .eq('status', 'scheduled')
+        .in('tournament_id', tournamentIds)
+        .order('scheduled_at', { ascending: true })
+        .limit(50);
+
+      if (scheduledMatches) {
+        const myMatch = scheduledMatches.find(m => teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id));
+        if (myMatch) {
+          // Get team names
+          const { data: matchTeams } = await supabase
+            .from('custom_tournament_teams')
+            .select('id, club_name')
+            .in('id', [myMatch.home_team_id, myMatch.away_team_id]);
+
+          const { data: tournament } = await supabase
+            .from('custom_tournaments')
+            .select('name')
+            .eq('id', myMatch.tournament_id)
+            .single();
+
+          const homeName = matchTeams?.find(t => t.id === myMatch.home_team_id)?.club_name || '???';
+          const awayName = matchTeams?.find(t => t.id === myMatch.away_team_id)?.club_name || '???';
+
+          setNextMatch({
+            home: homeName,
+            away: awayName,
+            date: myMatch.scheduled_at || '',
+            tournament: tournament?.name || 'Campeonato',
+          });
+        }
+      }
+      setLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (nextMatch) {
+    const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
+    const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
+    const timeUntil = matchDate ? Math.max(0, matchDate.getTime() - Date.now()) : 0;
+    const hoursUntil = Math.floor(timeUntil / 3600000);
+    const minsUntil = Math.floor((timeUntil % 3600000) / 60000);
+
+    return (
+      <div className="text-center py-3 space-y-2">
+        <div className="flex items-center justify-center gap-1.5">
+          <Trophy className="h-4 w-4 text-primary" />
+          <p className="text-[10px] font-bold text-primary uppercase">{nextMatch.tournament}</p>
+        </div>
+        <Badge variant={isToday ? 'destructive' : 'secondary'} className="text-[9px]">
+          {isToday ? `⏰ HOJE às ${matchDate?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` :
+            matchDate ? `📅 ${matchDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Em breve'}
+        </Badge>
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.home}</p>
+          <span className="text-base font-black text-muted-foreground">VS</span>
+          <p className="text-xs font-bold truncate max-w-[100px]">{nextMatch.away}</p>
+        </div>
+        {timeUntil > 0 && (
+          <p className="text-[9px] text-muted-foreground">
+            ⏱️ Faltam {hoursUntil > 0 ? `${hoursUntil}h ` : ''}{minsUntil}min
+          </p>
+        )}
+        {onGoToFriendly && (
+          <Button size="sm" variant="outline" className="mt-2 gap-2 text-[10px] h-7" onClick={onGoToFriendly}>
+            <Swords className="h-3 w-3" /> Jogar Amistoso
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-4">
+      <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
+      <p className="font-bold text-sm">Nenhuma partida agendada</p>
+      <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra BOT FC!</p>
+      {onGoToFriendly && (
+        <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
+          <Swords className="h-3.5 w-3.5" /> Ir para Amistosos
+        </Button>
+      )}
+    </div>
+  );
+}
 
 interface LiveMatchFromDB {
   id: string;
