@@ -18,6 +18,9 @@ interface Tournament {
   start_date: string | null;
   match_time: string;
   country: string;
+  description?: string;
+  rules_text?: string;
+  match_interval_hours?: number;
 }
 
 interface TournamentTeam {
