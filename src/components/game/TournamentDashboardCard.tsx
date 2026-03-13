@@ -92,7 +92,16 @@ export function TournamentDashboardCard({ onExpand }: Props) {
 
   if (tournaments.length === 0) return null;
 
-  // If expanded, show full view inline
+  // Redirect to tournament tab via onExpand prop
+  const handleExpand = (id: string) => {
+    if (onExpand) {
+      onExpand(id);
+    } else {
+      setExpandedId(id);
+    }
+  };
+
+  // If expanded inline (fallback), show full view
   if (expandedId) {
     return <TournamentExpandedView tournamentId={expandedId} onClose={() => setExpandedId(null)} />;
   }
