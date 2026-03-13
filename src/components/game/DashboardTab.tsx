@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure } from '@/types/infrastructure';
@@ -7,7 +6,7 @@ import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap,
 import { Progress } from '@/components/ui/progress';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
-import { TournamentDashboardCard, TournamentExpandedView } from './TournamentDashboardCard';
+import { TournamentDashboardCard } from './TournamentDashboardCard';
 
 interface Props {
   club: Club;
