@@ -3,12 +3,13 @@
  * 
  * Shows all 22 players in formation at all times.
  * Multi-phase highlight animations with realistic positioning.
- * Shooter finishes INSIDE the box, not from midfield.
+ * Includes: goals, penalties, saves, woodwork, corners, chances,
+ * counter-attacks, crossings, and free kicks.
  */
 
 import { useRef, useEffect, memo } from 'react';
 
-export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'idle';
+export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'idle';
 
 interface HighlightMiniCanvasProps {
   type: HighlightType;
@@ -33,7 +34,6 @@ const COLORS = {
   grass2: '#228b46',
 };
 
-// 4-4-2 formation positions (normalized 0-1)
 const HOME_POSITIONS = [
   { x: 0.06, y: 0.5, label: '1' },
   { x: 0.18, y: 0.15, label: '2' },
@@ -62,15 +62,17 @@ const AWAY_POSITIONS = [
   { x: 0.55, y: 0.65, label: '11' },
 ];
 
-// Longer durations for more polished animations
 const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
-  goal: 420,           // 7s
-  penalty: 390,        // 6.5s
-  woodwork: 360,       // 6s
-  corner: 330,         // 5.5s
-  chance: 300,         // 5s
-  save: 360,           // 6s
+  goal: 420,
+  penalty: 390,
+  woodwork: 360,
+  corner: 330,
+  chance: 300,
+  save: 360,
   penalty_shootout: 390,
+  counter_attack: 450,  // 7.5s — longer for full-field run
+  crossing: 400,        // 6.7s
+  free_kick: 420,       // 7s
   idle: Infinity,
 };
 
@@ -96,30 +98,50 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
     const totalFrames = HIGHLIGHT_DURATIONS[type] || 300;
     const isHome = team === 'home';
 
-    // Helper for Y variance
     const randY = () => H * 0.3 + Math.random() * H * 0.4;
 
-    // Goal area constants
     const goalX = isHome ? W - 8 : 8;
     const goalY = H * 0.5;
     const goalW = 8, goalH = 60;
 
-    // ── REALISTIC POSITIONING ──
-    // Shooter is INSIDE the penalty box (x ~0.78 for home, ~0.22 for away)
+    // Shooter position — inside penalty box
     const shooterPos = type === 'penalty' || type === 'penalty_shootout'
       ? { x: isHome ? W * 0.80 : W * 0.20, y: H * 0.5 }
-      : { x: isHome ? W * 0.76 + Math.random() * W * 0.06 : W * 0.18 + Math.random() * W * 0.06, 
+      : type === 'counter_attack'
+      ? { x: isHome ? W * 0.82 : W * 0.18, y: H * 0.45 + Math.random() * H * 0.1 }
+      : type === 'crossing'
+      ? { x: isHome ? W * 0.80 : W * 0.20, y: H * 0.45 + Math.random() * H * 0.1 }
+      : type === 'free_kick'
+      ? { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.5 }
+      : { x: isHome ? W * 0.76 + Math.random() * W * 0.06 : W * 0.18 + Math.random() * W * 0.06,
           y: H * 0.35 + Math.random() * H * 0.3 };
 
-    // Build-up: 4 passes progressing from own half to attack
-    const passPoints = type === 'penalty' || type === 'penalty_shootout' ? [] : [
-      { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
-      { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
-      { x: isHome ? W * 0.56 : W * 0.44, y: randY() },
-      { x: isHome ? W * 0.68 : W * 0.32, y: randY() },
-    ];
+    // Build-up pass points
+    const passPoints = type === 'penalty' || type === 'penalty_shootout' ? [] :
+      type === 'counter_attack' ? [
+        { x: isHome ? W * 0.15 : W * 0.85, y: randY() },
+        { x: isHome ? W * 0.35 : W * 0.65, y: randY() },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.4 + Math.random() * H * 0.2 },
+        { x: isHome ? W * 0.70 : W * 0.30, y: H * 0.4 + Math.random() * H * 0.2 },
+      ] :
+      type === 'crossing' ? [
+        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.85 },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.90 },
+        { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.88 },
+        { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.80 },
+      ] :
+      type === 'free_kick' ? [
+        { x: isHome ? W * 0.60 : W * 0.40, y: H * 0.5 },
+        { x: isHome ? W * 0.65 : W * 0.35, y: H * 0.5 },
+        { x: isHome ? W * 0.68 : W * 0.32, y: H * 0.5 },
+        { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.5 },
+      ] : [
+        { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
+        { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
+        { x: isHome ? W * 0.56 : W * 0.44, y: randY() },
+        { x: isHome ? W * 0.68 : W * 0.32, y: randY() },
+      ];
 
-    // Ball end position (inside the goal for goals, near post for others)
     let ballEndX = goalX;
     let ballEndY = goalY + (Math.random() - 0.5) * 36;
 
@@ -134,44 +156,41 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       passPoints[2] = { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.42 };
       passPoints[3] = { x: isHome ? W * 0.80 : W * 0.20, y: H * 0.50 };
     } else if (type === 'chance') {
-      // Miss goes wide
       ballEndX = goalX + (isHome ? 8 : -8);
       ballEndY = goalY + (Math.random() > 0.5 ? -40 : 40);
+    } else if (type === 'crossing') {
+      // Header target inside goal
+      ballEndY = goalY + (Math.random() - 0.5) * 30;
+    } else if (type === 'free_kick') {
+      // Curving into top corner
+      ballEndY = goalY - goalH / 2 + 8 + Math.random() * 15;
     }
 
-    // ── Pitch drawing with gradient stripes ──
+    // ── Pitch drawing ──
     const drawPitch = () => {
       for (let i = 0; i < 12; i++) {
         ctx.fillStyle = i % 2 === 0 ? COLORS.grass1 : COLORS.grass2;
         ctx.fillRect(i * (W / 12), 0, W / 12 + 1, H);
       }
-      // Pitch outline
       ctx.strokeStyle = COLORS.lines;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(2, 2, W - 4, H - 4);
-      // Halfway line
       ctx.beginPath(); ctx.moveTo(W / 2, 2); ctx.lineTo(W / 2, H - 2); ctx.stroke();
-      // Center circle
       ctx.beginPath(); ctx.arc(W / 2, H / 2, 35, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = COLORS.lines;
       ctx.beginPath(); ctx.arc(W / 2, H / 2, 2.5, 0, Math.PI * 2); ctx.fill();
-      // Penalty areas
       ctx.strokeRect(2, H / 2 - 55, 56, 110);
       ctx.strokeRect(2, H / 2 - 30, 24, 60);
       ctx.strokeRect(W - 58, H / 2 - 55, 56, 110);
       ctx.strokeRect(W - 26, H / 2 - 30, 24, 60);
-      // Penalty spots
       ctx.fillStyle = COLORS.lines;
       ctx.beginPath(); ctx.arc(38, H / 2, 2, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(W - 38, H / 2, 2, 0, Math.PI * 2); ctx.fill();
-      // Penalty arcs
       ctx.beginPath(); ctx.arc(38, H / 2, 28, -0.65, 0.65); ctx.stroke();
       ctx.beginPath(); ctx.arc(W - 38, H / 2, 28, Math.PI - 0.65, Math.PI + 0.65); ctx.stroke();
-      // Goals
       ctx.fillStyle = COLORS.net;
       ctx.fillRect(0, H / 2 - goalH / 2, goalW, goalH);
       ctx.fillRect(W - goalW, H / 2 - goalH / 2, goalW, goalH);
-      // Goal net lines
       ctx.strokeStyle = 'rgba(255,255,255,0.25)';
       ctx.lineWidth = 0.5;
       for (let ny = goalY - goalH / 2; ny <= goalY + goalH / 2; ny += 6) {
@@ -182,7 +201,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.lineWidth = 1.2;
       ctx.strokeRect(0, goalY - goalH / 2, goalW, goalH);
       ctx.strokeRect(W - goalW, goalY - goalH / 2, goalW, goalH);
-      // Corner arcs
       const corners: [number, number][] = [[2, 2], [W - 2, 2], [2, H - 2], [W - 2, H - 2]];
       corners.forEach(([cx, cy]) => {
         ctx.beginPath();
@@ -192,14 +210,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       });
     };
 
-    // ── Draw player with jersey and name ──
     const drawPlayer = (x: number, y: number, color: string, light: string, label: string, size = 7, glowing = false, showName?: string) => {
-      // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.18)';
       ctx.beginPath();
       ctx.ellipse(x + 1, y + size * 0.8, size * 0.9, size * 0.25, 0, 0, Math.PI * 2);
       ctx.fill();
-      // Glow
       if (glowing) {
         const grad = ctx.createRadialGradient(x, y, size, x, y, size + 8);
         grad.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
@@ -209,7 +224,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         ctx.arc(x, y, size + 8, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Body
       const bodyGrad = ctx.createRadialGradient(x - size * 0.3, y - size * 0.3, 0, x, y, size);
       bodyGrad.addColorStop(0, light);
       bodyGrad.addColorStop(1, color);
@@ -220,13 +234,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.strokeStyle = 'rgba(255,255,255,0.4)';
       ctx.lineWidth = 1;
       ctx.stroke();
-      // Number
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.font = `bold ${Math.max(6, size - 1)}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, x, y + 0.5);
-      // Name below
       if (showName) {
         ctx.fillStyle = 'rgba(255,255,255,0.8)';
         ctx.font = 'bold 7px Arial';
@@ -234,13 +246,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       }
     };
 
-    // ── Draw all 22 players with drift ──
     const drawAllPlayers = (drift: number, reactToAction = false, actionX = 0, actionY = 0, shiftAmount = 0) => {
       const driftAmt = reactToAction ? 4 : 2;
       HOME_POSITIONS.forEach((p, i) => {
         let px = p.x * W;
         let py = p.y * H;
-        // Shift attacking team forward during action
         if (isHome && shiftAmount > 0 && i > 4) px += shiftAmount;
         let dx = Math.sin(drift + i * 1.3) * driftAmt;
         let dy = Math.cos(drift + i * 0.9) * driftAmt;
@@ -270,9 +280,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       });
     };
 
-    // ── Draw ball with enhanced spin ──
     const drawBall = (x: number, y: number, scale = 1, spin = 0, trail = false) => {
-      // Motion trail
       if (trail) {
         for (let t = 3; t > 0; t--) {
           const alpha = 0.06 * t;
@@ -282,7 +290,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           ctx.fill();
         }
       }
-      // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.beginPath();
       ctx.ellipse(x + 1, y + 3, 4.5 * scale, 1.8 * scale, 0, 0, Math.PI * 2);
@@ -290,7 +297,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(spin);
-      // Ball body
       ctx.fillStyle = COLORS.ball;
       ctx.beginPath();
       ctx.arc(0, 0, 4.5 * scale, 0, Math.PI * 2);
@@ -298,7 +304,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.strokeStyle = '#555';
       ctx.lineWidth = 0.7;
       ctx.stroke();
-      // Pentagon pattern
       if (scale > 0.7) {
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
         for (let i = 0; i < 5; i++) {
@@ -311,7 +316,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.restore();
     };
 
-    // ── Pass trail (dashed line) ──
     const drawPassTrail = (fromX: number, fromY: number, toX: number, toY: number, progress: number, alpha = 0.3) => {
       ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
       ctx.lineWidth = 1;
@@ -323,7 +327,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.setLineDash([]);
     };
 
-    // ── Curved pass (for through balls / crosses) ──
     const drawCurvedPass = (fromX: number, fromY: number, toX: number, toY: number, progress: number, curvature: number) => {
       const cpX = (fromX + toX) / 2;
       const cpY = (fromY + toY) / 2 + curvature;
@@ -343,17 +346,14 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.setLineDash([]);
     };
 
-    // ── Idle overlay ──
     const drawIdleOverlay = (drift: number) => {
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.fillRect(0, 0, W, H);
-      // Vignette
       const vignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, W * 0.6);
       vignette.addColorStop(0, 'rgba(0,0,0,0)');
       vignette.addColorStop(1, 'rgba(0,0,0,0.3)');
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, W, H);
-
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.font = 'bold 13px Arial';
       ctx.textAlign = 'center';
@@ -367,7 +367,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       drawBall(W / 2, H / 2 + 38, ballScale);
     };
 
-    // ── Event label bar with gradient ──
     const drawEventLabel = (t: number, label: string, subLabel?: string) => {
       if (t < 0.15) return;
       const alpha = Math.min(1, (t - 0.15) * 5);
@@ -389,12 +388,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       }
     };
 
-    // ── Spotlight effect on action area ──
     const drawSpotlight = (cx: number, cy: number, radius: number, alpha: number) => {
-      // Darken everything except spotlight
       ctx.fillStyle = `rgba(0,0,0,${alpha * 0.25})`;
       ctx.fillRect(0, 0, W, H);
-      // Clear spotlight area
       const spot = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
       spot.addColorStop(0, `rgba(255,255,200,${alpha * 0.08})`);
       spot.addColorStop(0.7, 'rgba(0,0,0,0)');
@@ -403,7 +399,27 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ctx.fillRect(0, 0, W, H);
     };
 
-    // Easing helpers
+    // Speed lines behind a fast-moving player
+    const drawSpeedLines = (x: number, y: number, dir: number, alpha: number) => {
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const lx = x - dir * (8 + i * 6);
+        const ly = y - 6 + i * 3;
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx - dir * 12, ly);
+        ctx.stroke();
+      }
+    };
+
+    // Free kick wall
+    const drawWall = (wallX: number, wallY: number, count: number, color: string, light: string) => {
+      for (let i = 0; i < count; i++) {
+        drawPlayer(wallX, wallY - (count / 2 - i) * 14, color, light, '⬛', 6);
+      }
+    };
+
     const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
     const easeIn = (t: number) => t * t * t;
@@ -431,62 +447,48 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
       let ballX = W / 2, ballY = H / 2;
 
-      // ── PENALTY: Special flow (no build-up) ──
+      // ══════════════════════════════════════════════
+      // PENALTY
+      // ══════════════════════════════════════════════
       if (type === 'penalty' || type === 'penalty_shootout') {
-        /*
-         * Phase 0: Walk-up (0 → 0.30)
-         * Phase 1: Run-up + kick (0.30 → 0.55)
-         * Phase 2: Ball flight (0.55 → 0.75)
-         * Phase 3: Aftermath (0.75 → 1.0)
-         */
         const penSpotX = isHome ? W - 38 : 38;
         const penSpotY = H / 2;
 
         if (t < 0.30) {
           const walkT = t / 0.30;
           drawAllPlayers(drift * 0.3, false, 0, 0, 15 * easeOut(walkT));
-          // Shooter walking to spot
           const startX = isHome ? W * 0.55 : W * 0.45;
           const sx = startX + (penSpotX - startX - (isHome ? 35 : -35)) * easeOut(walkT);
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, true, playerName);
-          // GK on line
           const gkX = goalX + (isHome ? -8 : 8);
           drawPlayer(gkX, goalY, gkColor, gkLight, 'GK', 9);
           drawBall(penSpotX, penSpotY - 2, 1);
           drawEventLabel(walkT, type === 'penalty_shootout' ? '🎯 DISPUTA DE PÊNALTIS' : '🎯 PÊNALTI!', playerName);
-
         } else if (t < 0.55) {
           const runT = (t - 0.30) / 0.25;
           drawAllPlayers(drift * 0.2, false, 0, 0, 20);
-          // Run-up
           const runStartX = penSpotX + (isHome ? -35 : 35);
           const sx = runStartX + (penSpotX - runStartX) * easeIn(Math.min(runT * 1.3, 1));
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, runT < 0.7, playerName);
-          // GK bouncing
           const gkX = goalX + (isHome ? -8 : 8);
           const gkBounce = Math.sin(runT * 15) * 3;
           drawPlayer(gkX, goalY + gkBounce, gkColor, gkLight, 'GK', 9);
           drawBall(penSpotX, penSpotY - 2, 1);
           drawEventLabel(1, '🏃 Corrida para a bola...', playerName);
-
         } else if (t < 0.75) {
           const shotT = (t - 0.55) / 0.20;
           drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
-          // Shooter post-kick
           drawPlayer(penSpotX + (isHome ? 5 : -5), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
-          // GK diving
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
           const gkDiveY = goalY + diveDir * 25 * easeOut(shotT);
           const gkDiveX = gkX + (isHome ? -12 : 12) * easeOut(shotT);
           drawPlayer(gkDiveX, gkDiveY, gkColor, gkLight, 'GK', 9);
-          // Ball flight
           const bx = penSpotX + (ballEndX - penSpotX) * easeOut(shotT);
           const by = penSpotY + (ballEndY - penSpotY) * easeOut(shotT);
           const arc = Math.sin(easeOut(shotT) * Math.PI) * -20;
           drawBall(bx, by + arc, 1.1, drift * 10 + shotT * 20, true);
           drawEventLabel(shotT, '⚡ CHUTOU!');
-
         } else {
           const afterT = (t - 0.75) / 0.25;
           drawAllPlayers(drift * 0.15);
@@ -495,109 +497,529 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const diveDir = ballEndY > goalY ? 1 : -1;
           drawPlayer(gkX + (isHome ? -12 : 12), goalY + diveDir * 25, gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX, ballEndY, 0.9);
-
-          if (type === 'penalty' || type === 'penalty_shootout') {
-            // Goal flash
-            const flash = Math.sin(afterT * 20) * 0.12 * Math.max(0, 1 - afterT);
-            if (flash > 0) {
-              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-              ctx.fillRect(0, 0, W, H);
-            }
-            if (afterT > 0.2) {
-              const bigAlpha = Math.min(1, (afterT - 0.2) * 3) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
-              ctx.save();
-              ctx.globalAlpha = bigAlpha;
-              ctx.font = `bold 26px Arial`;
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillStyle = '#fbbf24';
-              ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-              ctx.lineWidth = 3;
-              ctx.strokeText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
-              ctx.fillText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
-              ctx.restore();
-            }
+          const flash = Math.sin(afterT * 20) * 0.12 * Math.max(0, 1 - afterT);
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+          if (afterT > 0.2) {
+            const bigAlpha = Math.min(1, (afterT - 0.2) * 3) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
+            ctx.save();
+            ctx.globalAlpha = bigAlpha;
+            ctx.font = `bold 26px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 3;
+            ctx.strokeText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
+            ctx.fillText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
+            ctx.restore();
           }
           drawEventLabel(1, '⚽ GOL DE PÊNALTI!', playerName);
         }
 
-      } else {
+      // ══════════════════════════════════════════════
+      // COUNTER-ATTACK — Full-field sprint
+      // ══════════════════════════════════════════════
+      } else if (type === 'counter_attack') {
         /*
-         * Phase 0: Build-up passes (0 → 0.30)
-         * Phase 1: Key pass / through ball (0.30 → 0.45)
-         * Phase 2: Dribble into box (0.45 → 0.58)
+         * Phase 0: Interception / GK distribution (0 → 0.15)
+         * Phase 1: Sprint through midfield (0.15 → 0.40)
+         * Phase 2: 2v1 or 1v1 into box (0.40 → 0.58)
          * Phase 3: Shot (0.58 → 0.72)
          * Phase 4: Aftermath (0.72 → 1.0)
          */
+        const dir = isHome ? 1 : -1;
 
-        // ── Phase 0: Build-up passes ──
+        if (t < 0.15) {
+          // Interception phase
+          const intT = t / 0.15;
+          drawAllPlayers(drift * 0.6);
+          // Defender wins the ball at own half
+          const interceptX = isHome ? W * 0.22 : W * 0.78;
+          const interceptY = H * 0.4;
+          drawPlayer(interceptX, interceptY, teamColor, teamLight, '6', 9, true);
+          // Opponent who lost ball
+          drawPlayer(interceptX + dir * -15, interceptY + 8, gkColor, gkLight, '9', 7);
+          drawBall(interceptX + dir * 8 * easeOut(intT), interceptY, 1, drift * 2);
+          drawEventLabel(intT, '🔥 CONTRA-ATAQUE!', 'Roubada de bola!');
+
+        } else if (t < 0.40) {
+          // Sprint through midfield
+          const sprintT = (t - 0.15) / 0.25;
+          const startX = isHome ? W * 0.25 : W * 0.75;
+          const endX = isHome ? W * 0.65 : W * 0.35;
+          const runnerX = startX + (endX - startX) * easeOut(sprintT);
+          const runnerY = H * 0.42;
+
+          // Shift everyone dramatically
+          drawAllPlayers(drift * 0.4, true, runnerX, runnerY, 35 * easeOut(sprintT));
+
+          // Runner with ball
+          drawPlayer(runnerX, runnerY, teamColor, teamLight, '10', 10, true, playerName);
+          drawSpeedLines(runnerX, runnerY, dir, 0.3 * (1 - sprintT));
+
+          // Support runner on the wing
+          const supportX = runnerX - dir * 20;
+          const supportY = H * 0.75;
+          drawPlayer(supportX, supportY, teamColor, teamLight, '11', 8, sprintT > 0.5);
+
+          // Lone defender chasing
+          const defChaseX = runnerX - dir * 25 * (1 - sprintT * 0.3);
+          drawPlayer(defChaseX, runnerY + 10, gkColor, gkLight, '4', 7);
+
+          drawBall(runnerX + dir * 8, runnerY - 2, 1, drift * 5, true);
+          drawEventLabel(sprintT, '💨 VELOCIDADE MÁXIMA!', playerName);
+
+        } else if (t < 0.58) {
+          // Entering the box — 1v1 or pass to support
+          const boxT = (t - 0.40) / 0.18;
+          const entryX = isHome ? W * 0.65 : W * 0.35;
+          const runX = entryX + (shooterPos.x - entryX) * easeOut(boxT);
+          const runY = shooterPos.y;
+
+          drawAllPlayers(drift * 0.3, true, runX, runY, 40);
+
+          // GK coming out
+          const gkBaseX = goalX + (isHome ? -15 : 15);
+          const gkOutX = gkBaseX + (isHome ? -8 : 8) * easeOut(boxT * 0.5);
+          drawPlayer(gkOutX, goalY, gkColor, gkLight, 'GK', 9);
+
+          // Attacker
+          drawPlayer(runX, runY, teamColor, teamLight, '10', 10, true, playerName);
+          drawBall(runX + dir * 7, runY - 1, 1, drift * 6, true);
+
+          drawSpotlight(runX, runY, 80, boxT * 0.5);
+          drawEventLabel(boxT, '⚡ 1 CONTRA 1!', playerName);
+
+        } else if (t < 0.72) {
+          // Shot phase (same as standard)
+          const shotT = (t - 0.58) / 0.14;
+          drawAllPlayers(drift * 0.25, true, goalX, goalY, 40);
+          const sX = shooterPos.x + dir * 6 * easeOut(Math.min(shotT * 2, 1));
+          drawPlayer(sX, shooterPos.y, teamColor, teamLight, '10', 10, shotT < 0.25, playerName);
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          const gkDiveDir = ballEndY > goalY ? 1 : -1;
+          const gkDiveY = goalY + gkDiveDir * 25 * easeOut(shotT);
+          drawPlayer(gkBaseX, gkDiveY, gkColor, gkLight, 'GK', 9);
+          const bEase = easeInOut(shotT);
+          const bx = shooterPos.x + dir * 12 + (ballEndX - shooterPos.x) * bEase;
+          const by = shooterPos.y + (ballEndY - shooterPos.y) * bEase;
+          const arc = Math.sin(bEase * Math.PI) * -18;
+          drawBall(bx, by + arc, 1.3, drift * 10 + shotT * 25, true);
+          drawSpotlight(bx, by + arc, 60, 0.5);
+          drawEventLabel(shotT, '🔥 CHUTOU NO CONTRA-ATAQUE!', playerName);
+
+        } else {
+          // Aftermath — reuse goal celebration
+          const afterT = (t - 0.72) / 0.28;
+          drawAllPlayers(drift * 0.15);
+          drawPlayer(shooterPos.x + dir * 10, shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          drawPlayer(gkBaseX, goalY + 15, gkColor, gkLight, 'GK', 9);
+          drawBall(ballEndX, ballEndY, 0.9);
+          // Goal flash
+          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+          if (afterT > 0.12) {
+            const bigAlpha = Math.min(1, (afterT - 0.12) * 4) * (afterT < 0.75 ? 1 : Math.max(0, 1 - (afterT - 0.75) * 4));
+            ctx.save();
+            ctx.globalAlpha = bigAlpha;
+            ctx.font = `bold 26px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+            ctx.lineWidth = 4;
+            ctx.strokeText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
+            ctx.fillText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
+            if (playerName) {
+              ctx.font = `bold 14px Arial`;
+              ctx.fillStyle = 'rgba(255,255,255,0.9)';
+              ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+              ctx.lineWidth = 2;
+              ctx.strokeText(playerName, W / 2, H / 2 + 16);
+              ctx.fillText(playerName, W / 2, H / 2 + 16);
+            }
+            ctx.restore();
+          }
+          drawEventLabel(1, '⚽ GOL DE CONTRA-ATAQUE!', playerName);
+        }
+
+      // ══════════════════════════════════════════════
+      // CROSSING — Wing play + header
+      // ══════════════════════════════════════════════
+      } else if (type === 'crossing') {
+        /*
+         * Phase 0: Build-up on the wing (0 → 0.25)
+         * Phase 1: Winger runs to byline (0.25 → 0.42)
+         * Phase 2: Cross delivery (arc) (0.42 → 0.60)
+         * Phase 3: Header/volley (0.60 → 0.75)
+         * Phase 4: Aftermath (0.75 → 1.0)
+         */
+        const dir = isHome ? 1 : -1;
+        const wingY = H * 0.88; // near bottom touchline
+        const crossTarget = { x: shooterPos.x, y: shooterPos.y };
+
+        if (t < 0.25) {
+          const passT = t / 0.25;
+          const startX = isHome ? W * 0.35 : W * 0.65;
+          const wingX = isHome ? W * 0.72 : W * 0.28;
+          const runX = startX + (wingX - startX) * easeOut(passT);
+          drawAllPlayers(drift * 0.5, true, runX, wingY, 15 * easeOut(passT));
+          // Midfielder passes to winger
+          drawPlayer(startX, H * 0.6, teamColor, teamLight, '8', 8, passT < 0.3);
+          drawPlayer(runX, wingY, teamColor, teamLight, '7', 9, passT > 0.4, 'Ponta');
+          drawPassTrail(startX, H * 0.6, wingX, wingY, easeOut(passT));
+          drawBall(runX, wingY - 2, 1, drift * 3);
+          drawEventLabel(passT, '⚡ Jogada pela ponta!');
+
+        } else if (t < 0.42) {
+          const runT = (t - 0.25) / 0.17;
+          const wingStartX = isHome ? W * 0.72 : W * 0.28;
+          const bylineX = isHome ? W * 0.88 : W * 0.12;
+          const runX = wingStartX + (bylineX - wingStartX) * easeOut(runT);
+          const runY = wingY - runT * 15; // slight inside cut
+
+          drawAllPlayers(drift * 0.4, true, runX, runY, 25);
+
+          // Winger with ball
+          drawPlayer(runX, runY, teamColor, teamLight, '7', 10, true, 'Ponta');
+          drawSpeedLines(runX, runY, dir, 0.25);
+
+          // Defender on the wing trying to keep up
+          drawPlayer(runX - dir * 12, runY - 8, gkColor, gkLight, '2', 7);
+
+          // Attackers making runs into the box
+          const att1X = isHome ? W * 0.76 : W * 0.24;
+          drawPlayer(att1X, H * 0.45, teamColor, teamLight, '9', 8, runT > 0.5);
+          drawPlayer(att1X - dir * 5, H * 0.55, teamColor, teamLight, '10', 8);
+
+          const wobbleX = Math.sin(runT * 14) * 3;
+          drawBall(runX + dir * 7 + wobbleX, runY - 2, 1, drift * 5);
+          drawSpotlight(runX, runY, 70, 0.35);
+          drawEventLabel(runT, '💨 Ponta avança na linha de fundo!');
+
+        } else if (t < 0.60) {
+          // Cross delivery — ball arcs from wing to box
+          const crossT = (t - 0.42) / 0.18;
+          const crossFromX = isHome ? W * 0.88 : W * 0.12;
+          const crossFromY = wingY - 15;
+
+          drawAllPlayers(drift * 0.3, true, crossTarget.x, crossTarget.y, 30);
+
+          // Winger after cross
+          drawPlayer(crossFromX, crossFromY, teamColor, teamLight, '7', 9, crossT < 0.2, 'Ponta');
+
+          // Attacker running to meet cross
+          const headerRunX = crossTarget.x - dir * 15 * (1 - easeOut(crossT));
+          drawPlayer(headerRunX, crossTarget.y, teamColor, teamLight, '9', 10, true, playerName);
+
+          // Defenders trying to clear
+          drawPlayer(crossTarget.x + dir * -8, crossTarget.y - 12, gkColor, gkLight, '5', 7);
+          drawPlayer(crossTarget.x + dir * -5, crossTarget.y + 15, gkColor, gkLight, '3', 7);
+
+          // GK
+          const gkBaseX = goalX + (isHome ? -10 : 10);
+          drawPlayer(gkBaseX, goalY, gkColor, gkLight, 'GK', 9);
+
+          // Curved ball flight
+          drawCurvedPass(crossFromX, crossFromY, crossTarget.x, crossTarget.y, crossT, -50);
+          // Ball along arc
+          const cpX = (crossFromX + crossTarget.x) / 2;
+          const cpY = (crossFromY + crossTarget.y) / 2 - 50;
+          const bct = easeOut(crossT);
+          const bx = (1 - bct) * (1 - bct) * crossFromX + 2 * (1 - bct) * bct * cpX + bct * bct * crossTarget.x;
+          const by = (1 - bct) * (1 - bct) * crossFromY + 2 * (1 - bct) * bct * cpY + bct * bct * crossTarget.y;
+          drawBall(bx, by, 1.1, drift * 8, true);
+          drawEventLabel(crossT, '📐 CRUZAMENTO NA ÁREA!');
+
+        } else if (t < 0.75) {
+          // Header/volley
+          const headT = (t - 0.60) / 0.15;
+          drawAllPlayers(drift * 0.25, true, goalX, goalY, 30);
+
+          // Header: player jumps (y offset)
+          const jumpY = shooterPos.y - Math.sin(easeOut(headT) * Math.PI) * 18;
+          drawPlayer(shooterPos.x, jumpY, teamColor, teamLight, '9', 10, headT < 0.3, playerName);
+
+          // GK dives
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          const gkDiveDir = ballEndY > goalY ? 1 : -1;
+          const gkDiveY = goalY + gkDiveDir * 22 * easeOut(headT);
+          drawPlayer(gkBaseX, gkDiveY, gkColor, gkLight, 'GK', 9);
+
+          // Ball from head to goal
+          const bEase = easeInOut(headT);
+          const bx = shooterPos.x + (ballEndX - shooterPos.x) * bEase;
+          const by = jumpY + (ballEndY - jumpY) * bEase;
+          const arc = Math.sin(bEase * Math.PI) * -12;
+          drawBall(bx, by + arc, 1.2, drift * 12 + headT * 20, true);
+
+          drawSpotlight(bx, by + arc, 55, 0.5);
+          drawEventLabel(headT, '⬆️ CABECEIO!', playerName);
+
+        } else {
+          // Aftermath
+          const afterT = (t - 0.75) / 0.25;
+          drawAllPlayers(drift * 0.15);
+          drawPlayer(shooterPos.x, shooterPos.y, teamColor, teamLight, '9', 9, false, playerName);
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          drawPlayer(gkBaseX, goalY + 18, gkColor, gkLight, 'GK', 9);
+          drawBall(ballEndX + dir * 2, ballEndY, 0.9);
+          // Goal celebration
+          const flash = Math.sin(afterT * 22) * 0.12 * Math.max(0, 1 - afterT * 1.2);
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+          if (afterT > 0.15) {
+            const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
+            ctx.save();
+            ctx.globalAlpha = bigAlpha;
+            ctx.font = `bold 24px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+            ctx.lineWidth = 4;
+            ctx.strokeText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
+            ctx.fillText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
+            if (playerName) {
+              ctx.font = `bold 14px Arial`;
+              ctx.fillStyle = 'rgba(255,255,255,0.9)';
+              ctx.strokeText(playerName, W / 2, H / 2 + 16);
+              ctx.fillText(playerName, W / 2, H / 2 + 16);
+            }
+            ctx.restore();
+          }
+          drawEventLabel(1, '⚽ GOL DE CRUZAMENTO!', playerName);
+        }
+
+      // ══════════════════════════════════════════════
+      // FREE KICK — Set piece with wall
+      // ══════════════════════════════════════════════
+      } else if (type === 'free_kick') {
+        /*
+         * Phase 0: Players positioning / wall forming (0 → 0.25)
+         * Phase 1: Run-up and kick (0.25 → 0.45)
+         * Phase 2: Ball curves over/around wall (0.45 → 0.65)
+         * Phase 3: Impact (0.65 → 0.78)
+         * Phase 4: Aftermath (0.78 → 1.0)
+         */
+        const dir = isHome ? 1 : -1;
+        const fkX = isHome ? W * 0.68 : W * 0.32;
+        const fkY = H * 0.5;
+        const wallX = isHome ? W * 0.78 : W * 0.22;
+        const wallY = H * 0.5;
+
+        if (t < 0.25) {
+          const setupT = t / 0.25;
+          drawAllPlayers(drift * 0.3, false, 0, 0, 10);
+
+          // Wall forming
+          const wallAlpha = easeOut(setupT);
+          for (let i = 0; i < 4; i++) {
+            const wy = wallY - 21 + i * 14;
+            const slideX = wallX + dir * 30 * (1 - wallAlpha);
+            drawPlayer(slideX, wy, gkColor, gkLight, String(2 + i), 7);
+          }
+
+          // Kicker approaching
+          const approachX = fkX - dir * 25 * (1 - easeOut(setupT));
+          drawPlayer(approachX, fkY + 5, teamColor, teamLight, '10', 9, setupT > 0.5, playerName);
+
+          // Second kicker (decoy)
+          drawPlayer(fkX - dir * 12, fkY - 18, teamColor, teamLight, '7', 8);
+
+          // GK positioning
+          const gkBaseX = goalX + (isHome ? -10 : 10);
+          drawPlayer(gkBaseX, goalY - 5, gkColor, gkLight, 'GK', 9);
+
+          drawBall(fkX, fkY, 1.1);
+          drawEventLabel(setupT, '🎯 FALTA PERIGOSA!', `${playerName || 'Cobrador'} se prepara`);
+
+        } else if (t < 0.45) {
+          const runT = (t - 0.25) / 0.20;
+          drawAllPlayers(drift * 0.2, false, 0, 0, 15);
+
+          // Wall standing
+          for (let i = 0; i < 4; i++) {
+            const wy = wallY - 21 + i * 14;
+            // Wall jumps at kick
+            const jumpOffset = runT > 0.8 ? -Math.sin((runT - 0.8) * 25) * 5 : 0;
+            drawPlayer(wallX, wy + jumpOffset, gkColor, gkLight, String(2 + i), 7);
+          }
+
+          // Kicker run-up
+          const kickStartX = fkX - dir * 25;
+          const kx = kickStartX + (fkX - kickStartX) * easeIn(Math.min(runT * 1.2, 1));
+          drawPlayer(kx, fkY + 3, teamColor, teamLight, '10', 10, runT < 0.8, playerName);
+
+          // GK
+          const gkBaseX = goalX + (isHome ? -10 : 10);
+          const gkBounce = Math.sin(runT * 12) * 2;
+          drawPlayer(gkBaseX, goalY + gkBounce, gkColor, gkLight, 'GK', 9);
+
+          drawBall(fkX, fkY, 1);
+          drawEventLabel(runT, '🏃 Pega distância...', playerName);
+
+        } else if (t < 0.65) {
+          // Ball curving over wall
+          const curveT = (t - 0.45) / 0.20;
+          drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+
+          // Wall (some ducking)
+          for (let i = 0; i < 4; i++) {
+            const wy = wallY - 21 + i * 14;
+            const duckY = curveT > 0.2 ? Math.sin(curveT * 8) * 3 : 0;
+            drawPlayer(wallX, wy + duckY, gkColor, gkLight, String(2 + i), 7);
+          }
+
+          // Kicker post-kick
+          drawPlayer(fkX + dir * 5, fkY + 2, teamColor, teamLight, '10', 9, false, playerName);
+
+          // GK starts diving
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          const gkDiveDir = ballEndY > goalY ? 1 : -1;
+          const gkDiveY = goalY + gkDiveDir * 20 * easeOut(curveT);
+          const gkDiveX = gkBaseX + (isHome ? -8 : 8) * easeOut(curveT * 0.7);
+          drawPlayer(gkDiveX, gkDiveY, gkColor, gkLight, 'GK', 9);
+
+          // Ball trajectory — big arc over the wall
+          const bEase = easeOut(curveT);
+          const midX = (fkX + ballEndX) / 2;
+          const midY = fkY - 65; // High arc
+          const bx = (1 - bEase) * (1 - bEase) * fkX + 2 * (1 - bEase) * bEase * midX + bEase * bEase * ballEndX;
+          const by = (1 - bEase) * (1 - bEase) * fkY + 2 * (1 - bEase) * bEase * midY + bEase * bEase * ballEndY;
+
+          // Curved trail
+          drawCurvedPass(fkX, fkY, ballEndX, ballEndY, curveT, -65);
+          drawBall(bx, by, 1.2, drift * 15 + curveT * 30, true);
+
+          drawSpotlight(bx, by, 60, 0.5);
+          drawEventLabel(curveT, '🌀 BOLA CURVA POR CIMA DA BARREIRA!');
+
+        } else if (t < 0.78) {
+          // Impact
+          const impT = (t - 0.65) / 0.13;
+          drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+
+          // Wall scattering
+          for (let i = 0; i < 4; i++) {
+            const wy = wallY - 21 + i * 14;
+            const scatterX = wallX + dir * -15 * easeOut(impT);
+            drawPlayer(scatterX, wy + (i - 1.5) * 5 * easeOut(impT), gkColor, gkLight, String(2 + i), 7);
+          }
+
+          drawPlayer(fkX + dir * 8, fkY, teamColor, teamLight, '10', 9, false, playerName);
+
+          // GK final dive
+          const gkBaseX = goalX + (isHome ? -8 : 8);
+          const gkDiveDir = ballEndY > goalY ? 1 : -1;
+          drawPlayer(gkBaseX + (isHome ? -12 : 12) * easeOut(impT), goalY + gkDiveDir * 28 * easeOut(impT), gkColor, gkLight, 'GK', 9);
+
+          drawBall(ballEndX, ballEndY, 1.1, drift * 5);
+
+          // Impact flash
+          if (impT < 0.4) {
+            ctx.fillStyle = `rgba(255,255,200,${0.2 * (1 - impT / 0.4)})`;
+            ctx.beginPath();
+            ctx.arc(ballEndX, ballEndY, 25, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          drawEventLabel(impT, '💥 BATEU FORTE!', playerName);
+
+        } else {
+          // Aftermath
+          const afterT = (t - 0.78) / 0.22;
+          drawAllPlayers(drift * 0.15);
+          drawPlayer(fkX + dir * 10, fkY, teamColor, teamLight, '10', 9, false, playerName);
+          const gkBaseX = goalX + (isHome ? -20 : 20);
+          drawPlayer(gkBaseX, goalY + 20, gkColor, gkLight, 'GK', 9);
+          drawBall(ballEndX + dir * 3, ballEndY, 0.9);
+
+          // Goal flash
+          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+          if (afterT > 0.15) {
+            const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
+            ctx.save();
+            ctx.globalAlpha = bigAlpha;
+            ctx.font = `bold 24px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+            ctx.lineWidth = 4;
+            ctx.strokeText('GOL DE FALTA!', W / 2, H / 2 - 12);
+            ctx.fillText('GOL DE FALTA!', W / 2, H / 2 - 12);
+            if (playerName) {
+              ctx.font = `bold 14px Arial`;
+              ctx.fillStyle = 'rgba(255,255,255,0.9)';
+              ctx.strokeText(playerName, W / 2, H / 2 + 16);
+              ctx.fillText(playerName, W / 2, H / 2 + 16);
+            }
+            ctx.restore();
+          }
+          drawEventLabel(1, '⚽ GOL DE FALTA MAGISTRAL!', playerName);
+        }
+
+      // ══════════════════════════════════════════════
+      // STANDARD FLOW (goal, save, woodwork, corner, chance)
+      // ══════════════════════════════════════════════
+      } else {
         if (t < 0.30) {
           const passT = t / 0.30;
           const numPasses = passPoints.length;
           const passIdx = Math.min(Math.floor(passT * numPasses), numPasses - 1);
           const localT = (passT * numPasses) - passIdx;
-
-          const from = passIdx === 0 
-            ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 } 
+          const from = passIdx === 0
+            ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 }
             : passPoints[passIdx - 1];
           const to = passPoints[passIdx];
           ballX = from.x + (to.x - from.x) * easeOut(localT);
           ballY = from.y + (to.y - from.y) * easeOut(localT);
-
           const shiftAmt = passT * 20;
           drawAllPlayers(drift * 0.5, true, ballX, ballY, shiftAmt);
-
-          // Draw completed pass trails
           for (let i = 0; i < passIdx; i++) {
             const pf = i === 0 ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 } : passPoints[i - 1];
             drawPassTrail(pf.x, pf.y, passPoints[i].x, passPoints[i].y, 1, 0.12);
           }
           drawPassTrail(from.x, from.y, to.x, to.y, easeOut(localT), 0.3);
-
-          // Passer
           drawPlayer(from.x, from.y, teamColor, teamLight, String(4 + passIdx), 8);
-          // Receiver running
           if (localT > 0.5) {
             const recvX = to.x - (to.x - from.x) * (1 - localT) * 0.3;
             drawPlayer(recvX, to.y, teamColor, teamLight, String(5 + passIdx), 8, true);
           }
-
           drawBall(ballX, ballY, 1, drift * 3);
           drawEventLabel(passT, type === 'corner' ? '📐 Escanteio' : '⚡ Construção de jogada', playerName);
 
-        // ── Phase 1: Key pass / through ball to attacker ──
         } else if (t < 0.45) {
           const keyT = (t - 0.30) / 0.15;
           const lastPass = passPoints[passPoints.length - 1];
-          // Key pass goes to edge of box
-          const keyTarget = { 
-            x: isHome ? W * 0.72 : W * 0.28, 
-            y: shooterPos.y 
-          };
+          const keyTarget = { x: isHome ? W * 0.72 : W * 0.28, y: shooterPos.y };
           ballX = lastPass.x + (keyTarget.x - lastPass.x) * easeOut(keyT);
           ballY = lastPass.y + (keyTarget.y - lastPass.y) * easeOut(keyT);
-
           drawAllPlayers(drift * 0.4, true, ballX, ballY, 25);
-
-          // Midfielder making key pass
           drawPlayer(lastPass.x, lastPass.y, teamColor, teamLight, '8', 8, keyT < 0.3);
-          // Attacker making the run
           const runnerX = (isHome ? W * 0.60 : W * 0.40) + (keyTarget.x - (isHome ? W * 0.60 : W * 0.40)) * easeOut(keyT);
           drawPlayer(runnerX, keyTarget.y, teamColor, teamLight, '10', 9, true, playerName);
-
-          // Curved pass trail
           drawCurvedPass(lastPass.x, lastPass.y, keyTarget.x, keyTarget.y, keyT, -30);
-
-          // Defender chasing
           const defStartX = isHome ? W * 0.75 : W * 0.25;
           const defX = defStartX + (keyTarget.x - defStartX) * easeOut(keyT) * 0.6;
           drawPlayer(defX, keyTarget.y + 15, gkColor, gkLight, '4', 7);
-
           drawBall(ballX, ballY, 1, drift * 4, true);
           drawSpotlight(ballX, ballY, 80, keyT * 0.5);
           drawEventLabel(keyT, '🎯 Passe decisivo!', playerName);
 
-        // ── Phase 2: Dribble into the box ──
         } else if (t < 0.58) {
           const drT = (t - 0.45) / 0.13;
           const entryX = isHome ? W * 0.72 : W * 0.28;
@@ -605,62 +1027,42 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const runY = shooterPos.y;
           ballX = runX + (isHome ? 8 : -8);
           ballY = runY;
-
           drawAllPlayers(drift * 0.35, true, ballX, ballY, 30);
-
-          // Two defenders converging
           const def1X = shooterPos.x + (isHome ? 18 : -18);
           const def1Y = shooterPos.y - 20 + drT * 10;
           drawPlayer(def1X, def1Y, gkColor, gkLight, '3', 7);
           const def2X = shooterPos.x + (isHome ? 22 : -22);
           const def2Y = shooterPos.y + 18 - drT * 8;
           drawPlayer(def2X, def2Y, gkColor, gkLight, '5', 7);
-
-          // Support runner
           const supportX = runX + (isHome ? -20 : 20);
           const supportY = runY + 25;
           drawPlayer(supportX, supportY, teamColor, teamLight, '11', 7);
-
-          // Dribbling player
           drawPlayer(runX, runY, teamColor, teamLight, '10', 10, true, playerName);
-
-          // Wobbling ball at feet
           const wobbleX = Math.sin(drT * 16) * 3;
           const wobbleY = Math.cos(drT * 12) * 1.5;
           drawBall(ballX + wobbleX, ballY + wobbleY - 2, 1, drift * 6);
-
           drawSpotlight(runX, runY, 70, 0.4);
           drawEventLabel(drT, '💨 Entrando na área!', playerName);
 
-        // ── Phase 3: Shot ──
         } else if (t < 0.72) {
           const shotT = (t - 0.58) / 0.14;
-
           drawAllPlayers(drift * 0.25, true, goalX, goalY, 30);
-
-          // Shooter kicks — body leans forward
           const sX = shooterPos.x + (isHome ? 6 : -6) * easeOut(Math.min(shotT * 2, 1));
           drawPlayer(sX, shooterPos.y, teamColor, teamLight, '10', 10, shotT < 0.25, playerName);
-
-          // GK reacts and dives
           const gkBaseX = goalX + (isHome ? -8 : 8);
           const gkDiveDir = ballEndY > goalY ? 1 : -1;
           const gkDiveY = type === 'save'
             ? goalY + gkDiveDir * 28 * easeOut(shotT)
             : goalY + (ballEndY - goalY) * 0.35 * easeOut(shotT);
-          const gkDiveX = type === 'save' 
-            ? gkBaseX + (isHome ? -10 : 10) * easeOut(shotT) 
+          const gkDiveX = type === 'save'
+            ? gkBaseX + (isHome ? -10 : 10) * easeOut(shotT)
             : gkBaseX;
           drawPlayer(gkDiveX, gkDiveY, gkColor, gkLight, 'GK', 9);
-
-          // Ball flying — REALISTIC arc from inside box
           const bEase = easeInOut(shotT);
           const bx = shooterPos.x + (isHome ? 12 : -12) + (ballEndX - shooterPos.x) * bEase;
           const by = shooterPos.y + (ballEndY - shooterPos.y) * bEase;
           const arc = Math.sin(bEase * Math.PI) * -22;
           drawBall(bx, by + arc, 1.3, drift * 10 + shotT * 25, true);
-
-          // Speed lines
           if (shotT > 0.1 && shotT < 0.85) {
             const lineAlpha = 0.35 * (1 - shotT);
             ctx.strokeStyle = `rgba(255,255,255,${lineAlpha})`;
@@ -674,8 +1076,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
               ctx.stroke();
             }
           }
-
-          // Impact flash near goal
           if (shotT > 0.8) {
             const impactAlpha = (shotT - 0.8) * 3;
             ctx.fillStyle = `rgba(255,255,200,${impactAlpha * 0.15})`;
@@ -683,7 +1083,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.arc(ballEndX, ballEndY, 20, 0, Math.PI * 2);
             ctx.fill();
           }
-
           drawSpotlight(bx, by + arc, 60, 0.5);
           const shotLabels: Record<string, string> = {
             goal: '🔥 CHUTOU!', woodwork: '💥 FINALIZAÇÃO!',
@@ -691,28 +1090,20 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           };
           drawEventLabel(shotT, shotLabels[type] || '⚡ CHUTE!', playerName);
 
-        // ── Phase 4: Aftermath / celebration ──
         } else {
           const afterT = (t - 0.72) / 0.28;
-
           drawAllPlayers(drift * 0.15);
-
-          // Shooter final position
           drawPlayer(shooterPos.x + (isHome ? 10 : -10), shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
-
-          // GK final
           const gkBaseX = goalX + (isHome ? -8 : 8);
           const gkDiveDir = ballEndY > goalY ? 1 : -1;
           const gkFinalY = type === 'save' ? goalY + gkDiveDir * 28 : goalY + (ballEndY - goalY) * 0.35;
           const gkFinalX = type === 'save' ? gkBaseX + (isHome ? -10 : 10) : gkBaseX;
           drawPlayer(gkFinalX, gkFinalY, gkColor, gkLight, 'GK', 9);
 
-          // ── Type-specific aftermath ──
           if (type === 'woodwork') {
             const bounceX = ballEndX + (isHome ? -35 : 35) * easeOut(afterT);
             const bounceY = ballEndY + 25 * easeOut(afterT);
             drawBall(bounceX, bounceY, 1, drift * 2);
-            // Post shake
             const shake = Math.sin(afterT * 45) * 3.5 * Math.max(0, 1 - afterT * 2.5);
             ctx.save();
             ctx.translate(shake, 0);
@@ -721,27 +1112,21 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.lineWidth = 2.5;
             ctx.strokeRect(netX, goalY - goalH / 2, goalW, goalH);
             ctx.restore();
-            // Red flash
             if (afterT < 0.3) {
               ctx.fillStyle = `rgba(255,50,50,${0.1 * (1 - afterT / 0.3)})`;
               ctx.fillRect(0, 0, W, H);
             }
             drawEventLabel(1, '😤 NA TRAVE!', playerName);
-
           } else if (type === 'save') {
             const deflX = ballEndX + (isHome ? -30 : 30) * easeOut(afterT);
             drawBall(deflX, ballEndY + 12 * afterT, 1);
-            // Green glow for save
             if (afterT < 0.4) {
               ctx.fillStyle = `rgba(34, 197, 94, ${0.12 * (1 - afterT / 0.4)})`;
               ctx.fillRect(0, 0, W, H);
             }
             drawEventLabel(1, '🧤 GRANDE DEFESA!', playerName);
-
           } else if (type === 'goal') {
-            // Ball in net
             drawBall(ballEndX + (isHome ? 3 : -3), ballEndY, 0.9);
-            // Net bulge
             ctx.strokeStyle = 'rgba(255,255,255,0.5)';
             ctx.lineWidth = 1;
             const netX = isHome ? W - goalW : goalW;
@@ -749,15 +1134,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.moveTo(netX, ballEndY - 10);
             ctx.quadraticCurveTo(netX + (isHome ? 7 : -7) * (1 - afterT * 0.5), ballEndY, netX, ballEndY + 10);
             ctx.stroke();
-
-            // Golden goal flash
             const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
             if (flash > 0) {
               ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
               ctx.fillRect(0, 0, W, H);
             }
-
-            // Celebration: teammates run to scorer
             if (afterT > 0.25) {
               const celebT = (afterT - 0.25) / 0.75;
               const positions = isHome ? HOME_POSITIONS : AWAY_POSITIONS;
@@ -767,8 +1148,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
                 drawPlayer(cx, cy, teamColor, teamLight, positions[i].label, 7);
               }
             }
-
-            // Big GOOOL text
             if (afterT > 0.12) {
               const bigAlpha = Math.min(1, (afterT - 0.12) * 4) * (afterT < 0.75 ? 1 : Math.max(0, 1 - (afterT - 0.75) * 4));
               const scale = 1 + easeOut(Math.min(afterT * 2, 1)) * 0.25;
@@ -793,14 +1172,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
               ctx.restore();
             }
             drawEventLabel(1, '⚽ GOOOOOL!!!', playerName);
-
           } else if (type === 'chance') {
-            // Ball going wide
             const wideX = ballEndX + (isHome ? 15 : -15) * easeOut(afterT);
             const wideY = ballEndY + (ballEndY > goalY ? 20 : -20) * easeOut(afterT);
             drawBall(wideX, wideY, 0.9, drift);
             drawEventLabel(1, '😰 Quase! Por pouco!', playerName);
-
           } else {
             drawBall(ballEndX, ballEndY, 0.9);
             drawEventLabel(1, type === 'corner' ? '📐 Escanteio perigoso!' : '⚽ Lance!', playerName);
@@ -839,11 +1215,15 @@ export function isHighlightEvent(type: string): boolean {
     'foot_goal', 'header_goal', 'penalty_goal', 'penalty_miss',
     'great_save', 'woodwork', 'corner_danger',
     'long_shot_miss', 'header_miss', 'dangerous_foul',
+    'counter_attack_goal', 'crossing_goal', 'free_kick_goal',
   ].includes(type);
 }
 
 /** Map event type to highlight canvas type */
 export function getHighlightType(eventType: string): HighlightType {
+  if (eventType === 'counter_attack_goal') return 'counter_attack';
+  if (eventType === 'crossing_goal') return 'crossing';
+  if (eventType === 'free_kick_goal') return 'free_kick';
   if (['foot_goal', 'header_goal'].includes(eventType)) return 'goal';
   if (['penalty_goal', 'penalty_miss'].includes(eventType)) return 'penalty';
   if (eventType === 'woodwork') return 'woodwork';
