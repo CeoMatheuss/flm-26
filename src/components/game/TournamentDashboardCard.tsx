@@ -114,271 +114,75 @@ export function TournamentDashboardCard({ onExpand }: Props) {
 
   return (
     <Card className="game-card-premium">
-      <CardHeader className="section-header pb-1 px-3 pt-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Trophy className="h-3.5 w-3.5 text-primary" /> Campeonatos Ativos
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            {tournaments.length > 1 && (
-              <div className="flex gap-0.5">
-                {tournaments.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedId(t.id)}
-                    className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
-                      t.id === selectedId
-                        ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm shadow-primary/10'
-                        : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                    }`}
-                  >
-                    {t.name.slice(0, 10)}
-                  </button>
-                ))}
-              </div>
-            )}
-            {onExpand && selected && (
-              <Button 
-                size="sm" 
-                variant="default" 
-                className="h-7 px-3 text-[10px] font-bold gap-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  console.log('Ver mais clicked, tournament:', selected.id);
-                  onExpand(selected.id);
-                }}
-              >
-                Ver mais
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-3 pb-3 space-y-2">
+      <CardContent className="px-3 py-2.5">
         {selected && (
-          <>
-            {/* Tournament header */}
+          <div className="space-y-2">
+            {/* Header row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold">{selected.name}</span>
+                <Trophy className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-bold truncate">{selected.name}</span>
                 <Badge variant="outline" className="text-[7px] text-primary border-primary/30">
                   {formatLabels[selected.format] || selected.format}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
-                <span>{selected.country === 'Mundial' ? '🌍' : '🏴'} {selected.country}</span>
-                <span>🥇 R$ {selected.prize_1st.toLocaleString('pt-BR')}</span>
-              </div>
-            </div>
-
-            {/* Quick stats */}
-            <div className="grid grid-cols-4 gap-1">
-              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
-                <p className="text-[7px] text-muted-foreground">Times</p>
-                <p className="text-[11px] font-bold">{teams.length}</p>
-              </div>
-              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
-                <p className="text-[7px] text-muted-foreground">Jogos</p>
-                <p className="text-[11px] font-bold">{totalPlayed}/{matches.length}</p>
-              </div>
-              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
-                <p className="text-[7px] text-muted-foreground">Gols</p>
-                <p className="text-[11px] font-bold text-primary">{totalGoals}</p>
-              </div>
-              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
-                <p className="text-[7px] text-muted-foreground">Líder</p>
-                <p className="text-[11px] font-bold truncate">{topScorer?.club_name?.slice(0, 8) || '-'}</p>
-              </div>
-            </div>
-
-            {/* Toggle */}
-            <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
-              {[
-                { key: 'standings' as const, label: 'Classificação', icon: Users },
-                { key: 'calendar' as const, label: 'Calendário', icon: Calendar },
-                { key: 'stats' as const, label: 'Destaques', icon: TrendingUp },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setView(tab.key)}
-                  className={`flex-1 h-6 rounded-md text-[8px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                    view === tab.key ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <tab.icon className="h-2.5 w-2.5" /> {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {view === 'standings' ? (
-              <ScrollArea className="max-h-[300px]">
-                {hasGroups ? (
-                  <div className="space-y-2">
-                    {groupLetters.map(letter => {
-                      const groupTeams = teams
-                        .filter(t => t.group_letter === letter)
-                        .sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
-                      return (
-                        <div key={letter} className="bg-accent/20 rounded-lg p-2">
-                          <p className="text-[9px] font-bold text-primary mb-1 flex items-center gap-1">
-                            <Target className="h-2.5 w-2.5" /> Grupo {letter}
-                          </p>
-                          <table className="w-full text-[8px]">
-                            <thead>
-                              <tr className="text-muted-foreground border-b border-border/20">
-                                <th className="text-left w-3 pb-0.5">#</th>
-                                <th className="text-left pb-0.5">Time</th>
-                                <th className="text-center w-4 pb-0.5">J</th>
-                                <th className="text-center w-4 pb-0.5">V</th>
-                                <th className="text-center w-4 pb-0.5">E</th>
-                                <th className="text-center w-4 pb-0.5">D</th>
-                                <th className="text-center w-5 pb-0.5">SG</th>
-                                <th className="text-center w-5 pb-0.5 font-bold">P</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {groupTeams.map((t, i) => (
-                                <tr key={t.id} className={`${i < 2 ? 'bg-primary/5' : ''}`}>
-                                  <td className="py-0.5 font-bold">{i + 1}</td>
-                                  <td className="py-0.5 truncate max-w-[65px]">
-                                    <span className="mr-0.5">{t.club_logo}</span>
-                                    <span className={i < 2 ? 'text-primary font-semibold' : ''}>{t.club_name}</span>
-                                  </td>
-                                  <td className="text-center py-0.5">{t.played}</td>
-                                  <td className="text-center py-0.5 text-success">{t.wins}</td>
-                                  <td className="text-center py-0.5">{t.draws}</td>
-                                  <td className="text-center py-0.5 text-destructive">{t.losses}</td>
-                                  <td className="text-center py-0.5">{t.goals_for - t.goals_against}</td>
-                                  <td className="text-center py-0.5 font-bold text-primary">{t.points}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-0.5">
-                    {sortedTeams.map((t, i) => (
-                      <div key={t.id} className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg text-[9px] transition-colors ${i < 3 ? 'bg-primary/8 border border-primary/10' : 'hover:bg-accent/30'} ${t.eliminated ? 'opacity-40 line-through' : ''}`}>
-                        <span className={`w-4 text-center font-bold ${i === 0 ? 'text-primary' : i < 3 ? 'text-primary/60' : 'text-muted-foreground'}`}>
-                          {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                        </span>
-                        <span>{t.club_logo}</span>
-                        <span className="flex-1 font-semibold truncate">{t.club_name}</span>
-                        <span className="text-[7px] text-muted-foreground">{t.played}J {t.wins}V</span>
-                        <span className="font-bold w-5 text-center text-primary">{t.points}</span>
-                      </div>
+              <div className="flex items-center gap-1">
+                {tournaments.length > 1 && (
+                  <div className="flex gap-0.5 mr-1">
+                    {tournaments.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedId(t.id)}
+                        className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
+                          t.id === selectedId
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                        }`}
+                      >
+                        {t.name.slice(0, 8)}
+                      </button>
                     ))}
                   </div>
                 )}
-              </ScrollArea>
-            ) : view === 'calendar' ? (
-              <ScrollArea className="max-h-[300px]">
-                <div className="space-y-2">
-                  {recent.length > 0 && (
-                    <div>
-                      <p className="text-[8px] font-bold text-muted-foreground mb-1 uppercase flex items-center gap-1">
-                        <Swords className="h-2.5 w-2.5" /> Últimos Resultados
-                      </p>
-                      <div className="space-y-0.5">
-                        {recent.map(m => (
-                          <div key={m.id} className="flex items-center justify-between p-1.5 rounded-lg bg-success/5 border border-success/10 text-[8px]">
-                            <span className="truncate max-w-[60px] font-medium">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
-                            <span className="font-bold px-2 text-[10px] bg-accent/50 rounded px-1.5 py-0.5">{m.home_goals} - {m.away_goals}</span>
-                            <span className="truncate max-w-[60px] text-right font-medium">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {onExpand && (
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    className="h-7 px-3 text-[10px] font-bold"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onExpand(selected.id);
+                    }}
+                  >
+                    Ver mais
+                  </Button>
+                )}
+              </div>
+            </div>
 
-                  {upcoming.length > 0 && (
-                    <div>
-                      <p className="text-[8px] font-bold text-muted-foreground mb-1 uppercase flex items-center gap-1">
-                        <Calendar className="h-2.5 w-2.5" /> Próximos Jogos
-                      </p>
-                      <div className="space-y-0.5">
-                        {upcoming.map(m => (
-                          <div key={m.id} className="flex items-center justify-between p-1.5 rounded-lg border border-border/20 text-[8px] hover:bg-accent/20 transition-colors">
-                            <div className="flex items-center gap-0.5 flex-1 min-w-0">
-                              <span className="truncate max-w-[55px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
-                              <span className="text-muted-foreground shrink-0 text-primary font-bold">vs</span>
-                              <span className="truncate max-w-[55px]">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
-                            </div>
-                            <div className="text-[7px] text-muted-foreground shrink-0 ml-1">
-                              {m.scheduled_at ? (
-                                <>
-                                  {new Date(m.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                  {' '}
-                                  {new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                </>
-                              ) : (
-                                <span>{m.stage || `R${m.round}`}</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {upcoming.length === 0 && recent.length === 0 && (
-                    <p className="text-[9px] text-muted-foreground text-center py-3">Nenhum jogo gerado ainda.</p>
-                  )}
-                </div>
-              </ScrollArea>
-            ) : (
-              /* Stats view */
-              <ScrollArea className="max-h-[300px]">
-                <div className="space-y-2">
-                  {/* Top 3 */}
-                  {sortedTeams.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                        <Medal className="h-2.5 w-2.5" /> Pódio Atual
-                      </p>
-                      {sortedTeams.slice(0, 3).map((t, i) => (
-                        <div key={t.id} className={`flex items-center gap-2 p-2 rounded-lg border ${i === 0 ? 'border-primary/30 bg-primary/8' : 'border-border/20 bg-accent/20'}`}>
-                          <span className="text-sm">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
-                          <span className="text-[10px]">{t.club_logo}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-[10px] font-bold truncate ${i === 0 ? 'text-primary' : ''}`}>{t.club_name}</p>
-                            <p className="text-[8px] text-muted-foreground">{t.wins}V {t.draws}E {t.losses}D • {t.goals_for}:{t.goals_against}</p>
-                          </div>
-                          <span className={`text-xs font-black ${i === 0 ? 'text-primary' : ''}`}>{t.points}pts</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Attack / Defense stats */}
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div className="bg-accent/30 rounded-lg p-2">
-                      <p className="text-[7px] text-muted-foreground uppercase mb-1">⚽ Melhor Ataque</p>
-                      {[...teams].sort((a, b) => b.goals_for - a.goals_for).slice(0, 3).map((t, i) => (
-                        <div key={t.id} className="flex items-center justify-between text-[8px] py-0.5">
-                          <span className="truncate max-w-[60px]">{t.club_logo} {t.club_name}</span>
-                          <span className="font-bold text-success">{t.goals_for}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="bg-accent/30 rounded-lg p-2">
-                      <p className="text-[7px] text-muted-foreground uppercase mb-1">🛡️ Melhor Defesa</p>
-                      {[...teams].sort((a, b) => a.goals_against - b.goals_against).slice(0, 3).map((t, i) => (
-                        <div key={t.id} className="flex items-center justify-between text-[8px] py-0.5">
-                          <span className="truncate max-w-[60px]">{t.club_logo} {t.club_name}</span>
-                          <span className="font-bold text-primary">{t.goals_against}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-            )}
-          </>
+            {/* Compact stats + top 3 */}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 text-[8px]">
+                <span className="bg-accent/40 rounded px-1.5 py-0.5">
+                  <Users className="h-2.5 w-2.5 inline mr-0.5" />{teams.length}
+                </span>
+                <span className="bg-accent/40 rounded px-1.5 py-0.5">
+                  ⚽ {totalPlayed}/{matches.length}
+                </span>
+                <span className="bg-accent/40 rounded px-1.5 py-0.5">
+                  🎯 {totalGoals} gols
+                </span>
+              </div>
+              <div className="ml-auto flex items-center gap-1 text-[8px]">
+                {sortedTeams.slice(0, 3).map((t, i) => (
+                  <span key={t.id} className={`truncate max-w-[50px] ${i === 0 ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}{t.club_name.slice(0, 6)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
