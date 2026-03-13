@@ -169,11 +169,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
     if (data) setLoanListings(data);
   }, []);
 
+  // Resolve pending 6h decisions on load
+  const resolveDecisions = useCallback(async () => {
+    await supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } });
+  }, []);
+
   useEffect(() => {
-    loadListings();
-    loadMyOffers();
-    loadIncomingOffers();
-    loadLoanListings();
+    resolveDecisions().then(() => {
+      loadListings();
+      loadMyOffers();
+      loadIncomingOffers();
+      loadLoanListings();
+    });
 
     const ch1 = supabase.channel('transfer-listings')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_listings' }, () => { loadListings(); loadIncomingOffers(); })
@@ -188,7 +195,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
       .subscribe();
 
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); };
-  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings]);
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, resolveDecisions]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
