@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye } from 'lucide-react';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
 import { toast } from 'sonner';
@@ -49,14 +50,28 @@ interface TransferOffer {
   created_at: string;
 }
 
-const posColors: Record<string, string> = {
-  GOL: 'bg-primary/15 text-primary',
-  ZAG: 'bg-blue-500/15 text-blue-400',
-  LAT: 'bg-cyan-500/15 text-cyan-400',
-  VOL: 'bg-emerald-500/15 text-emerald-400',
-  MEI: 'bg-purple-500/15 text-purple-400',
-  ATA: 'bg-red-500/15 text-red-400',
+const posColors: Record<string, { bg: string; text: string; border: string }> = {
+  GOL: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' },
+  ZAG: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
+  LAT: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  VOL: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  MEI: { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' },
+  ATA: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/30' },
 };
+
+function getOvrColor(ovr: number) {
+  if (ovr >= 85) return 'text-amber-400';
+  if (ovr >= 75) return 'text-emerald-400';
+  if (ovr >= 65) return 'text-blue-400';
+  return 'text-muted-foreground';
+}
+
+function getOvrBg(ovr: number) {
+  if (ovr >= 85) return 'from-amber-500/20 to-amber-500/5';
+  if (ovr >= 75) return 'from-emerald-500/20 to-emerald-500/5';
+  if (ovr >= 65) return 'from-blue-500/20 to-blue-500/5';
+  return 'from-muted/30 to-muted/10';
+}
 
 interface Props {
   userId: string;
@@ -81,6 +96,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const [loading, setLoading] = useState(false);
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
+  const [posFilter, setPosFilter] = useState('all');
+  const [searchText, setSearchText] = useState('');
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
@@ -113,7 +130,6 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   }, [userId]);
 
   const loadIncomingOffers = useCallback(async () => {
-    // Get my listing IDs first
     const { data: myListings } = await supabase
       .from('transfer_listings')
       .select('id')
@@ -167,22 +183,14 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const listPlayer = async (player: Player) => {
     setLoading(true);
     const askingPrice = getPlayerValue(player);
-
     const { data: session } = await supabase.auth.getSession();
     const token = session?.session?.access_token;
     if (!token) { toast.error('Sessão expirada'); setLoading(false); return; }
 
     const res = await supabase.functions.invoke('process-transfer', {
       body: {
-        action: 'list',
-        playerData: player,
-        playerName: player.name,
-        playerPosition: player.position,
-        playerOverall: player.overall,
-        playerAge: player.age,
-        askingPrice,
-        clubName,
-        sellerShield: clubShield || null,
+        action: 'list', playerData: player, playerName: player.name, playerPosition: player.position,
+        playerOverall: player.overall, playerAge: player.age, askingPrice, clubName, sellerShield: clubShield || null,
       },
     });
 
@@ -199,15 +207,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
 
   const delistPlayer = async (listingId: string) => {
     setLoading(true);
-    const res = await supabase.functions.invoke('process-transfer', {
-      body: { action: 'delist', listingId },
-    });
-    if (res.error || res.data?.error) {
-      toast.error(res.data?.error || 'Erro ao retirar jogador');
-    } else {
-      toast.success('Jogador retirado do mercado.');
-      loadListings();
-    }
+    const res = await supabase.functions.invoke('process-transfer', { body: { action: 'delist', listingId } });
+    if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao retirar jogador');
+    else { toast.success('Jogador retirado do mercado.'); loadListings(); }
     setLoading(false);
   };
 
@@ -219,59 +221,36 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
     setLoading(true);
     const res = await supabase.functions.invoke('process-transfer', {
       body: {
-        action: 'offer',
-        listingId: listing.id,
-        offeredPrice: offerPrice,
-        offeredSalary: offerSalary,
-        contractYears: offerYears,
-        bonusGoals,
-        bonusAssists,
-        bonusGames,
-        bonusTitles,
-        signingBonus,
-        clubName,
+        action: 'offer', listingId: listing.id, offeredPrice: offerPrice, offeredSalary: offerSalary,
+        contractYears: offerYears, bonusGoals, bonusAssists, bonusGames, bonusTitles, signingBonus, clubName,
       },
     });
 
-    if (res.error || res.data?.error) {
-      toast.error(res.data?.error || 'Erro ao enviar proposta');
-    } else {
-      toast.success(`Proposta enviada para ${listing.player_name}!`);
-      setOfferDialogId(null);
-      loadMyOffers();
-    }
+    if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
+    else { toast.success(`Proposta enviada para ${listing.player_name}!`); setOfferDialogId(null); loadMyOffers(); }
     setLoading(false);
   };
 
   const respondOffer = async (offerId: string, accept: boolean, listing?: TransferListing) => {
     setLoading(true);
-
-    // Build a smart rejection reason with counter-offer hint
     let rejectionReason = 'Recusada pelo clube vendedor.';
     if (!accept && listing) {
       const offer = incomingOffers.find(o => o.id === offerId);
       if (offer) {
         const askingPrice = listing.asking_price;
         const offeredPrice = offer.offered_price;
-        const diff = askingPrice - offeredPrice;
         const minAcceptable = Math.round(askingPrice * 0.85);
         const suggestedSalary = Math.round((listing.player_data?.salary || 500) * 1.15);
-        
-        if (diff > 0) {
-          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos a proposta de R$${(offeredPrice / 1000).toFixed(0)}k pois está abaixo do valor desejado. Talvez aceitemos por R$${(minAcceptable / 1000).toFixed(0)}k+ com salário de R$${suggestedSalary}/mês e contrato de 3+ anos.`;
+        if (askingPrice - offeredPrice > 0) {
+          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos a proposta de R$${(offeredPrice / 1000).toFixed(0)}k. Talvez aceitemos por R$${(minAcceptable / 1000).toFixed(0)}k+ com salário de R$${suggestedSalary}/mês e contrato de 3+ anos.`;
         } else {
-          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos a proposta por condições insatisfatórias. Sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus por gols para fecharmos negócio.`;
+          rejectionReason = `Aqui é o empresário de ${listing.player_name}. Recusamos por condições insatisfatórias. Sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus para fecharmos negócio.`;
         }
       }
     }
 
     const res = await supabase.functions.invoke('process-transfer', {
-      body: {
-        action: 'respond',
-        offerId,
-        response: accept ? 'accepted' : 'rejected',
-        rejectionReason: accept ? null : rejectionReason,
-      },
+      body: { action: 'respond', offerId, response: accept ? 'accepted' : 'rejected', rejectionReason: accept ? null : rejectionReason },
     });
 
     if (res.error || res.data?.error) {
@@ -282,17 +261,12 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
       toast.success(res.data.message || 'Transferência concluída!');
       if (listing) {
         const offer = incomingOffers.find(o => o.id === offerId);
-        if (offer) {
-          onPlayerSold(listing.player_data?.id, offer.offered_price);
-        }
+        if (offer) onPlayerSold(listing.player_data?.id, offer.offered_price);
       }
     } else {
-      toast.success(accept ? 'Proposta aceita!' : 'Proposta recusada. O empresário enviou uma contraproposta ao comprador.');
+      toast.success(accept ? 'Proposta aceita!' : 'Proposta recusada. Contraproposta enviada.');
     }
-
-    loadListings();
-    loadMyOffers();
-    loadIncomingOffers();
+    loadListings(); loadMyOffers(); loadIncomingOffers();
     setLoading(false);
   };
 
@@ -300,11 +274,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
     setOfferPrice(listing.asking_price);
     setOfferSalary(listing.player_data?.salary || 500);
     setOfferYears(2);
-    setBonusGoals(0);
-    setBonusAssists(0);
-    setBonusGames(0);
-    setBonusTitles(0);
-    setSigningBonus(0);
+    setBonusGoals(0); setBonusAssists(0); setBonusGames(0); setBonusTitles(0); setSigningBonus(0);
     setOfferDialogId(listing.id);
   };
 
@@ -312,371 +282,338 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const otherListings = listings.filter(l => l.seller_id !== userId);
   const listablePlayers = players.filter(p => !myListings.some(l => l.player_data?.id === p.id));
 
-  // If viewing seller's team
+  const filterListings = (list: TransferListing[]) => {
+    let filtered = list;
+    if (posFilter !== 'all') filtered = filtered.filter(l => l.player_position === posFilter);
+    if (searchText) filtered = filtered.filter(l => l.player_name.toLowerCase().includes(searchText.toLowerCase()));
+    return filtered;
+  };
+
+  // ── Seller Team View ──
   if (viewingSellerId) {
     return (
       <SellerTeamView
-        sellerId={viewingSellerId.id}
-        sellerClubName={viewingSellerId.name}
-        sellerShield={viewingSellerId.shield}
-        onBack={() => setViewingSellerId(null)}
-        budget={budget}
-        clubName={clubName}
+        sellerId={viewingSellerId.id} sellerClubName={viewingSellerId.name}
+        sellerShield={viewingSellerId.shield} onBack={() => setViewingSellerId(null)}
+        budget={budget} clubName={clubName}
       />
     );
   }
 
-  // If negotiating, show full negotiation page
+  // ── Negotiation View ──
   if (offerDialogId) {
     const listing = listings.find(l => l.id === offerDialogId);
     if (!listing) { setOfferDialogId(null); return null; }
     const currentSalary = listing.player_data?.salary || 500;
     const pd = listing.player_data as any;
+    const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
 
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setOfferDialogId(null)}>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setOfferDialogId(null)}>
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Mercado
         </Button>
 
-        <Card className="border-primary/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Send className="h-4 w-4 text-primary" /> Negociar — {listing.player_name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Player header */}
-            <div className="flex items-center gap-2 bg-muted/30 rounded-lg p-3">
-              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
-              <div>
-                <p className="text-sm font-bold">{listing.player_name}</p>
-                <p className="text-xs text-muted-foreground">{listing.player_age}a • OVR {listing.player_overall} • {listing.seller_club_name}</p>
+        {/* Player Hero Card */}
+        <div className="rounded-xl overflow-hidden border border-primary/20" style={{ background: 'hsl(var(--card))' }}>
+          <div className={`p-4 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center ${pos.bg} border-2 ${pos.border}`}>
+                <span className={`text-lg font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
+                <span className={`text-[8px] font-bold ${pos.text}`}>{listing.player_position}</span>
               </div>
-              <div className="ml-auto text-right">
+              <div className="flex-1">
+                <h2 className="text-lg font-black">{listing.player_name}</h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-muted-foreground">{listing.player_age} anos</span>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <button className="text-xs text-primary hover:underline" onClick={() => { setOfferDialogId(null); setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield: listing.seller_shield }); }}>
+                    {listing.seller_club_name}
+                  </button>
+                </div>
+              </div>
+              <div className="text-right">
                 <p className="text-[10px] text-muted-foreground">Preço</p>
-                <p className="font-bold text-sm text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+                <p className="text-xl font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-4 gap-px" style={{ background: 'hsl(var(--border) / 0.15)' }}>
+            {[
+              { icon: '🏟️', label: 'Jogos', val: pd?.gamesPlayed ?? 0 },
+              { icon: '⚽', label: 'Gols', val: pd?.goals ?? 0 },
+              { icon: '🅰️', label: 'Assist.', val: pd?.assists ?? 0 },
+              { icon: '★', label: 'Média', val: pd?.seasonRatings?.length > 0 ? (pd.seasonRatings.reduce((a: number, b: number) => a + b, 0) / pd.seasonRatings.length).toFixed(1) : '—' },
+            ].map((s, i) => (
+              <div key={i} className="text-center py-2.5" style={{ background: 'hsl(var(--card))' }}>
+                <p className="text-lg font-black">{s.val}</p>
+                <p className="text-[9px] text-muted-foreground">{s.icon} {s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Negotiation Form */}
+        <Tabs defaultValue="negotiate" className="w-full">
+          <TabsList className="grid grid-cols-2 w-full h-9 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+            <TabsTrigger value="negotiate" className="text-[10px] rounded-lg gap-1"><DollarSign className="h-3 w-3" /> Negociação</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] rounded-lg gap-1"><FileText className="h-3 w-3" /> Histórico</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="history" className="space-y-3 mt-3">
+            {pd?.history && pd.history.length > 0 ? (
+              <div className="space-y-1.5">
+                {pd.history.map((h: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2.5 rounded-xl p-2.5 border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                    <ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={24} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-xs truncate">{h.club}</p>
+                      <p className="text-[9px] text-muted-foreground">T{h.seasonStart}{h.seasonEnd ? `–${h.seasonEnd}` : ' (atual)'}</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] shrink-0">
+                      <span>{h.games}j</span>
+                      <span>⚽{h.goals}</span>
+                      <span>🅰️{h.assists}</span>
+                      {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-xs text-muted-foreground">Sem histórico de clubes anteriores.</div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="negotiate" className="space-y-4 mt-3">
+            {/* Price - fixed */}
+            <div className="rounded-xl p-3 border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Valor da transferência</label>
+              <p className="text-2xl font-black text-emerald-400 mt-1">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+              <p className="text-[9px] text-muted-foreground">Preço fixo baseado nos atributos</p>
+            </div>
+
+            {/* Salary */}
+            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
+              <label className="text-xs font-bold text-muted-foreground">💰 Salário mensal — atual: R${currentSalary}</label>
+              <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-9 text-xs rounded-lg" />
+              {offerSalary < currentSalary && (
+                <p className="text-[10px] text-orange-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Salário inferior ao atual — menor chance de aceite</p>
+              )}
+            </div>
+
+            {/* Contract */}
+            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
+              <label className="text-xs font-bold text-muted-foreground">📄 Duração do contrato</label>
+              <div className="flex gap-1.5">
+                {[1, 2, 3, 4, 5].map(y => (
+                  <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-8 px-3.5 text-xs rounded-lg flex-1" onClick={() => setOfferYears(y)}>
+                    {y}a
+                  </Button>
+                ))}
               </div>
             </div>
 
-            <Tabs defaultValue="negotiate" className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="negotiate" className="text-[10px]">💰 Negociação</TabsTrigger>
-                <TabsTrigger value="stats" className="text-[10px]">📈 Estatísticas</TabsTrigger>
-              </TabsList>
+            {/* Signing Bonus */}
+            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
+              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><Gift className="h-3.5 w-3.5" /> Luvas (R$)</label>
+              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-9 text-xs rounded-lg" />
+            </div>
 
-              {/* STATS TAB */}
-              <TabsContent value="stats" className="space-y-3 mt-2">
-                <div>
-                  <p className="text-xs font-semibold mb-1.5">🏆 Números da Carreira</p>
-                  <div className="grid grid-cols-4 gap-1.5 text-xs">
-                    <div className="bg-muted/30 rounded p-2 text-center">
-                      <p className="text-[10px] text-muted-foreground">Jogos</p>
-                      <p className="font-bold text-lg">{pd?.gamesPlayed ?? 0}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-2 text-center">
-                      <p className="text-[10px] text-muted-foreground">⚽ Gols</p>
-                      <p className="font-bold text-lg">{pd?.goals ?? 0}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-2 text-center">
-                      <p className="text-[10px] text-muted-foreground">🅰️ Assist.</p>
-                      <p className="font-bold text-lg">{pd?.assists ?? 0}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-2 text-center">
-                      <p className="text-[10px] text-muted-foreground">★ Média</p>
-                      <p className="font-bold text-lg text-primary">
-                        {pd?.seasonRatings && pd.seasonRatings.length > 0
-                          ? (pd.seasonRatings.reduce((a: number, b: number) => a + b, 0) / pd.seasonRatings.length).toFixed(1)
-                          : '—'}
-                      </p>
-                    </div>
+            {/* Performance Bonuses */}
+            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-muted-foreground">🎯 Bônus por desempenho (R$/ocorrência)</p>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowBonusHelp(!showBonusHelp)}>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
+              {showBonusHelp && (
+                <div className="rounded-lg p-3 text-[10px] leading-relaxed border border-border/20" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+                  <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
+                  <p>• <strong>Luvas:</strong> Pagamento único na assinatura.</p>
+                  <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação. Valores altos = jogador "fominha".</p>
+                  <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada.</p>
+                  <p>• <strong>Bônus por título:</strong> Grande motivação sem fominha.</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: '⚽ Por gol', value: bonusGoals, set: setBonusGoals },
+                  { label: '🅰️ Por assist.', value: bonusAssists, set: setBonusAssists },
+                  { label: '🏟️ Por jogo', value: bonusGames, set: setBonusGames },
+                  { label: '🏆 Por título', value: bonusTitles, set: setBonusTitles },
+                ].map(b => (
+                  <div key={b.label}>
+                    <label className="text-[10px] text-muted-foreground">{b.label}</label>
+                    <Input type="number" value={b.value} onChange={e => b.set(Math.max(0, Number(e.target.value)))} className="h-8 text-xs rounded-lg" />
                   </div>
-                  {(pd?.gamesPlayed ?? 0) > 0 && (
-                    <div className="grid grid-cols-2 gap-1.5 mt-1.5 text-[10px]">
-                      <div className="bg-muted/20 rounded p-1.5 text-center">
-                        <span className="text-muted-foreground">Gols/Jogo: </span>
-                        <span className="font-bold">{((pd?.goals ?? 0) / (pd?.gamesPlayed ?? 1)).toFixed(2)}</span>
-                      </div>
-                      <div className="bg-muted/20 rounded p-1.5 text-center">
-                        <span className="text-muted-foreground">Assist/Jogo: </span>
-                        <span className="font-bold">{((pd?.assists ?? 0) / (pd?.gamesPlayed ?? 1)).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* History */}
-                <div>
-                  <p className="text-xs font-semibold mb-1.5">📜 Histórico de Clubes</p>
-                  {pd?.history && pd.history.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {pd.history.map((h: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-[10px] bg-muted/20 rounded-lg px-2.5 py-2 border border-border/30">
-                          <div className="shrink-0"><ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={24} /></div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-xs truncate">{h.club}</p>
-                            <p className="text-[9px] text-muted-foreground">
-                              Temporada {h.seasonStart}{h.seasonEnd ? ` – ${h.seasonEnd}` : ' (atual)'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0 text-[10px]">
-                            <span>{h.games}j</span>
-                            <span>⚽{h.goals}</span>
-                            <span>🅰️{h.assists}</span>
-                            {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground bg-muted/20 rounded px-2 py-1.5">Sem histórico de clubes anteriores.</p>
-                  )}
-                </div>
-              </TabsContent>
+            {/* Summary */}
+            <div className="rounded-xl p-4 border border-primary/20" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.02))' }}>
+              <p className="font-black text-sm text-primary mb-2 flex items-center gap-1.5"><Sparkles className="h-4 w-4" /> Resumo da proposta</p>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between"><span className="text-muted-foreground">Transferência</span><span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Salário</span><span className={`font-bold ${offerSalary >= currentSalary ? 'text-emerald-400' : 'text-orange-400'}`}>R${offerSalary}/mês</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Contrato</span><span className="font-bold">{offerYears} ano{offerYears > 1 ? 's' : ''}</span></div>
+                {signingBonus > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Luvas</span><span className="font-bold">R${(signingBonus / 1000).toFixed(0)}k</span></div>}
+              </div>
+              {bonusGoals > 50000 && <p className="text-[10px] text-orange-400 mt-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Bônus por gol elevado pode tornar o jogador fominha</p>}
+            </div>
 
-              {/* NEGOTIATE TAB */}
-              <TabsContent value="negotiate" className="space-y-4 mt-2">
-                {/* Price - fixed */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Valor da transferência (R$)</label>
-                  <p className="text-lg font-bold text-emerald-400 mt-1">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-                  <p className="text-[9px] text-muted-foreground">Preço fixo baseado nos atributos do jogador</p>
-                </div>
-
-                {/* Salary */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">💰 Salário mensal (R$) — atual: R${currentSalary}</label>
-                  <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-9 text-xs mt-1" />
-                  {offerSalary < currentSalary && (
-                    <p className="text-[10px] text-orange-400 mt-0.5">⚠️ Salário inferior ao atual — menor chance de aceite</p>
-                  )}
-                </div>
-
-                {/* Contract */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">📄 Duração do contrato</label>
-                  <div className="flex gap-1 mt-1">
-                    {[1, 2, 3, 4, 5].map(y => (
-                      <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-7 px-3 text-xs" onClick={() => setOfferYears(y)}>
-                        {y} ano{y > 1 ? 's' : ''}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Signing Bonus */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><Gift className="h-3.5 w-3.5" /> Luvas / Bônus de assinatura (R$)</label>
-                  <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-9 text-xs mt-1" />
-                </div>
-
-                {/* Performance Bonuses */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <p className="text-xs font-semibold text-muted-foreground">🎯 Bônus por desempenho (R$ por ocorrência)</p>
-                    <button type="button" className="h-4 w-4 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center" onClick={() => setShowBonusHelp(!showBonusHelp)}>
-                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                    </button>
-                  </div>
-                  {showBonusHelp && (
-                    <div className="relative bg-muted/40 border border-border rounded-lg p-3 mb-2 text-[10px] leading-relaxed">
-                      <button type="button" className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center" onClick={() => setShowBonusHelp(false)}>
-                        <X className="h-3 w-3" />
-                      </button>
-                      <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
-                      <p>• <strong>Luvas:</strong> Pagamento único na assinatura. Aumenta a chance de aceite se o salário for menor que o atual.</p>
-                      <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação e desempenho individual. Valores altos podem tornar o jogador "fominha".</p>
-                      <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada, sem efeito fominha.</p>
-                      <p>• <strong>Bônus por título:</strong> Grande motivação, sem efeito fominha.</p>
-                      <p className="mt-1 text-muted-foreground">Bônus compensam salários menores e influenciam o comportamento em campo!</p>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] text-muted-foreground">⚽ Por gol</label>
-                      <Input type="number" value={bonusGoals} onChange={e => setBonusGoals(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-muted-foreground">🅰️ Por assistência</label>
-                      <Input type="number" value={bonusAssists} onChange={e => setBonusAssists(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-muted-foreground">🏟️ Por jogo</label>
-                      <Input type="number" value={bonusGames} onChange={e => setBonusGames(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-muted-foreground">🏆 Por título</label>
-                      <Input type="number" value={bonusTitles} onChange={e => setBonusTitles(Math.max(0, Number(e.target.value)))} className="h-8 text-xs" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-primary/10 rounded-lg p-3 text-xs">
-                  <p className="font-bold text-primary mb-1">📊 Resumo da proposta:</p>
-                  <p>💵 Valor ao clube: R${(listing.asking_price / 1000).toFixed(0)}k (fixo)</p>
-                  <p>💰 Salário: R${offerSalary}/mês ({offerSalary >= currentSalary ? '✅ ≥ atual' : '⚠️ < atual'})</p>
-                  <p>📄 Contrato: {offerYears} ano{offerYears > 1 ? 's' : ''}</p>
-                  {signingBonus > 0 && <p>🎁 Luvas: R${(signingBonus / 1000).toFixed(0)}k</p>}
-                  {(bonusGoals + bonusAssists + bonusGames + bonusTitles) > 0 && (
-                    <p>🎯 Bônus: {[bonusGoals > 0 && `⚽R$${bonusGoals}`, bonusAssists > 0 && `🅰️R$${bonusAssists}`, bonusGames > 0 && `🏟️R$${bonusGames}`, bonusTitles > 0 && `🏆R$${(bonusTitles / 1000).toFixed(0)}k`].filter(Boolean).join(' • ')}</p>
-                  )}
-                  {bonusGoals > 50000 && (
-                    <p className="text-orange-400 mt-1">⚠️ Bônus por gol elevado pode tornar o jogador "fominha"</p>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 h-10 text-xs" onClick={() => setOfferDialogId(null)}>
-                    Cancelar
-                  </Button>
-                  <Button className="flex-1 h-10 text-xs" onClick={() => makeOffer(listing)} disabled={loading || offerPrice <= 0 || budget < offerPrice}>
-                    <Send className="h-3.5 w-3.5 mr-1.5" /> Enviar Proposta
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-11 text-xs rounded-xl" onClick={() => setOfferDialogId(null)}>Cancelar</Button>
+              <Button className="flex-1 h-11 text-xs rounded-xl gap-1.5" onClick={() => makeOffer(listing)} disabled={loading || budget < offerPrice}>
+                <Send className="h-4 w-4" /> Enviar Proposta
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
 
+  // ── Main Market View ──
   return (
     <div className="space-y-4">
+      {/* Budget Hero */}
+      <div className="rounded-xl p-4 border border-border/20" style={{ background: 'linear-gradient(135deg, hsl(var(--card)), hsl(var(--accent) / 0.5))' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Orçamento</p>
+            <p className="text-2xl font-black text-emerald-400">R$ {(budget / 1000).toFixed(0)}k</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <div className="text-center">
+              <p className="font-bold text-foreground text-lg">{otherListings.length}</p>
+              <p>No mercado</p>
+            </div>
+            <div className="h-8 w-px bg-border/30" />
+            <div className="text-center">
+              <p className="font-bold text-foreground text-lg">{myListings.length}</p>
+              <p>Seus listados</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="browse" className="text-[10px] sm:text-xs">🌐 Mercado</TabsTrigger>
-          <TabsTrigger value="list" className="text-[10px] sm:text-xs">📋 Listar</TabsTrigger>
-          <TabsTrigger value="loans" className="text-[10px] sm:text-xs">🔄 Emprestar</TabsTrigger>
-          <TabsTrigger value="offers" className="text-[10px] sm:text-xs">
-            📩 Propostas {incomingOffers.length > 0 && <Badge variant="destructive" className="ml-1 text-[8px] h-4 px-1">{incomingOffers.length}</Badge>}
+        <TabsList className="grid grid-cols-5 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+          <TabsTrigger value="browse" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <Globe className="h-3 w-3" /> Mercado
           </TabsTrigger>
-          <TabsTrigger value="sent" className="text-[10px] sm:text-xs">📤 Enviadas</TabsTrigger>
+          <TabsTrigger value="list" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <Tag className="h-3 w-3" /> Listar
+          </TabsTrigger>
+          <TabsTrigger value="loans" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <ArrowLeftRight className="h-3 w-3" /> Emprést.
+          </TabsTrigger>
+          <TabsTrigger value="offers" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1 relative">
+            📩 Recebidas
+            {incomingOffers.length > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[8px] text-destructive-foreground flex items-center justify-center font-bold">{incomingOffers.length}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="sent" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <Send className="h-3 w-3" /> Enviadas
+          </TabsTrigger>
         </TabsList>
 
-        {/* BROWSE MARKET */}
-        <TabsContent value="browse" className="space-y-3">
+        {/* ── BROWSE ── */}
+        <TabsContent value="browse" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm">Mercado Online ({otherListings.length} jogadores)</h3>
-            <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" /> Mercado Online
+              <Badge variant="outline" className="text-[9px]">{otherListings.length}</Badge>
+            </h3>
+            <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
             </Button>
           </div>
 
-          {otherListings.length === 0 ? (
-            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhum jogador disponível no mercado online.</CardContent></Card>
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[120px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Buscar jogador..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-8 pl-8 text-xs rounded-lg" />
+            </div>
+            <Select value={posFilter} onValueChange={setPosFilter}>
+              <SelectTrigger className="h-8 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filterListings(otherListings).length === 0 ? (
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+              <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              Nenhum jogador disponível no mercado online.
+            </div>
           ) : (
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-1.5">
-               {otherListings.map(listing => {
+            <ScrollArea className="max-h-[55vh]">
+              <div className="space-y-2">
+                {filterListings(otherListings).map(listing => {
                   const pd = listing.player_data;
                   const shield = listing.seller_shield as any;
+                  const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+
                   return (
-                  <Card key={listing.id} className="hover:border-primary/30 transition-colors">
-                    <CardContent className="p-2 sm:p-3">
-                      <div className="flex items-center gap-2">
-                        {/* Seller shield */}
+                    <div key={listing.id} className={`rounded-xl border border-border/15 hover:border-primary/25 transition-all duration-300 overflow-hidden`} style={{ background: 'hsl(var(--card))' }}>
+                      <div className={`flex items-center gap-2.5 p-3 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
+                        {/* Shield */}
                         <div className="shrink-0">
                           {shield ? (
-                            <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={24} />
+                            <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={28} />
                           ) : (
-                            <span className="text-sm">⚽</span>
+                            <div className="w-7 h-7 rounded-lg bg-muted/30 flex items-center justify-center text-xs">⚽</div>
                           )}
                         </div>
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[listing.player_position] || 'bg-muted'}`}>{listing.player_position}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-xs truncate">{listing.player_name}</p>
-                          <button
-                            className="text-[10px] text-primary hover:underline cursor-pointer truncate block"
-                            onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
-                          >
-                            {listing.seller_club_name || 'Clube'}
-                          </button>
-                          <p className="text-[9px] text-muted-foreground">
-                            {listing.player_age}a • OVR {listing.player_overall} • {pd?.gamesPlayed ?? 0}j • ⚽{pd?.goals ?? 0} • 🅰️{pd?.assists ?? 0}
-                          </p>
+
+                        {/* OVR Badge */}
+                        <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
+                          <span className={`text-sm font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
+                          <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
                         </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs truncate">{listing.player_name}</p>
+                          <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
+                            {listing.seller_club_name}
+                          </button>
+                          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5">
+                            <span>{listing.player_age}a</span>
+                            <span>•</span>
+                            <span>{pd?.gamesPlayed ?? 0}j</span>
+                            <span>⚽{pd?.goals ?? 0}</span>
+                            <span>🅰️{pd?.assists ?? 0}</span>
+                          </div>
+                        </div>
+
                         {listing.transfer_count > 2 && (
-                          <Badge variant="outline" className="text-[8px] border-yellow-500/30 text-yellow-400 shrink-0">
-                            <ArrowLeftRight className="h-2.5 w-2.5 mr-0.5" /> {listing.transfer_count}x
+                          <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
+                            <ArrowLeftRight className="h-2.5 w-2.5" /> {listing.transfer_count}x
                           </Badge>
                         )}
-                        <div className="text-right shrink-0">
-                          <p className="text-[9px] text-muted-foreground">Preço</p>
-                          <p className="text-xs font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-                        </div>
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <Button
-                            size="sm"
-                            className="h-6 px-2 text-[9px]"
-                            onClick={() => openOfferDialog(listing)}
-                            disabled={loading || budget < listing.asking_price * 0.5}
-                          >
-                            <Send className="h-3 w-3 mr-0.5" /> Proposta
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-[9px]"
-                            onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
-                          >
-                            <Eye className="h-3 w-3 mr-0.5" /> Ver Time
-                          </Button>
+
+                        {/* Price + Actions */}
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+                          <div className="flex gap-1 mt-1.5">
+                            <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5}>
+                              <Send className="h-3 w-3" /> Proposta
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                  );
-                 })}
-              </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
-
-        {/* LIST PLAYERS */}
-        <TabsContent value="list" className="space-y-3">
-          <h3 className="font-semibold text-sm">Listar Jogadores ({myListings.length}/5)</h3>
-
-          {myListings.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground">Seus jogadores no mercado:</p>
-              {myListings.map(l => (
-                <Card key={l.id} className="border-primary/30">
-                  <CardContent className="p-2 flex items-center gap-2">
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[l.player_position] || 'bg-muted'}`}>{l.player_position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{l.player_name}</p>
-                      <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • R${(l.asking_price / 1000).toFixed(0)}k</p>
                     </div>
-                    <Button size="sm" variant="destructive" className="h-6 px-2 text-[9px]" onClick={() => delistPlayer(l.id)} disabled={loading}>
-                      <X className="h-3 w-3 mr-0.5" /> Retirar
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {myListings.length < 5 && (
-            <ScrollArea className="max-h-[40vh]">
-              <div className="space-y-1">
-                {listablePlayers.map(player => {
-                  const value = getPlayerValue(player);
-                  return (
-                    <Card key={player.id} className="hover:border-primary/30 transition-colors">
-                      <CardContent className="p-2 flex items-center gap-2">
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{player.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
-                        </div>
-                        <p className="text-[10px] text-emerald-400 font-bold shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                        <Button size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => listPlayer(player)} disabled={loading || players.length <= 11}>
-                          <Tag className="h-3 w-3 mr-0.5" /> Listar
-                        </Button>
-                      </CardContent>
-                    </Card>
                   );
                 })}
               </div>
@@ -684,221 +621,283 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
           )}
         </TabsContent>
 
-        {/* LOANS - ONLINE */}
-        <TabsContent value="loans" className="space-y-3">
+        {/* ── LIST PLAYERS ── */}
+        <TabsContent value="list" className="space-y-3 mt-3">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <Tag className="h-4 w-4 text-primary" /> Listar Jogadores
+            <Badge variant="outline" className="text-[9px]">{myListings.length}/5</Badge>
+          </h3>
+
+          {myListings.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado</p>
+              {myListings.map(l => {
+                const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                return (
+                  <div key={l.id} className="rounded-xl border border-primary/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                    <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                      <span className={`text-xs font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
+                      <span className={`text-[7px] font-bold ${pos.text}`}>{l.player_position}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{l.player_name}</p>
+                      <p className="text-[10px] text-emerald-400 font-bold">R${(l.asking_price / 1000).toFixed(0)}k</p>
+                    </div>
+                    <Button size="sm" variant="destructive" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => delistPlayer(l.id)} disabled={loading}>
+                      <X className="h-3 w-3" /> Retirar
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {myListings.length < 5 && (
+            <ScrollArea className="max-h-[45vh]">
+              <div className="space-y-1.5">
+                {listablePlayers.map(player => {
+                  const value = getPlayerValue(player);
+                  const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                  return (
+                    <div key={player.id} className="rounded-xl border border-border/15 hover:border-primary/20 transition-all p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                      <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                        <span className={`text-xs font-black ${getOvrColor(player.overall)}`}>{player.overall}</span>
+                        <span className={`text-[7px] font-bold ${pos.text}`}>{player.position}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{player.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{player.age}a</p>
+                      </div>
+                      <p className="text-[10px] text-emerald-400 font-bold shrink-0">R${(value / 1000).toFixed(0)}k</p>
+                      <Button size="sm" variant="outline" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => listPlayer(player)} disabled={loading || players.length <= 11}>
+                        <Tag className="h-3 w-3" /> Listar
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        {/* ── LOANS ── */}
+        <TabsContent value="loans" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm">🔄 Mercado de Empréstimos</h3>
-            <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1">
+            <h3 className="font-bold text-sm flex items-center gap-2"><ArrowLeftRight className="h-4 w-4 text-primary" /> Empréstimos Online</h3>
+            <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
             </Button>
           </div>
 
-          {/* My active loan listings */}
+          {/* My loan listings */}
           {loanListings.filter(l => l.seller_id === userId).length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground">Seus jogadores no mercado de empréstimo:</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado de empréstimo</p>
               {loanListings.filter(l => l.seller_id === userId).map(l => (
-                <Card key={l.id} className="border-cyan-500/30">
-                  <CardContent className="p-2 flex items-center gap-2">
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[l.player_position] || 'bg-muted'}`}>{l.player_position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{l.player_name}</p>
-                      <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
-                    </div>
-                    <Button size="sm" variant="destructive" className="h-6 px-2 text-[9px]" onClick={async () => {
-                      const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
-                      if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
-                      else { toast.success('Retirado do mercado de empréstimos!'); loadLoanListings(); }
-                    }}>
-                      <X className="h-3 w-3 mr-0.5" /> Retirar
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div key={l.id} className="rounded-xl border border-cyan-500/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[l.player_position]?.bg || 'bg-muted/30'} ${posColors[l.player_position]?.text || ''}`}>{l.player_position}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{l.player_name}</p>
+                    <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                  </div>
+                  <Button size="sm" variant="destructive" className="h-7 px-2.5 text-[9px] rounded-lg" onClick={async () => {
+                    const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
+                    if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                    else { toast.success('Retirado!'); loadLoanListings(); }
+                  }}>
+                    <X className="h-3 w-3 mr-0.5" /> Retirar
+                  </Button>
+                </div>
               ))}
             </div>
           )}
 
-          {/* Active loaned players (accepted loans) */}
+          {/* Active loans */}
           {loanedPlayers.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground">Empréstimos ativos:</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Empréstimos Ativos</p>
               {loanedPlayers.map((loan, i) => (
-                <Card key={i} className="border-cyan-500/20">
-                  <CardContent className="p-2 flex items-center gap-2">
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[loan.player.position] || 'bg-muted'}`}>{loan.player.position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{loan.player.name}</p>
-                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
-                    </div>
-                    <Badge variant={loan.direction === 'out' ? 'destructive' : 'default'} className="text-[8px]">
-                      {loan.direction === 'out' ? '↗ Cedido' : '↙ Recebido'}
-                    </Badge>
-                  </CardContent>
-                </Card>
+                <div key={i} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{loan.player.name}</p>
+                    <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+                  </div>
+                  <Badge className={`text-[8px] ${loan.direction === 'out' ? 'bg-orange-500/15 text-orange-400 border-orange-500/30' : 'bg-blue-500/15 text-blue-400 border-blue-500/30'}`}>
+                    {loan.direction === 'out' ? '↗ Cedido' : '↙ Recebido'}
+                  </Badge>
+                </div>
               ))}
             </div>
           )}
 
-          {/* List player for loan */}
+          {/* Loan out */}
           {onLoanOut && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground">Emprestar jogador (máx 3 cedidos):</p>
-              <ScrollArea className="max-h-[40vh]">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Emprestar jogador (máx 3)</p>
+              <ScrollArea className="max-h-[35vh]">
                 <div className="space-y-1">
-                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id) && !loanListings.some(l => l.seller_id === userId && (l.player_data as any)?.id === p.id)).map(player => (
-                    <Card key={player.id} className="hover:border-cyan-500/30 transition-colors">
-                      <CardContent className="p-2 flex items-center gap-2">
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{player.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • R${((player.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id) && !loanListings.some(l => l.seller_id === userId && (l.player_data as any)?.id === p.id)).map(player => {
+                    const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                    return (
+                      <div key={player.id} className="rounded-xl border border-border/15 hover:border-cyan-500/20 transition-all p-2.5 flex items-center gap-2" style={{ background: 'hsl(var(--card))' }}>
+                        <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold ${pos.bg} ${pos.text}`}>
+                          <span>{player.overall}</span>
+                          <span className="text-[7px]">{player.position}</span>
                         </div>
-                        <Button size="sm" variant="outline" className="h-6 px-2 text-[9px]" onClick={() => onLoanOut(player.id)} disabled={players.length <= 11 || loanedPlayers.filter(l => l.direction === 'out').length >= 3}>
-                          <ArrowLeftRight className="h-3 w-3 mr-0.5" /> Emprestar
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate">{player.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{player.age}a • R${((player.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg gap-1" onClick={() => onLoanOut(player.id)} disabled={players.length <= 11 || loanedPlayers.filter(l => l.direction === 'out').length >= 3}>
+                          <ArrowLeftRight className="h-3 w-3" /> Emprestar
                         </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
           )}
 
-          {/* Browse other users' loan listings */}
+          {/* Available loans from others */}
           {loanListings.filter(l => l.seller_id !== userId).length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-emerald-400">Jogadores disponíveis para empréstimo:</p>
-              <ScrollArea className="max-h-[40vh]">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Disponíveis para empréstimo</p>
+              <ScrollArea className="max-h-[35vh]">
                 <div className="space-y-1">
-                  {loanListings.filter(l => l.seller_id !== userId).map(l => (
-                    <Card key={l.id} className="hover:border-emerald-500/30 transition-colors">
-                      <CardContent className="p-2 flex items-center gap-2">
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[l.player_position] || 'bg-muted'}`}>{l.player_position}</span>
+                  {loanListings.filter(l => l.seller_id !== userId).map(l => {
+                    const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                    return (
+                      <div key={l.id} className="rounded-xl border border-emerald-500/15 hover:border-emerald-500/30 transition-all p-2.5 flex items-center gap-2" style={{ background: 'hsl(var(--card))' }}>
+                        <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold ${pos.bg} ${pos.text}`}>
+                          <span>{l.player_overall}</span>
+                          <span className="text-[7px]">{l.player_position}</span>
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{l.player_name}</p>
+                          <p className="text-xs font-bold truncate">{l.player_name}</p>
                           <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • {l.seller_club_name}</p>
                           <p className="text-[10px] text-muted-foreground">Salário: R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
                         </div>
-                        <Button size="sm" variant="default" className="h-6 px-2 text-[9px]" onClick={async () => {
-                          if (loanedPlayers.filter(lp => lp.direction === 'in').length >= 3) {
-                            toast.error('Limite de 3 empréstimos recebidos!');
-                            return;
-                          }
-                          const res = await supabase.functions.invoke('process-transfer', {
-                            body: { action: 'loan-accept', listingId: l.id, clubName },
-                          });
-                          if (res.error || res.data?.error) {
-                            toast.error(res.data?.error || 'Erro ao aceitar empréstimo');
-                          } else {
-                            toast.success(`${l.player_name} emprestado para o seu clube!`);
-                            if (onLoanIn && res.data?.playerData) {
-                              onLoanIn(res.data.playerData);
-                            }
-                            loadLoanListings();
-                          }
+                        <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={async () => {
+                          if (loanedPlayers.filter(lp => lp.direction === 'in').length >= 3) { toast.error('Limite de 3 empréstimos recebidos!'); return; }
+                          const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-accept', listingId: l.id, clubName } });
+                          if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                          else { toast.success(`${l.player_name} emprestado!`); if (onLoanIn && res.data?.playerData) onLoanIn(res.data.playerData); loadLoanListings(); }
                         }}>
-                          <Check className="h-3 w-3 mr-0.5" /> Aceitar
+                          <Check className="h-3 w-3" /> Aceitar
                         </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
           )}
 
           {loanListings.length === 0 && loanedPlayers.length === 0 && (
-            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhum empréstimo no mercado.</CardContent></Card>
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+              <ArrowLeftRight className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              Nenhum empréstimo no mercado.
+            </div>
           )}
         </TabsContent>
 
-        {/* INCOMING OFFERS */}
-        <TabsContent value="offers" className="space-y-3">
-          <h3 className="font-semibold text-sm">Propostas Recebidas ({incomingOffers.length})</h3>
+        {/* ── INCOMING OFFERS ── */}
+        <TabsContent value="offers" className="space-y-3 mt-3">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            📩 Propostas Recebidas
+            {incomingOffers.length > 0 && <Badge className="bg-destructive/15 text-destructive text-[9px]">{incomingOffers.length}</Badge>}
+          </h3>
 
           {incomingOffers.length === 0 ? (
-            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhuma proposta pendente.</CardContent></Card>
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+              📩 Nenhuma proposta pendente.
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {incomingOffers.map(offer => {
                 const listing = myListings.find(l => l.id === offer.listing_id);
+                const pos = posColors[listing?.player_position || ''] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
                 return (
-                  <Card key={offer.id} className="border-yellow-500/30">
-                    <CardContent className="p-3 space-y-2">
+                  <div key={offer.id} className="rounded-xl border border-amber-500/20 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
+                    <div className="p-3 bg-gradient-to-r from-amber-500/10 to-transparent">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-bold">{listing?.player_name || 'Jogador'}</p>
-                          <p className="text-[10px] text-muted-foreground">De: {offer.buyer_club_name}</p>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                            <span className={`text-xs font-black ${getOvrColor(listing?.player_overall || 0)}`}>{listing?.player_overall}</span>
+                            <span className={`text-[7px] font-bold ${pos.text}`}>{listing?.player_position}</span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-black">{listing?.player_name || 'Jogador'}</p>
+                            <p className="text-[10px] text-muted-foreground">De: <span className="text-primary">{offer.buyer_club_name}</span></p>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-400">R${(offer.offered_price / 1000).toFixed(0)}k</p>
+                          <p className="text-lg font-black text-emerald-400">R${(offer.offered_price / 1000).toFixed(0)}k</p>
                           <p className="text-[9px] text-muted-foreground">pedido: R${((listing?.asking_price || 0) / 1000).toFixed(0)}k</p>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="grid grid-cols-2 gap-1 text-[9px]">
-                        <div className="bg-muted/30 rounded p-1">💰 Salário: R${offer.offered_salary}/mês</div>
-                        <div className="bg-muted/30 rounded p-1">📄 Contrato: {offer.offered_contract_years}a</div>
-                        {offer.signing_bonus > 0 && <div className="bg-muted/30 rounded p-1">🎁 Luvas: R${(offer.signing_bonus / 1000).toFixed(0)}k</div>}
-                        {offer.bonus_goals > 0 && <div className="bg-muted/30 rounded p-1">⚽ Bônus/gol: R${offer.bonus_goals}</div>}
-                        {offer.bonus_assists > 0 && <div className="bg-muted/30 rounded p-1">🅰️ Bônus/assist: R${offer.bonus_assists}</div>}
-                        {offer.bonus_games > 0 && <div className="bg-muted/30 rounded p-1">🏟️ Bônus/jogo: R${offer.bonus_games}</div>}
-                        {offer.bonus_titles > 0 && <div className="bg-muted/30 rounded p-1">🏆 Bônus/título: R${(offer.bonus_titles / 1000).toFixed(0)}k</div>}
+                    <div className="px-3 pb-3">
+                      <div className="grid grid-cols-2 gap-1.5 mb-3 mt-2">
+                        <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>💰 Sal: R${offer.offered_salary}/mês</div>
+                        <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>📄 Contrato: {offer.offered_contract_years}a</div>
+                        {offer.signing_bonus > 0 && <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>🎁 Luvas: R${(offer.signing_bonus / 1000).toFixed(0)}k</div>}
+                        {offer.bonus_goals > 0 && <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>⚽ Bônus/gol: R${offer.bonus_goals}</div>}
                       </div>
-
-                      <div className="flex gap-1.5">
-                        <Button size="sm" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, true, listing)}>
-                          <Check className="h-3 w-3" /> Aceitar
+                      <div className="flex gap-2">
+                        <Button size="sm" className="flex-1 h-9 text-xs rounded-lg gap-1.5" onClick={() => respondOffer(offer.id, true, listing)}>
+                          <Check className="h-3.5 w-3.5" /> Aceitar
                         </Button>
-                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondOffer(offer.id, false, listing)}>
-                          <X className="h-3 w-3" /> Recusar
+                        <Button size="sm" variant="destructive" className="flex-1 h-9 text-xs rounded-lg gap-1.5" onClick={() => respondOffer(offer.id, false, listing)}>
+                          <X className="h-3.5 w-3.5" /> Recusar
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
         </TabsContent>
 
-        {/* SENT OFFERS */}
-        <TabsContent value="sent" className="space-y-3">
-          <h3 className="font-semibold text-sm">Propostas Enviadas ({myOffers.length})</h3>
+        {/* ── SENT OFFERS ── */}
+        <TabsContent value="sent" className="space-y-3 mt-3">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <Send className="h-4 w-4 text-primary" /> Propostas Enviadas
+            <Badge variant="outline" className="text-[9px]">{myOffers.length}</Badge>
+          </h3>
 
           {myOffers.length === 0 ? (
-            <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">Nenhuma proposta enviada.</CardContent></Card>
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+              <Send className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              Nenhuma proposta enviada.
+            </div>
           ) : (
             <div className="space-y-1.5">
               {myOffers.slice(0, 20).map(offer => {
                 const listing = listings.find(l => l.id === offer.listing_id);
-                const statusColors: Record<string, string> = {
-                  pending: 'bg-yellow-500/15 text-yellow-400',
-                  accepted: 'bg-emerald-500/15 text-emerald-400',
-                  rejected: 'bg-red-500/15 text-red-400',
-                  player_rejected: 'bg-orange-500/15 text-orange-400',
+                const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                  pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
+                  accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                  rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
+                  player_rejected: { bg: 'bg-orange-500/15', text: 'text-orange-400', label: '🚫 Jogador recusou' },
                 };
-                const statusLabels: Record<string, string> = {
-                  pending: 'Pendente',
-                  accepted: 'Aceita ✓',
-                  rejected: 'Recusada',
-                  player_rejected: 'Jogador recusou',
-                };
+                const sc = statusConfig[offer.status] || statusConfig.pending;
+
                 return (
-                  <Card key={offer.id}>
-                    <CardContent className="p-2 flex items-center gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{listing?.player_name || 'Jogador'}</p>
-                        <p className="text-[10px] text-muted-foreground">R${(offer.offered_price / 1000).toFixed(0)}k • Sal: R${offer.offered_salary}/mês</p>
-                        {offer.rejection_reason && (
-                          <p className="text-[9px] text-orange-400 mt-0.5">💬 {offer.rejection_reason}</p>
-                        )}
-                      </div>
-                      <Badge className={`text-[8px] ${statusColors[offer.status] || 'bg-muted'}`}>
-                        {statusLabels[offer.status] || offer.status}
-                      </Badge>
-                    </CardContent>
-                  </Card>
+                  <div key={offer.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{listing?.player_name || 'Jogador'}</p>
+                      <p className="text-[10px] text-muted-foreground">R${(offer.offered_price / 1000).toFixed(0)}k • Sal: R${offer.offered_salary}/mês</p>
+                      {offer.rejection_reason && (
+                        <p className="text-[9px] text-orange-400 mt-1 leading-relaxed">💬 {offer.rejection_reason}</p>
+                      )}
+                    </div>
+                    <Badge className={`text-[8px] ${sc.bg} ${sc.text} border-0 shrink-0`}>{sc.label}</Badge>
+                  </div>
                 );
               })}
             </div>

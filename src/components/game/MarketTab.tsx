@@ -3,13 +3,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { ShoppingCart, Banknote, UserPlus, Search, EyeOff, RefreshCw, DollarSign, ArrowLeftRight } from 'lucide-react';
+import { ShoppingCart, UserPlus, Search, EyeOff, RefreshCw, DollarSign, ArrowLeftRight, Filter, TrendingUp, Star, Zap, Shield, Crosshair, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState, Fragment } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { LoanedPlayer } from '@/hooks/useGame';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Props {
   marketPlayers: Player[];
@@ -29,42 +31,47 @@ interface Props {
   onLoanIn: (player: Player) => void;
 }
 
-const posColors: Record<string, string> = {
-  GOL: 'bg-primary/15 text-primary',
-  ZAG: 'bg-blue-500/15 text-blue-400',
-  LAT: 'bg-cyan-500/15 text-cyan-400',
-  VOL: 'bg-emerald-500/15 text-emerald-400',
-  MEI: 'bg-purple-500/15 text-purple-400',
-  ATA: 'bg-red-500/15 text-red-400',
+const posColors: Record<string, { bg: string; text: string; border: string }> = {
+  GOL: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' },
+  ZAG: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
+  LAT: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  VOL: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  MEI: { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' },
+  ATA: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/30' },
 };
 
 const attrLabels: Record<string, string> = {
-  speed: '⚡ Vel',
-  shooting: '🎯 Fin',
-  passing: '📐 Pas',
-  defending: '🛡️ Def',
-  physical: '💪 Fís',
-  dribbling: '🎨 Dri',
-  setPieces: '🎱 BP',
-  positioning: '📍 Pos',
-  heading: '🗣️ Cab',
-  marking: '🔒 Mar',
-  vision: '👁️ Vis',
-  crossing: '🎯 Cru',
-  longShots: '🚀 CL',
-  workRate: '🔥 Int',
-  composure: '🧠 Com',
-  aggression: '⚔️ Agr',
+  speed: '⚡ Vel', shooting: '🎯 Fin', passing: '📐 Pas', defending: '🛡️ Def',
+  physical: '💪 Fís', dribbling: '🎨 Dri', setPieces: '🎱 BP', positioning: '📍 Pos',
+  heading: '🗣️ Cab', marking: '🔒 Mar', vision: '👁️ Vis', crossing: '🎯 Cru',
+  longShots: '🚀 CL', workRate: '🔥 Int', composure: '🧠 Com', aggression: '⚔️ Agr',
 };
 
 function getPlayerExpectedSalary(player: Player): number {
-  // Base salary expectation based on overall
   return Math.floor(player.overall * 200 + player.age * 100);
+}
+
+function getOvrColor(ovr: number) {
+  if (ovr >= 85) return 'text-amber-400';
+  if (ovr >= 75) return 'text-emerald-400';
+  if (ovr >= 65) return 'text-blue-400';
+  return 'text-muted-foreground';
+}
+
+function getOvrBg(ovr: number) {
+  if (ovr >= 85) return 'from-amber-500/20 to-amber-500/5';
+  if (ovr >= 75) return 'from-emerald-500/20 to-emerald-500/5';
+  if (ovr >= 65) return 'from-blue-500/20 to-blue-500/5';
+  return 'from-muted/30 to-muted/10';
 }
 
 export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, clubName, listedForSale, scoutReports, loanedPlayers, onBuy, onSell, onSignFreeAgent, onRefresh, onRefreshFreeAgents, onLoanOut, onLoanIn }: Props) {
   const [salaryOffers, setSalaryOffers] = useState<Record<string, number>>({});
   const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set());
+  const [posFilter, setPosFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'overall' | 'age' | 'value'>('overall');
+  const [searchText, setSearchText] = useState('');
+
   const listedPlayers = clubPlayers.filter(p => listedForSale.includes(p.id));
   const loansOut = loanedPlayers.filter(l => l.direction === 'out');
   const loansIn = loanedPlayers.filter(l => l.direction === 'in');
@@ -79,145 +86,279 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
     });
   };
 
+  const filterAndSort = (players: Player[]) => {
+    let filtered = players;
+    if (posFilter !== 'all') filtered = filtered.filter(p => p.position === posFilter);
+    if (searchText) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchText.toLowerCase()));
+    return filtered.sort((a, b) => {
+      if (sortBy === 'overall') return b.overall - a.overall;
+      if (sortBy === 'age') return a.age - b.age;
+      return getPlayerValue(b) - getPlayerValue(a);
+    });
+  };
+
   const renderAttributes = (attrs: PlayerAttributes) => (
-    <div className="mt-2 grid grid-cols-4 sm:grid-cols-8 gap-1">
+    <div className="mt-3 grid grid-cols-4 sm:grid-cols-8 gap-1.5">
       {(Object.entries(attrLabels) as [string, string][]).map(([key, label]) => {
         const val = attrs[key as keyof PlayerAttributes];
         if (val === undefined) return null;
-        const color = val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-yellow-400' : 'text-red-400';
+        const color = val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-amber-400' : 'text-red-400';
+        const barWidth = `${val}%`;
         return (
-          <div key={key} className="text-center bg-muted/30 rounded px-1 py-0.5">
-            <p className="text-[8px] text-muted-foreground">{label}</p>
-            <p className={`text-[10px] font-bold ${color}`}>{val}</p>
+          <div key={key} className="text-center rounded-lg p-1.5" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+            <p className="text-[7px] text-muted-foreground leading-none mb-0.5">{label}</p>
+            <p className={`text-[11px] font-bold ${color}`}>{val}</p>
+            <div className="w-full h-0.5 rounded-full mt-0.5" style={{ background: 'hsl(var(--border) / 0.3)' }}>
+              <div className={`h-full rounded-full ${val >= 80 ? 'bg-emerald-400' : val >= 60 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: barWidth }} />
+            </div>
           </div>
         );
       })}
     </div>
   );
+
+  const renderPlayerCard = (player: Player, action: React.ReactNode, showAttrs = true) => {
+    const value = getPlayerValue(player);
+    const isExpanded = expandedPlayers.has(player.id);
+    const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+
+    return (
+      <div key={player.id} className="group rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
+        <div className={`flex items-center gap-2.5 p-3 bg-gradient-to-r ${getOvrBg(player.overall)}`}>
+          {/* OVR Badge */}
+          <div className="relative shrink-0">
+            <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+              <span className={`text-sm font-black ${getOvrColor(player.overall)}`}>{player.overall}</span>
+              <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{player.position}</span>
+            </div>
+          </div>
+
+          {/* Player Info */}
+          <div className="flex-1 min-w-0">
+            <PlayerProfileModal player={player}>
+              <button className="font-bold text-sm truncate text-left hover:text-primary transition-colors cursor-pointer block">{player.name}</button>
+            </PlayerProfileModal>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-muted-foreground">{player.age} anos</span>
+            </div>
+          </div>
+
+          {/* Value */}
+          <div className="text-right shrink-0 mr-1">
+            <p className="text-xs font-black text-emerald-400">R${(value / 1000).toFixed(0)}k</p>
+            <p className="text-[8px] text-muted-foreground">valor</p>
+          </div>
+
+          {/* Action + Expand */}
+          <div className="flex items-center gap-1 shrink-0">
+            {showAttrs && (
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-60 hover:opacity-100" onClick={() => toggleExpand(player.id)}>
+                {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </Button>
+            )}
+            {action}
+          </div>
+        </div>
+        {isExpanded && showAttrs && (
+          <div className="px-3 pb-3">
+            {renderAttributes(player.attributes)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Filters bar
+  const renderFilters = () => (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="relative flex-1 min-w-[120px]">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          placeholder="Buscar jogador..."
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          className="h-8 pl-8 text-xs"
+        />
+      </div>
+      <Select value={posFilter} onValueChange={setPosFilter}>
+        <SelectTrigger className="h-8 w-[90px] text-[10px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todas</SelectItem>
+          <SelectItem value="GOL">GOL</SelectItem>
+          <SelectItem value="ZAG">ZAG</SelectItem>
+          <SelectItem value="LAT">LAT</SelectItem>
+          <SelectItem value="VOL">VOL</SelectItem>
+          <SelectItem value="MEI">MEI</SelectItem>
+          <SelectItem value="ATA">ATA</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
+        <SelectTrigger className="h-8 w-[100px] text-[10px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="overall">OVR ↓</SelectItem>
+          <SelectItem value="age">Idade ↑</SelectItem>
+          <SelectItem value="value">Valor ↓</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4">
+      {/* Budget Header */}
+      <div className="rounded-xl p-4 border border-border/20" style={{ background: 'linear-gradient(135deg, hsl(var(--card)), hsl(var(--accent) / 0.5))' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Orçamento disponível</p>
+            <p className="text-2xl font-black text-emerald-400">R$ {(budget / 1000).toFixed(0)}k</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <div className="text-center">
+              <p className="font-bold text-foreground text-lg">{clubPlayers.length}</p>
+              <p>Jogadores</p>
+            </div>
+            <div className="h-8 w-px bg-border/30" />
+            <div className="text-center">
+              <p className="font-bold text-foreground text-lg">{listedPlayers.length}</p>
+              <p>À venda</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Tabs defaultValue="market" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="market" className="text-[10px] sm:text-xs">🛒 Mercado</TabsTrigger>
-          <TabsTrigger value="free" className="text-[10px] sm:text-xs">📋 Livres</TabsTrigger>
-          <TabsTrigger value="loans" className="text-[10px] sm:text-xs">🔄 Empréstimos</TabsTrigger>
-          <TabsTrigger value="sell" className="text-[10px] sm:text-xs">💰 Vender</TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+          <TabsTrigger value="market" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <ShoppingCart className="h-3 w-3" /> Mercado
+          </TabsTrigger>
+          <TabsTrigger value="free" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <UserPlus className="h-3 w-3" /> Livres
+          </TabsTrigger>
+          <TabsTrigger value="loans" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <ArrowLeftRight className="h-3 w-3" /> Empréstimos
+          </TabsTrigger>
+          <TabsTrigger value="sell" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <DollarSign className="h-3 w-3" /> Vender
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="market" className="space-y-3">
+        {/* ── MARKET TAB ── */}
+        <TabsContent value="market" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm sm:text-lg">Mercado de Transferências</h3>
-            <Button variant="outline" size="sm" onClick={onRefresh} className="text-xs sm:text-sm gap-1">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-primary" /> Mercado de Transferências
+              <Badge variant="outline" className="text-[9px] ml-1">{marketPlayers.length}</Badge>
+            </h3>
+            <Button variant="outline" size="sm" onClick={onRefresh} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
             </Button>
           </div>
-          <div className="space-y-1.5 sm:space-y-2">
-            {marketPlayers.map(player => {
-              const value = getPlayerValue(player);
-              const isExpanded = expandedPlayers.has(player.id);
-              return (
-                <Card key={player.id}>
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                      <div className="flex-1 min-w-0">
-                        <PlayerProfileModal player={player}>
-                          <button className="font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
-                        </PlayerProfileModal>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall}</p>
-                      </div>
-                      <p className="text-xs sm:text-sm font-bold text-emerald-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleExpand(player.id)}>
-                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </Button>
-                      <Button size="sm" onClick={() => onBuy(player)} disabled={budget < value} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
-                        <ShoppingCart className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Comprar</span>
-                      </Button>
-                    </div>
-                    {isExpanded && renderAttributes(player.attributes)}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+
+          {renderFilters()}
+
+          <ScrollArea className="max-h-[55vh]">
+            <div className="space-y-2">
+              {filterAndSort(marketPlayers).map(player =>
+                renderPlayerCard(player,
+                  <Button
+                    size="sm"
+                    onClick={() => onBuy(player)}
+                    disabled={budget < getPlayerValue(player)}
+                    className="h-8 px-3 text-[10px] sm:text-xs rounded-lg gap-1"
+                  >
+                    <ShoppingCart className="h-3 w-3" />
+                    <span className="hidden sm:inline">Comprar</span>
+                  </Button>
+                )
+              )}
+              {filterAndSort(marketPlayers).length === 0 && (
+                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador encontrado</div>
+              )}
+            </div>
+          </ScrollArea>
         </TabsContent>
 
-        {/* Free Agents - Salary Negotiation */}
-        <TabsContent value="free" className="space-y-3">
+        {/* ── FREE AGENTS TAB ── */}
+        <TabsContent value="free" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-sm sm:text-lg">Jogadores Livres</h3>
-              <p className="text-[10px] text-muted-foreground">Negocie apenas o salário — contrate olheiros para saber o nível real</p>
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" /> Jogadores Livres
+              </h3>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Negocie o salário — contrate olheiros para saber o nível real</p>
             </div>
-            <Button variant="outline" size="sm" onClick={onRefreshFreeAgents} className="text-xs sm:text-sm gap-1">
+            <Button variant="outline" size="sm" onClick={onRefreshFreeAgents} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
             </Button>
           </div>
-          <div className="space-y-2">
-            {freeAgents.map(player => {
-              const expectedSalary = getPlayerExpectedSalary(player);
-              const report = scoutReports.find(r => r.player.id === player.id);
-              const currentOffer = salaryOffers[player.id] ?? expectedSalary;
-              const salaryOptions = [
-                expectedSalary,
-                Math.ceil(expectedSalary * 1.15),
-                Math.ceil(expectedSalary * 1.3),
-                Math.ceil(expectedSalary * 1.5),
-              ];
 
-              return (
-                <Card key={player.id} className={report ? 'border-primary/30' : ''}>
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
+          <ScrollArea className="max-h-[55vh]">
+            <div className="space-y-2.5">
+              {freeAgents.map(player => {
+                const expectedSalary = getPlayerExpectedSalary(player);
+                const report = scoutReports.find(r => r.player.id === player.id);
+                const currentOffer = salaryOffers[player.id] ?? expectedSalary;
+                const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+
+                return (
+                  <div key={player.id} className={`rounded-xl border transition-all duration-300 overflow-hidden ${report ? 'border-primary/30' : 'border-border/20'}`} style={{ background: 'hsl(var(--card))' }}>
+                    {/* Header */}
+                    <div className="flex items-center gap-2.5 p-3">
+                      <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                        <EyeOff className={`h-3.5 w-3.5 ${pos.text}`} />
+                        <span className={`text-[7px] font-bold ${pos.text} leading-none mt-0.5`}>{player.position}</span>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <PlayerProfileModal player={player} isFreeAgent scoutReport={report}>
-                          <button className="font-medium text-xs sm:text-sm truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
+                          <button className="font-bold text-sm truncate text-left hover:text-primary transition-colors cursor-pointer block">{player.name}</button>
                         </PlayerProfileModal>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          {player.age}a • OVR <span className="text-muted-foreground/50"><EyeOff className="h-3 w-3 inline" /> ???</span>
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">{player.age} anos</span>
+                          <span className="text-[10px] text-muted-foreground/50">OVR ???</span>
+                        </div>
                       </div>
                       {report && (
-                        <Badge variant="outline" className="text-[9px] text-primary border-primary/30 shrink-0">
-                          <Search className="h-2.5 w-2.5 mr-0.5" /> ~{report.estimatedOverall}
+                        <Badge className="text-[9px] bg-primary/15 text-primary border-primary/30 shrink-0 gap-1">
+                          <Search className="h-2.5 w-2.5" /> ~{report.estimatedOverall}
                         </Badge>
                       )}
                     </div>
 
                     {/* Salary negotiation */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="text-[9px] text-muted-foreground shrink-0">Salário mensal:</span>
-                      </div>
+                    <div className="px-3 pb-3 space-y-2 border-t border-border/10 pt-2">
+                      <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" /> Proposta salarial mensal
+                      </p>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {salaryOptions.map(sal => (
+                        {[expectedSalary, Math.ceil(expectedSalary * 1.15), Math.ceil(expectedSalary * 1.3), Math.ceil(expectedSalary * 1.5)].map(sal => (
                           <Button
                             key={sal}
                             size="sm"
                             variant={currentOffer === sal ? 'default' : 'outline'}
-                            className="h-5 px-1.5 text-[9px]"
+                            className="h-6 px-2 text-[9px] rounded-lg"
                             onClick={() => setSalaryOffers(prev => ({ ...prev, [player.id]: sal }))}
                           >
                             R${(sal / 1000).toFixed(0)}k
                           </Button>
                         ))}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] text-muted-foreground">Valor personalizado: R$</span>
+                      <div className="flex items-center gap-2">
                         <Input
                           type="number"
                           min={1000}
                           step={1000}
                           value={currentOffer}
                           onChange={e => setSalaryOffers(prev => ({ ...prev, [player.id]: Math.max(1000, Number(e.target.value)) }))}
-                          className="h-6 w-24 text-[10px] px-1.5"
+                          className="h-7 w-28 text-[10px] px-2 rounded-lg"
                         />
                         <span className="text-[9px] text-muted-foreground">/mês</span>
                         <Button
                           size="sm"
-                          className="h-6 px-2 text-[10px] gap-1 ml-auto"
+                          className="h-7 px-3 text-[10px] gap-1 ml-auto rounded-lg"
                           onClick={() => onSignFreeAgent(player, currentOffer)}
                         >
                           <UserPlus className="h-3 w-3" /> Assinar
@@ -226,163 +367,159 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
                     </div>
 
                     {report && (
-                      <div className="mt-2 grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                        {(Object.entries(report.estimatedAttributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
-                          <div key={key} className="text-center bg-muted/30 rounded px-1 py-0.5">
-                            <p className="text-[8px] text-muted-foreground">{attrLabels[key]}</p>
-                            <p className="text-[10px] font-bold">{val}</p>
-                          </div>
-                        ))}
+                      <div className="px-3 pb-3">
+                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-1">
+                          {(Object.entries(report.estimatedAttributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
+                            <div key={key} className="text-center rounded-lg p-1" style={{ background: 'hsl(var(--accent) / 0.4)' }}>
+                              <p className="text-[7px] text-muted-foreground">{attrLabels[key]}</p>
+                              <p className={`text-[10px] font-bold ${val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{val}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
         </TabsContent>
 
-        {/* Loans Tab */}
-        <TabsContent value="loans" className="space-y-3">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2">
-                <ArrowLeftRight className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-xs font-semibold text-primary">🔄 Empréstimos</p>
-                  <p className="text-[10px] text-muted-foreground">Máx. 3 empréstimos (entrada ou saída). Duração: 1 temporada. Receptor paga salário.</p>
-                </div>
+        {/* ── LOANS TAB ── */}
+        <TabsContent value="loans" className="space-y-3 mt-3">
+          {/* Info Card */}
+          <div className="rounded-xl p-3 border border-primary/20" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.02))' }}>
+            <div className="flex items-center gap-2.5">
+              <ArrowLeftRight className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-primary">Sistema de Empréstimos</p>
+                <p className="text-[10px] text-muted-foreground">Máx. 3 empréstimos (entrada ou saída). Duração: 1 temporada. Receptor paga salário.</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Active loans */}
           {(loansOut.length > 0 || loansIn.length > 0) && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">Empréstimos Ativos</p>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Empréstimos Ativos</p>
               {loansOut.map(loan => (
-                <Card key={loan.player.id} className="border-orange-500/30 bg-orange-500/5">
-                  <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                    <Badge variant="outline" className="text-[8px] border-orange-500/30 text-orange-400 shrink-0">SAÍDA</Badge>
-                    <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[loan.player.position]}`}>{loan.player.position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs truncate">{loan.player.name}</p>
-                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Desde T{loan.seasonStart}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={loan.player.id} className="rounded-xl border border-orange-500/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                  <Badge className="text-[8px] bg-orange-500/15 text-orange-400 border-orange-500/30 shrink-0">↗ SAÍDA</Badge>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || 'text-muted-foreground'}`}>{loan.player.position}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs truncate">{loan.player.name}</p>
+                    <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Desde T{loan.seasonStart}</p>
+                  </div>
+                </div>
               ))}
               {loansIn.map(loan => (
-                <Card key={loan.player.id} className="border-blue-500/30 bg-blue-500/5">
-                  <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                    <Badge variant="outline" className="text-[8px] border-blue-500/30 text-blue-400 shrink-0">ENTRADA</Badge>
-                    <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[loan.player.position]}`}>{loan.player.position}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs truncate">{loan.player.name}</p>
-                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Sal: R${(loan.player.salary / 1000).toFixed(0)}k/mês</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={loan.player.id} className="rounded-xl border border-blue-500/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                  <Badge className="text-[8px] bg-blue-500/15 text-blue-400 border-blue-500/30 shrink-0">↙ ENTRADA</Badge>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || 'text-muted-foreground'}`}>{loan.player.position}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs truncate">{loan.player.name}</p>
+                    <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • Sal: R${(loan.player.salary / 1000).toFixed(0)}k/mês</p>
+                  </div>
+                </div>
               ))}
             </div>
           )}
 
-          {/* Loan out own players */}
-          <div>
-            <p className="text-xs font-semibold mb-1.5">Emprestar Jogadores ({loansOut.length}/3)</p>
+          {/* Loan out */}
+          <div className="space-y-2">
+            <p className="text-xs font-bold flex items-center gap-1.5">
+              Emprestar Jogadores
+              <Badge variant="outline" className="text-[8px]">{loansOut.length}/3</Badge>
+            </p>
             {loansOut.length >= 3 ? (
               <p className="text-[10px] text-muted-foreground">Limite de empréstimos de saída atingido.</p>
             ) : (
-              <div className="space-y-1">
-                {loanableClubPlayers.map(player => (
-                  <Card key={player.id} className="hover:border-primary/30 transition-colors">
-                    <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                      <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                      <div className="flex-1 min-w-0">
-                        <PlayerProfileModal player={player}>
-                          <button className="font-medium text-xs truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
-                        </PlayerProfileModal>
-                        <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall}</p>
-                      </div>
-                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={clubPlayers.length <= 11}>
+              <ScrollArea className="max-h-[35vh]">
+                <div className="space-y-1.5">
+                  {loanableClubPlayers.map(player =>
+                    renderPlayerCard(player,
+                      <Button size="sm" variant="outline" className="h-7 px-2.5 text-[10px] rounded-lg gap-1" onClick={() => onLoanOut(player.id)} disabled={clubPlayers.length <= 11}>
                         <ArrowLeftRight className="h-3 w-3" /> Emprestar
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </Button>,
+                      false
+                    )
+                  )}
+                </div>
+              </ScrollArea>
             )}
           </div>
 
           {/* Loan in from market */}
-          <div>
-            <p className="text-xs font-semibold mb-1.5">Pegar Emprestado do Mercado ({loansIn.length}/3)</p>
+          <div className="space-y-2">
+            <p className="text-xs font-bold flex items-center gap-1.5">
+              Pegar Emprestado
+              <Badge variant="outline" className="text-[8px]">{loansIn.length}/3</Badge>
+            </p>
             {loansIn.length >= 3 ? (
               <p className="text-[10px] text-muted-foreground">Limite de empréstimos de entrada atingido.</p>
             ) : (
-              <div className="space-y-1">
-                {marketPlayers.slice(0, 5).map(player => {
-                  const isExpanded = expandedPlayers.has(`loan-${player.id}`);
-                  return (
-                    <Card key={player.id} className="hover:border-primary/30 transition-colors">
-                      <CardContent className="p-2 sm:p-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[9px] font-mono px-1 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                          <div className="flex-1 min-w-0">
-                            <PlayerProfileModal player={player}>
-                              <button className="font-medium text-xs truncate text-left hover:text-primary hover:underline transition-colors cursor-pointer">{player.name}</button>
-                            </PlayerProfileModal>
-                            <p className="text-[10px] text-muted-foreground">{player.age}a • OVR {player.overall} • Sal: R${(player.salary / 1000).toFixed(0)}k/mês</p>
-                          </div>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleExpand(`loan-${player.id}`)}>
-                            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </Button>
-                          <Button size="sm" variant="default" className="h-6 px-2 text-[10px] gap-1" onClick={() => onLoanIn(player)}>
-                            <ArrowLeftRight className="h-3 w-3" /> Pegar
-                          </Button>
-                        </div>
-                        {isExpanded && renderAttributes(player.attributes)}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+              <ScrollArea className="max-h-[35vh]">
+                <div className="space-y-1.5">
+                  {marketPlayers.slice(0, 5).map(player => {
+                    const isExpanded = expandedPlayers.has(`loan-${player.id}`);
+                    return renderPlayerCard(player,
+                      <Button size="sm" className="h-7 px-2.5 text-[10px] rounded-lg gap-1" onClick={() => onLoanIn(player)} disabled={clubPlayers.length >= 30}>
+                        <ArrowLeftRight className="h-3 w-3" /> Pegar
+                      </Button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="sell" className="space-y-3">
-          <h3 className="font-semibold text-sm sm:text-lg">Lista de Transferência</h3>
-          {listedPlayers.length > 0 ? (
-            <div className="space-y-1.5 sm:space-y-2">
+        {/* ── SELL TAB ── */}
+        <TabsContent value="sell" className="space-y-3 mt-3">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary" /> Vender Jogadores
+          </h3>
+
+          {listedPlayers.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">À venda</p>
               {listedPlayers.map(player => {
-                const value = Math.floor(getPlayerValue(player) * 0.8);
+                const value = getPlayerValue(player);
                 return (
-                  <Card key={player.id} className="border-yellow-500/30">
-                    <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                      <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[player.position]}`}>{player.position}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs sm:text-sm truncate">{player.name}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">{player.age}a • OVR {player.overall} • 📄{player.contract}a</p>
-                        <p className="text-[9px] text-primary">🏟️ {clubName}</p>
-                      </div>
-                      <p className="text-xs sm:text-sm font-bold text-yellow-400 shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                      <Button size="sm" variant="destructive" onClick={() => onSell(player)} disabled={clubPlayers.length <= 11} className="h-6 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs">
-                        <Banknote className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Vender</span>
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div key={player.id} className="rounded-xl border border-primary/30 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                    <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${posColors[player.position]?.bg || 'bg-muted/30'}`}>
+                      <span className={`text-xs font-black ${getOvrColor(player.overall)}`}>{player.overall}</span>
+                      <span className={`text-[7px] font-bold ${posColors[player.position]?.text || 'text-muted-foreground'}`}>{player.position}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-xs truncate">{player.name}</p>
+                      <p className="text-[10px] text-emerald-400 font-bold">R${(value / 1000).toFixed(0)}k</p>
+                    </div>
+                    <Badge className="text-[8px] bg-primary/15 text-primary border-primary/30">À VENDA</Badge>
+                  </div>
                 );
               })}
             </div>
-          ) : (
-            <Card className="border-muted/30">
-              <CardContent className="p-4 text-center">
-                <p className="text-xs text-muted-foreground">Nenhum jogador na lista de transferência.</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Use o ícone 🏷️ no Elenco para listar jogadores.</p>
-              </CardContent>
-            </Card>
           )}
+
+          <ScrollArea className="max-h-[45vh]">
+            <div className="space-y-1.5">
+              {clubPlayers.filter(p => !listedForSale.includes(p.id)).map(player =>
+                renderPlayerCard(player,
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2.5 text-[10px] rounded-lg gap-1"
+                    onClick={() => onSell(player)}
+                    disabled={clubPlayers.length <= 11}
+                  >
+                    <DollarSign className="h-3 w-3" /> Vender
+                  </Button>,
+                  false
+                )
+              )}
+            </div>
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>

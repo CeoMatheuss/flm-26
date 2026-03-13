@@ -190,7 +190,8 @@
 
   /* Subtle gradient header for sections */
   .section-header {
-    @apply bg-gradient-to-r from-primary/8 via-primary/3 to-transparent border-b border-border/25 px-4 py-3 rounded-t-xl;
+    @apply border-b border-border/25 px-4 py-3 rounded-t-xl;
+    background: linear-gradient(to right, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.03), transparent);
   }
 
   /* Navigation tab pill style */
