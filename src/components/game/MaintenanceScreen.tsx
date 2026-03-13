@@ -1,5 +1,7 @@
-import { Wrench, AlertTriangle, Clock } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock, LogOut } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import flmLogo from '@/assets/flm26-logo.png';
 
 export function MaintenanceScreen() {
