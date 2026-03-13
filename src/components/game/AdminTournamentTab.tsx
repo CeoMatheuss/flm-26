@@ -628,7 +628,9 @@ export function AdminTournamentTab({ userId }: Props) {
     if (!confirm('Isso apagará todos os jogos existentes e gerará novos. Continuar?')) return;
     setLoading(true);
     await supabase.from('custom_tournament_matches').delete().eq('tournament_id', selectedTournament.id);
-    const startDateStr = selectedTournament.start_date || new Date().toISOString().split('T')[0];
+    const rn = new Date();
+    const fallbackDate = `${rn.getFullYear()}-${String(rn.getMonth() + 1).padStart(2, '0')}-${String(rn.getDate()).padStart(2, '0')}`;
+    const startDateStr = selectedTournament.start_date?.split('T')[0] || fallbackDate;
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
     if (selectedTournament.format === 'league') {
