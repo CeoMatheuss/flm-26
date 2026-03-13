@@ -345,7 +345,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
       </div>
 
       {/* Tab Content */}
-      <ScrollArea className="max-h-[60vh]">
+      <div className="pb-4">
         {activeTab === 'overview' && (
           <div className="space-y-3">
             {/* For league format show standings, for knockout show bracket summary */}
@@ -481,7 +481,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'groups' && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {groupLetters.map(letter => {
               const groupTeams = teams
                 .filter(t => t.group_letter === letter)
@@ -493,26 +493,28 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
                       <Target className="h-3 w-3 text-primary" /> Grupo {letter}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-2 pb-2">
-                    <table className="w-full text-[9px]">
+                  <CardContent className="px-1 pb-2 overflow-x-auto">
+                    <table className="w-full text-[9px] min-w-[280px]">
                       <thead>
                         <tr className="text-muted-foreground border-b border-border/20">
-                          <th className="text-left pl-1 py-0.5">#</th>
+                          <th className="text-left pl-1 py-0.5 w-5">#</th>
                           <th className="text-left py-0.5">Time</th>
-                          <th className="text-center py-0.5">J</th>
-                          <th className="text-center py-0.5">V</th>
-                          <th className="text-center py-0.5">E</th>
-                          <th className="text-center py-0.5">D</th>
-                          <th className="text-center py-0.5">GP</th>
-                          <th className="text-center py-0.5">GC</th>
-                          <th className="text-center py-0.5 font-bold">Pts</th>
+                          <th className="text-center py-0.5 w-6">J</th>
+                          <th className="text-center py-0.5 w-6">V</th>
+                          <th className="text-center py-0.5 w-6">E</th>
+                          <th className="text-center py-0.5 w-6">D</th>
+                          <th className="text-center py-0.5 w-6">GP</th>
+                          <th className="text-center py-0.5 w-6">GC</th>
+                          <th className="text-center py-0.5 w-7 font-bold">Pts</th>
                         </tr>
                       </thead>
                       <tbody>
                         {groupTeams.map((t, i) => (
                           <tr key={t.id} className={`${i < 2 ? 'bg-primary/5' : ''} border-t border-border/10`}>
-                            <td className="pl-1 py-1 font-bold">{i + 1}</td>
-                            <td className="py-1 truncate max-w-[80px] font-medium">{t.club_logo} {t.club_name}</td>
+                            <td className="pl-1 py-1 font-bold text-center">{i + 1}</td>
+                            <td className="py-1 font-medium">
+                              <span className="truncate block max-w-[100px]">{t.club_logo} {t.club_name}</span>
+                            </td>
                             <td className="text-center py-1">{t.played}</td>
                             <td className="text-center py-1 text-success">{t.wins}</td>
                             <td className="text-center py-1">{t.draws}</td>
@@ -610,7 +612,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'stats' && <TournamentStatsTab teams={teams} matches={matches} getTeamName={getTeamName} getTeamLogo={getTeamLogo} />}
-      </ScrollArea>
+      </div>
 
       {/* Bot Squad Viewer Dialog */}
       <Dialog open={!!viewingSquadTeam} onOpenChange={() => setViewingSquadTeam(null)}>
@@ -675,10 +677,9 @@ interface StatsTabProps {
 }
 
 function TournamentStatsTab({ teams, matches, getTeamName, getTeamLogo }: StatsTabProps) {
-  // Aggregate stats from match_data (goal scorers, ratings etc.)
+  const [statsView, setStatsView] = useState<'goals' | 'assists' | 'ratings'>('goals');
   const playedMatches = matches.filter(m => m.status === 'played');
 
-  // Build player stats from match_data JSONB
   const playerStats = useMemo(() => {
     const stats: Record<string, { name: string; teamId: string; goals: number; assists: number; ratings: number[]; matches: number }> = {};
 
@@ -686,24 +687,22 @@ function TournamentStatsTab({ teams, matches, getTeamName, getTeamLogo }: StatsT
       const data = match.match_data as any;
       if (!data) continue;
 
-      // Process goal scorers
       const goalScorers = data.goal_scorers || data.goalScorers || [];
       for (const gs of goalScorers) {
-        const key = `${gs.name}_${gs.team === 'home' ? match.home_team_id : match.away_team_id}`;
-        if (!stats[key]) stats[key] = { name: gs.name, teamId: gs.team === 'home' ? match.home_team_id : match.away_team_id, goals: 0, assists: 0, ratings: [], matches: 0 };
+        const teamId = gs.team === 'home' ? match.home_team_id : match.away_team_id;
+        const key = `${gs.name}_${teamId}`;
+        if (!stats[key]) stats[key] = { name: gs.name, teamId, goals: 0, assists: 0, ratings: [], matches: 0 };
         stats[key].goals += 1;
         if (gs.assist) {
-          const aKey = `${gs.assist}_${gs.team === 'home' ? match.home_team_id : match.away_team_id}`;
-          if (!stats[aKey]) stats[aKey] = { name: gs.assist, teamId: gs.team === 'home' ? match.home_team_id : match.away_team_id, goals: 0, assists: 0, ratings: [], matches: 0 };
+          const aKey = `${gs.assist}_${teamId}`;
+          if (!stats[aKey]) stats[aKey] = { name: gs.assist, teamId, goals: 0, assists: 0, ratings: [], matches: 0 };
           stats[aKey].assists += 1;
         }
       }
 
-      // Process player ratings
       const ratings = data.player_ratings || data.playerRatings || {};
+      const homePlayers = data.home_players || data.homePlayers || [];
       for (const [playerId, rating] of Object.entries(ratings)) {
-        // Try to find player name from home_players
-        const homePlayers = data.home_players || data.homePlayers || [];
         const player = homePlayers.find((p: any) => p.id === playerId);
         if (player) {
           const key = `${player.name}_${match.home_team_id}`;
@@ -732,93 +731,86 @@ function TournamentStatsTab({ teams, matches, getTeamName, getTeamLogo }: StatsT
     );
   }
 
+  const renderList = (items: typeof topScorers, valueKey: 'goals' | 'assists', color: string) => (
+    items.length === 0 ? (
+      <p className="text-[9px] text-muted-foreground text-center py-3">Nenhum dado registrado ainda.</p>
+    ) : (
+      <div className="space-y-0.5">
+        {items.map((p, i) => (
+          <div key={`${valueKey}_${i}`} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[9px] ${i === 0 ? 'bg-primary/10' : i % 2 === 0 ? 'bg-accent/10' : ''}`}>
+            <span className={`w-5 text-center font-bold ${i === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+            <span className="text-sm">{getTeamLogo(p.teamId)}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">{p.name}</p>
+              <p className="text-[7px] text-muted-foreground truncate">{getTeamName(p.teamId)}</p>
+            </div>
+            <span className={`font-black text-sm ${color}`}>{p[valueKey]}</span>
+          </div>
+        ))}
+      </div>
+    )
+  );
+
+  const renderRatings = () => (
+    topRated.length === 0 ? (
+      <p className="text-[9px] text-muted-foreground text-center py-3">Nenhuma nota registrada ainda.</p>
+    ) : (
+      <div className="space-y-0.5">
+        {topRated.map((p, i) => (
+          <div key={`r_${i}`} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[9px] ${i === 0 ? 'bg-primary/10' : i % 2 === 0 ? 'bg-accent/10' : ''}`}>
+            <span className={`w-5 text-center font-bold ${i === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+            <span className="text-sm">{getTeamLogo(p.teamId)}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">{p.name}</p>
+              <p className="text-[7px] text-muted-foreground">{getTeamName(p.teamId)} • {p.matches}j</p>
+            </div>
+            <span className="font-black text-sm text-warning">{p.avgRating.toFixed(1)}</span>
+          </div>
+        ))}
+      </div>
+    )
+  );
+
   return (
     <div className="space-y-3">
-      {/* Top Scorers */}
+      {/* 3 Toggle Buttons */}
+      <div className="grid grid-cols-3 gap-1 bg-muted/30 rounded-lg p-0.5">
+        <button
+          onClick={() => setStatsView('goals')}
+          className={`h-8 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all ${statsView === 'goals' ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          ⚽ Gols ({topScorers.length})
+        </button>
+        <button
+          onClick={() => setStatsView('assists')}
+          className={`h-8 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all ${statsView === 'assists' ? 'bg-success/15 text-success shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          🎯 Assist. ({topAssisters.length})
+        </button>
+        <button
+          onClick={() => setStatsView('ratings')}
+          className={`h-8 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all ${statsView === 'ratings' ? 'bg-warning/15 text-warning shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          ⭐ Notas ({topRated.length})
+        </button>
+      </div>
+
+      {/* Active stats view */}
       <Card className="game-card">
         <CardHeader className="section-header pb-1 px-3 pt-2">
           <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-            ⚽ Artilheiros
+            {statsView === 'goals' ? '⚽ Artilheiros' : statsView === 'assists' ? '🎯 Garçons' : '⭐ Melhores Notas'}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pb-2">
-          {topScorers.length === 0 ? (
-            <p className="text-[9px] text-muted-foreground text-center py-2">Nenhum gol marcado ainda.</p>
-          ) : (
-            <div className="space-y-0.5">
-              {topScorers.map((p, i) => (
-                <div key={`s_${i}`} className="flex items-center gap-2 px-2 py-1 rounded text-[9px] bg-accent/10">
-                  <span className="w-4 text-center font-bold">{i + 1}</span>
-                  <span className="text-[8px]">{getTeamLogo(p.teamId)}</span>
-                  <span className="flex-1 font-medium truncate">{p.name}</span>
-                  <span className="text-[7px] text-muted-foreground truncate max-w-[50px]">{getTeamName(p.teamId)}</span>
-                  <span className="font-black text-primary text-xs">{p.goals}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {statsView === 'goals' && renderList(topScorers, 'goals', 'text-primary')}
+          {statsView === 'assists' && renderList(topAssisters, 'assists', 'text-success')}
+          {statsView === 'ratings' && renderRatings()}
         </CardContent>
       </Card>
 
-      {/* Top Assisters */}
+      {/* Summary */}
       <Card className="game-card">
-        <CardHeader className="section-header pb-1 px-3 pt-2">
-          <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-            🎯 Garçons (Assistências)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-2">
-          {topAssisters.length === 0 ? (
-            <p className="text-[9px] text-muted-foreground text-center py-2">Nenhuma assistência registrada.</p>
-          ) : (
-            <div className="space-y-0.5">
-              {topAssisters.map((p, i) => (
-                <div key={`a_${i}`} className="flex items-center gap-2 px-2 py-1 rounded text-[9px] bg-accent/10">
-                  <span className="w-4 text-center font-bold">{i + 1}</span>
-                  <span className="text-[8px]">{getTeamLogo(p.teamId)}</span>
-                  <span className="flex-1 font-medium truncate">{p.name}</span>
-                  <span className="text-[7px] text-muted-foreground truncate max-w-[50px]">{getTeamName(p.teamId)}</span>
-                  <span className="font-black text-success text-xs">{p.assists}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Rated */}
-      <Card className="game-card">
-        <CardHeader className="section-header pb-1 px-3 pt-2">
-          <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-            ⭐ Melhores Notas (Média)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-2">
-          {topRated.length === 0 ? (
-            <p className="text-[9px] text-muted-foreground text-center py-2">Nenhuma nota registrada.</p>
-          ) : (
-            <div className="space-y-0.5">
-              {topRated.map((p, i) => (
-                <div key={`r_${i}`} className="flex items-center gap-2 px-2 py-1 rounded text-[9px] bg-accent/10">
-                  <span className="w-4 text-center font-bold">{i + 1}</span>
-                  <span className="text-[8px]">{getTeamLogo(p.teamId)}</span>
-                  <span className="flex-1 font-medium truncate">{p.name}</span>
-                  <span className="text-[7px] text-muted-foreground">{p.matches}j</span>
-                  <span className="font-black text-warning text-xs">{p.avgRating.toFixed(1)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Team stats summary */}
-      <Card className="game-card">
-        <CardHeader className="section-header pb-1 px-3 pt-2">
-          <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-            📊 Resumo do Campeonato
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-2.5">
           <div className="grid grid-cols-2 gap-2 text-[9px]">
             <div className="space-y-1">
