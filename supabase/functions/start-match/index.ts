@@ -415,6 +415,15 @@ function simulateFullMatch(
     },
   };
 
+  // ── Goal type picker: varies the 2D animation ──
+  function pickGoalEventType(): string {
+    const r = rng();
+    if (r < 0.20) return 'counter_attack_goal';  // 20%
+    if (r < 0.38) return 'crossing_goal';         // 18%
+    if (r < 0.50) return 'free_kick_goal';        // 12%
+    return 'foot_goal';                           // 50%
+  }
+
   // ── HOME GOALS ──
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
@@ -433,8 +442,9 @@ function simulateFullMatch(
     }
     stats.shots[0]++; stats.shotsOnTarget[0]++;
     const buildup = buildupDesc('home', homeTeam);
+    const eventType = pickGoalEventType();
     allPlanned.push({
-      minute: m, type: 'foot_goal', team: 'home', isGoal: true,
+      minute: m, type: eventType, team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
       description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${scoreH}x${scoreA}`)}`,
@@ -458,8 +468,9 @@ function simulateFullMatch(
     }
     stats.shots[1]++; stats.shotsOnTarget[1]++;
     const buildup = buildupDesc('away', awayTeam);
+    const eventType = pickGoalEventType();
     allPlanned.push({
-      minute: m, type: 'foot_goal', team: 'away', isGoal: true,
+      minute: m, type: eventType, team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
       description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${scoreH}x${scoreA}`)}`,

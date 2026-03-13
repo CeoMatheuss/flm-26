@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   LayoutDashboard, Users, Swords, ShoppingCart, Trophy, 
   Building2, GraduationCap, ChevronRight, ChevronLeft, X, Sparkles, Coins,
-  Target, Dumbbell, Globe, Newspaper, DollarSign, Landmark
+  Target, Dumbbell, Globe, Newspaper, DollarSign, Landmark, Gamepad2, Zap, Shield
 } from 'lucide-react';
 
 interface Props {
@@ -20,115 +20,128 @@ const steps = [
     icon: Sparkles,
     title: 'Bem-vindo ao FLM 26! ⚽',
     tab: 'dashboard',
-    description: 'Você é o novo manager! Aqui no Dashboard você acompanha tudo: orçamento, torcida, resultados e eventos do seu clube.',
+    description: 'Você é o novo manager! O Dashboard mostra tudo: orçamento, torcida, moral, próximo jogo, infraestrutura e eventos do clube em tempo real.',
     examples: [
-      { label: 'Orçamento', detail: 'Seu dinheiro disponível para contratações e melhorias' },
-      { label: 'Torcida', detail: 'Vitórias atraem fãs, derrotas espantam' },
-      { label: 'Eventos', detail: 'Lesões, protestos e surpresas aparecem aqui' },
+      { label: '💰 Orçamento', detail: 'Gerencie finanças — cada decisão impacta seu caixa' },
+      { label: '📊 Moral & Torcida', detail: 'Resultados afetam moral do elenco e tamanho da torcida' },
+      { label: '⚡ Eventos', detail: 'Lesões, protestos, patrocínios e surpresas aparecem aqui' },
     ],
     reward: 50000,
     color: 'text-primary',
   },
   {
     icon: Newspaper,
-    title: 'Jornal & Notícias',
+    title: 'Jornal & Notícias 📰',
     tab: 'journal',
-    description: 'O Jornal traz todas as manchetes: transferências, resultados, eventos e comunicados oficiais dos administradores.',
+    description: 'O Jornal traz manchetes automáticas sobre transferências, resultados e comunicados. Use a IA para gerar narrações épicas!',
     examples: [
-      { label: 'Manchetes', detail: 'Notícias automáticas sobre seu clube e jogadores' },
-      { label: 'Narração IA', detail: 'Clique para gerar narrações realistas das notícias' },
-      { label: 'Atualizações ADM', detail: 'Comunicados oficiais da moderação do jogo' },
+      { label: '📰 Manchetes', detail: 'Notícias geradas automaticamente sobre seu clube' },
+      { label: '🤖 Narração IA', detail: 'Clique para gerar narrações cinematográficas' },
+      { label: '📢 Comunicados', detail: 'Avisos importantes da administração do jogo' },
     ],
     reward: 25000,
     color: 'text-blue-400',
   },
   {
     icon: Users,
-    title: 'Elenco',
+    title: 'Elenco & Jogadores 👥',
     tab: 'squad',
-    description: 'Gerencie seus jogadores: veja atributos detalhados, renove contratos, descanse jogadores cansados e liste para venda.',
+    description: 'Gerencie cada jogador: atributos detalhados (16 stats), contratos, fadiga, moral individual. Descanse jogadores cansados e renove contratos antes que expirem!',
     examples: [
-      { label: 'OVR', detail: 'Overall do jogador — quanto maior, melhor ele joga' },
-      { label: 'Stamina', detail: 'Jogadores cansados rendem menos. Use "Descansar"' },
-      { label: 'Contrato', detail: 'Renove antes que expire ou perde o jogador!' },
+      { label: '⭐ OVR & Atributos', detail: '16 atributos como Velocidade, Finalização, Visão, Compostura...' },
+      { label: '😴 Fadiga & Descanso', detail: 'Jogadores cansados rendem -20%. Use "Descansar" para recuperar' },
+      { label: '📝 Contratos', detail: 'Renove antes de expirar ou perde o jogador de graça!' },
     ],
     reward: 50000,
     color: 'text-green-400',
   },
   {
     icon: Target,
-    title: 'Táticas',
+    title: 'Táticas & Formações ⚔️',
     tab: 'tactics',
-    description: 'Configure formação (4-3-3, 4-4-2, etc), estilo de jogo (ofensivo/defensivo) e pressão. A tática afeta diretamente o resultado das partidas.',
+    description: 'Escolha formação (4-3-3, 4-4-2, 3-5-2...), estilo (ofensivo/defensivo), pressão e tempo. Cada combinação muda completamente o resultado das partidas!',
     examples: [
-      { label: 'Formação', detail: 'Escolha entre 4-3-3, 4-4-2, 3-5-2 e mais' },
-      { label: 'Estilo', detail: 'Ofensivo marca mais gols mas sofre mais' },
-      { label: 'Pressão', detail: 'Alta pressão cansa mais mas rouba mais bolas' },
+      { label: '📐 Formação', detail: '4-3-3, 4-4-2, 3-5-2, 5-3-2 e mais — cada uma com pontos fortes' },
+      { label: '⚔️ Estilo', detail: 'Ofensivo → mais gols mas sofre mais. Contra-ataque → explosivo' },
+      { label: '🔥 Pressão & Tempo', detail: 'Pressão alta cansa mas rouba bolas. Tempo rápido = mais chances' },
     ],
     reward: 50000,
     color: 'text-red-400',
   },
   {
     icon: Dumbbell,
-    title: 'Treinos & Treinos 2D',
+    title: 'Treinos Táticos 2D 🎮',
     tab: 'training',
-    description: 'Treine seus jogadores para evoluir atributos. Os Treinos 2D (Pênaltis, Faltas, Contra-Ataque) dão bônus temporários para as partidas!',
+    description: 'Simulações táticas interativas! Pratique Pênaltis, Faltas, Cruzamentos, Contra-Ataques e Pressão. Cada treino dá bônus temporários para a próxima partida!',
     examples: [
-      { label: 'Treinos', detail: 'Insights automáticos sobre potencial e condição do elenco' },
-      { label: 'Treinos 2D', detail: 'Simulações táticas que dão +1/+2 em atributos' },
-      { label: 'Bônus', detail: 'Complete um treino 2D antes do jogo para vantagem!' },
+      { label: '🎯 Pênaltis', detail: '10 cobranças com física realista — pratique o ângulo perfeito' },
+      { label: '⚡ Contra-Ataque', detail: 'Simule transições rápidas e ganhe +2 em Velocidade temporário' },
+      { label: '📐 Cruzamentos', detail: 'Treine jogadas pela ponta e ganhe bônus em Cruzamento' },
     ],
     reward: 75000,
     color: 'text-orange-400',
   },
   {
     icon: ShoppingCart,
-    title: 'Mercado de Transferências',
+    title: 'Mercado Online 🛒',
     tab: 'market',
-    description: 'Compre e venda jogadores no mercado online. Faça propostas, negocie salários e monte o melhor elenco possível.',
+    description: 'Compre e venda jogadores com outros managers reais! Faça propostas com bônus por gols, títulos e assistências. Negocie empréstimos para reduzir custos.',
     examples: [
-      { label: 'Comprar', detail: 'Veja jogadores à venda e faça ofertas com bônus' },
-      { label: 'Vender', detail: 'Liste seus jogadores no elenco → botão "Vender"' },
-      { label: 'Empréstimos', detail: 'Empreste jogadores para reduzir folha salarial' },
+      { label: '🔍 Buscar', detail: 'Filtre por posição, OVR, idade e preço no mercado global' },
+      { label: '💼 Negociar', detail: 'Oferte preço + salário + bônus por performance' },
+      { label: '🔄 Empréstimos', detail: 'Empreste jogadores para economizar ou reforçar temporariamente' },
     ],
     reward: 75000,
     color: 'text-yellow-400',
   },
   {
-    icon: Globe,
-    title: 'Liga Online',
-    tab: 'league',
-    description: 'Entre na liga automática do seu país e dispute contra outros managers reais. Campeonatos com rodadas, tabela e premiações.',
+    icon: Gamepad2,
+    title: 'Partidas & Simulação ⚽',
+    tab: 'matches',
+    description: 'Partidas em tempo real com narração detalhada e lances 2D animados! Gols, pênaltis, contra-ataques, cruzamentos e cobranças de falta — tudo visualizado em 2D.',
     examples: [
-      { label: 'Auto-Liga', detail: 'O jogo te coloca automaticamente em uma liga competitiva' },
-      { label: 'Chat', detail: 'Converse com outros managers na liga' },
-      { label: 'Propostas', detail: 'Negocie jogadores diretamente com rivais' },
+      { label: '📺 Narração', detail: 'Texto detalhado minuto a minuto com emoção de rádio' },
+      { label: '🎬 Lances 2D', detail: 'Animações de gols, defesas, trave, contra-ataques e faltas' },
+      { label: '📊 Estatísticas', detail: 'Posse, chutes, escanteios, faltas — tudo em tempo real' },
+    ],
+    reward: 50000,
+    color: 'text-emerald-400',
+  },
+  {
+    icon: Globe,
+    title: 'Liga Online & Torneios 🌍',
+    tab: 'league',
+    description: 'Entre na liga automática do seu país e dispute contra managers reais! Campeonatos com rodadas, tabela, chat, propostas diretas e premiações.',
+    examples: [
+      { label: '🏆 Auto-Liga', detail: 'O jogo te inscreve automaticamente em liga competitiva' },
+      { label: '💬 Chat & Propostas', detail: 'Negocie jogadores e converse diretamente com rivais' },
+      { label: '🎖️ Torneios', detail: 'Campeonatos especiais com grupos, mata-mata e premiação' },
     ],
     reward: 50000,
     color: 'text-cyan-400',
   },
   {
     icon: Building2,
-    title: 'Infraestrutura & Estádio',
+    title: 'Infraestrutura & Estádio 🏟️',
     tab: 'infra',
-    description: 'Melhore o CT, fisioterapia, base e estádio. Cada nível traz benefícios reais: treino mais rápido, recuperação melhor e mais torcedores.',
+    description: 'Evolua CT, Fisioterapia, Base e Estádio até nível 15! Cada upgrade traz benefícios reais: treino mais eficiente, recuperação acelerada e mais receita.',
     examples: [
-      { label: 'Estádio', detail: 'Até nível 15 (120k lugares) → mais receita por jogo' },
-      { label: 'CT', detail: 'Nível maior = jogadores evoluem mais rápido' },
-      { label: 'Fisioterapia', detail: 'Lesões duram menos com nível alto' },
+      { label: '🏟️ Estádio', detail: 'Até 120k lugares → mais receita por jogo disputado' },
+      { label: '🏋️ CT', detail: 'Nível maior = evolução de atributos mais rápida' },
+      { label: '🏥 Fisioterapia', detail: 'Lesões duram menos dias com nível alto' },
     ],
     reward: 50000,
     color: 'text-purple-400',
   },
   {
     icon: Trophy,
-    title: 'Ranking & Conquistas',
+    title: 'Ranking & Conquistas 🏅',
     tab: 'ranking',
-    description: 'Suba no ranking global com vitórias! Complete conquistas para desbloquear marcos. Acesse troféus para ver sua galeria.',
+    description: 'Suba no ranking global com vitórias! Complete conquistas únicas e colecione troféus de títulos conquistados. Dispute o topo!',
     examples: [
-      { label: 'Ranking', detail: 'Vitórias dão pontos, derrotas tiram. Dispute o topo!' },
-      { label: 'Conquistas', detail: 'Marque 100 gols, ganhe 10 jogos seguidos e mais' },
-      { label: 'Troféus', detail: 'Títulos de liga ficam eternizados na galeria' },
+      { label: '📈 Ranking', detail: 'Vitórias dão pontos, derrotas tiram. Suba divisões!' },
+      { label: '🏅 Conquistas', detail: '100 gols, 10 vitórias seguidas, campeão invicto e mais' },
+      { label: '🏆 Troféus', detail: 'Títulos de liga ficam eternizados na galeria do clube' },
     ],
     reward: 75000,
     color: 'text-amber-400',
@@ -164,13 +177,21 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
     onClose();
   };
 
-  // Navigate to tab when opening
   const handleOpen = (isOpen: boolean) => {
     if (!isOpen) {
       onClose();
     } else {
       onNavigateTab?.(current.tab);
     }
+  };
+
+  const tabDisplayName = (tab: string) => {
+    const map: Record<string, string> = {
+      dashboard: 'Dashboard', journal: 'Jornal', squad: 'Elenco',
+      tactics: 'Táticas', training: 'Treinos', market: 'Mercado',
+      matches: 'Partidas', league: 'Liga', infra: 'Infraestrutura', ranking: 'Ranking',
+    };
+    return map[tab] || tab;
   };
 
   return (
@@ -194,7 +215,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
                 <DialogTitle className="text-base">{current.title}</DialogTitle>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Badge variant="secondary" className="text-[9px] gap-0.5 h-4">
-                    📍 Aba: {current.tab === 'dashboard' ? 'Dashboard' : current.tab === 'journal' ? 'Jornal' : current.tab === 'squad' ? 'Elenco' : current.tab === 'tactics' ? 'Táticas' : current.tab === 'training' ? 'Treinos' : current.tab === 'market' ? 'Mercado' : current.tab === 'league' ? 'Liga' : current.tab === 'infra' ? 'Infraestrutura' : 'Ranking'}
+                    📍 Aba: {tabDisplayName(current.tab)}
                   </Badge>
                   <div className="flex items-center gap-0.5">
                     <Coins className="h-3 w-3 text-yellow-400" />
@@ -209,7 +230,6 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
             {current.description}
           </p>
 
-          {/* Interactive examples */}
           <div className="space-y-1.5">
             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Como funciona:</p>
             {current.examples.map((ex, i) => (
@@ -223,7 +243,6 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
             ))}
           </div>
 
-          {/* Total reward */}
           <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Coins className="h-3.5 w-3.5 text-yellow-400" />
@@ -232,7 +251,6 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
             <span className="text-xs font-bold text-yellow-400">R${TOTAL_REWARD.toLocaleString('pt-BR')}</span>
           </div>
 
-          {/* Progress */}
           <div className="flex gap-0.5">
             {steps.map((_, i) => (
               <div
