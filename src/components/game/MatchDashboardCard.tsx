@@ -157,6 +157,7 @@ interface Props {
   club: Club;
   userId?: string;
   onGoToFriendly?: () => void;
+  onViewClub?: (clubName: string) => void;
 }
 
 type MatchStatus = 'live' | 'finished' | 'none';
