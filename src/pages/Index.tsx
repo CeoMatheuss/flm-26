@@ -26,6 +26,8 @@ import { AuctionTab } from '@/components/game/AuctionTab';
 import { OnlineFriendliesTab } from '@/components/game/OnlineFriendliesTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { AdminTab } from '@/components/game/AdminTab';
+import { MaintenanceScreen } from '@/components/game/MaintenanceScreen';
+import { UpdatePopupWidget } from '@/components/game/UpdatePopupWidget';
 
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
@@ -164,9 +166,31 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isFounder, setIsFounder] = useState(false);
   const [showTutorial, setShowTutorial] = useState(!!isNewClub);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const game = useGame(initialState, userId);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
+
+  // Check maintenance mode
+  useEffect(() => {
+    const checkMaintenance = async () => {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .maybeSingle();
+      if (data?.value) {
+        const val = data.value as any;
+        setIsMaintenanceMode(val.active === true);
+      }
+      setMaintenanceChecked(true);
+    };
+    checkMaintenance();
+    // Poll every 30s
+    const interval = setInterval(checkMaintenance, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Handle match result from MatchResultLocker via navigation state (Bug #1 fix)
   // MatchResultLocker navigates to '/' with serverMatchResult in state after persist().
@@ -386,8 +410,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     }
   }, []);
 
+  // Show maintenance screen for non-admins
+  if (maintenanceChecked && isMaintenanceMode && !isAdminRole) {
+    return <MaintenanceScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
+      <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal
         open={showChangelog}
         onClose={() => {

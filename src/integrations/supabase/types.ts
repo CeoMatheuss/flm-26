@@ -472,6 +472,48 @@ export type Database = {
         }
         Relationships: []
       }
+      game_updates: {
+        Row: {
+          ai_summary: string | null
+          author_id: string
+          created_at: string
+          description: string
+          features: string[]
+          fixes: string[]
+          id: string
+          published_at: string | null
+          status: string
+          title: string
+          version: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          author_id: string
+          created_at?: string
+          description?: string
+          features?: string[]
+          fixes?: string[]
+          id?: string
+          published_at?: string | null
+          status?: string
+          title: string
+          version: string
+        }
+        Update: {
+          ai_summary?: string | null
+          author_id?: string
+          created_at?: string
+          description?: string
+          features?: string[]
+          fixes?: string[]
+          id?: string
+          published_at?: string | null
+          status?: string
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       global_chat_messages: {
         Row: {
           club_name: string
@@ -1368,6 +1410,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       trade_proposals: {
         Row: {
