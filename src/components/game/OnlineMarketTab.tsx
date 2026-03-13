@@ -587,77 +587,112 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => setAgeMaxFilter(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
           </div>
 
-          {filterListings(otherListings).length === 0 ? (
-            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
-              <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Nenhum jogador disponível no mercado online.
-            </div>
-          ) : (
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-2">
-                {filterListings(otherListings).map(listing => {
-                  const pd = listing.player_data;
-                  const shield = listing.seller_shield as any;
-                  const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+          {(() => {
+            const filtered = filterListings(otherListings);
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            const safePage = Math.min(currentPage, totalPages || 1);
+            const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
-                  return (
-                    <div key={listing.id} className={`rounded-xl border border-border/15 hover:border-primary/25 transition-all duration-300 overflow-hidden`} style={{ background: 'hsl(var(--card))' }}>
-                      <div className={`flex items-center gap-2.5 p-3 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
-                        {/* Shield */}
-                        <div className="shrink-0">
-                          {shield ? (
-                            <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={28} />
-                          ) : (
-                            <div className="w-7 h-7 rounded-lg bg-muted/30 flex items-center justify-center text-xs">⚽</div>
-                          )}
-                        </div>
+            if (filtered.length === 0) return (
+              <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                Nenhum jogador disponível no mercado online.
+              </div>
+            );
 
-                        {/* OVR Badge */}
-                        <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
-                          <span className={`text-sm font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
-                          <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
-                        </div>
+            return (
+              <>
+                <div className="space-y-2">
+                  {paginated.map(listing => {
+                    const pd = listing.player_data;
+                    const shield = listing.seller_shield as any;
+                    const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
 
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-xs truncate">{listing.player_name}</p>
-                          <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
-                            {listing.seller_club_name}
-                          </button>
-                          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5">
-                            <span>{listing.player_age}a</span>
-                            <span>•</span>
-                            <span>{pd?.gamesPlayed ?? 0}j</span>
-                            <span>⚽{pd?.goals ?? 0}</span>
-                            <span>🅰️{pd?.assists ?? 0}</span>
+                    return (
+                      <div key={listing.id} className="rounded-xl border border-border/15 hover:border-primary/25 transition-all duration-300 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
+                        <div className={`flex items-center gap-2.5 p-3 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
+                          <div className="shrink-0">
+                            {shield ? (
+                              <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={28} />
+                            ) : (
+                              <div className="w-7 h-7 rounded-lg bg-muted/30 flex items-center justify-center text-xs">⚽</div>
+                            )}
                           </div>
-                        </div>
-
-                        {listing.transfer_count > 2 && (
-                          <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
-                            <ArrowLeftRight className="h-2.5 w-2.5" /> {listing.transfer_count}x
-                          </Badge>
-                        )}
-
-                        {/* Price + Actions */}
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-                          <div className="flex gap-1 mt-1.5">
-                            <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5}>
-                              <Send className="h-3 w-3" /> Proposta
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
-                              <Eye className="h-3 w-3" />
-                            </Button>
+                          <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
+                            <span className={`text-sm font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
+                            <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-xs truncate">{listing.player_name}</p>
+                            <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
+                              {listing.seller_club_name}
+                            </button>
+                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5">
+                              <span>{listing.player_age}a</span>
+                              <span>•</span>
+                              <span>{pd?.gamesPlayed ?? 0}j</span>
+                              <span>⚽{pd?.goals ?? 0}</span>
+                              <span>🅰️{pd?.assists ?? 0}</span>
+                            </div>
+                          </div>
+                          {listing.transfer_count > 2 && (
+                            <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
+                              <ArrowLeftRight className="h-2.5 w-2.5" /> {listing.transfer_count}x
+                            </Badge>
+                          )}
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+                            <div className="flex gap-1 mt-1.5">
+                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5}>
+                                <Send className="h-3 w-3" /> Proposta
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          )}
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination className="mt-3">
+                    <PaginationContent>
+                      {safePage > 1 && (
+                        <PaginationItem>
+                          <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="h-8 text-[10px] cursor-pointer" />
+                        </PaginationItem>
+                      )}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const start = Math.max(1, Math.min(safePage - 2, totalPages - 4));
+                        const page = start + i;
+                        if (page > totalPages) return null;
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink isActive={page === safePage} onClick={() => setCurrentPage(page)} className="h-8 w-8 text-[10px] cursor-pointer">
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+                      {safePage < totalPages && (
+                        <PaginationItem>
+                          <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="h-8 text-[10px] cursor-pointer" />
+                        </PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                )}
+
+                <p className="text-[9px] text-muted-foreground text-center">
+                  Mostrando {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} de {filtered.length} jogadores
+                </p>
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* ── LIST PLAYERS ── */}
