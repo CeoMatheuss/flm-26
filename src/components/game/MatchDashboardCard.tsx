@@ -393,7 +393,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
             <div className="flex items-center justify-between py-2">
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isHomeTeamClub)}
-                <p className="font-bold text-xs sm:text-sm truncate">{homeTeamName}</p>
+                <button onClick={() => onViewClub?.(homeTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{homeTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Mandante</p>
               </div>
 
