@@ -272,6 +272,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
 
     if (res.error || res.data?.error) {
       toast.error(res.data?.error || 'Erro ao responder proposta');
+    } else if (res.data?.awaitingDecision) {
+      toast.success(res.data.message || `Proposta aceita! Jogador decidirá em 6 horas.`);
     } else if (res.data?.playerAccepted === false) {
       toast.warning(res.data.reason || 'Jogador recusou a proposta.');
     } else if (res.data?.playerAccepted === true) {
@@ -281,7 +283,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
         if (offer) onPlayerSold(listing.player_data?.id, offer.offered_price);
       }
     } else {
-      toast.success(accept ? 'Proposta aceita!' : 'Proposta recusada. Contraproposta enviada.');
+      toast.success(accept ? 'Proposta aceita! Jogador decidirá em 6h.' : 'Proposta recusada. Contraproposta enviada.');
     }
     loadListings(); loadMyOffers(); loadIncomingOffers();
     setLoading(false);
