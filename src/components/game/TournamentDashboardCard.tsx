@@ -140,15 +140,16 @@ export function TournamentDashboardCard({ onExpand }: Props) {
             {onExpand && selected && (
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="h-6 px-2 text-[8px] font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                variant="default" 
+                className="h-7 px-3 text-[10px] font-bold gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
+                  console.log('Ver mais clicked, tournament:', selected.id);
                   onExpand(selected.id);
                 }}
               >
-                <Maximize2 className="h-3 w-3" />
-                Expandir
+                Ver mais
               </Button>
             )}
           </div>
