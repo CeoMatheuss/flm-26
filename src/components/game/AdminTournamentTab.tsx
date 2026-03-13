@@ -167,6 +167,28 @@ function getBotNamesForScope(scope: string): string[] {
   return BOT_NAMES_BY_COUNTRY[scope] || BOT_NAMES_BY_COUNTRY['Brasil'];
 }
 
+const BOT_FIRST_NAMES = ['Carlos','Henrique','Vinícius','Renan','Caio','Yuri','Danilo','Igor','Gustavo','Eduardo','Ricardo','Willian','Samuel','Otávio','Matheus','Luan','Wesley','Breno','Davi','Enzo','Miguel','Arthur','Rafael','Pedro','Lucas','Felipe','Gabriel','Thiago','Bruno','André','Diego','Marcos','Leonardo','Bernardo','João','Nicolas','Vitor','Guilherme','Hugo','Cássio'];
+const BOT_LAST_NAMES = ['Silva','Santos','Oliveira','Souza','Lima','Costa','Almeida','Ferreira','Rodrigues','Nunes','Gomes','Dias','Mendes','Rocha','Borges','Reis','Amaral','Melo','Pires','Tavares','Fonseca','Castro','Azevedo','Moura','Barros','Andrade','Cunha','Batista','Nogueira','Miranda'];
+const BOT_POSITIONS = ['GOL','ZAG','ZAG','LAT','LAT','VOL','MEI','MEI','MEI','ATA','ATA','ZAG','MEI','ATA','GOL'];
+
+function generateBotSquad(teamOvr: number, clubName: string): any[] {
+  const usedNames = new Set<string>();
+  return BOT_POSITIONS.map((pos, i) => {
+    let name = '';
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const fn = BOT_FIRST_NAMES[Math.floor(Math.random() * BOT_FIRST_NAMES.length)];
+      const ln = BOT_LAST_NAMES[Math.floor(Math.random() * BOT_LAST_NAMES.length)];
+      name = `${fn} ${ln}`;
+      if (!usedNames.has(name)) break;
+    }
+    usedNames.add(name);
+    const variance = Math.floor(Math.random() * 16) - 8;
+    const ovr = Math.max(30, Math.min(99, teamOvr + variance));
+    const age = 18 + Math.floor(Math.random() * 17);
+    return { id: `bot_${i}_${Math.random().toString(36).slice(2,7)}`, name, position: pos, overall: ovr, age, stamina: 70 + Math.floor(Math.random() * 25), morale: 60 + Math.floor(Math.random() * 30) };
+  });
+}
+
 export function AdminTournamentTab({ userId }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -463,7 +485,7 @@ export function AdminTournamentTab({ userId }: Props) {
       }
     }
 
-    // 3. Fill remaining slots with bots
+    // 3. Fill remaining slots with bots (each with 15-player squad)
     const slotsForBots = maxTeams - allTeamInserts.length;
     if (slotsForBots > 0 && teamSource !== 'online_only') {
       const botPool = getBotNamesForScope(scope);
@@ -478,6 +500,7 @@ export function AdminTournamentTab({ userId }: Props) {
         if (!name || usedNames.has(name)) name = `Bot FC ${i + 1}`;
         usedNames.add(name);
         const ovr = Math.floor(Math.random() * (maxOvr - minOvr + 1)) + minOvr;
+        const botSquad = generateBotSquad(ovr, name);
         allTeamInserts.push({
           tournament_id: tournament.id,
           is_bot: true,
@@ -486,6 +509,7 @@ export function AdminTournamentTab({ userId }: Props) {
           club_name: name,
           club_logo: '🤖',
           user_id: null,
+          bot_squad: botSquad,
         });
       }
     }
