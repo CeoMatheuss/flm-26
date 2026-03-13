@@ -173,7 +173,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [teams, setTeams] = useState<TournamentTeam[]>([]);
   const [matches, setMatches] = useState<TournamentMatch[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'calendar' | 'bracket'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'teams' | 'groups' | 'calendar' | 'bracket'>('overview');
 
   useEffect(() => {
     const load = async () => {
