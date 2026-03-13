@@ -518,12 +518,12 @@ export function AdminTournamentTab({ userId }: Props) {
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
     if (formFormat === 'league') {
-      fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
-      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
-      fixtures = generateGroupFixtures(groups, startDateStr, formMatchTime, Number(formInterval) || 24);
+      fixtures = generateGroupFixtures(groups, startDateStr, matchTime, Number(formInterval) || 24);
     }
 
     // 6. Insert fixtures
