@@ -49,6 +49,8 @@ interface TransferOffer {
   status: string;
   rejection_reason: string | null;
   created_at: string;
+  decision_deadline: string | null;
+  decision_status: string | null;
 }
 
 const posColors: Record<string, { bg: string; text: string; border: string }> = {
