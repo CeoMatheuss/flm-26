@@ -463,7 +463,7 @@ export function AdminTournamentTab({ userId }: Props) {
       }
     }
 
-    // 3. Fill remaining slots with bots
+    // 3. Fill remaining slots with bots (each with 15-player squad)
     const slotsForBots = maxTeams - allTeamInserts.length;
     if (slotsForBots > 0 && teamSource !== 'online_only') {
       const botPool = getBotNamesForScope(scope);
@@ -478,6 +478,7 @@ export function AdminTournamentTab({ userId }: Props) {
         if (!name || usedNames.has(name)) name = `Bot FC ${i + 1}`;
         usedNames.add(name);
         const ovr = Math.floor(Math.random() * (maxOvr - minOvr + 1)) + minOvr;
+        const botSquad = generateBotSquad(ovr, name);
         allTeamInserts.push({
           tournament_id: tournament.id,
           is_bot: true,
@@ -486,6 +487,7 @@ export function AdminTournamentTab({ userId }: Props) {
           club_name: name,
           club_logo: '🤖',
           user_id: null,
+          bot_squad: botSquad,
         });
       }
     }
