@@ -209,9 +209,10 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
 
   const tabs = [
     { key: 'overview' as const, label: 'Visão Geral', icon: TrendingUp },
+    { key: 'teams' as const, label: 'Times', icon: Users },
     ...(hasGroups ? [{ key: 'groups' as const, label: 'Grupos', icon: Target }] : []),
     { key: 'calendar' as const, label: 'Calendário', icon: Calendar },
-    ...(tournament.format === 'knockout' || tournament.format === 'group_knockout' ? [{ key: 'bracket' as const, label: 'Chaveamento', icon: Swords }] : []),
+    ...(tournament.format === 'knockout' || tournament.format === 'group_knockout' ? [{ key: 'bracket' as const, label: 'Chave', icon: Swords }] : []),
   ];
 
   return (
