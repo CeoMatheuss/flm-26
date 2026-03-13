@@ -280,34 +280,25 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .limit(100);
       setMatches((data as MatchHistoryItem[]) || []);
 
-      // Load scheduled tournament matches for this user
-      const { data: myTeams } = await supabase
-        .from('custom_tournament_teams')
-        .select('id, tournament_id, club_name')
-        .eq('user_id', userId);
+      // Load scheduled tournament matches - show ALL active tournament matches
+      const { data: activeTournaments } = await supabase
+        .from('custom_tournaments')
+        .select('id, name')
+        .in('status', ['in_progress', 'registration']);
 
-      if (myTeams && myTeams.length > 0) {
-        const teamIds = myTeams.map(t => t.id);
-        const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
+      if (activeTournaments && activeTournaments.length > 0) {
+        const tournamentIds = activeTournaments.map(t => t.id);
+        const tournamentMap = new Map(activeTournaments.map(t => [t.id, t.name]));
 
-        // Get tournament names
-        const { data: tournaments } = await supabase
-          .from('custom_tournaments')
-          .select('id, name')
-          .in('id', tournamentIds);
-        const tournamentMap = new Map((tournaments || []).map(t => [t.id, t.name]));
-
-        // Get scheduled matches where user is home or away
         const { data: scheduledMatches } = await supabase
           .from('custom_tournament_matches')
           .select('*')
           .eq('status', 'scheduled')
           .in('tournament_id', tournamentIds)
           .order('scheduled_at', { ascending: true })
-          .limit(50);
+          .limit(100);
 
-        if (scheduledMatches) {
-          // Get all team names for these matches
+        if (scheduledMatches && scheduledMatches.length > 0) {
           const allTeamIds = new Set<string>();
           scheduledMatches.forEach(m => {
             allTeamIds.add(m.home_team_id);
@@ -320,20 +311,15 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
             .in('id', [...allTeamIds]);
           const teamNameMap = new Map((allTeams || []).map(t => [t.id, t.club_name]));
 
-          const userScheduled: ScheduledMatch[] = scheduledMatches
-            .filter(m => teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id))
-            .map(m => {
-              const isHome = teamIds.includes(m.home_team_id);
-              return {
-                id: m.id,
-                home_team: teamNameMap.get(m.home_team_id) || '???',
-                away_team: teamNameMap.get(m.away_team_id) || '???',
-                scheduled_at: m.scheduled_at || '',
-                stage: m.stage || `Rodada ${m.round}`,
-                tournament_name: tournamentMap.get(m.tournament_id) || 'Campeonato',
-                stadium_name: isHome ? `Estádio de ${clubName}` : `Estádio de ${teamNameMap.get(m.home_team_id) || 'Visitante'}`,
-              };
-            });
+          const userScheduled: ScheduledMatch[] = scheduledMatches.map(m => ({
+            id: m.id,
+            home_team: teamNameMap.get(m.home_team_id) || '???',
+            away_team: teamNameMap.get(m.away_team_id) || '???',
+            scheduled_at: m.scheduled_at || '',
+            stage: m.stage || `Rodada ${m.round}`,
+            tournament_name: tournamentMap.get(m.tournament_id) || 'Campeonato',
+            stadium_name: `Estádio de ${teamNameMap.get(m.home_team_id) || 'Casa'}`,
+          }));
           setScheduled(userScheduled);
         }
       }
