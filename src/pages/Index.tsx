@@ -34,6 +34,8 @@ import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
 import { TrophiesTab } from '@/components/game/TrophiesTab';
+import { TournamentExpandedView } from '@/components/game/TournamentDashboardCard';
+import { SeasonTab } from '@/components/game/SeasonTab';
 import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
