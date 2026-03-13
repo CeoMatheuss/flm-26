@@ -104,6 +104,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const [ageMinFilter, setAgeMinFilter] = useState('');
   const [ageMaxFilter, setAgeMaxFilter] = useState('');
   const [sortBy, setSortBy] = useState('recent');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
