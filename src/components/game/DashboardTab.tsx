@@ -77,10 +77,78 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     { label: 'Aproveit.', value: `${winRate}%`, icon: TrendingUp, color: 'text-foreground' },
   ];
 
+  const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
+
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Club Info Widget */}
+      <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0">
+              {club.shieldPattern ? (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
+                  <span className="text-3xl">🛡️</span>
+                </div>
+              ) : (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center text-2xl">⚽</div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <h2 className="text-sm sm:text-base font-black truncate">{club.name}</h2>
+              {clubProfile?.motto && <p className="text-[9px] text-muted-foreground italic">"{clubProfile.motto}"</p>}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <User className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Presidente:</span>
+                  <span className="font-bold truncate">{clubProfile?.ownerName || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Fundação:</span>
+                  <span className="font-bold">T{clubProfile?.foundedSeason || season || 1}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Landmark className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Estádio:</span>
+                  <span className="font-bold truncate">{club.stadiumName} ({stadiumCapacity?.toLocaleString() || '?'})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Elenco:</span>
+                  <span className="font-bold">{club.players.length} jogadores</span>
+                </div>
+              </div>
+              {/* Infrastructure mini */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Dumbbell className="h-2.5 w-2.5" /> CT Lv.{infrastructure?.trainingCenter?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Stethoscope className="h-2.5 w-2.5" /> Fisio Lv.{infrastructure?.physiotherapy?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <GraduationCap className="h-2.5 w-2.5" /> Base Lv.{infrastructure?.youthAcademy?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Building2 className="h-2.5 w-2.5" /> Estádio Lv.{infrastructure?.stadium?.level || 1}
+                </Badge>
+              </div>
+              {/* Instagram */}
+              {clubProfile?.instagram ? (
+                <a href={`https://instagram.com/${clubProfile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5">
+                  <Instagram className="h-3 w-3" /> @{clubProfile.instagram.replace('@', '')}
+                </a>
+              ) : (
+                <p className="text-[9px] text-muted-foreground/50 mt-0.5">📸 Vincule seu Instagram no Perfil do Clube</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Match Card */}
-      <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} />
+      <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
