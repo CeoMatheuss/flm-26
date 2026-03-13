@@ -612,7 +612,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'stats' && <TournamentStatsTab teams={teams} matches={matches} getTeamName={getTeamName} getTeamLogo={getTeamLogo} />}
-      </ScrollArea>
+      </div>
 
       {/* Bot Squad Viewer Dialog */}
       <Dialog open={!!viewingSquadTeam} onOpenChange={() => setViewingSquadTeam(null)}>
