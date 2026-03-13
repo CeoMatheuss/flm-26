@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Calendar, Users, Swords, Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trophy, Calendar, Users, Swords, Target, Maximize2, ArrowLeft, Medal, TrendingUp, Shield } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -12,8 +13,11 @@ interface Tournament {
   status: string;
   max_teams: number;
   prize_1st: number;
+  prize_2nd: number;
+  prize_3rd: number;
   start_date: string | null;
   match_time: string;
+  country: string;
 }
 
 interface TournamentTeam {
@@ -45,12 +49,16 @@ interface TournamentMatch {
   scheduled_at: string | null;
 }
 
-export function TournamentDashboardCard() {
+interface Props {
+  onExpand?: (tournamentId: string) => void;
+}
+
+export function TournamentDashboardCard({ onExpand }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [teams, setTeams] = useState<TournamentTeam[]>([]);
   const [matches, setMatches] = useState<TournamentMatch[]>([]);
-  const [view, setView] = useState<'standings' | 'calendar'>('standings');
+  const [view, setView] = useState<'standings' | 'calendar' | 'stats'>('standings');
 
   useEffect(() => {
     const load = async () => {
@@ -87,13 +95,13 @@ export function TournamentDashboardCard() {
   const getTeamName = (id: string) => teams.find(t => t.id === id)?.club_name || '???';
   const getTeamLogo = (id: string) => teams.find(t => t.id === id)?.club_logo || '⚽';
 
-  // Group teams
   const groupLetters = [...new Set(teams.filter(t => t.group_letter).map(t => t.group_letter!))].sort();
   const hasGroups = groupLetters.length > 0;
 
-  // Upcoming matches
   const upcoming = matches.filter(m => m.status !== 'played').slice(0, 6);
   const recent = matches.filter(m => m.status === 'played').slice(-4);
+  const totalPlayed = matches.filter(m => m.status === 'played').length;
+  const totalGoals = matches.filter(m => m.status === 'played').reduce((sum, m) => sum + (m.home_goals || 0) + (m.away_goals || 0), 0);
 
   const formatLabels: Record<string, string> = {
     league: '🏟️ Liga',
@@ -101,30 +109,40 @@ export function TournamentDashboardCard() {
     group_knockout: '🏟️⚔️ Grupos',
   };
 
+  const sortedTeams = [...teams].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+  const topScorer = sortedTeams.length > 0 ? sortedTeams[0] : null;
+
   return (
-    <Card className="game-card-accent border-yellow-500/20">
+    <Card className="game-card-premium">
       <CardHeader className="section-header pb-1 px-3 pt-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Trophy className="h-3.5 w-3.5 text-yellow-400" /> Campeonatos Ativos
+            <Trophy className="h-3.5 w-3.5 text-primary" /> Campeonatos Ativos
           </CardTitle>
-          {tournaments.length > 1 && (
-            <div className="flex gap-0.5">
-              {tournaments.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedId(t.id)}
-                  className={`h-5 px-1.5 rounded text-[7px] font-bold transition-colors ${
-                    t.id === selectedId
-                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                      : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                  }`}
-                >
-                  {t.name.slice(0, 10)}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            {tournaments.length > 1 && (
+              <div className="flex gap-0.5">
+                {tournaments.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedId(t.id)}
+                    className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
+                      t.id === selectedId
+                        ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm shadow-primary/10'
+                        : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    {t.name.slice(0, 10)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {onExpand && selected && (
+              <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-muted-foreground hover:text-primary" onClick={() => onExpand(selected.id)}>
+                <Maximize2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-3 pb-3 space-y-2">
@@ -134,37 +152,57 @@ export function TournamentDashboardCard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold">{selected.name}</span>
-                <Badge variant="outline" className="text-[7px] text-yellow-400 border-yellow-500/30">
+                <Badge variant="outline" className="text-[7px] text-primary border-primary/30">
                   {formatLabels[selected.format] || selected.format}
                 </Badge>
               </div>
-              <span className="text-[8px] text-muted-foreground">
-                🥇 R$ {selected.prize_1st.toLocaleString('pt-BR')}
-              </span>
+              <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
+                <span>{selected.country === 'Mundial' ? '🌍' : '🏴'} {selected.country}</span>
+                <span>🥇 R$ {selected.prize_1st.toLocaleString('pt-BR')}</span>
+              </div>
+            </div>
+
+            {/* Quick stats */}
+            <div className="grid grid-cols-4 gap-1">
+              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
+                <p className="text-[7px] text-muted-foreground">Times</p>
+                <p className="text-[11px] font-bold">{teams.length}</p>
+              </div>
+              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
+                <p className="text-[7px] text-muted-foreground">Jogos</p>
+                <p className="text-[11px] font-bold">{totalPlayed}/{matches.length}</p>
+              </div>
+              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
+                <p className="text-[7px] text-muted-foreground">Gols</p>
+                <p className="text-[11px] font-bold text-primary">{totalGoals}</p>
+              </div>
+              <div className="bg-accent/40 rounded-lg p-1.5 text-center">
+                <p className="text-[7px] text-muted-foreground">Líder</p>
+                <p className="text-[11px] font-bold truncate">{topScorer?.club_name?.slice(0, 8) || '-'}</p>
+              </div>
             </div>
 
             {/* Toggle */}
-            <div className="flex gap-0.5 bg-muted/20 rounded p-0.5">
-              <button
-                onClick={() => setView('standings')}
-                className={`flex-1 h-5 rounded text-[8px] font-semibold flex items-center justify-center gap-1 transition-colors ${
-                  view === 'standings' ? 'bg-primary/20 text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                <Users className="h-2.5 w-2.5" /> Classificação
-              </button>
-              <button
-                onClick={() => setView('calendar')}
-                className={`flex-1 h-5 rounded text-[8px] font-semibold flex items-center justify-center gap-1 transition-colors ${
-                  view === 'calendar' ? 'bg-primary/20 text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                <Calendar className="h-2.5 w-2.5" /> Calendário
-              </button>
+            <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
+              {[
+                { key: 'standings' as const, label: 'Classificação', icon: Users },
+                { key: 'calendar' as const, label: 'Calendário', icon: Calendar },
+                { key: 'stats' as const, label: 'Destaques', icon: TrendingUp },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setView(tab.key)}
+                  className={`flex-1 h-6 rounded-md text-[8px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                    view === tab.key ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <tab.icon className="h-2.5 w-2.5" /> {tab.label}
+                </button>
+              ))}
             </div>
 
             {view === 'standings' ? (
-              <ScrollArea className="max-h-[280px]">
+              <ScrollArea className="max-h-[300px]">
                 {hasGroups ? (
                   <div className="space-y-2">
                     {groupLetters.map(letter => {
@@ -172,34 +210,37 @@ export function TournamentDashboardCard() {
                         .filter(t => t.group_letter === letter)
                         .sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
                       return (
-                        <div key={letter}>
-                          <p className="text-[9px] font-bold text-primary mb-0.5 flex items-center gap-1">
+                        <div key={letter} className="bg-accent/20 rounded-lg p-2">
+                          <p className="text-[9px] font-bold text-primary mb-1 flex items-center gap-1">
                             <Target className="h-2.5 w-2.5" /> Grupo {letter}
                           </p>
                           <table className="w-full text-[8px]">
                             <thead>
-                              <tr className="text-muted-foreground">
-                                <th className="text-left w-3">#</th>
-                                <th className="text-left">Time</th>
-                                <th className="text-center w-4">J</th>
-                                <th className="text-center w-4">V</th>
-                                <th className="text-center w-4">E</th>
-                                <th className="text-center w-4">D</th>
-                                <th className="text-center w-5">SG</th>
-                                <th className="text-center w-5 font-bold">P</th>
+                              <tr className="text-muted-foreground border-b border-border/20">
+                                <th className="text-left w-3 pb-0.5">#</th>
+                                <th className="text-left pb-0.5">Time</th>
+                                <th className="text-center w-4 pb-0.5">J</th>
+                                <th className="text-center w-4 pb-0.5">V</th>
+                                <th className="text-center w-4 pb-0.5">E</th>
+                                <th className="text-center w-4 pb-0.5">D</th>
+                                <th className="text-center w-5 pb-0.5">SG</th>
+                                <th className="text-center w-5 pb-0.5 font-bold">P</th>
                               </tr>
                             </thead>
                             <tbody>
                               {groupTeams.map((t, i) => (
-                                <tr key={t.id} className={`${i < 2 ? 'bg-emerald-500/8' : ''}`}>
+                                <tr key={t.id} className={`${i < 2 ? 'bg-primary/5' : ''}`}>
                                   <td className="py-0.5 font-bold">{i + 1}</td>
-                                  <td className="py-0.5 truncate max-w-[65px]">{t.club_logo} {t.club_name}</td>
+                                  <td className="py-0.5 truncate max-w-[65px]">
+                                    <span className="mr-0.5">{t.club_logo}</span>
+                                    <span className={i < 2 ? 'text-primary font-semibold' : ''}>{t.club_name}</span>
+                                  </td>
                                   <td className="text-center py-0.5">{t.played}</td>
-                                  <td className="text-center py-0.5 text-emerald-400">{t.wins}</td>
+                                  <td className="text-center py-0.5 text-success">{t.wins}</td>
                                   <td className="text-center py-0.5">{t.draws}</td>
                                   <td className="text-center py-0.5 text-destructive">{t.losses}</td>
                                   <td className="text-center py-0.5">{t.goals_for - t.goals_against}</td>
-                                  <td className="text-center py-0.5 font-bold">{t.points}</td>
+                                  <td className="text-center py-0.5 font-bold text-primary">{t.points}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -209,49 +250,52 @@ export function TournamentDashboardCard() {
                     })}
                   </div>
                 ) : (
-                  /* League/Knockout standings */
                   <div className="space-y-0.5">
-                    {teams.sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against)).map((t, i) => (
-                      <div key={t.id} className={`flex items-center gap-1.5 py-1 px-1 rounded text-[9px] ${i < 3 ? 'bg-emerald-500/8' : ''} ${t.eliminated ? 'opacity-40 line-through' : ''}`}>
-                        <span className="w-3 text-center font-bold text-muted-foreground">{i + 1}</span>
+                    {sortedTeams.map((t, i) => (
+                      <div key={t.id} className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg text-[9px] transition-colors ${i < 3 ? 'bg-primary/8 border border-primary/10' : 'hover:bg-accent/30'} ${t.eliminated ? 'opacity-40 line-through' : ''}`}>
+                        <span className={`w-4 text-center font-bold ${i === 0 ? 'text-primary' : i < 3 ? 'text-primary/60' : 'text-muted-foreground'}`}>
+                          {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                        </span>
                         <span>{t.club_logo}</span>
                         <span className="flex-1 font-semibold truncate">{t.club_name}</span>
-                        <span className="text-[7px] text-muted-foreground">{t.played}J</span>
-                        <span className="font-bold w-4 text-center">{t.points}</span>
+                        <span className="text-[7px] text-muted-foreground">{t.played}J {t.wins}V</span>
+                        <span className="font-bold w-5 text-center text-primary">{t.points}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </ScrollArea>
-            ) : (
-              <ScrollArea className="max-h-[280px]">
+            ) : view === 'calendar' ? (
+              <ScrollArea className="max-h-[300px]">
                 <div className="space-y-2">
-                  {/* Recent results */}
                   {recent.length > 0 && (
                     <div>
-                      <p className="text-[8px] font-bold text-muted-foreground mb-0.5 uppercase">Últimos Resultados</p>
+                      <p className="text-[8px] font-bold text-muted-foreground mb-1 uppercase flex items-center gap-1">
+                        <Swords className="h-2.5 w-2.5" /> Últimos Resultados
+                      </p>
                       <div className="space-y-0.5">
                         {recent.map(m => (
-                          <div key={m.id} className="flex items-center justify-between p-1 rounded bg-emerald-500/5 border border-emerald-500/10 text-[8px]">
-                            <span className="truncate max-w-[60px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
-                            <span className="font-bold px-1">{m.home_goals} - {m.away_goals}</span>
-                            <span className="truncate max-w-[60px] text-right">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
+                          <div key={m.id} className="flex items-center justify-between p-1.5 rounded-lg bg-success/5 border border-success/10 text-[8px]">
+                            <span className="truncate max-w-[60px] font-medium">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
+                            <span className="font-bold px-2 text-[10px] bg-accent/50 rounded px-1.5 py-0.5">{m.home_goals} - {m.away_goals}</span>
+                            <span className="truncate max-w-[60px] text-right font-medium">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Upcoming */}
                   {upcoming.length > 0 && (
                     <div>
-                      <p className="text-[8px] font-bold text-muted-foreground mb-0.5 uppercase">Próximos Jogos</p>
+                      <p className="text-[8px] font-bold text-muted-foreground mb-1 uppercase flex items-center gap-1">
+                        <Calendar className="h-2.5 w-2.5" /> Próximos Jogos
+                      </p>
                       <div className="space-y-0.5">
                         {upcoming.map(m => (
-                          <div key={m.id} className="flex items-center justify-between p-1 rounded border border-border/20 text-[8px]">
+                          <div key={m.id} className="flex items-center justify-between p-1.5 rounded-lg border border-border/20 text-[8px] hover:bg-accent/20 transition-colors">
                             <div className="flex items-center gap-0.5 flex-1 min-w-0">
                               <span className="truncate max-w-[55px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
-                              <span className="text-muted-foreground shrink-0">vs</span>
+                              <span className="text-muted-foreground shrink-0 text-primary font-bold">vs</span>
                               <span className="truncate max-w-[55px]">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
                             </div>
                             <div className="text-[7px] text-muted-foreground shrink-0 ml-1">
@@ -276,10 +320,379 @@ export function TournamentDashboardCard() {
                   )}
                 </div>
               </ScrollArea>
+            ) : (
+              /* Stats view */
+              <ScrollArea className="max-h-[300px]">
+                <div className="space-y-2">
+                  {/* Top 3 */}
+                  {sortedTeams.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                        <Medal className="h-2.5 w-2.5" /> Pódio Atual
+                      </p>
+                      {sortedTeams.slice(0, 3).map((t, i) => (
+                        <div key={t.id} className={`flex items-center gap-2 p-2 rounded-lg border ${i === 0 ? 'border-primary/30 bg-primary/8' : 'border-border/20 bg-accent/20'}`}>
+                          <span className="text-sm">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
+                          <span className="text-[10px]">{t.club_logo}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-[10px] font-bold truncate ${i === 0 ? 'text-primary' : ''}`}>{t.club_name}</p>
+                            <p className="text-[8px] text-muted-foreground">{t.wins}V {t.draws}E {t.losses}D • {t.goals_for}:{t.goals_against}</p>
+                          </div>
+                          <span className={`text-xs font-black ${i === 0 ? 'text-primary' : ''}`}>{t.points}pts</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Attack / Defense stats */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-accent/30 rounded-lg p-2">
+                      <p className="text-[7px] text-muted-foreground uppercase mb-1">⚽ Melhor Ataque</p>
+                      {[...teams].sort((a, b) => b.goals_for - a.goals_for).slice(0, 3).map((t, i) => (
+                        <div key={t.id} className="flex items-center justify-between text-[8px] py-0.5">
+                          <span className="truncate max-w-[60px]">{t.club_logo} {t.club_name}</span>
+                          <span className="font-bold text-success">{t.goals_for}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-accent/30 rounded-lg p-2">
+                      <p className="text-[7px] text-muted-foreground uppercase mb-1">🛡️ Melhor Defesa</p>
+                      {[...teams].sort((a, b) => a.goals_against - b.goals_against).slice(0, 3).map((t, i) => (
+                        <div key={t.id} className="flex items-center justify-between text-[8px] py-0.5">
+                          <span className="truncate max-w-[60px]">{t.club_logo} {t.club_name}</span>
+                          <span className="font-bold text-primary">{t.goals_against}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
             )}
           </>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ── EXPANDED FULL PAGE TOURNAMENT VIEW ─────────────────────── */
+
+interface ExpandedProps {
+  tournamentId: string;
+  onClose: () => void;
+}
+
+export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps) {
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [teams, setTeams] = useState<TournamentTeam[]>([]);
+  const [matches, setMatches] = useState<TournamentMatch[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'calendar' | 'bracket'>('overview');
+
+  useEffect(() => {
+    const load = async () => {
+      const [tRes, teamsRes, matchesRes] = await Promise.all([
+        supabase.from('custom_tournaments').select('*').eq('id', tournamentId).single(),
+        supabase.from('custom_tournament_teams').select('*').eq('tournament_id', tournamentId).order('points', { ascending: false }),
+        supabase.from('custom_tournament_matches').select('*').eq('tournament_id', tournamentId).order('round', { ascending: true }),
+      ]);
+      if (tRes.data) setTournament(tRes.data as any);
+      if (teamsRes.data) setTeams(teamsRes.data as any);
+      if (matchesRes.data) setMatches(matchesRes.data as any);
+    };
+    load();
+  }, [tournamentId]);
+
+  if (!tournament) return null;
+
+  const getTeamName = (id: string) => teams.find(t => t.id === id)?.club_name || '???';
+  const getTeamLogo = (id: string) => teams.find(t => t.id === id)?.club_logo || '⚽';
+
+  const groupLetters = [...new Set(teams.filter(t => t.group_letter).map(t => t.group_letter!))].sort();
+  const hasGroups = groupLetters.length > 0;
+  const sortedTeams = [...teams].sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+  const rounds = [...new Set(matches.map(m => m.round))].sort((a, b) => a - b);
+  const totalPlayed = matches.filter(m => m.status === 'played').length;
+  const totalGoals = matches.filter(m => m.status === 'played').reduce((s, m) => s + (m.home_goals || 0) + (m.away_goals || 0), 0);
+
+  const formatLabels: Record<string, string> = {
+    league: '🏟️ Liga',
+    knockout: '⚔️ Mata-mata',
+    group_knockout: '🏟️⚔️ Grupos + Mata-mata',
+  };
+
+  const tabs = [
+    { key: 'overview' as const, label: 'Visão Geral', icon: TrendingUp },
+    ...(hasGroups ? [{ key: 'groups' as const, label: 'Grupos', icon: Target }] : []),
+    { key: 'calendar' as const, label: 'Calendário', icon: Calendar },
+    ...(tournament.format === 'knockout' || tournament.format === 'group_knockout' ? [{ key: 'bracket' as const, label: 'Chaveamento', icon: Swords }] : []),
+  ];
+
+  return (
+    <div className="space-y-3 animate-fade-slide-up">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button size="sm" variant="ghost" onClick={onClose} className="h-8 px-2 text-xs gap-1">
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </Button>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm sm:text-base font-black flex items-center gap-2 truncate">
+            <Trophy className="h-4 w-4 text-primary shrink-0" /> {tournament.name}
+          </h2>
+          <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+            <Badge variant="outline" className="text-[7px] text-primary border-primary/30">{formatLabels[tournament.format]}</Badge>
+            <span>{tournament.country === 'Mundial' ? '🌍 Mundial' : `🏴 ${tournament.country}`}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats banner */}
+      <div className="grid grid-cols-5 gap-1.5">
+        {[
+          { label: 'Times', value: teams.length, icon: '👥' },
+          { label: 'Jogos', value: `${totalPlayed}/${matches.length}`, icon: '⚽' },
+          { label: 'Gols', value: totalGoals, icon: '🎯' },
+          { label: '🥇 1º', value: `R$${(tournament.prize_1st / 1e6).toFixed(1)}M`, icon: '' },
+          { label: 'Líder', value: sortedTeams[0]?.club_name?.slice(0, 8) || '-', icon: '👑' },
+        ].map((s, i) => (
+          <div key={i} className="stat-card text-center">
+            <p className="text-[7px] text-muted-foreground">{s.icon} {s.label}</p>
+            <p className="text-[10px] sm:text-xs font-bold">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-0.5 bg-muted/30 rounded-lg p-0.5">
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 h-7 rounded-md text-[9px] sm:text-[10px] font-semibold flex items-center justify-center gap-1 transition-all ${
+              activeTab === tab.key ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <tab.icon className="h-3 w-3" /> {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <ScrollArea className="max-h-[60vh]">
+        {activeTab === 'overview' && (
+          <div className="space-y-3">
+            {/* Full standings */}
+            <Card className="game-card">
+              <CardHeader className="section-header pb-1 px-3 pt-2">
+                <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Shield className="h-3 w-3" /> Classificação Geral
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-2 pb-2">
+                <table className="w-full text-[9px]">
+                  <thead>
+                    <tr className="text-muted-foreground border-b border-border/30">
+                      <th className="text-left pl-1 py-1">#</th>
+                      <th className="text-left py-1">Time</th>
+                      <th className="text-center py-1 w-5">J</th>
+                      <th className="text-center py-1 w-5">V</th>
+                      <th className="text-center py-1 w-5">E</th>
+                      <th className="text-center py-1 w-5">D</th>
+                      <th className="text-center py-1 w-5">GP</th>
+                      <th className="text-center py-1 w-5">GC</th>
+                      <th className="text-center py-1 w-5">SG</th>
+                      <th className="text-center py-1 w-6 font-bold">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedTeams.map((t, i) => (
+                      <tr key={t.id} className={`border-b border-border/10 ${i < 3 ? 'bg-primary/5' : ''} ${t.eliminated ? 'opacity-40' : ''}`}>
+                        <td className="pl-1 py-1 font-bold text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
+                        <td className="py-1 truncate max-w-[100px]">
+                          {t.club_logo} <span className={`font-medium ${i < 3 ? 'text-primary' : ''}`}>{t.club_name}</span>
+                          {t.is_bot && <span className="ml-0.5 text-[7px] text-muted-foreground">🤖</span>}
+                        </td>
+                        <td className="text-center py-1">{t.played}</td>
+                        <td className="text-center py-1 text-success">{t.wins}</td>
+                        <td className="text-center py-1">{t.draws}</td>
+                        <td className="text-center py-1 text-destructive">{t.losses}</td>
+                        <td className="text-center py-1">{t.goals_for}</td>
+                        <td className="text-center py-1">{t.goals_against}</td>
+                        <td className="text-center py-1">{t.goals_for - t.goals_against}</td>
+                        <td className="text-center py-1 font-black text-primary">{t.points}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            {/* Top Attack / Defense */}
+            <div className="grid grid-cols-2 gap-2">
+              <Card className="game-card">
+                <CardContent className="p-2.5 space-y-1">
+                  <p className="text-[8px] font-bold text-muted-foreground uppercase">⚽ Melhor Ataque</p>
+                  {[...teams].sort((a, b) => b.goals_for - a.goals_for).slice(0, 5).map((t, i) => (
+                    <div key={t.id} className="flex items-center justify-between text-[9px] py-0.5">
+                      <span className="truncate flex-1">{t.club_logo} {t.club_name}</span>
+                      <span className="font-bold text-success ml-1">{t.goals_for}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card className="game-card">
+                <CardContent className="p-2.5 space-y-1">
+                  <p className="text-[8px] font-bold text-muted-foreground uppercase">🛡️ Melhor Defesa</p>
+                  {[...teams].filter(t => t.played > 0).sort((a, b) => a.goals_against - b.goals_against).slice(0, 5).map((t, i) => (
+                    <div key={t.id} className="flex items-center justify-between text-[9px] py-0.5">
+                      <span className="truncate flex-1">{t.club_logo} {t.club_name}</span>
+                      <span className="font-bold text-primary ml-1">{t.goals_against}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'groups' && (
+          <div className="space-y-2">
+            {groupLetters.map(letter => {
+              const groupTeams = teams
+                .filter(t => t.group_letter === letter)
+                .sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against));
+              const groupMatches = matches.filter(m => m.stage === `Grupo ${letter}`);
+              return (
+                <Card key={letter} className="game-card-accent">
+                  <CardHeader className="pb-1 px-3 pt-2">
+                    <CardTitle className="text-xs font-bold flex items-center gap-1">
+                      <Target className="h-3 w-3 text-primary" /> Grupo {letter}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-2 space-y-2">
+                    <table className="w-full text-[9px]">
+                      <thead>
+                        <tr className="text-muted-foreground border-b border-border/20">
+                          <th className="text-left pl-1 py-0.5">#</th>
+                          <th className="text-left py-0.5">Time</th>
+                          <th className="text-center py-0.5">J</th>
+                          <th className="text-center py-0.5">V</th>
+                          <th className="text-center py-0.5">E</th>
+                          <th className="text-center py-0.5">D</th>
+                          <th className="text-center py-0.5">GP</th>
+                          <th className="text-center py-0.5">GC</th>
+                          <th className="text-center py-0.5 font-bold">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupTeams.map((t, i) => (
+                          <tr key={t.id} className={`${i < 2 ? 'bg-primary/5' : ''} border-t border-border/10`}>
+                            <td className="pl-1 py-1 font-bold">{i + 1}</td>
+                            <td className="py-1 truncate max-w-[80px] font-medium">{t.club_logo} {t.club_name}</td>
+                            <td className="text-center py-1">{t.played}</td>
+                            <td className="text-center py-1 text-success">{t.wins}</td>
+                            <td className="text-center py-1">{t.draws}</td>
+                            <td className="text-center py-1 text-destructive">{t.losses}</td>
+                            <td className="text-center py-1">{t.goals_for}</td>
+                            <td className="text-center py-1">{t.goals_against}</td>
+                            <td className="text-center py-1 font-bold text-primary">{t.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {/* Group matches */}
+                    {groupMatches.length > 0 && (
+                      <div className="space-y-0.5">
+                        <p className="text-[7px] text-muted-foreground uppercase font-bold">Jogos do Grupo</p>
+                        {groupMatches.map(m => (
+                          <div key={m.id} className={`flex items-center justify-between p-1 rounded text-[8px] ${m.status === 'played' ? 'bg-success/5 border border-success/10' : 'border border-border/15'}`}>
+                            <span className="truncate max-w-[55px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
+                            <span className="font-bold">{m.status === 'played' ? `${m.home_goals} - ${m.away_goals}` : 'vs'}</span>
+                            <span className="truncate max-w-[55px] text-right">{getTeamName(m.away_team_id)} {getTeamLogo(m.away_team_id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <div className="space-y-2">
+            {rounds.map(round => {
+              const roundMatches = matches.filter(m => m.round === round);
+              const stageName = roundMatches[0]?.stage || `Rodada ${round}`;
+              const played = roundMatches.filter(m => m.status === 'played').length;
+              return (
+                <Card key={round} className="game-card">
+                  <CardHeader className="pb-1 px-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-[10px] font-bold flex items-center gap-1 text-muted-foreground uppercase tracking-wider">
+                        <Calendar className="h-3 w-3" /> {stageName}
+                      </CardTitle>
+                      <Badge variant="outline" className={`text-[7px] ${played === roundMatches.length ? 'text-success border-success/30' : 'text-muted-foreground'}`}>
+                        {played}/{roundMatches.length}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-2 space-y-0.5">
+                    {roundMatches.map(match => (
+                      <div key={match.id} className={`flex items-center justify-between p-1.5 rounded-lg border text-[9px] transition-colors ${match.status === 'played' ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
+                        <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
+                        <span className={`font-bold px-2 ${match.status === 'played' ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {match.status === 'played' ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
+                        </span>
+                        <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
+                        {match.scheduled_at && (
+                          <span className="text-[7px] text-muted-foreground ml-1 shrink-0">
+                            {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === 'bracket' && (
+          <div className="space-y-2">
+            <Card className="game-card">
+              <CardContent className="p-3">
+                <p className="text-[9px] text-muted-foreground text-center mb-2">⚔️ Chaveamento Mata-Mata</p>
+                {rounds.map(round => {
+                  const roundMatches = matches.filter(m => m.round === round);
+                  const stageName = roundMatches[0]?.stage || `Rodada ${round}`;
+                  return (
+                    <div key={round} className="mb-3">
+                      <p className="text-[8px] font-bold text-primary uppercase mb-1">{stageName}</p>
+                      <div className="space-y-1">
+                        {roundMatches.map(m => (
+                          <div key={m.id} className={`border rounded-lg overflow-hidden ${m.status === 'played' ? 'border-success/20' : 'border-border/30'}`}>
+                            <div className={`flex items-center justify-between px-2 py-1.5 text-[9px] ${m.status === 'played' && m.home_goals !== null && m.away_goals !== null && m.home_goals > m.away_goals ? 'bg-primary/8 font-bold' : ''}`}>
+                              <span className="truncate max-w-[100px]">{getTeamLogo(m.home_team_id)} {getTeamName(m.home_team_id)}</span>
+                              <span className="font-bold">{m.status === 'played' ? m.home_goals : '-'}</span>
+                            </div>
+                            <div className="border-t border-border/20" />
+                            <div className={`flex items-center justify-between px-2 py-1.5 text-[9px] ${m.status === 'played' && m.home_goals !== null && m.away_goals !== null && m.away_goals > m.home_goals ? 'bg-primary/8 font-bold' : ''}`}>
+                              <span className="truncate max-w-[100px]">{getTeamLogo(m.away_team_id)} {getTeamName(m.away_team_id)}</span>
+                              <span className="font-bold">{m.status === 'played' ? m.away_goals : '-'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </ScrollArea>
+    </div>
   );
 }
