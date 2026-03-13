@@ -555,13 +555,31 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input placeholder="Buscar jogador..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-8 pl-8 text-xs rounded-lg" />
             </div>
-            <Select value={posFilter} onValueChange={setPosFilter}>
+             <Select value={posFilter} onValueChange={setPosFilter}>
               <SelectTrigger className="h-8 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-8 w-[100px] text-[10px] rounded-lg"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Recente</SelectItem>
+                <SelectItem value="ovr_desc">OVR ↓</SelectItem>
+                <SelectItem value="ovr_asc">OVR ↑</SelectItem>
+                <SelectItem value="price_asc">Preço ↑</SelectItem>
+                <SelectItem value="price_desc">Preço ↓</SelectItem>
+                <SelectItem value="age_asc">Idade ↑</SelectItem>
+                <SelectItem value="age_desc">Idade ↓</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => setOvrMinFilter(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
+            <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => setOvrMaxFilter(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
+            <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => setAgeMinFilter(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
+            <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => setAgeMaxFilter(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
           </div>
 
           {filterListings(otherListings).length === 0 ? (
@@ -570,7 +588,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
               Nenhum jogador disponível no mercado online.
             </div>
           ) : (
-            <ScrollArea className="max-h-[55vh]">
+            <ScrollArea className="max-h-[60vh]">
               <div className="space-y-2">
                 {filterListings(otherListings).map(listing => {
                   const pd = listing.player_data;
