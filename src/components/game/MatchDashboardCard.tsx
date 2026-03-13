@@ -52,12 +52,12 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
   useEffect(() => {
     if (!userId) return;
     const checkPremium = async () => {
-      const { data } = await supabase
-        .from('premium_users')
-        .select('activated_at, status')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .maybeSingle();
+      const { data } = await supabase.
+      from('premium_users').
+      select('activated_at, status').
+      eq('user_id', userId).
+      eq('status', 'active').
+      maybeSingle();
       if (data) {
         const activatedAt = new Date(data.activated_at).getTime();
         const now = Date.now();
@@ -77,13 +77,13 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
   // Poll DB for active live match
   useEffect(() => {
     const fetchLive = async () => {
-      const { data } = await supabase
-        .from('live_matches')
-        .select('*')
-        .eq('status', 'live')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data } = await supabase.
+      from('live_matches').
+      select('*').
+      eq('status', 'live').
+      order('created_at', { ascending: false }).
+      limit(1).
+      maybeSingle();
 
       if (data) {
         setLiveMatch(data as any);
@@ -94,7 +94,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
         const progress = Math.min(1, elapsed / (data.duration_seconds * 1000));
 
         // Get max minute from events
-        const events = (data.events as any[]) || [];
+        const events = data.events as any[] || [];
         const maxMin = events.length > 0 ? Math.max(...events.map((e: any) => e.minute)) : 90;
         const gameMin = Math.floor(progress * maxMin);
         setCurrentMinute(gameMin);
@@ -122,7 +122,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
 
   // Determine match status and data
   // NOTE: Do NOT show pending bot friendlies as "scheduled" — they are on-demand only
-  const lastFinished = [...club.matches].filter(m => m.played).pop();
+  const lastFinished = [...club.matches].filter((m) => m.played).pop();
 
   let status: MatchStatus = 'none';
   if (liveMatch) {
@@ -132,50 +132,50 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
   }
 
   // Resolve display data
-  const homeTeamName = status === 'live'
-    ? liveMatch!.home_team
-    : status === 'finished'
-      ? (lastFinished!.isHome !== false ? club.name : lastFinished!.opponent)
-      : club.name;
+  const homeTeamName = status === 'live' ?
+  liveMatch!.home_team :
+  status === 'finished' ?
+  lastFinished!.isHome !== false ? club.name : lastFinished!.opponent :
+  club.name;
 
-  const awayTeamName = status === 'live'
-    ? liveMatch!.away_team
-    : status === 'finished'
-      ? (lastFinished!.isHome !== false ? lastFinished!.opponent : club.name)
-      : '—';
+  const awayTeamName = status === 'live' ?
+  liveMatch!.away_team :
+  status === 'finished' ?
+  lastFinished!.isHome !== false ? lastFinished!.opponent : club.name :
+  '—';
 
-  const competition = status === 'live'
-    ? (liveMatch!.competition || 'Amistoso')
-    : 'Amistoso';
+  const competition = status === 'live' ?
+  liveMatch!.competition || 'Amistoso' :
+  'Amistoso';
 
-  const matchDate = status === 'finished'
-    ? lastFinished!.date
-    : '—';
+  const matchDate = status === 'finished' ?
+  lastFinished!.date :
+  '—';
 
-  const venueName = status === 'live'
-    ? (liveMatch!.stadium_name || club.stadiumName)
-    : status === 'finished'
-      ? (lastFinished!.stadium || club.stadiumName)
-      : club.stadiumName;
+  const venueName = status === 'live' ?
+  liveMatch!.stadium_name || club.stadiumName :
+  status === 'finished' ?
+  lastFinished!.stadium || club.stadiumName :
+  club.stadiumName;
 
-  const venueCapacity = status === 'live'
-    ? (liveMatch!.stadium_capacity || null)
-    : status === 'finished'
-      ? (lastFinished!.stadiumCapacity || null)
-      : null;
+  const venueCapacity = status === 'live' ?
+  liveMatch!.stadium_capacity || null :
+  status === 'finished' ?
+  lastFinished!.stadiumCapacity || null :
+  null;
 
-  const isHome = status === 'live'
-    ? liveMatch!.is_home
-    : status === 'finished'
-      ? (lastFinished!.isHome !== false)
-      : true;
+  const isHome = status === 'live' ?
+  liveMatch!.is_home :
+  status === 'finished' ?
+  lastFinished!.isHome !== false :
+  true;
 
   // Border color based on status
-  const borderClass = status === 'live'
-    ? 'border-destructive/60 bg-destructive/5'
-    : status === 'finished'
-      ? 'border-muted-foreground/30'
-      : 'border-primary/30';
+  const borderClass = status === 'live' ?
+  'border-destructive/60 bg-destructive/5' :
+  status === 'finished' ?
+  'border-muted-foreground/30' :
+  'border-primary/30';
 
   // Club logo renderer
   const renderClubLogo = (isClub: boolean) => {
@@ -196,63 +196,63 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
 
   return (
     <Card className={`border-2 ${borderClass}`}>
-      {isPremium && (
-        <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 flex items-center justify-center gap-2">
+      {isPremium &&
+      <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 flex items-center justify-center gap-2">
           <Crown className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
           <span className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-widest">Premium</span>
           <span className="text-[8px] sm:text-[9px] text-yellow-400/70">({premiumDaysLeft} dias restantes)</span>
         </div>
-      )}
+      }
       <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
         <CardTitle className="text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-          {status === 'live' ? (
-            <>
+          {status === 'live' ?
+          <>
               <Radio className="h-3 w-3 sm:h-4 sm:w-4 text-destructive animate-pulse" />
               <span className="text-destructive font-bold">Partida Atual</span>
               <Badge variant="destructive" className="text-[9px] animate-pulse ml-auto">🔴 AO VIVO</Badge>
-            </>
-          ) : status === 'finished' ? (
-            <>
+            </> :
+          status === 'finished' ?
+          <>
               <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               <span className="text-muted-foreground font-bold">Última Partida</span>
               <Badge variant="secondary" className="text-[9px] ml-auto">Encerrada</Badge>
-            </>
-          ) : null}
+            </> :
+          null}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-        {status === 'none' ? (
-          <div className="text-center py-4">
+        {status === 'none' ?
+        <div className="text-center py-4">
             <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-bold text-sm">Nenhuma partida agendada</p>
-            <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra AI FC!</p>
-            {onGoToFriendly && (
-              <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
+            <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra BOT FC!</p>
+            {onGoToFriendly &&
+          <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
                 <Swords className="h-3.5 w-3.5" /> Ir para Amistosos
               </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
+          }
+          </div> :
+
+        <div className="space-y-3">
             {/* Info bar */}
             <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/30">
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">⚽ {competition}</Badge>
               <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
                 <MapPin className="h-2.5 w-2.5" /> {venueName}
               </Badge>
-              {venueCapacity && (
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
+              {venueCapacity &&
+            <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
                   <Building2 className="h-2.5 w-2.5" /> {venueCapacity.toLocaleString()} lugares
                 </Badge>
-              )}
+            }
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">
                 {isHome ? '🏠 Casa' : '✈️ Fora'}
               </Badge>
-              {status === 'live' && (
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] text-emerald-500 border-emerald-500/30">
+              {status === 'live' &&
+            <Badge variant="outline" className="text-[9px] sm:text-[10px] text-emerald-500 border-emerald-500/30">
                   🖥️ Servidor
                 </Badge>
-              )}
+            }
             </div>
 
             {/* Date & Status row */}
@@ -260,13 +260,13 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {matchDate}</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {status === 'live' ? (
-                  <span className="text-destructive font-bold animate-pulse">AO VIVO — {currentMinute}'</span>
-                ) : status === 'finished' ? (
-                  <span>Encerrada</span>
-                ) : (
-                  <span>Agendada</span>
-                )}
+                {status === 'live' ?
+              <span className="text-destructive font-bold animate-pulse">AO VIVO — {currentMinute}'</span> :
+              status === 'finished' ?
+              <span>Encerrada</span> :
+
+              <span>Agendada</span>
+              }
               </span>
             </div>
 
@@ -279,26 +279,26 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
               </div>
 
               <div className="text-center px-3 sm:px-5 shrink-0">
-                {status === 'live' ? (
-                  <>
+                {status === 'live' ?
+              <>
                     <p className="text-2xl sm:text-3xl font-black tabular-nums">
                       {currentHomeGoals} <span className="text-muted-foreground">-</span> {currentAwayGoals}
                     </p>
                     <p className="text-[10px] sm:text-xs text-destructive font-bold animate-pulse mt-0.5">{currentMinute}'</p>
-                  </>
-                ) : status === 'finished' && lastFinished?.result ? (
-                  <>
+                  </> :
+              status === 'finished' && lastFinished?.result ?
+              <>
                     <p className="text-2xl sm:text-3xl font-black tabular-nums">
                       {lastFinished.result.home} <span className="text-muted-foreground">-</span> {lastFinished.result.away}
                     </p>
                     <Badge variant="secondary" className="text-[8px] mt-1">Final</Badge>
-                  </>
-                ) : (
-                  <>
+                  </> :
+
+              <>
                     <p className="text-base sm:text-lg font-bold text-muted-foreground">VS</p>
                     <Badge variant="outline" className="text-[8px] mt-1">Agendada</Badge>
                   </>
-                )}
+              }
               </div>
 
               <div className="text-center flex-1 min-w-0">
@@ -309,27 +309,27 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly }: Props) {
             </div>
 
             {/* Action buttons */}
-            {status === 'live' && liveMatch && (
-              <Button
-                className="w-full gap-2 font-bold"
-                variant="destructive"
-                onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id } })}
-              >
+            {status === 'live' && liveMatch &&
+          <Button
+            className="w-full gap-2 font-bold"
+            variant="destructive"
+            onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id } })}>
+            
                 <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
               </Button>
-            )}
-            {status === 'finished' && (
-              <Button
-                className="w-full gap-2 font-bold"
-                variant="outline"
-                disabled
-              >
+          }
+            {status === 'finished' &&
+          <Button
+            className="w-full gap-2 font-bold"
+            variant="outline"
+            disabled>
+            
                 <FileText className="h-4 w-4" /> VER RELATÓRIO
               </Button>
-            )}
+          }
           </div>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 }
