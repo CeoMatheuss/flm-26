@@ -24,7 +24,7 @@ const previewSlides = [
 const RESEND_COOLDOWN = 60; // seconds
 
 const features = [
-  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores' },
+  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores!' },
   { icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas em tempo real' },
   { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa no campo' },
   { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e agentes livres' },
