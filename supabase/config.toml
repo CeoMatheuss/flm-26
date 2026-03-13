@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.get-seller-squad]
 verify_jwt = false
+
+[functions.summarize-update]
+verify_jwt = false
