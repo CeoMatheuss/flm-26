@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import {
   Trophy, Plus, Users, Bot, Swords, Calendar, Clock, Award, Trash2,
-  RefreshCw, ChevronRight, Play, CheckCircle, XCircle, Zap, Target
+  RefreshCw, ChevronRight, Play, CheckCircle, XCircle, Zap, Target, Globe
 } from 'lucide-react';
 
 interface Tournament {
@@ -73,21 +73,99 @@ interface Props {
   userId: string;
 }
 
-// Brazilian team name pool for bots
-const BOT_NAMES = [
-  'Atlético Mineiro', 'Bahia', 'Botafogo', 'Ceará', 'Chapecoense',
-  'Corinthians', 'Coritiba', 'Criciúma', 'Cruzeiro', 'Cuiabá',
-  'Flamengo', 'Fluminense', 'Fortaleza', 'Goiás', 'Grêmio',
-  'Internacional', 'Juventude', 'Mirassol', 'Náutico', 'Palmeiras',
-  'Ponte Preta', 'Red Bull Bragantino', 'Santos', 'São Paulo',
-  'Sport', 'Vasco da Gama', 'Vitória', 'América-MG', 'Avaí',
-  'Guarani', 'Londrina', 'Operário-PR', 'Paysandu', 'Remo',
-  'Sampaio Corrêa', 'Vila Nova', 'ABC', 'CRB', 'CSA', 'Tombense',
-  'Real Madrid', 'Barcelona', 'Manchester City', 'Liverpool',
-  'Bayern Munich', 'PSG', 'Juventus', 'Milan', 'Ajax', 'Benfica',
-  'Porto', 'River Plate', 'Boca Juniors', 'Peñarol', 'Nacional',
-  'Olimpia', 'Cerro Porteño', 'Independiente', 'Racing', 'Lanús',
+// Bot name pools per country
+const BOT_NAMES_BY_COUNTRY: Record<string, string[]> = {
+  'Brasil': [
+    'Atlético Mineiro', 'Bahia', 'Botafogo', 'Ceará', 'Chapecoense',
+    'Corinthians', 'Coritiba', 'Criciúma', 'Cruzeiro', 'Cuiabá',
+    'Flamengo', 'Fluminense', 'Fortaleza', 'Goiás', 'Grêmio',
+    'Internacional', 'Juventude', 'Mirassol', 'Náutico', 'Palmeiras',
+    'Ponte Preta', 'Red Bull Bragantino', 'Santos', 'São Paulo',
+    'Sport', 'Vasco da Gama', 'Vitória', 'América-MG', 'Avaí',
+    'Guarani', 'Londrina', 'Operário-PR', 'Paysandu', 'Remo',
+    'Sampaio Corrêa', 'Vila Nova', 'ABC', 'CRB', 'CSA', 'Tombense',
+  ],
+  'Argentina': [
+    'Boca Juniors', 'River Plate', 'Racing', 'Independiente', 'San Lorenzo',
+    'Estudiantes', 'Vélez Sarsfield', 'Lanús', 'Defensa y Justicia', 'Talleres',
+    'Banfield', 'Argentinos Juniors', 'Huracán', 'Newell\'s', 'Rosario Central',
+    'Colón', 'Unión', 'Gimnasia', 'Godoy Cruz', 'Tigre',
+  ],
+  'Espanha': [
+    'Real Madrid', 'Barcelona', 'Atlético Madrid', 'Sevilla', 'Real Sociedad',
+    'Real Betis', 'Villarreal', 'Athletic Bilbao', 'Valencia', 'Celta de Vigo',
+    'Espanyol', 'Osasuna', 'Getafe', 'Mallorca', 'Alavés',
+    'Girona', 'Las Palmas', 'Rayo Vallecano', 'Cádiz', 'Granada',
+  ],
+  'Inglaterra': [
+    'Manchester City', 'Liverpool', 'Arsenal', 'Chelsea', 'Manchester United',
+    'Tottenham', 'Newcastle', 'Aston Villa', 'West Ham', 'Brighton',
+    'Crystal Palace', 'Brentford', 'Wolves', 'Fulham', 'Everton',
+    'Bournemouth', 'Nottingham Forest', 'Burnley', 'Luton Town', 'Sheffield United',
+  ],
+  'Itália': [
+    'Juventus', 'Inter Milan', 'Milan', 'Napoli', 'Roma',
+    'Lazio', 'Atalanta', 'Fiorentina', 'Torino', 'Bologna',
+    'Udinese', 'Sassuolo', 'Monza', 'Empoli', 'Cagliari',
+    'Lecce', 'Verona', 'Genoa', 'Salernitana', 'Frosinone',
+  ],
+  'Alemanha': [
+    'Bayern Munich', 'Borussia Dortmund', 'RB Leipzig', 'Bayer Leverkusen', 'Eintracht Frankfurt',
+    'Union Berlin', 'Freiburg', 'Wolfsburg', 'Hoffenheim', 'Mainz 05',
+    'Augsburg', 'Borussia Mönchengladbach', 'Werder Bremen', 'Stuttgart', 'Köln',
+    'Bochum', 'Heidenheim', 'Darmstadt', 'St. Pauli', 'Hertha Berlin',
+  ],
+  'França': [
+    'PSG', 'Marseille', 'Lyon', 'Monaco', 'Lille',
+    'Nice', 'Lens', 'Rennes', 'Strasbourg', 'Nantes',
+    'Montpellier', 'Toulouse', 'Reims', 'Brest', 'Lorient',
+    'Le Havre', 'Metz', 'Clermont Foot', 'Auxerre', 'Angers',
+  ],
+  'Portugal': [
+    'Benfica', 'Porto', 'Sporting', 'Braga', 'Vitória SC',
+    'Boavista', 'Gil Vicente', 'Rio Ave', 'Arouca', 'Famalicão',
+    'Estoril Praia', 'Casa Pia', 'Moreirense', 'Chaves', 'Portimonense',
+    'Vizela', 'Santa Clara', 'Farense', 'Estrela Amadora', 'Nacional',
+  ],
+  'México': [
+    'Club América', 'Guadalajara', 'Cruz Azul', 'Monterrey', 'Tigres UANL',
+    'Pumas UNAM', 'Santos Laguna', 'León', 'Toluca', 'Pachuca',
+    'Atlas', 'Necaxa', 'Puebla', 'Querétaro', 'San Luis',
+    'Juárez', 'Mazatlán', 'Tijuana', 'FC Juárez', 'Tampico Madero',
+  ],
+  'Colômbia': [
+    'Atlético Nacional', 'Millonarios', 'Junior', 'América de Cali', 'Deportivo Cali',
+    'Santa Fe', 'Once Caldas', 'Tolima', 'Medellín', 'Bucaramanga',
+    'Pereira', 'Pasto', 'La Equidad', 'Envigado', 'Águilas Doradas',
+    'Jaguares', 'Alianza Petrolera', 'Boyacá Chicó', 'Patriotas', 'Rionegro',
+  ],
+  'Chile': [
+    'Colo-Colo', 'Universidad de Chile', 'Universidad Católica', 'Cobreloa', 'Huachipato',
+    'O\'Higgins', 'Unión Española', 'Audax Italiano', 'Palestino', 'Everton de Viña',
+    'Cobresal', 'Curicó Unido', 'Ñublense', 'La Calera', 'La Serena',
+    'Santiago Wanderers', 'Magallanes', 'Deportes Temuco', 'Rangers', 'Antofagasta',
+  ],
+  'Uruguai': [
+    'Peñarol', 'Nacional', 'Defensor Sporting', 'Danubio', 'Cerro',
+    'River Plate (URU)', 'Liverpool (URU)', 'Wanderers', 'Fénix', 'Racing (URU)',
+    'Rentistas', 'Plaza Colonia', 'Boston River', 'Cerro Largo', 'Progreso',
+    'Sud América', 'Villa Española', 'Deportivo Maldonado', 'Torque', 'Albion',
+  ],
+};
+
+// All countries available
+const ALL_COUNTRIES = [
+  'Brasil', 'Argentina', 'Colômbia', 'Chile', 'Uruguai',
+  'Portugal', 'Espanha', 'Itália', 'França', 'Alemanha',
+  'Inglaterra', 'México'
 ];
+
+function getBotNamesForScope(scope: string): string[] {
+  if (scope === 'Mundial') {
+    return Object.values(BOT_NAMES_BY_COUNTRY).flat();
+  }
+  return BOT_NAMES_BY_COUNTRY[scope] || BOT_NAMES_BY_COUNTRY['Brasil'];
+}
 
 export function AdminTournamentTab({ userId }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -101,7 +179,6 @@ export function AdminTournamentTab({ userId }: Props) {
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formFormat, setFormFormat] = useState('league');
-  const [formMaxTeams, setFormMaxTeams] = useState('8');
   const [formTotalRounds, setFormTotalRounds] = useState('1');
   const [formPrize1, setFormPrize1] = useState('5000000');
   const [formPrize2, setFormPrize2] = useState('2000000');
@@ -113,10 +190,16 @@ export function AdminTournamentTab({ userId }: Props) {
   const [formCountry, setFormCountry] = useState('Brasil');
   const [formRules, setFormRules] = useState('');
 
-  // Batch bot creation
-  const [batchBotCount, setBatchBotCount] = useState('8');
+  // Scope: country-based or world
+  const [formScope, setFormScope] = useState<'country' | 'world'>('country');
+
+  // Team source mode
+  const [teamSource, setTeamSource] = useState<'online_only' | 'online_plus_bots' | 'bots_only'>('online_plus_bots');
+
+  // Bot fill
   const [batchBotMinOvr, setBatchBotMinOvr] = useState('50');
   const [batchBotMaxOvr, setBatchBotMaxOvr] = useState('80');
+  const [formMaxTeams, setFormMaxTeams] = useState('20');
 
   // Add single team state
   const [addTeamType, setAddTeamType] = useState<'bot' | 'player'>('bot');
@@ -168,7 +251,7 @@ export function AdminTournamentTab({ userId }: Props) {
   }, [loadTournaments, loadPlayers]);
 
   // ── FIXTURE GENERATION ──────────────────────────────────────
-  const generateLeagueFixtures = (teamIds: string[], totalRounds: number, startDate: string, matchTime: string, intervalHours: number): Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> => {
+  const generateLeagueFixtures = (teamIds: string[], totalRounds: number, startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const n = teamIds.length;
     const ids = [...teamIds];
@@ -189,16 +272,9 @@ export function AdminTournamentTab({ userId }: Props) {
           const date = new Date(startDate);
           date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
-          fixtures.push({
-            home_team_id: h,
-            away_team_id: a,
-            round: turn * roundsPerTurn + round + 1,
-            stage: 'league',
-            scheduled_at: date.toISOString(),
-          });
+          fixtures.push({ home_team_id: h, away_team_id: a, round: turn * roundsPerTurn + round + 1, stage: 'league', scheduled_at: date.toISOString() });
         }
         matchDay++;
-        // Rotate: fix first, rotate rest
         const last = shuffled.pop()!;
         shuffled.splice(1, 0, last);
       }
@@ -206,13 +282,11 @@ export function AdminTournamentTab({ userId }: Props) {
     return fixtures;
   };
 
-  const generateKnockoutFixtures = (teamIds: string[], startDate: string, matchTime: string, intervalHours: number): Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> => {
+  const generateKnockoutFixtures = (teamIds: string[], startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
     const totalRounds = Math.ceil(Math.log2(shuffled.length));
     const stageNames = ['Final', 'Semi', 'Quartas', 'Oitavas', 'R32', 'R64'];
-    
-    // Only generate first round, subsequent rounds are generated after results
     const firstRoundPairs = Math.floor(shuffled.length / 2);
     const stageName = stageNames[Math.min(totalRounds - 1, stageNames.length - 1)] || `R${shuffled.length}`;
     
@@ -220,18 +294,12 @@ export function AdminTournamentTab({ userId }: Props) {
       const date = new Date(startDate);
       date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
       date.setTime(date.getTime() + i * intervalHours * 3600000);
-      fixtures.push({
-        home_team_id: shuffled[i * 2],
-        away_team_id: shuffled[i * 2 + 1],
-        round: 1,
-        stage: stageName,
-        scheduled_at: date.toISOString(),
-      });
+      fixtures.push({ home_team_id: shuffled[i * 2], away_team_id: shuffled[i * 2 + 1], round: 1, stage: stageName, scheduled_at: date.toISOString() });
     }
     return fixtures;
   };
 
-  const generateGroupFixtures = (teamsByGroup: Record<string, string[]>, startDate: string, matchTime: string, intervalHours: number): Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> => {
+  const generateGroupFixtures = (teamsByGroup: Record<string, string[]>, startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     let matchDay = 0;
 
@@ -250,13 +318,7 @@ export function AdminTournamentTab({ userId }: Props) {
           const date = new Date(startDate);
           date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
-          fixtures.push({
-            home_team_id: home,
-            away_team_id: away,
-            round: round + 1,
-            stage: `Grupo ${groupLetter}`,
-            scheduled_at: date.toISOString(),
-          });
+          fixtures.push({ home_team_id: home, away_team_id: away, round: round + 1, stage: `Grupo ${groupLetter}`, scheduled_at: date.toISOString() });
         }
         matchDay++;
       }
@@ -276,11 +338,9 @@ export function AdminTournamentTab({ userId }: Props) {
 
     shuffled.forEach((team, idx) => {
       const groupIdx = idx % groupCount;
-      const letter = letters[groupIdx];
-      groups[letter].push(team.id);
+      groups[letters[groupIdx]].push(team.id);
     });
 
-    // Update group_letter in DB
     for (const [letter, ids] of Object.entries(groups)) {
       for (const id of ids) {
         await supabase.from('custom_tournament_teams').update({ group_letter: letter } as any).eq('id', id);
@@ -290,14 +350,39 @@ export function AdminTournamentTab({ userId }: Props) {
     return groups;
   };
 
-  // ── CREATE WITH BATCH BOTS ──────────────────────────────────
+  // ── Fetch online players from game_saves filtered by country ──
+  const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }>> => {
+    // Get all game saves
+    const { data: saves } = await supabase.from('game_saves').select('user_id, club_data');
+    if (!saves) return [];
+
+    const result: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+
+    for (const save of saves) {
+      try {
+        const clubData = save.club_data as any;
+        if (!clubData) continue;
+        const clubCountry = clubData?.country || 'Brasil';
+        const clubName = clubData?.name || 'Clube';
+        const clubLogo = clubData?.logo || '⚽';
+
+        if (scope === 'Mundial' || clubCountry === scope) {
+          result.push({ user_id: save.user_id, club_name: clubName, club_logo: clubLogo });
+        }
+      } catch { /* skip bad data */ }
+    }
+
+    return result;
+  };
+
+  // ── CREATE WITH AUTO-ENROLLMENT ──────────────────────────────
   const createTournament = async () => {
     if (!formName.trim()) return toast.error('Nome é obrigatório');
-    const numBots = Math.max(0, Math.min(64, Number(batchBotCount) || 0));
+    const maxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
-    const maxTeams = Math.max(numBots, Number(formMaxTeams) || 8);
     const startDateStr = formStartDate || new Date().toISOString().split('T')[0];
+    const scope = formScope === 'world' ? 'Mundial' : formCountry;
 
     setLoading(true);
 
@@ -315,7 +400,7 @@ export function AdminTournamentTab({ userId }: Props) {
       match_interval_hours: Number(formInterval) || 24,
       start_date: startDateStr,
       match_time: formMatchTime || '20:00',
-      country: formCountry,
+      country: scope,
       rules_text: formRules.trim(),
       created_by: userId,
       status: 'in_progress',
@@ -328,18 +413,42 @@ export function AdminTournamentTab({ userId }: Props) {
     }
 
     const tournament = tournamentData as any;
+    const allTeamInserts: any[] = [];
 
-    // 2. Create batch bots
-    if (numBots > 0) {
-      const usedNames = new Set<string>();
-      const botInserts = [];
+    // 2. Enroll online players if applicable
+    if (teamSource !== 'bots_only') {
+      const onlineTeams = await fetchOnlineTeams(scope);
+      const enrollCount = Math.min(onlineTeams.length, maxTeams);
+      
+      for (let i = 0; i < enrollCount; i++) {
+        allTeamInserts.push({
+          tournament_id: tournament.id,
+          is_bot: false,
+          user_id: onlineTeams[i].user_id,
+          club_name: onlineTeams[i].club_name,
+          club_logo: onlineTeams[i].club_logo || '⚽',
+          bot_name: '',
+          bot_strength: 0,
+        });
+      }
+    }
 
-      for (let i = 0; i < numBots; i++) {
-        let name = BOT_NAMES[i % BOT_NAMES.length];
-        if (usedNames.has(name)) name = `${name} B`;
+    // 3. Fill remaining slots with bots
+    const slotsForBots = maxTeams - allTeamInserts.length;
+    if (slotsForBots > 0 && teamSource !== 'online_only') {
+      const botPool = getBotNamesForScope(scope);
+      const usedNames = new Set(allTeamInserts.map(t => t.club_name));
+      const availableNames = botPool.filter(n => !usedNames.has(n));
+      
+      // Shuffle available names
+      const shuffledNames = [...availableNames].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < slotsForBots; i++) {
+        let name = shuffledNames[i % shuffledNames.length];
+        if (!name || usedNames.has(name)) name = `Bot FC ${i + 1}`;
         usedNames.add(name);
         const ovr = Math.floor(Math.random() * (maxOvr - minOvr + 1)) + minOvr;
-        botInserts.push({
+        allTeamInserts.push({
           tournament_id: tournament.id,
           is_bot: true,
           bot_name: name,
@@ -349,16 +458,22 @@ export function AdminTournamentTab({ userId }: Props) {
           user_id: null,
         });
       }
+    }
 
-      const { error: botError } = await supabase.from('custom_tournament_teams').insert(botInserts);
-      if (botError) {
-        toast.error('Erro ao criar bots: ' + botError.message);
-        setLoading(false);
-        return;
+    // Insert all teams in batches
+    if (allTeamInserts.length > 0) {
+      for (let i = 0; i < allTeamInserts.length; i += 50) {
+        const batch = allTeamInserts.slice(i, i + 50);
+        const { error: teamErr } = await supabase.from('custom_tournament_teams').insert(batch);
+        if (teamErr) {
+          toast.error('Erro ao criar times: ' + teamErr.message);
+          setLoading(false);
+          return;
+        }
       }
     }
 
-    // 3. Load created teams
+    // 4. Load created teams
     const { data: createdTeams } = await supabase
       .from('custom_tournament_teams')
       .select('*')
@@ -373,59 +488,41 @@ export function AdminTournamentTab({ userId }: Props) {
     }
 
     const teamList = createdTeams as any as TournamentTeam[];
+    const onlineCount = teamList.filter(t => !t.is_bot).length;
+    const botCount = teamList.filter(t => t.is_bot).length;
 
-    // 4. Generate fixtures based on format
+    // 5. Generate fixtures
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
     if (formFormat === 'league') {
-      fixtures = generateLeagueFixtures(
-        teamList.map(t => t.id),
-        Number(formTotalRounds) || 1,
-        startDateStr,
-        formMatchTime,
-        Number(formInterval) || 24
-      );
+      fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, formMatchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
-      fixtures = generateKnockoutFixtures(
-        teamList.map(t => t.id),
-        startDateStr,
-        formMatchTime,
-        Number(formInterval) || 24
-      );
+      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, formMatchTime, Number(formInterval) || 24);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
-      fixtures = generateGroupFixtures(
-        groups,
-        startDateStr,
-        formMatchTime,
-        Number(formInterval) || 24
-      );
+      fixtures = generateGroupFixtures(groups, startDateStr, formMatchTime, Number(formInterval) || 24);
     }
 
-    // 5. Insert fixtures
+    // 6. Insert fixtures
     if (fixtures.length > 0) {
-      const matchInserts = fixtures.map(f => ({
-        tournament_id: tournament.id,
-        home_team_id: f.home_team_id,
-        away_team_id: f.away_team_id,
-        round: f.round,
-        stage: f.stage,
-        scheduled_at: f.scheduled_at,
-        status: 'scheduled',
-      }));
-
-      // Insert in batches of 50
-      for (let i = 0; i < matchInserts.length; i += 50) {
-        const batch = matchInserts.slice(i, i + 50);
+      for (let i = 0; i < fixtures.length; i += 50) {
+        const batch = fixtures.slice(i, i + 50).map(f => ({
+          tournament_id: tournament.id,
+          home_team_id: f.home_team_id,
+          away_team_id: f.away_team_id,
+          round: f.round,
+          stage: f.stage,
+          scheduled_at: f.scheduled_at,
+          status: 'scheduled',
+        }));
         await supabase.from('custom_tournament_matches').insert(batch);
       }
     }
 
-    // Update total_rounds on tournament
     const maxRound = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.round)) : 1;
     await supabase.from('custom_tournaments').update({ total_rounds: maxRound } as any).eq('id', tournament.id);
 
-    toast.success(`🏆 Campeonato criado com ${numBots} times e ${fixtures.length} jogos gerados!`);
+    toast.success(`🏆 Campeonato "${formName}" criado! ${onlineCount} online + ${botCount} bots = ${teamList.length} times, ${fixtures.length} jogos!`);
     setShowCreate(false);
     setFormName(''); setFormDesc(''); setFormRules('');
     loadTournaments();
@@ -440,24 +537,16 @@ export function AdminTournamentTab({ userId }: Props) {
       if (!botName.trim()) { setLoading(false); return toast.error('Nome do time bot é obrigatório'); }
       const strength = Math.max(20, Math.min(99, Number(botStrength) || 60));
       const { error } = await supabase.from('custom_tournament_teams').insert([{
-        tournament_id: selectedTournament.id,
-        is_bot: true,
-        bot_name: botName.trim(),
-        bot_strength: strength,
-        club_name: botName.trim(),
-        club_logo: '🤖',
-        user_id: null,
+        tournament_id: selectedTournament.id, is_bot: true, bot_name: botName.trim(), bot_strength: strength,
+        club_name: botName.trim(), club_logo: '🤖', user_id: null,
       }]);
       if (error) toast.error('Erro: ' + error.message);
       else { toast.success(`🤖 Bot "${botName}" (OVR ${strength}) adicionado!`); setBotName(''); }
     } else {
       if (!playerUserId.trim()) { setLoading(false); return toast.error('ID do jogador é obrigatório'); }
       const { error } = await supabase.from('custom_tournament_teams').insert([{
-        tournament_id: selectedTournament.id,
-        is_bot: false,
-        user_id: playerUserId.trim(),
-        club_name: playerClubName.trim() || 'Clube do Jogador',
-        club_logo: '⚽',
+        tournament_id: selectedTournament.id, is_bot: false, user_id: playerUserId.trim(),
+        club_name: playerClubName.trim() || 'Clube do Jogador', club_logo: '⚽',
       }]);
       if (error) toast.error('Erro: ' + error.message);
       else { toast.success('👤 Jogador adicionado!'); setPlayerUserId(''); setPlayerClubName(''); }
@@ -477,10 +566,7 @@ export function AdminTournamentTab({ userId }: Props) {
     if (!selectedTournament) return;
     if (!confirm('Isso apagará todos os jogos existentes e gerará novos. Continuar?')) return;
     setLoading(true);
-
-    // Delete existing matches
     await supabase.from('custom_tournament_matches').delete().eq('tournament_id', selectedTournament.id);
-
     const startDateStr = selectedTournament.start_date || new Date().toISOString().split('T')[0];
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
@@ -496,13 +582,8 @@ export function AdminTournamentTab({ userId }: Props) {
     if (fixtures.length > 0) {
       for (let i = 0; i < fixtures.length; i += 50) {
         const batch = fixtures.slice(i, i + 50).map(f => ({
-          tournament_id: selectedTournament.id,
-          home_team_id: f.home_team_id,
-          away_team_id: f.away_team_id,
-          round: f.round,
-          stage: f.stage,
-          scheduled_at: f.scheduled_at,
-          status: 'scheduled',
+          tournament_id: selectedTournament.id, home_team_id: f.home_team_id, away_team_id: f.away_team_id,
+          round: f.round, stage: f.stage, scheduled_at: f.scheduled_at, status: 'scheduled',
         }));
         await supabase.from('custom_tournament_matches').insert(batch);
       }
@@ -561,7 +642,7 @@ export function AdminTournamentTab({ userId }: Props) {
     return team ? team.club_name : '???';
   };
 
-  // ── GROUPS VIEW ──────────────────────────────────────────────
+  // ── GROUPS VIEW ──
   const renderGroups = () => {
     const groupLetters = [...new Set(teams.filter(t => t.group_letter).map(t => t.group_letter!))].sort();
     if (groupLetters.length === 0) return <p className="text-xs text-muted-foreground text-center py-4">Sem grupos definidos.</p>;
@@ -614,10 +695,9 @@ export function AdminTournamentTab({ userId }: Props) {
     );
   };
 
-  // ── MATCHES/CALENDAR VIEW ────────────────────────────────────
+  // ── MATCHES/CALENDAR VIEW ──
   const renderMatches = () => {
     if (matches.length === 0) return <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogo gerado ainda.</p>;
-
     const rounds = [...new Set(matches.map(m => m.round))].sort((a, b) => a - b);
 
     return (
@@ -638,9 +718,7 @@ export function AdminTournamentTab({ userId }: Props) {
                     <div className="flex items-center gap-1 flex-1 min-w-0">
                       <span className="font-semibold truncate max-w-[70px]">{getTeamName(match.home_team_id)}</span>
                       <span className="text-muted-foreground shrink-0">
-                        {match.status === 'played' ? (
-                          <span className="font-bold">{match.home_goals} - {match.away_goals}</span>
-                        ) : 'vs'}
+                        {match.status === 'played' ? <span className="font-bold">{match.home_goals} - {match.away_goals}</span> : 'vs'}
                       </span>
                       <span className="font-semibold truncate max-w-[70px]">{getTeamName(match.away_team_id)}</span>
                     </div>
@@ -664,7 +742,7 @@ export function AdminTournamentTab({ userId }: Props) {
     );
   };
 
-  // ── TOURNAMENT LIST VIEW ──────────────────────────────────────
+  // ── TOURNAMENT LIST VIEW ──
   if (!selectedTournament) {
     return (
       <div className="space-y-3">
@@ -694,6 +772,85 @@ export function AdminTournamentTab({ userId }: Props) {
               <Input placeholder="Nome do campeonato" value={formName} onChange={e => setFormName(e.target.value)} className="text-xs h-8" maxLength={100} />
               <Textarea placeholder="Descrição (opcional)" value={formDesc} onChange={e => setFormDesc(e.target.value)} className="text-xs min-h-[50px]" maxLength={500} />
               
+              {/* Scope: País ou Mundial */}
+              <Card className="border-blue-500/20 bg-blue-500/5">
+                <CardHeader className="pb-1 px-3 pt-2">
+                  <CardTitle className="text-[10px] flex items-center gap-1.5 text-blue-400">
+                    <Globe className="h-3 w-3" /> Escopo do Campeonato
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-2 space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1">
+                    <Button size="sm" variant={formScope === 'country' ? 'default' : 'outline'} className="h-7 text-[9px] gap-1" onClick={() => setFormScope('country')}>
+                      🏴 Por País
+                    </Button>
+                    <Button size="sm" variant={formScope === 'world' ? 'default' : 'outline'} className="h-7 text-[9px] gap-1" onClick={() => setFormScope('world')}>
+                      🌍 Mundial
+                    </Button>
+                  </div>
+                  {formScope === 'country' && (
+                    <Select value={formCountry} onValueChange={setFormCountry}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ALL_COUNTRIES.map(c => (
+                          <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <p className="text-[8px] text-blue-400/70">
+                    {formScope === 'world' 
+                      ? '🌍 Todos os times criados de todos os países participam' 
+                      : `🏴 Apenas times do ${formCountry} participam`}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Team source */}
+              <Card className="border-emerald-500/20 bg-emerald-500/5">
+                <CardHeader className="pb-1 px-3 pt-2">
+                  <CardTitle className="text-[10px] flex items-center gap-1.5 text-emerald-400">
+                    <Users className="h-3 w-3" /> Origem dos Times
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-2 space-y-1.5">
+                  <div className="grid grid-cols-3 gap-1">
+                    <Button size="sm" variant={teamSource === 'online_plus_bots' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('online_plus_bots')}>
+                      👤+🤖
+                    </Button>
+                    <Button size="sm" variant={teamSource === 'online_only' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('online_only')}>
+                      👤 Só online
+                    </Button>
+                    <Button size="sm" variant={teamSource === 'bots_only' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('bots_only')}>
+                      🤖 Só bots
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[8px] text-muted-foreground">Total Times</label>
+                      <Input value={formMaxTeams} onChange={e => setFormMaxTeams(e.target.value)} className="text-xs h-7" type="number" min="4" max="64" />
+                    </div>
+                    {teamSource !== 'online_only' && (
+                      <>
+                        <div>
+                          <label className="text-[8px] text-muted-foreground">Bot OVR Mín</label>
+                          <Input value={batchBotMinOvr} onChange={e => setBatchBotMinOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
+                        </div>
+                        <div>
+                          <label className="text-[8px] text-muted-foreground">Bot OVR Máx</label>
+                          <Input value={batchBotMaxOvr} onChange={e => setBatchBotMaxOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-[8px] text-emerald-400/70">
+                    {teamSource === 'online_plus_bots' && `Todos jogadores online são inscritos + bots completam até ${formMaxTeams} times`}
+                    {teamSource === 'online_only' && `Apenas jogadores online reais (máx ${formMaxTeams})`}
+                    {teamSource === 'bots_only' && `${formMaxTeams} times bot com OVR ${batchBotMinOvr}-${batchBotMaxOvr}`}
+                  </p>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[9px] text-muted-foreground">Formato</label>
@@ -719,34 +876,6 @@ export function AdminTournamentTab({ userId }: Props) {
                   </div>
                 )}
               </div>
-
-              {/* Batch Bot Creation */}
-              <Card className="border-orange-500/20 bg-orange-500/5">
-                <CardHeader className="pb-1 px-3 pt-2">
-                  <CardTitle className="text-[10px] flex items-center gap-1.5 text-orange-400">
-                    <Bot className="h-3 w-3" /> Criação automática de times BOT
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2 space-y-1.5">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">Qtd. Times</label>
-                      <Input value={batchBotCount} onChange={e => setBatchBotCount(e.target.value)} className="text-xs h-7" type="number" min="2" max="64" />
-                    </div>
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">OVR Mín</label>
-                      <Input value={batchBotMinOvr} onChange={e => setBatchBotMinOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
-                    </div>
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">OVR Máx</label>
-                      <Input value={batchBotMaxOvr} onChange={e => setBatchBotMaxOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
-                    </div>
-                  </div>
-                  <p className="text-[8px] text-orange-400/70">
-                    {batchBotCount} times serão criados com OVR entre {batchBotMinOvr}-{batchBotMaxOvr} + calendário gerado automaticamente
-                  </p>
-                </CardContent>
-              </Card>
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -801,18 +930,6 @@ export function AdminTournamentTab({ userId }: Props) {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[9px] text-muted-foreground">País</label>
-                <Select value={formCountry} onValueChange={setFormCountry}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['Brasil', 'Argentina', 'Colômbia', 'Chile', 'Uruguai', 'Portugal', 'Espanha', 'Itália', 'França', 'Alemanha', 'Inglaterra', 'México'].map(c => (
-                      <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Textarea placeholder="Regras especiais (opcional)" value={formRules} onChange={e => setFormRules(e.target.value)} className="text-xs min-h-[40px]" maxLength={1000} />
 
               <Button className="w-full h-9 text-xs gap-1 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={createTournament} disabled={loading}>
@@ -848,6 +965,8 @@ export function AdminTournamentTab({ userId }: Props) {
                         <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
                           <span>{t.format === 'league' ? '🏟️ Liga' : t.format === 'knockout' ? '⚔️ Mata-mata' : '🏟️⚔️ Grupos+MM'}</span>
                           <span>•</span>
+                          <span>{t.country === 'Mundial' ? '🌍 Mundial' : `🏴 ${t.country}`}</span>
+                          <span>•</span>
                           <span>{t.max_teams} times</span>
                           <span>•</span>
                           <span>🥇 {formatMoney(t.prize_1st)}</span>
@@ -875,7 +994,7 @@ export function AdminTournamentTab({ userId }: Props) {
     );
   }
 
-  // ── TOURNAMENT DETAIL VIEW ────────────────────────────────────
+  // ── TOURNAMENT DETAIL VIEW ──
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -900,10 +1019,14 @@ export function AdminTournamentTab({ userId }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-4 gap-1.5 text-center">
+          <div className="grid grid-cols-5 gap-1.5 text-center">
             <div className="p-1.5 rounded bg-muted/20">
               <p className="text-[8px] text-muted-foreground">Formato</p>
               <p className="text-[10px] font-semibold">{selectedTournament.format === 'league' ? 'Liga' : selectedTournament.format === 'knockout' ? 'Mata-mata' : 'Grupos+MM'}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20">
+              <p className="text-[8px] text-muted-foreground">Escopo</p>
+              <p className="text-[10px] font-semibold">{selectedTournament.country === 'Mundial' ? '🌍' : '🏴'} {selectedTournament.country?.slice(0, 6)}</p>
             </div>
             <div className="p-1.5 rounded bg-muted/20">
               <p className="text-[8px] text-muted-foreground">Times</p>
@@ -917,6 +1040,13 @@ export function AdminTournamentTab({ userId }: Props) {
               <p className="text-[8px] text-muted-foreground">Jogados</p>
               <p className="text-[10px] font-semibold">{matches.filter(m => m.status === 'played').length}</p>
             </div>
+          </div>
+
+          {/* Online vs Bot count */}
+          <div className="flex items-center gap-2 text-[9px]">
+            <span className="text-green-400">👤 {teams.filter(t => !t.is_bot).length} online</span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-orange-400">🤖 {teams.filter(t => t.is_bot).length} bots</span>
           </div>
 
           <div className="grid grid-cols-3 gap-1.5 text-center">
