@@ -62,10 +62,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     player_unhappy: 'border-l-destructive bg-destructive/5',
   };
 
-  // If tournament expanded, show full view
-  if (expandedTournament) {
-    return <TournamentExpandedView tournamentId={expandedTournament} onClose={() => setExpandedTournament(null)} />;
-  }
 
   const stats = [
     { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, color: 'text-primary' },
