@@ -350,29 +350,21 @@ export function AdminTournamentTab({ userId }: Props) {
     return groups;
   };
 
-  // ── Fetch ALL existing teams from game_saves (even offline) filtered by country ──
+  // ── Fetch ALL existing teams via edge function (bypasses RLS) ──
   const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }>> => {
-    // Get all game saves - these are all created teams regardless of online status
-    const { data: saves } = await supabase.from('game_saves').select('user_id, club_data');
-    if (!saves) return [];
-
-    const result: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
-
-    for (const save of saves) {
-      try {
-        const clubData = save.club_data as any;
-        if (!clubData) continue;
-        const clubCountry = clubData?.country || 'Brasil';
-        const clubName = clubData?.name || 'Clube';
-        const clubLogo = clubData?.logo || '⚽';
-
-        if (scope === 'Mundial' || clubCountry === scope) {
-          result.push({ user_id: save.user_id, club_name: clubName, club_logo: clubLogo });
-        }
-      } catch { /* skip bad data */ }
+    try {
+      const { data, error } = await supabase.functions.invoke('get-all-clubs', {
+        body: { scope },
+      });
+      if (error) {
+        console.error('Error fetching clubs:', error);
+        return [];
+      }
+      return data?.clubs || [];
+    } catch (err) {
+      console.error('Failed to fetch clubs:', err);
+      return [];
     }
-
-    return result;
   };
 
   // ── CREATE WITH AUTO-ENROLLMENT ──────────────────────────────
