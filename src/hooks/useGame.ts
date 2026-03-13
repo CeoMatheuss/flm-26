@@ -65,18 +65,68 @@ function resetLeagueTeams(): LeagueTeam[] {
   return initialLeagueTeams.map(t => ({ ...t, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, played: 0 }));
 }
 
-function applyAgeDevelopment(player: Player): Player {
-  if (player.age <= 33) return player;
-  const lossChance = 0.1 + (player.age - 33) * 0.08;
-  if (Math.random() < lossChance) {
-    const attrs = { ...player.attributes };
-    // Random attribute loses 1-2 points
-    const keys = Object.keys(attrs) as (keyof typeof attrs)[];
-    const key = keys[Math.floor(Math.random() * keys.length)];
-    attrs[key] = Math.max(1, attrs[key] - Math.floor(Math.random() * 2 + 1));
-    return { ...player, overall: Math.max(40, player.overall - 1), attributes: attrs };
+function applySeasonDevelopment(player: Player): Player {
+  const attrs = { ...player.attributes };
+  const keys = Object.keys(attrs) as (keyof typeof attrs)[];
+  const gamesPlayed = player.gamesPlayed ?? 0;
+  const goals = player.goals ?? 0;
+  const assists = player.assists ?? 0;
+
+  // Performance score: games played + goals + assists (capped)
+  const perfScore = Math.min(gamesPlayed * 2 + goals * 3 + assists * 2, 100);
+
+  let ovrChange = 0;
+
+  if (player.age <= 21) {
+    // Young talent: high growth potential (+1 to +3 based on performance)
+    const growth = perfScore >= 60 ? 3 : perfScore >= 30 ? 2 : perfScore >= 10 ? 1 : 0;
+    ovrChange = growth;
+    for (let i = 0; i < growth; i++) {
+      const key = keys[Math.floor(Math.random() * keys.length)];
+      attrs[key] = Math.min(99, attrs[key] + Math.floor(Math.random() * 3 + 1));
+    }
+  } else if (player.age <= 24) {
+    // Developing: moderate growth (+0 to +2)
+    const growth = perfScore >= 50 ? 2 : perfScore >= 20 ? 1 : 0;
+    ovrChange = growth;
+    for (let i = 0; i < growth; i++) {
+      const key = keys[Math.floor(Math.random() * keys.length)];
+      attrs[key] = Math.min(99, attrs[key] + Math.floor(Math.random() * 2 + 1));
+    }
+  } else if (player.age <= 29) {
+    // Peak: maintain or slight change based on performance (-1 to +1)
+    if (perfScore >= 50) { ovrChange = 1; const key = keys[Math.floor(Math.random() * keys.length)]; attrs[key] = Math.min(99, attrs[key] + 1); }
+    else if (perfScore < 10 && Math.random() < 0.3) { ovrChange = -1; const key = keys[Math.floor(Math.random() * keys.length)]; attrs[key] = Math.max(1, attrs[key] - 1); }
+  } else if (player.age <= 33) {
+    // Declining: slight decline (-1 to 0, rarely +1 with great performance)
+    if (perfScore >= 70) { /* maintain */ }
+    else {
+      const declineChance = 0.4 + (player.age - 30) * 0.1;
+      if (Math.random() < declineChance) {
+        ovrChange = -1;
+        const key = keys[Math.floor(Math.random() * keys.length)];
+        attrs[key] = Math.max(1, attrs[key] - Math.floor(Math.random() * 2 + 1));
+      }
+    }
+  } else {
+    // Veteran (34+): significant decline (-1 to -3)
+    const severity = Math.min(3, Math.floor((player.age - 33) * 0.6));
+    const declineChance = 0.5 + (player.age - 33) * 0.1;
+    if (Math.random() < declineChance) {
+      const loss = Math.max(1, severity);
+      ovrChange = -loss;
+      for (let i = 0; i < loss; i++) {
+        const key = keys[Math.floor(Math.random() * keys.length)];
+        attrs[key] = Math.max(1, attrs[key] - Math.floor(Math.random() * 2 + 1));
+      }
+    }
   }
-  return player;
+
+  return {
+    ...player,
+    overall: Math.max(40, Math.min(99, player.overall + ovrChange)),
+    attributes: attrs,
+  };
 }
 
 export function useGame(initialState?: GameState, userId?: string) {
