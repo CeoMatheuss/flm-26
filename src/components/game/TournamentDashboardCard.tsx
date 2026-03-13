@@ -138,8 +138,17 @@ export function TournamentDashboardCard({ onExpand }: Props) {
               </div>
             )}
             {onExpand && selected && (
-              <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-muted-foreground hover:text-primary" onClick={() => onExpand(selected.id)}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-6 px-2 text-[8px] font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExpand(selected.id);
+                }}
+              >
                 <Maximize2 className="h-3 w-3" />
+                Expandir
               </Button>
             )}
           </div>
