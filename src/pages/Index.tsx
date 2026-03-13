@@ -410,8 +410,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     }
   }, []);
 
+  // Show maintenance screen for non-admins
+  if (maintenanceChecked && isMaintenanceMode && !isAdminRole) {
+    return <MaintenanceScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
+      <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal
         open={showChangelog}
         onClose={() => {
