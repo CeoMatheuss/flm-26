@@ -1192,6 +1192,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         <TabsContent value="moderation" className="space-y-3 mt-3">
           <ModerationPanel onDeleteMessage={deleteMessage} />
         </TabsContent>
+
+        {/* Updates Management Tab */}
+        <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
+          <AdminUpdatesPanel userId={userId} />
+        </TabsContent>
       </Tabs>
     </div>
   );
