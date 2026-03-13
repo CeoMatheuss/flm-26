@@ -1,0 +1,1 @@
+ALTER TABLE public.custom_tournament_teams DROP CONSTRAINT IF EXISTS custom_tournament_teams_tournament_id_user_id_key;

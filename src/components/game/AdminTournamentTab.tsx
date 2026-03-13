@@ -415,16 +415,20 @@ export function AdminTournamentTab({ userId }: Props) {
     const tournament = tournamentData as any;
     const allTeamInserts: any[] = [];
 
-    // 2. Enroll online players if applicable
+    // 2. Enroll online players if applicable (deduplicate by user_id)
     if (teamSource !== 'bots_only') {
       const onlineTeams = await fetchOnlineTeams(scope);
       const enrollCount = Math.min(onlineTeams.length, maxTeams);
+      const enrolledUserIds = new Set<string>();
       
       for (let i = 0; i < enrollCount; i++) {
+        const uid = onlineTeams[i].user_id;
+        if (enrolledUserIds.has(uid)) continue;
+        enrolledUserIds.add(uid);
         allTeamInserts.push({
           tournament_id: tournament.id,
           is_bot: false,
-          user_id: onlineTeams[i].user_id,
+          user_id: uid,
           club_name: onlineTeams[i].club_name,
           club_logo: onlineTeams[i].club_logo || '⚽',
           bot_name: '',
