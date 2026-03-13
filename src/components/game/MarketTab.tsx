@@ -140,11 +140,6 @@ export function MarketTab({ marketPlayers, freeAgents, clubPlayers, budget, club
             </PlayerProfileModal>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[10px] text-muted-foreground">{player.age} anos</span>
-              {player.potential && player.potential > player.overall && (
-                <span className="text-[9px] text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="h-2.5 w-2.5" /> POT {player.potential}
-                </span>
-              )}
             </div>
           </div>
 
