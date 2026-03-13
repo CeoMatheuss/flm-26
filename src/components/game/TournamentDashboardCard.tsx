@@ -379,6 +379,40 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
           </div>
         )}
 
+        {activeTab === 'teams' && (
+          <Card className="game-card">
+            <CardHeader className="section-header pb-1 px-3 pt-2">
+              <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Users className="h-3 w-3" /> Todos os Times ({teams.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 pb-2">
+              <ScrollArea className="max-h-[50vh]">
+                <div className="space-y-0.5">
+                  {sortedTeams.map((t, i) => (
+                    <div key={t.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] ${i < 3 ? 'bg-primary/5' : i % 2 === 0 ? 'bg-accent/10' : ''}`}>
+                      <span className="w-5 text-center font-bold text-muted-foreground">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}</span>
+                      <span className="text-sm">{t.club_logo}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold truncate ${i < 3 ? 'text-primary' : ''}`}>{t.club_name}</p>
+                        <p className="text-[8px] text-muted-foreground">
+                          {t.played}J • {t.wins}V {t.draws}E {t.losses}D • {t.goals_for}GP {t.goals_against}GC • SG: {t.goals_for - t.goals_against}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-black text-primary text-xs">{t.points}</p>
+                        <p className="text-[7px] text-muted-foreground">pts</p>
+                      </div>
+                      {t.is_bot && <Badge variant="outline" className="text-[6px] px-1 py-0 h-3">🤖</Badge>}
+                      {t.group_letter && <Badge variant="secondary" className="text-[6px] px-1 py-0 h-3">G{t.group_letter}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === 'groups' && (
           <div className="space-y-2">
             {groupLetters.map(letter => {
