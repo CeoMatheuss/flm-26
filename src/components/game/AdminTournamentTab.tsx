@@ -251,6 +251,13 @@ export function AdminTournamentTab({ userId }: Props) {
   }, [loadTournaments, loadPlayers]);
 
   // ── FIXTURE GENERATION ──────────────────────────────────────
+  // Parse YYYY-MM-DD as local date (avoids UTC timezone shift)
+  const parseLocalDate = (dateStr: string, time: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = time.split(':').map(Number);
+    return new Date(year, month - 1, day, hours || 0, minutes || 0);
+  };
+
   const generateLeagueFixtures = (teamIds: string[], totalRounds: number, startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const n = teamIds.length;
@@ -269,8 +276,7 @@ export function AdminTournamentTab({ userId }: Props) {
           if (home === 'BYE' || away === 'BYE') continue;
           const h = turn % 2 === 0 ? home : away;
           const a = turn % 2 === 0 ? away : home;
-          const date = new Date(startDate);
-          date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+          const date = parseLocalDate(startDate, matchTime);
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
           fixtures.push({ home_team_id: h, away_team_id: a, round: turn * roundsPerTurn + round + 1, stage: 'league', scheduled_at: date.toISOString() });
         }
@@ -291,8 +297,7 @@ export function AdminTournamentTab({ userId }: Props) {
     const stageName = stageNames[Math.min(totalRounds - 1, stageNames.length - 1)] || `R${shuffled.length}`;
     
     for (let i = 0; i < firstRoundPairs; i++) {
-      const date = new Date(startDate);
-      date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+      const date = parseLocalDate(startDate, matchTime);
       date.setTime(date.getTime() + i * intervalHours * 3600000);
       fixtures.push({ home_team_id: shuffled[i * 2], away_team_id: shuffled[i * 2 + 1], round: 1, stage: stageName, scheduled_at: date.toISOString() });
     }
@@ -315,8 +320,7 @@ export function AdminTournamentTab({ userId }: Props) {
           const home = padded[i];
           const away = padded[total - 1 - i];
           if (home === 'BYE' || away === 'BYE') continue;
-          const date = new Date(startDate);
-          date.setHours(...(matchTime.split(':').map(Number) as [number, number]));
+          const date = parseLocalDate(startDate, matchTime);
           date.setTime(date.getTime() + matchDay * intervalHours * 3600000);
           fixtures.push({ home_team_id: home, away_team_id: away, round: round + 1, stage: `Grupo ${groupLetter}`, scheduled_at: date.toISOString() });
         }
@@ -384,7 +388,10 @@ export function AdminTournamentTab({ userId }: Props) {
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
     const now = new Date();
-    const startDateStr = formStartDate || now.toISOString().split('T')[0];
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const da = String(now.getDate()).padStart(2, '0');
+    const startDateStr = formStartDate || `${y}-${mo}-${da}`;
     const matchTime = formMatchTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const scope = formScope === 'world' ? 'Mundial' : formCountry;
 
@@ -621,7 +628,9 @@ export function AdminTournamentTab({ userId }: Props) {
     if (!confirm('Isso apagará todos os jogos existentes e gerará novos. Continuar?')) return;
     setLoading(true);
     await supabase.from('custom_tournament_matches').delete().eq('tournament_id', selectedTournament.id);
-    const startDateStr = selectedTournament.start_date || new Date().toISOString().split('T')[0];
+    const rn = new Date();
+    const fallbackDate = `${rn.getFullYear()}-${String(rn.getMonth() + 1).padStart(2, '0')}-${String(rn.getDate()).padStart(2, '0')}`;
+    const startDateStr = selectedTournament.start_date?.split('T')[0] || fallbackDate;
     let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
 
     if (selectedTournament.format === 'league') {
@@ -977,6 +986,23 @@ export function AdminTournamentTab({ userId }: Props) {
                 <div>
                   <label className="text-[9px] text-muted-foreground">Data de Início</label>
                   <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="text-xs h-8" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mt-1 h-6 text-[9px] gap-1"
+                    onClick={() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, '0');
+                      const d = String(now.getDate()).padStart(2, '0');
+                      setFormStartDate(`${y}-${m}-${d}`);
+                      if (!formMatchTime) {
+                        setFormMatchTime(`${String(now.getHours()).padStart(2, '0')}:${String(Math.min(59, now.getMinutes() + 5)).padStart(2, '0')}`);
+                      }
+                    }}
+                  >
+                    <Zap className="h-3 w-3" /> Começar Hoje
+                  </Button>
                 </div>
                 <div>
                   <label className="text-[9px] text-muted-foreground">Horário dos Jogos</label>
