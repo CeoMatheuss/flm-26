@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Trophy, Calendar, Users, Swords, Target, Maximize2, ArrowLeft, Medal, TrendingUp, Shield } from 'lucide-react';
+import { Trophy, Calendar, Users, Swords, Target, ArrowLeft, Medal, TrendingUp, Shield } from 'lucide-react';
 
 interface Tournament {
   id: string;
