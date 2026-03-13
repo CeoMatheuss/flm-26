@@ -1020,8 +1020,8 @@ export function useGame(initialState?: GameState, userId?: string) {
       const allPlayers = [...basePlayers, ...returnedPlayers];
       
       // Track seasons without playing and filter unhappy players
-      const processedPlayers = allPlayers
-        .map(p => {
+      const processedPlayers: Player[] = allPlayers
+        .map((p): Player => {
           const swp = p.gamesPlayed === 0 ? (p.seasonsWithoutPlaying ?? 0) + 1 : 0;
           return {
             ...p, goals: 0, assists: 0, stamina: 100, morale: 75, age: p.age + 1,
