@@ -422,7 +422,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
 
               <div className="text-center flex-1 min-w-0">
                 {renderClubLogo(isAwayTeamClub)}
-                <p className="font-bold text-xs sm:text-sm truncate">{awayTeamName}</p>
+                <button onClick={() => onViewClub?.(awayTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{awayTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Visitante</p>
               </div>
             </div>
