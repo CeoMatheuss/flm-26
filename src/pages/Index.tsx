@@ -559,7 +559,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} /></TabsContent>
+          <TabsContent value="dashboard"><DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} clubProfile={game.clubProfile} season={game.season?.currentSeason} onViewClub={(name) => { /* TODO: navigate to club profile */ toast.info(`Perfil de ${name}`); }} /></TabsContent>
           <TabsContent value="tournament">
             {activeTournamentId ? (
               <TournamentExpandedView tournamentId={activeTournamentId} onClose={() => { setActiveTournamentId(null); setActiveTab('dashboard'); }} />
