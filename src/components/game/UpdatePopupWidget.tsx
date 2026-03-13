@@ -79,7 +79,7 @@ export function UpdatePopupWidget({ userId }: Props) {
                   <Rocket className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold">📢 Novidades da Atualização</p>
+                  <p className="text-xs font-bold">📢 Novidades da Atualização!</p>
                   <p className="text-[10px] text-muted-foreground">v{latestUpdate.version}</p>
                 </div>
               </div>
