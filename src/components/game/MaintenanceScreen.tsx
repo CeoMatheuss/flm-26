@@ -53,6 +53,18 @@ export function MaintenanceScreen() {
           <p className="text-[10px] text-muted-foreground/60">
             Obrigado pela paciência! 💚
           </p>
+
+          <Button
+            variant="outline"
+            className="w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = '/';
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            Sair e voltar ao Login
+          </Button>
         </CardContent>
       </Card>
     </div>
