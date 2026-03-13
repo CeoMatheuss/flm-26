@@ -981,6 +981,23 @@ export function AdminTournamentTab({ userId }: Props) {
                 <div>
                   <label className="text-[9px] text-muted-foreground">Data de Início</label>
                   <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="text-xs h-8" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mt-1 h-6 text-[9px] gap-1"
+                    onClick={() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, '0');
+                      const d = String(now.getDate()).padStart(2, '0');
+                      setFormStartDate(`${y}-${m}-${d}`);
+                      if (!formMatchTime) {
+                        setFormMatchTime(`${String(now.getHours()).padStart(2, '0')}:${String(Math.min(59, now.getMinutes() + 5)).padStart(2, '0')}`);
+                      }
+                    }}
+                  >
+                    <Zap className="h-3 w-3" /> Começar Hoje
+                  </Button>
                 </div>
                 <div>
                   <label className="text-[9px] text-muted-foreground">Horário dos Jogos</label>
