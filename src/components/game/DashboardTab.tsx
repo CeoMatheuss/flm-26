@@ -23,7 +23,7 @@ interface Props {
   onViewClub?: (clubName: string) => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, onViewClub }: Props) {
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
