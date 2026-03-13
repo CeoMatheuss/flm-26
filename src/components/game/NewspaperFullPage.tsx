@@ -1,226 +1,94 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameEvent } from '@/types/events';
-import { Club } from '@/types/game';
-import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ArrowLeft, Sparkles, Loader2, ChevronDown, SmilePlus } from 'lucide-react';
+import { Newspaper, ArrowLeft, Loader2, ChevronDown, SmilePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import signingImg from '@/assets/transfer-signing.jpg';
 
 interface Props {
-  club: Club;
-  events: GameEvent[];
-  infrastructure?: Infrastructure;
   onBack: () => void;
 }
 
 const categoryColors: Record<string, string> = {
-  LESÃO: 'bg-orange-500/80',
   MERCADO: 'bg-blue-500/80',
-  BASTIDORES: 'bg-red-500/80',
-  FINANÇAS: 'bg-emerald-500/80',
-  CANTEIRA: 'bg-purple-500/80',
-  POLÊMICA: 'bg-yellow-600/80',
-  EVOLUÇÃO: 'bg-green-500/80',
-  TORCIDA: 'bg-red-600/80',
-  INFRAESTRUTURA: 'bg-cyan-500/80',
-  HISTÓRIA: 'bg-amber-500/80',
-  RIVALIDADE: 'bg-orange-600/80',
-  CLIMA: 'bg-sky-500/80',
+  RESULTADO: 'bg-emerald-500/80',
   CAMPEONATO: 'bg-primary/80',
   DESTAQUE: 'bg-emerald-500/80',
+  TRANSFERÊNCIA: 'bg-blue-500/80',
+  CONTRATAÇÃO: 'bg-emerald-600/80',
+  EMPRÉSTIMO: 'bg-amber-500/80',
+  RENOVAÇÃO: 'bg-blue-600/80',
+  LESÃO: 'bg-orange-500/80',
+  ATUALIZAÇÃO: 'bg-primary/80',
+  FUNDAÇÃO: 'bg-emerald-600/80',
+  CANTEIRA: 'bg-purple-500/80',
+  FINANÇAS: 'bg-emerald-500/80',
+  EVOLUÇÃO: 'bg-green-500/80',
   CRISE: 'bg-destructive/80',
-  'PRÉ-TEMPORADA': 'bg-primary/80',
-  LIDERANÇA: 'bg-yellow-500/80',
-  ESTÁDIO: 'bg-cyan-500/80',
-  ESTRUTURA: 'bg-blue-500/80',
+  TORCIDA: 'bg-red-600/80',
   ELENCO: 'bg-primary/80',
   GOLS: 'bg-emerald-500/80',
   PASSES: 'bg-purple-500/80',
-  LESÕES: 'bg-orange-500/80',
-  PRESTÍGIO: 'bg-amber-500/80',
-  ESTATÍSTICAS: 'bg-muted-foreground/80',
-  ATUALIZAÇÃO: 'bg-primary/80',
-  RENOVAÇÃO: 'bg-blue-600/80',
-  CONTRATAÇÃO: 'bg-emerald-600/80',
-  EMPRÉSTIMO: 'bg-amber-500/80',
-  FUNDAÇÃO: 'bg-emerald-600/80',
+  HISTÓRIA: 'bg-amber-500/80',
+  POLÊMICA: 'bg-yellow-600/80',
+  INFRAESTRUTURA: 'bg-cyan-500/80',
+  ESTÁDIO: 'bg-cyan-500/80',
+  BASTIDORES: 'bg-red-500/80',
+  PREMIAÇÃO: 'bg-amber-600/80',
+  INSATISFAÇÃO: 'bg-red-700/80',
 };
 
 interface SavedEntry {
   id: string;
   text: string;
   category: string;
-  narration: string | null;
   is_event: boolean;
   created_at: string;
+  user_id: string;
 }
 
-const transferNewsKeywords = [
-  'vendido',
-  'venda',
-  'contratado',
-  'contratacao',
-  'contratação',
-  'novo reforço',
-  'reforco',
-  'transferencia',
-  'emprestado',
-  'emprestimo',
-  'renovacao',
-  'renovou',
-  'assinou',
-  'proposta aceita',
-];
-
-function normalizeNewsValue(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function shouldShowSigningImage(category: string, ...texts: Array<string | undefined>): boolean {
-  const normalizedCategory = normalizeNewsValue(category || '');
-  if (['mercado', 'elenco', 'emprestimo', 'renovacao', 'fundacao', 'contratacao'].includes(normalizedCategory)) {
-    return true;
-  }
-
-  const combinedText = normalizeNewsValue(texts.filter(Boolean).join(' '));
-  return transferNewsKeywords.some(keyword => combinedText.includes(keyword));
-}
-
-function generateCurrentNews(club: Club, events: GameEvent[], infrastructure?: Infrastructure): { text: string; category: string; isEvent?: boolean }[] {
-  const news: { text: string; category: string; isEvent?: boolean }[] = [];
-
-  events.forEach(ev => {
-    const catMap: Record<string, string> = {
-      injury: 'LESÃO', offer: 'MERCADO', protest: 'BASTIDORES', bonus: 'FINANÇAS',
-      discovery: 'CANTEIRA', scandal: 'POLÊMICA', player_upgrade: 'EVOLUÇÃO',
-      fan_rage: 'TORCIDA', stadium_upgrade: 'INFRAESTRUTURA', transfer_in: 'MERCADO',
-      transfer_out: 'MERCADO', record: 'HISTÓRIA', derby: 'RIVALIDADE',
-      weather: 'CLIMA', captain: 'LIDERANÇA',
-    };
-    news.push({ text: `${ev.icon} ${ev.title} — ${ev.description}`, category: catMap[ev.type] || ev.type.toUpperCase(), isEvent: true });
-  });
-
-  if (infrastructure) {
-    const cap = getStadiumCapacity(infrastructure.stadium.level);
-    news.push({ text: `🏟️ ${club.stadiumName}: capacidade de ${cap.toLocaleString()} torcedores (Nv.${infrastructure.stadium.level})`, category: 'ESTÁDIO' });
-    if (infrastructure.trainingCenter.level >= 2) news.push({ text: `🏋️ Centro de Treinamento Nv.${infrastructure.trainingCenter.level} — evolução acelerada`, category: 'ESTRUTURA' });
-    if (infrastructure.youthAcademy.level >= 2) news.push({ text: `🎓 Base Nv.${infrastructure.youthAcademy.level} — formando talentos`, category: 'CANTEIRA' });
-    if (infrastructure.physiotherapy.level >= 2) news.push({ text: `💊 Fisioterapia Nv.${infrastructure.physiotherapy.level} — recuperação rápida`, category: 'ESTRUTURA' });
-  }
-
-  const topPlayer = [...club.players].sort((a, b) => b.overall - a.overall)[0];
-  const topScorer = [...club.players].sort((a, b) => b.goals - a.goals)[0];
-  const topAssister = [...club.players].sort((a, b) => b.assists - a.assists)[0];
-  const youngStar = [...club.players].filter(p => p.age <= 21).sort((a, b) => b.overall - a.overall)[0];
-  const injuredCount = club.players.filter(p => p.injury).length;
-
-  if (topPlayer) news.push({ text: `⭐ ${topPlayer.name} (OVR ${topPlayer.overall}) é destaque do elenco`, category: 'ELENCO' });
-  if (topScorer && topScorer.goals > 0) news.push({ text: `⚽ Artilheiro: ${topScorer.name} com ${topScorer.goals} gols`, category: 'GOLS' });
-  if (topAssister && topAssister.assists > 0) news.push({ text: `🅰️ Garçom: ${topAssister.name} com ${topAssister.assists} assistências`, category: 'PASSES' });
-  if (youngStar) news.push({ text: `🌟 Joia da base: ${youngStar.name} (${youngStar.age}a, OVR ${youngStar.overall})`, category: 'CANTEIRA' });
-  if (injuredCount > 0) news.push({ text: `🏥 DM lotado: ${injuredCount} jogador(es) no departamento médico`, category: 'LESÕES' });
-  if (club.fans > 20000) news.push({ text: `👥 Torcida cresce: ${club.fans.toLocaleString()} torcedores`, category: 'TORCIDA' });
-  if (club.reputation >= 80) news.push({ text: `🌍 Reputação do clube atinge nível internacional`, category: 'PRESTÍGIO' });
-
-  const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
-  if (totalGames > 0) {
-    const avgAge = (club.players.reduce((s, p) => s + p.age, 0) / club.players.length).toFixed(1);
-    const avgOvr = Math.round(club.players.reduce((s, p) => s + p.overall, 0) / club.players.length);
-    news.push({ text: `📊 ${totalGames} jogos | ${club.stats.points}pts | Média: ${avgAge}a / OVR ${avgOvr}`, category: 'ESTATÍSTICAS' });
-  }
-
-  return news;
-}
-
+const transferCategories = ['MERCADO', 'TRANSFERÊNCIA', 'CONTRATAÇÃO', 'EMPRÉSTIMO', 'RENOVAÇÃO'];
 const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
 
-export function NewspaperFullPage({ club, events, infrastructure, onBack }: Props) {
-  const [savedEntries, setSavedEntries] = useState<SavedEntry[]>([]);
+export function NewspaperFullPage({ onBack }: Props) {
+  const [entries, setEntries] = useState<SavedEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [narrating, setNarrating] = useState(false);
   const [showMore, setShowMore] = useState(false);
-  const [expandedNarration, setExpandedNarration] = useState<string | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
-  const [reactions, setReactions] = useState<Record<string, string[]>>({}); // entryId -> emojis user reacted with
+  const [reactions, setReactions] = useState<Record<string, string[]>>({});
 
-  // Save current news to DB and fetch history
-  const saveAndLoad = useCallback(async () => {
+  const loadEntries = useCallback(async () => {
     setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    // Load ALL global news (from all users)
+    const { data } = await supabase
+      .from('newspaper_entries')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (data) setEntries(data as SavedEntry[]);
 
-      // Generate current news
-      const currentNews = generateCurrentNews(club, events, infrastructure);
-
-      // Save current news (upsert by checking if similar text exists recently)
-      if (currentNews.length > 0) {
-        const entries = currentNews.map(n => ({
-          user_id: user.id,
-          text: n.text,
-          category: n.category,
-          is_event: n.isEvent || false,
-        }));
-
-        // Check last saved texts to avoid duplicates
-        const { data: recent } = await supabase
-          .from('newspaper_entries')
-          .select('text')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        const recentTexts = new Set((recent || []).map(r => r.text));
-        const newEntries = entries.filter(e => !recentTexts.has(e.text));
-
-        if (newEntries.length > 0) {
-          await supabase.from('newspaper_entries').insert(newEntries);
-        }
-      }
-
-      // Load all saved entries
-      const { data } = await supabase
-        .from('newspaper_entries')
-        .select('*')
+    // Load user reactions
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && data && data.length > 0) {
+      const entryIds = (data as SavedEntry[]).map(e => e.id);
+      const { data: rxns } = await supabase
+        .from('newspaper_reactions')
+        .select('entry_id, emoji')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (data) {
-        setSavedEntries(data as SavedEntry[]);
-        
-        // Load user reactions
-        const entryIds = (data as SavedEntry[]).map(e => e.id);
-        if (entryIds.length > 0) {
-          const { data: rxns } = await supabase
-            .from('newspaper_reactions')
-            .select('entry_id, emoji')
-            .eq('user_id', user.id)
-            .in('entry_id', entryIds);
-          if (rxns) {
-            const map: Record<string, string[]> = {};
-            (rxns as any[]).forEach(r => {
-              if (!map[r.entry_id]) map[r.entry_id] = [];
-              map[r.entry_id].push(r.emoji);
-            });
-            setReactions(map);
-          }
-        }
+        .in('entry_id', entryIds);
+      if (rxns) {
+        const map: Record<string, string[]> = {};
+        (rxns as any[]).forEach(r => {
+          if (!map[r.entry_id]) map[r.entry_id] = [];
+          map[r.entry_id].push(r.emoji);
+        });
+        setReactions(map);
       }
-
-    } catch (err) {
-      console.error('Error loading newspaper:', err);
-    } finally {
-      setLoading(false);
     }
-  }, [club, events, infrastructure]);
+
+    setLoading(false);
+  }, []);
 
   const toggleReaction = useCallback(async (entryId: string, emoji: string) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -230,84 +98,18 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
     const hasIt = current.includes(emoji);
 
     if (hasIt) {
-      await supabase
-        .from('newspaper_reactions')
-        .delete()
-        .eq('entry_id', entryId)
-        .eq('user_id', user.id)
-        .eq('emoji', emoji);
-      setReactions(prev => ({
-        ...prev,
-        [entryId]: (prev[entryId] || []).filter(e => e !== emoji),
-      }));
+      await supabase.from('newspaper_reactions').delete().eq('entry_id', entryId).eq('user_id', user.id).eq('emoji', emoji);
+      setReactions(prev => ({ ...prev, [entryId]: (prev[entryId] || []).filter(e => e !== emoji) }));
     } else {
-      await supabase
-        .from('newspaper_reactions')
-        .insert({ entry_id: entryId, user_id: user.id, emoji });
-      setReactions(prev => ({
-        ...prev,
-        [entryId]: [...(prev[entryId] || []), emoji],
-      }));
+      await supabase.from('newspaper_reactions').insert({ entry_id: entryId, user_id: user.id, emoji });
+      setReactions(prev => ({ ...prev, [entryId]: [...(prev[entryId] || []), emoji] }));
     }
     setShowReactionPicker(null);
   }, [reactions]);
 
-  useEffect(() => {
-    saveAndLoad();
-  }, [saveAndLoad]);
+  useEffect(() => { loadEntries(); }, [loadEntries]);
 
-  // Generate AI narration for entries without it
-  const generateNarrations = async () => {
-    const withoutNarration = savedEntries.filter(e => !e.narration).slice(0, 10);
-    if (withoutNarration.length === 0) {
-      toast.info('Todas as notícias já possuem narração!');
-      return;
-    }
-
-    setNarrating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-narration', {
-        body: {
-          headlines: withoutNarration.map(e => ({ text: e.text, category: e.category })),
-        },
-      });
-
-      if (error) throw error;
-
-      const narrations: string[] = data.narrations || [];
-
-      // Update entries in DB with narrations
-      for (let i = 0; i < withoutNarration.length && i < narrations.length; i++) {
-        if (narrations[i]) {
-          await supabase
-            .from('newspaper_entries')
-            .update({ narration: narrations[i] })
-            .eq('id', withoutNarration[i].id);
-        }
-      }
-
-      // Reload entries
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: updated } = await supabase
-          .from('newspaper_entries')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(200);
-        if (updated) setSavedEntries(updated as SavedEntry[]);
-      }
-
-      toast.success(`Narração gerada para ${Math.min(narrations.length, withoutNarration.length)} notícias!`);
-    } catch (err) {
-      console.error('Narration error:', err);
-      toast.error('Erro ao gerar narração');
-    } finally {
-      setNarrating(false);
-    }
-  };
-
-  const visibleEntries = showMore ? savedEntries : savedEntries.slice(0, 30);
+  const visibleEntries = showMore ? entries : entries.slice(0, 30);
 
   return (
     <div className="space-y-3">
@@ -319,19 +121,9 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
           <Newspaper className="h-4 w-4" />
           <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
-        <Badge variant="outline" className="text-[9px]">{savedEntries.length} notícias</Badge>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={generateNarrations}
-          disabled={narrating}
-          className="h-7 text-[10px] gap-1 ml-auto"
-        >
-          {narrating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          {narrating ? 'Narrando...' : 'Gerar Narração IA'}
-        </Button>
+        <Badge variant="outline" className="text-[9px]">{entries.length} notícias</Badge>
+        <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global</Badge>
       </div>
-
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -339,10 +131,9 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
         </div>
       ) : (
         <>
-          {/* News from DB */}
           <div className="space-y-2">
             {visibleEntries.map((item) => {
-              const showSigningVisual = shouldShowSigningImage(item.category, item.text);
+              const showSigningVisual = transferCategories.includes(item.category);
 
               return (
                 <Card key={item.id} className="border-border overflow-hidden">
@@ -359,30 +150,14 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs leading-snug">{item.text}</p>
-                        {item.narration && (
-                          <div
-                            className="mt-1.5 cursor-pointer"
-                            onClick={() => setExpandedNarration(expandedNarration === item.id ? null : item.id)}
-                          >
-                            <div className="flex items-center gap-1 text-[9px] text-primary font-medium">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              <span>Narração IA</span>
-                            </div>
-                            {expandedNarration === item.id && (
-                              <p className="text-[10px] leading-snug text-muted-foreground mt-1 italic border-l-2 border-primary/30 pl-2">
-                                {item.narration}
-                              </p>
-                            )}
-                          </div>
-                        )}
+                        </div>
+                        <div className="flex flex-col items-end shrink-0 gap-1">
+                          {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
+                          <span className="text-[8px] text-muted-foreground">
+                            {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end shrink-0 gap-1">
-                        {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
-                        <span className="text-[8px] text-muted-foreground">
-                          {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
                       {/* Reaction bar */}
                       <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-border/30">
                         {(reactions[item.id] || []).map(emoji => (
@@ -423,14 +198,20 @@ export function NewspaperFullPage({ club, events, infrastructure, onBack }: Prop
             })}
           </div>
 
-          {savedEntries.length > 30 && !showMore && (
+          {entries.length > 30 && !showMore && (
             <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs gap-1">
-              <ChevronDown className="h-3 w-3" /> Ver mais {savedEntries.length - 30} notícias
+              <ChevronDown className="h-3 w-3" /> Ver mais ({entries.length - 30} notícias)
             </Button>
           )}
 
-          {savedEntries.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-6">Nenhuma notícia registrada ainda. Jogue partidas para gerar notícias!</p>
+          {entries.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Newspaper className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm font-medium">Nenhuma notícia publicada</p>
+                <p className="text-xs text-muted-foreground">Transferências e eventos aparecerão aqui automaticamente</p>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
