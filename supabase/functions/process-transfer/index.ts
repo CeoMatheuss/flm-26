@@ -265,145 +265,186 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ success: true, message: 'Proposta recusada.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // ACCEPT: Player decision based on personality & salary
-      const playerData = listing.player_data;
-      const currentSalary = playerData?.salary || 500;
-      const offeredSalary = offer.offered_salary || 0;
-      const signingBonus = offer.signing_bonus || 0;
-      const totalBonus = (offer.bonus_goals || 0) + (offer.bonus_assists || 0) + (offer.bonus_games || 0) + (offer.bonus_titles || 0);
-
-      // Player acceptance logic
-      let acceptChance = 0.5; // base 50%
-
-      // Salary comparison
-      if (offeredSalary >= currentSalary * 1.5) acceptChance += 0.3;
-      else if (offeredSalary >= currentSalary) acceptChance += 0.15;
-      else if (offeredSalary >= currentSalary * 0.8) acceptChance += 0.0; // neutral
-      else acceptChance -= 0.2; // below current salary
-
-      // Signing bonus helps
-      if (signingBonus > 0) acceptChance += Math.min(0.15, signingBonus / 1000000 * 0.05);
-
-      // Performance bonuses help
-      if (totalBonus > 0) acceptChance += Math.min(0.1, totalBonus / 500000 * 0.02);
-
-      // Personality effects
-      const personality = playerData?.personality || 'calmo';
-      if (personality === 'ambicioso') acceptChance += (offeredSalary > currentSalary ? 0.1 : -0.15);
-      if (personality === 'leal') acceptChance -= 0.15; // harder to leave
-      if (personality === 'dedicado') acceptChance += 0.05;
-
-      // Contract length: players prefer 2-3 years
-      const years = offer.offered_contract_years || 2;
-      if (years >= 2 && years <= 3) acceptChance += 0.05;
-      if (years >= 4) acceptChance -= 0.05;
-
-      acceptChance = Math.max(0.1, Math.min(0.95, acceptChance));
-
-      const playerAccepts = Math.random() < acceptChance;
-
-      if (!playerAccepts) {
-        // Player rejected - provide reason
-        let reason = 'O jogador recusou a proposta.';
-        if (offeredSalary < currentSalary) reason = `Jogador recusou: salário oferecido (R$${offeredSalary}) é inferior ao atual (R$${currentSalary}).`;
-        else if (personality === 'leal') reason = 'Jogador recusou: é leal ao clube atual e prefere ficar.';
-        else if (personality === 'ambicioso' && offeredSalary <= currentSalary) reason = 'Jogador recusou: ambicioso, espera um salário maior.';
-        else reason = 'Jogador recusou: não se interessou pela proposta.';
-
-        // Build agent message for the buyer
-        const suggestedSalary = Math.round(currentSalary * 1.25);
-        const agentMessage = `Aqui é o empresário de ${listing.player_name}. ${reason} Para fecharmos negócio, sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus de assinatura. O jogador pode reconsiderar com melhores condições.`;
-
-        await adminClient.from('transfer_offers').update({
-          status: 'player_rejected',
-          rejection_reason: agentMessage,
-          responded_at: new Date().toISOString(),
-        }).eq('id', offerId);
-
-        // Notify the buyer about the player rejection with agent message
-        await adminClient.from('user_notifications').insert({
-          user_id: offer.buyer_id,
-          icon: '🤵',
-          title: `Empresário de ${listing.player_name} respondeu`,
-          message: agentMessage,
-          type: 'warning',
-        });
-
-        return new Response(JSON.stringify({ success: true, playerAccepted: false, reason: agentMessage }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      // Player accepted! Complete the transfer
+      // ACCEPT: Set 6h decision deadline instead of instant decision
       const now = new Date();
-      const cooldownUntil = new Date(now.getTime() + 72 * 3600 * 1000); // 72h cooldown
+      const deadline = new Date(now.getTime() + 6 * 3600 * 1000); // 6 hours
 
-      // Update offer
       await adminClient.from('transfer_offers').update({
-        status: 'accepted',
+        status: 'awaiting_decision',
+        decision_status: 'awaiting_decision',
+        decision_deadline: deadline.toISOString(),
         responded_at: now.toISOString(),
       }).eq('id', offerId);
 
-      // Update listing
-      await adminClient.from('transfer_listings').update({
-        status: 'sold',
-        buyer_id: offer.buyer_id,
-        buyer_club_name: offer.buyer_club_name,
-        sold_at: now.toISOString(),
-        cooldown_until: cooldownUntil.toISOString(),
-      }).eq('id', listing.id);
-
-      // Reject all other pending offers
-      await adminClient.from('transfer_offers').update({
-        status: 'rejected',
-        rejection_reason: 'Jogador já foi vendido para outro clube.',
-        responded_at: now.toISOString(),
-      }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', offerId);
-
-      // Log the transfer
-      await adminClient.from('transfer_log').insert({
-        player_name: listing.player_name,
-        player_overall: listing.player_overall,
-        from_user_id: listing.seller_id,
-        to_user_id: offer.buyer_id,
-        from_club_name: listing.seller_club_name,
-        to_club_name: offer.buyer_club_name,
-        price: offer.offered_price,
-        salary: offer.offered_salary,
-        transfer_type: 'sale',
+      // Notify the buyer that the club accepted and player is deciding
+      await adminClient.from('user_notifications').insert({
+        user_id: offer.buyer_id,
+        icon: '⏳',
+        title: `${listing.player_name} está decidindo!`,
+        message: `O ${listing.seller_club_name} aceitou sua proposta por ${listing.player_name}! O jogador tem 6 horas para decidir. Resultado até ${deadline.toLocaleString('pt-BR')}.`,
+        type: 'info',
       });
 
-      // Create journal entry for the transfer (visible to all)
-      const priceStr = offer.offered_price >= 1000000
-        ? `R$${(offer.offered_price / 1000000).toFixed(1)}M`
-        : `R$${(offer.offered_price / 1000).toFixed(0)}k`;
-      await adminClient.from('journal_updates').insert({
+      // Create newspaper entry about the negotiation
+      await adminClient.from('newspaper_entries').insert({
         user_id: listing.seller_id,
-        title: `📰 ${listing.player_name} muda de clube!`,
-        content: `⚽ TRANSFERÊNCIA CONFIRMADA!\n\n${listing.player_name} (${listing.player_data?.position || '???'}, ${listing.player_age}a, OVR ${listing.player_overall}) foi vendido pelo ${listing.seller_club_name} para o ${offer.buyer_club_name} por ${priceStr}.\n\nO jogador assinou contrato de ${offer.offered_contract_years} ano(s) com salário de R$${offer.offered_salary}/mês.${offer.signing_bonus > 0 ? ` Luvas de R$${(offer.signing_bonus / 1000).toFixed(0)}k foram incluídas.` : ''}`,
+        category: 'MERCADO',
+        text: `🤝 ${listing.seller_club_name} aceitou proposta de R$${(offer.offered_price / 1000).toFixed(0)}k do ${offer.buyer_club_name} por ${listing.player_name} (OVR ${listing.player_overall}). Jogador tem 6h para decidir.`,
+        is_event: true,
       });
-
-      // Check for fominha behavior: high goal bonus makes player selfish
-      const fominhaRisk = (offer.bonus_goals || 0) > 50000 ? 0.3 : (offer.bonus_goals || 0) > 20000 ? 0.15 : 0;
 
       return new Response(JSON.stringify({
         success: true,
-        playerAccepted: true,
-        fominhaRisk,
-        message: `Transferência concluída! ${listing.player_name} foi vendido para ${offer.buyer_club_name} por R$${offer.offered_price}.`,
-        transfer: {
-          playerData: listing.player_data,
-          playerName: listing.player_name,
-          price: offer.offered_price,
-          salary: offer.offered_salary,
-          contractYears: offer.offered_contract_years,
-          bonuses: {
-            goals: offer.bonus_goals,
-            assists: offer.bonus_assists,
-            games: offer.bonus_games,
-            titles: offer.bonus_titles,
-            signing: offer.signing_bonus,
-          },
-        },
+        message: `Proposta aceita! ${listing.player_name} tem 6 horas para decidir.`,
+        awaitingDecision: true,
+        deadline: deadline.toISOString(),
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: RESOLVE PENDING DECISIONS (called on market load)
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'resolve-decisions') {
+      const now = new Date();
+      
+      // Find all offers awaiting decision whose deadline has passed
+      const { data: pendingOffers } = await adminClient
+        .from('transfer_offers')
+        .select('*, transfer_listings!inner(*)')
+        .eq('decision_status', 'awaiting_decision')
+        .lte('decision_deadline', now.toISOString());
+
+      if (!pendingOffers || pendingOffers.length === 0) {
+        return new Response(JSON.stringify({ success: true, resolved: 0 }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      let resolved = 0;
+      for (const offer of pendingOffers) {
+        const listing = (offer as any).transfer_listings;
+        const playerData = listing.player_data;
+        const currentSalary = playerData?.salary || 500;
+        const offeredSalary = offer.offered_salary || 0;
+        const signingBonus = offer.signing_bonus || 0;
+        const totalBonus = (offer.bonus_goals || 0) + (offer.bonus_assists || 0) + (offer.bonus_games || 0) + (offer.bonus_titles || 0);
+
+        // Player acceptance logic (same as before)
+        let acceptChance = 0.5;
+        if (offeredSalary >= currentSalary * 1.5) acceptChance += 0.3;
+        else if (offeredSalary >= currentSalary) acceptChance += 0.15;
+        else if (offeredSalary >= currentSalary * 0.8) acceptChance += 0.0;
+        else acceptChance -= 0.2;
+        if (signingBonus > 0) acceptChance += Math.min(0.15, signingBonus / 1000000 * 0.05);
+        if (totalBonus > 0) acceptChance += Math.min(0.1, totalBonus / 500000 * 0.02);
+        const personality = playerData?.personality || 'calmo';
+        if (personality === 'ambicioso') acceptChance += (offeredSalary > currentSalary ? 0.1 : -0.15);
+        if (personality === 'leal') acceptChance -= 0.15;
+        if (personality === 'dedicado') acceptChance += 0.05;
+        const years = offer.offered_contract_years || 2;
+        if (years >= 2 && years <= 3) acceptChance += 0.05;
+        if (years >= 4) acceptChance -= 0.05;
+        acceptChance = Math.max(0.1, Math.min(0.95, acceptChance));
+
+        const playerAccepts = Math.random() < acceptChance;
+
+        if (!playerAccepts) {
+          let reason = 'O jogador recusou a proposta.';
+          if (offeredSalary < currentSalary) reason = `Jogador recusou: salário oferecido (R$${offeredSalary}) é inferior ao atual (R$${currentSalary}).`;
+          else if (personality === 'leal') reason = 'Jogador recusou: é leal ao clube atual e prefere ficar.';
+          else if (personality === 'ambicioso' && offeredSalary <= currentSalary) reason = 'Jogador recusou: ambicioso, espera um salário maior.';
+
+          const suggestedSalary = Math.round(currentSalary * 1.25);
+          const agentMessage = `Aqui é o empresário de ${listing.player_name}. ${reason} Para fecharmos negócio, sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus de assinatura.`;
+
+          await adminClient.from('transfer_offers').update({
+            status: 'player_rejected',
+            decision_status: 'player_rejected',
+            rejection_reason: agentMessage,
+          }).eq('id', offer.id);
+
+          await adminClient.from('user_notifications').insert({
+            user_id: offer.buyer_id,
+            icon: '🤵',
+            title: `Empresário de ${listing.player_name} respondeu`,
+            message: agentMessage,
+            type: 'warning',
+          });
+
+          // Newspaper: player rejected
+          await adminClient.from('newspaper_entries').insert({
+            user_id: offer.buyer_id,
+            category: 'MERCADO',
+            text: `❌ ${listing.player_name} (OVR ${listing.player_overall}) recusou proposta do ${offer.buyer_club_name}. Negociação frustrada.`,
+            is_event: true,
+          });
+        } else {
+          // Player accepted! Complete transfer
+          const cooldownUntil = new Date(now.getTime() + 72 * 3600 * 1000);
+
+          await adminClient.from('transfer_offers').update({
+            status: 'accepted',
+            decision_status: 'player_accepted',
+          }).eq('id', offer.id);
+
+          await adminClient.from('transfer_listings').update({
+            status: 'sold',
+            buyer_id: offer.buyer_id,
+            buyer_club_name: offer.buyer_club_name,
+            sold_at: now.toISOString(),
+            cooldown_until: cooldownUntil.toISOString(),
+          }).eq('id', listing.id);
+
+          // Reject other pending offers
+          await adminClient.from('transfer_offers').update({
+            status: 'rejected',
+            rejection_reason: 'Jogador já foi vendido para outro clube.',
+            responded_at: now.toISOString(),
+          }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', offer.id);
+
+          // Log transfer
+          await adminClient.from('transfer_log').insert({
+            player_name: listing.player_name,
+            player_overall: listing.player_overall,
+            from_user_id: listing.seller_id,
+            to_user_id: offer.buyer_id,
+            from_club_name: listing.seller_club_name,
+            to_club_name: offer.buyer_club_name,
+            price: offer.offered_price,
+            salary: offer.offered_salary,
+            transfer_type: 'sale',
+          });
+
+          // Notify both
+          await adminClient.from('user_notifications').insert({
+            user_id: offer.buyer_id,
+            icon: '✅',
+            title: `${listing.player_name} aceitou!`,
+            message: `${listing.player_name} aceitou sua proposta e agora faz parte do ${offer.buyer_club_name}! Salário: R$${offer.offered_salary}/mês, contrato de ${offer.offered_contract_years} ano(s).`,
+            type: 'success',
+          });
+
+          await adminClient.from('user_notifications').insert({
+            user_id: listing.seller_id,
+            icon: '💰',
+            title: `${listing.player_name} vendido!`,
+            message: `${listing.player_name} aceitou a proposta do ${offer.buyer_club_name} por R$${(offer.offered_price / 1000).toFixed(0)}k.`,
+            type: 'success',
+          });
+
+          // Newspaper: transfer completed
+          const priceStr = offer.offered_price >= 1000000 ? `R$${(offer.offered_price / 1000000).toFixed(1)}M` : `R$${(offer.offered_price / 1000).toFixed(0)}k`;
+          await adminClient.from('newspaper_entries').insert({
+            user_id: listing.seller_id,
+            category: 'TRANSFERÊNCIA',
+            text: `✅ CONFIRMADO! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi vendido pelo ${listing.seller_club_name} para o ${offer.buyer_club_name} por ${priceStr}.`,
+            is_event: true,
+          });
+
+          const fominhaRisk = (offer.bonus_goals || 0) > 50000 ? 0.3 : (offer.bonus_goals || 0) > 20000 ? 0.15 : 0;
+        }
+        resolved++;
+      }
+
+      return new Response(JSON.stringify({ success: true, resolved }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ═══════════════════════════════════════════════════════════════
