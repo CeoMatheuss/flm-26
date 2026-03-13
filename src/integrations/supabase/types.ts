@@ -1550,6 +1550,8 @@ export type Database = {
           buyer_club_name: string
           buyer_id: string
           created_at: string
+          decision_deadline: string | null
+          decision_status: string | null
           id: string
           listing_id: string
           offered_contract_years: number
@@ -1568,6 +1570,8 @@ export type Database = {
           buyer_club_name?: string
           buyer_id: string
           created_at?: string
+          decision_deadline?: string | null
+          decision_status?: string | null
           id?: string
           listing_id: string
           offered_contract_years?: number
@@ -1586,6 +1590,8 @@ export type Database = {
           buyer_club_name?: string
           buyer_id?: string
           created_at?: string
+          decision_deadline?: string | null
+          decision_status?: string | null
           id?: string
           listing_id?: string
           offered_contract_years?: number
