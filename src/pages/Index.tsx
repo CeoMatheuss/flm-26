@@ -26,6 +26,8 @@ import { AuctionTab } from '@/components/game/AuctionTab';
 import { OnlineFriendliesTab } from '@/components/game/OnlineFriendliesTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { AdminTab } from '@/components/game/AdminTab';
+import { MaintenanceScreen } from '@/components/game/MaintenanceScreen';
+import { UpdatePopupWidget } from '@/components/game/UpdatePopupWidget';
 
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
