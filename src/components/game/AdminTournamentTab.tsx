@@ -383,8 +383,9 @@ export function AdminTournamentTab({ userId }: Props) {
     const maxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
-    const startDateStr = formStartDate || new Date().toISOString().split('T')[0];
-    const scope = formScope === 'world' ? 'Mundial' : formCountry;
+    const now = new Date();
+    const startDateStr = formStartDate || now.toISOString().split('T')[0];
+    const matchTime = formMatchTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     setLoading(true);
 
