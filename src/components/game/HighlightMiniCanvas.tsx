@@ -160,10 +160,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ballEndX = goalX + (isHome ? -10 : 10);
       ballEndY = goalY + (Math.random() - 0.5) * 30;
     } else if (type === 'corner') {
-      passPoints[0] = { x: isHome ? W * 0.88 : W * 0.12, y: H * 0.05 };
-      passPoints[1] = { x: isHome ? W * 0.82 : W * 0.18, y: H * 0.28 };
-      passPoints[2] = { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.42 };
-      passPoints[3] = { x: isHome ? W * 0.80 : W * 0.20, y: H * 0.50 };
+      // Corner: short corner play with 4 touches before cross
+      passPoints[0] = { x: isHome ? W * 0.92 : W * 0.08, y: H * 0.05 }; // Corner flag
+      passPoints[1] = { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.15 }; // Short pass
+      passPoints[2] = { x: isHome ? W * 0.78 : W * 0.22, y: H * 0.25 }; // Back to midfielder
+      passPoints[3] = { x: isHome ? W * 0.84 : W * 0.16, y: H * 0.12 }; // Return pass
+      passPoints[4] = { x: isHome ? W * 0.88 : W * 0.12, y: H * 0.20 }; // Cross position
+      passPoints[5] = { x: isHome ? W * 0.82 : W * 0.18, y: H * 0.45 }; // Header target
     } else if (type === 'chance') {
       ballEndX = goalX + (isHome ? 8 : -8);
       ballEndY = goalY + (Math.random() > 0.5 ? -40 : 40);
