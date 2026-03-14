@@ -132,7 +132,12 @@ export default function AuthPage() {
       email,
       password,
       options: {
-        data: { display_name: displayName || 'Manager' }
+        data: {
+          display_name: displayName || 'Manager',
+          favorite_country: favoriteCountry,
+          preferred_formation: preferredFormation,
+          playstyle: playstyle,
+        }
       }
     });
     if (error) {
