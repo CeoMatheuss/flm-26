@@ -1045,8 +1045,8 @@ Deno.serve(async (req) => {
           const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
           const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
 
-          await adminClient.rpc('', {}).catch(() => {}); // noop
-          
+
+
           // Update home team
           const { data: ht } = await adminClient.from('custom_tournament_teams').select('*').eq('id', tmMatch.home_team_id).single();
           if (ht) {
