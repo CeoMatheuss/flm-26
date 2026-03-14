@@ -116,29 +116,38 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       : { x: isHome ? W * 0.76 + Math.random() * W * 0.06 : W * 0.18 + Math.random() * W * 0.06,
           y: H * 0.35 + Math.random() * H * 0.3 };
 
-    // Build-up pass points
+    // Build-up pass points — collective plays with 4-6 player participation
     const passPoints = type === 'penalty' || type === 'penalty_shootout' ? [] :
       type === 'counter_attack' ? [
         { x: isHome ? W * 0.15 : W * 0.85, y: randY() },
-        { x: isHome ? W * 0.35 : W * 0.65, y: randY() },
+        { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
+        { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
         { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.4 + Math.random() * H * 0.2 },
+        { x: isHome ? W * 0.65 : W * 0.35, y: H * 0.4 + Math.random() * H * 0.2 },
         { x: isHome ? W * 0.70 : W * 0.30, y: H * 0.4 + Math.random() * H * 0.2 },
       ] :
       type === 'crossing' ? [
-        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.85 },
-        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.90 },
+        { x: isHome ? W * 0.30 : W * 0.70, y: H * 0.55 },
+        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.70 },
+        { x: isHome ? W * 0.50 : W * 0.50, y: H * 0.60 },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.85 },
         { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.88 },
         { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.80 },
       ] :
       type === 'free_kick' ? [
-        { x: isHome ? W * 0.60 : W * 0.40, y: H * 0.5 },
+        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.35 },
+        { x: isHome ? W * 0.48 : W * 0.52, y: H * 0.60 },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.40 },
+        { x: isHome ? W * 0.60 : W * 0.40, y: H * 0.55 },
         { x: isHome ? W * 0.65 : W * 0.35, y: H * 0.5 },
-        { x: isHome ? W * 0.68 : W * 0.32, y: H * 0.5 },
         { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.5 },
       ] : [
-        { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
-        { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
-        { x: isHome ? W * 0.56 : W * 0.44, y: randY() },
+        // Collective build-up: 6 passes involving 5+ players
+        { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.60 },
+        { x: isHome ? W * 0.30 : W * 0.70, y: H * 0.30 },
+        { x: isHome ? W * 0.38 : W * 0.62, y: H * 0.65 },
+        { x: isHome ? W * 0.48 : W * 0.52, y: H * 0.35 },
+        { x: isHome ? W * 0.56 : W * 0.44, y: H * 0.55 },
         { x: isHome ? W * 0.68 : W * 0.32, y: randY() },
       ];
 
@@ -151,10 +160,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       ballEndX = goalX + (isHome ? -10 : 10);
       ballEndY = goalY + (Math.random() - 0.5) * 30;
     } else if (type === 'corner') {
-      passPoints[0] = { x: isHome ? W * 0.88 : W * 0.12, y: H * 0.05 };
-      passPoints[1] = { x: isHome ? W * 0.82 : W * 0.18, y: H * 0.28 };
-      passPoints[2] = { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.42 };
-      passPoints[3] = { x: isHome ? W * 0.80 : W * 0.20, y: H * 0.50 };
+      // Corner: short corner play with 4 touches before cross
+      passPoints[0] = { x: isHome ? W * 0.92 : W * 0.08, y: H * 0.05 }; // Corner flag
+      passPoints[1] = { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.15 }; // Short pass
+      passPoints[2] = { x: isHome ? W * 0.78 : W * 0.22, y: H * 0.25 }; // Back to midfielder
+      passPoints[3] = { x: isHome ? W * 0.84 : W * 0.16, y: H * 0.12 }; // Return pass
+      passPoints[4] = { x: isHome ? W * 0.88 : W * 0.12, y: H * 0.20 }; // Cross position
+      passPoints[5] = { x: isHome ? W * 0.82 : W * 0.18, y: H * 0.45 }; // Header target
     } else if (type === 'chance') {
       ballEndX = goalX + (isHome ? 8 : -8);
       ballEndY = goalY + (Math.random() > 0.5 ? -40 : 40);
@@ -453,10 +465,32 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       if (type === 'penalty' || type === 'penalty_shootout') {
         const penSpotX = isHome ? W - 38 : 38;
         const penSpotY = H / 2;
+        // Players lined up at edge of penalty area
+        const boxEdgeX = isHome ? W - 58 : 58;
+        const penLineupPositions = [
+          { x: boxEdgeX, y: H * 0.22 },
+          { x: boxEdgeX, y: H * 0.34 },
+          { x: boxEdgeX + (isHome ? -12 : 12), y: H * 0.46 },
+          { x: boxEdgeX + (isHome ? -12 : 12), y: H * 0.58 },
+          { x: boxEdgeX, y: H * 0.66 },
+          { x: boxEdgeX, y: H * 0.78 },
+        ];
+        const drawPenaltyLineup = (alpha: number) => {
+          penLineupPositions.forEach((pos, i) => {
+            const isAttacker = i % 2 === 0;
+            const c = isAttacker ? teamColor : gkColor;
+            const cl = isAttacker ? teamLight : gkLight;
+            const lbl = isAttacker ? String(6 + Math.floor(i / 2)) : String(2 + Math.floor(i / 2));
+            const dx = Math.sin(driftRef.current + i * 1.5) * 1.5;
+            const dy = Math.cos(driftRef.current + i * 1.1) * 1.5;
+            drawPlayer(pos.x + dx, pos.y + dy, c, cl, lbl, 7);
+          });
+        };
 
         if (t < 0.30) {
           const walkT = t / 0.30;
           drawAllPlayers(drift * 0.3, false, 0, 0, 15 * easeOut(walkT));
+          drawPenaltyLineup(easeOut(walkT));
           const startX = isHome ? W * 0.55 : W * 0.45;
           const sx = startX + (penSpotX - startX - (isHome ? 35 : -35)) * easeOut(walkT);
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, true, playerName);
@@ -467,6 +501,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.55) {
           const runT = (t - 0.30) / 0.25;
           drawAllPlayers(drift * 0.2, false, 0, 0, 20);
+          drawPenaltyLineup(1);
           const runStartX = penSpotX + (isHome ? -35 : 35);
           const sx = runStartX + (penSpotX - runStartX) * easeIn(Math.min(runT * 1.3, 1));
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, runT < 0.7, playerName);
@@ -478,6 +513,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.75) {
           const shotT = (t - 0.55) / 0.20;
           drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+          drawPenaltyLineup(1);
           drawPlayer(penSpotX + (isHome ? 5 : -5), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
@@ -492,6 +528,15 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else {
           const afterT = (t - 0.75) / 0.25;
           drawAllPlayers(drift * 0.15);
+          // Lineup players rush in on goal
+          penLineupPositions.forEach((pos, i) => {
+            const isAttacker = i % 2 === 0;
+            if (isAttacker) {
+              const rushX = pos.x + (shooterPos.x - pos.x) * easeOut(afterT) * 0.4;
+              const rushY = pos.y + (shooterPos.y - pos.y) * easeOut(afterT) * 0.3;
+              drawPlayer(rushX, rushY, teamColor, teamLight, String(6 + Math.floor(i / 2)), 7);
+            }
+          });
           drawPlayer(penSpotX + (isHome ? 8 : -8), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
@@ -982,25 +1027,36 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const passIdx = Math.min(Math.floor(passT * numPasses), numPasses - 1);
           const localT = (passT * numPasses) - passIdx;
           const from = passIdx === 0
-            ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 }
+            ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 }
             : passPoints[passIdx - 1];
           const to = passPoints[passIdx];
           ballX = from.x + (to.x - from.x) * easeOut(localT);
           ballY = from.y + (to.y - from.y) * easeOut(localT);
           const shiftAmt = passT * 20;
           drawAllPlayers(drift * 0.5, true, ballX, ballY, shiftAmt);
+          // Draw pass trails for all completed passes
           for (let i = 0; i < passIdx; i++) {
-            const pf = i === 0 ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 } : passPoints[i - 1];
-            drawPassTrail(pf.x, pf.y, passPoints[i].x, passPoints[i].y, 1, 0.12);
+            const pf = i === 0 ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 } : passPoints[i - 1];
+            drawPassTrail(pf.x, pf.y, passPoints[i].x, passPoints[i].y, 1, 0.08 + (i * 0.02));
           }
           drawPassTrail(from.x, from.y, to.x, to.y, easeOut(localT), 0.3);
-          drawPlayer(from.x, from.y, teamColor, teamLight, String(4 + passIdx), 8);
-          if (localT > 0.5) {
-            const recvX = to.x - (to.x - from.x) * (1 - localT) * 0.3;
-            drawPlayer(recvX, to.y, teamColor, teamLight, String(5 + passIdx), 8, true);
+          // Draw passer (stays at from position after pass)
+          const passerLabel = String(2 + passIdx);
+          drawPlayer(from.x, from.y, teamColor, teamLight, passerLabel, 8, localT < 0.3);
+          // Draw receiver running to receive
+          if (localT > 0.4) {
+            const recvX = to.x - (to.x - from.x) * (1 - localT) * 0.2;
+            const recvY = to.y - (to.y - from.y) * (1 - localT) * 0.2;
+            drawPlayer(recvX, recvY, teamColor, teamLight, String(3 + passIdx), 8, true);
+          }
+          // Show previous passers still visible on the pitch (collective feel)
+          for (let i = Math.max(0, passIdx - 2); i < passIdx; i++) {
+            const prevPos = i === 0 ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 } : passPoints[i - 1];
+            drawPlayer(prevPos.x, prevPos.y, teamColor, teamLight, String(2 + i), 7);
           }
           drawBall(ballX, ballY, 1, drift * 3);
-          drawEventLabel(passT, type === 'corner' ? '📐 Escanteio' : '⚡ Construção de jogada', playerName);
+          const passCountLabel = `Passe ${passIdx + 1}/${numPasses}`;
+          drawEventLabel(passT, type === 'corner' ? '📐 Escanteio' : `⚡ Toque de bola coletivo`, passCountLabel);
 
         } else if (t < 0.45) {
           const keyT = (t - 0.30) / 0.15;
