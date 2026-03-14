@@ -1079,6 +1079,8 @@ Deno.serve(async (req) => {
         console.error('Tournament match update failed:', tmErr);
       }
     }
+
+    return new Response(JSON.stringify({
       success: true,
       matchDbId: match.id,
       startedAt: now.toISOString(),
