@@ -34,11 +34,38 @@ const features = [
 { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' }];
 
 
+const countryOptions = [
+  { value: 'BR', label: '🇧🇷 Brasil' },
+  { value: 'AR', label: '🇦🇷 Argentina' },
+  { value: 'PT', label: '🇵🇹 Portugal' },
+  { value: 'ES', label: '🇪🇸 Espanha' },
+  { value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra' },
+  { value: 'IT', label: '🇮🇹 Itália' },
+  { value: 'DE', label: '🇩🇪 Alemanha' },
+  { value: 'FR', label: '🇫🇷 França' },
+  { value: 'MX', label: '🇲🇽 México' },
+  { value: 'CO', label: '🇨🇴 Colômbia' },
+];
+
+const formationOptions = [
+  '4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1',
+];
+
+const playstyleOptions = [
+  { value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
+  { value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
+  { value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
+  { value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' },
+];
+
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [favoriteCountry, setFavoriteCountry] = useState('BR');
+  const [preferredFormation, setPreferredFormation] = useState('4-3-3');
+  const [playstyle, setPlaystyle] = useState('balanced');
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
