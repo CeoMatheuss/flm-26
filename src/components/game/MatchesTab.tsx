@@ -62,8 +62,79 @@ export function MatchesTab({
   const nextMatch = matches.find(m => !m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
 
+  // Tournament matches for this user
+  const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
+  const [tournamentTeams, setTournamentTeams] = useState<any[]>([]);
+  const [tournamentNames, setTournamentNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!userId) return;
+    const loadTournamentMatches = async () => {
+      // Find user's tournament teams
+      const { data: myTeams } = await supabase
+        .from('custom_tournament_teams')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('eliminated', false);
+
+      if (!myTeams || myTeams.length === 0) {
+        setTournamentMatches([]);
+        return;
+      }
+
+      setTournamentTeams(myTeams);
+      const teamIds = myTeams.map(t => t.id);
+      const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
+
+      // Load tournament names
+      const { data: tournaments } = await supabase
+        .from('custom_tournaments')
+        .select('id, name')
+        .in('id', tournamentIds);
+
+      if (tournaments) {
+        const names: Record<string, string> = {};
+        tournaments.forEach(t => { names[t.id] = t.name; });
+        setTournamentNames(names);
+      }
+
+      // Find upcoming matches for this user
+      const { data: upcomingMatches } = await supabase
+        .from('custom_tournament_matches')
+        .select('*')
+        .eq('status', 'scheduled')
+        .or(teamIds.map(id => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(','))
+        .order('scheduled_at', { ascending: true })
+        .limit(10);
+
+      if (upcomingMatches) {
+        // Load all teams for these matches
+        const allTeamIds = new Set<string>();
+        upcomingMatches.forEach(m => {
+          allTeamIds.add(m.home_team_id);
+          allTeamIds.add(m.away_team_id);
+        });
+        const { data: matchTeams } = await supabase
+          .from('custom_tournament_teams')
+          .select('*')
+          .in('id', [...allTeamIds]);
+
+        const enriched = upcomingMatches.map(m => {
+          const home = matchTeams?.find(t => t.id === m.home_team_id);
+          const away = matchTeams?.find(t => t.id === m.away_team_id);
+          const myTeam = myTeams.find(t => t.id === m.home_team_id || t.id === m.away_team_id);
+          const isHome = myTeam?.id === m.home_team_id;
+          return { ...m, homeName: home?.club_name || '???', awayName: away?.club_name || '???', homeStrength: home?.bot_strength || 60, awayStrength: away?.bot_strength || 60, isHome, myTeamId: myTeam?.id, opponentIsBot: isHome ? away?.is_bot : home?.is_bot };
+        });
+        setTournamentMatches(enriched);
+      }
+    };
+    loadTournamentMatches();
+    const interval = setInterval(loadTournamentMatches, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
+
   const goToMatch = (match: Match) => {
-    // BOT FC strength: use stored value or default 65
     const botStrength = (match as any).opponentStrength || 65;
     navigate('/match', {
       state: {
@@ -79,6 +150,35 @@ export function MatchesTab({
         isHome: match.isHome ?? true,
       },
     });
+  };
+
+  const goToTournamentMatch = (tm: any) => {
+    const isHome = tm.isHome;
+    navigate('/match', {
+      state: {
+        homeTeam: isHome ? clubName : tm.homeName,
+        awayTeam: isHome ? tm.awayName : clubName,
+        homePlayers: players,
+        homeStrength: teamStrength,
+        awayStrength: isHome ? tm.awayStrength : tm.homeStrength,
+        matchId: tm.id,
+        tactics,
+        stadiumName: isHome ? stadiumName : 'Estádio Adversário',
+        stadiumCapacity: stadiumCapacity,
+        isHome,
+        competition: tournamentNames[tm.tournament_id] || 'Campeonato',
+        tournamentMatchId: tm.id,
+      },
+    });
+  };
+
+  const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean } => {
+    const diff = new Date(scheduledAt).getTime() - Date.now();
+    if (diff <= 0) return { text: 'AGORA!', isNow: true };
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, isNow: false };
+    return { text: `${hours}h ${mins}min`, isNow: false };
   };
 
   return (
