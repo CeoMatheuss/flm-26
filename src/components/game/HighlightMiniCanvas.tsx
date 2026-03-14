@@ -462,10 +462,32 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       if (type === 'penalty' || type === 'penalty_shootout') {
         const penSpotX = isHome ? W - 38 : 38;
         const penSpotY = H / 2;
+        // Players lined up at edge of penalty area
+        const boxEdgeX = isHome ? W - 58 : 58;
+        const penLineupPositions = [
+          { x: boxEdgeX, y: H * 0.22 },
+          { x: boxEdgeX, y: H * 0.34 },
+          { x: boxEdgeX + (isHome ? -12 : 12), y: H * 0.46 },
+          { x: boxEdgeX + (isHome ? -12 : 12), y: H * 0.58 },
+          { x: boxEdgeX, y: H * 0.66 },
+          { x: boxEdgeX, y: H * 0.78 },
+        ];
+        const drawPenaltyLineup = (alpha: number) => {
+          penLineupPositions.forEach((pos, i) => {
+            const isAttacker = i % 2 === 0;
+            const c = isAttacker ? teamColor : gkColor;
+            const cl = isAttacker ? teamLight : gkLight;
+            const lbl = isAttacker ? String(6 + Math.floor(i / 2)) : String(2 + Math.floor(i / 2));
+            const dx = Math.sin(driftRef.current + i * 1.5) * 1.5;
+            const dy = Math.cos(driftRef.current + i * 1.1) * 1.5;
+            drawPlayer(pos.x + dx, pos.y + dy, c, cl, lbl, 7);
+          });
+        };
 
         if (t < 0.30) {
           const walkT = t / 0.30;
           drawAllPlayers(drift * 0.3, false, 0, 0, 15 * easeOut(walkT));
+          drawPenaltyLineup(easeOut(walkT));
           const startX = isHome ? W * 0.55 : W * 0.45;
           const sx = startX + (penSpotX - startX - (isHome ? 35 : -35)) * easeOut(walkT);
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, true, playerName);
@@ -476,6 +498,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.55) {
           const runT = (t - 0.30) / 0.25;
           drawAllPlayers(drift * 0.2, false, 0, 0, 20);
+          drawPenaltyLineup(1);
           const runStartX = penSpotX + (isHome ? -35 : 35);
           const sx = runStartX + (penSpotX - runStartX) * easeIn(Math.min(runT * 1.3, 1));
           drawPlayer(sx, penSpotY, teamColor, teamLight, '10', 9, runT < 0.7, playerName);
@@ -487,6 +510,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.75) {
           const shotT = (t - 0.55) / 0.20;
           drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+          drawPenaltyLineup(1);
           drawPlayer(penSpotX + (isHome ? 5 : -5), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
@@ -501,6 +525,15 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else {
           const afterT = (t - 0.75) / 0.25;
           drawAllPlayers(drift * 0.15);
+          // Lineup players rush in on goal
+          penLineupPositions.forEach((pos, i) => {
+            const isAttacker = i % 2 === 0;
+            if (isAttacker) {
+              const rushX = pos.x + (shooterPos.x - pos.x) * easeOut(afterT) * 0.4;
+              const rushY = pos.y + (shooterPos.y - pos.y) * easeOut(afterT) * 0.3;
+              drawPlayer(rushX, rushY, teamColor, teamLight, String(6 + Math.floor(i / 2)), 7);
+            }
+          });
           drawPlayer(penSpotX + (isHome ? 8 : -8), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
