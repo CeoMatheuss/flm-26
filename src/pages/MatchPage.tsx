@@ -61,7 +61,7 @@ export default function MatchPage() {
           stadiumName: locState.stadiumName,
           stadiumCapacity: locState.stadiumCapacity,
           isHome: locState.isHome,
-          competition: 'Amistoso',
+          competition: locState.competition || 'Amistoso',
         });
       } else {
         setLoadingMsg('Buscando partida ativa');
