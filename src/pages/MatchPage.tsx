@@ -29,6 +29,8 @@ interface MatchPageState {
   stadiumCapacity: number;
   isHome: boolean;
   liveMatchDbId?: string;
+  competition?: string;
+  tournamentMatchId?: string;
 }
 
 export default function MatchPage() {
