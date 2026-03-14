@@ -116,29 +116,38 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       : { x: isHome ? W * 0.76 + Math.random() * W * 0.06 : W * 0.18 + Math.random() * W * 0.06,
           y: H * 0.35 + Math.random() * H * 0.3 };
 
-    // Build-up pass points
+    // Build-up pass points — collective plays with 4-6 player participation
     const passPoints = type === 'penalty' || type === 'penalty_shootout' ? [] :
       type === 'counter_attack' ? [
         { x: isHome ? W * 0.15 : W * 0.85, y: randY() },
-        { x: isHome ? W * 0.35 : W * 0.65, y: randY() },
+        { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
+        { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
         { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.4 + Math.random() * H * 0.2 },
+        { x: isHome ? W * 0.65 : W * 0.35, y: H * 0.4 + Math.random() * H * 0.2 },
         { x: isHome ? W * 0.70 : W * 0.30, y: H * 0.4 + Math.random() * H * 0.2 },
       ] :
       type === 'crossing' ? [
-        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.85 },
-        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.90 },
+        { x: isHome ? W * 0.30 : W * 0.70, y: H * 0.55 },
+        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.70 },
+        { x: isHome ? W * 0.50 : W * 0.50, y: H * 0.60 },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.85 },
         { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.88 },
         { x: isHome ? W * 0.85 : W * 0.15, y: H * 0.80 },
       ] :
       type === 'free_kick' ? [
-        { x: isHome ? W * 0.60 : W * 0.40, y: H * 0.5 },
+        { x: isHome ? W * 0.40 : W * 0.60, y: H * 0.35 },
+        { x: isHome ? W * 0.48 : W * 0.52, y: H * 0.60 },
+        { x: isHome ? W * 0.55 : W * 0.45, y: H * 0.40 },
+        { x: isHome ? W * 0.60 : W * 0.40, y: H * 0.55 },
         { x: isHome ? W * 0.65 : W * 0.35, y: H * 0.5 },
-        { x: isHome ? W * 0.68 : W * 0.32, y: H * 0.5 },
         { x: isHome ? W * 0.72 : W * 0.28, y: H * 0.5 },
       ] : [
-        { x: isHome ? W * 0.30 : W * 0.70, y: randY() },
-        { x: isHome ? W * 0.42 : W * 0.58, y: randY() },
-        { x: isHome ? W * 0.56 : W * 0.44, y: randY() },
+        // Collective build-up: 6 passes involving 5+ players
+        { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.60 },
+        { x: isHome ? W * 0.30 : W * 0.70, y: H * 0.30 },
+        { x: isHome ? W * 0.38 : W * 0.62, y: H * 0.65 },
+        { x: isHome ? W * 0.48 : W * 0.52, y: H * 0.35 },
+        { x: isHome ? W * 0.56 : W * 0.44, y: H * 0.55 },
         { x: isHome ? W * 0.68 : W * 0.32, y: randY() },
       ];
 
