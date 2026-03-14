@@ -35,28 +35,28 @@ const features = [
 
 
 const countryOptions = [
-  { value: 'BR', label: '🇧🇷 Brasil' },
-  { value: 'AR', label: '🇦🇷 Argentina' },
-  { value: 'PT', label: '🇵🇹 Portugal' },
-  { value: 'ES', label: '🇪🇸 Espanha' },
-  { value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra' },
-  { value: 'IT', label: '🇮🇹 Itália' },
-  { value: 'DE', label: '🇩🇪 Alemanha' },
-  { value: 'FR', label: '🇫🇷 França' },
-  { value: 'MX', label: '🇲🇽 México' },
-  { value: 'CO', label: '🇨🇴 Colômbia' },
-];
+{ value: 'BR', label: '🇧🇷 Brasil' },
+{ value: 'AR', label: '🇦🇷 Argentina' },
+{ value: 'PT', label: '🇵🇹 Portugal' },
+{ value: 'ES', label: '🇪🇸 Espanha' },
+{ value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra' },
+{ value: 'IT', label: '🇮🇹 Itália' },
+{ value: 'DE', label: '🇩🇪 Alemanha' },
+{ value: 'FR', label: '🇫🇷 França' },
+{ value: 'MX', label: '🇲🇽 México' },
+{ value: 'CO', label: '🇨🇴 Colômbia' }];
+
 
 const formationOptions = [
-  '4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1',
-];
+'4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1'];
+
 
 const playstyleOptions = [
-  { value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
-  { value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
-  { value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
-  { value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' },
-];
+{ value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
+{ value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
+{ value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
+{ value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' }];
+
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,7 @@ export default function AuthPage() {
           display_name: displayName || 'Manager',
           favorite_country: favoriteCountry,
           preferred_formation: preferredFormation,
-          playstyle: playstyle,
+          playstyle: playstyle
         }
       }
     });
@@ -418,11 +418,11 @@ export default function AuthPage() {
                     <select
                       value={favoriteCountry}
                       onChange={(e) => setFavoriteCountry(e.target.value)}
-                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      {countryOptions.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                      
+                      {countryOptions.map((c) =>
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                      )}
                     </select>
                   </div>
 
@@ -430,20 +430,20 @@ export default function AuthPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-muted-foreground">📋 Formação Preferida</label>
                     <div className="grid grid-cols-4 gap-1.5">
-                      {formationOptions.map((f) => (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => setPreferredFormation(f)}
-                          className={`py-1.5 px-1 rounded-md text-[11px] font-bold border transition-all ${
-                            preferredFormation === f
-                              ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                              : 'bg-card border-border/50 text-muted-foreground hover:border-primary/40'
-                          }`}
-                        >
+                      {formationOptions.map((f) =>
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setPreferredFormation(f)}
+                        className={`py-1.5 px-1 rounded-md text-[11px] font-bold border transition-all ${
+                        preferredFormation === f ?
+                        'bg-primary text-primary-foreground border-primary shadow-md' :
+                        'bg-card border-border/50 text-muted-foreground hover:border-primary/40'}`
+                        }>
+                        
                           {f}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
 
@@ -451,21 +451,21 @@ export default function AuthPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-muted-foreground">🎮 Estilo de Jogo</label>
                     <div className="grid grid-cols-2 gap-1.5">
-                      {playstyleOptions.map((ps) => (
-                        <button
-                          key={ps.value}
-                          type="button"
-                          onClick={() => setPlaystyle(ps.value)}
-                          className={`p-2 rounded-lg border text-left transition-all ${
-                            playstyle === ps.value
-                              ? 'bg-primary/10 border-primary shadow-sm'
-                              : 'bg-card/50 border-border/40 hover:border-primary/30'
-                          }`}
-                        >
+                      {playstyleOptions.map((ps) =>
+                      <button
+                        key={ps.value}
+                        type="button"
+                        onClick={() => setPlaystyle(ps.value)}
+                        className={`p-2 rounded-lg border text-left transition-all ${
+                        playstyle === ps.value ?
+                        'bg-primary/10 border-primary shadow-sm' :
+                        'bg-card/50 border-border/40 hover:border-primary/30'}`
+                        }>
+                        
                           <span className="text-xs font-bold block">{ps.label}</span>
                           <span className="text-[9px] text-muted-foreground">{ps.desc}</span>
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
 
@@ -480,7 +480,7 @@ export default function AuthPage() {
 
         {/* Features Grid */}
         <div className="w-full max-w-md">
-          <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades-FLM-26</p>
+          <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades-FLM</p>
           <div className="grid grid-cols-2 gap-2">
             {features.map((f, i) =>
             <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-colors">
