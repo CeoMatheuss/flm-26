@@ -1024,25 +1024,36 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const passIdx = Math.min(Math.floor(passT * numPasses), numPasses - 1);
           const localT = (passT * numPasses) - passIdx;
           const from = passIdx === 0
-            ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 }
+            ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 }
             : passPoints[passIdx - 1];
           const to = passPoints[passIdx];
           ballX = from.x + (to.x - from.x) * easeOut(localT);
           ballY = from.y + (to.y - from.y) * easeOut(localT);
           const shiftAmt = passT * 20;
           drawAllPlayers(drift * 0.5, true, ballX, ballY, shiftAmt);
+          // Draw pass trails for all completed passes
           for (let i = 0; i < passIdx; i++) {
-            const pf = i === 0 ? { x: isHome ? W * 0.20 : W * 0.80, y: H * 0.45 } : passPoints[i - 1];
-            drawPassTrail(pf.x, pf.y, passPoints[i].x, passPoints[i].y, 1, 0.12);
+            const pf = i === 0 ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 } : passPoints[i - 1];
+            drawPassTrail(pf.x, pf.y, passPoints[i].x, passPoints[i].y, 1, 0.08 + (i * 0.02));
           }
           drawPassTrail(from.x, from.y, to.x, to.y, easeOut(localT), 0.3);
-          drawPlayer(from.x, from.y, teamColor, teamLight, String(4 + passIdx), 8);
-          if (localT > 0.5) {
-            const recvX = to.x - (to.x - from.x) * (1 - localT) * 0.3;
-            drawPlayer(recvX, to.y, teamColor, teamLight, String(5 + passIdx), 8, true);
+          // Draw passer (stays at from position after pass)
+          const passerLabel = String(2 + passIdx);
+          drawPlayer(from.x, from.y, teamColor, teamLight, passerLabel, 8, localT < 0.3);
+          // Draw receiver running to receive
+          if (localT > 0.4) {
+            const recvX = to.x - (to.x - from.x) * (1 - localT) * 0.2;
+            const recvY = to.y - (to.y - from.y) * (1 - localT) * 0.2;
+            drawPlayer(recvX, recvY, teamColor, teamLight, String(3 + passIdx), 8, true);
+          }
+          // Show previous passers still visible on the pitch (collective feel)
+          for (let i = Math.max(0, passIdx - 2); i < passIdx; i++) {
+            const prevPos = i === 0 ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 } : passPoints[i - 1];
+            drawPlayer(prevPos.x, prevPos.y, teamColor, teamLight, String(2 + i), 7);
           }
           drawBall(ballX, ballY, 1, drift * 3);
-          drawEventLabel(passT, type === 'corner' ? '📐 Escanteio' : '⚡ Construção de jogada', playerName);
+          const passCountLabel = `Passe ${passIdx + 1}/${numPasses}`;
+          drawEventLabel(passT, type === 'corner' ? '📐 Escanteio' : `⚡ Toque de bola coletivo`, passCountLabel);
 
         } else if (t < 0.45) {
           const keyT = (t - 0.30) / 0.15;
