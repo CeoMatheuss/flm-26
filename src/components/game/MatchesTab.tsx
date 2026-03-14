@@ -275,6 +275,66 @@ export function MatchesTab({
             </CardContent>
           </Card>
         </div>
+
+        {/* ── TOURNAMENT MATCHES ──────────────────────────── */}
+        {tournamentMatches.length > 0 && (
+          <Card className="border-warning/20 bg-gradient-to-br from-warning/5 to-transparent">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-warning" /> Jogos de Campeonato
+                <Badge variant="outline" className="text-[8px] ml-auto">{tournamentMatches.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {tournamentMatches.map(tm => {
+                const timeInfo = getTimeUntilMatch(tm.scheduled_at);
+                return (
+                  <Card key={tm.id} className={`${timeInfo.isNow ? 'border-success/40 bg-success/5 animate-pulse' : 'border-border/30'}`}>
+                    <CardContent className="p-2.5">
+                      <div className="flex items-center gap-2 mb-1.5 pb-1 border-b border-border/20">
+                        <Badge variant="secondary" className="text-[8px] gap-1">
+                          🏆 {tournamentNames[tm.tournament_id] || 'Campeonato'}
+                        </Badge>
+                        <Badge variant="outline" className="text-[8px] gap-1">
+                          {tm.stage || `Rodada ${tm.round}`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className={`font-medium truncate ${tm.isHome ? 'text-primary' : ''}`}>{tm.homeName}</span>
+                            <span className="text-muted-foreground">vs</span>
+                            <span className={`font-medium truncate ${!tm.isHome ? 'text-primary' : ''}`}>{tm.awayName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[8px] text-muted-foreground">
+                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <Badge variant={timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
+                              {timeInfo.isNow ? '🔴 AO VIVO' : `⏳ ${timeInfo.text}`}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={timeInfo.isNow ? 'default' : 'outline'}
+                          onClick={() => goToTournamentMatch(tm)}
+                          className={`h-7 px-3 text-xs gap-1 shrink-0 ${timeInfo.isNow ? 'bg-success hover:bg-success/90' : ''}`}
+                        >
+                          <LogIn className="h-3 w-3" />
+                          {timeInfo.isNow ? 'Entrar' : 'Ver'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              <p className="text-[9px] text-muted-foreground text-center">
+                🏆 Jogos começam automaticamente no horário • Entre antes para jogar ao vivo!
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
 
 
