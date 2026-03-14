@@ -411,6 +411,64 @@ export default function AuthPage() {
                   <Input placeholder="Nome do Manager" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" />
                   <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
                   <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-11" />
+                  
+                  {/* País Favorito */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">🌍 País da Liga</label>
+                    <select
+                      value={favoriteCountry}
+                      onChange={(e) => setFavoriteCountry(e.target.value)}
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      {countryOptions.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Formação Preferida */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">📋 Formação Preferida</label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {formationOptions.map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setPreferredFormation(f)}
+                          className={`py-1.5 px-1 rounded-md text-[11px] font-bold border transition-all ${
+                            preferredFormation === f
+                              ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                              : 'bg-card border-border/50 text-muted-foreground hover:border-primary/40'
+                          }`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Estilo de Jogo */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">🎮 Estilo de Jogo</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {playstyleOptions.map((ps) => (
+                        <button
+                          key={ps.value}
+                          type="button"
+                          onClick={() => setPlaystyle(ps.value)}
+                          className={`p-2 rounded-lg border text-left transition-all ${
+                            playstyle === ps.value
+                              ? 'bg-primary/10 border-primary shadow-sm'
+                              : 'bg-card/50 border-border/40 hover:border-primary/30'
+                          }`}
+                        >
+                          <span className="text-xs font-bold block">{ps.label}</span>
+                          <span className="text-[9px] text-muted-foreground">{ps.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                     {loading ? 'Criando...' : '🏆 Criar Conta'}
                   </Button>
