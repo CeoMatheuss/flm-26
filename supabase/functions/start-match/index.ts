@@ -811,7 +811,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId } = body;
 
     if (!homeTeam || !awayTeam || !matchId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -1019,7 +1019,66 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({
+    // Mark tournament match as played if applicable
+    if (typeof tournamentMatchId === 'string' && tournamentMatchId.length > 0) {
+      try {
+        // Get match details
+        const { data: tmMatch } = await adminClient.from('custom_tournament_matches')
+          .select('*').eq('id', tournamentMatchId).eq('status', 'scheduled').maybeSingle();
+        
+        if (tmMatch) {
+          await adminClient.from('custom_tournament_matches').update({
+            home_goals: result.homeGoals,
+            away_goals: result.awayGoals,
+            match_data: {
+              events: result.events,
+              goal_scorers: result.goalScorers,
+              player_ratings: result.playerRatings,
+              home_players: (homePlayers || []).slice(0, 11).map((p: any) => ({ id: p.id, name: p.name, position: p.position, overall: p.overall })),
+              stats: result.stats,
+            },
+            status: 'played',
+            played_at: now.toISOString(),
+          }).eq('id', tournamentMatchId);
+
+          // Update team stats
+          const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
+          const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
+
+
+
+          // Update home team
+          const { data: ht } = await adminClient.from('custom_tournament_teams').select('*').eq('id', tmMatch.home_team_id).single();
+          if (ht) {
+            await adminClient.from('custom_tournament_teams').update({
+              played: (ht.played || 0) + 1,
+              wins: (ht.wins || 0) + (homePoints === 3 ? 1 : 0),
+              draws: (ht.draws || 0) + (homePoints === 1 ? 1 : 0),
+              losses: (ht.losses || 0) + (homePoints === 0 ? 1 : 0),
+              goals_for: (ht.goals_for || 0) + result.homeGoals,
+              goals_against: (ht.goals_against || 0) + result.awayGoals,
+              points: (ht.points || 0) + homePoints,
+            }).eq('id', ht.id);
+          }
+
+          // Update away team
+          const { data: at } = await adminClient.from('custom_tournament_teams').select('*').eq('id', tmMatch.away_team_id).single();
+          if (at) {
+            await adminClient.from('custom_tournament_teams').update({
+              played: (at.played || 0) + 1,
+              wins: (at.wins || 0) + (awayPoints === 3 ? 1 : 0),
+              draws: (at.draws || 0) + (awayPoints === 1 ? 1 : 0),
+              losses: (at.losses || 0) + (awayPoints === 0 ? 1 : 0),
+              goals_for: (at.goals_for || 0) + result.awayGoals,
+              goals_against: (at.goals_against || 0) + result.homeGoals,
+              points: (at.points || 0) + awayPoints,
+            }).eq('id', at.id);
+          }
+        }
+      } catch (tmErr) {
+        console.error('Tournament match update failed:', tmErr);
+      }
+    }
       success: true,
       matchDbId: match.id,
       startedAt: now.toISOString(),

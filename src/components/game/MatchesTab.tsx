@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe } from 'lucide-react';
-import { useMemo } from 'react';
+import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe, Trophy, LogIn } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 
@@ -61,8 +62,79 @@ export function MatchesTab({
   const nextMatch = matches.find(m => !m.played);
   const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
 
+  // Tournament matches for this user
+  const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
+  const [tournamentTeams, setTournamentTeams] = useState<any[]>([]);
+  const [tournamentNames, setTournamentNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!userId) return;
+    const loadTournamentMatches = async () => {
+      // Find user's tournament teams
+      const { data: myTeams } = await supabase
+        .from('custom_tournament_teams')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('eliminated', false);
+
+      if (!myTeams || myTeams.length === 0) {
+        setTournamentMatches([]);
+        return;
+      }
+
+      setTournamentTeams(myTeams);
+      const teamIds = myTeams.map(t => t.id);
+      const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
+
+      // Load tournament names
+      const { data: tournaments } = await supabase
+        .from('custom_tournaments')
+        .select('id, name')
+        .in('id', tournamentIds);
+
+      if (tournaments) {
+        const names: Record<string, string> = {};
+        tournaments.forEach(t => { names[t.id] = t.name; });
+        setTournamentNames(names);
+      }
+
+      // Find upcoming matches for this user
+      const { data: upcomingMatches } = await supabase
+        .from('custom_tournament_matches')
+        .select('*')
+        .eq('status', 'scheduled')
+        .or(teamIds.map(id => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(','))
+        .order('scheduled_at', { ascending: true })
+        .limit(10);
+
+      if (upcomingMatches) {
+        // Load all teams for these matches
+        const allTeamIds = new Set<string>();
+        upcomingMatches.forEach(m => {
+          allTeamIds.add(m.home_team_id);
+          allTeamIds.add(m.away_team_id);
+        });
+        const { data: matchTeams } = await supabase
+          .from('custom_tournament_teams')
+          .select('*')
+          .in('id', [...allTeamIds]);
+
+        const enriched = upcomingMatches.map(m => {
+          const home = matchTeams?.find(t => t.id === m.home_team_id);
+          const away = matchTeams?.find(t => t.id === m.away_team_id);
+          const myTeam = myTeams.find(t => t.id === m.home_team_id || t.id === m.away_team_id);
+          const isHome = myTeam?.id === m.home_team_id;
+          return { ...m, homeName: home?.club_name || '???', awayName: away?.club_name || '???', homeStrength: home?.bot_strength || 60, awayStrength: away?.bot_strength || 60, isHome, myTeamId: myTeam?.id, opponentIsBot: isHome ? away?.is_bot : home?.is_bot };
+        });
+        setTournamentMatches(enriched);
+      }
+    };
+    loadTournamentMatches();
+    const interval = setInterval(loadTournamentMatches, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
+
   const goToMatch = (match: Match) => {
-    // BOT FC strength: use stored value or default 65
     const botStrength = (match as any).opponentStrength || 65;
     navigate('/match', {
       state: {
@@ -78,6 +150,35 @@ export function MatchesTab({
         isHome: match.isHome ?? true,
       },
     });
+  };
+
+  const goToTournamentMatch = (tm: any) => {
+    const isHome = tm.isHome;
+    navigate('/match', {
+      state: {
+        homeTeam: isHome ? clubName : tm.homeName,
+        awayTeam: isHome ? tm.awayName : clubName,
+        homePlayers: players,
+        homeStrength: teamStrength,
+        awayStrength: isHome ? tm.awayStrength : tm.homeStrength,
+        matchId: tm.id,
+        tactics,
+        stadiumName: isHome ? stadiumName : 'Estádio Adversário',
+        stadiumCapacity: stadiumCapacity,
+        isHome,
+        competition: tournamentNames[tm.tournament_id] || 'Campeonato',
+        tournamentMatchId: tm.id,
+      },
+    });
+  };
+
+  const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean } => {
+    const diff = new Date(scheduledAt).getTime() - Date.now();
+    if (diff <= 0) return { text: 'AGORA!', isNow: true };
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, isNow: false };
+    return { text: `${hours}h ${mins}min`, isNow: false };
   };
 
   return (
@@ -174,6 +275,66 @@ export function MatchesTab({
             </CardContent>
           </Card>
         </div>
+
+        {/* ── TOURNAMENT MATCHES ──────────────────────────── */}
+        {tournamentMatches.length > 0 && (
+          <Card className="border-warning/20 bg-gradient-to-br from-warning/5 to-transparent">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-warning" /> Jogos de Campeonato
+                <Badge variant="outline" className="text-[8px] ml-auto">{tournamentMatches.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {tournamentMatches.map(tm => {
+                const timeInfo = getTimeUntilMatch(tm.scheduled_at);
+                return (
+                  <Card key={tm.id} className={`${timeInfo.isNow ? 'border-success/40 bg-success/5 animate-pulse' : 'border-border/30'}`}>
+                    <CardContent className="p-2.5">
+                      <div className="flex items-center gap-2 mb-1.5 pb-1 border-b border-border/20">
+                        <Badge variant="secondary" className="text-[8px] gap-1">
+                          🏆 {tournamentNames[tm.tournament_id] || 'Campeonato'}
+                        </Badge>
+                        <Badge variant="outline" className="text-[8px] gap-1">
+                          {tm.stage || `Rodada ${tm.round}`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className={`font-medium truncate ${tm.isHome ? 'text-primary' : ''}`}>{tm.homeName}</span>
+                            <span className="text-muted-foreground">vs</span>
+                            <span className={`font-medium truncate ${!tm.isHome ? 'text-primary' : ''}`}>{tm.awayName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[8px] text-muted-foreground">
+                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <Badge variant={timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
+                              {timeInfo.isNow ? '🔴 AO VIVO' : `⏳ ${timeInfo.text}`}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={timeInfo.isNow ? 'default' : 'outline'}
+                          onClick={() => goToTournamentMatch(tm)}
+                          className={`h-7 px-3 text-xs gap-1 shrink-0 ${timeInfo.isNow ? 'bg-success hover:bg-success/90' : ''}`}
+                        >
+                          <LogIn className="h-3 w-3" />
+                          {timeInfo.isNow ? 'Entrar' : 'Ver'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              <p className="text-[9px] text-muted-foreground text-center">
+                🏆 Jogos começam automaticamente no horário • Entre antes para jogar ao vivo!
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
 
 

@@ -29,6 +29,8 @@ interface MatchPageState {
   stadiumCapacity: number;
   isHome: boolean;
   liveMatchDbId?: string;
+  competition?: string;
+  tournamentMatchId?: string;
 }
 
 export default function MatchPage() {
@@ -59,7 +61,8 @@ export default function MatchPage() {
           stadiumName: locState.stadiumName,
           stadiumCapacity: locState.stadiumCapacity,
           isHome: locState.isHome,
-          competition: 'Amistoso',
+          competition: locState.competition || 'Amistoso',
+          tournamentMatchId: locState.tournamentMatchId,
         });
       } else {
         setLoadingMsg('Buscando partida ativa');
