@@ -297,7 +297,7 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
               {visibleEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início da partida...</p>
               )}
-              {[...visibleEvents].reverse().slice(0, 50).map((ev, i) => (
+              {(isFinished ? [...visibleEvents].reverse() : [...visibleEvents].reverse().slice(0, 50)).map((ev, i) => (
                 <div
                   key={`${ev.minute}-${i}`}
                   className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${getEventBg(ev)}`}

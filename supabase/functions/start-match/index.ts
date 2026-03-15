@@ -928,11 +928,12 @@ Deno.serve(async (req) => {
 
       // Build stats summary for notification
       const stats = result.stats || {};
-      const possession = stats.possession || 50;
-      const shots = stats.shots || 0;
-      const shotsOnTarget = stats.shotsOnTarget || 0;
-      const corners = stats.corners || 0;
-      const fouls = stats.fouls || 0;
+      const statIdx = (isHome !== false) ? 0 : 1;
+      const possession = Array.isArray(stats.possession) ? (stats.possession[statIdx] ?? 50) : 50;
+      const shots = Array.isArray(stats.shots) ? (stats.shots[statIdx] ?? 0) : 0;
+      const shotsOnTarget = Array.isArray(stats.shotsOnTarget) ? (stats.shotsOnTarget[statIdx] ?? 0) : 0;
+      const corners = Array.isArray(stats.corners) ? (stats.corners[statIdx] ?? 0) : 0;
+      const fouls = Array.isArray(stats.fouls) ? (stats.fouls[statIdx] ?? 0) : 0;
       const motm = result.manOfTheMatch || null;
 
       const statLine = `Posse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol) | Escanteios: ${corners} | Faltas: ${fouls}`;
