@@ -280,6 +280,23 @@ export function AdminTournamentTab({ userId }: Props) {
     return new Date(year, month - 1, day, hours || 0, minutes || 0);
   };
 
+  const isPowerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0;
+
+  const nextPowerOfTwo = (n: number) => {
+    if (n <= 2) return 2;
+    let p = 2;
+    while (p < n) p *= 2;
+    return p;
+  };
+
+  const knockoutStageByTeamCount = (teamCount: number) => {
+    if (teamCount <= 2) return 'Final';
+    if (teamCount === 4) return 'Semi';
+    if (teamCount === 8) return 'Quartas';
+    if (teamCount === 16) return 'Oitavas';
+    return `R${teamCount}`;
+  };
+
   const generateLeagueFixtures = (teamIds: string[], totalRounds: number, startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const n = teamIds.length;
@@ -313,16 +330,20 @@ export function AdminTournamentTab({ userId }: Props) {
   const generateKnockoutFixtures = (teamIds: string[], startDate: string, matchTime: string, intervalHours: number) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
     const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
-    const totalRounds = Math.ceil(Math.log2(shuffled.length));
-    const stageNames = ['Final', 'Semi', 'Quartas', 'Oitavas', 'R32', 'R64'];
-    const firstRoundPairs = Math.floor(shuffled.length / 2);
-    const stageName = stageNames[Math.min(totalRounds - 1, stageNames.length - 1)] || `R${shuffled.length}`;
-    
-    for (let i = 0; i < firstRoundPairs; i++) {
+    const stageName = knockoutStageByTeamCount(shuffled.length);
+
+    for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
       const date = parseLocalDate(startDate, matchTime);
       date.setTime(date.getTime() + i * intervalHours * 3600000);
-      fixtures.push({ home_team_id: shuffled[i * 2], away_team_id: shuffled[i * 2 + 1], round: 1, stage: stageName, scheduled_at: date.toISOString() });
+      fixtures.push({
+        home_team_id: shuffled[i * 2],
+        away_team_id: shuffled[i * 2 + 1],
+        round: 1,
+        stage: stageName,
+        scheduled_at: date.toISOString(),
+      });
     }
+
     return fixtures;
   };
 
@@ -406,7 +427,12 @@ export function AdminTournamentTab({ userId }: Props) {
   // ── CREATE WITH AUTO-ENROLLMENT ──────────────────────────────
   const createTournament = async () => {
     if (!formName.trim()) return toast.error('Nome é obrigatório');
-    const maxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
+    const requestedMaxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
+    const isKnockoutFormat = formFormat === 'knockout' || formFormat === 'group_knockout';
+    const maxTeams = isKnockoutFormat ? Math.min(64, nextPowerOfTwo(requestedMaxTeams)) : requestedMaxTeams;
+    if (isKnockoutFormat && maxTeams !== requestedMaxTeams) {
+      toast.info(`⚙️ Mata-mata ajustado para ${maxTeams} times (potência de 2) para chaveamento correto.`);
+    }
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
     const now = new Date();
@@ -551,6 +577,11 @@ export function AdminTournamentTab({ userId }: Props) {
     if (formFormat === 'league') {
       fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
+      if (!isPowerOfTwo(teamList.length)) {
+        toast.error(`Mata-mata exige potência de 2 (4, 8, 16, 32, 64). Times atuais: ${teamList.length}`);
+        setLoading(false);
+        return;
+      }
       fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
