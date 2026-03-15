@@ -577,6 +577,11 @@ export function AdminTournamentTab({ userId }: Props) {
     if (formFormat === 'league') {
       fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
+      if (!isPowerOfTwo(teamList.length)) {
+        toast.error(`Mata-mata exige potência de 2 (4, 8, 16, 32, 64). Times atuais: ${teamList.length}`);
+        setLoading(false);
+        return;
+      }
       fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
