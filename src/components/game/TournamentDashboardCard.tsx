@@ -535,43 +535,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'calendar' && (
-          <div className="space-y-2">
-            {rounds.map(round => {
-              const roundMatches = matches.filter(m => m.round === round);
-              const stageName = roundMatches[0]?.stage || `Rodada ${round}`;
-              const played = roundMatches.filter(m => m.status === 'played').length;
-              return (
-                <Card key={round} className="game-card">
-                  <CardHeader className="pb-1 px-3 pt-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-[10px] font-bold flex items-center gap-1 text-muted-foreground uppercase tracking-wider">
-                        <Calendar className="h-3 w-3" /> {stageName}
-                      </CardTitle>
-                      <Badge variant="outline" className={`text-[7px] ${played === roundMatches.length ? 'text-success border-success/30' : 'text-muted-foreground'}`}>
-                        {played}/{roundMatches.length}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-2 pb-2 space-y-0.5">
-                    {roundMatches.map(match => (
-                      <div key={match.id} className={`flex items-center justify-between p-1.5 rounded-lg border text-[9px] transition-colors ${match.status === 'played' ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
-                        <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
-                        <span className={`font-bold px-2 ${match.status === 'played' ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {match.status === 'played' ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
-                        </span>
-                        <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
-                        {match.scheduled_at && (
-                          <span className="text-[7px] text-muted-foreground ml-1 shrink-0">
-                            {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <TournamentCalendarTab rounds={rounds} matches={matches} getTeamName={getTeamName} getTeamLogo={getTeamLogo} />
         )}
 
         {activeTab === 'bracket' && (
