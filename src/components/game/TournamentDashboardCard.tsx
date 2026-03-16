@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trophy, Calendar, Users, Swords, Target, ArrowLeft, Medal, TrendingUp, Shield, BarChart3, Eye } from 'lucide-react';
+import { Trophy, Calendar, Users, Swords, Target, ArrowLeft, Medal, TrendingUp, Shield, BarChart3, Eye, Play, Tv } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -534,43 +535,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'calendar' && (
-          <div className="space-y-2">
-            {rounds.map(round => {
-              const roundMatches = matches.filter(m => m.round === round);
-              const stageName = roundMatches[0]?.stage || `Rodada ${round}`;
-              const played = roundMatches.filter(m => m.status === 'played').length;
-              return (
-                <Card key={round} className="game-card">
-                  <CardHeader className="pb-1 px-3 pt-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-[10px] font-bold flex items-center gap-1 text-muted-foreground uppercase tracking-wider">
-                        <Calendar className="h-3 w-3" /> {stageName}
-                      </CardTitle>
-                      <Badge variant="outline" className={`text-[7px] ${played === roundMatches.length ? 'text-success border-success/30' : 'text-muted-foreground'}`}>
-                        {played}/{roundMatches.length}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-2 pb-2 space-y-0.5">
-                    {roundMatches.map(match => (
-                      <div key={match.id} className={`flex items-center justify-between p-1.5 rounded-lg border text-[9px] transition-colors ${match.status === 'played' ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
-                        <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
-                        <span className={`font-bold px-2 ${match.status === 'played' ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {match.status === 'played' ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
-                        </span>
-                        <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
-                        {match.scheduled_at && (
-                          <span className="text-[7px] text-muted-foreground ml-1 shrink-0">
-                            {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <TournamentCalendarTab rounds={rounds} matches={matches} getTeamName={getTeamName} getTeamLogo={getTeamLogo} />
         )}
 
         {activeTab === 'bracket' && (
@@ -664,6 +629,78 @@ function BotSquadView({ squad }: { squad: any[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── TOURNAMENT CALENDAR TAB WITH REPLAY ─────────────── */
+
+function TournamentCalendarTab({ rounds, matches, getTeamName, getTeamLogo }: {
+  rounds: number[];
+  matches: TournamentMatch[];
+  getTeamName: (id: string) => string;
+  getTeamLogo: (id: string) => string;
+}) {
+  const navigate = useNavigate();
+
+  const handleReplay = (match: TournamentMatch) => {
+    if (!match.match_data) return;
+    navigate('/replay', { state: { matchData: match.match_data, homeTeamName: getTeamName(match.home_team_id), awayTeamName: getTeamName(match.away_team_id), homeGoals: match.home_goals, awayGoals: match.away_goals } });
+  };
+
+  return (
+    <div className="space-y-2">
+      {rounds.map(round => {
+        const roundMatches = matches.filter(m => m.round === round);
+        const stageName = roundMatches[0]?.stage || `Rodada ${round}`;
+        const played = roundMatches.filter(m => m.status === 'played').length;
+        return (
+          <Card key={round} className="game-card">
+            <CardHeader className="pb-1 px-3 pt-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[10px] font-bold flex items-center gap-1 text-muted-foreground uppercase tracking-wider">
+                  <Calendar className="h-3 w-3" /> {stageName}
+                </CardTitle>
+                <Badge variant="outline" className={`text-[7px] ${played === roundMatches.length ? 'text-success border-success/30' : 'text-muted-foreground'}`}>
+                  {played}/{roundMatches.length}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="px-2 pb-2 space-y-1">
+              {roundMatches.map(match => (
+                <div key={match.id} className={`rounded-lg border p-2 text-[9px] transition-colors ${match.status === 'played' ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
+                    <span className={`font-bold px-2 ${match.status === 'played' ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {match.status === 'played' ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
+                    </span>
+                    <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    {match.scheduled_at && (
+                      <span className="text-[7px] text-muted-foreground">
+                        📅 {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    <div className="flex gap-1 ml-auto">
+                      {match.status === 'played' && match.match_data && (
+                        <Button size="sm" variant="outline" className="h-5 px-1.5 text-[7px] gap-0.5 text-primary border-primary/30" onClick={(e) => { e.stopPropagation(); handleReplay(match); }}>
+                          <Tv className="h-2.5 w-2.5" /> Assistir Replay
+                        </Button>
+                      )}
+                      {match.status === 'scheduled' && (
+                        <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
+                          ⏳ Aguardando
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

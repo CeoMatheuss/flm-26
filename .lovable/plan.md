@@ -1,92 +1,110 @@
 
 
-# Plano: Simulação 2D para Campeonatos, Notificações e Temporada
+# Plan: Post-Game Report, Data Persistence Fix, and 2D Sync
 
-## Resumo dos Problemas Atuais
+## Overview
 
-1. **Partidas do campeonato são simuladas automaticamente** pela edge function `process-tournament-matches` quando o horário chega -- sem simulação 2D nem narração
-2. **Botão "vs" no calendário** não oferece opção de assistir a partida com simulação 2D
-3. **Notificações** usam estilo escuro; precisa ser redesenhado com cores brancas e melhor organização
-4. **Informação da primeira temporada** não aparece (data de teste: 01/05/2026)
-5. **Dados offline** precisam ser limpos
+Four main tasks to implement:
 
----
-
-## Tarefa 1: Simulação 2D + Narração para Partidas de Campeonato
-
-### Problema
-Quando o horário agendado chega, `process-tournament-matches` resolve o jogo instantaneamente com Poisson simples (apenas gols + kickoff/halftime/fulltime). O jogador humano não tem chance de assistir.
-
-### Solução
-Adicionar na UI do calendário de partidas do torneio:
-
-- **Botão "Assistir" (Eye icon)** em cada partida agendada que envolva o time do jogador OU qualquer partida de bot
-- Ao clicar "Assistir", a partida é iniciada via `start-match` edge function (que já gera eventos completos com narração, pênaltis, faltas, etc.) e redireciona para a MatchPage com simulação 2D
-- Para partidas **bot vs bot** que o jogador quer assistir: criar um modo "spectator" que usa os dados de `match_data` já salvos e os revela progressivamente (reutilizando o `useMatchSimulation` em modo de replay)
-
-### Mudanças específicas:
-
-**TournamentDashboardCard.tsx** (calendário de partidas):
-- No calendário, partidas `scheduled` mostram botão "⚽ Entrar" (se envolve o jogador) ou "👁️ Assistir" (para bot vs bot)
-- Partidas `played` mostram "📺 Replay" para revisar com narração 2D
-- Ao clicar "Entrar", chama o fluxo normal de `startMatch` do MatchPage
-- Ao clicar "Assistir/Replay", carrega `match_data` do banco e reproduz via hook de replay
-
-**Novo: useMatchReplay hook** (`src/match/useMatchReplay.ts`):
-- Recebe os eventos e stats salvos em `match_data`
-- Revela progressivamente com tick de 300ms, igual ao `useMatchSimulation`
-- Exibe no MatchPage em modo somente leitura
-
-**MatchPage.tsx**:
-- Aceitar query param `?replay=MATCH_ID` para modo replay de torneio
-- Reutilizar os componentes 2D existentes (HighlightMiniCanvas, narração)
-
-**process-tournament-matches (edge function)**:
-- Enriquecer os eventos gerados: adicionar eventos intermediários (faltas, cartões, escanteios, defesas) entre os gols, similar ao `start-match`
-- Isso garante que partidas de bot tenham narração rica para replay
+1. **Post-game report** — auto-generated after each match with tactical analysis, individual highlights, and ranking impact
+2. **Data persistence fix** — notifications and game data persist across sessions
+3. **2D sync fix** — ball movement and events stay continuous; events don't only appear when leaving
+4. **Testing** — verify simulation generates consistent scores, penalties, dangerous fouls, and 2D sync
 
 ---
 
-## Tarefa 2: Redesign do Sino de Notificações
+## Task 1: Post-Game Report
 
-### Mudanças visuais:
-- **Ícone do sino**: cor branca, badge de contagem com fundo vermelho
-- **Página de notificações (NotificationFullPage)**: fundo branco/claro, cards com bordas suaves
-- Organizar por categorias: Partidas, Transferências, Sistema
-- Melhor visualização de créditos/economia
-- Limitar exibição a máximo de créditos visíveis
+### Database
+Create a `match_reports` table:
+- `id`, `user_id`, `match_history_id` (FK), `competition`, `home_team`, `away_team`, `home_goals`, `away_goals`, `result` (win/draw/loss), `report_data` (JSONB — full analysis), `ranking_impact` (integer), `created_at`
+- RLS: users can only read their own reports
 
-### Mudanças em:
-- `NotificationBell.tsx`: estilo do ícone
-- `NotificationFullPage.tsx`: layout e cores
+### Edge Function (start-match)
+After simulation, generate report data server-side and include it in the `match_history` insert. The report JSONB includes:
+- **General**: competition, score, result type (win/draw/rout_win/etc)
+- **Positives**: top stats (possession dominance, shot accuracy, clean sheet)
+- **Negatives**: weaknesses (low possession, too many fouls, goals conceded)
+- **Individual highlights**: best player (highest rating), worst player, top scorer, assists
+- **Tactical analysis**: pressing effectiveness, play style impact
+- **Impacts**: morale change, ranking points gained/lost, fatigue, financial (gate revenue estimate)
 
----
+### Frontend
+Create `PostGameReportModal` component shown after match finishes (in MatchPage finished state or on return to Index). Displays:
+- Score + result badge
+- Positive/negative analysis cards
+- Individual highlight cards (best/worst player with ratings)
+- Ranking impact indicator (+/- points)
+- Save as notification for later viewing
 
-## Tarefa 3: Informação da Primeira Temporada
-
-### Na aba Temporada (SeasonTab):
-- Adicionar banner informativo: "🧪 Temporada de Testes - Início em 01/05/2026"
-- Exibir quando `season.currentSeason === 1`
-- Texto explicativo sobre regras da temporada teste
-
----
-
-## Tarefa 4: Limpeza de Dados Offline
-
-### Remover dados do localStorage:
-- Na tela de Settings ou via botão dedicado
-- Limpar chaves: `flm26_*`, `game_state_*`, qualquer cache local
-- Não afeta dados do banco (partidas, save, ranking)
+### Notification Integration
+On match finish, insert a notification record into a `user_notifications` table (new) so it persists across sessions.
 
 ---
 
-## Ordem de Implementação
+## Task 2: Data Persistence Fix
 
-1. Enriquecer `process-tournament-matches` com eventos completos (narração rica)
-2. Criar `useMatchReplay` hook para replay de partidas salvas
-3. Adicionar botões "Assistir/Replay" no calendário do torneio
-4. Integrar replay no MatchPage
-5. Redesign visual do NotificationBell + NotificationFullPage
-6. Adicionar banner de temporada teste no SeasonTab
-7. Implementar limpeza de dados offline no Settings
+### New `user_notifications` table
+- `id`, `user_id`, `type`, `title`, `message`, `icon`, `created_at`, `read_at`
+- RLS: users read/update only their own
+- Current notifications are ephemeral (localStorage + in-memory). Move to DB.
+
+### NotificationBell refactor
+- Fetch notifications from `user_notifications` table instead of building in-memory
+- Mark-as-read updates `read_at` in DB
+- Keep welcome/tips notifications as seed data inserted on club creation
+- Match results, transfers, and other events write to `user_notifications`
+
+### Game state persistence
+- Ensure `applyServerResult` in Index.tsx properly saves to the club's JSONB state
+- Verify auto-save writes all relevant data including notification read states
+
+---
+
+## Task 3: 2D Sync and Continuous Events
+
+### Problem
+The simulation generates events for every minute (1-90), but the `SimulationEngine.getSnapshot()` uses time-based progress that may skip minutes or cluster them. The 2D ball position updates only when React re-renders visible events.
+
+### Fix — SimulationEngine
+- Add `ballX`/`ballY` interpolation: between events, interpolate ball position smoothly based on fractional minute progress (not just discrete minute boundaries)
+- The engine already has events for every minute from the server — the issue is the tick interval (1s) vs the 12-minute real-time mapping
+
+### Fix — MatchManager tick
+- Change tick interval from 1000ms to 500ms for smoother event revelation
+- Ensure `_emitUpdate()` fires consistently regardless of event density
+
+### Fix — Pitch2DView
+- Already has continuous ball drift and lerp — verify it works with faster ticks
+- Add intermediate ball positions for minutes without events (use interpolation between prev/next event `ballX`/`ballY`)
+- Ensure canvas animation loop runs at 60fps (already using `requestAnimationFrame`)
+
+### Fix — "Events only when leaving"
+This is likely caused by `_startTick()` not being called or the update callback not being set before events are ready. Verify:
+- `setUpdateCallback` is called before `loadFromDb`/`startNewMatch`
+- The tick fires `_emitUpdate()` on every cycle, not just when new events appear
+
+---
+
+## Task 4: Testing
+
+After implementation, manually test a friendly match against AI FC to verify:
+- Scores are consistent (Poisson-based, not always 0-0 or extreme)
+- Penalties and dangerous fouls appear in events
+- 2D ball moves continuously throughout the match
+- Events appear in real-time without needing to leave/return
+- Post-game report shows with meaningful analysis
+- Notifications persist after page reload
+
+---
+
+## Implementation Order
+
+1. DB migration: `match_reports` + `user_notifications` tables with RLS
+2. Update `start-match` Edge Function to generate report data
+3. Create `PostGameReportModal` component
+4. Wire report display into MatchPage finished state and Index.tsx
+5. Refactor NotificationBell to use DB-backed notifications
+6. Fix SimulationEngine tick interval and 2D sync
+7. Test end-to-end
 

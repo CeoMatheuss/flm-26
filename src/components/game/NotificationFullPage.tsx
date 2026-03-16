@@ -25,46 +25,45 @@ interface Props {
 const typeConfig = {
   danger: {
     border: 'border-l-red-500',
-    bg: 'bg-red-500/10',
-    hoverBg: 'hover:bg-red-500/15',
+    bg: 'bg-white/80 dark:bg-card/90',
+    hoverBg: 'hover:bg-white dark:hover:bg-card',
     icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
     label: 'Urgente',
-    labelClass: 'bg-red-500/20 text-red-400 border-red-500/30',
+    labelClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
     dot: 'bg-red-500',
   },
   warning: {
-    border: 'border-l-yellow-400',
-    bg: 'bg-yellow-400/10',
-    hoverBg: 'hover:bg-yellow-400/15',
-    icon: <Zap className="h-4 w-4 text-yellow-400" />,
+    border: 'border-l-amber-500',
+    bg: 'bg-white/80 dark:bg-card/90',
+    hoverBg: 'hover:bg-white dark:hover:bg-card',
+    icon: <Zap className="h-4 w-4 text-amber-500" />,
     label: 'Atenção',
-    labelClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30',
-    dot: 'bg-yellow-400',
+    labelClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    dot: 'bg-amber-500',
   },
   info: {
-    border: 'border-l-blue-400',
-    bg: 'bg-blue-400/8',
-    hoverBg: 'hover:bg-blue-400/12',
-    icon: <Info className="h-4 w-4 text-blue-400" />,
+    border: 'border-l-blue-500',
+    bg: 'bg-white/80 dark:bg-card/90',
+    hoverBg: 'hover:bg-white dark:hover:bg-card',
+    icon: <Info className="h-4 w-4 text-blue-500" />,
     label: 'Info',
-    labelClass: 'bg-blue-400/20 text-blue-300 border-blue-400/30',
-    dot: 'bg-blue-400',
+    labelClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    dot: 'bg-blue-500',
   },
   success: {
-    border: 'border-l-emerald-400',
-    bg: 'bg-emerald-400/10',
-    hoverBg: 'hover:bg-emerald-400/15',
-    icon: <CheckCircle2 className="h-4 w-4 text-emerald-400" />,
+    border: 'border-l-emerald-500',
+    bg: 'bg-white/80 dark:bg-card/90',
+    hoverBg: 'hover:bg-white dark:hover:bg-card',
+    icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
     label: 'Sucesso',
-    labelClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30',
-    dot: 'bg-emerald-400',
+    labelClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    dot: 'bg-emerald-500',
   },
 };
 
 export function NotificationFullPage({ notifications, readIds, onMarkRead, onMarkAllRead, onClose, respondingId }: Props) {
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
   
-  // Group notifications
   const urgent = notifications.filter(n => n.type === 'danger' || n.actions);
   const attention = notifications.filter(n => n.type === 'warning' && !n.actions);
   const info = notifications.filter(n => (n.type === 'info' || n.type === 'success') && !n.actions);
@@ -90,19 +89,16 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
         key={n.id}
         className={`
           group relative rounded-xl border-l-[3px] ${config.border} ${config.bg} ${config.hoverBg}
-          bg-card/80 backdrop-blur-sm p-3.5 sm:p-4
+          backdrop-blur-sm p-3.5 sm:p-4 shadow-sm
           transition-all duration-200 cursor-pointer
           ${isRead && !n.actions ? 'opacity-50' : ''}
         `}
         onClick={() => !n.actions && onMarkRead(n.id)}
       >
         <div className="flex items-start gap-3">
-          {/* Icon container */}
           <div className="flex-shrink-0 mt-0.5 text-xl leading-none">
             {n.icon}
           </div>
-
-          {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <p className="text-sm font-semibold text-foreground leading-tight">{n.title}</p>
@@ -125,8 +121,6 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
                 {isExpanded ? 'Recolher' : 'Expandir'}
               </button>
             )}
-            
-            {/* Action buttons */}
             {n.actions && (
               <div className="flex gap-2 mt-3">
                 {n.actions.map((action, i) => (
@@ -159,7 +153,7 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1 pt-2">
           {icon}
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</span>
+          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{title}</span>
           <span className="text-[10px] text-muted-foreground/60">({items.length})</span>
         </div>
         <div className="space-y-2">
@@ -170,9 +164,9 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md flex flex-col animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-background/95 backdrop-blur-md flex flex-col animate-in fade-in duration-200">
+      {/* Header - white/light theme */}
+      <div className="flex-shrink-0 border-b border-border/30 bg-white/90 dark:bg-card/80 backdrop-blur-sm shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10">
@@ -198,7 +192,7 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
             )}
             <button
               onClick={onClose}
-              className="flex items-center justify-center h-8 w-8 rounded-lg bg-accent/50 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -219,9 +213,9 @@ export function NotificationFullPage({ notifications, readIds, onMarkRead, onMar
             </div>
           ) : (
             <>
-              {renderSection('Ação necessária', <AlertTriangle className="h-3.5 w-3.5 text-destructive" />, urgent)}
-              {renderSection('Atenção', <Zap className="h-3.5 w-3.5 text-amber-400" />, attention)}
-              {renderSection('Informações', <Info className="h-3.5 w-3.5 text-blue-400" />, info)}
+              {renderSection('Ação necessária', <AlertTriangle className="h-3.5 w-3.5 text-red-500" />, urgent)}
+              {renderSection('Atenção', <Zap className="h-3.5 w-3.5 text-amber-500" />, attention)}
+              {renderSection('Informações', <Info className="h-3.5 w-3.5 text-blue-500" />, info)}
             </>
           )}
         </div>

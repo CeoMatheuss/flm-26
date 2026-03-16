@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -108,6 +109,31 @@ export function SettingsTab() {
           <p className="text-[9px] text-muted-foreground text-center">
             Tema atual: <span className="font-semibold text-foreground">{theme === 'dark' ? '🌙 Escuro' : '☀️ Claro'}</span>
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Limpeza de dados offline */}
+      <Card className="border-destructive/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-destructive" />
+            Limpar Dados Offline
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Remove cache local do navegador. Seus dados online (partidas, save, ranking) não são afetados.</p>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full text-xs gap-2"
+            onClick={() => {
+              const keys = Object.keys(localStorage).filter(k => k.startsWith('flm26') || k.startsWith('game_state') || k.startsWith('flm_'));
+              keys.forEach(k => localStorage.removeItem(k));
+              toast.success(`🗑️ ${keys.length} itens de cache removidos!`);
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Limpar Cache Local
+          </Button>
         </CardContent>
       </Card>
     </div>

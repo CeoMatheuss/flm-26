@@ -19,6 +19,27 @@ export function SeasonTab({ season, leagueTeams, clubName }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Banner temporada de testes */}
+      {season.currentSeason === 1 && (
+        <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
+          <CardContent className="p-3">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-cyan-500/20 shrink-0">
+                <span className="text-lg">🧪</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Temporada de Testes</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Esta é a <span className="font-semibold text-cyan-500">primeira temporada</span> do jogo. Início oficial: <span className="font-bold text-foreground">01/05/2026</span>.
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Durante este período, dados podem ser resetados. Aproveite para testar e aprender as mecânicas!
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Status da temporada */}
       <Card className="border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent">
         <CardHeader className="pb-2">
