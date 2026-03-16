@@ -8,4 +8,5 @@
  */
 
 export { useMatchSimulation } from './useMatchSimulation';
+export { useMatchReplay } from './useMatchReplay';
 export type { MatchState, SimEvent, MatchStats } from './useMatchSimulation';
