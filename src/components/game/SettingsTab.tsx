@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
