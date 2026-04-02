@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
+import { ActiveLeaguesPanel } from './ActiveLeaguesPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -524,6 +525,7 @@ export function AdminTab({ userId, isFounder }: Props) {
             {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
             <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
             <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
+            <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
             <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
             <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
           </TabsList>
@@ -1186,6 +1188,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         {/* Tournaments Tab */}
         <TabsContent value="tournaments" className="space-y-3 mt-3">
           <AdminTournamentTab userId={userId} />
+        </TabsContent>
+
+        {/* Active Leagues Tab */}
+        <TabsContent value="active_leagues" className="space-y-3 mt-3">
+          <ActiveLeaguesPanel />
         </TabsContent>
 
         {/* Moderation Tab */}

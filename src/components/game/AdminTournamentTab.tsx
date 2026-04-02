@@ -880,196 +880,155 @@ export function AdminTournamentTab({ userId }: Props) {
 
         {/* Create Form */}
         {showCreate && (
-          <Card className="border-yellow-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Plus className="h-4 w-4 text-yellow-400" /> Novo Campeonato
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+          <Card className="border-primary/20">
+            <CardContent className="p-3 space-y-2.5">
+              <p className="text-xs font-bold flex items-center gap-1.5">
+                <Trophy className="h-3.5 w-3.5 text-primary" /> Novo Campeonato
+              </p>
+
               <Input placeholder="Nome do campeonato" value={formName} onChange={e => setFormName(e.target.value)} className="text-xs h-8" maxLength={100} />
-              <Textarea placeholder="Descrição (opcional)" value={formDesc} onChange={e => setFormDesc(e.target.value)} className="text-xs min-h-[50px]" maxLength={500} />
-              
-              {/* Scope: País ou Mundial */}
-              <Card className="border-blue-500/20 bg-blue-500/5">
-                <CardHeader className="pb-1 px-3 pt-2">
-                  <CardTitle className="text-[10px] flex items-center gap-1.5 text-blue-400">
-                    <Globe className="h-3 w-3" /> Escopo do Campeonato
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2 space-y-1.5">
-                  <div className="grid grid-cols-2 gap-1">
-                    <Button size="sm" variant={formScope === 'country' ? 'default' : 'outline'} className="h-7 text-[9px] gap-1" onClick={() => setFormScope('country')}>
-                      🏴 Por País
-                    </Button>
-                    <Button size="sm" variant={formScope === 'world' ? 'default' : 'outline'} className="h-7 text-[9px] gap-1" onClick={() => setFormScope('world')}>
-                      🌍 Mundial
-                    </Button>
-                  </div>
-                  {formScope === 'country' && (
-                    <Select value={formCountry} onValueChange={setFormCountry}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {ALL_COUNTRIES.map(c => (
-                          <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <p className="text-[8px] text-blue-400/70">
-                    {formScope === 'world' 
-                      ? '🌍 Todos os times criados de todos os países participam' 
-                      : `🏴 Apenas times do ${formCountry} participam`}
-                  </p>
-                </CardContent>
-              </Card>
 
-              {/* Team source */}
-              <Card className="border-emerald-500/20 bg-emerald-500/5">
-                <CardHeader className="pb-1 px-3 pt-2">
-                  <CardTitle className="text-[10px] flex items-center gap-1.5 text-emerald-400">
-                    <Users className="h-3 w-3" /> Origem dos Times
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2 space-y-1.5">
-                  <div className="grid grid-cols-3 gap-1">
-                    <Button size="sm" variant={teamSource === 'online_plus_bots' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('online_plus_bots')}>
-                      👤+🤖
-                    </Button>
-                    <Button size="sm" variant={teamSource === 'online_only' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('online_only')}>
-                      👤 Só online
-                    </Button>
-                    <Button size="sm" variant={teamSource === 'bots_only' ? 'default' : 'outline'} className="h-7 text-[8px] gap-0.5" onClick={() => setTeamSource('bots_only')}>
-                      🤖 Só bots
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">Total Times</label>
-                      <Input value={formMaxTeams} onChange={e => setFormMaxTeams(e.target.value)} className="text-xs h-7" type="number" min="4" max="64" />
-                    </div>
-                    {teamSource !== 'online_only' && (
-                      <>
-                        <div>
-                          <label className="text-[8px] text-muted-foreground">Bot OVR Mín</label>
-                          <Input value={batchBotMinOvr} onChange={e => setBatchBotMinOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
-                        </div>
-                        <div>
-                          <label className="text-[8px] text-muted-foreground">Bot OVR Máx</label>
-                          <Input value={batchBotMaxOvr} onChange={e => setBatchBotMaxOvr(e.target.value)} className="text-xs h-7" type="number" min="20" max="99" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-[8px] text-emerald-400/70">
-                    {teamSource === 'online_plus_bots' && `Todos jogadores online são inscritos + bots completam até ${formMaxTeams} times`}
-                    {teamSource === 'online_only' && `Apenas jogadores online reais (máx ${formMaxTeams})`}
-                    {teamSource === 'bots_only' && `${formMaxTeams} times bot com OVR ${batchBotMinOvr}-${batchBotMaxOvr}`}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Formato</label>
-                  <Select value={formFormat} onValueChange={setFormFormat}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              {/* Scope + Country in one row */}
+              <div className="flex gap-1.5">
+                <Button size="sm" variant={formScope === 'country' ? 'default' : 'outline'} className="h-7 text-[9px] flex-1" onClick={() => setFormScope('country')}>
+                  🏴 País
+                </Button>
+                <Button size="sm" variant={formScope === 'world' ? 'default' : 'outline'} className="h-7 text-[9px] flex-1" onClick={() => setFormScope('world')}>
+                  🌍 Mundial
+                </Button>
+                {formScope === 'country' && (
+                  <Select value={formCountry} onValueChange={setFormCountry}>
+                    <SelectTrigger className="h-7 text-[9px] flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="league" className="text-xs">🏟️ Liga</SelectItem>
-                      <SelectItem value="knockout" className="text-xs">⚔️ Mata-mata</SelectItem>
-                      <SelectItem value="group_knockout" className="text-xs">🏟️⚔️ Grupos + Mata-mata</SelectItem>
+                      {ALL_COUNTRIES.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                </div>
-                {formFormat !== 'knockout' && (
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Turnos</label>
-                    <Select value={formTotalRounds} onValueChange={setFormTotalRounds}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1" className="text-xs">Turno único</SelectItem>
-                        <SelectItem value="2" className="text-xs">Turno e returno</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[9px] text-muted-foreground">🥇 1º (R$)</label>
-                  <Input value={formPrize1} onChange={e => setFormPrize1(e.target.value)} className="text-xs h-8" type="number" />
-                </div>
-                <div>
-                  <label className="text-[9px] text-muted-foreground">🥈 2º (R$)</label>
-                  <Input value={formPrize2} onChange={e => setFormPrize2(e.target.value)} className="text-xs h-8" type="number" />
-                </div>
-                <div>
-                  <label className="text-[9px] text-muted-foreground">🥉 3º (R$)</label>
-                  <Input value={formPrize3} onChange={e => setFormPrize3(e.target.value)} className="text-xs h-8" type="number" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Duração Partida</label>
-                  <Select value={formDuration} onValueChange={setFormDuration}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="360" className="text-xs">6 min</SelectItem>
-                      <SelectItem value="720" className="text-xs">12 min</SelectItem>
-                      <SelectItem value="900" className="text-xs">15 min</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Intervalo entre Jogos</label>
-                  <Select value={formInterval} onValueChange={setFormInterval}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1" className="text-xs">1 hora</SelectItem>
-                      <SelectItem value="6" className="text-xs">6 horas</SelectItem>
-                      <SelectItem value="12" className="text-xs">12 horas</SelectItem>
-                      <SelectItem value="24" className="text-xs">24 horas</SelectItem>
-                      <SelectItem value="48" className="text-xs">48 horas</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Data de Início</label>
-                  <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="text-xs h-8" />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full mt-1 h-6 text-[9px] gap-1"
-                    onClick={() => {
-                      const now = new Date();
-                      const y = now.getFullYear();
-                      const m = String(now.getMonth() + 1).padStart(2, '0');
-                      const d = String(now.getDate()).padStart(2, '0');
-                      setFormStartDate(`${y}-${m}-${d}`);
-                      if (!formMatchTime) {
-                        setFormMatchTime(`${String(now.getHours()).padStart(2, '0')}:${String(Math.min(59, now.getMinutes() + 5)).padStart(2, '0')}`);
-                      }
-                    }}
-                  >
-                    <Zap className="h-3 w-3" /> Começar Hoje
+              {/* Team source compact */}
+              <div className="flex gap-1">
+                {(['online_plus_bots', 'online_only', 'bots_only'] as const).map(src => (
+                  <Button key={src} size="sm" variant={teamSource === src ? 'default' : 'outline'} className="h-6 text-[8px] flex-1" onClick={() => setTeamSource(src)}>
+                    {src === 'online_plus_bots' ? '👤+🤖' : src === 'online_only' ? '👤 Online' : '🤖 Bots'}
                   </Button>
-                </div>
+                ))}
+              </div>
+
+              {/* Teams + OVR + Format in grid */}
+              <div className="grid grid-cols-4 gap-1.5">
                 <div>
-                  <label className="text-[9px] text-muted-foreground">Horário dos Jogos</label>
-                  <Input type="time" value={formMatchTime} onChange={e => setFormMatchTime(e.target.value)} className="text-xs h-8" />
+                  <label className="text-[7px] text-muted-foreground">Times</label>
+                  <Input value={formMaxTeams} onChange={e => setFormMaxTeams(e.target.value)} className="text-[10px] h-7" type="number" min="4" max="64" />
+                </div>
+                {teamSource !== 'online_only' && (
+                  <>
+                    <div>
+                      <label className="text-[7px] text-muted-foreground">OVR Min</label>
+                      <Input value={batchBotMinOvr} onChange={e => setBatchBotMinOvr(e.target.value)} className="text-[10px] h-7" type="number" />
+                    </div>
+                    <div>
+                      <label className="text-[7px] text-muted-foreground">OVR Max</label>
+                      <Input value={batchBotMaxOvr} onChange={e => setBatchBotMaxOvr(e.target.value)} className="text-[10px] h-7" type="number" />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="text-[7px] text-muted-foreground">Formato</label>
+                  <Select value={formFormat} onValueChange={setFormFormat}>
+                    <SelectTrigger className="h-7 text-[9px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="league" className="text-xs">Liga</SelectItem>
+                      <SelectItem value="knockout" className="text-xs">Mata-mata</SelectItem>
+                      <SelectItem value="group_knockout" className="text-xs">Grupos+MM</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <Textarea placeholder="Regras especiais (opcional)" value={formRules} onChange={e => setFormRules(e.target.value)} className="text-xs min-h-[40px]" maxLength={1000} />
+              {/* Prizes compact */}
+              <div className="grid grid-cols-3 gap-1.5">
+                <div>
+                  <label className="text-[7px] text-muted-foreground">🥇 1º</label>
+                  <Input value={formPrize1} onChange={e => setFormPrize1(e.target.value)} className="text-[10px] h-7" type="number" />
+                </div>
+                <div>
+                  <label className="text-[7px] text-muted-foreground">🥈 2º</label>
+                  <Input value={formPrize2} onChange={e => setFormPrize2(e.target.value)} className="text-[10px] h-7" type="number" />
+                </div>
+                <div>
+                  <label className="text-[7px] text-muted-foreground">🥉 3º</label>
+                  <Input value={formPrize3} onChange={e => setFormPrize3(e.target.value)} className="text-[10px] h-7" type="number" />
+                </div>
+              </div>
 
-              <Button className="w-full h-9 text-xs gap-1 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={createTournament} disabled={loading}>
+              {/* Schedule compact */}
+              <div className="grid grid-cols-4 gap-1.5">
+                <div>
+                  <label className="text-[7px] text-muted-foreground">Início</label>
+                  <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="text-[9px] h-7" />
+                </div>
+                <div>
+                  <label className="text-[7px] text-muted-foreground">Hora</label>
+                  <Input type="time" value={formMatchTime} onChange={e => setFormMatchTime(e.target.value)} className="text-[9px] h-7" />
+                </div>
+                <div>
+                  <label className="text-[7px] text-muted-foreground">Intervalo</label>
+                  <Select value={formInterval} onValueChange={setFormInterval}>
+                    <SelectTrigger className="h-7 text-[9px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1" className="text-xs">1h</SelectItem>
+                      <SelectItem value="6" className="text-xs">6h</SelectItem>
+                      <SelectItem value="12" className="text-xs">12h</SelectItem>
+                      <SelectItem value="24" className="text-xs">24h</SelectItem>
+                      <SelectItem value="48" className="text-xs">48h</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[7px] text-muted-foreground">Duração</label>
+                  <Select value={formDuration} onValueChange={setFormDuration}>
+                    <SelectTrigger className="h-7 text-[9px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="360" className="text-xs">6min</SelectItem>
+                      <SelectItem value="720" className="text-xs">12min</SelectItem>
+                      <SelectItem value="900" className="text-xs">15min</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Quick start button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-6 text-[9px] gap-1"
+                onClick={() => {
+                  const now = new Date();
+                  setFormStartDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
+                  if (!formMatchTime) {
+                    setFormMatchTime(`${String(now.getHours()).padStart(2, '0')}:${String(Math.min(59, now.getMinutes() + 5)).padStart(2, '0')}`);
+                  }
+                }}
+              >
+                <Zap className="h-3 w-3" /> Preencher Data/Hora Atual
+              </Button>
+
+              {formFormat !== 'knockout' && (
+                <Select value={formTotalRounds} onValueChange={setFormTotalRounds}>
+                  <SelectTrigger className="h-7 text-[9px]"><SelectValue placeholder="Turnos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1" className="text-xs">Turno único</SelectItem>
+                    <SelectItem value="2" className="text-xs">Turno e returno</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Textarea placeholder="Regras (opcional)" value={formRules} onChange={e => setFormRules(e.target.value)} className="text-[10px] min-h-[30px]" maxLength={500} />
+
+              <Button className="w-full h-8 text-xs gap-1" onClick={createTournament} disabled={loading}>
                 {loading ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Trophy className="h-3 w-3" />}
-                Criar Campeonato + Gerar Calendário
+                Criar Campeonato
               </Button>
             </CardContent>
           </Card>

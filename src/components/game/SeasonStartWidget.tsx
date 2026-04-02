@@ -8,26 +8,31 @@ interface Props {
 }
 
 export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
-  const targetDate = new Date('2026-05-01T00:00:00-03:00');
   const [timeLeft, setTimeLeft] = useState('');
   const [isStarted, setIsStarted] = useState(false);
 
   useEffect(() => {
     const update = () => {
+      // Target: May 1, 2026 at midnight (local time)
+      const target = new Date(2026, 4, 1, 0, 0, 0); // month is 0-indexed
       const now = new Date();
-      const diff = targetDate.getTime() - now.getTime();
+      const diff = target.getTime() - now.getTime();
+      
       if (diff <= 0) {
         setIsStarted(true);
         setTimeLeft('');
         return;
       }
+      
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft(`${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`);
     };
+    
     update();
-    const interval = setInterval(update, 60000);
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -55,7 +60,7 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
             </div>
             {isStarted ? (
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                A primeira temporada oficial já começou! Participe dos campeonatos, disputas de liga e evolua seu clube.
+                A primeira temporada oficial já começou! Participe dos campeonatos e evolua seu clube.
               </p>
             ) : (
               <>
@@ -66,7 +71,6 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
                   <div className="flex items-center gap-1.5 mt-1">
                     <Clock className="h-3 w-3 text-cyan-400" />
                     <span className="text-[10px] font-mono font-bold text-cyan-400">{timeLeft}</span>
-                    <span className="text-[8px] text-muted-foreground">para o início</span>
                   </div>
                 )}
               </>
@@ -76,7 +80,7 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
                 <Trophy className="h-2.5 w-2.5" /> Campeonatos
               </Badge>
               <Badge variant="secondary" className="text-[7px] gap-0.5">
-                <Zap className="h-2.5 w-2.5" /> Ligas 4 Divisões
+                <Zap className="h-2.5 w-2.5" /> 4 Divisões
               </Badge>
               <Badge variant="secondary" className="text-[7px] gap-0.5">
                 🌍 38 Países
