@@ -667,36 +667,53 @@ function TournamentCalendarTab({ rounds, matches, getTeamName, getTeamLogo }: {
               </div>
             </CardHeader>
             <CardContent className="px-2 pb-2 space-y-1">
-              {roundMatches.map(match => (
-                <div key={match.id} className={`rounded-lg border p-2 text-[9px] transition-colors ${match.status === 'played' ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
-                    <span className={`font-bold px-2 ${match.status === 'played' ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {match.status === 'played' ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
-                    </span>
-                    <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1.5">
-                    {match.scheduled_at && (
-                      <span className="text-[7px] text-muted-foreground">
-                        📅 {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              {roundMatches.map(match => {
+                const isPlayed = match.status === 'played';
+                const hasMatchData = !!match.match_data;
+
+                return (
+                  <div key={match.id} className={`rounded-lg border p-2 text-[9px] transition-colors ${isPlayed ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
+                      <span className={`font-bold px-2 ${isPlayed ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {isPlayed ? `${match.home_goals} - ${match.away_goals}` : 'vs'}
                       </span>
-                    )}
-                    <div className="flex gap-1 ml-auto">
-                      {match.status === 'played' && match.match_data && (
-                        <Button size="sm" variant="outline" className="h-5 px-1.5 text-[7px] gap-0.5 text-primary border-primary/30" onClick={(e) => { e.stopPropagation(); handleReplay(match); }}>
-                          <Tv className="h-2.5 w-2.5" /> Assistir Replay
-                        </Button>
+                      <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      {/* Show scheduled time only for unplayed matches */}
+                      {!isPlayed && match.scheduled_at && (
+                        <span className="text-[7px] text-muted-foreground">
+                          📅 {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       )}
-                      {match.status === 'scheduled' && (
-                        <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
-                          ⏳ Aguardando
-                        </Badge>
+                      {/* Show result info for played matches */}
+                      {isPlayed && (
+                        <span className="text-[7px] text-muted-foreground">
+                          ✅ Finalizado
+                        </span>
                       )}
+                      <div className="flex gap-1 ml-auto">
+                        {isPlayed && hasMatchData && (
+                          <Button size="sm" variant="outline" className="h-5 px-1.5 text-[7px] gap-0.5 text-primary border-primary/30" onClick={(e) => { e.stopPropagation(); handleReplay(match); }}>
+                            <Tv className="h-2.5 w-2.5" /> Assistir Replay
+                          </Button>
+                        )}
+                        {isPlayed && !hasMatchData && (
+                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
+                            ✅ Jogado
+                          </Badge>
+                        )}
+                        {!isPlayed && (
+                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
+                            ⏳ Aguardando
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         );

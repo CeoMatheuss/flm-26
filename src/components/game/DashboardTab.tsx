@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
+import { SeasonStartWidget } from './SeasonStartWidget';
 
 interface Props {
   club: Club;
@@ -146,6 +147,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </div>
         </CardContent>
       </Card>
+
+      {/* Season Start Widget */}
+      <SeasonStartWidget seasonNumber={season} />
 
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
