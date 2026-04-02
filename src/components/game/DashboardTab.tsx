@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
+import { SeasonStartWidget } from './SeasonStartWidget';
 
 interface Props {
   club: Club;
