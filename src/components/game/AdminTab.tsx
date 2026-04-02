@@ -1190,6 +1190,11 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminTournamentTab userId={userId} />
         </TabsContent>
 
+        {/* Active Leagues Tab */}
+        <TabsContent value="active_leagues" className="space-y-3 mt-3">
+          <ActiveLeaguesPanel />
+        </TabsContent>
+
         {/* Moderation Tab */}
         <TabsContent value="moderation" className="space-y-3 mt-3">
           <ModerationPanel onDeleteMessage={deleteMessage} />
