@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor, Trash2 } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, Trash2, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -8,6 +8,7 @@ export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
+  const [cacheCount, setCacheCount] = useState(0);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -15,6 +16,25 @@ export function SettingsTab() {
     root.classList.add(theme);
     localStorage.setItem('flm-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const keys = Object.keys(localStorage).filter(k =>
+      k.startsWith('flm26') || k.startsWith('game_state') || k.startsWith('flm_') ||
+      k.startsWith('flm-') || k.startsWith('offline') || k.startsWith('local_')
+    );
+    setCacheCount(keys.length);
+  }, []);
+
+  const clearAllOfflineData = () => {
+    const allKeys = Object.keys(localStorage);
+    const keysToRemove = allKeys.filter(k =>
+      k !== 'flm-theme' && // preserve theme
+      k !== 'sb-devjicsgksuxnnlkcliq-auth-token' // preserve auth
+    );
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    setCacheCount(0);
+    toast.success(`🗑️ ${keysToRemove.length} itens de cache removidos! Todos os dados offline foram apagados.`);
+  };
 
   return (
     <div className="space-y-4">
@@ -42,7 +62,6 @@ export function SettingsTab() {
                   : 'border-border hover:border-muted-foreground/30 hover:bg-accent/50'
               }`}
             >
-              {/* Mini preview */}
               <div className="rounded-lg overflow-hidden mb-2.5 border border-border/50">
                 <div className="bg-[hsl(220,30%,8%)] p-2 space-y-1.5">
                   <div className="flex items-center gap-1.5">
@@ -78,7 +97,6 @@ export function SettingsTab() {
                   : 'border-border hover:border-muted-foreground/30 hover:bg-accent/50'
               }`}
             >
-              {/* Mini preview */}
               <div className="rounded-lg overflow-hidden mb-2.5 border border-border/50">
                 <div className="bg-[hsl(210,60%,94%)] p-2 space-y-1.5">
                   <div className="flex items-center gap-1.5">
@@ -112,27 +130,29 @@ export function SettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Limpeza de dados offline */}
+      {/* Limpeza TOTAL de dados offline */}
       <Card className="border-destructive/20">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Trash2 className="h-4 w-4 text-destructive" />
-            Limpar Dados Offline
+            Limpar TODOS os Dados Offline
           </CardTitle>
-          <p className="text-[10px] text-muted-foreground">Remove cache local do navegador. Seus dados online (partidas, save, ranking) não são afetados.</p>
+          <p className="text-[10px] text-muted-foreground">
+            Remove <span className="font-bold">todo o cache local</span> do navegador. Seus dados online (partidas, save, ranking) não são afetados.
+          </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-destructive/5 rounded-lg p-2 border border-destructive/10">
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+            <p>Esta ação limpa todo o localStorage do jogo (exceto tema e autenticação). O jogo funciona 100% online — nenhum dado será perdido.</p>
+          </div>
           <Button
             variant="destructive"
             size="sm"
             className="w-full text-xs gap-2"
-            onClick={() => {
-              const keys = Object.keys(localStorage).filter(k => k.startsWith('flm26') || k.startsWith('game_state') || k.startsWith('flm_'));
-              keys.forEach(k => localStorage.removeItem(k));
-              toast.success(`🗑️ ${keys.length} itens de cache removidos!`);
-            }}
+            onClick={clearAllOfflineData}
           >
-            <Trash2 className="h-3.5 w-3.5" /> Limpar Cache Local
+            <Trash2 className="h-3.5 w-3.5" /> Limpar Todos os Dados Offline
           </Button>
         </CardContent>
       </Card>
