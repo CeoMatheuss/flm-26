@@ -201,7 +201,38 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     const st = location.state as {
       serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number };
       matchResult?: { matchId: string }; // legacy fallback (offline)
+      playTournamentMatch?: {
+        matchId: string;
+        tournamentMatchId: string;
+        opponentName: string;
+        opponentStrength: number;
+        isHome: boolean;
+        competition: string;
+      };
     } | null;
+
+    // Handle tournament match play request
+    if (st?.playTournamentMatch) {
+      const tm = st.playTournamentMatch;
+      navigate('/match', {
+        replace: true,
+        state: {
+          homeTeam: tm.isHome ? game.club.name : tm.opponentName,
+          awayTeam: tm.isHome ? tm.opponentName : game.club.name,
+          homePlayers: game.club.players,
+          homeStrength: Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length)),
+          awayStrength: tm.opponentStrength,
+          matchId: tm.matchId,
+          tactics: game.tactics || defaultTactics,
+          stadiumName: tm.isHome ? game.club.stadiumName : 'Estádio Adversário',
+          stadiumCapacity: tm.isHome ? (game.stadium?.capacity || 5000) : 10000,
+          isHome: tm.isHome,
+          competition: tm.competition,
+          tournamentMatchId: tm.tournamentMatchId,
+        },
+      });
+      return;
+    }
 
     if (st?.serverMatchResult) {
       // New path: result came from MatchResultLocker with real server goals
