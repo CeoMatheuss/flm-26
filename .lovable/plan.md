@@ -1,83 +1,110 @@
 
 
-# Plano: Melhorias Gerais, Correções e Redesign do Sininho
+# Plano: Melhorias Gerais — Responsividade, Admin Logs, Campeonato, Amistosos Online e Visualização de Times
 
-## 1 — Redesign completo do sistema de Notificações
+## Resumo
 
-**Problema**: O sininho atual mistura notificações dinâmicas (convites, vendas) com mensagens estáticas fixas ("Bem-vindo", "Guia Completo", "Auto-Save") que poluem a lista. Layout funcional mas pode ser mais limpo.
+Múltiplas melhorias: responsividade mobile, logs admin, redesign campeonato, amistosos online com convite aberto, visualização de time adversário, remoção da aba temporada/indicador dia, limpeza de dados, e hide do badge Lovable.
 
-**Solução**:
-- Remover notificações estáticas fixas (welcome, welcome_tips, welcome_online, welcome_save) — mostrar apenas na primeira vez via flag
-- Remover `localStorage` para readIds — usar apenas banco de dados
-- Redesign visual: header mais compacto com ícone branco, cards com visual mais limpo
-- Adicionar timestamps ("há 2 min", "ontem") em cada notificação
-- Agrupar por tempo (Hoje, Ontem, Anteriores) em vez de por tipo
-- Adicionar botão "Limpar tudo" para notificações lidas
-- Remover notificações redundantes (ct_tip, physio_tip, topscorer, best) que são informações do Dashboard
+---
 
-**Arquivos**: `NotificationBell.tsx`, `NotificationFullPage.tsx`
+## 1 — Responsividade Mobile (Dashboard + Admin)
 
-## 2 — Corrigir campeonato: partidas humanas com simulação 2D
+- **DashboardTab**: Stats cards em `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`, texto responsivo
+- **AdminTab**: Tabs scrollable horizontal no mobile, formulários em grid compacto, inputs full-width
+- **GameHeader**: Remover indicador `Dia X/30` da temporada (conforme pedido)
+- **TournamentDashboardCard**: Fontes maiores nos nomes de times e placares, badges mais legíveis
 
-**Problema**: 22 partidas scheduled no MUNDIAL, partidas humanas ficam esperando mas quando o horário chega, não há caminho claro para jogar com simulação 2D.
+## 2 — Logs Admin
 
-**Correções**:
-- No `TournamentDashboardCard`: quando uma partida do jogador tem status "scheduled" e `scheduled_at <= now`, mostrar botão "⚽ Jogar Agora" que navega direto para `/match` com os dados corretos
-- No `process-tournament-matches`: verificar que partidas com humanos nunca são auto-simuladas (já implementado, validar que funciona)
-- Garantir que o resultado da partida jogada manualmente é salvo de volta no `custom_tournament_matches` com status `played`
-- Corrigir avanço de fases: quando todas as partidas da rodada estão "played", gerar próxima rodada automaticamente
+- Criar tabela `admin_logs` com campos: `id`, `user_id`, `action`, `details (jsonb)`, `created_at`
+- RLS: apenas admins podem ler/inserir
+- Nova sub-aba "Logs" no AdminTab mostrando histórico de ações (criar torneio, banir, gift, etc.)
+- Inserir logs automaticamente nas ações admin existentes (ban, gift, torneio, manutenção)
 
-**Arquivos**: `TournamentDashboardCard.tsx`, `MatchDashboardCard.tsx`, `process-tournament-matches/index.ts`
+## 3 — Redesign Aba Campeonato
 
-## 3 — Corrigir sistema financeiro da Base
+- Aumentar tamanho de fontes: nomes de times 14px, placares 16px bold
+- Tabela de classificação com colunas mais espaçadas
+- Calendário de jogos com cards maiores e mais legíveis
+- Badge de status do jogo mais visível
 
-**Problema**: O `youthInvestment` é cobrado "a cada 4 jogos" mas não há registro financeiro automático quando a cobrança acontece. O valor padrão é R$100k.
+## 4 — Esconder Badge "Edit with Lovable"
 
-**Correções**:
-- No `useInfraState` ou `useGame`: quando jovens são gerados (a cada 4 rodadas), registrar a despesa financeira automaticamente via `addFinance('despesa', 'Base', youthInvestment, 'Investimento em Base')`
-- Na `FinanceTab`: mostrar "Investimento Base" como custo recorrente com o valor real configurado pelo jogador
-- Validar que o jogador tem budget suficiente antes de cobrar
+- Usar `publish_settings--set_badge_visibility` para esconder
 
-**Arquivos**: `useInfraState.ts`, `useGame.ts`, `FinanceTab.tsx`
+## 5 — Verificação de Email (Auth)
 
-## 4 — Remover imports e componentes desnecessários
+- Verificar configuração atual de confirmação de email
+- Garantir que `supabase.auth.signUp` envia código OTP corretamente
+- Melhorar UX da tela de OTP com instruções mais claras
 
-**Remoções**:
-- `FinanceTab.tsx`: remover imports não usados (`Heart`, `Dumbbell`, `ShoppingCart`, `Package`)
-- `NotificationBell.tsx`: limpar notificações estáticas fixas (5 notificações hardcoded)
-- `DashboardTab.tsx`: remover card de infraestrutura duplicado (já existe na linha 294 "Nível do estádio" que é redundante)
-- Remover `LeagueTab.tsx` e `LeaguesOverview.tsx` se não são usados no modo online
-- Remover `SeasonTab.tsx` referências offline
+## 6 — Limpar Dados do Jogo (Reset)
 
-**Arquivos**: Vários componentes
+- Adicionar botão "Resetar Jogo" nas Configurações que deleta o save do banco e recarrega
+- Migração para limpar dados existentes se necessário
 
-## 5 — Melhorar SeasonStartWidget
+## 7 — Remover Aba Temporada e Indicador de Dia
 
-**Problema**: Widget funcional mas pode ter mais informações úteis.
+- Remover entrada "Temporada" do `GameMenu.tsx`
+- Remover `SeasonTab` do `GameTabRouter.tsx`
+- Remover badge `Dia X/30` do `GameHeader.tsx`
 
-**Melhorias**:
-- Adicionar contagem de jogadores inscritos em campeonatos
-- Mostrar próxima partida agendada dentro do widget
-- Após 01/05/2026, mostrar resumo da temporada (posição no ranking, jogos disputados)
+## 8 — Amistosos Online Redesign
 
-**Arquivo**: `SeasonStartWidget.tsx`
+- Remover simulação local de amistoso (botão "Jogar Amistoso" no Dashboard que simula vs BOT)
+- Manter apenas modo online: buscar jogador, enviar convite
+- Adicionar opção de **convite aberto**: jogador publica que quer jogar, primeiro que aceita fecha o amistoso
+- Nova tabela `open_friendly_slots` com: `id`, `user_id`, `club_name`, `stadium_name`, `stadium_capacity`, `created_at`, `status`
+- No `OnlineFriendliesTab`: seção "Partidas Abertas" listando convites abertos de outros jogadores
+- Botão "Criar Partida Aberta" que publica disponibilidade
 
-## Ordem de execução
-1. Redesign Notificações (maior impacto visual)
-2. Correções financeiras da Base
-3. Correções do campeonato
-4. Limpeza de imports
-5. Melhorar SeasonStartWidget
+## 9 — Visualizar Time Adversário
 
-## Arquivos modificados
+- Ao clicar no nome de um clube (no jornal, campeonato, ranking, amistosos), abrir página/modal `ClubProfilePage` com:
+  - Escudo, nome, país, reputação
+  - Infraestrutura (níveis)
+  - Elenco completo (carregado via `game_saves` ou `league_squads`)
+  - Estatísticas do clube
+- Prop `onViewClub` já existe em alguns componentes — expandir para jornal e ranking
+- Criar rota ou modal dedicado que carrega dados do clube via save público
+
+## 10 — Melhorar Jornal
+
+- No `NewspaperFullPage`: ao lado do nome do clube em cada notícia, tornar clicável para abrir perfil do clube
+- Adicionar filtros por categoria (Mercado, Resultado, etc.)
+
+---
+
+## Arquivos Modificados/Criados
+
 | Arquivo | Ação |
 |---------|------|
-| `NotificationBell.tsx` | Reescrever — remover estáticas, limpar lógica |
-| `NotificationFullPage.tsx` | Redesign — agrupar por tempo, visual limpo |
-| `useInfraState.ts` | Adicionar cobrança financeira ao gerar jovens |
-| `useGame.ts` | Conectar addFinance ao fluxo de base |
-| `FinanceTab.tsx` | Limpar imports, ajustar custo base |
-| `TournamentDashboardCard.tsx` | Corrigir botão jogar + avanço fases |
-| `SeasonStartWidget.tsx` | Enriquecer com dados do jogador |
-| `DashboardTab.tsx` | Remover redundâncias |
+| `src/components/game/DashboardTab.tsx` | Responsividade mobile |
+| `src/components/game/AdminTab.tsx` | Responsividade + logs |
+| `src/components/game/GameHeader.tsx` | Remover Dia X/30 |
+| `src/components/game/GameMenu.tsx` | Remover aba Temporada |
+| `src/components/game/GameTabRouter.tsx` | Remover SeasonTab, add ClubProfilePage |
+| `src/components/game/TournamentDashboardCard.tsx` | Fontes maiores, design |
+| `src/components/game/OnlineFriendliesTab.tsx` | Convite aberto, remover simulação local |
+| `src/components/game/MatchDashboardCard.tsx` | Remover botão amistoso local |
+| `src/components/game/NewspaperFullPage.tsx` | Clique no clube, filtros |
+| `src/components/game/ClubProfilePage.tsx` | Expandir para visualização pública |
+| `src/pages/Auth.tsx` | Melhorar UX de verificação |
+| `src/components/game/SettingsTab.tsx` | Botão reset game |
+| Migração SQL | Tabela `admin_logs`, `open_friendly_slots` |
+
+## Ordem de Execução
+
+1. Migração SQL (admin_logs + open_friendly_slots)
+2. Remover aba temporada + indicador dia
+3. Responsividade Dashboard + Admin
+4. Logs admin
+5. Redesign campeonato (fontes)
+6. Amistosos online com convite aberto
+7. Visualização de time adversário
+8. Melhorar jornal
+9. Auth/OTP melhorias
+10. Hide badge Lovable
+11. Reset game button
 
