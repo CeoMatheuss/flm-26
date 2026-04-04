@@ -633,19 +633,76 @@ function BotSquadView({ squad }: { squad: any[] }) {
   );
 }
 
-/* ── TOURNAMENT CALENDAR TAB WITH REPLAY ─────────────── */
+/* ── TOURNAMENT CALENDAR TAB WITH REPLAY + PLAY ─────────────── */
 
-function TournamentCalendarTab({ rounds, matches, getTeamName, getTeamLogo }: {
+function TournamentCalendarTab({ rounds, matches, teams, getTeamName, getTeamLogo, tournamentName }: {
   rounds: number[];
   matches: TournamentMatch[];
+  teams: TournamentTeam[];
   getTeamName: (id: string) => string;
   getTeamLogo: (id: string) => string;
+  tournamentName: string;
 }) {
   const navigate = useNavigate();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setCurrentUserId(data.session?.user?.id || null);
+    });
+  }, []);
 
   const handleReplay = (match: TournamentMatch) => {
     if (!match.match_data) return;
     navigate('/replay', { state: { matchData: match.match_data, homeTeamName: getTeamName(match.home_team_id), awayTeamName: getTeamName(match.away_team_id), homeGoals: match.home_goals, awayGoals: match.away_goals } });
+  };
+
+  const handlePlayMatch = (match: TournamentMatch) => {
+    const homeTeamData = teams.find(t => t.id === match.home_team_id);
+    const awayTeamData = teams.find(t => t.id === match.away_team_id);
+    if (!homeTeamData || !awayTeamData) return;
+
+    // Determine which side the player is on
+    const isPlayerHome = homeTeamData.user_id === currentUserId;
+    const opponentTeam = isPlayerHome ? awayTeamData : homeTeamData;
+
+    // Navigate to match page — the game_saves data (players, tactics etc) 
+    // is loaded on the Index page, so we navigate back there with a trigger
+    navigate('/', {
+      replace: true,
+      state: {
+        playTournamentMatch: {
+          matchId: match.id,
+          tournamentMatchId: match.id,
+          opponentName: opponentTeam.club_name,
+          opponentStrength: opponentTeam.bot_strength || 60,
+          isHome: isPlayerHome,
+          competition: tournamentName,
+        },
+      },
+    });
+  };
+
+  // Check if current user is involved in a match
+  const isUserMatch = (match: TournamentMatch): boolean => {
+    if (!currentUserId) return false;
+    const homeTeam = teams.find(t => t.id === match.home_team_id);
+    const awayTeam = teams.find(t => t.id === match.away_team_id);
+    return (homeTeam?.user_id === currentUserId) || (awayTeam?.user_id === currentUserId);
+  };
+
+  const isMatchReady = (match: TournamentMatch): boolean => {
+    if (!match.scheduled_at) return false;
+    return new Date(match.scheduled_at).getTime() <= Date.now();
+  };
+
+  const getTimeUntil = (scheduledAt: string): string => {
+    const diff = new Date(scheduledAt).getTime() - Date.now();
+    if (diff <= 0) return 'AGORA!';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+    return `${hours}h ${mins}min`;
   };
 
   return (
@@ -670,9 +727,11 @@ function TournamentCalendarTab({ rounds, matches, getTeamName, getTeamLogo }: {
               {roundMatches.map(match => {
                 const isPlayed = match.status === 'played';
                 const hasMatchData = !!match.match_data;
+                const userInvolved = isUserMatch(match);
+                const ready = !isPlayed && match.scheduled_at && isMatchReady(match);
 
                 return (
-                  <div key={match.id} className={`rounded-lg border p-2 text-[9px] transition-colors ${isPlayed ? 'border-success/15 bg-success/5' : 'border-border/20 hover:bg-accent/20'}`}>
+                  <div key={match.id} className={`rounded-lg border p-2 text-[9px] transition-colors ${isPlayed ? 'border-success/15 bg-success/5' : userInvolved ? 'border-primary/30 bg-primary/5' : 'border-border/20 hover:bg-accent/20'}`}>
                     <div className="flex items-center justify-between">
                       <span className="font-medium truncate max-w-[80px]">{getTeamLogo(match.home_team_id)} {getTeamName(match.home_team_id)}</span>
                       <span className={`font-bold px-2 ${isPlayed ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -681,33 +740,45 @@ function TournamentCalendarTab({ rounds, matches, getTeamName, getTeamLogo }: {
                       <span className="font-medium truncate max-w-[80px] text-right">{getTeamName(match.away_team_id)} {getTeamLogo(match.away_team_id)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-1.5">
-                      {/* Show scheduled time only for unplayed matches */}
-                      {!isPlayed && match.scheduled_at && (
+                      {/* Status info */}
+                      {isPlayed && (
+                        <span className="text-[7px] text-muted-foreground">✅ Finalizado</span>
+                      )}
+                      {!isPlayed && userInvolved && ready && (
+                        <span className="text-[7px] text-success font-bold animate-pulse">⚽ Pronto para jogar!</span>
+                      )}
+                      {!isPlayed && userInvolved && !ready && match.scheduled_at && (
+                        <span className="text-[7px] text-muted-foreground flex items-center gap-0.5">
+                          <Clock className="h-2.5 w-2.5" /> {getTimeUntil(match.scheduled_at)}
+                        </span>
+                      )}
+                      {!isPlayed && !userInvolved && match.scheduled_at && (
                         <span className="text-[7px] text-muted-foreground">
                           📅 {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
-                      {/* Show result info for played matches */}
-                      {isPlayed && (
-                        <span className="text-[7px] text-muted-foreground">
-                          ✅ Finalizado
-                        </span>
-                      )}
+
                       <div className="flex gap-1 ml-auto">
+                        {/* PLAY button for human matches that are ready */}
+                        {!isPlayed && userInvolved && ready && (
+                          <Button size="sm" variant="default" className="h-5 px-2 text-[7px] gap-0.5 font-bold" onClick={(e) => { e.stopPropagation(); handlePlayMatch(match); }}>
+                            <Gamepad2 className="h-2.5 w-2.5" /> Jogar
+                          </Button>
+                        )}
+                        {/* Replay button for played matches */}
                         {isPlayed && hasMatchData && (
                           <Button size="sm" variant="outline" className="h-5 px-1.5 text-[7px] gap-0.5 text-primary border-primary/30" onClick={(e) => { e.stopPropagation(); handleReplay(match); }}>
-                            <Tv className="h-2.5 w-2.5" /> Assistir Replay
+                            <Tv className="h-2.5 w-2.5" /> Replay
                           </Button>
                         )}
                         {isPlayed && !hasMatchData && (
-                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
-                            ✅ Jogado
-                          </Badge>
+                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">✅ Jogado</Badge>
                         )}
-                        {!isPlayed && (
-                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">
-                            ⏳ Aguardando
-                          </Badge>
+                        {!isPlayed && !userInvolved && (
+                          <Badge variant="secondary" className="text-[7px] h-5 px-1.5">⏳ Aguardando</Badge>
+                        )}
+                        {!isPlayed && userInvolved && !ready && (
+                          <Badge variant="outline" className="text-[7px] h-5 px-1.5 text-primary border-primary/30">🎮 Seu Jogo</Badge>
                         )}
                       </div>
                     </div>
