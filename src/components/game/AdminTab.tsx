@@ -1215,6 +1215,66 @@ export function AdminTab({ userId, isFounder }: Props) {
   );
 }
 
+function AdminLogsPanel() {
+  const [logs, setLogs] = useState<Array<{ id: string; user_id: string; action: string; details: any; created_at: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const { data } = await supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(200);
+      if (data) setLogs(data as any[]);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const actionColors: Record<string, string> = {
+    ban: 'text-red-400',
+    unban: 'text-emerald-400',
+    gift: 'text-yellow-400',
+    tournament_create: 'text-blue-400',
+    tournament_start: 'text-emerald-400',
+    maintenance: 'text-orange-400',
+    premium_activate: 'text-yellow-400',
+    player_generate: 'text-purple-400',
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" /> Logs de Atividade ({logs.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-4"><RefreshCw className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></div>
+        ) : logs.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Nenhum log registrado</p>
+        ) : (
+          <ScrollArea className="max-h-[500px]">
+            <div className="space-y-1.5">
+              {logs.map(log => (
+                <div key={log.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/20 border border-border/30 text-[10px]">
+                  <Activity className={`h-3 w-3 mt-0.5 shrink-0 ${actionColors[log.action] || 'text-muted-foreground'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold">{log.action}</p>
+                    {log.details && typeof log.details === 'object' && (
+                      <p className="text-muted-foreground truncate">{JSON.stringify(log.details).slice(0, 100)}</p>
+                    )}
+                    <p className="text-muted-foreground/60">{log.user_id.slice(0, 8)}... • {new Date(log.created_at).toLocaleString('pt-BR')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ModerationPanel({ onDeleteMessage }: { onDeleteMessage: (id: string) => Promise<void> }) {
   const [messages, setMessages] = useState<Array<{ id: string; content: string; sender_name: string; created_at: string; user_id: string }>>([]);
   const [loading, setLoading] = useState(false);
