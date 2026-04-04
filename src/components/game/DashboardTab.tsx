@@ -149,7 +149,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       </Card>
 
       {/* Season Start Widget */}
-      <SeasonStartWidget seasonNumber={season} />
+      <SeasonStartWidget seasonNumber={season} userId={userId} />
 
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
@@ -289,10 +289,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                       <span className="text-[9px] font-bold w-6 text-right">Lv.{item.value}</span>
                     </div>
                   ))}
-                </div>
-                <div className="flex items-center justify-between text-[9px] bg-accent/30 rounded-lg px-2 py-1.5">
-                  <span className="text-muted-foreground">Nível do estádio</span>
-                  <span className="font-bold">Lv.{infrastructure.stadium?.level || 1}</span>
                 </div>
               </>
             ) : (

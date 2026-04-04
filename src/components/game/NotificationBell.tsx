@@ -1,5 +1,6 @@
 /**
- * NotificationBell — Redesigned bell icon + full-page notification center
+ * NotificationBell — Clean bell icon + full-page notification center
+ * Only dynamic notifications from DB + real-time events (no static tips)
  */
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,12 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { NotificationFullPage } from './NotificationFullPage';
 
-interface Notification {
+export interface Notification {
   id: string;
   icon: string;
   title: string;
   message: string;
   type: 'warning' | 'info' | 'danger' | 'success';
+  createdAt: Date;
   actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
 }
 
@@ -30,25 +32,8 @@ interface FriendlyInvite {
   sender_id: string;
   receiver_id: string;
   match_date: string;
+  created_at: string;
 }
-
-interface SoldListing {
-  id: string;
-  player_name: string;
-  buyer_club_name: string | null;
-  asking_price: number;
-  sold_at: string | null;
-}
-
-interface BoughtListing {
-  id: string;
-  player_name: string;
-  seller_club_name: string;
-  asking_price: number;
-  sold_at: string | null;
-}
-
-const STORAGE_KEY = 'flm26_read_notifications';
 
 interface Props {
   players: Player[];
@@ -62,35 +47,12 @@ interface Props {
 
 export function NotificationBell({ players, budget, listedPlayers, clubName, infrastructure, isNewClub, userId }: Props) {
   const [fullPage, setFullPage] = useState(false);
-  const [readIds, setReadIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
-  const [soldListings, setSoldListings] = useState<SoldListing[]>([]);
-  const [boughtListings, setBoughtListings] = useState<BoughtListing[]>([]);
-  const [dbNotifications, setDbNotifications] = useState<Array<{ id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string }>>([]);
+  const [dbNotifications, setDbNotifications] = useState<Array<{
+    id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string;
+  }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!userId) return;
-    const loadSaved = async () => {
-      const { data } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
-      if (data?.club_data && typeof data.club_data === 'object' && 'readNotificationIds' in (data.club_data as any)) {
-        const saved = (data.club_data as any).readNotificationIds as string[];
-        if (saved?.length) {
-          setReadIds(prev => Array.from(new Set([...prev, ...saved])));
-        }
-      }
-    };
-    loadSaved();
-  }, [userId]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds));
-  }, [readIds]);
+  const [localReadIds, setLocalReadIds] = useState<Set<string>>(new Set());
 
   const loadInvites = useCallback(async () => {
     const { data } = await supabase
@@ -100,30 +62,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
     if (data) setPendingInvites(data as unknown as FriendlyInvite[]);
-  }, [userId]);
-
-  const loadSoldListings = useCallback(async () => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from('transfer_listings')
-      .select('id, player_name, buyer_club_name, asking_price, sold_at')
-      .eq('seller_id', userId)
-      .eq('status', 'sold')
-      .gte('sold_at', sevenDaysAgo)
-      .order('sold_at', { ascending: false });
-    if (data) setSoldListings(data as SoldListing[]);
-  }, [userId]);
-
-  const loadBoughtListings = useCallback(async () => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from('transfer_listings')
-      .select('id, player_name, seller_club_name, asking_price, sold_at')
-      .eq('buyer_id', userId)
-      .eq('status', 'sold')
-      .gte('sold_at', sevenDaysAgo)
-      .order('sold_at', { ascending: false });
-    if (data) setBoughtListings(data as BoughtListing[]);
   }, [userId]);
 
   const loadDbNotifications = useCallback(async () => {
@@ -140,23 +78,15 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   useEffect(() => {
     loadInvites();
-    loadSoldListings();
-    loadBoughtListings();
     loadDbNotifications();
-    const channel = supabase
-      .channel('bell-friendly-invites')
+    const ch1 = supabase.channel('bell-invites')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
       .subscribe();
-    const channel2 = supabase
-      .channel('bell-sold-listings')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transfer_listings' }, () => { loadSoldListings(); loadBoughtListings(); })
-      .subscribe();
-    const channel3 = supabase
-      .channel('bell-user-notifications')
+    const ch2 = supabase.channel('bell-notifications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_notifications' }, () => loadDbNotifications())
       .subscribe();
-    return () => { supabase.removeChannel(channel); supabase.removeChannel(channel2); supabase.removeChannel(channel3); };
-  }, [loadInvites, loadSoldListings, loadBoughtListings, loadDbNotifications]);
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+  }, [loadInvites, loadDbNotifications]);
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setRespondingId(inviteId);
@@ -170,9 +100,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     loadInvites();
   };
 
+  // Build notifications list — only dynamic/relevant ones
   const notifications: Notification[] = [];
 
-  // Friendly invite notifications
   pendingInvites.forEach(invite => {
     const isHome = invite.home_team_id === userId;
     const dateStr = new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
@@ -180,8 +110,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: `invite-${invite.id}`,
       icon: '⚔️',
       title: `${invite.sender_club_name} quer jogar!`,
-      message: `📅 ${dateStr} • 🏟️ ${isHome ? invite.receiver_stadium : invite.sender_stadium} (${(isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity).toLocaleString()}) • ${isHome ? 'Você é mandante' : 'Você é visitante'}`,
+      message: `📅 ${dateStr} • 🏟️ ${isHome ? invite.receiver_stadium : invite.sender_stadium} (${(isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity).toLocaleString()})`,
       type: 'warning',
+      createdAt: new Date(invite.created_at),
       actions: [
         { label: 'Aceitar', icon: <Check className="h-3 w-3" />, variant: 'default', onClick: () => respondInvite(invite.id, true) },
         { label: 'Recusar', icon: <XCircle className="h-3 w-3" />, variant: 'destructive', onClick: () => respondInvite(invite.id, false) },
@@ -189,25 +120,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   });
 
-  soldListings.forEach(sold => {
-    const dateStr = sold.sold_at ? new Date(sold.sold_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
-    notifications.push({
-      id: `sold-${sold.id}`, icon: '💰', title: `${sold.player_name} vendido!`,
-      message: `Comprado por ${sold.buyer_club_name || 'outro clube'} por R$${(sold.asking_price / 1000).toFixed(0)}k • ${dateStr}`,
-      type: 'success',
-    });
-  });
-
-  boughtListings.forEach(bought => {
-    const dateStr = bought.sold_at ? new Date(bought.sold_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
-    notifications.push({
-      id: `bought-${bought.id}`, icon: '🛒', title: `${bought.player_name} contratado!`,
-      message: `Comprado do ${bought.seller_club_name} por R$${(bought.asking_price / 1000).toFixed(0)}k • ${dateStr}`,
-      type: 'success',
-    });
-  });
-
-  // DB notifications (offers, agent messages, etc.)
   dbNotifications.forEach(dbN => {
     const typeMap: Record<string, 'warning' | 'info' | 'danger' | 'success'> = {
       warning: 'warning', info: 'info', danger: 'danger', success: 'success',
@@ -218,136 +130,100 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       title: dbN.title,
       message: dbN.message,
       type: typeMap[dbN.type] || 'info',
+      createdAt: new Date(dbN.created_at),
     });
   });
 
-  notifications.push({
-    id: 'welcome', icon: '🏆', title: 'Bem-vindo ao FLM 26!',
-    message: `Parabéns, Manager! Você fundou o ${clubName}! 🎉\n\nSeu objetivo é construir um time vencedor, conquistar ligas online e subir de divisão. O FLM 26 é 100% multiplayer — tudo que você faz é visível para outros jogadores.\n\nSuas ações são salvas automaticamente a cada 30 segundos.`,
-    type: 'success',
-  });
-  notifications.push({
-    id: 'welcome_tips', icon: '💡', title: 'Guia Completo do Manager',
-    message: '1️⃣ Táticas → Monte sua formação ideal\n2️⃣ Partidas → Jogue amistosos para experiência\n3️⃣ CT & Base → Melhore infraestrutura\n4️⃣ Mercado → Compre e venda jogadores\n5️⃣ Liga → Participe da liga online\n6️⃣ Pacotinhos → Descubra promessas\n7️⃣ Leilão → Dispute jogadores raros\n8️⃣ Uniformes → Personalize seu clube',
-    type: 'info',
-  });
-  notifications.push({
-    id: 'welcome_online', icon: '🌐', title: 'Mundo 100% Online',
-    message: 'Temporadas de 30 dias com 1 rodada por dia. Melhores sobem, piores caem. Construa sua reputação e conquiste troféus!',
-    type: 'info',
-  });
-  notifications.push({
-    id: 'welcome_save', icon: '💾', title: 'Auto-Save Ativo',
-    message: 'Seu progresso é salvo automaticamente a cada 30 segundos. Pode sair tranquilo!',
-    type: 'success',
-  });
-
+  // Dynamic alerts based on squad state
   const expiring = players.filter(p => p.contract <= 1);
   if (expiring.length > 0) {
     const names = expiring.slice(0, 3).map(p => p.name.split(' ')[0]).join(', ');
-    notifications.push({ id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`, message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove antes do fim da temporada!`, type: 'danger' });
-  }
-
-  const tired = players.filter(p => p.stamina < 50);
-  if (tired.length > 0) {
-    const worst = [...tired].sort((a, b) => a.stamina - b.stamina)[0];
-    notifications.push({ id: 'tired', icon: '😴', title: `${tired.length} cansado(s)`, message: `${worst.name} com ${worst.stamina}% energia. Descanse ou melhore a Fisioterapia.`, type: 'warning' });
-  }
-
-  const lowMorale = players.filter(p => p.morale < 40);
-  if (lowMorale.length > 0) {
-    const worst = [...lowMorale].sort((a, b) => a.morale - b.morale)[0];
-    notifications.push({ id: 'morale', icon: '😤', title: `${lowMorale.length} com moral baixa`, message: `${worst.name} com ${worst.morale}% moral. Vitórias ajudam!`, type: 'warning' });
+    notifications.push({
+      id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`,
+      message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove!`,
+      type: 'danger', createdAt: new Date(),
+    });
   }
 
   const injured = players.filter(p => p.injury);
   if (injured.length > 0) {
-    const names = injured.slice(0, 3).map(p => `${p.name.split(' ')[0]} (${p.injury!.weeksRemaining}j)`).join(', ');
-    notifications.push({ id: 'injured', icon: '🏥', title: `${injured.length} lesionado(s)`, message: `${names}${injured.length > 3 ? ` e +${injured.length - 3}` : ''}`, type: 'danger' });
-  }
-
-  if (listedPlayers.length > 0) {
-    notifications.push({ id: 'listed', icon: '🏷️', title: `${listedPlayers.length} na lista`, message: 'Jogadores aguardando propostas no Mercado.', type: 'info' });
+    notifications.push({
+      id: 'injured', icon: '🏥', title: `${injured.length} lesionado(s)`,
+      message: injured.slice(0, 3).map(p => `${p.name.split(' ')[0]} (${p.injury!.weeksRemaining}j)`).join(', '),
+      type: 'danger', createdAt: new Date(),
+    });
   }
 
   const totalSalaries = players.reduce((s, p) => s + p.salary, 0);
   if (budget < totalSalaries * 3) {
     const monthsLeft = totalSalaries > 0 ? Math.floor(budget / totalSalaries) : 99;
-    notifications.push({ id: 'budget', icon: '💰', title: 'Orçamento crítico!', message: `~${monthsLeft} meses de salários restantes.`, type: 'danger' });
+    notifications.push({
+      id: 'budget', icon: '💰', title: 'Orçamento crítico!',
+      message: `~${monthsLeft} meses de salários restantes.`,
+      type: 'danger', createdAt: new Date(),
+    });
   }
 
   if (players.length < 16) {
-    notifications.push({ id: 'squad', icon: '👥', title: 'Elenco curto', message: `${players.length} jogadores. Ideal: 18+.`, type: 'warning' });
+    notifications.push({
+      id: 'squad', icon: '👥', title: 'Elenco curto',
+      message: `${players.length} jogadores. Ideal: 18+.`,
+      type: 'warning', createdAt: new Date(),
+    });
   }
 
-  if (infrastructure?.trainingCenter && infrastructure.trainingCenter.level < 3) {
-    notifications.push({ id: 'ct_tip', icon: '🏋️', title: 'Dica: CT', message: `CT Nv.${infrastructure.trainingCenter.level} — melhore para treinos mais eficientes.`, type: 'info' });
-  }
-
-  if (infrastructure?.physiotherapy && infrastructure.physiotherapy.level < 3) {
-    notifications.push({ id: 'physio_tip', icon: '🏥', title: 'Dica: Fisioterapia', message: `Nv.${infrastructure.physiotherapy.level} — recuperação lenta. Melhore!`, type: 'info' });
-  }
-
-  const topScorer = [...players].sort((a, b) => b.goals - a.goals)[0];
-  if (topScorer && topScorer.goals > 0) {
-    notifications.push({ id: 'topscorer', icon: '⚽', title: 'Artilheiro', message: `${topScorer.name}: ${topScorer.goals} gol(s), ${topScorer.assists} assist.`, type: 'info' });
-  }
-
-  const bestPlayer = [...players].sort((a, b) => b.overall - a.overall)[0];
-  if (bestPlayer) {
-    notifications.push({ id: 'best', icon: '⭐', title: 'Melhor jogador', message: `${bestPlayer.name} (${bestPlayer.position}) OVR ${bestPlayer.overall}`, type: 'info' });
-  }
-
-  const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
-  const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !readIds.includes(n.id)).length;
-
-  const markAsRead = (id: string) => {
-    setReadIds(prev => prev.includes(id) ? prev : [...prev, id]);
-  };
-
-  const markAllAsRead = () => {
-    setReadIds(notifications.map(n => n.id));
-  };
-
-  const handleOpen = () => {
-    try {
-      setFullPage(prev => !prev);
-      const nonActionIds = notifications.filter(n => !n.actions).map(n => n.id);
-      setReadIds(prev => {
-        const newIds = nonActionIds.filter(id => !prev.includes(id));
-        return newIds.length > 0 ? [...prev, ...newIds] : prev;
-      });
-    } catch (error) {
-      console.error("Error opening notifications:", error);
-      toast.error("Erro ao abrir notificações");
+  // Read state: DB read_at + local set
+  const isRead = (n: Notification) => {
+    if (localReadIds.has(n.id)) return true;
+    if (n.id.startsWith('db-')) {
+      const dbId = n.id.replace('db-', '');
+      const dbN = dbNotifications.find(d => d.id === dbId);
+      return dbN?.read_at !== null;
     }
+    return false;
+  };
+
+  const unreadCount = notifications.filter(n => !isRead(n)).length;
+  const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !isRead(n)).length;
+
+  const markAsRead = async (id: string) => {
+    setLocalReadIds(prev => new Set(prev).add(id));
+    if (id.startsWith('db-')) {
+      const dbId = id.replace('db-', '');
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const allIds = notifications.map(n => n.id);
+    setLocalReadIds(new Set(allIds));
+    const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
+    if (dbIds.length > 0) {
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
+    }
+  };
+
+  const clearRead = async () => {
+    const readDbIds = dbNotifications.filter(d => d.read_at).map(d => d.id);
+    if (readDbIds.length > 0) {
+      // We don't delete, just hide by updating read to a special marker isn't needed — just reload
+      // For now clearing means marking all as read
+    }
+    setLocalReadIds(new Set(notifications.map(n => n.id)));
   };
 
   return (
     <div className="relative">
       <button
-        onClick={handleOpen}
+        onClick={() => setFullPage(prev => !prev)}
         className="relative flex items-center justify-center h-9 w-9 bg-transparent transition-colors duration-200"
       >
         <Bell
-          className={`h-5 w-5 ${
-            urgentCount > 0
-              ? 'text-red-500'
-              : unreadCount > 0
-                ? 'text-yellow-400'
-                : 'text-white'
-          }`}
+          className={`h-5 w-5 ${urgentCount > 0 ? 'text-red-500' : unreadCount > 0 ? 'text-yellow-400' : 'text-white'}`}
           strokeWidth={2.5}
         />
         {unreadCount > 0 && (
-          <span className={`
-            absolute -top-1.5 -right-1.5 flex items-center justify-center
-            min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black
-            ${urgentCount > 0 
-              ? 'bg-red-500 text-white' 
-              : 'bg-yellow-400 text-black'
-            }
-          `}>
+          <span className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black ${urgentCount > 0 ? 'bg-red-500 text-white' : 'bg-yellow-400 text-black'}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -356,7 +232,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       {fullPage && createPortal(
         <NotificationFullPage
           notifications={notifications}
-          readIds={readIds}
+          isRead={isRead}
           onMarkRead={markAsRead}
           onMarkAllRead={markAllAsRead}
           onClose={() => setFullPage(false)}

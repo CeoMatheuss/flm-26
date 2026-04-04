@@ -2,7 +2,7 @@ import { FinanceEntry } from '@/types/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, DollarSign, Users, Landmark, Dumbbell, Heart, GraduationCap, Eye, Handshake, ShoppingCart, Ticket, Trophy, Wallet, Building2, Package } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Landmark, GraduationCap, Eye, Handshake, Ticket, Trophy, Wallet, Building2 } from 'lucide-react';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Sponsor, sponsorTypeLabels } from '@/types/sponsor';
 import { Player, Scout } from '@/types/game';

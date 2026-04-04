@@ -56,6 +56,21 @@ export function useInfraState(initialState: any, userId?: string) {
     }
   }, [infrastructure, userId]);
 
+  const chargeYouthInvestment = useCallback((
+    clubBudget: number,
+    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    deductBudget: (cost: number) => void,
+  ) => {
+    if (youthInvestment <= 0) return false;
+    if (clubBudget < youthInvestment) {
+      toast.error('Orçamento insuficiente para investimento na Base!');
+      return false;
+    }
+    deductBudget(youthInvestment);
+    addFinance('despesa', 'Base', youthInvestment, `Investimento Base (ciclo de geração)`);
+    return true;
+  }, [youthInvestment]);
+
   const promoteYouth = useCallback((youthId: string, addPlayerToClub: (p: any) => void) => {
     const prospect = youthProspects.find(p => p.id === youthId);
     if (!prospect) return;
@@ -91,6 +106,6 @@ export function useInfraState(initialState: any, userId?: string) {
     youthInvestment, setYouthInvestment, season, setSeason,
     ctRooms, setCTRooms, achievements, setAchievements,
     lastMatchReport, setLastMatchReport, youthPromotedCount, setYouthPromotedCount,
-    upgradeFacility, promoteYouth, upgradeCTRoom,
+    upgradeFacility, promoteYouth, upgradeCTRoom, chargeYouthInvestment,
   };
 }

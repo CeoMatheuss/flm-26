@@ -1,20 +1,23 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Trophy, Zap, Clock } from 'lucide-react';
+import { CalendarDays, Trophy, Zap, Clock, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   seasonNumber?: number;
+  userId?: string;
 }
 
-export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
+export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isStarted, setIsStarted] = useState(false);
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [nextMatch, setNextMatch] = useState<{ opponent: string; time: string } | null>(null);
 
   useEffect(() => {
     const update = () => {
-      // Target: May 1, 2026 at midnight (local time)
-      const target = new Date(2026, 4, 1, 0, 0, 0); // month is 0-indexed
+      const target = new Date(2026, 4, 1, 0, 0, 0);
       const now = new Date();
       const diff = target.getTime() - now.getTime();
       
@@ -35,6 +38,51 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    const loadExtra = async () => {
+      // Count total tournament enrollments
+      const { count } = await supabase
+        .from('custom_tournament_teams')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_bot', false);
+      if (count !== null) setEnrolledCount(count);
+
+      // Next scheduled match for user
+      const { data: teams } = await supabase
+        .from('custom_tournament_teams')
+        .select('id')
+        .eq('user_id', userId);
+      
+      if (teams && teams.length > 0) {
+        const teamIds = teams.map(t => t.id);
+        const { data: matches } = await supabase
+          .from('custom_tournament_matches')
+          .select('scheduled_at, home_team_id, away_team_id')
+          .eq('status', 'scheduled')
+          .or(teamIds.map(id => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(','))
+          .order('scheduled_at', { ascending: true })
+          .limit(1);
+        
+        if (matches && matches.length > 0) {
+          const m = matches[0];
+          const oppId = teamIds.includes(m.home_team_id) ? m.away_team_id : m.home_team_id;
+          const { data: oppTeam } = await supabase
+            .from('custom_tournament_teams')
+            .select('club_name')
+            .eq('id', oppId)
+            .maybeSingle();
+          
+          setNextMatch({
+            opponent: oppTeam?.club_name || '???',
+            time: m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'A definir',
+          });
+        }
+      }
+    };
+    loadExtra();
+  }, [userId]);
 
   if (seasonNumber > 1) return null;
 
@@ -59,9 +107,16 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
               </Badge>
             </div>
             {isStarted ? (
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                A primeira temporada oficial já começou! Participe dos campeonatos e evolua seu clube.
-              </p>
+              <div className="space-y-1 mt-0.5">
+                <p className="text-[10px] text-muted-foreground">
+                  A primeira temporada oficial já começou!
+                </p>
+                {nextMatch && (
+                  <p className="text-[10px] text-foreground">
+                    ⚽ Próximo jogo: <span className="font-bold">{nextMatch.opponent}</span> — {nextMatch.time}
+                  </p>
+                )}
+              </div>
             ) : (
               <>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -82,9 +137,11 @@ export function SeasonStartWidget({ seasonNumber = 1 }: Props) {
               <Badge variant="secondary" className="text-[7px] gap-0.5">
                 <Zap className="h-2.5 w-2.5" /> 4 Divisões
               </Badge>
-              <Badge variant="secondary" className="text-[7px] gap-0.5">
-                🌍 38 Países
-              </Badge>
+              {enrolledCount > 0 && (
+                <Badge variant="secondary" className="text-[7px] gap-0.5">
+                  <Users className="h-2.5 w-2.5" /> {enrolledCount} inscritos
+                </Badge>
+              )}
             </div>
           </div>
         </div>
