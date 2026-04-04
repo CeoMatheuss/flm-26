@@ -225,7 +225,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           matchId: tm.matchId,
           tactics: game.tactics || defaultTactics,
           stadiumName: tm.isHome ? game.club.stadiumName : 'Estádio Adversário',
-          stadiumCapacity: tm.isHome ? (game.stadium?.capacity || 5000) : 10000,
+          stadiumCapacity: tm.isHome ? 10000 : 10000,
           isHome: tm.isHome,
           competition: tm.competition,
           tournamentMatchId: tm.tournamentMatchId,
