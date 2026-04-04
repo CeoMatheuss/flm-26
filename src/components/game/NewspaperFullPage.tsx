@@ -110,7 +110,9 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
-  const visibleEntries = showMore ? entries : entries.slice(0, 30);
+  const allCategories = [...new Set(entries.map(e => e.category))].filter(Boolean).sort();
+  const filteredEntries = categoryFilter ? entries.filter(e => e.category === categoryFilter) : entries;
+  const visibleEntries = showMore ? filteredEntries : filteredEntries.slice(0, 30);
 
   return (
     <div className="space-y-3">
