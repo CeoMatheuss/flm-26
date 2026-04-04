@@ -124,9 +124,30 @@ export function NewspaperFullPage({ onBack }: Props) {
           <Newspaper className="h-4 w-4" />
           <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
-        <Badge variant="outline" className="text-[9px]">{entries.length} notícias</Badge>
+        <Badge variant="outline" className="text-[9px]">{filteredEntries.length} notícias</Badge>
         <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global-Online</Badge>
       </div>
+
+      {/* Category Filters */}
+      {allCategories.length > 0 && (
+        <div className="flex gap-1 flex-wrap">
+          <button
+            onClick={() => setCategoryFilter(null)}
+            className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${!categoryFilter ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
+          >
+            Todas
+          </button>
+          {allCategories.slice(0, 8).map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+              className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${categoryFilter === cat ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
