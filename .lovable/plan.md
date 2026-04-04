@@ -1,60 +1,83 @@
 
 
-# Fase 3 + 5 — Limpeza de Código Legado e Divisão do useGame.ts
+# Plano: Melhorias Gerais, Correções e Redesign do Sininho
 
-## Contexto
-A Fase 1 (refatoração do Index.tsx) está concluída. Agora atacamos as Fases 3 e 5 juntas: limpar código offline/legado e dividir o useGame.ts (1217 linhas) em hooks menores e focados.
+## 1 — Redesign completo do sistema de Notificações
 
-## O que será feito
+**Problema**: O sininho atual mistura notificações dinâmicas (convites, vendas) com mensagens estáticas fixas ("Bem-vindo", "Guia Completo", "Auto-Save") que poluem a lista. Layout funcional mas pode ser mais limpo.
 
-### Parte A — Limpeza de Código Offline (Fase 3)
+**Solução**:
+- Remover notificações estáticas fixas (welcome, welcome_tips, welcome_online, welcome_save) — mostrar apenas na primeira vez via flag
+- Remover `localStorage` para readIds — usar apenas banco de dados
+- Redesign visual: header mais compacto com ícone branco, cards com visual mais limpo
+- Adicionar timestamps ("há 2 min", "ontem") em cada notificação
+- Agrupar por tempo (Hoje, Ontem, Anteriores) em vez de por tipo
+- Adicionar botão "Limpar tudo" para notificações lidas
+- Remover notificações redundantes (ct_tip, physio_tip, topscorer, best) que são informações do Dashboard
 
-1. **useGame.ts**: Remover `simulateMatch` (lógica offline de simulação local com bots), `leagueTeams` local (tabela offline), `endSeason` offline, `resetLeagueTeams`, `applySeasonDevelopment` do topo, e todo o código de liga local (`initialLeagueTeams`, etc.)
-2. **Remover imports não usados**: `generateSeasonMatches`, `initialLeagueTeams`, `LeagueTeam`, `generateRandomEvents`, etc.
-3. **Simplificar `generateFriendly`**: Manter apenas a geração de amistoso BOT FC (já simplificado)
-4. **SeasonTab/MatchCalendarTab**: Remover qualquer referência a liga offline local
+**Arquivos**: `NotificationBell.tsx`, `NotificationFullPage.tsx`
 
-### Parte B — Dividir useGame.ts em Hooks (Fase 5)
+## 2 — Corrigir campeonato: partidas humanas com simulação 2D
 
-Estrutura final:
+**Problema**: 22 partidas scheduled no MUNDIAL, partidas humanas ficam esperando mas quando o horário chega, não há caminho claro para jogar com simulação 2D.
 
-```text
-useGame.ts (~200 linhas — compositor)
-├── useClubState.ts (~350) — club, players, scouts, rename, sell, buy, sign
-├── useFinanceState.ts (~100) — finances, addFinance, sponsors, sponsorOffers
-├── useInfraState.ts (~150) — infrastructure, ctRooms, youth, upgrades
-└── useMatchState.ts (~200) — applyServerResult, generateFriendly, ranking
-```
+**Correções**:
+- No `TournamentDashboardCard`: quando uma partida do jogador tem status "scheduled" e `scheduled_at <= now`, mostrar botão "⚽ Jogar Agora" que navega direto para `/match` com os dados corretos
+- No `process-tournament-matches`: verificar que partidas com humanos nunca são auto-simuladas (já implementado, validar que funciona)
+- Garantir que o resultado da partida jogada manualmente é salvo de volta no `custom_tournament_matches` com status `played`
+- Corrigir avanço de fases: quando todas as partidas da rodada estão "played", gerar próxima rodada automaticamente
 
-**useClubState.ts** — Estado do clube, jogadores, compra/venda/empréstimo, olheiros, contratos, perfil
-**useFinanceState.ts** — Finanças, patrocínios, histórico financeiro
-**useInfraState.ts** — Infraestrutura (estádio, CT, base), salas do CT, jovens da base
-**useMatchState.ts** — Aplicação de resultados do servidor, geração de amistosos, ranking, friendlies
-**useGame.ts** — Compositor que combina os 4 hooks e expõe a mesma interface atual (sem quebrar nada)
+**Arquivos**: `TournamentDashboardCard.tsx`, `MatchDashboardCard.tsx`, `process-tournament-matches/index.ts`
 
-### Parte C — Limpeza Final
+## 3 — Corrigir sistema financeiro da Base
 
-- Remover `applySeasonDevelopment` (lógica offline de evolução de jogador entre temporadas — deve ser servidor)
-- Remover `endSeason` local (temporada é gerenciada pelo servidor via campeonato online)
-- Manter `getFullState` no compositor para salvar no banco
-- Remover `leagueTeams` do GameState (não é usado no modo online)
+**Problema**: O `youthInvestment` é cobrado "a cada 4 jogos" mas não há registro financeiro automático quando a cobrança acontece. O valor padrão é R$100k.
 
-## Arquivos
+**Correções**:
+- No `useInfraState` ou `useGame`: quando jovens são gerados (a cada 4 rodadas), registrar a despesa financeira automaticamente via `addFinance('despesa', 'Base', youthInvestment, 'Investimento em Base')`
+- Na `FinanceTab`: mostrar "Investimento Base" como custo recorrente com o valor real configurado pelo jogador
+- Validar que o jogador tem budget suficiente antes de cobrar
 
+**Arquivos**: `useInfraState.ts`, `useGame.ts`, `FinanceTab.tsx`
+
+## 4 — Remover imports e componentes desnecessários
+
+**Remoções**:
+- `FinanceTab.tsx`: remover imports não usados (`Heart`, `Dumbbell`, `ShoppingCart`, `Package`)
+- `NotificationBell.tsx`: limpar notificações estáticas fixas (5 notificações hardcoded)
+- `DashboardTab.tsx`: remover card de infraestrutura duplicado (já existe na linha 294 "Nível do estádio" que é redundante)
+- Remover `LeagueTab.tsx` e `LeaguesOverview.tsx` se não são usados no modo online
+- Remover `SeasonTab.tsx` referências offline
+
+**Arquivos**: Vários componentes
+
+## 5 — Melhorar SeasonStartWidget
+
+**Problema**: Widget funcional mas pode ter mais informações úteis.
+
+**Melhorias**:
+- Adicionar contagem de jogadores inscritos em campeonatos
+- Mostrar próxima partida agendada dentro do widget
+- Após 01/05/2026, mostrar resumo da temporada (posição no ranking, jogos disputados)
+
+**Arquivo**: `SeasonStartWidget.tsx`
+
+## Ordem de execução
+1. Redesign Notificações (maior impacto visual)
+2. Correções financeiras da Base
+3. Correções do campeonato
+4. Limpeza de imports
+5. Melhorar SeasonStartWidget
+
+## Arquivos modificados
 | Arquivo | Ação |
 |---------|------|
-| `src/hooks/useClubState.ts` | Criar |
-| `src/hooks/useFinanceState.ts` | Criar |
-| `src/hooks/useInfraState.ts` | Criar |
-| `src/hooks/useMatchState.ts` | Criar |
-| `src/hooks/useGame.ts` | Reescrever como compositor (~200 linhas) |
-| `src/pages/Index.tsx` | Ajustar imports se necessário |
-| `src/components/game/SeasonTab.tsx` | Limpar referências offline |
-
-## Detalhes Técnicos
-
-- A interface de retorno do `useGame()` permanece **idêntica** para não quebrar nenhum componente consumidor
-- O `GameState` será simplificado removendo `leagueTeams` (substituído por dados do servidor)
-- `simulateMatch` será removido — todas as partidas usam `applyServerResult` (resultado vem do servidor)
-- `endSeason` será removido — temporada é controlada pelo servidor via `process_season_transition`
+| `NotificationBell.tsx` | Reescrever — remover estáticas, limpar lógica |
+| `NotificationFullPage.tsx` | Redesign — agrupar por tempo, visual limpo |
+| `useInfraState.ts` | Adicionar cobrança financeira ao gerar jovens |
+| `useGame.ts` | Conectar addFinance ao fluxo de base |
+| `FinanceTab.tsx` | Limpar imports, ajustar custo base |
+| `TournamentDashboardCard.tsx` | Corrigir botão jogar + avanço fases |
+| `SeasonStartWidget.tsx` | Enriquecer com dados do jogador |
+| `DashboardTab.tsx` | Remover redundâncias |
 
