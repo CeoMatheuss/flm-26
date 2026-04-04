@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trophy, Calendar, Users, Swords, Target, ArrowLeft, Medal, TrendingUp, Shield, BarChart3, Eye, Play, Tv } from 'lucide-react';
+import { Trophy, Calendar, Users, Swords, Target, ArrowLeft, Medal, TrendingUp, Shield, BarChart3, Eye, Play, Tv, Gamepad2, Clock } from 'lucide-react';
 
 interface Tournament {
   id: string;
