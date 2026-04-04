@@ -290,10 +290,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between text-[9px] bg-accent/30 rounded-lg px-2 py-1.5">
-                  <span className="text-muted-foreground">Nível do estádio</span>
-                  <span className="font-bold">Lv.{infrastructure.stadium?.level || 1}</span>
-                </div>
               </>
             ) : (
               <p className="text-xs text-muted-foreground text-center py-4">Carregando...</p>
