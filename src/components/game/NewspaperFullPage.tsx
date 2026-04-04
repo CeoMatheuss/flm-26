@@ -57,6 +57,7 @@ export function NewspaperFullPage({ onBack }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Record<string, string[]>>({});
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
