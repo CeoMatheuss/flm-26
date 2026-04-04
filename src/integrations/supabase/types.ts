@@ -77,6 +77,30 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_bans: {
         Row: {
           banned_at: string
@@ -1226,6 +1250,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      open_friendly_slots: {
+        Row: {
+          club_name: string
+          created_at: string
+          id: string
+          stadium_capacity: number
+          stadium_name: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          club_name?: string
+          created_at?: string
+          id?: string
+          stadium_capacity?: number
+          stadium_name?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          club_name?: string
+          created_at?: string
+          id?: string
+          stadium_capacity?: number
+          stadium_name?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       player_auctions: {
         Row: {
