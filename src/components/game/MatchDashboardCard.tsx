@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2 } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 import { useState, useEffect, useMemo } from 'react';
