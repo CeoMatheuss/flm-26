@@ -1,92 +1,60 @@
 
 
-# Plano: Refatoração e Melhoria Geral do FLM 26
+# Fase 3 + 5 — Limpeza de Código Legado e Divisão do useGame.ts
 
-## Diagnóstico
+## Contexto
+A Fase 1 (refatoração do Index.tsx) está concluída. Agora atacamos as Fases 3 e 5 juntas: limpar código offline/legado e dividir o useGame.ts (1217 linhas) em hooks menores e focados.
 
-O Index.tsx tem ~900 linhas monolíticas. O useGame.ts tem ~1200 linhas. Muitas tabs são raramente usadas. O sistema de campeonato ainda tem bugs de simulação automática. A responsividade precisa de ajustes em várias telas.
+## O que será feito
 
-## Fases de Implementação (por prioridade)
+### Parte A — Limpeza de Código Offline (Fase 3)
 
-### Fase 1 — Refatorar Index.tsx e Navegação
-- Extrair o header para `GameHeader.tsx` (escudo, stats, ações)
-- Extrair o menu dropdown para `GameMenu.tsx`
-- Extrair a barra de tabs para `GameNavBar.tsx`
-- Extrair o roteamento de tabs para `GameTabRouter.tsx`
-- Index.tsx fica com ~100 linhas: auth check → GameApp → GameUI com componentes limpos
-- Melhorar responsividade do header: compactar stats no mobile, expandir no desktop
+1. **useGame.ts**: Remover `simulateMatch` (lógica offline de simulação local com bots), `leagueTeams` local (tabela offline), `endSeason` offline, `resetLeagueTeams`, `applySeasonDevelopment` do topo, e todo o código de liga local (`initialLeagueTeams`, etc.)
+2. **Remover imports não usados**: `generateSeasonMatches`, `initialLeagueTeams`, `LeagueTeam`, `generateRandomEvents`, etc.
+3. **Simplificar `generateFriendly`**: Manter apenas a geração de amistoso BOT FC (já simplificado)
+4. **SeasonTab/MatchCalendarTab**: Remover qualquer referência a liga offline local
 
-### Fase 2 — Corrigir Sistema de Campeonato
-- Reescrever `process-tournament-matches` para garantir:
-  - Partidas humanas NUNCA são auto-simuladas (ficam "scheduled" até o jogador clicar "Jogar")
-  - Partidas bot-vs-bot geram eventos completos para replay
-  - Timeout de 48h com notificação antes de auto-resolver
-- Corrigir `TournamentDashboardCard`: ocultar horário de jogos finalizados, mostrar placar
-- Corrigir countdown do widget: usar timestamp do servidor, não local
-- Garantir que o botão "⚽ Jogar" redireciona corretamente para `/match` com dados do torneio
+### Parte B — Dividir useGame.ts em Hooks (Fase 5)
 
-### Fase 3 — Limpar Código Legado
-- Remover referências a localStorage para saves (manter apenas tema/versão)
-- Remover código offline/solo não utilizado em `useGame.ts`
-- Consolidar tabs duplicadas (journal/newspaper apontam para o mesmo componente)
-- Remover imports não utilizados em todos os componentes
-- Limpar `SeasonTab` e `MatchCalendarTab` de lógica offline
+Estrutura final:
 
-### Fase 4 — Melhorar Responsividade Global
-- Dashboard: cards em grid responsivo (1 col mobile, 2 col tablet, 3 col desktop)
-- AdminTab: formulários em grid compacto, scrollable no mobile
-- SquadTab: tabela horizontal scrollable com sticky first column no mobile
-- TacticsTab: formação responsiva com drag-and-drop adaptável
-- Todas as modais: max-height com scroll interno, padding reduzido no mobile
+```text
+useGame.ts (~200 linhas — compositor)
+├── useClubState.ts (~350) — club, players, scouts, rename, sell, buy, sign
+├── useFinanceState.ts (~100) — finances, addFinance, sponsors, sponsorOffers
+├── useInfraState.ts (~150) — infrastructure, ctRooms, youth, upgrades
+└── useMatchState.ts (~200) — applyServerResult, generateFriendly, ranking
+```
 
-### Fase 5 — Melhorar useGame.ts
-- Dividir em hooks menores:
-  - `useClubState` — estado do clube, jogadores, budget
-  - `useSeasonState` — temporada, semanas, calendário
-  - `useFinanceState` — finanças, patrocínios
-  - `useInfraState` — infraestrutura, CT, estádio
-- useGame.ts vira um compositor que combina os hooks menores
-- Cada hook tem ~200-300 linhas em vez de 1200
+**useClubState.ts** — Estado do clube, jogadores, compra/venda/empréstimo, olheiros, contratos, perfil
+**useFinanceState.ts** — Finanças, patrocínios, histórico financeiro
+**useInfraState.ts** — Infraestrutura (estádio, CT, base), salas do CT, jovens da base
+**useMatchState.ts** — Aplicação de resultados do servidor, geração de amistosos, ranking, friendlies
+**useGame.ts** — Compositor que combina os 4 hooks e expõe a mesma interface atual (sem quebrar nada)
+
+### Parte C — Limpeza Final
+
+- Remover `applySeasonDevelopment` (lógica offline de evolução de jogador entre temporadas — deve ser servidor)
+- Remover `endSeason` local (temporada é gerenciada pelo servidor via campeonato online)
+- Manter `getFullState` no compositor para salvar no banco
+- Remover `leagueTeams` do GameState (não é usado no modo online)
+
+## Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `src/hooks/useClubState.ts` | Criar |
+| `src/hooks/useFinanceState.ts` | Criar |
+| `src/hooks/useInfraState.ts` | Criar |
+| `src/hooks/useMatchState.ts` | Criar |
+| `src/hooks/useGame.ts` | Reescrever como compositor (~200 linhas) |
+| `src/pages/Index.tsx` | Ajustar imports se necessário |
+| `src/components/game/SeasonTab.tsx` | Limpar referências offline |
 
 ## Detalhes Técnicos
 
-```text
-Antes:
-  Index.tsx (898 linhas) → useGame.ts (1217 linhas)
-
-Depois:
-  Index.tsx (~100)
-  ├── GameHeader.tsx (~80)
-  ├── GameMenu.tsx (~100)
-  ├── GameNavBar.tsx (~30)
-  └── GameTabRouter.tsx (~200)
-  
-  useGame.ts (~150 compositor)
-  ├── useClubState.ts (~300)
-  ├── useSeasonState.ts (~200)
-  ├── useFinanceState.ts (~200)
-  └── useInfraState.ts (~200)
-```
-
-## Arquivos Modificados
-- `src/pages/Index.tsx` — refatorar para ~100 linhas
-- `src/components/game/GameHeader.tsx` — novo
-- `src/components/game/GameMenu.tsx` — novo
-- `src/components/game/GameNavBar.tsx` — novo
-- `src/components/game/GameTabRouter.tsx` — novo
-- `src/hooks/useClubState.ts` — novo
-- `src/hooks/useSeasonState.ts` — novo
-- `src/hooks/useFinanceState.ts` — novo
-- `src/hooks/useInfraState.ts` — novo
-- `src/hooks/useGame.ts` — simplificar como compositor
-- `supabase/functions/process-tournament-matches/index.ts` — corrigir lógica
-- `src/components/game/TournamentDashboardCard.tsx` — corrigir bugs
-- `src/components/game/DashboardTab.tsx` — responsividade
-- `src/components/game/AdminTab.tsx` — responsividade
-- `src/components/game/SquadTab.tsx` — responsividade mobile
-
-## Ordem de Execução
-Fase 1 → Fase 3 → Fase 5 → Fase 2 → Fase 4
-
-Começamos pela refatoração estrutural (1, 3, 5) para ter uma base limpa, depois corrigimos funcionalidades (2) e finalizamos com polish visual (4).
+- A interface de retorno do `useGame()` permanece **idêntica** para não quebrar nenhum componente consumidor
+- O `GameState` será simplificado removendo `leagueTeams` (substituído por dados do servidor)
+- `simulateMatch` será removido — todas as partidas usam `applyServerResult` (resultado vem do servidor)
+- `endSeason` será removido — temporada é controlada pelo servidor via `process_season_transition`
 
