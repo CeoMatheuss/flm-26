@@ -502,7 +502,7 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Stats Grid */}
       {stats && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {statItems.map(s => (
             <Card key={s.label} className="p-2 text-center">
               <s.icon className={`h-4 w-4 mx-auto mb-1 ${s.color}`} />
