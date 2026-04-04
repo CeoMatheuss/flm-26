@@ -25,7 +25,6 @@ interface TeamData {
   user_id: string | null;
 }
 
-// Rich event types matching start-match edge function
 const EVENT_TYPES = {
   goals: ['foot_goal', 'header_goal'],
   chances: ['great_save', 'woodwork', 'long_shot_miss', 'header_miss', 'corner_danger'],
@@ -61,14 +60,8 @@ function generateRichEvents(
   const secondHalf = Array.from({ length: 44 }, (_, i) => i + 47);
   const allMinutes = [...firstHalf, ...secondHalf];
 
-  // Kickoff
-  events.push({
-    minute: 0, type: 'kickoff',
-    description: `📢 ${homeTeam.club_name} x ${awayTeam.club_name} - Começa o jogo!`,
-    team: 'neutral', animType: 'kickoff',
-  });
+  events.push({ minute: 0, type: 'kickoff', description: `📢 ${homeTeam.club_name} x ${awayTeam.club_name} - Começa o jogo!`, team: 'neutral', animType: 'kickoff' });
 
-  // Goal events with rich descriptions
   const goalScorers: any[] = [];
   const goalTypes = ['foot_goal', 'header_goal'];
 
@@ -81,11 +74,7 @@ function generateRichEvents(
     const desc = goalType === 'header_goal'
       ? `⚽ GOL DE CABEÇA! ${scorer.name} sobe mais que todo mundo e cabeceia para o gol!${assister ? ` Cruzamento de ${assister.name}.` : ''}`
       : `⚽ GOL! ${scorer.name} finaliza com categoria para o gol de ${homeTeam.club_name}!${assister ? ` Assistência de ${assister.name}.` : ''}`;
-    events.push({
-      minute: min, type: goalType, description: desc, team: 'home',
-      playerName: scorer.name, assistName: assister?.name, isGoal: true,
-      goalType: goalType === 'header_goal' ? 'Cabeçada' : 'Chute', animType: 'goal',
-    });
+    events.push({ minute: min, type: goalType, description: desc, team: 'home', playerName: scorer.name, assistName: assister?.name, isGoal: true, goalType: goalType === 'header_goal' ? 'Cabeçada' : 'Chute', animType: 'goal' });
     goalScorers.push({ minute: min, name: scorer.name, assist: assister?.name, team: 'home' });
   }
 
@@ -98,15 +87,10 @@ function generateRichEvents(
     const desc = goalType === 'header_goal'
       ? `⚽ GOL DE CABEÇA! ${scorer.name} sobe mais que todo mundo e cabeceia para o gol!${assister ? ` Cruzamento de ${assister.name}.` : ''}`
       : `⚽ GOL! ${scorer.name} finaliza com categoria para o gol de ${awayTeam.club_name}!${assister ? ` Assistência de ${assister.name}.` : ''}`;
-    events.push({
-      minute: min, type: goalType, description: desc, team: 'away',
-      playerName: scorer.name, assistName: assister?.name, isGoal: true,
-      goalType: goalType === 'header_goal' ? 'Cabeçada' : 'Chute', animType: 'goal',
-    });
+    events.push({ minute: min, type: goalType, description: desc, team: 'away', playerName: scorer.name, assistName: assister?.name, isGoal: true, goalType: goalType === 'header_goal' ? 'Cabeçada' : 'Chute', animType: 'goal' });
     goalScorers.push({ minute: min, name: scorer.name, assist: assister?.name, team: 'away' });
   }
 
-  // Penalty events (chance)
   if (rng() < 0.12) {
     const min = pickMinute(allMinutes.filter(m => m >= 20));
     if (min > 0) {
@@ -115,22 +99,13 @@ function generateRichEvents(
       const kicker = squad.length > 0 ? pick(squad) : { name: 'Jogador' };
       const isGoal = rng() < 0.75;
       if (isGoal) {
-        events.push({
-          minute: min, type: 'penalty_goal',
-          description: `⚽ GOL DE PÊNALTI! ${kicker.name} bate firme e marca!`,
-          team, playerName: kicker.name, isGoal: true, goalType: 'Pênalti', animType: 'penalty',
-        });
+        events.push({ minute: min, type: 'penalty_goal', description: `⚽ GOL DE PÊNALTI! ${kicker.name} bate firme e marca!`, team, playerName: kicker.name, isGoal: true, goalType: 'Pênalti', animType: 'penalty' });
       } else {
-        events.push({
-          minute: min, type: 'penalty_miss',
-          description: `❌ PÊNALTI PERDIDO! ${kicker.name} isola a bola!`,
-          team, playerName: kicker.name, isGoal: false, animType: 'penalty',
-        });
+        events.push({ minute: min, type: 'penalty_miss', description: `❌ PÊNALTI PERDIDO! ${kicker.name} isola a bola!`, team, playerName: kicker.name, isGoal: false, animType: 'penalty' });
       }
     }
   }
 
-  // Chance events (saves, woodwork, misses, corners)
   const chanceCount = 4 + Math.floor(rng() * 6);
   for (let i = 0; i < chanceCount; i++) {
     const min = pickMinute(allMinutes);
@@ -139,7 +114,6 @@ function generateRichEvents(
     const attackers = team === 'home' ? homeAttackers : awayAttackers;
     const player = attackers.length > 0 ? pick(attackers) : { name: 'Jogador' };
     const chanceType = pick(EVENT_TYPES.chances);
-
     const descriptions: Record<string, string> = {
       great_save: `🧤 GRANDE DEFESA! O goleiro faz uma defesa espetacular em chute de ${player.name}!`,
       woodwork: `🥅 NA TRAVE! ${player.name} acerta o poste! Quase gol!`,
@@ -147,16 +121,9 @@ function generateRichEvents(
       header_miss: `🎯 ${player.name} cabeceia, mas a bola passa por cima do gol!`,
       corner_danger: `🏳️ Escanteio perigoso! ${player.name} cabeceia na primeira trave, o goleiro defende!`,
     };
-
-    events.push({
-      minute: min, type: chanceType,
-      description: descriptions[chanceType] || `Lance de ${player.name}`,
-      team, playerName: player.name,
-      animType: chanceType === 'great_save' ? 'save' : 'chance',
-    });
+    events.push({ minute: min, type: chanceType, description: descriptions[chanceType] || `Lance de ${player.name}`, team, playerName: player.name, animType: chanceType === 'great_save' ? 'save' : 'chance' });
   }
 
-  // Foul & card events
   const foulCount = 3 + Math.floor(rng() * 5);
   for (let i = 0; i < foulCount; i++) {
     const min = pickMinute(allMinutes);
@@ -166,22 +133,14 @@ function generateRichEvents(
     const allP = team === 'home' ? homeSquad : awaySquad;
     const player = defenders.length > 0 ? pick(defenders) : allP.length > 0 ? pick(allP) : { name: 'Jogador' };
     const foulType = pick(EVENT_TYPES.fouls);
-
     const descriptions: Record<string, string> = {
       dangerous_foul: `⚠️ Falta perigosa de ${player.name}! Livre direto na entrada da área.`,
       midfield_foul: `⚠️ ${player.name} comete falta no meio de campo.`,
       yellow_card: `🟡 CARTÃO AMARELO para ${player.name}! Entrada imprudente.`,
     };
-
-    events.push({
-      minute: min, type: foulType,
-      description: descriptions[foulType] || `Falta de ${player.name}`,
-      team, playerName: player.name,
-      animType: foulType === 'yellow_card' ? 'card' : 'foul',
-    });
+    events.push({ minute: min, type: foulType, description: descriptions[foulType] || `Falta de ${player.name}`, team, playerName: player.name, animType: foulType === 'yellow_card' ? 'card' : 'foul' });
   }
 
-  // Possession / buildup events
   const possCount = 8 + Math.floor(rng() * 8);
   for (let i = 0; i < possCount; i++) {
     const min = pickMinute(allMinutes);
@@ -190,7 +149,6 @@ function generateRichEvents(
     const squad = team === 'home' ? homeSquad : awaySquad;
     const player = squad.length > 0 ? pick(squad) : { name: 'Jogador' };
     const possType = pick(EVENT_TYPES.possession);
-
     const descriptions: Record<string, string> = {
       possession: `${(team === 'home' ? homeTeam : awayTeam).club_name} troca passes no campo ofensivo.`,
       dribble_ok: `💨 ${player.name} dribla com classe e avança!`,
@@ -200,38 +158,15 @@ function generateRichEvents(
       pressing: `${(team === 'home' ? homeTeam : awayTeam).club_name} pressiona alto no campo adversário.`,
       tackle: `🦶 ${player.name} desarma com precisão!`,
     };
-
-    events.push({
-      minute: min, type: possType,
-      description: descriptions[possType] || `Lance de ${player.name}`,
-      team, playerName: player.name,
-    });
+    events.push({ minute: min, type: possType, description: descriptions[possType] || `Lance de ${player.name}`, team, playerName: player.name });
   }
 
-  // Halftime
-  events.push({
-    minute: 45, type: 'halftime',
-    description: `⏸ Intervalo! ${homeTeam.club_name} ${goalScorers.filter(g => g.team === 'home' && g.minute <= 45).length} x ${goalScorers.filter(g => g.team === 'away' && g.minute <= 45).length} ${awayTeam.club_name}`,
-    team: 'neutral', animType: 'halftime',
-  });
-
-  // Second half start
-  events.push({
-    minute: 46, type: 'kickoff',
-    description: `📢 Começa o segundo tempo!`,
-    team: 'neutral', animType: 'kickoff',
-  });
-
-  // Final whistle
-  events.push({
-    minute: 90, type: 'final_whistle',
-    description: `🏁 Fim de jogo! ${homeTeam.club_name} ${homeGoals} x ${awayGoals} ${awayTeam.club_name}`,
-    team: 'neutral', animType: 'final',
-  });
+  events.push({ minute: 45, type: 'halftime', description: `⏸ Intervalo! ${homeTeam.club_name} ${goalScorers.filter(g => g.team === 'home' && g.minute <= 45).length} x ${goalScorers.filter(g => g.team === 'away' && g.minute <= 45).length} ${awayTeam.club_name}`, team: 'neutral', animType: 'halftime' });
+  events.push({ minute: 46, type: 'kickoff', description: `📢 Começa o segundo tempo!`, team: 'neutral', animType: 'kickoff' });
+  events.push({ minute: 90, type: 'final_whistle', description: `🏁 Fim de jogo! ${homeTeam.club_name} ${homeGoals} x ${awayGoals} ${awayTeam.club_name}`, team: 'neutral', animType: 'final' });
 
   events.sort((a, b) => a.minute - b.minute);
 
-  // Player ratings
   const playerRatings: Record<string, number> = {};
   for (const p of homeSquad) {
     playerRatings[p.id || p.name] = clamp(parseFloat((6 + rng() * 3 + (homeGoals > awayGoals ? 0.5 : -0.3)).toFixed(1)), 4, 10);
@@ -240,7 +175,6 @@ function generateRichEvents(
     playerRatings[p.id || p.name] = clamp(parseFloat((6 + rng() * 3 + (awayGoals > homeGoals ? 0.5 : -0.3)).toFixed(1)), 4, 10);
   }
 
-  // Compute stats from events
   const stats = {
     possession: [clamp(45 + (homeStr - awayStr) * 0.3 + (rng() * 10 - 5), 30, 70), 0] as [number, number],
     shots: [clamp(Math.floor(3 + homeStr / 15 + rng() * 5), 2, 20), clamp(Math.floor(3 + awayStr / 15 + rng() * 5), 2, 20)],
@@ -255,8 +189,6 @@ function generateRichEvents(
     offsides: [Math.floor(rng() * 5), Math.floor(rng() * 5)],
   };
   stats.possession[1] = 100 - stats.possession[0];
-
-  // Count cards from events
   for (const ev of events) {
     if (ev.type === 'yellow_card') stats.yellowCards[ev.team === 'home' ? 0 : 1]++;
   }
@@ -267,21 +199,12 @@ function generateRichEvents(
 function simulateMatch(homeTeam: TeamData, awayTeam: TeamData) {
   const homeStr = homeTeam.bot_strength || 60;
   const awayStr = awayTeam.bot_strength || 60;
-  
   const homeLambda = clamp((homeStr / 50) * 1.4 + 0.15, 0.3, 4.5);
   const awayLambda = clamp((awayStr / 50) * 1.2, 0.2, 4.0);
-  
   const homeGoals = poissonSample(homeLambda);
   const awayGoals = poissonSample(awayLambda);
-
-  // Generate rich events with narration
   const result = generateRichEvents(homeTeam, awayTeam, homeGoals, awayGoals);
-
-  return {
-    homeGoals,
-    awayGoals,
-    ...result,
-  };
+  return { homeGoals, awayGoals, ...result };
 }
 
 Deno.serve(async (req) => {
@@ -292,14 +215,15 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowISO = now.toISOString();
 
     // Find all scheduled matches whose time has passed
     const { data: dueMatches, error: fetchErr } = await supabase
       .from('custom_tournament_matches')
       .select('*')
       .eq('status', 'scheduled')
-      .lte('scheduled_at', now)
+      .lte('scheduled_at', nowISO)
       .order('scheduled_at', { ascending: true })
       .limit(50);
 
@@ -308,10 +232,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Group by tournament
     const tournamentIds = [...new Set(dueMatches.map(m => m.tournament_id))];
-    
-    // Load all teams for these tournaments
+
     const { data: allTeams } = await supabase
       .from('custom_tournament_teams')
       .select('*')
@@ -331,9 +253,26 @@ Deno.serve(async (req) => {
       const awayTeam = teams.find(t => t.id === match.away_team_id);
       if (!homeTeam || !awayTeam) continue;
 
+      // ── KEY CHANGE: Only auto-simulate if BOTH teams are bots ──
+      // If at least one team has a human player, skip automatic simulation.
+      // The human player must play the match manually via the Match page.
+      // Exception: if 48+ hours have passed since scheduled_at, auto-simulate as W.O.
+      const hasHuman = (!homeTeam.is_bot && homeTeam.user_id) || (!awayTeam.is_bot && awayTeam.user_id);
+      
+      if (hasHuman) {
+        const scheduledAt = new Date(match.scheduled_at).getTime();
+        const hoursSinceScheduled = (now.getTime() - scheduledAt) / (1000 * 60 * 60);
+        
+        if (hoursSinceScheduled < 48) {
+          // Human still has time to play — skip this match
+          continue;
+        }
+        // 48h+ expired — auto-simulate as timeout/W.O.
+        console.log(`[Tournament] Match ${match.id} expired (${hoursSinceScheduled.toFixed(1)}h). Auto-simulating.`);
+      }
+
       const result = simulateMatch(homeTeam, awayTeam);
 
-      // Update match
       await supabase.from('custom_tournament_matches').update({
         home_goals: result.homeGoals,
         away_goals: result.awayGoals,
@@ -345,10 +284,9 @@ Deno.serve(async (req) => {
           stats: result.stats,
         },
         status: 'played',
-        played_at: now,
+        played_at: nowISO,
       }).eq('id', match.id);
 
-      // Update team stats
       const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
       const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
 
@@ -380,19 +318,21 @@ Deno.serve(async (req) => {
           const oppGoals = isHome ? result.awayGoals : result.homeGoals;
           const oppName = isHome ? awayTeam.club_name : homeTeam.club_name;
           const resultText = userGoals > oppGoals ? '✅ Vitória' : userGoals < oppGoals ? '❌ Derrota' : '🤝 Empate';
+          const isExpired = hasHuman;
           
           await supabase.from('user_notifications').insert({
             user_id: team.user_id,
             type: 'match_result',
             title: `⚽ ${resultText}: ${homeTeam.club_name} ${result.homeGoals} x ${result.awayGoals} ${awayTeam.club_name}`,
-            message: `Jogo do campeonato foi simulado automaticamente.\n${resultText} contra ${oppName}.\n⚽ Placar: ${result.homeGoals} x ${result.awayGoals}\n\n📺 Você pode assistir o replay completo na aba de Campeonatos > Jogos.`,
+            message: isExpired
+              ? `⏰ Você não jogou a partida no prazo (48h). O jogo foi simulado automaticamente.\n${resultText} contra ${oppName}.\n⚽ Placar: ${result.homeGoals} x ${result.awayGoals}`
+              : `Jogo do campeonato foi simulado automaticamente.\n${resultText} contra ${oppName}.\n⚽ Placar: ${result.homeGoals} x ${result.awayGoals}\n\n📺 Assista o replay na aba de Campeonatos.`,
             icon: userGoals > oppGoals ? '🏆' : userGoals < oppGoals ? '😔' : '🤝',
             data: { matchId: match.id, tournamentId: match.tournament_id },
           });
         }
       }
 
-      // Newspaper entry
       await supabase.from('newspaper_entries').insert({
         user_id: homeTeam.user_id || awayTeam.user_id || '00000000-0000-0000-0000-000000000000',
         text: `⚽ CAMPEONATO: ${homeTeam.club_name} ${result.homeGoals} x ${result.awayGoals} ${awayTeam.club_name}. ${result.goalScorers.map((g: any) => `⚽ ${g.name} (${g.minute}')`).join(', ') || 'Sem gols.'}`,
@@ -403,7 +343,7 @@ Deno.serve(async (req) => {
       processed++;
     }
 
-    // Check if any tournament round is fully played and advance knockout brackets
+    // Check knockout advancement
     for (const tournamentId of tournamentIds) {
       const { data: tournament } = await supabase
         .from('custom_tournaments')
@@ -450,7 +390,6 @@ Deno.serve(async (req) => {
 
           for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
             const scheduledDate = new Date(baseDate.getTime() + (i + 1) * intervalHours * 3600000);
-            // Set match time
             const [hours, minutes] = matchTime.split(':').map(Number);
             scheduledDate.setHours(hours || 20, minutes || 0, 0, 0);
 
