@@ -1205,6 +1205,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
           <AdminUpdatesPanel userId={userId} />
         </TabsContent>
+
+        {/* Logs Tab */}
+        <TabsContent value="logs" className="space-y-3 mt-3">
+          <AdminLogsPanel />
+        </TabsContent>
       </Tabs>
     </div>
   );
