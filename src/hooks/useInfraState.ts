@@ -106,6 +106,6 @@ export function useInfraState(initialState: any, userId?: string) {
     youthInvestment, setYouthInvestment, season, setSeason,
     ctRooms, setCTRooms, achievements, setAchievements,
     lastMatchReport, setLastMatchReport, youthPromotedCount, setYouthPromotedCount,
-    upgradeFacility, promoteYouth, upgradeCTRoom,
+    upgradeFacility, promoteYouth, upgradeCTRoom, chargeYouthInvestment,
   };
 }
