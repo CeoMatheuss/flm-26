@@ -53,6 +53,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [matchTime, setMatchTime] = useState('');
   const [homeChoice, setHomeChoice] = useState<'me' | 'them'>('me');
   const [sending, setSending] = useState(false);
+  const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
+  const [creatingSlot, setCreatingSlot] = useState(false);
 
   const loadInvites = useCallback(async () => {
     setLoading(true);

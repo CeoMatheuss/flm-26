@@ -222,9 +222,9 @@ export function NewspaperFullPage({ onBack }: Props) {
             })}
           </div>
 
-          {entries.length > 30 && !showMore && (
+          {filteredEntries.length > 30 && !showMore && (
             <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs gap-1">
-              <ChevronDown className="h-3 w-3" /> Ver mais ({entries.length - 30} notícias)
+              <ChevronDown className="h-3 w-3" /> Ver mais ({filteredEntries.length - 30} notícias)
             </Button>
           )}
 
