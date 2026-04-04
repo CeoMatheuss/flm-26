@@ -535,7 +535,7 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
         )}
 
         {activeTab === 'calendar' && (
-          <TournamentCalendarTab rounds={rounds} matches={matches} getTeamName={getTeamName} getTeamLogo={getTeamLogo} />
+          <TournamentCalendarTab rounds={rounds} matches={matches} teams={teams} getTeamName={getTeamName} getTeamLogo={getTeamLogo} tournamentName={tournament.name} />
         )}
 
         {activeTab === 'bracket' && (
