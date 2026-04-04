@@ -68,7 +68,73 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     setLoading(false);
   }, [userId]);
 
-  useEffect(() => { loadInvites(); }, [loadInvites]);
+  useEffect(() => { loadInvites(); loadOpenSlots(); }, [loadInvites]);
+
+  const loadOpenSlots = async () => {
+    const { data } = await supabase
+      .from('open_friendly_slots')
+      .select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (data) setOpenSlots(data as any[]);
+  };
+
+  const createOpenSlot = async () => {
+    setCreatingSlot(true);
+    const existing = openSlots.find(s => s.user_id === userId);
+    if (existing) {
+      toast.error('Você já tem uma partida aberta!');
+      setCreatingSlot(false);
+      return;
+    }
+    const { error } = await supabase.from('open_friendly_slots').insert([{
+      user_id: userId,
+      club_name: clubName,
+      stadium_name: stadiumName,
+      stadium_capacity: stadiumCapacity,
+    }]);
+    if (error) toast.error('Erro ao criar partida aberta');
+    else { toast.success('⚽ Partida aberta criada! Aguardando adversário...'); loadOpenSlots(); }
+    setCreatingSlot(false);
+  };
+
+  const acceptOpenSlot = async (slot: typeof openSlots[0]) => {
+    if (slot.user_id === userId) return toast.error('Não pode aceitar sua própria partida');
+    setLoading(true);
+    const dateTime = new Date();
+    dateTime.setMinutes(dateTime.getMinutes() + 5);
+
+    const { error } = await supabase.from('friendly_invites').insert([{
+      sender_id: slot.user_id,
+      receiver_id: userId,
+      sender_club_name: slot.club_name,
+      receiver_club_name: clubName,
+      sender_stadium: slot.stadium_name,
+      receiver_stadium: stadiumName,
+      sender_stadium_capacity: slot.stadium_capacity,
+      receiver_stadium_capacity: stadiumCapacity,
+      home_team_id: slot.user_id,
+      match_date: dateTime.toISOString(),
+      status: 'accepted',
+    }]);
+
+    if (!error) {
+      await supabase.from('open_friendly_slots').update({ status: 'matched' }).eq('id', slot.id);
+      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
+      loadInvites();
+      loadOpenSlots();
+    } else {
+      toast.error('Erro ao aceitar');
+    }
+    setLoading(false);
+  };
+
+  const cancelMySlot = async () => {
+    await supabase.from('open_friendly_slots').delete().eq('user_id', userId);
+    toast.success('Partida aberta cancelada');
+    loadOpenSlots();
+  };
 
   // Realtime subscription for new invites
   useEffect(() => {
