@@ -502,7 +502,7 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Stats Grid */}
       {stats && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {statItems.map(s => (
             <Card key={s.label} className="p-2 text-center">
               <s.icon className={`h-4 w-4 mx-auto mb-1 ${s.color}`} />
@@ -516,18 +516,19 @@ export function AdminTab({ userId, isFounder }: Props) {
       {/* Admin Tabs */}
       <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
         <ScrollArea className="w-full">
-          <TabsList className="inline-flex w-auto min-w-full gap-0.5">
-            {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
-            <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
-            <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
-            <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
-            <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
-            {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
-            <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
-            <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
-            <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
-            <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
-            <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
+          <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto">
+            {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
+            <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
+            <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2 shrink-0"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
+            <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2 shrink-0"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
+            <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2 shrink-0"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
+            {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2 shrink-0"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
+            <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2 shrink-0"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
+            <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2 shrink-0"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
+            <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
+            <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
+            <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
+            <TabsTrigger value="logs" className="text-[10px] gap-0.5 px-2 shrink-0"><Activity className="h-3 w-3" /> Logs</TabsTrigger>
           </TabsList>
         </ScrollArea>
 
@@ -1204,8 +1205,73 @@ export function AdminTab({ userId, isFounder }: Props) {
         <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
           <AdminUpdatesPanel userId={userId} />
         </TabsContent>
+
+        {/* Logs Tab */}
+        <TabsContent value="logs" className="space-y-3 mt-3">
+          <AdminLogsPanel />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function AdminLogsPanel() {
+  const [logs, setLogs] = useState<Array<{ id: string; user_id: string; action: string; details: any; created_at: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const { data } = await supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(200);
+      if (data) setLogs(data as any[]);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const actionColors: Record<string, string> = {
+    ban: 'text-red-400',
+    unban: 'text-emerald-400',
+    gift: 'text-yellow-400',
+    tournament_create: 'text-blue-400',
+    tournament_start: 'text-emerald-400',
+    maintenance: 'text-orange-400',
+    premium_activate: 'text-yellow-400',
+    player_generate: 'text-purple-400',
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" /> Logs de Atividade ({logs.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-4"><RefreshCw className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></div>
+        ) : logs.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Nenhum log registrado</p>
+        ) : (
+          <ScrollArea className="max-h-[500px]">
+            <div className="space-y-1.5">
+              {logs.map(log => (
+                <div key={log.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/20 border border-border/30 text-[10px]">
+                  <Activity className={`h-3 w-3 mt-0.5 shrink-0 ${actionColors[log.action] || 'text-muted-foreground'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold">{log.action}</p>
+                    {log.details && typeof log.details === 'object' && (
+                      <p className="text-muted-foreground truncate">{JSON.stringify(log.details).slice(0, 100)}</p>
+                    )}
+                    <p className="text-muted-foreground/60">{log.user_id.slice(0, 8)}... • {new Date(log.created_at).toLocaleString('pt-BR')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

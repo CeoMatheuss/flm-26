@@ -57,6 +57,7 @@ export function NewspaperFullPage({ onBack }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Record<string, string[]>>({});
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
@@ -109,7 +110,9 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
-  const visibleEntries = showMore ? entries : entries.slice(0, 30);
+  const allCategories = [...new Set(entries.map(e => e.category))].filter(Boolean).sort();
+  const filteredEntries = categoryFilter ? entries.filter(e => e.category === categoryFilter) : entries;
+  const visibleEntries = showMore ? filteredEntries : filteredEntries.slice(0, 30);
 
   return (
     <div className="space-y-3">
@@ -121,9 +124,30 @@ export function NewspaperFullPage({ onBack }: Props) {
           <Newspaper className="h-4 w-4" />
           <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
-        <Badge variant="outline" className="text-[9px]">{entries.length} notícias</Badge>
+        <Badge variant="outline" className="text-[9px]">{filteredEntries.length} notícias</Badge>
         <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global-Online</Badge>
       </div>
+
+      {/* Category Filters */}
+      {allCategories.length > 0 && (
+        <div className="flex gap-1 flex-wrap">
+          <button
+            onClick={() => setCategoryFilter(null)}
+            className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${!categoryFilter ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
+          >
+            Todas
+          </button>
+          {allCategories.slice(0, 8).map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+              className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${categoryFilter === cat ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -198,9 +222,9 @@ export function NewspaperFullPage({ onBack }: Props) {
             })}
           </div>
 
-          {entries.length > 30 && !showMore && (
+          {filteredEntries.length > 30 && !showMore && (
             <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs gap-1">
-              <ChevronDown className="h-3 w-3" /> Ver mais ({entries.length - 30} notícias)
+              <ChevronDown className="h-3 w-3" /> Ver mais ({filteredEntries.length - 30} notícias)
             </Button>
           )}
 

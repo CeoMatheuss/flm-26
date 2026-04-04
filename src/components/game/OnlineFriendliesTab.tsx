@@ -53,6 +53,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [matchTime, setMatchTime] = useState('');
   const [homeChoice, setHomeChoice] = useState<'me' | 'them'>('me');
   const [sending, setSending] = useState(false);
+  const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
+  const [creatingSlot, setCreatingSlot] = useState(false);
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
@@ -66,7 +68,73 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     setLoading(false);
   }, [userId]);
 
-  useEffect(() => { loadInvites(); }, [loadInvites]);
+  useEffect(() => { loadInvites(); loadOpenSlots(); }, [loadInvites]);
+
+  const loadOpenSlots = async () => {
+    const { data } = await supabase
+      .from('open_friendly_slots')
+      .select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (data) setOpenSlots(data as any[]);
+  };
+
+  const createOpenSlot = async () => {
+    setCreatingSlot(true);
+    const existing = openSlots.find(s => s.user_id === userId);
+    if (existing) {
+      toast.error('Você já tem uma partida aberta!');
+      setCreatingSlot(false);
+      return;
+    }
+    const { error } = await supabase.from('open_friendly_slots').insert([{
+      user_id: userId,
+      club_name: clubName,
+      stadium_name: stadiumName,
+      stadium_capacity: stadiumCapacity,
+    }]);
+    if (error) toast.error('Erro ao criar partida aberta');
+    else { toast.success('⚽ Partida aberta criada! Aguardando adversário...'); loadOpenSlots(); }
+    setCreatingSlot(false);
+  };
+
+  const acceptOpenSlot = async (slot: typeof openSlots[0]) => {
+    if (slot.user_id === userId) return toast.error('Não pode aceitar sua própria partida');
+    setLoading(true);
+    const dateTime = new Date();
+    dateTime.setMinutes(dateTime.getMinutes() + 5);
+
+    const { error } = await supabase.from('friendly_invites').insert([{
+      sender_id: slot.user_id,
+      receiver_id: userId,
+      sender_club_name: slot.club_name,
+      receiver_club_name: clubName,
+      sender_stadium: slot.stadium_name,
+      receiver_stadium: stadiumName,
+      sender_stadium_capacity: slot.stadium_capacity,
+      receiver_stadium_capacity: stadiumCapacity,
+      home_team_id: slot.user_id,
+      match_date: dateTime.toISOString(),
+      status: 'accepted',
+    }]);
+
+    if (!error) {
+      await supabase.from('open_friendly_slots').update({ status: 'matched' }).eq('id', slot.id);
+      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
+      loadInvites();
+      loadOpenSlots();
+    } else {
+      toast.error('Erro ao aceitar');
+    }
+    setLoading(false);
+  };
+
+  const cancelMySlot = async () => {
+    await supabase.from('open_friendly_slots').delete().eq('user_id', userId);
+    toast.success('Partida aberta cancelada');
+    loadOpenSlots();
+  };
 
   // Realtime subscription for new invites
   useEffect(() => {
@@ -504,9 +572,49 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
         </Card>
       )}
 
+      {/* Open Friendly Slots */}
+      <Card className="border-emerald-500/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Swords className="h-4 w-4 text-emerald-400" />
+            Partidas Abertas
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Publique que quer jogar — o primeiro que aceitar fecha o amistoso!</p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {openSlots.filter(s => s.user_id !== userId).length > 0 ? (
+            <div className="space-y-1.5">
+              {openSlots.filter(s => s.user_id !== userId).map(slot => (
+                <div key={slot.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{slot.club_name}</p>
+                    <p className="text-[9px] text-muted-foreground">🏟️ {slot.stadium_name} ({slot.stadium_capacity.toLocaleString()})</p>
+                  </div>
+                  <Button size="sm" className="h-7 text-[10px] gap-1" onClick={() => acceptOpenSlot(slot)} disabled={loading}>
+                    <Check className="h-3 w-3" /> Aceitar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground text-center py-2">Nenhuma partida aberta no momento</p>
+          )}
+
+          {openSlots.find(s => s.user_id === userId) ? (
+            <Button variant="outline" size="sm" className="w-full text-xs gap-1" onClick={cancelMySlot}>
+              <XCircle className="h-3 w-3" /> Cancelar Minha Partida Aberta
+            </Button>
+          ) : (
+            <Button size="sm" className="w-full text-xs gap-1" onClick={createOpenSlot} disabled={creatingSlot}>
+              <Swords className="h-3 w-3" /> {creatingSlot ? 'Criando...' : '⚽ Criar Partida Aberta'}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Refresh */}
       <div className="text-center">
-        <Button size="sm" variant="ghost" onClick={loadInvites} disabled={loading} className="text-[10px] gap-1">
+        <Button size="sm" variant="ghost" onClick={() => { loadInvites(); loadOpenSlots(); }} disabled={loading} className="text-[10px] gap-1">
           <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Atualizar
         </Button>
       </div>

@@ -5,7 +5,7 @@ import { TacticsTab } from '@/components/game/TacticsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
-import { SeasonTab } from '@/components/game/SeasonTab';
+
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
@@ -80,9 +80,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
         )}
       </TabsContent>
-      <TabsContent value="season">
-        <SeasonTab season={game.season} leagueTeams={game.leagueTeams} clubName={game.club.name} hasUnplayedMatches={game.club.matches.some(m => !m.played)} onEndSeason={game.endSeason} />
-      </TabsContent>
+      
       <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
       <TabsContent value="squad">
         <SquadTab

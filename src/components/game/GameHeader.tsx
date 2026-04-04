@@ -37,7 +37,7 @@ export function GameHeader({ club, season, infrastructure, listedPlayers, userId
             <h1 className="text-sm sm:text-base font-bold truncate leading-tight">{club.name}</h1>
             <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
               <span className="game-badge bg-accent text-foreground">T{season.currentSeason}</span>
-              <span className="game-badge bg-primary/15 text-primary">📅 Dia {season.currentWeek}/30</span>
+              
               <span>{club.stats.points}pts</span>
               <span className="text-primary font-bold">R${(club.budget / 1000000).toFixed(1)}M</span>
             </div>

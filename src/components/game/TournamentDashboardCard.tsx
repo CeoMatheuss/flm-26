@@ -358,35 +358,35 @@ export function TournamentExpandedView({ tournamentId, onClose }: ExpandedProps)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2">
-                  <table className="w-full text-[9px]">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/30">
-                        <th className="text-left pl-1 py-1">#</th>
-                        <th className="text-left py-1">Time</th>
-                        <th className="text-center py-1 w-5">J</th>
-                        <th className="text-center py-1 w-5">V</th>
-                        <th className="text-center py-1 w-5">E</th>
-                        <th className="text-center py-1 w-5">D</th>
-                        <th className="text-center py-1 w-5">GP</th>
-                        <th className="text-center py-1 w-5">GC</th>
-                        <th className="text-center py-1 w-6 font-bold">Pts</th>
+                        <th className="text-left pl-1 py-1.5">#</th>
+                        <th className="text-left py-1.5">Time</th>
+                        <th className="text-center py-1.5 w-7">J</th>
+                        <th className="text-center py-1.5 w-7">V</th>
+                        <th className="text-center py-1.5 w-7">E</th>
+                        <th className="text-center py-1.5 w-7">D</th>
+                        <th className="text-center py-1.5 w-7">GP</th>
+                        <th className="text-center py-1.5 w-7">GC</th>
+                        <th className="text-center py-1.5 w-8 font-bold">Pts</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedTeams.map((t, i) => (
                         <tr key={t.id} className={`border-b border-border/10 ${i < 3 ? 'bg-primary/5' : ''} ${t.eliminated ? 'opacity-40' : ''}`}>
-                          <td className="pl-1 py-1 font-bold text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
-                          <td className="py-1 truncate max-w-[100px]">
-                            {t.club_logo} <span className={`font-medium ${i < 3 ? 'text-primary' : ''}`}>{t.club_name}</span>
-                            {t.is_bot && <span className="ml-0.5 text-[7px] text-muted-foreground">🤖</span>}
+                          <td className="pl-1 py-1.5 font-bold text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
+                          <td className="py-1.5 truncate max-w-[120px]">
+                            {t.club_logo} <span className={`font-semibold text-sm ${i < 3 ? 'text-primary' : ''}`}>{t.club_name}</span>
+                            {t.is_bot && <span className="ml-0.5 text-[8px] text-muted-foreground">🤖</span>}
                           </td>
-                          <td className="text-center py-1">{t.played}</td>
-                          <td className="text-center py-1 text-success">{t.wins}</td>
-                          <td className="text-center py-1">{t.draws}</td>
-                          <td className="text-center py-1 text-destructive">{t.losses}</td>
-                          <td className="text-center py-1">{t.goals_for}</td>
-                          <td className="text-center py-1">{t.goals_against}</td>
-                          <td className="text-center py-1 font-black text-primary">{t.points}</td>
+                          <td className="text-center py-1.5">{t.played}</td>
+                          <td className="text-center py-1.5 text-success font-semibold">{t.wins}</td>
+                          <td className="text-center py-1.5">{t.draws}</td>
+                          <td className="text-center py-1.5 text-destructive">{t.losses}</td>
+                          <td className="text-center py-1.5">{t.goals_for}</td>
+                          <td className="text-center py-1.5">{t.goals_against}</td>
+                          <td className="text-center py-1.5 font-black text-primary text-sm">{t.points}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -19,7 +19,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial }: GameMenuPro
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">⚽ Clube</p>
         <DropdownMenuItem onClick={() => onTabChange('calendar')} className="menu-item"><Calendar className="h-3.5 w-3.5 text-primary/70" /> Calendário <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('season')} className="menu-item"><CalendarDays className="h-3.5 w-3.5 text-primary/70" /> Temporada <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
         <DropdownMenuItem onClick={() => onTabChange('training')} className="menu-item"><Dumbbell className="h-3.5 w-3.5 text-primary/70" /> Treinos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('youth')} className="menu-item"><GraduationCap className="h-3.5 w-3.5 text-primary/70" /> Categorias de Base <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('scouts')} className="menu-item"><Search className="h-3.5 w-3.5 text-primary/70" /> Olheiros <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
