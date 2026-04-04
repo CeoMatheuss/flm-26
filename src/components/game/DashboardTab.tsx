@@ -149,7 +149,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       </Card>
 
       {/* Season Start Widget */}
-      <SeasonStartWidget seasonNumber={season} />
+      <SeasonStartWidget seasonNumber={season} userId={userId} />
 
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
