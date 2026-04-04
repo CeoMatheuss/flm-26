@@ -1,16 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor, Trash2, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
-  const [cacheCount, setCacheCount] = useState(0);
-  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -18,53 +13,6 @@ export function SettingsTab() {
     root.classList.add(theme);
     localStorage.setItem('flm-theme', theme);
   }, [theme]);
-
-  useEffect(() => {
-    const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('flm26') || k.startsWith('game_state') || k.startsWith('flm_') ||
-      k.startsWith('flm-') || k.startsWith('offline') || k.startsWith('local_')
-    );
-    setCacheCount(keys.length);
-  }, []);
-
-  const clearAllOfflineData = () => {
-    const allKeys = Object.keys(localStorage);
-    const keysToRemove = allKeys.filter(k =>
-      k !== 'flm-theme' &&
-      !k.startsWith('sb-')
-    );
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-    setCacheCount(0);
-    toast.success(`🗑️ ${keysToRemove.length} itens de cache removidos!`);
-  };
-
-  const resetGame = async () => {
-    if (!confirm('⚠️ ATENÇÃO: Isso vai APAGAR todo o seu progresso no jogo (save, ranking, histórico). Tem certeza?')) return;
-    if (!confirm('🔴 ÚLTIMA CHANCE: Essa ação é IRREVERSÍVEL. Confirmar reset total?')) return;
-    setResetting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error('Não autenticado'); setResetting(false); return; }
-      const uid = user.id;
-      
-      await Promise.all([
-        supabase.from('game_saves').delete().eq('user_id', uid),
-        supabase.from('global_ranking').delete().eq('user_id', uid),
-        supabase.from('match_history').delete().eq('user_id', uid),
-        supabase.from('match_reports').delete().eq('user_id', uid),
-        supabase.from('live_matches').delete().eq('user_id', uid),
-        supabase.from('newspaper_entries').delete().eq('user_id', uid),
-        supabase.from('user_notifications').delete().eq('user_id', uid),
-      ]);
-      
-      clearAllOfflineData();
-      toast.success('🔄 Jogo resetado! Recarregando...');
-      setTimeout(() => window.location.reload(), 1500);
-    } catch {
-      toast.error('Erro ao resetar');
-    }
-    setResetting(false);
-  };
 
   return (
     <div className="space-y-4">
@@ -141,47 +89,6 @@ export function SettingsTab() {
               )}
             </button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Clear offline cache */}
-      <Card className="border-destructive/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Trash2 className="h-4 w-4 text-destructive" />
-            Limpar Cache Offline
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-[10px] text-muted-foreground">Remove cache local. Dados online não são afetados.</p>
-          <Button variant="destructive" size="sm" className="w-full text-xs gap-2" onClick={clearAllOfflineData}>
-            <Trash2 className="h-3.5 w-3.5" /> Limpar Cache ({cacheCount} itens)
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* RESET GAME */}
-      <Card className="border-destructive/40 bg-destructive/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2 text-destructive">
-            <RotateCcw className="h-4 w-4" />
-            Resetar Jogo Completo
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-destructive/10 rounded-lg p-2 border border-destructive/20">
-            <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
-            <p>⚠️ Apaga TODOS os dados do jogo: save, ranking, histórico de partidas, notícias. <strong>Irreversível!</strong></p>
-          </div>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="w-full text-xs gap-2 font-bold"
-            onClick={resetGame}
-            disabled={resetting}
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> {resetting ? 'Resetando...' : '🔴 RESETAR TUDO'}
-          </Button>
         </CardContent>
       </Card>
     </div>
