@@ -457,7 +457,7 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
       {tactics && (
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary" className="text-xs">📋 {tactics.formation}</Badge>
-          {tactics.mentality && <Badge variant="outline" className="text-[10px]">{tactics.mentality}</Badge>}
+          {tactics.playStyle && <Badge variant="outline" className="text-[10px]">{tactics.playStyle}</Badge>}
           {tactics.pressing && <Badge variant="outline" className="text-[10px]">Pressão: {tactics.pressing}</Badge>}
         </div>
       )}
