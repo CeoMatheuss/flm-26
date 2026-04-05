@@ -3,94 +3,74 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import flmLogo from '@/assets/flm26-logo.png';
-import gamePreview1 from '@/assets/game-preview.jpg';
-import gamePreview2 from '@/assets/game-preview-2.jpg';
-import gamePreview3 from '@/assets/game-preview-3.jpg';
-import gamePreview4 from '@/assets/game-preview-4.jpg';
-import { Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap, Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, Info, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
+  Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, RefreshCw,
+  ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
+} from 'lucide-react';
 
-const previewSlides = [
-{ src: gamePreview1, title: 'Seu Estádio, Sua Torcida', desc: 'Construa e evolua seu estádio. Lote a casa e sinta a pressão da torcida a seu favor.' },
-{ src: gamePreview2, title: 'Centro de Treinamento', desc: 'Invista em infraestrutura de ponta: campos, academia, fisioterapia e categorias de base.' },
-{ src: gamePreview4, title: 'Categorias de Base', desc: 'Desenvolva jovens talentos na academia. Treinos 2D melhoram atributos e contribuem nas partidas.' },
-{ src: gamePreview3, title: 'FLM 26 — Football Life Manager', desc: 'Gerencie. Compita. Conquiste. O manager game definitivo em português.' }];
-
-
-const RESEND_COOLDOWN = 60; // seconds
-
-const features = [
-{ icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale seus jogadores!' },
-{ icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas em tempo real' },
-{ icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa no campo' },
-{ icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e agentes livres' },
-{ icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas competitivas com amigos' },
-{ icon: GraduationCap, title: 'Base & Olheiros', desc: 'Desenvolva talentos e contrate scouts' },
-{ icon: Shield, title: 'Infraestrutura', desc: 'CT, fisioterapia, estádio e mais' },
-{ icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' }];
-
+const RESEND_COOLDOWN = 60;
 
 const countryOptions = [
-{ value: 'BR', label: '🇧🇷 Brasil' },
-{ value: 'AR', label: '🇦🇷 Argentina' },
-{ value: 'PT', label: '🇵🇹 Portugal' },
-{ value: 'ES', label: '🇪🇸 Espanha' },
-{ value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra' },
-{ value: 'IT', label: '🇮🇹 Itália' },
-{ value: 'DE', label: '🇩🇪 Alemanha' },
-{ value: 'FR', label: '🇫🇷 França' },
-{ value: 'MX', label: '🇲🇽 México' },
-{ value: 'CO', label: '🇨🇴 Colômbia' }];
+  { value: 'BR', label: '🇧🇷 Brasil', flag: '🇧🇷' },
+  { value: 'AR', label: '🇦🇷 Argentina', flag: '🇦🇷' },
+  { value: 'PT', label: '🇵🇹 Portugal', flag: '🇵🇹' },
+  { value: 'ES', label: '🇪🇸 Espanha', flag: '🇪🇸' },
+  { value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { value: 'IT', label: '🇮🇹 Itália', flag: '🇮🇹' },
+  { value: 'DE', label: '🇩🇪 Alemanha', flag: '🇩🇪' },
+  { value: 'FR', label: '🇫🇷 França', flag: '🇫🇷' },
+  { value: 'MX', label: '🇲🇽 México', flag: '🇲🇽' },
+  { value: 'CO', label: '🇨🇴 Colômbia', flag: '🇨🇴' },
+];
 
-
-const formationOptions = [
-'4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1'];
-
+const formationOptions = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1'];
 
 const playstyleOptions = [
-{ value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
-{ value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
-{ value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
-{ value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' }];
+  { value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
+  { value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
+  { value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
+  { value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' },
+];
 
+const features = [
+  { icon: Users, title: 'Gerencie seu Elenco', desc: 'Contrate, treine e escale' },
+  { icon: Swords, title: 'Simule Partidas', desc: 'Campeonatos com táticas' },
+  { icon: Target, title: 'Táticas 2D', desc: 'Escalação visual interativa' },
+  { icon: TrendingUp, title: 'Mercado Dinâmico', desc: 'Compra, venda e leilões' },
+  { icon: Trophy, title: 'Multiplayer Online', desc: 'Ligas competitivas' },
+  { icon: GraduationCap, title: 'Base & Olheiros', desc: 'Desenvolva talentos' },
+  { icon: Shield, title: 'Infraestrutura', desc: 'CT, estádio e mais' },
+  { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
+];
+
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'signup-preferences' | 'otp';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [favoriteCountry, setFavoriteCountry] = useState('BR');
   const [preferredFormation, setPreferredFormation] = useState('4-3-3');
   const [playstyle, setPlaystyle] = useState('balanced');
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
-  const [slideIndex, setSlideIndex] = useState(0);
+  const [step, setStep] = useState<AuthStep>('welcome');
 
-  // Auto-advance carousel
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % previewSlides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-  // Countdown timer for resend
   useEffect(() => {
     if (resendTimer <= 0) return;
-    const interval = setInterval(() => {
-      setResendTimer((prev) => prev - 1);
-    }, 1000);
+    const interval = setInterval(() => setResendTimer(prev => prev - 1), 1000);
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const startResendTimer = useCallback(() => {
-    setResendTimer(RESEND_COOLDOWN);
-  }, []);
+  const startResendTimer = useCallback(() => setResendTimer(RESEND_COOLDOWN), []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -110,9 +90,9 @@ export default function AuthPage() {
     if (error) {
       if (error.message === 'Email not confirmed') {
         setPendingEmail(email);
-        setShowOtp(true);
+        setStep('otp');
         startResendTimer();
-        toast.info('Email ainda não confirmado. Digite o código enviado para seu email.');
+        toast.info('Email não confirmado. Digite o código enviado.');
         await supabase.auth.resend({ type: 'signup', email });
       } else {
         toast.error(error.message);
@@ -121,8 +101,7 @@ export default function AuthPage() {
     setLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignup = async () => {
     if (password.length < 6) {
       toast.error('Senha deve ter no mínimo 6 caracteres');
       return;
@@ -136,17 +115,17 @@ export default function AuthPage() {
           display_name: displayName || 'Manager',
           favorite_country: favoriteCountry,
           preferred_formation: preferredFormation,
-          playstyle: playstyle
-        }
-      }
+          playstyle,
+        },
+      },
     });
     if (error) {
       toast.error(error.message);
     } else {
       setPendingEmail(email);
-      setShowOtp(true);
+      setStep('otp');
       startResendTimer();
-      toast.success('Código de verificação enviado para seu email!');
+      toast.success('Código de verificação enviado!');
     }
     setLoading(false);
   };
@@ -160,12 +139,12 @@ export default function AuthPage() {
     const { error } = await supabase.auth.verifyOtp({
       email: pendingEmail,
       token: otpCode,
-      type: 'signup'
+      type: 'signup',
     });
     if (error) {
-      toast.error('Código inválido ou expirado. Tente novamente.');
+      toast.error('Código inválido ou expirado.');
     } else {
-      toast.success('🎉 Email verificado com sucesso! Bem-vindo ao FLM 26!');
+      toast.success('🎉 Email verificado! Bem-vindo ao FLM 26!');
     }
     setLoading(false);
   };
@@ -174,80 +153,46 @@ export default function AuthPage() {
     if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-    if (error) {
-      toast.error('Erro ao reenviar código. Tente novamente.');
-    } else {
-      toast.success('Novo código enviado para ' + pendingEmail);
+    if (error) toast.error('Erro ao reenviar código.');
+    else {
+      toast.success('Novo código enviado!');
       startResendTimer();
     }
     setLoading(false);
   };
 
-  // OTP Verification Screen
-  if (showOtp) {
+  // ── OTP STEP ──
+  if (step === 'otp') {
     return (
-      <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
-        {/* Left side - Game Preview Carousel */}
-        <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
-          <img src={gamePreview1} alt="FLM 26 Game Preview" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,40%,8%)] via-transparent to-[hsl(220,40%,8%)]/50" />
-          <div className="relative z-10 p-8 text-center space-y-4">
-            <h2 className="text-3xl font-black text-white drop-shadow-lg">Quase lá! ⚽</h2>
-            <p className="text-white/70 text-sm max-w-sm mx-auto">Confirme seu email e comece a construir seu império no futebol.</p>
-          </div>
-        </div>
-        {/* Right side - OTP Form */}
-        <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="text-center space-y-4 pb-2">
-            <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="w-10 h-10 text-primary" />
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+          <CardContent className="p-6 space-y-5">
+            <div className="text-center space-y-3">
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-black">Verifique seu Email</h2>
+              <p className="text-sm text-muted-foreground">Código enviado para</p>
+              <Badge variant="secondary" className="text-xs font-bold">{pendingEmail}</Badge>
             </div>
-            <CardTitle className="text-xl">Verifique seu Email</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Enviamos um código de 6 dígitos para
-            </p>
-            <p className="text-sm font-bold text-primary">{pendingEmail}</p>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Email illustration */}
-            <div className="relative mx-auto w-56 h-36 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex flex-col items-center justify-center gap-2 overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-8 bg-primary/30 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-primary-foreground/80 tracking-wider">FLM 26 ⚽</span>
-              </div>
-              <div className="mt-4 flex items-center gap-1">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <span className="text-xs font-bold">Código de Verificação</span>
-              </div>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5, 6].map((i) =>
-                  <div key={i} className="w-5 h-6 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-primary">•</span>
+
+            {/* Email preview */}
+            <div className="mx-auto w-48 h-28 rounded-xl bg-primary/5 border border-primary/15 flex flex-col items-center justify-center gap-1.5">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              <span className="text-[10px] font-bold">Código de Verificação</span>
+              <div className="flex gap-0.5">
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="w-4 h-5 rounded bg-primary/15 border border-primary/25 flex items-center justify-center">
+                    <span className="text-[8px] text-primary font-bold">•</span>
                   </div>
-                  )}
+                ))}
               </div>
               <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-muted-foreground" />
-                <span className="text-[8px] text-muted-foreground">Válido por 60 minutos</span>
+                <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                <span className="text-[7px] text-muted-foreground">Válido por 60 min</span>
               </div>
             </div>
 
-            {/* Info box */}
-            <div className="bg-primary/5 border border-primary/15 rounded-lg p-3 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-xs font-semibold">Como funciona?</span>
-              </div>
-              <ul className="text-[11px] text-muted-foreground space-y-1 ml-6 list-disc">
-                <li>Enviamos um código de <strong>6 dígitos</strong> para seu email</li>
-                <li>O código é válido por <strong>60 minutos</strong></li>
-                <li>Verifique a pasta de <strong>spam/lixo eletrônico</strong></li>
-                <li>Você pode reenviar o código após o tempo de espera</li>
-              </ul>
-            </div>
-
-            {/* OTP Input */}
             <div className="flex justify-center">
               <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
                 <InputOTPGroup>
@@ -264,239 +209,328 @@ export default function AuthPage() {
               </InputOTP>
             </div>
 
-            <Button
-                onClick={handleVerifyOtp}
-                disabled={loading || otpCode.length !== 6}
-                className="w-full h-12 font-semibold text-sm gap-2">
-                
+            <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length !== 6} className="w-full h-12 font-bold gap-2">
               <CheckCircle2 className="w-4 h-4" />
               {loading ? 'Verificando...' : 'Verificar Código'}
             </Button>
 
-            {/* Resend with timer */}
-            <div className="text-center space-y-2">
-              <p className="text-xs text-muted-foreground">Não recebeu o código?</p>
-              {resendTimer > 0 ?
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Reenviar em <strong className="text-primary">{resendTimer}s</strong></span>
-                </div> :
-
+            <div className="text-center space-y-1">
+              {resendTimer > 0 ? (
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <Clock className="w-3 h-3" /> Reenviar em <strong className="text-primary">{resendTimer}s</strong>
+                </p>
+              ) : (
                 <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary gap-1">
                   <RefreshCw className="w-3 h-3" /> Reenviar código
                 </Button>
-                }
+              )}
             </div>
 
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {setShowOtp(false);setOtpCode('');setResendTimer(0);}}
-                className="w-full text-xs text-muted-foreground gap-1">
-                
-              <ArrowLeft className="w-3 h-3" /> Voltar ao login
+            <Button variant="ghost" size="sm" onClick={() => { setStep('welcome'); setOtpCode(''); }} className="w-full text-xs text-muted-foreground gap-1">
+              <ArrowLeft className="w-3 h-3" /> Voltar
             </Button>
           </CardContent>
         </Card>
-        </div>
-      </div>);
-
+      </div>
+    );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-[hsl(220,40%,8%)] via-background to-background">
-      {/* Left side - Image Carousel (responsive) */}
-      <div className="relative w-full h-48 sm:h-56 lg:h-auto lg:w-1/2 lg:flex items-center justify-center overflow-hidden">
-        {previewSlides.map((slide, i) =>
-        <img
-          key={i}
-          src={slide.src}
-          alt={slide.title}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === slideIndex ? 'opacity-100' : 'opacity-0'}`} />
-
-        )}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(220,40%,8%)]/80 hidden lg:block" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(220,40%,8%)] lg:bg-gradient-to-t lg:from-[hsl(220,40%,8%)] lg:via-transparent lg:to-[hsl(220,40%,8%)]/50" />
-        
-        <div className="relative z-10 p-4 lg:p-8 text-center space-y-2 lg:space-y-4 flex flex-col items-center justify-end lg:justify-center h-full">
-          <h2 className="text-lg lg:text-3xl font-black text-white drop-shadow-lg">{previewSlides[slideIndex].title}</h2>
-          <p className="text-white/70 text-[11px] lg:text-sm max-w-sm mx-auto hidden sm:block">{previewSlides[slideIndex].desc}</p>
-          
-          {/* Navigation */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSlideIndex((prev) => (prev - 1 + previewSlides.length) % previewSlides.length)}
-              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors">
-              
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="flex gap-1.5">
-              {previewSlides.map((_, i) =>
-              <button
-                key={i}
-                onClick={() => setSlideIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${i === slideIndex ? 'bg-primary w-5' : 'bg-white/40 hover:bg-white/60'}`} />
-
-              )}
+  // ── SIGNUP PREFERENCES STEP ──
+  if (step === 'signup-preferences') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+          <CardContent className="p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <Gamepad2 className="w-10 h-10 text-primary mx-auto" />
+              <h2 className="text-xl font-black">Seu Perfil de Manager</h2>
+              <p className="text-xs text-muted-foreground">Configure suas preferências iniciais</p>
             </div>
-            <button
-              onClick={() => setSlideIndex((prev) => (prev + 1) % previewSlides.length)}
-              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-colors">
-              
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+
+            {/* Country */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground">🌍 País da Liga</label>
+              <div className="grid grid-cols-5 gap-1.5">
+                {countryOptions.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setFavoriteCountry(c.value)}
+                    className={`p-2 rounded-lg border text-center transition-all text-lg ${
+                      favoriteCountry === c.value
+                        ? 'bg-primary/15 border-primary shadow-sm ring-1 ring-primary/30'
+                        : 'bg-card/50 border-border/30 hover:border-primary/30'
+                    }`}
+                    title={c.label}
+                  >
+                    {c.flag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Formation */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground">📋 Formação Preferida</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {formationOptions.map(f => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setPreferredFormation(f)}
+                    className={`py-2 px-1 rounded-lg text-xs font-black border transition-all ${
+                      preferredFormation === f
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                        : 'bg-card/50 border-border/30 text-muted-foreground hover:border-primary/30'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Playstyle */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground">🎮 Estilo de Jogo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {playstyleOptions.map(ps => (
+                  <button
+                    key={ps.value}
+                    type="button"
+                    onClick={() => setPlaystyle(ps.value)}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      playstyle === ps.value
+                        ? 'bg-primary/10 border-primary shadow-sm ring-1 ring-primary/30'
+                        : 'bg-card/50 border-border/30 hover:border-primary/30'
+                    }`}
+                  >
+                    <span className="text-sm font-bold block">{ps.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{ps.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button onClick={handleSignup} disabled={loading} className="w-full h-12 font-bold gap-2">
+              <ChevronRight className="w-4 h-4" />
+              {loading ? 'Criando conta...' : 'Criar Conta'}
+            </Button>
+
+            <Button variant="ghost" size="sm" onClick={() => setStep('signup-info')} className="w-full text-xs text-muted-foreground gap-1">
+              <ArrowLeft className="w-3 h-3" /> Voltar
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+    );
+  }
 
-      {/* Right side - Login Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 gap-6 overflow-y-auto">
-        {/* Hero */}
-        <div className="text-center space-y-3 max-w-md animate-fade-in">
-          <div className="relative inline-block">
-            <img src={flmLogo} alt="FLM 26" className="w-24 h-24 mx-auto drop-shadow-2xl" />
-            <div className="absolute -inset-3 bg-primary/10 rounded-full blur-xl -z-10" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter bg-gradient-to-r from-white to-primary bg-clip-text text-transparent">
-            FLM 26
-          </h1>
-          <p className="text-muted-foreground text-sm">Football Life Manager 2026</p>
-        </div>
+  // ── SIGNUP INFO STEP ──
+  if (step === 'signup-info') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+          <CardContent className="p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <UserPlus className="w-10 h-10 text-primary mx-auto" />
+              <h2 className="text-xl font-black">Criar Conta</h2>
+              <p className="text-xs text-muted-foreground">Preencha seus dados para começar</p>
+            </div>
 
-        {/* Login Card */}
-        <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-center">⚽ Entrar no Jogo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Google Button */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Nome do Manager</label>
+                <Input
+                  placeholder="Ex: Sir Alex"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  className="h-12 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Email</label>
+                <Input
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="h-12 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Senha</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Mínimo 6 caracteres"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="h-12 text-sm pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <Button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full h-12 gap-3 text-sm font-semibold"
-              variant="outline">
-              
+              onClick={() => {
+                if (!email) { toast.error('Preencha o email'); return; }
+                if (password.length < 6) { toast.error('Senha deve ter no mínimo 6 caracteres'); return; }
+                setStep('signup-preferences');
+              }}
+              className="w-full h-12 font-bold gap-2"
+            >
+              Próximo <ChevronRight className="w-4 h-4" />
+            </Button>
+
+            <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
+              <ArrowLeft className="w-3 h-3" /> Voltar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── LOGIN STEP ──
+  if (step === 'login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+          <CardContent className="p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <LogIn className="w-10 h-10 text-primary mx-auto" />
+              <h2 className="text-xl font-black">Entrar</h2>
+              <p className="text-xs text-muted-foreground">Acesse sua conta e volte ao campo</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Email</label>
+                <Input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="h-12 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Senha</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Sua senha"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    className="h-12 text-sm pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full h-12 font-bold gap-2" disabled={loading}>
+                {loading ? 'Entrando...' : '🎮 Entrar'}
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/30" /></div>
+              <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">ou</span></div>
+            </div>
+
+            <Button onClick={handleGoogleLogin} disabled={loading} className="w-full h-11 gap-3 text-sm font-semibold" variant="outline">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              {loading ? 'Entrando...' : 'Entrar com Google'}
+              Entrar com Google
             </Button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">ou com email</span></div>
-            </div>
-
-            <Tabs defaultValue="login">
-              <TabsList className="w-full mb-3">
-                <TabsTrigger value="login" className="flex-1 text-xs">Entrar</TabsTrigger>
-                <TabsTrigger value="signup" className="flex-1 text-xs">Criar Conta</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
-                  <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
-                  <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-                    {loading ? 'Entrando...' : '🎮 Entrar'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-3">
-                  <Input placeholder="Nome do Manager" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" />
-                  <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
-                  <Input type="password" placeholder="Senha (mín. 6 caracteres)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-11" />
-                  
-                  {/* País Favorito */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">🌍 País da Liga</label>
-                    <select
-                      value={favoriteCountry}
-                      onChange={(e) => setFavoriteCountry(e.target.value)}
-                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                      
-                      {countryOptions.map((c) =>
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* Formação Preferida */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">📋 Formação Preferida</label>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {formationOptions.map((f) =>
-                      <button
-                        key={f}
-                        type="button"
-                        onClick={() => setPreferredFormation(f)}
-                        className={`py-1.5 px-1 rounded-md text-[11px] font-bold border transition-all ${
-                        preferredFormation === f ?
-                        'bg-primary text-primary-foreground border-primary shadow-md' :
-                        'bg-card border-border/50 text-muted-foreground hover:border-primary/40'}`
-                        }>
-                        
-                          {f}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Estilo de Jogo */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">🎮 Estilo de Jogo</label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {playstyleOptions.map((ps) =>
-                      <button
-                        key={ps.value}
-                        type="button"
-                        onClick={() => setPlaystyle(ps.value)}
-                        className={`p-2 rounded-lg border text-left transition-all ${
-                        playstyle === ps.value ?
-                        'bg-primary/10 border-primary shadow-sm' :
-                        'bg-card/50 border-border/40 hover:border-primary/30'}`
-                        }>
-                        
-                          <span className="text-xs font-bold block">{ps.label}</span>
-                          <span className="text-[9px] text-muted-foreground">{ps.desc}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-                    {loading ? 'Criando...' : '🏆 Criar Conta'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
+              <ArrowLeft className="w-3 h-3" /> Voltar
+            </Button>
           </CardContent>
         </Card>
-
-        {/* Features Grid */}
-        <div className="w-full max-w-md">
-          <p className="text-xs font-bold text-center text-primary uppercase tracking-widest mb-3">✨ Funcionalidades-FLM</p>
-          <div className="grid grid-cols-2 gap-2">
-            {features.map((f, i) =>
-            <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-colors">
-                <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-xs font-bold truncate">{f.title}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{f.desc}</p>
-                </div>
-              </div>
-            )}
-          </div>
-          <p className="text-[10px] text-center text-muted-foreground/50 mt-4">
-            FLM 26 © 2026 — Todos os direitos reservados
-          </p>
-        </div>
       </div>
-    </div>);
+    );
+  }
 
+  // ── WELCOME STEP ──
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex flex-col items-center justify-center p-4 gap-8">
+      {/* Hero */}
+      <div className="text-center space-y-4 animate-fade-in max-w-md">
+        <div className="relative inline-block">
+          <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-primary/30 to-primary/5 flex items-center justify-center border border-primary/20">
+            <Trophy className="w-14 h-14 text-primary" />
+          </div>
+          <div className="absolute -inset-4 bg-primary/10 rounded-full blur-2xl -z-10" />
+        </div>
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tighter bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          FLM 26
+        </h1>
+        <p className="text-sm text-muted-foreground font-medium">Football Life Manager 2026</p>
+        <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">
+          Gerencie seu clube, escale seu time, dispute campeonatos online e conquiste títulos.
+        </p>
+      </div>
+
+      {/* CTA Buttons */}
+      <div className="w-full max-w-sm space-y-3">
+        <Button onClick={() => setStep('login')} className="w-full h-14 text-base font-black gap-2 shadow-lg">
+          <LogIn className="w-5 h-5" /> Entrar
+        </Button>
+        <Button onClick={() => setStep('signup-info')} variant="outline" className="w-full h-14 text-base font-black gap-2">
+          <UserPlus className="w-5 h-5" /> Criar Conta
+        </Button>
+
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/20" /></div>
+          <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-background px-3 text-muted-foreground/60">ou</span></div>
+        </div>
+
+        <Button onClick={handleGoogleLogin} disabled={loading} variant="ghost" className="w-full h-12 gap-3 text-sm font-semibold border border-border/20">
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+          </svg>
+          Entrar com Google
+        </Button>
+      </div>
+
+      {/* Features Grid */}
+      <div className="w-full max-w-md">
+        <p className="text-[10px] font-bold text-center text-primary uppercase tracking-[0.2em] mb-3">✨ Funcionalidades</p>
+        <div className="grid grid-cols-2 gap-2">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-border/20 bg-card/20 hover:border-primary/20 transition-colors">
+              <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold truncate">{f.title}</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[9px] text-center text-muted-foreground/40 mt-4">FLM 26 © 2026</p>
+      </div>
+    </div>
+  );
 }
