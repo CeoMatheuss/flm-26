@@ -1,6 +1,6 @@
 /**
- * MatchPage — Text-based match simulation with 2D highlight clips.
- * Uses the new simple useMatchSimulation hook.
+ * MatchPage — Redesigned match simulation with rich stats, player ratings,
+ * substitutions, tactics display, and professional scoreboard.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Film, LogOut, BarChart3 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown } from 'lucide-react';
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
@@ -93,7 +94,7 @@ export default function MatchPage() {
         <Card className="max-w-sm w-full">
           <CardContent className="p-6 text-center space-y-3">
             <p className="text-sm text-destructive">{state.errorMsg || 'Erro ao carregar partida.'}</p>
-            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>  
+            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>
           </CardContent>
         </Card>
       </div>
@@ -121,15 +122,18 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} />;
 }
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: () => void }) {
+function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
+  matchState: MatchState; onExit: () => void;
+  homePlayers?: Player[]; tactics?: TacticsConfig;
+}) {
   const {
     phase, currentMinute, progress, homeTeam, awayTeam,
-    homeGoals, awayGoals, visibleEvents, latestEvent, stats, stadiumName, matchDbId,
+    homeGoals, awayGoals, visibleEvents, latestEvent, stats, stadiumName, matchDbId, competition,
   } = matchState;
 
   const isFinished = phase === 'finished';
@@ -142,7 +146,7 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
     const total = homeGoals + awayGoals;
     if (total > lastGoalCount.current) {
       setGoalFlash(true);
-      setTimeout(() => setGoalFlash(false), 2000);
+      setTimeout(() => setGoalFlash(false), 2500);
     }
     lastGoalCount.current = total;
   }, [homeGoals, awayGoals]);
@@ -165,97 +169,129 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
   }, [visibleEvents.length]);
 
   const phaseLabel = () => {
-    if (isFinished) return 'FIM';
-    if (isHalftime) return 'INT';
-    if (currentMinute <= 45) return '1ºT';
-    return '2ºT';
+    if (isFinished) return 'FIM DE JOGO';
+    if (isHalftime) return 'INTERVALO';
+    if (currentMinute <= 45) return '1º TEMPO';
+    return '2º TEMPO';
   };
 
   const possession = computePossession(visibleEvents, stats);
+  const substitutions = visibleEvents.filter(e => e.type === 'substitution');
+  const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 max-w-2xl mx-auto space-y-2">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-3">
+      {/* Top Bar */}
       <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
+          <LogOut className="h-3.5 w-3.5" /> Sair
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
-            <LogOut className="h-3 w-3" /> Sair
-          </Button>
-          <Badge variant={isHalftime ? 'secondary' : isFinished ? 'outline' : 'default'} className="text-xs font-mono px-2">
-            {currentMinute}' {phaseLabel()}
+          <Badge variant="outline" className="text-[10px] font-medium">
+            {competition || 'Amistoso'}
           </Badge>
+          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">🏟️ {stadiumName}</span>
         </div>
-        <span className="text-[9px] text-muted-foreground truncate max-w-[140px]">🏟️ {stadiumName}</span>
       </div>
 
-      {/* Scoreboard */}
-      <Card className={`p-3 transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/50 shadow-lg shadow-yellow-400/10' : ''}`}>
-        <div className="flex items-center gap-3 justify-center">
-          <p className="text-xs sm:text-sm font-bold truncate text-right flex-1">{homeTeam}</p>
-          <div className={`text-3xl sm:text-4xl font-black font-mono px-4 py-1.5 rounded-lg min-w-[90px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-105' : 'bg-muted/30'}`}>
-            {homeGoals}
-            <span className="text-muted-foreground text-base mx-1">×</span>
-            {awayGoals}
-          </div>
-          <p className="text-xs sm:text-sm font-bold truncate text-left flex-1">{awayTeam}</p>
+      {/* Professional Scoreboard */}
+      <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+        {/* Phase bar */}
+        <div className="bg-primary/10 px-3 py-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{phaseLabel()}</span>
+          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs font-mono h-6">
+            {currentMinute}'
+          </Badge>
         </div>
-        {goalFlash && latestEvent?.isGoal && (
-          <p className="text-center text-xs font-bold text-yellow-400 animate-fade-in mt-1">
-            ⚽ GOL! {latestEvent.playerName || 'Jogador'}{latestEvent.assistName ? ` (🅰 ${latestEvent.assistName})` : ''}
-          </p>
-        )}
-        {/* Mini possession bar */}
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-[9px] font-mono text-blue-400">{possession[0]}%</span>
-          <div className="flex-1 flex h-1 rounded-full overflow-hidden bg-muted/20">
-            <div className="bg-blue-500 transition-all duration-500" style={{ width: `${possession[0]}%` }} />
-            <div className="bg-red-500 flex-1" />
-          </div>
-          <span className="text-[9px] font-mono text-red-400">{possession[1]}%</span>
-        </div>
-      </Card>
 
-      {/* Progress bar */}
-      {!isFinished && (
-        <div className="px-1">
-          <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
-            <div className="h-full bg-primary/60 transition-all duration-500 rounded-full" style={{ width: `${(progress || 0) * 100}%` }} />
+        <CardContent className="p-4 space-y-3">
+          {/* Teams + Score */}
+          <div className="flex items-center gap-2">
+            {/* Home */}
+            <div className="flex-1 text-right space-y-0.5">
+              <p className="text-sm sm:text-base font-black truncate">{homeTeam}</p>
+              <div className="flex items-center gap-1 justify-end flex-wrap">
+                {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                  <span key={i} className="text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Score */}
+            <div className={`text-4xl sm:text-5xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl min-w-[100px] sm:min-w-[120px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+              <span className="text-primary">{homeGoals}</span>
+              <span className="text-muted-foreground/50 text-2xl mx-1">:</span>
+              <span className="text-primary">{awayGoals}</span>
+            </div>
+
+            {/* Away */}
+            <div className="flex-1 text-left space-y-0.5">
+              <p className="text-sm sm:text-base font-black truncate">{awayTeam}</p>
+              <div className="flex items-center gap-1 flex-wrap">
+                {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                  <span key={i} className="text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Goal flash banner */}
+          {goalFlash && latestEvent?.isGoal && (
+            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 text-center animate-fade-in">
+              <p className="text-sm font-black text-emerald-400">
+                ⚽ GOOOL! {latestEvent.playerName || 'Jogador'}
+              </p>
+              {latestEvent.assistName && (
+                <p className="text-[10px] text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+              )}
+            </div>
+          )}
+
+          {/* Possession bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-blue-400 w-8 text-right">{possession[0]}%</span>
+            <div className="flex-1 flex h-2 rounded-full overflow-hidden bg-muted/10">
+              <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
+              <div className="bg-red-500 flex-1 rounded-r-full" />
+            </div>
+            <span className="text-[10px] font-bold text-red-400 w-8">{possession[1]}%</span>
+          </div>
+
+          {/* Match progress */}
+          {!isFinished && (
+            <Progress value={(progress || 0) * 100} className="h-1" />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Halftime banner */}
       {isHalftime && (
-        <Card className="border-primary/30 bg-primary/5 p-3 text-center animate-fade-in">
-          <p className="text-sm font-bold text-primary">⏸ INTERVALO</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+        <Card className="border-primary/30 bg-primary/5 p-4 text-center animate-fade-in">
+          <p className="text-base font-black text-primary">⏸ INTERVALO</p>
+          <p className="text-xs text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
         </Card>
       )}
 
-      {/* 2D Canvas — always visible. Shows highlight or idle state */}
-      {!isFinished && (
-        <Card className={`p-2 transition-all duration-300 ${activeHighlight ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-border/10 bg-muted/5'}`}>
-          {activeHighlight && (
-            <div className="text-center mb-1">
-              <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
-            </div>
-          )}
+      {/* 2D Canvas — highlights */}
+      {!isFinished && activeHighlight && (
+        <Card className="p-2 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
+          <div className="text-center mb-1">
+            <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
+          </div>
           <HighlightMiniCanvas
-            type={activeHighlight ? getHighlightType(activeHighlight.type) : 'idle'}
-            team={activeHighlight ? (activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team) : 'home'}
+            type={getHighlightType(activeHighlight.type)}
+            team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
             playerName={activeHighlight?.playerName}
             currentMinute={currentMinute}
-            onComplete={activeHighlight ? () => setTimeout(() => setActiveHighlight(null), 1500) : undefined}
+            onComplete={() => setTimeout(() => setActiveHighlight(null), 1500)}
           />
-          {activeHighlight && (
-            <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
-          )}
+          <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
         </Card>
       )}
 
-      {/* Commentary — latest event */}
-      {latestEvent && (
-        <Card className="p-2.5">
+      {/* Live commentary */}
+      {latestEvent && !goalFlash && (
+        <Card className="p-3 border-border/30">
           <div className="flex items-start gap-2">
             <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
             <p className={`text-sm font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
@@ -265,51 +301,54 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
         </Card>
       )}
 
-      {/* Quick stats bar */}
+      {/* Quick Stats Row */}
       {!isFinished && (
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1.5">
           {[
             ['⚡', 'Finalizações', stats.shots[0], stats.shots[1]],
             ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
             ['🏳️', 'Escanteios', stats.corners[0], stats.corners[1]],
             ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
           ].map(([icon, label, h, a]) => (
-            <div key={label as string} className="text-center bg-muted/10 rounded p-1.5">
+            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-2">
               <p className="text-[9px] text-muted-foreground">{icon} {label}</p>
-              <p className="text-xs font-bold font-mono">{h as number} - {a as number}</p>
+              <p className="text-sm font-black font-mono">{h as number} - {a as number}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tabs: Events + Stats */}
-      <Tabs defaultValue="events" className="space-y-1">
-        <TabsList className="w-full h-8">
-          <TabsTrigger value="events" className="flex-1 text-[10px] gap-1">📝 Narração</TabsTrigger>
-          <TabsTrigger value="stats" className="flex-1 text-[10px] gap-1">
-            <BarChart3 className="h-3 w-3" /> Estatísticas
+      {/* Tabs: Narração, Estatísticas, Escalação, Substituições */}
+      <Tabs defaultValue="events" className="space-y-2">
+        <TabsList className="w-full h-9 grid grid-cols-4">
+          <TabsTrigger value="events" className="text-[10px] gap-1">📝 Narração</TabsTrigger>
+          <TabsTrigger value="stats" className="text-[10px] gap-1">
+            <BarChart3 className="h-3 w-3" /> Stats
+          </TabsTrigger>
+          <TabsTrigger value="lineup" className="text-[10px] gap-1">
+            <Shirt className="h-3 w-3" /> Time
+          </TabsTrigger>
+          <TabsTrigger value="subs" className="text-[10px] gap-1">
+            <ArrowUpDown className="h-3 w-3" /> Subs
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="events">
-          <Card className="p-1.5">
-            <div ref={eventsRef} className="max-h-[300px] overflow-y-auto space-y-0.5">
+          <Card className="p-2">
+            <div ref={eventsRef} className="max-h-[350px] overflow-y-auto space-y-0.5">
               {visibleEvents.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início da partida...</p>
+                <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
               )}
-              {(isFinished ? [...visibleEvents].reverse() : [...visibleEvents].reverse().slice(0, 50)).map((ev, i) => (
+              {(isFinished ? [...visibleEvents].reverse() : [...visibleEvents].reverse().slice(0, 60)).map((ev, i) => (
                 <div
                   key={`${ev.minute}-${i}`}
                   className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${getEventBg(ev)}`}
                 >
-                  <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono mt-0.5">
+                  <Badge variant="outline" className="text-[8px] w-8 justify-center shrink-0 font-mono mt-0.5">
                     {ev.minute}'
                   </Badge>
-                  <span className="text-[10px] shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
-                  {isHighlightEvent(ev.type) && (
-                    <span className="text-[8px] text-yellow-400 shrink-0 mt-0.5">🎬</span>
-                  )}
+                  <span className="text-[11px] shrink-0">{getEventIcon(ev.type)}</span>
+                  <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
                 </div>
               ))}
             </div>
@@ -317,8 +356,20 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
         </TabsContent>
 
         <TabsContent value="stats">
-          <Card className="p-3">
+          <Card className="p-4">
             <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="lineup">
+          <Card className="p-4">
+            <LineupView homePlayers={homePlayers} tactics={tactics} homeTeam={homeTeam} />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="subs">
+          <Card className="p-4">
+            <SubstitutionsView substitutions={substitutions} />
           </Card>
         </TabsContent>
       </Tabs>
@@ -334,6 +385,7 @@ function MatchViewer({ matchState, onExit }: { matchState: MatchState; onExit: (
           visibleEvents={visibleEvents}
           matchDbId={matchDbId}
           onExit={onExit}
+          homePlayers={homePlayers}
         />
       )}
     </div>
@@ -349,8 +401,8 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
     ['Chutes no Gol', stats.shotsOnTarget, ''],
     ['Escanteios', stats.corners, ''],
     ['Faltas', stats.fouls, ''],
-    ['Cartões Am.', stats.yellowCards, ''],
-    ['Cartões Vm.', stats.redCards, ''],
+    ['Cartões Amarelos', stats.yellowCards, ''],
+    ['Cartões Vermelhos', stats.redCards, ''],
     ['Passes', stats.passes, ''],
     ['Desarmes', stats.tackles, ''],
     ['Defesas', stats.saves, ''],
@@ -358,49 +410,202 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
   ];
 
   return (
-    <div className="space-y-1.5">
-      {rows.map(([label, vals, suffix]) => (
-        <div key={label} className="flex items-center gap-2 text-[10px]">
-          <span className="w-8 text-right font-bold">{vals[0]}{suffix}</span>
-          <div className="flex-1 flex h-1.5 rounded overflow-hidden bg-muted/20">
-            <div className="bg-blue-500 transition-all duration-500" style={{ width: `${vals[0] + vals[1] > 0 ? (vals[0] / (vals[0] + vals[1])) * 100 : 50}%` }} />
-            <div className="bg-red-500 flex-1" />
-          </div>
-          <span className="w-8 text-left font-bold">{vals[1]}{suffix}</span>
-          <span className="text-muted-foreground w-20 shrink-0 truncate">{label}</span>
-        </div>
-      ))}
-      <div className="flex justify-between text-[8px] text-muted-foreground pt-1 border-t border-border/20">
+    <div className="space-y-3">
+      <div className="flex justify-between text-xs font-bold">
         <span className="text-blue-400">{homeTeam}</span>
         <span className="text-red-400">{awayTeam}</span>
       </div>
+      {rows.map(([label, vals, suffix]) => {
+        const total = vals[0] + vals[1];
+        const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
+        return (
+          <div key={label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold w-10 text-right">{vals[0]}{suffix}</span>
+              <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+              <span className="font-bold w-10 text-left">{vals[1]}{suffix}</span>
+            </div>
+            <div className="flex h-2 rounded-full overflow-hidden bg-muted/10">
+              <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
+              <div className="bg-red-500 flex-1 rounded-r-full" />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── LINEUP VIEW ───────────────────────────────────────────── */
+
+function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string }) {
+  if (!homePlayers || homePlayers.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground">Escalação não disponível</p>
+      </div>
+    );
+  }
+
+  const starters = homePlayers.slice(0, 11);
+  const bench = homePlayers.slice(11);
+
+  return (
+    <div className="space-y-4">
+      {/* Tactics info */}
+      {tactics && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="secondary" className="text-xs">📋 {tactics.formation}</Badge>
+          {tactics.mentality && <Badge variant="outline" className="text-[10px]">{tactics.mentality}</Badge>}
+          {tactics.pressing && <Badge variant="outline" className="text-[10px]">Pressão: {tactics.pressing}</Badge>}
+        </div>
+      )}
+
+      {/* Starters */}
+      <div>
+        <p className="text-xs font-bold mb-2 text-primary flex items-center gap-1"><Shirt className="h-3 w-3" /> Titulares — {homeTeam}</p>
+        <div className="space-y-1">
+          {starters.map((p, i) => (
+            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2">
+              <span className="text-[10px] font-mono text-muted-foreground w-5">{i + 1}</span>
+              <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
+              <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 text-yellow-400" />
+                <span className="text-xs font-bold">{p.overall}</span>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <Activity className="h-3 w-3 text-emerald-400" />
+                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bench */}
+      {bench.length > 0 && (
+        <div>
+          <p className="text-xs font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
+          <div className="grid grid-cols-2 gap-1">
+            {bench.map((p, i) => (
+              <div key={p.id || i} className="flex items-center gap-1.5 bg-muted/10 rounded px-2 py-1.5">
+                <Badge variant="outline" className="text-[8px] w-7 justify-center">{p.position}</Badge>
+                <span className="text-[10px] truncate flex-1">{p.name}</span>
+                <span className="text-[10px] font-bold">{p.overall}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── SUBSTITUTIONS VIEW ────────────────────────────────────── */
+
+function SubstitutionsView({ substitutions }: { substitutions: SimEvent[] }) {
+  if (substitutions.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground">Nenhuma substituição realizada</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold text-primary mb-3">🔄 Substituições ({substitutions.length})</p>
+      {substitutions.map((sub, i) => (
+        <div key={i} className="flex items-center gap-3 bg-sky-500/5 border border-sky-500/15 rounded-lg px-3 py-2.5">
+          <Badge variant="outline" className="text-[9px] font-mono">{sub.minute}'</Badge>
+          <ArrowUpDown className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold">{sub.description}</p>
+            <p className="text-[10px] text-muted-foreground capitalize">{sub.team === 'home' ? '🔵 Casa' : '🔴 Visitante'}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 /* ── FINISHED SECTION ──────────────────────────────────────── */
 
-function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayGoals, visibleEvents, matchDbId, onExit }: {
+function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayGoals, visibleEvents, matchDbId, onExit, homePlayers }: {
   stats: MatchStats; homeTeam: string; awayTeam: string;
   finalHomeGoals: number; finalAwayGoals: number;
   visibleEvents: SimEvent[]; matchDbId: string | null; onExit: () => void;
+  homePlayers?: Player[];
 }) {
   const [showReplay, setShowReplay] = useState(false);
   const [replayIndex, setReplayIndex] = useState(0);
   const [showReport, setShowReport] = useState(false);
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
+  // Calculate player ratings from events
+  const playerRatings = homePlayers?.slice(0, 11).map(p => {
+    let rating = 6.5;
+    for (const ev of visibleEvents) {
+      if (ev.playerName === p.name && ev.team === 'home') {
+        if (ev.isGoal) rating += 1.0;
+        if (ev.type === 'great_save') rating += 0.5;
+        if (ev.type === 'yellow_card') rating -= 0.3;
+        if (ev.type === 'red_card') rating -= 1.5;
+        if (['dribble_ok', 'through_ball', 'tackle'].includes(ev.type)) rating += 0.1;
+      }
+      if (ev.assistName === p.name) rating += 0.5;
+    }
+    return { ...p, rating: Math.min(10, Math.max(3, parseFloat(rating.toFixed(1)))) };
+  }) || [];
+
+  const motm = playerRatings.length > 0 ? playerRatings.reduce((a, b) => a.rating > b.rating ? a : b) : null;
+
   return (
-    <div className="space-y-2 pt-2 animate-fade-in">
-      <Card className="border-primary/20">
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-primary" /> Resultado Final
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 pb-3">
+    <div className="space-y-3 pt-2 animate-fade-in">
+      {/* Result Summary */}
+      <Card className="border-primary/30 overflow-hidden">
+        <div className="bg-primary/10 px-3 py-2 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">Resultado Final</p>
+        </div>
+        <CardContent className="p-4 space-y-4">
+          {/* MOTM */}
+          {motm && (
+            <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                <Star className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-[10px] text-yellow-400 font-bold uppercase">Craque do Jogo</p>
+                <p className="text-sm font-black">{motm.name}</p>
+                <p className="text-[10px] text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Player Ratings */}
+          {playerRatings.length > 0 && (
+            <div>
+              <p className="text-xs font-bold mb-2 flex items-center gap-1"><Star className="h-3 w-3 text-yellow-400" /> Notas dos Jogadores</p>
+              <div className="grid grid-cols-2 gap-1">
+                {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded px-2 py-1.5">
+                    <Badge variant="outline" className="text-[8px] w-7 justify-center">{p.position}</Badge>
+                    <span className="text-[10px] truncate flex-1">{p.name}</span>
+                    <span className={`text-xs font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {p.rating}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-          <p className="text-[8px] text-muted-foreground text-center mt-2 border-t border-border/20 pt-2">
+
+          <p className="text-[9px] text-muted-foreground text-center border-t border-border/20 pt-2">
             {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols
           </p>
         </CardContent>
