@@ -1,9 +1,9 @@
 /**
- * MatchPage — Redesigned match simulation with rich stats, player ratings,
- * substitutions, tactics display, and professional scoreboard.
+ * MatchPage — Match simulation with manager-controlled substitutions.
+ * Reports only appear after the match ends.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Player } from '@/types/game';
 import { TacticsConfig } from '@/types/tactics';
@@ -80,12 +80,7 @@ export default function MatchPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!initDone || state.phase === 'loading') {
-    return (
-      <GameLoadingScreen
-        message={loadingMsg}
-        subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined}
-      />
-    );
+    return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
   }
 
   if (state.phase === 'error') {
@@ -168,6 +163,18 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     if (eventsRef.current) eventsRef.current.scrollTop = 0;
   }, [visibleEvents.length]);
 
+  // Manager substitution state
+  const [subsUsed, setSubsUsed] = useState(0);
+  const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
+  const maxSubs = 5;
+
+  const handleSubstitution = useCallback((playerOutId: string, playerInId: string) => {
+    if (subsUsed >= maxSubs || isFinished) return;
+    setSubsUsed(prev => prev + 1);
+    setSelectedSubOut(null);
+    // The substitution is visual/local — we just track it
+  }, [subsUsed, isFinished]);
+
   const phaseLabel = () => {
     if (isFinished) return 'FIM DE JOGO';
     if (isHalftime) return 'INTERVALO';
@@ -180,7 +187,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-3">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-2 sm:space-y-3">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
@@ -190,13 +197,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           <Badge variant="outline" className="text-[10px] font-medium">
             {competition || 'Amistoso'}
           </Badge>
-          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">🏟️ {stadiumName}</span>
+          <span className="text-[10px] text-muted-foreground truncate max-w-[100px] sm:max-w-[120px]">🏟️ {stadiumName}</span>
         </div>
       </div>
 
       {/* Professional Scoreboard */}
       <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
-        {/* Phase bar */}
         <div className="bg-primary/10 px-3 py-1.5 flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{phaseLabel()}</span>
           <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs font-mono h-6">
@@ -204,32 +210,29 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </Badge>
         </div>
 
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
           {/* Teams + Score */}
-          <div className="flex items-center gap-2">
-            {/* Home */}
-            <div className="flex-1 text-right space-y-0.5">
-              <p className="text-sm sm:text-base font-black truncate">{homeTeam}</p>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex-1 text-right space-y-0.5 min-w-0">
+              <p className="text-xs sm:text-base font-black truncate">{homeTeam}</p>
               <div className="flex items-center gap-1 justify-end flex-wrap">
                 {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                  <span key={i} className="text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[8px] sm:text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
 
-            {/* Score */}
-            <div className={`text-4xl sm:text-5xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl min-w-[100px] sm:min-w-[120px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+            <div className={`text-3xl sm:text-5xl font-black font-mono px-3 sm:px-6 py-1.5 sm:py-2 rounded-xl min-w-[80px] sm:min-w-[120px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
               <span className="text-primary">{homeGoals}</span>
-              <span className="text-muted-foreground/50 text-2xl mx-1">:</span>
+              <span className="text-muted-foreground/50 text-xl sm:text-2xl mx-0.5 sm:mx-1">:</span>
               <span className="text-primary">{awayGoals}</span>
             </div>
 
-            {/* Away */}
-            <div className="flex-1 text-left space-y-0.5">
-              <p className="text-sm sm:text-base font-black truncate">{awayTeam}</p>
+            <div className="flex-1 text-left space-y-0.5 min-w-0">
+              <p className="text-xs sm:text-base font-black truncate">{awayTeam}</p>
               <div className="flex items-center gap-1 flex-wrap">
                 {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                  <span key={i} className="text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[8px] sm:text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
@@ -238,9 +241,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           {/* Goal flash banner */}
           {goalFlash && latestEvent?.isGoal && (
             <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 text-center animate-fade-in">
-              <p className="text-sm font-black text-emerald-400">
-                ⚽ GOOOL! {latestEvent.playerName || 'Jogador'}
-              </p>
+              <p className="text-sm font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
               {latestEvent.assistName && (
                 <p className="text-[10px] text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
               )}
@@ -257,18 +258,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             <span className="text-[10px] font-bold text-red-400 w-8">{possession[1]}%</span>
           </div>
 
-          {/* Match progress */}
-          {!isFinished && (
-            <Progress value={(progress || 0) * 100} className="h-1" />
-          )}
+          {!isFinished && <Progress value={(progress || 0) * 100} className="h-1" />}
         </CardContent>
       </Card>
 
       {/* Halftime banner */}
       {isHalftime && (
-        <Card className="border-primary/30 bg-primary/5 p-4 text-center animate-fade-in">
-          <p className="text-base font-black text-primary">⏸ INTERVALO</p>
-          <p className="text-xs text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+        <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
+          <p className="text-sm sm:text-base font-black text-primary">⏸ INTERVALO</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
         </Card>
       )}
 
@@ -291,91 +289,82 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
       {/* Live commentary */}
       {latestEvent && !goalFlash && (
-        <Card className="p-3 border-border/30">
+        <Card className="p-2 sm:p-3 border-border/30">
           <div className="flex items-start gap-2">
             <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-            <p className={`text-sm font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
+            <p className={`text-xs sm:text-sm font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
               {getEventIcon(latestEvent.type)} {latestEvent.description}
             </p>
           </div>
         </Card>
       )}
 
-      {/* Quick Stats Row */}
+      {/* Quick Stats Row — during match */}
       {!isFinished && (
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
           {[
-            ['⚡', 'Finalizações', stats.shots[0], stats.shots[1]],
+            ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
             ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
             ['🏳️', 'Escanteios', stats.corners[0], stats.corners[1]],
             ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
           ].map(([icon, label, h, a]) => (
-            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-2">
-              <p className="text-[9px] text-muted-foreground">{icon} {label}</p>
-              <p className="text-sm font-black font-mono">{h as number} - {a as number}</p>
+            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2">
+              <p className="text-[8px] sm:text-[9px] text-muted-foreground">{icon} {label}</p>
+              <p className="text-xs sm:text-sm font-black font-mono">{h as number} - {a as number}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tabs: Narração, Estatísticas, Escalação, Substituições */}
-      <Tabs defaultValue="events" className="space-y-2">
-        <TabsList className="w-full h-9 grid grid-cols-4">
-          <TabsTrigger value="events" className="text-[10px] gap-1">📝 Narração</TabsTrigger>
-          <TabsTrigger value="stats" className="text-[10px] gap-1">
-            <BarChart3 className="h-3 w-3" /> Stats
-          </TabsTrigger>
-          <TabsTrigger value="lineup" className="text-[10px] gap-1">
-            <Shirt className="h-3 w-3" /> Time
-          </TabsTrigger>
-          <TabsTrigger value="subs" className="text-[10px] gap-1">
-            <ArrowUpDown className="h-3 w-3" /> Subs
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs: only Narração + Subs (manager) during match. Full tabs at end. */}
+      {!isFinished ? (
+        <Tabs defaultValue="events" className="space-y-2">
+          <TabsList className="w-full h-9 grid grid-cols-3">
+            <TabsTrigger value="events" className="text-[10px] gap-1">📝 Narração</TabsTrigger>
+            <TabsTrigger value="lineup" className="text-[10px] gap-1"><Shirt className="h-3 w-3" /> Time</TabsTrigger>
+            <TabsTrigger value="subs" className="text-[10px] gap-1"><ArrowUpDown className="h-3 w-3" /> Subs ({subsUsed}/{maxSubs})</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="events">
-          <Card className="p-2">
-            <div ref={eventsRef} className="max-h-[350px] overflow-y-auto space-y-0.5">
-              {visibleEvents.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
-              )}
-              {(isFinished ? [...visibleEvents].reverse() : [...visibleEvents].reverse().slice(0, 60)).map((ev, i) => (
-                <div
-                  key={`${ev.minute}-${i}`}
-                  className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${getEventBg(ev)}`}
-                >
-                  <Badge variant="outline" className="text-[8px] w-8 justify-center shrink-0 font-mono mt-0.5">
-                    {ev.minute}'
-                  </Badge>
-                  <span className="text-[11px] shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </TabsContent>
+          <TabsContent value="events">
+            <Card className="p-2">
+              <div ref={eventsRef} className="max-h-[280px] sm:max-h-[350px] overflow-y-auto space-y-0.5">
+                {visibleEvents.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
+                )}
+                {[...visibleEvents].reverse().slice(0, 60).map((ev, i) => (
+                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-2 py-1 sm:py-1.5 rounded transition-colors ${getEventBg(ev)}`}>
+                    <Badge variant="outline" className="text-[8px] w-8 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                    <span className="text-[10px] sm:text-[11px] shrink-0">{getEventIcon(ev.type)}</span>
+                    <span className={`text-[10px] sm:text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="stats">
-          <Card className="p-4">
-            <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-          </Card>
-        </TabsContent>
+          <TabsContent value="lineup">
+            <Card className="p-3 sm:p-4">
+              <LineupView homePlayers={homePlayers} tactics={tactics} homeTeam={homeTeam} />
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="lineup">
-          <Card className="p-4">
-            <LineupView homePlayers={homePlayers} tactics={tactics} homeTeam={homeTeam} />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="subs">
-          <Card className="p-4">
-            <SubstitutionsView substitutions={substitutions} />
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Finished */}
-      {isFinished && (
+          <TabsContent value="subs">
+            <Card className="p-3 sm:p-4">
+              <ManagerSubstitutionView
+                homePlayers={homePlayers}
+                subsUsed={subsUsed}
+                maxSubs={maxSubs}
+                selectedSubOut={selectedSubOut}
+                onSelectSubOut={setSelectedSubOut}
+                onConfirmSub={handleSubstitution}
+                isHalftime={isHalftime}
+                isFinished={isFinished}
+              />
+            </Card>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        /* ── FINISHED: Full report ── */
         <FinishedSection
           stats={stats}
           homeTeam={homeTeam}
@@ -387,6 +376,93 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           onExit={onExit}
           homePlayers={homePlayers}
         />
+      )}
+    </div>
+  );
+}
+
+/* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
+
+function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished }: {
+  homePlayers?: Player[];
+  subsUsed: number;
+  maxSubs: number;
+  selectedSubOut: string | null;
+  onSelectSubOut: (id: string | null) => void;
+  onConfirmSub: (outId: string, inId: string) => void;
+  isHalftime: boolean;
+  isFinished: boolean;
+}) {
+  if (!homePlayers || homePlayers.length <= 11) {
+    return (
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground">Banco insuficiente para substituições</p>
+      </div>
+    );
+  }
+
+  if (subsUsed >= maxSubs) {
+    return (
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground">Todas as {maxSubs} substituições foram usadas</p>
+      </div>
+    );
+  }
+
+  const starters = homePlayers.slice(0, 11);
+  const bench = homePlayers.slice(11);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-primary">🔄 Substituições do Manager</p>
+        <Badge variant="outline" className="text-[9px]">{subsUsed}/{maxSubs} usadas</Badge>
+      </div>
+
+      {!selectedSubOut ? (
+        <>
+          <p className="text-[10px] text-muted-foreground">Selecione o jogador para SAIR:</p>
+          <div className="space-y-1 max-h-[250px] overflow-y-auto">
+            {starters.map((p, i) => (
+              <button
+                key={p.id || i}
+                onClick={() => onSelectSubOut(p.id)}
+                className="w-full flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2 hover:border-red-400/40 hover:bg-red-500/5 transition-all text-left"
+              >
+                <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
+                <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
+                <span className="text-xs font-bold">{p.overall}</span>
+                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-2 flex items-center gap-2">
+            <span className="text-xs">🔴 SAI:</span>
+            <span className="text-xs font-bold">{starters.find(p => p.id === selectedSubOut)?.name}</span>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] ml-auto" onClick={() => onSelectSubOut(null)}>Cancelar</Button>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground">Selecione o jogador para ENTRAR:</p>
+          <div className="space-y-1 max-h-[200px] overflow-y-auto">
+            {bench.map((p, i) => (
+              <button
+                key={p.id || i}
+                onClick={() => onConfirmSub(selectedSubOut, p.id)}
+                className="w-full flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-all text-left"
+              >
+                <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
+                <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
+                <span className="text-xs font-bold text-emerald-400">{p.overall}</span>
+                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -410,22 +486,22 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       <div className="flex justify-between text-xs font-bold">
-        <span className="text-blue-400">{homeTeam}</span>
-        <span className="text-red-400">{awayTeam}</span>
+        <span className="text-blue-400 truncate max-w-[120px]">{homeTeam}</span>
+        <span className="text-red-400 truncate max-w-[120px]">{awayTeam}</span>
       </div>
       {rows.map(([label, vals, suffix]) => {
         const total = vals[0] + vals[1];
         const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
         return (
-          <div key={label} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold w-10 text-right">{vals[0]}{suffix}</span>
-              <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
-              <span className="font-bold w-10 text-left">{vals[1]}{suffix}</span>
+          <div key={label} className="space-y-0.5 sm:space-y-1">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs">
+              <span className="font-bold w-8 sm:w-10 text-right">{vals[0]}{suffix}</span>
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">{label}</span>
+              <span className="font-bold w-8 sm:w-10 text-left">{vals[1]}{suffix}</span>
             </div>
-            <div className="flex h-2 rounded-full overflow-hidden bg-muted/10">
+            <div className="flex h-1.5 sm:h-2 rounded-full overflow-hidden bg-muted/10">
               <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
               <div className="bg-red-500 flex-1 rounded-r-full" />
             </div>
@@ -452,39 +528,36 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
   const bench = homePlayers.slice(11);
 
   return (
-    <div className="space-y-4">
-      {/* Tactics info */}
+    <div className="space-y-3 sm:space-y-4">
       {tactics && (
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-xs">📋 {tactics.formation}</Badge>
-          {tactics.playStyle && <Badge variant="outline" className="text-[10px]">{tactics.playStyle}</Badge>}
-          {tactics.pressing && <Badge variant="outline" className="text-[10px]">Pressão: {tactics.pressing}</Badge>}
+          <Badge variant="secondary" className="text-[10px] sm:text-xs">📋 {tactics.formation}</Badge>
+          {tactics.playStyle && <Badge variant="outline" className="text-[9px] sm:text-[10px]">{tactics.playStyle}</Badge>}
+          {tactics.pressing && <Badge variant="outline" className="text-[9px] sm:text-[10px]">Pressão: {tactics.pressing}</Badge>}
         </div>
       )}
 
-      {/* Starters */}
       <div>
         <p className="text-xs font-bold mb-2 text-primary flex items-center gap-1"><Shirt className="h-3 w-3" /> Titulares — {homeTeam}</p>
         <div className="space-y-1">
           {starters.map((p, i) => (
-            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2">
-              <span className="text-[10px] font-mono text-muted-foreground w-5">{i + 1}</span>
-              <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
-              <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
-              <div className="flex items-center gap-1">
+            <div key={p.id || i} className="flex items-center gap-1.5 sm:gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+              <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
+              <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold w-7 sm:w-8 justify-center">{p.position}</Badge>
+              <span className="text-[10px] sm:text-xs font-semibold flex-1 truncate">{p.name}</span>
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 <Star className="h-3 w-3 text-yellow-400" />
-                <span className="text-xs font-bold">{p.overall}</span>
+                <span className="text-[10px] sm:text-xs font-bold">{p.overall}</span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Activity className="h-3 w-3 text-emerald-400" />
-                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Bench */}
       {bench.length > 0 && (
         <div>
           <p className="text-xs font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
@@ -503,35 +576,6 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
   );
 }
 
-/* ── SUBSTITUTIONS VIEW ────────────────────────────────────── */
-
-function SubstitutionsView({ substitutions }: { substitutions: SimEvent[] }) {
-  if (substitutions.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">Nenhuma substituição realizada</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-bold text-primary mb-3">🔄 Substituições ({substitutions.length})</p>
-      {substitutions.map((sub, i) => (
-        <div key={i} className="flex items-center gap-3 bg-sky-500/5 border border-sky-500/15 rounded-lg px-3 py-2.5">
-          <Badge variant="outline" className="text-[9px] font-mono">{sub.minute}'</Badge>
-          <ArrowUpDown className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold">{sub.description}</p>
-            <p className="text-[10px] text-muted-foreground capitalize">{sub.team === 'home' ? '🔵 Casa' : '🔴 Visitante'}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* ── FINISHED SECTION ──────────────────────────────────────── */
 
 function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayGoals, visibleEvents, matchDbId, onExit, homePlayers }: {
@@ -544,6 +588,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
   const [replayIndex, setReplayIndex] = useState(0);
   const [showReport, setShowReport] = useState(false);
   const goalEvents = visibleEvents.filter(e => e.isGoal);
+  const substitutions = visibleEvents.filter(e => e.type === 'substitution');
 
   // Calculate player ratings from events
   const playerRatings = homePlayers?.slice(0, 11).map(p => {
@@ -570,7 +615,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
         <div className="bg-primary/10 px-3 py-2 text-center">
           <p className="text-xs font-bold uppercase tracking-wider text-primary">Resultado Final</p>
         </div>
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-3 sm:p-4 space-y-4">
           {/* MOTM */}
           {motm && (
             <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 flex items-center gap-3">
@@ -589,7 +634,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
           {playerRatings.length > 0 && (
             <div>
               <p className="text-xs font-bold mb-2 flex items-center gap-1"><Star className="h-3 w-3 text-yellow-400" /> Notas dos Jogadores</p>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                 {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
                   <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded px-2 py-1.5">
                     <Badge variant="outline" className="text-[8px] w-7 justify-center">{p.position}</Badge>
@@ -603,7 +648,37 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
             </div>
           )}
 
+          {/* Full Stats */}
           <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+
+          {/* Substitutions summary */}
+          {substitutions.length > 0 && (
+            <div>
+              <p className="text-xs font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
+              {substitutions.map((sub, i) => (
+                <div key={i} className="flex items-center gap-2 text-[10px] bg-sky-500/5 border border-sky-500/15 rounded px-2 py-1.5 mb-1">
+                  <Badge variant="outline" className="text-[8px] font-mono">{sub.minute}'</Badge>
+                  <span className="flex-1">{sub.description}</span>
+                  <span className="text-muted-foreground capitalize">{sub.team === 'home' ? '🔵' : '🔴'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Narration log */}
+          <div>
+            <p className="text-xs font-bold mb-2">📝 Narração Completa</p>
+            <div className="max-h-[200px] overflow-y-auto space-y-0.5 border border-border/20 rounded-lg p-2">
+              {[...visibleEvents].reverse().map((ev, i) => (
+                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-1 py-1 rounded ${getEventBg(ev)}`}>
+                  <Badge variant="outline" className="text-[7px] w-7 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
+                  <span className={`text-[10px] ${getEventColor(ev.type)} leading-snug`}>
+                    {getEventIcon(ev.type)} {ev.description}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <p className="text-[9px] text-muted-foreground text-center border-t border-border/20 pt-2">
             {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols

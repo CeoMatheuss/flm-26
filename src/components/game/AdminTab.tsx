@@ -515,22 +515,27 @@ export function AdminTab({ userId, isFounder }: Props) {
 
       {/* Admin Tabs */}
       <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto">
-            {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
-            <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
-            <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2 shrink-0"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
-            <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2 shrink-0"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
-            <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2 shrink-0"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
-            {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2 shrink-0"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
-            <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2 shrink-0"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
-            <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2 shrink-0"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
-            <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
-            <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
-            <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
-            <TabsTrigger value="logs" className="text-[10px] gap-0.5 px-2 shrink-0"><Activity className="h-3 w-3" /> Logs</TabsTrigger>
-          </TabsList>
-        </ScrollArea>
+        <div className="relative group">
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto scrollbar-none pb-1">
+              {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
+              <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
+              <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2 shrink-0"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
+              <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2 shrink-0"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
+              <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2 shrink-0"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
+              {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2 shrink-0"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
+              <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2 shrink-0"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
+              <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2 shrink-0"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
+              <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
+              <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
+              <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
+              <TabsTrigger value="logs" className="text-[10px] gap-0.5 px-2 shrink-0"><Activity className="h-3 w-3" /> Logs</TabsTrigger>
+            </TabsList>
+          </ScrollArea>
+          {/* Scroll hint indicator */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
+          <p className="text-[8px] text-muted-foreground/50 text-center mt-1">← Deslize para ver mais abas →</p>
+        </div>
 
         {/* Team/Hierarchy Tab - Founder Only */}
         {isFounder && (
