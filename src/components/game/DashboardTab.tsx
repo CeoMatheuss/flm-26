@@ -155,13 +155,13 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {stats.map(item => (
-          <div key={item.label} className="stat-card flex items-center gap-1.5">
-            <item.icon className={`h-3.5 w-3.5 ${item.color} shrink-0`} />
+          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2">
+            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0`} />
             <div className="min-w-0">
-              <p className="text-[8px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
-              <p className="text-xs sm:text-sm font-bold truncate">{item.value}</p>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
+              <p className="text-sm sm:text-sm font-bold truncate">{item.value}</p>
             </div>
           </div>
         ))}
