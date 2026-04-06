@@ -1,110 +1,61 @@
 
 
-# Plano: Melhorias Gerais — Responsividade, Admin Logs, Campeonato, Amistosos Online e Visualização de Times
+# Plano: Restaurar Design Antigo Auth, Corrigir Canvas 2D, Melhorar Substituições e Mobile
 
-## Resumo
+## Diagnóstico
 
-Múltiplas melhorias: responsividade mobile, logs admin, redesign campeonato, amistosos online com convite aberto, visualização de time adversário, remoção da aba temporada/indicador dia, limpeza de dados, e hide do badge Lovable.
+1. **Auth/Tela Inicial**: O design atual usa `auth-hero.jpg` e `auth-manager.jpg` (imagens genéricas). O design antigo usava um carrossel de 3 imagens (`game-preview.jpg`, `game-preview-2.jpg`, `game-preview-3.jpg`) com títulos dinâmicos que rodavam automaticamente. As imagens ainda existem em `src/assets/`.
 
----
+2. **Canvas 2D não aparece**: O `HighlightMiniCanvas` tem `useEffect` com dependência em `currentMinute`, que muda a cada 300ms. Isso causa o canvas reiniciar sua animação a cada tick, então a animação nunca completa — fica "piscando" ou invisível. Solução: remover `currentMinute` das dependências do `useEffect` e passá-lo via ref.
 
-## 1 — Responsividade Mobile (Dashboard + Admin)
+3. **Substituições**: O sistema atual é funcional mas puramente visual (não afeta a simulação). O design pode ser melhorado com cards mais bonitos, feedback visual de confirmação e animação.
 
-- **DashboardTab**: Stats cards em `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`, texto responsivo
-- **AdminTab**: Tabs scrollable horizontal no mobile, formulários em grid compacto, inputs full-width
-- **GameHeader**: Remover indicador `Dia X/30` da temporada (conforme pedido)
-- **TournamentDashboardCard**: Fontes maiores nos nomes de times e placares, badges mais legíveis
-
-## 2 — Logs Admin
-
-- Criar tabela `admin_logs` com campos: `id`, `user_id`, `action`, `details (jsonb)`, `created_at`
-- RLS: apenas admins podem ler/inserir
-- Nova sub-aba "Logs" no AdminTab mostrando histórico de ações (criar torneio, banir, gift, etc.)
-- Inserir logs automaticamente nas ações admin existentes (ban, gift, torneio, manutenção)
-
-## 3 — Redesign Aba Campeonato
-
-- Aumentar tamanho de fontes: nomes de times 14px, placares 16px bold
-- Tabela de classificação com colunas mais espaçadas
-- Calendário de jogos com cards maiores e mais legíveis
-- Badge de status do jogo mais visível
-
-## 4 — Esconder Badge "Edit with Lovable"
-
-- Usar `publish_settings--set_badge_visibility` para esconder
-
-## 5 — Verificação de Email (Auth)
-
-- Verificar configuração atual de confirmação de email
-- Garantir que `supabase.auth.signUp` envia código OTP corretamente
-- Melhorar UX da tela de OTP com instruções mais claras
-
-## 6 — Limpar Dados do Jogo (Reset)
-
-- Adicionar botão "Resetar Jogo" nas Configurações que deleta o save do banco e recarrega
-- Migração para limpar dados existentes se necessário
-
-## 7 — Remover Aba Temporada e Indicador de Dia
-
-- Remover entrada "Temporada" do `GameMenu.tsx`
-- Remover `SeasonTab` do `GameTabRouter.tsx`
-- Remover badge `Dia X/30` do `GameHeader.tsx`
-
-## 8 — Amistosos Online Redesign
-
-- Remover simulação local de amistoso (botão "Jogar Amistoso" no Dashboard que simula vs BOT)
-- Manter apenas modo online: buscar jogador, enviar convite
-- Adicionar opção de **convite aberto**: jogador publica que quer jogar, primeiro que aceita fecha o amistoso
-- Nova tabela `open_friendly_slots` com: `id`, `user_id`, `club_name`, `stadium_name`, `stadium_capacity`, `created_at`, `status`
-- No `OnlineFriendliesTab`: seção "Partidas Abertas" listando convites abertos de outros jogadores
-- Botão "Criar Partida Aberta" que publica disponibilidade
-
-## 9 — Visualizar Time Adversário
-
-- Ao clicar no nome de um clube (no jornal, campeonato, ranking, amistosos), abrir página/modal `ClubProfilePage` com:
-  - Escudo, nome, país, reputação
-  - Infraestrutura (níveis)
-  - Elenco completo (carregado via `game_saves` ou `league_squads`)
-  - Estatísticas do clube
-- Prop `onViewClub` já existe em alguns componentes — expandir para jornal e ranking
-- Criar rota ou modal dedicado que carrega dados do clube via save público
-
-## 10 — Melhorar Jornal
-
-- No `NewspaperFullPage`: ao lado do nome do clube em cada notícia, tornar clicável para abrir perfil do clube
-- Adicionar filtros por categoria (Mercado, Resultado, etc.)
+4. **Mobile**: Textos muito pequenos (7px), navbar apertada, cards sem espaçamento adequado.
 
 ---
 
-## Arquivos Modificados/Criados
+## O que será feito
 
-| Arquivo | Ação |
-|---------|------|
-| `src/components/game/DashboardTab.tsx` | Responsividade mobile |
-| `src/components/game/AdminTab.tsx` | Responsividade + logs |
-| `src/components/game/GameHeader.tsx` | Remover Dia X/30 |
-| `src/components/game/GameMenu.tsx` | Remover aba Temporada |
-| `src/components/game/GameTabRouter.tsx` | Remover SeasonTab, add ClubProfilePage |
-| `src/components/game/TournamentDashboardCard.tsx` | Fontes maiores, design |
-| `src/components/game/OnlineFriendliesTab.tsx` | Convite aberto, remover simulação local |
-| `src/components/game/MatchDashboardCard.tsx` | Remover botão amistoso local |
-| `src/components/game/NewspaperFullPage.tsx` | Clique no clube, filtros |
-| `src/components/game/ClubProfilePage.tsx` | Expandir para visualização pública |
-| `src/pages/Auth.tsx` | Melhorar UX de verificação |
-| `src/components/game/SettingsTab.tsx` | Botão reset game |
-| Migração SQL | Tabela `admin_logs`, `open_friendly_slots` |
+### 1 — Restaurar Design Antigo da Auth (Carrossel)
+- Voltar para o carrossel automático de 3 imagens com títulos/descrições
+- Imagens: `game-preview.jpg`, `game-preview-2.jpg`, `game-preview-3.jpg` (já existem)
+- Layout split-screen: carrossel lateral no desktop, header no mobile
+- Manter o fluxo multi-step (welcome → login/signup → preferences → OTP)
 
-## Ordem de Execução
+### 2 — Corrigir Bug do Canvas 2D
+- **Causa raiz**: `useEffect` no `HighlightMiniCanvas` inclui `currentMinute` nas dependências, fazendo reiniciar a animação a cada 300ms
+- **Correção**: Usar `useRef` para `currentMinute` em vez de incluí-lo nas deps do `useEffect`
+- O canvas vai iniciar a animação UMA vez por highlight e rodar até completar
 
-1. Migração SQL (admin_logs + open_friendly_slots)
-2. Remover aba temporada + indicador dia
-3. Responsividade Dashboard + Admin
-4. Logs admin
-5. Redesign campeonato (fontes)
-6. Amistosos online com convite aberto
-7. Visualização de time adversário
-8. Melhorar jornal
-9. Auth/OTP melhorias
-10. Hide badge Lovable
-11. Reset game button
+### 3 — Redesign das Substituições
+- Cards com foto/avatar do jogador, barra de stamina visual
+- Animação de transição ao confirmar substituição (slide out/in)
+- Histórico das subs feitas com timeline visual
+- Indicação de posição recomendada (mesmo tipo de posição = verde)
+
+### 4 — Mobile Completo
+- **GameNavBar**: aumentar texto de 7px para 9px, ícones de 12px para 14px, padding mais generoso
+- **GameHeader**: compactar budget display, garantir truncate nos nomes longos
+- **DashboardTab**: cards com padding mínimo de 12px, stats row 2 colunas no mobile
+- **MatchPage**: score 4xl→3xl no mobile, tabs com texto 11px, quick stats 2 colunas
+- **AdminTab**: tabs scrolláveis com indicador visual funcional
+
+---
+
+## Arquivos Modificados
+
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/Auth.tsx` | Restaurar carrossel de 3 imagens, layout split-screen |
+| `src/components/game/HighlightMiniCanvas.tsx` | Corrigir deps do useEffect, usar ref para currentMinute |
+| `src/pages/MatchPage.tsx` | Redesign substituições, ajustes mobile |
+| `src/components/game/GameNavBar.tsx` | Aumentar tamanhos mobile |
+| `src/components/game/DashboardTab.tsx` | Ajustes responsivos |
+| `src/components/game/GameHeader.tsx` | Compactar para mobile |
+
+## Ordem
+1. Corrigir Canvas 2D (bug crítico)
+2. Restaurar Auth com carrossel
+3. Redesign substituições
+4. Passar mobile em todos os componentes
 
