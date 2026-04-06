@@ -19,7 +19,7 @@ interface GameHeaderProps {
 
 export function GameHeader({ club, season, infrastructure, listedPlayers, userId, isNewClub, onSignOut }: GameHeaderProps) {
   return (
-    <header className="border-b border-border/30 bg-gradient-to-r from-card/95 via-card/80 to-card/95 backdrop-blur-md sticky top-0 z-10">
+    <header className="border-b border-border/30 bg-gradient-to-r from-card/95 via-card/80 to-card/95 backdrop-blur-md sticky top-0 z-10 safe-area-top">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
         {/* Club Identity */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">

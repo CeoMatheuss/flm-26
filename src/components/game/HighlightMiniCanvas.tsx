@@ -82,6 +82,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
   const driftRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const currentMinuteRef = useRef(currentMinute);
+  currentMinuteRef.current = currentMinute;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -374,7 +376,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       const dotAlpha = 0.4 + Math.sin(drift * 2) * 0.3;
       ctx.fillStyle = `rgba(255,255,255,${dotAlpha})`;
       ctx.font = '11px Arial';
-      ctx.fillText(currentMinute !== undefined ? `${currentMinute}' em jogo` : 'Partida em andamento', W / 2, H / 2 + 14);
+      ctx.fillText(currentMinuteRef.current !== undefined ? `${currentMinuteRef.current}' em jogo` : 'Partida em andamento', W / 2, H / 2 + 14);
       const ballScale = 0.8 + Math.sin(drift * 1.5) * 0.15;
       drawBall(W / 2, H / 2 + 38, ballScale);
     };
@@ -1252,7 +1254,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
     return () => {
       cancelAnimationFrame(animRef.current);
     };
-  }, [type, team, playerName, currentMinute]);
+  }, [type, team, playerName]);
 
   return (
     <canvas
