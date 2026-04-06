@@ -397,7 +397,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
     return (
       <div className="text-center py-6">
         <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">Banco insuficiente para substituições</p>
+        <p className="text-sm text-muted-foreground">Banco insuficiente para substituições</p>
       </div>
     );
   }
@@ -406,7 +406,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
     return (
       <div className="text-center py-6">
         <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">Todas as {maxSubs} substituições foram usadas</p>
+        <p className="text-sm text-muted-foreground">Todas as {maxSubs} substituições foram usadas</p>
       </div>
     );
   }
@@ -414,53 +414,105 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
   const starters = homePlayers.slice(0, 11);
   const bench = homePlayers.slice(11);
 
+  const getPositionGroup = (pos: string) => {
+    if (['GK'].includes(pos)) return 'gk';
+    if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) return 'def';
+    if (['CM', 'CDM', 'CAM', 'LM', 'RM'].includes(pos)) return 'mid';
+    return 'atk';
+  };
+
+  const selectedPlayer = starters.find(p => p.id === selectedSubOut);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-primary">🔄 Substituições do Manager</p>
-        <Badge variant="outline" className="text-[9px]">{subsUsed}/{maxSubs} usadas</Badge>
+        <p className="text-sm font-bold text-primary flex items-center gap-1.5">
+          <ArrowUpDown className="h-4 w-4" /> Substituições
+        </p>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: maxSubs }).map((_, i) => (
+            <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < subsUsed ? 'bg-primary' : 'bg-muted/30 border border-border/30'}`} />
+          ))}
+        </div>
       </div>
 
       {!selectedSubOut ? (
         <>
-          <p className="text-[10px] text-muted-foreground">Selecione o jogador para SAIR:</p>
-          <div className="space-y-1 max-h-[250px] overflow-y-auto">
-            {starters.map((p, i) => (
-              <button
-                key={p.id || i}
-                onClick={() => onSelectSubOut(p.id)}
-                className="w-full flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2 hover:border-red-400/40 hover:bg-red-500/5 transition-all text-left"
-              >
-                <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
-                <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
-                <span className="text-xs font-bold">{p.overall}</span>
-                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
-              </button>
-            ))}
+          <p className="text-xs text-muted-foreground">Selecione quem SAI do campo:</p>
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+            {starters.map((p, i) => {
+              const stamina = p.stamina || 100;
+              const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+              return (
+                <button
+                  key={p.id || i}
+                  onClick={() => onSelectSubOut(p.id)}
+                  className="w-full flex items-center gap-2.5 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5 hover:border-red-400/40 hover:bg-red-500/5 transition-all text-left group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
+                    {p.position}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">OVR {p.overall}</span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <div className="h-1.5 flex-1 max-w-[60px] rounded-full bg-muted/20 overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                        </div>
+                        <span className="text-[9px] text-muted-foreground">{stamina}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold">SAIR →</span>
+                </button>
+              );
+            })}
           </div>
         </>
       ) : (
         <>
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-2 flex items-center gap-2">
-            <span className="text-xs">🔴 SAI:</span>
-            <span className="text-xs font-bold">{starters.find(p => p.id === selectedSubOut)?.name}</span>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] ml-auto" onClick={() => onSelectSubOut(null)}>Cancelar</Button>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center text-sm font-black text-red-400 shrink-0">
+              {selectedPlayer?.position}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-red-400 font-bold uppercase">Sai do campo</p>
+              <p className="text-sm font-black truncate">{selectedPlayer?.name}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] shrink-0" onClick={() => onSelectSubOut(null)}>Cancelar</Button>
           </div>
 
-          <p className="text-[10px] text-muted-foreground">Selecione o jogador para ENTRAR:</p>
-          <div className="space-y-1 max-h-[200px] overflow-y-auto">
-            {bench.map((p, i) => (
-              <button
-                key={p.id || i}
-                onClick={() => onConfirmSub(selectedSubOut, p.id)}
-                className="w-full flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-all text-left"
-              >
-                <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
-                <span className="text-xs font-semibold flex-1 truncate">{p.name}</span>
-                <span className="text-xs font-bold text-emerald-400">{p.overall}</span>
-                <span className="text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
-              </button>
-            ))}
+          <p className="text-xs text-muted-foreground">Selecione quem ENTRA:</p>
+          <div className="space-y-1.5 max-h-[220px] overflow-y-auto">
+            {bench.map((p, i) => {
+              const sameGroup = selectedPlayer && getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
+              const stamina = p.stamina || 100;
+              return (
+                <button
+                  key={p.id || i}
+                  onClick={() => onConfirmSub(selectedSubOut, p.id)}
+                  className={`w-full flex items-center gap-2.5 bg-card/60 border rounded-xl px-3 py-2.5 hover:bg-emerald-500/5 transition-all text-left group ${
+                    sameGroup ? 'border-emerald-500/30' : 'border-border/20 hover:border-emerald-400/40'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                    sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {p.position}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-bold text-emerald-400">OVR {p.overall}</span>
+                      <span className="text-[9px] text-muted-foreground">⚡ {stamina}%</span>
+                      {sameGroup && <Badge variant="outline" className="text-[7px] h-4 border-emerald-500/30 text-emerald-400">Mesma posição</Badge>}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold">← ENTRA</span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
