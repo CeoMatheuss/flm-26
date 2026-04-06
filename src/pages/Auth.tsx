@@ -12,6 +12,8 @@ import {
   Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, RefreshCw,
   ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
 } from 'lucide-react';
+import authHero from '@/assets/auth-hero.jpg';
+import authManager from '@/assets/auth-manager.jpg';
 
 const RESEND_COOLDOWN = 60;
 
@@ -164,8 +166,10 @@ export default function AuthPage() {
   // ── OTP STEP ──
   if (step === 'otp') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
+        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-3">
               <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -176,7 +180,6 @@ export default function AuthPage() {
               <Badge variant="secondary" className="text-xs font-bold">{pendingEmail}</Badge>
             </div>
 
-            {/* Email preview */}
             <div className="mx-auto w-48 h-28 rounded-xl bg-primary/5 border border-primary/15 flex flex-col items-center justify-center gap-1.5">
               <ShieldCheck className="w-5 h-5 text-primary" />
               <span className="text-[10px] font-bold">Código de Verificação</span>
@@ -238,8 +241,10 @@ export default function AuthPage() {
   // ── SIGNUP PREFERENCES STEP ──
   if (step === 'signup-preferences') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
+        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-2">
               <Gamepad2 className="w-10 h-10 text-primary mx-auto" />
@@ -247,7 +252,6 @@ export default function AuthPage() {
               <p className="text-xs text-muted-foreground">Configure suas preferências iniciais</p>
             </div>
 
-            {/* Country */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-muted-foreground">🌍 País da Liga</label>
               <div className="grid grid-cols-5 gap-1.5">
@@ -269,7 +273,6 @@ export default function AuthPage() {
               </div>
             </div>
 
-            {/* Formation */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-muted-foreground">📋 Formação Preferida</label>
               <div className="grid grid-cols-4 gap-1.5">
@@ -290,7 +293,6 @@ export default function AuthPage() {
               </div>
             </div>
 
-            {/* Playstyle */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-muted-foreground">🎮 Estilo de Jogo</label>
               <div className="grid grid-cols-2 gap-2">
@@ -329,8 +331,10 @@ export default function AuthPage() {
   // ── SIGNUP INFO STEP ──
   if (step === 'signup-info') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={authManager} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-2">
               <UserPlus className="w-10 h-10 text-primary mx-auto" />
@@ -341,26 +345,12 @@ export default function AuthPage() {
             <div className="space-y-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground">Nome do Manager</label>
-                <Input
-                  placeholder="Ex: Sir Alex"
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                  className="h-12 text-sm"
-                />
+                <Input placeholder="Ex: Sir Alex" value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 text-sm" />
               </div>
-
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground">Email</label>
-                <Input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  className="h-12 text-sm"
-                />
+                <Input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="h-12 text-sm" />
               </div>
-
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground">Senha</label>
                 <div className="relative">
@@ -373,11 +363,7 @@ export default function AuthPage() {
                     minLength={6}
                     className="h-12 text-sm pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -407,8 +393,10 @@ export default function AuthPage() {
   // ── LOGIN STEP ──
   if (step === 'login') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border/30 bg-card/90 backdrop-blur-sm shadow-2xl">
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={authManager} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/85 to-background" />
+        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-2">
               <LogIn className="w-10 h-10 text-primary mx-auto" />
@@ -432,11 +420,7 @@ export default function AuthPage() {
                     required
                     className="h-12 text-sm pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -472,64 +456,81 @@ export default function AuthPage() {
 
   // ── WELCOME STEP ──
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(220,40%,5%)] via-background to-background flex flex-col items-center justify-center p-4 gap-8">
-      {/* Hero */}
-      <div className="text-center space-y-4 animate-fade-in max-w-md">
-        <div className="relative inline-block">
-          <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-primary/30 to-primary/5 flex items-center justify-center border border-primary/20">
-            <Trophy className="w-14 h-14 text-primary" />
-          </div>
-          <div className="absolute -inset-4 bg-primary/10 rounded-full blur-2xl -z-10" />
-        </div>
-        <h1 className="text-5xl sm:text-6xl font-black tracking-tighter bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-          FLM 26
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium">Football Life Manager 2026</p>
-        <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">
-          Gerencie seu clube, escale seu time, dispute campeonatos online e conquiste títulos.
-        </p>
-      </div>
+    <div className="min-h-screen relative flex flex-col">
+      {/* Hero image background */}
+      <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover" width={1280} height={720} />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
 
-      {/* CTA Buttons */}
-      <div className="w-full max-w-sm space-y-3">
-        <Button onClick={() => setStep('login')} className="w-full h-14 text-base font-black gap-2 shadow-lg">
-          <LogIn className="w-5 h-5" /> Entrar
-        </Button>
-        <Button onClick={() => setStep('signup-info')} variant="outline" className="w-full h-14 text-base font-black gap-2">
-          <UserPlus className="w-5 h-5" /> Criar Conta
-        </Button>
-
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/20" /></div>
-          <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-background px-3 text-muted-foreground/60">ou</span></div>
-        </div>
-
-        <Button onClick={handleGoogleLogin} disabled={loading} variant="ghost" className="w-full h-12 gap-3 text-sm font-semibold border border-border/20">
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-          </svg>
-          Entrar com Google
-        </Button>
-      </div>
-
-      {/* Features Grid */}
-      <div className="w-full max-w-md">
-        <p className="text-[10px] font-bold text-center text-primary uppercase tracking-[0.2em] mb-3">✨ Funcionalidades</p>
-        <div className="grid grid-cols-2 gap-2">
-          {features.map((f, i) => (
-            <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-border/20 bg-card/20 hover:border-primary/20 transition-colors">
-              <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold truncate">{f.title}</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">{f.desc}</p>
-              </div>
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 gap-6">
+        {/* Logo & Title */}
+        <div className="text-center space-y-3 animate-fade-in">
+          <div className="relative inline-block">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-full bg-background/60 backdrop-blur-md flex items-center justify-center border border-primary/30 shadow-xl shadow-primary/10">
+              <Trophy className="w-12 h-12 sm:w-14 sm:h-14 text-primary" />
             </div>
-          ))}
+          </div>
+          <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-foreground drop-shadow-lg">
+            FLM 26
+          </h1>
+          <p className="text-sm sm:text-base text-foreground/80 font-medium">Football Life Manager 2026</p>
+          <p className="text-xs text-foreground/60 max-w-xs mx-auto">
+            Gerencie seu clube, escale seu time, dispute campeonatos online e conquiste títulos.
+          </p>
         </div>
-        <p className="text-[9px] text-center text-muted-foreground/40 mt-4">FLM 26 © 2026</p>
+
+        {/* Manager image card */}
+        <div className="hidden sm:block w-full max-w-sm">
+          <div className="relative rounded-2xl overflow-hidden border border-border/30 shadow-2xl h-48">
+            <img src={authManager} alt="Manager" className="w-full h-full object-cover object-top" loading="lazy" width={640} height={960} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 right-3 text-center">
+              <p className="text-sm font-black text-foreground">Seja o melhor manager</p>
+              <p className="text-[10px] text-foreground/70">Estratégia, táticas e conquistas</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="w-full max-w-sm space-y-3">
+          <Button onClick={() => setStep('login')} className="w-full h-14 text-base font-black gap-2 shadow-lg">
+            <LogIn className="w-5 h-5" /> Entrar
+          </Button>
+          <Button onClick={() => setStep('signup-info')} variant="outline" className="w-full h-14 text-base font-black gap-2 bg-background/50 backdrop-blur-sm">
+            <UserPlus className="w-5 h-5" /> Criar Conta
+          </Button>
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-foreground/10" /></div>
+            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-background/60 backdrop-blur-sm px-3 text-foreground/40 rounded">ou</span></div>
+          </div>
+
+          <Button onClick={handleGoogleLogin} disabled={loading} variant="ghost" className="w-full h-12 gap-3 text-sm font-semibold border border-foreground/10 bg-background/30 backdrop-blur-sm">
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Entrar com Google
+          </Button>
+        </div>
+
+        {/* Features Grid */}
+        <div className="w-full max-w-md">
+          <p className="text-[10px] font-bold text-center text-primary uppercase tracking-[0.2em] mb-3">✨ Funcionalidades</p>
+          <div className="grid grid-cols-2 gap-2">
+            {features.map((f, i) => (
+              <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-foreground/10 bg-background/40 backdrop-blur-sm hover:border-primary/20 transition-colors">
+                <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold truncate">{f.title}</p>
+                  <p className="text-[9px] text-muted-foreground leading-tight">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-center text-foreground/30 mt-4">FLM 26 © 2026</p>
+        </div>
       </div>
     </div>
   );
