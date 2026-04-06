@@ -12,10 +12,17 @@ import {
   Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, RefreshCw,
   ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
 } from 'lucide-react';
-import authHero from '@/assets/auth-hero.jpg';
-import authManager from '@/assets/auth-manager.jpg';
+import gamePreview1 from '@/assets/game-preview.jpg';
+import gamePreview2 from '@/assets/game-preview-2.jpg';
+import gamePreview3 from '@/assets/game-preview-3.jpg';
 
 const RESEND_COOLDOWN = 60;
+
+const slides = [
+  { img: gamePreview1, title: 'Gerencie seu Clube', desc: 'Escale, treine e leve seu time ao topo' },
+  { img: gamePreview2, title: 'Disputas Online', desc: 'Campeonatos multiplayer competitivos' },
+  { img: gamePreview3, title: 'Conquiste Títulos', desc: 'Infraestrutura, base e mercado dinâmico' },
+];
 
 const countryOptions = [
   { value: 'BR', label: '🇧🇷 Brasil', flag: '🇧🇷' },
@@ -65,6 +72,13 @@ export default function AuthPage() {
   const [otpCode, setOtpCode] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  // Auto-rotate carousel
+  useEffect(() => {
+    const timer = setInterval(() => setSlideIndex(i => (i + 1) % slides.length), 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -163,11 +177,40 @@ export default function AuthPage() {
     setLoading(false);
   };
 
+  // ── Carousel component ──
+  const CarouselPanel = ({ className = '' }: { className?: string }) => (
+    <div className={`relative overflow-hidden ${className}`}>
+      {slides.map((slide, i) => (
+        <div
+          key={i}
+          className={`absolute inset-0 transition-opacity duration-700 ${i === slideIndex ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <img src={slide.img} alt={slide.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute bottom-6 left-6 right-6">
+            <h3 className="text-xl font-black text-foreground drop-shadow-lg">{slide.title}</h3>
+            <p className="text-sm text-foreground/80">{slide.desc}</p>
+          </div>
+        </div>
+      ))}
+      {/* Dots */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setSlideIndex(i)}
+            className={`w-2 h-2 rounded-full transition-all ${i === slideIndex ? 'bg-primary w-5' : 'bg-foreground/30'}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   // ── OTP STEP ──
   if (step === 'otp') {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <img src={slides[0].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
         <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
@@ -242,7 +285,7 @@ export default function AuthPage() {
   if (step === 'signup-preferences') {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
+        <img src={slides[2].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
         <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
@@ -332,7 +375,7 @@ export default function AuthPage() {
   if (step === 'signup-info') {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={authManager} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <img src={slides[1].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
         <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
@@ -394,7 +437,7 @@ export default function AuthPage() {
   if (step === 'login') {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={authManager} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+        <img src={slides[1].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/85 to-background" />
         <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
@@ -454,57 +497,41 @@ export default function AuthPage() {
     );
   }
 
-  // ── WELCOME STEP ──
+  // ── WELCOME STEP — Split screen with carousel ──
   return (
-    <div className="min-h-screen relative flex flex-col">
-      {/* Hero image background */}
-      <img src={authHero} alt="" className="absolute inset-0 w-full h-full object-cover" width={1280} height={720} />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Carousel — header on mobile, side panel on desktop */}
+      <CarouselPanel className="h-56 sm:h-72 lg:h-auto lg:flex-1 lg:sticky lg:top-0" />
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 gap-6">
+      {/* Content panel */}
+      <div className="flex-1 lg:max-w-lg flex flex-col items-center justify-center p-6 sm:p-8 bg-background relative z-10">
         {/* Logo & Title */}
-        <div className="text-center space-y-3 animate-fade-in">
-          <div className="relative inline-block">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-full bg-background/60 backdrop-blur-md flex items-center justify-center border border-primary/30 shadow-xl shadow-primary/10">
-              <Trophy className="w-12 h-12 sm:w-14 sm:h-14 text-primary" />
-            </div>
+        <div className="text-center space-y-3 mb-8">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+            <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
           </div>
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-foreground drop-shadow-lg">
-            FLM 26
-          </h1>
-          <p className="text-sm sm:text-base text-foreground/80 font-medium">Football Life Manager 2026</p>
-          <p className="text-xs text-foreground/60 max-w-xs mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">FLM 26</h1>
+          <p className="text-sm text-muted-foreground">Football Life Manager 2026</p>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
             Gerencie seu clube, escale seu time, dispute campeonatos online e conquiste títulos.
           </p>
         </div>
 
-        {/* Manager image card */}
-        <div className="hidden sm:block w-full max-w-sm">
-          <div className="relative rounded-2xl overflow-hidden border border-border/30 shadow-2xl h-48">
-            <img src={authManager} alt="Manager" className="w-full h-full object-cover object-top" loading="lazy" width={640} height={960} />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 text-center">
-              <p className="text-sm font-black text-foreground">Seja o melhor manager</p>
-              <p className="text-[10px] text-foreground/70">Estratégia, táticas e conquistas</p>
-            </div>
-          </div>
-        </div>
-
         {/* CTA Buttons */}
-        <div className="w-full max-w-sm space-y-3">
+        <div className="w-full max-w-sm space-y-3 mb-8">
           <Button onClick={() => setStep('login')} className="w-full h-14 text-base font-black gap-2 shadow-lg">
             <LogIn className="w-5 h-5" /> Entrar
           </Button>
-          <Button onClick={() => setStep('signup-info')} variant="outline" className="w-full h-14 text-base font-black gap-2 bg-background/50 backdrop-blur-sm">
+          <Button onClick={() => setStep('signup-info')} variant="outline" className="w-full h-14 text-base font-black gap-2">
             <UserPlus className="w-5 h-5" /> Criar Conta
           </Button>
 
           <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-foreground/10" /></div>
-            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-background/60 backdrop-blur-sm px-3 text-foreground/40 rounded">ou</span></div>
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/30" /></div>
+            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-background px-3 text-muted-foreground">ou</span></div>
           </div>
 
-          <Button onClick={handleGoogleLogin} disabled={loading} variant="ghost" className="w-full h-12 gap-3 text-sm font-semibold border border-foreground/10 bg-background/30 backdrop-blur-sm">
+          <Button onClick={handleGoogleLogin} disabled={loading} variant="ghost" className="w-full h-12 gap-3 text-sm font-semibold border border-border/30">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -516,11 +543,11 @@ export default function AuthPage() {
         </div>
 
         {/* Features Grid */}
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-sm">
           <p className="text-[10px] font-bold text-center text-primary uppercase tracking-[0.2em] mb-3">✨ Funcionalidades</p>
           <div className="grid grid-cols-2 gap-2">
             {features.map((f, i) => (
-              <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-foreground/10 bg-background/40 backdrop-blur-sm hover:border-primary/20 transition-colors">
+              <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-border/20 bg-card/50 hover:border-primary/20 transition-colors">
                 <f.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold truncate">{f.title}</p>
@@ -529,7 +556,7 @@ export default function AuthPage() {
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-center text-foreground/30 mt-4">FLM 26 © 2026</p>
+          <p className="text-[9px] text-center text-muted-foreground/50 mt-4">FLM 26 © 2026</p>
         </div>
       </div>
     </div>
