@@ -529,7 +529,7 @@ export function AdminTab({ userId, isFounder }: Props) {
               <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
               <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
               <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
-              <TabsTrigger value="logs" className="text-[10px] gap-0.5 px-2 shrink-0"><Activity className="h-3 w-3" /> Logs</TabsTrigger>
+              <TabsTrigger value="announcements" className="text-[10px] gap-0.5 px-2 shrink-0"><Image className="h-3 w-3" /> Anúncios IA</TabsTrigger>
             </TabsList>
           </ScrollArea>
           {/* Scroll hint indicator */}
@@ -614,11 +614,13 @@ export function AdminTab({ userId, isFounder }: Props) {
                         const isSelf = a.user_id === userId;
                         return (
                           <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/50">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono truncate">{a.user_id.slice(0, 16)}...</span>
-                                {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
-                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold truncate">
+                                    {allUsers.find(u => u.user_id === a.user_id)?.display_name || a.user_id.slice(0, 12) + '...'}
+                                  </span>
+                                  {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
+                                </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <Badge variant="outline" className={`text-[8px] ${
                                   a.role === 'admin' ? 'text-blue-400 border-blue-500/30' :
@@ -1211,72 +1213,168 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminUpdatesPanel userId={userId} />
         </TabsContent>
 
-        {/* Logs Tab */}
-        <TabsContent value="logs" className="space-y-3 mt-3">
-          <AdminLogsPanel />
+        {/* Announcements with AI Tab */}
+        <TabsContent value="announcements" className="space-y-3 mt-3">
+          <AdminAnnouncementsPanel userId={userId} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function AdminLogsPanel() {
-  const [logs, setLogs] = useState<Array<{ id: string; user_id: string; action: string; details: any; created_at: string }>>([]);
-  const [loading, setLoading] = useState(true);
+function AdminAnnouncementsPanel({ userId }: { userId: string }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const { data } = await supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(200);
-      if (data) setLogs(data as any[]);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const generateImage = async () => {
+    if (!title.trim()) return toast.error('Digite um título para gerar a imagem');
+    setGenerating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sessão expirada'); setGenerating(false); return; }
 
-  const actionColors: Record<string, string> = {
-    ban: 'text-red-400',
-    unban: 'text-emerald-400',
-    gift: 'text-yellow-400',
-    tournament_create: 'text-blue-400',
-    tournament_start: 'text-emerald-400',
-    maintenance: 'text-orange-400',
-    premium_activate: 'text-yellow-400',
-    player_generate: 'text-purple-400',
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-announcement-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ prompt: `${title}. ${description}` }),
+      });
+      const result = await res.json();
+      if (result.success && result.imageUrl) {
+        setImageUrl(result.imageUrl);
+        toast.success('🎨 Imagem gerada com sucesso!');
+      } else {
+        toast.error(result.error || 'Erro ao gerar imagem');
+      }
+    } catch {
+      toast.error('Erro ao gerar imagem');
+    }
+    setGenerating(false);
+  };
+
+  const publishAnnouncement = async () => {
+    if (!title.trim()) return toast.error('Título obrigatório');
+    setPublishing(true);
+    const { error } = await supabase.from('game_updates').insert([{
+      title,
+      description: description || title,
+      version: new Date().toISOString().split('T')[0],
+      author_id: userId,
+      status: 'published',
+      published_at: new Date().toISOString(),
+      features: [title],
+      fixes: [],
+      ai_summary: imageUrl ? 'Imagem gerada por IA' : null,
+    }]);
+    if (error) toast.error('Erro ao publicar: ' + error.message);
+    else {
+      toast.success('📢 Anúncio publicado para todos os jogadores!');
+      setTitle('');
+      setDescription('');
+      setImageUrl('');
+    }
+    setPublishing(false);
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" /> Logs de Atividade ({logs.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-4"><RefreshCw className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></div>
-        ) : logs.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Nenhum log registrado</p>
-        ) : (
-          <ScrollArea className="max-h-[500px]">
-            <div className="space-y-1.5">
-              {logs.map(log => (
-                <div key={log.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/20 border border-border/30 text-[10px]">
-                  <Activity className={`h-3 w-3 mt-0.5 shrink-0 ${actionColors[log.action] || 'text-muted-foreground'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold">{log.action}</p>
-                    {log.details && typeof log.details === 'object' && (
-                      <p className="text-muted-foreground truncate">{JSON.stringify(log.details).slice(0, 100)}</p>
-                    )}
-                    <p className="text-muted-foreground/60">{log.user_id.slice(0, 8)}... • {new Date(log.created_at).toLocaleString('pt-BR')}</p>
-                  </div>
-                </div>
-              ))}
+    <div className="space-y-3">
+      <Card className="border-purple-500/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Image className="h-4 w-4 text-purple-400" />
+            Criar Anúncio com IA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground">Título do Anúncio</label>
+            <Input placeholder="Ex: Nova temporada chegando!" value={title} onChange={e => setTitle(e.target.value)} className="h-9 text-xs" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground">Descrição</label>
+            <Textarea placeholder="Detalhes do anúncio..." value={description} onChange={e => setDescription(e.target.value)} className="text-xs min-h-[60px]" />
+          </div>
+
+          <Button size="sm" variant="outline" onClick={generateImage} disabled={generating} className="w-full h-8 text-xs gap-1 border-purple-500/30 text-purple-400">
+            <Wand2 className={`h-3 w-3 ${generating ? 'animate-spin' : ''}`} />
+            {generating ? 'Gerando imagem...' : '🎨 Gerar Imagem com IA'}
+          </Button>
+
+          {imageUrl && (
+            <div className="rounded-lg overflow-hidden border border-border/30">
+              <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover" />
+              <p className="text-[9px] text-muted-foreground text-center py-1">Preview da imagem gerada</p>
             </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+          )}
+
+          <Button onClick={publishAnnouncement} disabled={publishing || !title.trim()} className="w-full h-9 text-xs font-bold gap-1">
+            <Megaphone className="h-3 w-3" />
+            {publishing ? 'Publicando...' : '📢 Publicar Anúncio'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Maintenance channel controls */}
+      <Card className="border-orange-500/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Lock className="h-4 w-4 text-orange-400" />
+            Controle de Canais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">Bloquear/desbloquear acesso ao jogo para manutenção.</p>
+          <MaintenanceToggle userId={userId} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function MaintenanceToggle({ userId }: { userId: string }) {
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const check = async () => {
+      const { data } = await supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
+      if (data?.value) setActive((data.value as any).active === true);
+      setLoading(false);
+    };
+    check();
+  }, []);
+
+  const toggle = async () => {
+    const newState = !active;
+    setLoading(true);
+    const { error } = await supabase.from('system_settings').upsert({
+      key: 'maintenance_mode',
+      value: { active: newState } as any,
+      updated_by: userId,
+    });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      setActive(newState);
+      toast.success(newState ? '🔒 Manutenção ativada' : '🔓 Jogo liberado');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant={active ? 'destructive' : 'outline'}
+      className="w-full h-8 text-xs gap-1"
+      onClick={toggle}
+      disabled={loading}
+    >
+      {active ? '🔓 Desativar Manutenção' : '🔒 Ativar Manutenção'}
+    </Button>
   );
 }
 

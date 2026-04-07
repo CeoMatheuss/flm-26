@@ -4,12 +4,12 @@ import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
-  Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, RefreshCw,
+  Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
   ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
 } from 'lucide-react';
 import gamePreview1 from '@/assets/game-preview.jpg';
@@ -57,7 +57,7 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'signup-preferences' | 'otp';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'signup-preferences' | 'verify-email';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,7 @@ export default function AuthPage() {
   const [preferredFormation, setPreferredFormation] = useState('4-3-3');
   const [playstyle, setPlaystyle] = useState('balanced');
   const [pendingEmail, setPendingEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
   const [slideIndex, setSlideIndex] = useState(0);
@@ -106,9 +106,9 @@ export default function AuthPage() {
     if (error) {
       if (error.message === 'Email not confirmed') {
         setPendingEmail(email);
-        setStep('otp');
+        setStep('verify-email');
         startResendTimer();
-        toast.info('Email não confirmado. Digite o código enviado.');
+        toast.info('Email não confirmado. Verifique sua caixa de entrada.');
         await supabase.auth.resend({ type: 'signup', email });
       } else {
         toast.error(error.message);
@@ -127,6 +127,7 @@ export default function AuthPage() {
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin,
         data: {
           display_name: displayName || 'Manager',
           favorite_country: favoriteCountry,
@@ -139,39 +140,20 @@ export default function AuthPage() {
       toast.error(error.message);
     } else {
       setPendingEmail(email);
-      setStep('otp');
+      setStep('verify-email');
       startResendTimer();
-      toast.success('Código de verificação enviado!');
+      toast.success('Email de verificação enviado!');
     }
     setLoading(false);
   };
 
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
-      toast.error('Digite o código completo de 6 dígitos');
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: pendingEmail,
-      token: otpCode,
-      type: 'signup',
-    });
-    if (error) {
-      toast.error('Código inválido ou expirado.');
-    } else {
-      toast.success('🎉 Email verificado! Bem-vindo ao FLM 26!');
-    }
-    setLoading(false);
-  };
-
-  const handleResendCode = async () => {
+  const handleResendVerification = async () => {
     if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-    if (error) toast.error('Erro ao reenviar código.');
+    if (error) toast.error('Erro ao reenviar email.');
     else {
-      toast.success('Novo código enviado!');
+      toast.success('Novo email de verificação enviado!');
       startResendTimer();
     }
     setLoading(false);
@@ -207,7 +189,7 @@ export default function AuthPage() {
   );
 
   // ── OTP STEP ──
-  if (step === 'otp') {
+  if (step === 'verify-email') {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
         <img src={slides[0].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
@@ -215,65 +197,61 @@ export default function AuthPage() {
         <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-3">
-              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="w-8 h-8 text-primary" />
+              <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center relative">
+                <Mail className="w-10 h-10 text-primary" />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 flex items-center justify-center border-2 border-card">
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                </div>
               </div>
-              <h2 className="text-xl font-black">Verifique seu Email</h2>
-              <p className="text-sm text-muted-foreground">Código enviado para</p>
-              <Badge variant="secondary" className="text-xs font-bold">{pendingEmail}</Badge>
+              <h2 className="text-xl font-black">Verifique seu Email! 📬</h2>
+              <p className="text-sm text-muted-foreground">Enviamos um link de verificação para:</p>
+              <Badge variant="secondary" className="text-xs font-bold px-4 py-1.5">{pendingEmail}</Badge>
             </div>
 
-            <div className="mx-auto w-48 h-28 rounded-xl bg-primary/5 border border-primary/15 flex flex-col items-center justify-center gap-1.5">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-              <span className="text-[10px] font-bold">Código de Verificação</span>
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="w-4 h-5 rounded bg-primary/15 border border-primary/25 flex items-center justify-center">
-                    <span className="text-[8px] text-primary font-bold">•</span>
-                  </div>
-                ))}
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-sm font-bold text-primary">1</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold">Abra seu email</p>
+                  <p className="text-[10px] text-muted-foreground">Verifique a caixa de entrada e spam</p>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-                <span className="text-[7px] text-muted-foreground">Válido por 60 min</span>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-sm font-bold text-primary">2</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold">Clique no link "Confirm your mail"</p>
+                  <p className="text-[10px] text-muted-foreground">O link vai te redirecionar de volta para o jogo</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-success/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-sm font-bold text-success">3</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold">Pronto! 🎮</p>
+                  <p className="text-[10px] text-muted-foreground">Sua conta será ativada automaticamente</p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-center">
-              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <span className="mx-2 text-muted-foreground">-</span>
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-
-            <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length !== 6} className="w-full h-12 font-bold gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              {loading ? 'Verificando...' : 'Verificar Código'}
-            </Button>
-
-            <div className="text-center space-y-1">
+            <div className="text-center space-y-2">
               {resendTimer > 0 ? (
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                   <Clock className="w-3 h-3" /> Reenviar em <strong className="text-primary">{resendTimer}s</strong>
                 </p>
               ) : (
-                <Button variant="ghost" size="sm" onClick={handleResendCode} disabled={loading} className="text-xs text-primary gap-1">
-                  <RefreshCw className="w-3 h-3" /> Reenviar código
+                <Button variant="outline" size="sm" onClick={handleResendVerification} disabled={loading} className="text-xs gap-1">
+                  <RefreshCw className="w-3 h-3" /> Reenviar email de verificação
                 </Button>
               )}
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => { setStep('welcome'); setOtpCode(''); }} className="w-full text-xs text-muted-foreground gap-1">
-              <ArrowLeft className="w-3 h-3" /> Voltar
+            <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
+              <ArrowLeft className="w-3 h-3" /> Voltar ao início
             </Button>
           </CardContent>
         </Card>
