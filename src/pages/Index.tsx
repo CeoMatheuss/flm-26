@@ -194,7 +194,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
     if (st?.serverMatchResult) {
       const { matchDbId, homeGoals, awayGoals } = st.serverMatchResult;
-      const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played) ?? game.club.matches.find(m => !m.played);
+      const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
       if (pendingMatch) {
         game.applyServerResult({ matchId: pendingMatch.id, homeGoals, awayGoals, isHome: pendingMatch.isHome ?? true });
       }
@@ -203,16 +203,24 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       return;
     }
 
-    // Check for stale finished matches
+    // Check for stale finished matches — strict match_id validation only
     if (!st?.serverMatchResult) {
       const checkFinished = async () => {
-        const { data: finishedMatches } = await supabase.from('live_matches').select('match_id, home_goals, away_goals, is_home, id, status').eq('status', 'finished').order('created_at', { ascending: false }).limit(1);
+        const { data: finishedMatches } = await supabase.from('live_matches').select('match_id, home_goals, away_goals, is_home, id, status, created_at').eq('status', 'finished').order('created_at', { ascending: false }).limit(5);
         if (!finishedMatches || finishedMatches.length === 0) return;
-        const fm = finishedMatches[0];
-        await supabase.from('live_matches').delete().eq('id', fm.id);
-        const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played) ?? game.club.matches.find(m => !m.played);
-        if (localMatch) {
-          game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true });
+        for (const fm of finishedMatches) {
+          // Skip matches older than 2 hours (stale)
+          const matchAge = Date.now() - new Date(fm.created_at).getTime();
+          if (matchAge > 2 * 60 * 60 * 1000) {
+            await supabase.from('live_matches').delete().eq('id', fm.id);
+            continue;
+          }
+          // Only apply if match_id matches exactly a local unplayed match
+          const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played);
+          if (localMatch) {
+            game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true });
+          }
+          await supabase.from('live_matches').delete().eq('id', fm.id);
         }
       };
       checkFinished();
