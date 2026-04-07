@@ -50,9 +50,11 @@ interface GameTabRouterProps {
   setActiveTournamentId: (id: string | null) => void;
   onSigningPlayer: (data: { name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string }) => void;
   saveSigningNews: (playerName: string, position: string, overall: number, age: number, eventType?: 'signing' | 'renewal' | 'loan', extraInfo?: string) => void;
+  blockedTabs?: string[];
+  isAdmin?: boolean;
 }
 
-export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews }: GameTabRouterProps) {
+export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false }: GameTabRouterProps) {
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
   const { winStreak, loseStreak } = useMemo(() => {
