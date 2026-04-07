@@ -239,7 +239,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
       </TabsContent>
       <TabsContent value="training">
-        <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} />
+        <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} />
       </TabsContent>
       <TabsContent value="matches">
         <MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} alreadyPlayedToday={game.alreadyPlayedToday} lastFriendlyDate={game.lastFriendlyDate} players={game.club.players} teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))} tactics={game.tactics} onGenerateFriendly={game.generateFriendly} userId={userId} stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)} />
