@@ -32,6 +32,7 @@ interface MatchPageState {
   liveMatchDbId?: string;
   competition?: string;
   tournamentMatchId?: string;
+  fans?: number;
 }
 
 export default function MatchPage() {
