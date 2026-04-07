@@ -112,7 +112,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const navigate = useNavigate();
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(!!isNewClub);
+  const [tutorialCompleted, setTutorialCompleted] = useState(true); // default true to prevent flash
+  const [showTutorial, setShowTutorial] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
