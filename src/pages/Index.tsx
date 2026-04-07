@@ -312,7 +312,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} />
+            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={tutorialCompleted ? undefined : () => setShowTutorial(true)} />
             <GameNavBar />
           </div>
           <GameTabRouter
