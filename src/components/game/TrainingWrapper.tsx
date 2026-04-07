@@ -20,6 +20,7 @@ interface Props {
   onPlayersUpdate?: (players: Player[]) => void;
   currentWeek?: number;
   clubName?: string;
+  userId?: string;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
@@ -33,7 +34,7 @@ const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
 
 export function TrainingWrapper({
   players, infrastructure, trainingFocus, onSetTrainingFocus,
-  tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube',
+  tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'training' | 'training2d'>('training');
 
@@ -95,6 +96,7 @@ export function TrainingWrapper({
           tactics={tactics}
           onPlayersUpdate={onPlayersUpdate}
           currentWeek={currentWeek}
+          userId={userId}
         />
       ) : (
         <TrainingMatchCanvas clubName={clubName} players={players} onFinish={handleTrainingFinish} />

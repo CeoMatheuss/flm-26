@@ -1,23 +1,37 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Player } from '@/types/game';
 import type { Infrastructure } from '@/types/infrastructure';
 import type { TacticsConfig } from '@/types/tactics';
+import { getTrainingThreshold, getTrainingPointsPerSession, getTrainingFatiguePerSession } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dumbbell, Target, Users, TrendingUp, Calendar, Play, AlertTriangle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Dumbbell, Target, Users, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Sun, Moon, Zap, Shield, Heart, Swords, BarChart3, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { TrainingHelpButton } from './TrainingHelpPanel';
+import { supabase } from '@/integrations/supabase/client';
 
-import type { TrainingFocusKey, TrainingIntensity, PlayerTrainingConfig, WeeklyTrainingResult } from '@/training/TrainingTypes';
-import { focusLabels, focusToAttr, intensityConfig, positionRecommendations } from '@/training/TrainingTypes';
-import { getTrainingManager, defaultStaff, type StaffConfig } from '@/training/TrainingManager';
+import type { TrainingFocusKey, TrainingIntensity } from '@/training/TrainingTypes';
+import { focusLabels, intensityConfig } from '@/training/TrainingTypes';
 
-
-// Re-export for backward compatibility (useGame still uses TrainingFocus type)
 export type TrainingFocus = TrainingFocusKey;
+
+// Training types with descriptions
+const trainingTypes = [
+  { key: 'tecnico', label: '🟢 Técnico', color: 'border-emerald-500/40 bg-emerald-500/10', desc: 'Melhora passe, drible e finalização. Ideal para evolução ofensiva.', attrs: ['passing', 'dribbling', 'shooting', 'crossing'] },
+  { key: 'tatico', label: '🔵 Tático', color: 'border-blue-500/40 bg-blue-500/10', desc: 'Posicionamento, leitura de jogo e organização tática.', attrs: ['positioning', 'vision', 'composure', 'marking'] },
+  { key: 'fisico', label: '🔴 Físico', color: 'border-red-500/40 bg-red-500/10', desc: 'Resistência, velocidade e força. Gera mais cansaço.', attrs: ['speed', 'physical', 'heading', 'aggression'] },
+  { key: 'recuperacao', label: '🟡 Recuperação', color: 'border-yellow-500/40 bg-yellow-500/10', desc: 'Reduz fadiga e risco de lesão. Essencial após jogos.', attrs: [] },
+  { key: 'preparacao', label: '🟣 Preparação', color: 'border-purple-500/40 bg-purple-500/10', desc: 'Boost geral para a próxima partida. Aumenta entrosamento.', attrs: ['workRate'] },
+];
+
+const focusOptions = [
+  { key: 'ofensivo', label: '⚔️ Ofensivo', desc: 'Shooting, dribbling, crossing' },
+  { key: 'defensivo', label: '🛡️ Defensivo', desc: 'Defending, marking, heading' },
+  { key: 'equilibrado', label: '⚖️ Equilibrado', desc: 'Distribuição entre todos' },
+  { key: 'individual', label: '🎯 Individual', desc: 'Foco em 1 jogador (+50%)' },
+];
 
 interface Props {
   players: Player[];
@@ -27,6 +41,7 @@ interface Props {
   tactics?: TacticsConfig;
   onPlayersUpdate?: (players: Player[]) => void;
   currentWeek?: number;
+  userId?: string;
 }
 
 const posColors: Record<string, string> = {
@@ -38,305 +53,383 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-500/15 text-red-400',
 };
 
-// ── Mini subcomponent: relatório de desempenho ───────────────────────────────
-function TrainingInsights({ players, trainingFocus }: { players: Player[]; trainingFocus: Record<string, TrainingFocusKey> }) {
-  const activeTraining = players.filter(p => trainingFocus[p.id] && trainingFocus[p.id] !== 'none');
-  const youngTalents = players.filter(p => p.age <= 22).sort((a, b) => b.overall - a.overall).slice(0, 3);
-  const veterans = players.filter(p => p.age >= 30).sort((a, b) => b.overall - a.overall).slice(0, 3);
-  const lowStamina = players.filter(p => (p.stamina ?? 100) < 60).sort((a, b) => (a.stamina ?? 100) - (b.stamina ?? 100)).slice(0, 3);
-  const topPlayers = [...players].sort((a, b) => b.overall - a.overall).slice(0, 3);
-
-  return (
-    <div className="rounded-lg border border-border/40 bg-muted/10 p-3 space-y-3">
-      <div className="flex items-center justify-center gap-2 text-xs">
-        <TrendingUp className="h-3.5 w-3.5 text-primary" />
-        <span className="font-bold text-primary">Relatório de Desempenho</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
-          <p className="text-[8px] font-bold text-emerald-400 uppercase mb-1.5">🌱 Jovens Promissores</p>
-          {youngTalents.length > 0 ? youngTalents.map(p => (
-            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
-              <span className="truncate">{p.name.split(' ').pop()}</span>
-              <span className="text-muted-foreground">{p.age}a • {p.overall}</span>
-            </div>
-          )) : <p className="text-[8px] text-muted-foreground">Nenhum sub-22</p>}
-        </div>
-        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
-          <p className="text-[8px] font-bold text-yellow-400 uppercase mb-1.5">⭐ Top do Elenco</p>
-          {topPlayers.map(p => (
-            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
-              <span className="truncate">{p.name.split(' ').pop()}</span>
-              <Badge variant="outline" className="text-[7px] h-4">{p.overall}</Badge>
-            </div>
-          ))}
-        </div>
-        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
-          <p className="text-[8px] font-bold text-amber-400 uppercase mb-1.5">🏅 Veteranos (30+)</p>
-          {veterans.length > 0 ? veterans.map(p => (
-            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
-              <span className="truncate">{p.name.split(' ').pop()}</span>
-              <span className="text-muted-foreground">{p.age}a</span>
-            </div>
-          )) : <p className="text-[8px] text-muted-foreground">Nenhum 30+</p>}
-        </div>
-        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
-          <p className="text-[8px] font-bold text-red-400 uppercase mb-1.5">😓 Cansados</p>
-          {lowStamina.length > 0 ? lowStamina.map(p => (
-            <div key={p.id} className="flex items-center justify-between text-[9px] py-0.5">
-              <span className="truncate">{p.name.split(' ').pop()}</span>
-              <span className="text-destructive">{p.stamina ?? 100}%</span>
-            </div>
-          )) : <p className="text-[8px] text-emerald-400">Todos descansados ✓</p>}
-        </div>
-      </div>
-      <p className="text-[8px] text-muted-foreground text-center">
-        {activeTraining.length} jogador(es) em foco de treino ativo
-      </p>
-    </div>
-  );
-}
-
-// ── Mini subcomponent: card de jogador ─────────────────────────────────────
-function PlayerTrainingRow({
-  player,
-  config,
-  onFocusChange,
-  onIntensityChange,
-  roundsNeeded,
-}: {
+// Player progress row
+function PlayerProgressRow({ player, ctLevel, devPoints }: {
   player: Player;
-  config: PlayerTrainingConfig;
-  onFocusChange: (focus: TrainingFocusKey) => void;
-  onIntensityChange: (intensity: TrainingIntensity) => void;
-  roundsNeeded: number;
+  ctLevel: number;
+  devPoints: Record<string, { accumulated: number; threshold: number }>;
 }) {
   const [open, setOpen] = useState(false);
-  const { focus, intensity } = config;
-  const attr = focusToAttr[focus];
-  const currentVal = attr ? ((player.attributes[attr] as number | undefined) ?? 0) : null;
-  const tooOld = player.age > 33;
-  const recommended = positionRecommendations[player.position] ?? [];
-  const isRecommended = recommended.includes(focus);
-  const intCfg = intensityConfig[intensity];
-  const injRiskClass = intensity === 'pesado' ? 'text-destructive' : intensity === 'moderado' ? 'text-yellow-400' : 'text-emerald-400';
+  const threshold = getTrainingThreshold(ctLevel);
+  const attrs = Object.entries(devPoints).filter(([, v]) => v.accumulated > 0);
+  const bestAttr = attrs.length > 0 ? attrs.sort((a, b) => b[1].accumulated - a[1].accumulated)[0] : null;
+
+  const staminaColor = (player.stamina ?? 100) < 40 ? 'text-red-400' : (player.stamina ?? 100) < 60 ? 'text-yellow-400' : 'text-emerald-400';
+  const moraleEmoji = player.morale >= 80 ? '😊' : player.morale >= 50 ? '😐' : '😤';
 
   return (
-    <div className={`rounded-lg border transition-colors ${player.injury ? 'border-destructive/30 bg-destructive/5' : 'border-border/30 bg-muted/20 hover:bg-muted/40'}`}>
-      {/* Header row */}
-      <div className="flex items-center gap-2 px-2 py-1.5">
+    <div className={`rounded-lg border transition-colors ${player.injury ? 'border-red-500/30 bg-red-500/5' : 'border-border/30 bg-muted/20 hover:bg-muted/30'}`}>
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer" onClick={() => setOpen(o => !o)}>
         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[player.position]}`}>{player.position}</span>
-        <span className="text-[10px] sm:text-xs font-medium flex-1 truncate">{player.name}</span>
-        <span className="text-[10px] text-muted-foreground shrink-0">{player.age}a</span>
-        <span className="text-xs font-bold w-6 text-right shrink-0">{player.overall}</span>
-        {player.injury && <Badge variant="destructive" className="text-[8px] h-4 px-1 shrink-0">Lesão</Badge>}
-        {tooOld && !player.injury && <Badge variant="secondary" className="text-[8px] h-4 px-1 shrink-0">Declínio</Badge>}
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => setOpen(o => !o)}>
-          {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </Button>
+        <span className="text-xs font-medium flex-1 truncate">{player.name}</span>
+        <span className="text-[10px] text-muted-foreground">{player.age}a</span>
+        <Badge variant="outline" className="text-[9px] h-5">{player.overall}</Badge>
+        <span className={`text-[9px] ${staminaColor}`}>⚡{player.stamina ?? 100}%</span>
+        <span className="text-[10px]">{moraleEmoji}</span>
+        {player.injury && <Badge variant="destructive" className="text-[8px] h-4">🏥 Lesão</Badge>}
+        {open ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
       </div>
 
-      {/* Compact info row */}
-      <div className="flex items-center gap-2 px-2 pb-1.5">
-        {currentVal !== null && (
-          <Badge variant="outline" className={`text-[8px] px-1 h-4 ${isRecommended ? 'border-emerald-500/50 text-emerald-400' : ''}`}>
-            {attr}: {currentVal}
-          </Badge>
-        )}
-        <Badge variant="outline" className={`text-[8px] px-1 h-4 ${injRiskClass}`}>
-          {intCfg.emoji} {intCfg.label}
-        </Badge>
-        <div className="flex-1">
-          <Progress value={player.trainingProgress * (100 / Math.max(1, roundsNeeded))} className="h-1" />
+      {bestAttr && !open && (
+        <div className="px-3 pb-2">
+          <div className="flex items-center gap-2 text-[9px]">
+            <span className="text-muted-foreground">{bestAttr[0]}:</span>
+            <Progress value={(bestAttr[1].accumulated / bestAttr[1].threshold) * 100} className="h-1.5 flex-1" />
+            <span className="text-muted-foreground font-mono">{bestAttr[1].accumulated}/{bestAttr[1].threshold}</span>
+          </div>
         </div>
-        <span className="text-[9px] font-mono text-muted-foreground shrink-0">{player.trainingProgress}/{roundsNeeded}</span>
-      </div>
+      )}
 
-      {/* Expanded controls */}
-      {open && !player.injury && (
-        <div className="px-2 pb-2 space-y-2 border-t border-border/20 pt-2">
-          {/* Focus select */}
-          <div className="space-y-1">
-            <p className="text-[9px] text-muted-foreground uppercase font-semibold">Foco de Treino</p>
-            <Select value={focus} onValueChange={v => onFocusChange(v as TrainingFocusKey)} disabled={tooOld}>
-              <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(focusLabels).map(([key, label]) => {
-                  const isRec = recommended.includes(key as TrainingFocusKey);
-                  return (
-                    <SelectItem key={key} value={key} className="text-xs">
-                      {label} {isRec && key !== 'none' ? '⭐' : ''}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Intensity */}
-          <div className="space-y-1">
-            <p className="text-[9px] text-muted-foreground uppercase font-semibold">Intensidade</p>
-            <div className="flex gap-1">
-              {(['leve', 'moderado', 'pesado'] as TrainingIntensity[]).map(int => {
-                const ic = intensityConfig[int];
-                return (
-                  <Button
-                    key={int}
-                    size="sm"
-                    variant={intensity === int ? 'default' : 'outline'}
-                    className="flex-1 h-6 text-[9px] gap-1"
-                    onClick={() => onIntensityChange(int)}
-                    disabled={tooOld}
-                  >
-                    {ic.emoji} {ic.label}
-                  </Button>
-                );
-              })}
+      {open && (
+        <div className="px-3 pb-3 space-y-2 border-t border-border/20 pt-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-[9px]">
+              <span className="text-muted-foreground">Stamina: </span>
+              <span className={staminaColor}>{player.stamina ?? 100}%</span>
             </div>
-            <p className={`text-[9px] ${injRiskClass}`}>
-              Risco de lesão: {intensity === 'leve' ? 'Baixo' : intensity === 'moderado' ? 'Médio' : 'Alto'} •
-              Fadiga: -{intCfg.fatiguePerSession} stamina/sessão
-            </p>
-          </div>
-
-          {/* Stamina bar */}
-          <div className="space-y-0.5">
-            <div className="flex justify-between text-[9px] text-muted-foreground">
-              <span>Stamina</span>
-              <span className={player.stamina < 40 ? 'text-destructive' : player.stamina < 60 ? 'text-yellow-400' : 'text-emerald-400'}>
-                {player.stamina}%
+            <div className="text-[9px]">
+              <span className="text-muted-foreground">Moral: </span>
+              <span>{moraleEmoji} {player.morale}</span>
+            </div>
+            <div className="text-[9px]">
+              <span className="text-muted-foreground">Personalidade: </span>
+              <span className="capitalize">{player.personality ?? 'normal'}</span>
+            </div>
+            <div className="text-[9px]">
+              <span className="text-muted-foreground">Lesão risco: </span>
+              <span className={(player.stamina ?? 100) < 40 ? 'text-red-400' : 'text-emerald-400'}>
+                {(player.stamina ?? 100) < 40 ? 'ALTO ⚠️' : (player.stamina ?? 100) < 60 ? 'Médio' : 'Baixo'}
               </span>
             </div>
-            <Progress
-              value={player.stamina}
-              className="h-1.5"
-            />
           </div>
+          {attrs.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase">Progresso de Evolução</p>
+              {attrs.map(([attr, val]) => (
+                <div key={attr} className="flex items-center gap-2 text-[9px]">
+                  <span className="w-20 truncate text-muted-foreground">{attr}</span>
+                  <Progress value={(val.accumulated / val.threshold) * 100} className="h-1.5 flex-1" />
+                  <span className="font-mono text-muted-foreground w-12 text-right">{val.accumulated}/{val.threshold}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {attrs.length === 0 && (
+            <p className="text-[9px] text-muted-foreground text-center">Sem progresso acumulado ainda. Inicie treinos!</p>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ── Componente principal ──────────────────────────────────────────────────
 export function TrainingTab({
-  players,
-  infrastructure,
-  trainingFocus = {},
-  onSetTrainingFocus,
-  tactics,
-  onPlayersUpdate,
-  currentWeek = 1,
+  players, infrastructure, trainingFocus = {}, onSetTrainingFocus,
+  tactics, onPlayersUpdate, currentWeek = 1, userId,
 }: Props) {
-  const [filterPos, setFilterPos] = useState<string>('all');
-  const [intensityMap, setIntensityMap] = useState<Record<string, TrainingIntensity>>({});
-  const [globalIntensity, setGlobalIntensity] = useState<TrainingIntensity>('moderado');
-  const [lastResult, setLastResult] = useState<WeeklyTrainingResult | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [selectedType, setSelectedType] = useState('tecnico');
+  const [selectedFocus, setSelectedFocus] = useState('equilibrado');
+  const [selectedIntensity, setSelectedIntensity] = useState<TrainingIntensity>('moderado');
+  const [selectedSlot, setSelectedSlot] = useState<1 | 2>(1);
+  const [individualPlayerId, setIndividualPlayerId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [showPitch, setShowPitch] = useState(false);
-  
+  const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [devPointsMap, setDevPointsMap] = useState<Record<string, Record<string, { accumulated: number; threshold: number }>>>({});
+  const [filterPos, setFilterPos] = useState('all');
+  const [historyDays, setHistoryDays] = useState<any[]>([]);
 
-  const trainingLevel = infrastructure?.trainingCenter?.level ?? 1;
+  const ctLevel = infrastructure?.trainingCenter?.level ?? 1;
   const physioLevel = infrastructure?.physiotherapy?.level ?? 1;
-  const roundsNeeded = Math.max(2, 10 - trainingLevel);
-  const successChance = Math.round((0.3 + trainingLevel * 0.07) * 100);
+  const canDoAfternoon = ctLevel >= 10;
+  const threshold = getTrainingThreshold(ctLevel);
 
-  const sorted = [...players].sort((a, b) => b.overall - a.overall);
-  const injured = sorted.filter(p => !!p.injury);
-  const healthy = sorted.filter(p => !p.injury);
+  const today = new Date().toISOString().split('T')[0];
+
+  // Load today's sessions and dev points
+  const loadData = useCallback(async () => {
+    if (!userId) return;
+    const [sessRes, devRes, histRes] = await Promise.all([
+      supabase.from('daily_training_sessions').select('*').eq('user_id', userId).eq('session_date', today),
+      supabase.from('player_development_points').select('*').eq('user_id', userId),
+      supabase.from('daily_training_sessions').select('*').eq('user_id', userId).gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]).order('session_date', { ascending: false }),
+    ]);
+    if (sessRes.data) setTodaySessions(sessRes.data);
+    if (devRes.data) {
+      const map: typeof devPointsMap = {};
+      devRes.data.forEach((d: any) => {
+        if (!map[d.player_id]) map[d.player_id] = {};
+        map[d.player_id][d.attribute] = { accumulated: d.accumulated_points, threshold: d.threshold };
+      });
+      setDevPointsMap(map);
+    }
+    if (histRes.data) {
+      const grouped: Record<string, any[]> = {};
+      histRes.data.forEach((s: any) => {
+        if (!grouped[s.session_date]) grouped[s.session_date] = [];
+        grouped[s.session_date].push(s);
+      });
+      setHistoryDays(Object.entries(grouped).map(([date, sessions]) => ({ date, sessions, totalPoints: sessions.reduce((s: number, x: any) => s + x.dev_points_earned, 0) })).slice(0, 7));
+    }
+  }, [userId, today]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const slotAlreadyDone = (slot: number) => todaySessions.some(s => s.session_slot === slot);
+  const morningDone = slotAlreadyDone(1);
+  const afternoonDone = slotAlreadyDone(2);
+
+  const healthy = players.filter(p => !p.injury);
+  const injured = players.filter(p => !!p.injury);
   const filtered = filterPos === 'all' ? healthy : healthy.filter(p => p.position === filterPos);
 
-  const trainingCount = Object.values(trainingFocus).filter(f => f !== 'none').length;
-
-  const getConfig = useCallback((playerId: string): PlayerTrainingConfig => ({
-    focus: trainingFocus[playerId] ?? 'none',
-    intensity: intensityMap[playerId] ?? globalIntensity,
-  }), [trainingFocus, intensityMap, globalIntensity]);
-
-  const handleGlobalIntensity = (int: TrainingIntensity) => {
-    setGlobalIntensity(int);
-    // Apply to all players who haven't customized
-    const updated: Record<string, TrainingIntensity> = {};
-    players.forEach(p => { updated[p.id] = int; });
-    setIntensityMap(updated);
-  };
-
-  // ── Processar semana de treinos ─────────────────────────────────────
-  const handleProcessWeek = useCallback(async () => {
-    if (processing) return;
-    setProcessing(true);
-
-    const configs: Record<string, PlayerTrainingConfig> = {};
-    players.forEach(p => { configs[p.id] = getConfig(p.id); });
-
-    const staff: StaffConfig = defaultStaff; // TODO: integrar staff real quando implementado
-
-    try {
-      const manager = getTrainingManager();
-      const { players: updated, result } = manager.processWeek(
-        players,
-        configs,
-        trainingLevel,
-        physioLevel,
-        staff,
-        tactics ?? { formation: '4-4-2', playStyle: 'equilibrado', pressing: 'medio', tempo: 'normal', marking: 'zona', passingStyle: 'misto', defenseLine: 'media', width: 'normal', playerInstructions: [] },
-        currentWeek
-      );
-
-      if (onPlayersUpdate) onPlayersUpdate(updated);
-      setLastResult(result);
-      setShowResult(true);
-
-      const evolCount = result.developmentLogs.length;
-      const injCount = result.events.filter(e => e.type === 'injury_scare').length;
-      if (evolCount > 0) toast.success(`📈 ${evolCount} jogador(es) evoluíram nesta semana!`);
-      if (injCount > 0) toast.warning(`⚠️ ${injCount} lesão(ões) no treino!`);
-      if (evolCount === 0 && injCount === 0) toast.info('Semana de treino concluída. Continue assim!');
-    } catch (err) {
-      console.error('[TrainingTab] processWeek error:', err);
-      toast.error('Erro ao processar treino.');
+  // Process daily training session
+  const handleTrain = useCallback(async () => {
+    if (!userId || processing) return;
+    if (slotAlreadyDone(selectedSlot)) {
+      toast.error(`Sessão da ${selectedSlot === 1 ? 'manhã' : 'tarde'} já foi realizada hoje!`);
+      return;
+    }
+    if (selectedSlot === 2 && !canDoAfternoon) {
+      toast.error('CT nível 10+ necessário para sessão da tarde!');
+      return;
     }
 
+    setProcessing(true);
+    const typeInfo = trainingTypes.find(t => t.key === selectedType)!;
+    const updatedPlayers = [...players];
+    const sessionsToInsert: any[] = [];
+    let totalEvolutions = 0;
+
+    for (const player of healthy) {
+      const isIndividualTarget = selectedFocus === 'individual' && individualPlayerId === player.id;
+      const pointsMult = isIndividualTarget ? 1.5 : 1.0;
+      const points = Math.round(getTrainingPointsPerSession(ctLevel, selectedIntensity, player.age, player.personality) * pointsMult);
+      const fatigue = getTrainingFatiguePerSession(selectedType);
+
+      sessionsToInsert.push({
+        user_id: userId,
+        player_id: player.id,
+        session_date: today,
+        session_slot: selectedSlot,
+        training_type: selectedType,
+        focus: selectedFocus,
+        intensity: selectedIntensity,
+        dev_points_earned: points,
+        fatigue_generated: fatigue,
+      });
+
+      // Apply fatigue/recovery to local state
+      const playerIdx = updatedPlayers.findIndex(p => p.id === player.id);
+      if (playerIdx >= 0) {
+        const newStamina = Math.max(5, Math.min(100, (updatedPlayers[playerIdx].stamina ?? 100) - fatigue));
+        const moraleDelta = selectedIntensity === 'pesado' ? -2 : selectedIntensity === 'leve' ? 1 : 0;
+        updatedPlayers[playerIdx] = {
+          ...updatedPlayers[playerIdx],
+          stamina: newStamina,
+          morale: Math.max(20, Math.min(100, updatedPlayers[playerIdx].morale + moraleDelta)),
+        };
+
+        // Injury check
+        if (newStamina < 30 && selectedIntensity === 'pesado' && Math.random() < 0.15) {
+          const weeks = Math.floor(Math.random() * 3) + 1;
+          updatedPlayers[playerIdx] = {
+            ...updatedPlayers[playerIdx],
+            injury: { type: 'Lesão muscular', severity: 'moderada', weeksRemaining: weeks, originalWeeks: weeks },
+          };
+          toast.warning(`🏥 ${player.name} se lesionou no treino!`);
+        }
+
+        // Accumulate dev points per attribute
+        const targetAttrs = typeInfo.attrs.length > 0 ? typeInfo.attrs : [];
+        for (const attr of targetAttrs) {
+          const currentDevPoints = devPointsMap[player.id]?.[attr]?.accumulated ?? 0;
+          const newAccumulated = currentDevPoints + Math.round(points / Math.max(1, targetAttrs.length));
+
+          if (newAccumulated >= threshold) {
+            // Evolution!
+            const currentVal = (player.attributes as any)[attr] ?? 50;
+            const cap = player.age < 25 ? 99 : 95;
+            if (currentVal < cap) {
+              (updatedPlayers[playerIdx].attributes as any)[attr] = Math.min(cap, currentVal + 1);
+              totalEvolutions++;
+
+              // Upsert with reset
+              await supabase.from('player_development_points').upsert({
+                user_id: userId, player_id: player.id, attribute: attr,
+                accumulated_points: newAccumulated - threshold, threshold,
+              }, { onConflict: 'user_id,player_id,attribute' });
+            }
+          } else {
+            await supabase.from('player_development_points').upsert({
+              user_id: userId, player_id: player.id, attribute: attr,
+              accumulated_points: newAccumulated, threshold,
+            }, { onConflict: 'user_id,player_id,attribute' });
+          }
+        }
+      }
+    }
+
+    // Insert sessions
+    await supabase.from('daily_training_sessions').insert(sessionsToInsert);
+
+    // Update last_training_processed_at
+    await supabase.from('profiles').update({ last_training_processed_at: new Date().toISOString() } as any).eq('user_id', userId);
+
+    if (onPlayersUpdate) onPlayersUpdate(updatedPlayers);
+
+    if (totalEvolutions > 0) {
+      toast.success(`📈 ${totalEvolutions} evolução(ões) de atributo!`);
+    } else {
+      toast.info(`✅ Sessão da ${selectedSlot === 1 ? 'manhã' : 'tarde'} concluída! Pontos acumulados.`);
+    }
+
+    await loadData();
     setProcessing(false);
-  }, [players, getConfig, trainingLevel, physioLevel, tactics, currentWeek, onPlayersUpdate, processing]);
+  }, [userId, processing, selectedSlot, selectedType, selectedFocus, selectedIntensity, individualPlayerId, players, healthy, ctLevel, threshold, today, devPointsMap, onPlayersUpdate, loadData, canDoAfternoon]);
+
+  const typeInfo = trainingTypes.find(t => t.key === selectedType)!;
 
   return (
     <div className="space-y-4">
-      {/* ── Header: Informações do CT ──────────────────────────────── */}
+      {/* Header CT Info */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Dumbbell className="h-4 w-4 text-primary" /> Sistema de Treinos FLM 26
-            </CardTitle>
-            <TrainingHelpButton />
-          </div>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Dumbbell className="h-4 w-4 text-primary" /> Centro de Treinamento
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-2">
-            <div className="bg-muted/30 rounded p-2 text-center">
+        <CardContent>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
               <p className="text-[9px] text-muted-foreground">CT Nível</p>
-              <p className="text-base font-bold text-primary">{trainingLevel}/10</p>
+              <p className="text-lg font-bold text-primary">{ctLevel}<span className="text-[9px] text-muted-foreground">/30</span></p>
             </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[9px] text-muted-foreground">Sem. p/ +1</p>
-              <p className="text-base font-bold text-primary">{roundsNeeded}</p>
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
+              <p className="text-[9px] text-muted-foreground">Threshold</p>
+              <p className="text-lg font-bold text-primary">{threshold}<span className="text-[9px] text-muted-foreground">pts</span></p>
             </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[9px] text-muted-foreground">Chance</p>
-              <p className="text-base font-bold text-primary">{successChance}%</p>
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
+              <p className="text-[9px] text-muted-foreground">Sessões</p>
+              <p className="text-lg font-bold text-primary">{canDoAfternoon ? '2' : '1'}<span className="text-[9px] text-muted-foreground">/dia</span></p>
             </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-[9px] text-muted-foreground">Em treino</p>
-              <p className="text-base font-bold text-primary">{trainingCount}/{healthy.length}</p>
+            <div className="bg-muted/30 rounded-lg p-2 text-center">
+              <p className="text-[9px] text-muted-foreground">Elenco</p>
+              <p className="text-lg font-bold text-primary">{healthy.length}</p>
             </div>
           </div>
 
-          {/* Intensidade global */}
+          {/* Today status */}
+          <div className="flex items-center gap-2 text-xs">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">Hoje:</span>
+            <Badge variant={morningDone ? 'default' : 'outline'} className="text-[9px] h-5 gap-1">
+              <Sun className="h-2.5 w-2.5" /> Manhã {morningDone ? '✅' : '⬜'}
+            </Badge>
+            {canDoAfternoon && (
+              <Badge variant={afternoonDone ? 'default' : 'outline'} className="text-[9px] h-5 gap-1">
+                <Moon className="h-2.5 w-2.5" /> Tarde {afternoonDone ? '✅' : '⬜'}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Session Config */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Target className="h-4 w-4" /> Configurar Sessão
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Slot selection */}
+          <div className="flex gap-2">
+            <Button
+              variant={selectedSlot === 1 ? 'default' : 'outline'}
+              size="sm" className="flex-1 gap-1 text-xs"
+              onClick={() => setSelectedSlot(1)}
+              disabled={morningDone}
+            >
+              <Sun className="h-3.5 w-3.5" /> Manhã {morningDone && '✅'}
+            </Button>
+            <Button
+              variant={selectedSlot === 2 ? 'default' : 'outline'}
+              size="sm" className="flex-1 gap-1 text-xs"
+              onClick={() => setSelectedSlot(2)}
+              disabled={afternoonDone || !canDoAfternoon}
+            >
+              <Moon className="h-3.5 w-3.5" /> Tarde {afternoonDone && '✅'} {!canDoAfternoon && '🔒'}
+            </Button>
+          </div>
+
+          {/* Training type cards */}
           <div className="space-y-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Intensidade Global</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Tipo de Treino</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {trainingTypes.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setSelectedType(t.key)}
+                  className={`text-left p-2.5 rounded-lg border transition-all ${selectedType === t.key ? t.color + ' ring-1 ring-primary/30' : 'border-border/30 bg-muted/10 hover:bg-muted/20'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold">{t.label}</span>
+                    <Badge variant="outline" className="text-[8px] h-4">
+                      {t.key === 'recuperacao' ? '-20 fadiga' : `+${getTrainingFatiguePerSession(t.key)} fadiga`}
+                    </Badge>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{t.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Focus selection */}
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Foco</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {focusOptions.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setSelectedFocus(f.key)}
+                  className={`text-left p-2 rounded-lg border transition-all text-xs ${selectedFocus === f.key ? 'border-primary/50 bg-primary/10' : 'border-border/30 bg-muted/10 hover:bg-muted/20'}`}
+                >
+                  <p className="font-semibold">{f.label}</p>
+                  <p className="text-[8px] text-muted-foreground">{f.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Individual player selection */}
+          {selectedFocus === 'individual' && (
+            <Select value={individualPlayerId ?? ''} onValueChange={setIndividualPlayerId}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Escolher jogador..." />
+              </SelectTrigger>
+              <SelectContent>
+                {healthy.map(p => (
+                  <SelectItem key={p.id} value={p.id} className="text-xs">
+                    {p.position} — {p.name} ({p.overall})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* Intensity */}
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Intensidade</p>
             <div className="flex gap-1.5">
               {(['leve', 'moderado', 'pesado'] as TrainingIntensity[]).map(int => {
                 const ic = intensityConfig[int];
@@ -344,9 +437,9 @@ export function TrainingTab({
                   <Button
                     key={int}
                     size="sm"
-                    variant={globalIntensity === int ? 'default' : 'outline'}
+                    variant={selectedIntensity === int ? 'default' : 'outline'}
                     className="flex-1 h-8 text-[10px] gap-1"
-                    onClick={() => handleGlobalIntensity(int)}
+                    onClick={() => setSelectedIntensity(int)}
                   >
                     {ic.emoji} {ic.label}
                   </Button>
@@ -354,139 +447,89 @@ export function TrainingTab({
               })}
             </div>
             <p className="text-[9px] text-muted-foreground">
-              🟢 Leve: seguro, evolução lenta • 🟡 Moderado: equilibrado • 🔴 Pesado: rápido, risco de lesão
+              🟢 Seguro, lento • 🟡 Equilibrado • 🔴 Rápido, risco de lesão
             </p>
           </div>
 
-          {/* Sugestão tática */}
-          {tactics && (
-            <div className="bg-primary/10 rounded p-2 text-[9px] text-muted-foreground">
-              <Info className="h-3 w-3 inline mr-1 text-primary" />
-              Com táticas <span className="text-primary font-semibold">{tactics.playStyle}</span>,
-              recomendamos focar em <span className="text-primary font-semibold">
-                {focusLabels[getTrainingManager().suggestFocusFromTactics(tactics)] ?? 'Físico'}
-              </span>
-            </div>
-          )}
-
-          {/* Relatório de Desempenho */}
+          {/* Execute button */}
           <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-xs h-8"
-            onClick={() => setShowPitch(v => !v)}
+            className="w-full gap-2"
+            onClick={handleTrain}
+            disabled={processing || slotAlreadyDone(selectedSlot) || (selectedSlot === 2 && !canDoAfternoon)}
           >
-            <TrendingUp className="h-3.5 w-3.5" />
-            {showPitch ? 'Ocultar Relatório' : 'Ver Relatório de Desempenho'}
+            <Zap className="h-4 w-4" />
+            {processing ? 'Treinando...' : `Iniciar Treino — ${selectedSlot === 1 ? 'Manhã' : 'Tarde'}`}
           </Button>
-
-          {showPitch && (
-            <TrainingInsights players={healthy} trainingFocus={trainingFocus} />
-          )}
         </CardContent>
       </Card>
 
-
-
-      {/* ── Resultado da última semana ─────────────────────────────── */}
-      {showResult && lastResult && (
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" /> Resultado — Semana {lastResult.week}
-              </CardTitle>
-              <Button variant="ghost" size="sm" className="h-6 text-[9px]" onClick={() => setShowResult(false)}>Fechar</Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {lastResult.developmentLogs.length === 0 && lastResult.events.filter(e => e.type === 'injury_scare').length === 0 && (
-              <p className="text-xs text-muted-foreground text-center">Nenhuma evolução esta semana. Continue treinando!</p>
-            )}
-            {lastResult.developmentLogs.map((log, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 bg-primary/10 rounded text-xs">
-                <span className="text-primary font-bold">📈</span>
-                <span className="font-medium flex-1">{log.playerName}</span>
-                <Badge variant="outline" className="text-[8px] text-primary border-primary/40">
-                  {String(log.attribute)} {log.oldValue} → {log.newValue}
-                </Badge>
-              </div>
+      {/* Player Progress */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" /> Progresso dos Jogadores
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {/* Position filter */}
+          <div className="flex gap-1 flex-wrap">
+            {['all', 'GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
+              <Button key={pos} variant={filterPos === pos ? 'default' : 'outline'} size="sm" className="h-6 text-[10px] px-2" onClick={() => setFilterPos(pos)}>
+                {pos === 'all' ? 'Todos' : pos}
+              </Button>
             ))}
-            {lastResult.events.map((ev, i) => (
-              <div key={i} className={`flex items-start gap-2 p-2 rounded text-xs ${ev.type === 'injury_scare' ? 'bg-destructive/10' : ev.type === 'team_chemistry' || ev.type === 'dedication' ? 'bg-primary/10' : 'bg-muted/30'}`}>
-                <span className="text-base shrink-0">{ev.icon}</span>
-                <div>
-                  <p className="font-bold text-[10px]">{ev.title}</p>
-                  <p className="text-[9px] text-muted-foreground">{ev.description}</p>
-                </div>
+          </div>
+
+          <div className="space-y-1.5">
+            {filtered.sort((a, b) => b.overall - a.overall).map(p => (
+              <PlayerProgressRow key={p.id} player={p} ctLevel={ctLevel} devPoints={devPointsMap[p.id] ?? {}} />
+            ))}
+            {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador encontrado.</p>}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Injured players */}
+      {injured.length > 0 && (
+        <Card className="border-red-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-400" /> Departamento Médico ({injured.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {injured.map(p => (
+              <div key={p.id} className="flex items-center gap-2 p-2 bg-red-500/5 rounded-lg">
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
+                <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
+                <Badge variant="destructive" className="text-[9px]">{p.injury?.severity}</Badge>
+                <span className="text-[10px] font-mono text-red-400">{p.injury?.weeksRemaining}j</span>
               </div>
             ))}
           </CardContent>
         </Card>
       )}
 
-      {/* ── Filtro de posição ────────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
-        <Users className="h-3.5 w-3.5 text-muted-foreground" />
-        <div className="flex gap-1 flex-wrap">
-          {['all', 'GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
-            <Button
-              key={pos}
-              variant={filterPos === pos ? 'default' : 'outline'}
-              size="sm"
-              className="h-6 text-[10px] px-2"
-              onClick={() => setFilterPos(pos)}
-            >
-              {pos === 'all' ? 'Todos' : pos}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Lista de jogadores ──────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Target className="h-4 w-4" /> Elenco Saudável ({filtered.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {filtered.map(p => (
-              <PlayerTrainingRow
-                key={p.id}
-                player={p}
-                config={getConfig(p.id)}
-                onFocusChange={(focus) => onSetTrainingFocus(p.id, focus)}
-                onIntensityChange={(intensity) => setIntensityMap(prev => ({ ...prev, [p.id]: intensity }))}
-                roundsNeeded={roundsNeeded}
-              />
-            ))}
-            {filtered.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador encontrado.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Departamento Médico ──────────────────────────────────────── */}
-      {injured.length > 0 && (
-        <Card className="border-destructive/20">
+      {/* History */}
+      {historyDays.length > 0 && (
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" /> Departamento Médico ({injured.length})
+              <BarChart3 className="h-4 w-4" /> Histórico (7 dias)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5">
-            {injured.map(p => (
-              <div key={p.id} className="flex items-center gap-2 p-2 bg-destructive/5 rounded">
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
-                <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
-                <Badge variant="destructive" className="text-[9px]">{p.injury?.severity}</Badge>
-                <span className="text-[10px] text-muted-foreground truncate">{p.injury?.type}</span>
-                <span className="text-[10px] font-mono text-destructive shrink-0">{p.injury?.weeksRemaining}j</span>
-              </div>
-            ))}
+          <CardContent>
+            <div className="space-y-1.5">
+              {historyDays.map((day, i) => (
+                <div key={i} className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg text-xs">
+                  <span className="font-mono text-muted-foreground w-20">{new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                  <Badge variant="outline" className="text-[9px]">{day.sessions.length} sessões</Badge>
+                  <span className="text-primary font-semibold">+{day.totalPoints} pts</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

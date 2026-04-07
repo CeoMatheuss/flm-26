@@ -379,6 +379,48 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_training_sessions: {
+        Row: {
+          created_at: string
+          dev_points_earned: number
+          fatigue_generated: number
+          focus: string
+          id: string
+          intensity: string
+          player_id: string
+          session_date: string
+          session_slot: number
+          training_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dev_points_earned?: number
+          fatigue_generated?: number
+          focus?: string
+          id?: string
+          intensity?: string
+          player_id: string
+          session_date?: string
+          session_slot?: number
+          training_type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dev_points_earned?: number
+          fatigue_generated?: number
+          focus?: string
+          id?: string
+          intensity?: string
+          player_id?: string
+          session_date?: string
+          session_slot?: number
+          training_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendly_invites: {
         Row: {
           created_at: string
@@ -1370,6 +1412,39 @@ export type Database = {
         }
         Relationships: []
       }
+      player_development_points: {
+        Row: {
+          accumulated_points: number
+          attribute: string
+          created_at: string
+          id: string
+          player_id: string
+          threshold: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accumulated_points?: number
+          attribute: string
+          created_at?: string
+          id?: string
+          player_id: string
+          threshold?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accumulated_points?: number
+          attribute?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          threshold?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       player_missions: {
         Row: {
           category: string
@@ -1473,6 +1548,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_training_processed_at: string | null
           tutorial_completed: boolean
           user_id: string
         }
@@ -1480,6 +1556,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id: string
         }
@@ -1487,6 +1564,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id?: string
         }

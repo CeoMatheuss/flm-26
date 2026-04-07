@@ -96,6 +96,14 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     };
     const jsonState = JSON.parse(JSON.stringify(newState));
     await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
+    // Welcome notification
+    await supabase.from('user_notifications').insert([{
+      user_id: userId,
+      icon: '👋',
+      title: 'Bem-vindo ao FLM 26!',
+      message: `Parabéns pela criação do ${config.name}! Dicas: treine seus jogadores diariamente, melhore o CT e entre em ligas para competir online. Boa sorte, Manager!`,
+      type: 'success',
+    }]);
     setLoadedState(newState);
     setHasSave(true);
     setIsNewClub(true);
