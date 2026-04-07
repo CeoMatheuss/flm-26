@@ -1228,6 +1228,152 @@ export function AdminTab({ userId, isFounder }: Props) {
   );
 }
 
+function AdminDirectMessagePanel({ allUsers }: { allUsers: Array<{ user_id: string; display_name: string | null; created_at: string }> }) {
+  const [search, setSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState<{ user_id: string; club_name: string; display_name: string } | null>(null);
+  const [msgTitle, setMsgTitle] = useState('');
+  const [msgBody, setMsgBody] = useState('');
+  const [msgIcon, setMsgIcon] = useState('📩');
+  const [sending, setSending] = useState(false);
+  const [clubUsers, setClubUsers] = useState<Array<{ user_id: string; club_name: string; display_name: string }>>([]);
+  const [searching, setSearching] = useState(false);
+
+  const searchUsers = async () => {
+    if (!search.trim()) return;
+    setSearching(true);
+    try {
+      const { data: saves } = await supabase.from('game_saves').select('user_id, club_data').limit(200);
+      const { data: profiles } = await supabase.from('profiles').select('user_id, display_name').limit(200);
+      
+      const profileMap: Record<string, string> = {};
+      (profiles || []).forEach(p => { profileMap[p.user_id] = p.display_name || 'Manager'; });
+      
+      const results: Array<{ user_id: string; club_name: string; display_name: string }> = [];
+      (saves || []).forEach(s => {
+        const cd = s.club_data as any;
+        const clubName = cd?.club?.name || cd?.name || 'Sem nome';
+        const displayName = profileMap[s.user_id] || 'Manager';
+        if (clubName.toLowerCase().includes(search.toLowerCase()) || displayName.toLowerCase().includes(search.toLowerCase())) {
+          results.push({ user_id: s.user_id, club_name: clubName, display_name: displayName });
+        }
+      });
+      setClubUsers(results);
+    } catch { toast.error('Erro ao buscar'); }
+    setSearching(false);
+  };
+
+  const sendMessage = async () => {
+    if (!selectedUser) return toast.error('Selecione um jogador');
+    if (!msgTitle.trim() || !msgBody.trim()) return toast.error('Preencha título e mensagem');
+    setSending(true);
+    try {
+      const { error } = await supabase.from('user_notifications').insert([{
+        user_id: selectedUser.user_id,
+        icon: msgIcon,
+        title: msgTitle,
+        message: msgBody,
+        type: 'info',
+      }]);
+      if (error) throw error;
+      toast.success(`Mensagem enviada para ${selectedUser.club_name}!`);
+      setMsgTitle(''); setMsgBody(''); setSelectedUser(null);
+    } catch (err: any) { toast.error(err.message || 'Erro ao enviar'); }
+    setSending(false);
+  };
+
+  const icons = ['📩', '⚠️', '🎁', '🏆', '📢', '💰', '⚽', '🔔', '❗', '🎉'];
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Megaphone className="h-4 w-4 text-primary" />
+          Mensagem Direta para Jogador
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Search */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Buscar por nome do clube ou manager..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && searchUsers()}
+            className="text-xs h-8"
+          />
+          <Button size="sm" onClick={searchUsers} disabled={searching} className="h-8 px-3 text-xs shrink-0">
+            {searching ? <RefreshCw className="h-3 w-3 animate-spin" /> : 'Buscar'}
+          </Button>
+        </div>
+
+        {/* Results */}
+        {clubUsers.length > 0 && (
+          <ScrollArea className="max-h-[150px]">
+            <div className="space-y-1">
+              {clubUsers.map(u => (
+                <button
+                  key={u.user_id}
+                  onClick={() => setSelectedUser(u)}
+                  className={`w-full text-left px-3 py-1.5 rounded text-xs flex items-center justify-between transition-colors ${
+                    selectedUser?.user_id === u.user_id ? 'bg-primary/20 border border-primary/40' : 'bg-muted/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <div>
+                    <span className="font-semibold">{u.club_name}</span>
+                    <span className="text-muted-foreground ml-2">({u.display_name})</span>
+                  </div>
+                  {selectedUser?.user_id === u.user_id && <CheckCircle className="h-3 w-3 text-primary" />}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+
+        {selectedUser && (
+          <div className="space-y-2 p-3 rounded-lg bg-muted/20 border border-primary/10">
+            <p className="text-xs text-muted-foreground">
+              Enviando para: <span className="font-semibold text-foreground">{selectedUser.club_name}</span> ({selectedUser.display_name})
+            </p>
+
+            {/* Icon selector */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[10px] text-muted-foreground mr-1">Ícone:</span>
+              {icons.map(ic => (
+                <button
+                  key={ic}
+                  onClick={() => setMsgIcon(ic)}
+                  className={`w-7 h-7 rounded text-sm flex items-center justify-center transition-colors ${
+                    msgIcon === ic ? 'bg-primary/20 ring-1 ring-primary' : 'bg-muted/30 hover:bg-muted/50'
+                  }`}
+                >
+                  {ic}
+                </button>
+              ))}
+            </div>
+
+            <Input
+              placeholder="Título da mensagem"
+              value={msgTitle}
+              onChange={e => setMsgTitle(e.target.value)}
+              className="text-xs h-8"
+            />
+            <Textarea
+              placeholder="Corpo da mensagem..."
+              value={msgBody}
+              onChange={e => setMsgBody(e.target.value)}
+              className="text-xs min-h-[60px]"
+            />
+            <Button size="sm" onClick={sendMessage} disabled={sending} className="w-full text-xs">
+              {sending ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Megaphone className="h-3 w-3 mr-1" />}
+              Enviar Notificação
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function AdminAnnouncementsPanel({ userId }: { userId: string }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
