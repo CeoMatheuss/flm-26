@@ -17,6 +17,7 @@ interface SimPlayer {
   dribbling: number; heading: number; marking: number; vision: number; crossing: number;
   longShots: number; workRate: number; composure: number; aggression: number;
   goalkeeping: number; setPieces: number; positioning: number;
+  personality?: string;
 }
 
 interface SimEvent {
@@ -183,7 +184,8 @@ function generateReport(
 function simulateFullMatch(
   homeTeam: string, awayTeam: string, homePlayers: any[],
   homeStrength: number, awayStrength: number, tactics: any,
-  stadiumName: string, isHome: boolean, competition: string
+  stadiumName: string, isHome: boolean, competition: string,
+  stadiumCapacity: number = 5000, homeFans: number = 500
 ) {
   // Validate and clamp strengths server-side
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
