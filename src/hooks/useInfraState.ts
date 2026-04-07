@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
   Infrastructure, defaultInfrastructure, getUpgradeCost, getAcademyUpgradeCost,
-  getStadiumUpgradeCost, getStadiumCapacity, YouthProspect, SeasonData, defaultSeason,
+  getStadiumUpgradeCost, getStadiumCapacity, getTrainingCenterUpgradeCost,
+  YouthProspect, SeasonData, defaultSeason,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
@@ -29,6 +30,7 @@ export function useInfraState(initialState: any, userId?: string) {
     let cost: number;
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure[facility].level);
     else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure[facility].level);
+    else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure[facility].level);
     else cost = getUpgradeCost(infrastructure[facility].level);
 
     if (clubBudget < cost) return;
