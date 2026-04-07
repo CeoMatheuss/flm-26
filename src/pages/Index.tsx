@@ -338,6 +338,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             setActiveTournamentId={setActiveTournamentId}
             onSigningPlayer={setSigningPlayer}
             saveSigningNews={saveSigningNews}
+            blockedTabs={blockedTabs}
+            isAdmin={isAdminRole}
           />
         </Tabs>
       </main>
