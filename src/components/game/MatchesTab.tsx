@@ -149,6 +149,7 @@ export function MatchesTab({
         stadiumName: match.isHome ? stadiumName : (match.stadium || 'Estádio BOT FC'),
         stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 10000),
         isHome: match.isHome ?? true,
+        fans: fans,
       },
     });
   };
@@ -169,6 +170,7 @@ export function MatchesTab({
         isHome,
         competition: tournamentNames[tm.tournament_id] || 'Campeonato',
         tournamentMatchId: tm.id,
+        fans: fans,
       },
     });
   };
