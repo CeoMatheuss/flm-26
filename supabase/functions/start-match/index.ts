@@ -846,7 +846,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans } = body;
 
     if (!homeTeam || !awayTeam || !matchId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -877,7 +877,7 @@ Deno.serve(async (req) => {
       homeTeam, awayTeam, homePlayers || [],
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
-      validCompetition
+      validCompetition, stadiumCapacity || 5000, fans || 500
     );
 
     const durationSeconds = 720;
