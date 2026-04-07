@@ -7,6 +7,20 @@ export interface Infrastructure {
   physiotherapy: FacilityLevel;
 }
 
+// Training Center upgrade costs (level 1-30)
+export const trainingCenterCosts: Record<number, number> = {
+  1: 10000, 2: 20000, 3: 35000, 4: 50000, 5: 75000,
+  6: 100000, 7: 150000, 8: 200000, 9: 300000, 10: 500000,
+  11: 700000, 12: 900000, 13: 1100000, 14: 1400000, 15: 1700000,
+  16: 2000000, 17: 2500000, 18: 3000000, 19: 3500000, 20: 4000000,
+  21: 5000000, 22: 5500000, 23: 6000000, 24: 6500000, 25: 7000000,
+  26: 7500000, 27: 8000000, 28: 8500000, 29: 9000000, 30: 10000000,
+};
+
+export function getTrainingCenterUpgradeCost(currentLevel: number): number {
+  return trainingCenterCosts[currentLevel + 1] ?? 999999999;
+}
+
 export interface FacilityLevel {
   level: number;
   maxLevel: number;
@@ -50,11 +64,41 @@ export function getUpgradeCost(currentLevel: number): number {
 }
 
 export const defaultInfrastructure: Infrastructure = {
-  trainingCenter: { level: 0, maxLevel: 10 },
+  trainingCenter: { level: 1, maxLevel: 30 },
   youthAcademy: { level: 0, maxLevel: 30 },
   stadium: { level: 1, maxLevel: 15 },
   physiotherapy: { level: 0, maxLevel: 10 },
 };
+
+// Training system helpers
+export function getTrainingThreshold(ctLevel: number): number {
+  return Math.max(40, 100 - ctLevel * 2);
+}
+
+export function getTrainingPointsPerSession(
+  ctLevel: number,
+  intensity: 'leve' | 'moderado' | 'pesado',
+  age: number,
+  personality?: string
+): number {
+  const base = 5;
+  const intMult = intensity === 'leve' ? 0.6 : intensity === 'moderado' ? 1.0 : 1.5;
+  const ageFactor = age < 22 ? 1.5 : age <= 30 ? 1.0 : 0.5;
+  const persFactor = personality === 'dedicado' ? 1.2 : personality === 'preguicoso' ? 0.8 : 1.0;
+  const ctBonus = 1 + ctLevel * 0.03;
+  return Math.round(base * intMult * ageFactor * persFactor * ctBonus);
+}
+
+export function getTrainingFatiguePerSession(trainingType: string): number {
+  switch (trainingType) {
+    case 'fisico': return 15;
+    case 'tecnico': return 8;
+    case 'tatico': return 5;
+    case 'recuperacao': return -20;
+    case 'preparacao': return 3;
+    default: return 5;
+  }
+}
 
 // Stadium-specific capacity and costs
 export const stadiumCapacities: Record<number, number> = {
