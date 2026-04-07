@@ -939,113 +939,26 @@ Deno.serve(async (req) => {
       man_of_the_match: result.manOfTheMatch || null,
     }).select('id').single();
 
-    // Save match report
+    // Report + notification will be created when the player finishes watching the match (client-side)
+    // Store reportData in the live_matches stats field for later retrieval
     if (historyRow) {
-      await adminClient.from('match_reports').insert({
-        user_id: userId,
-        match_history_id: historyRow.id,
-        competition: validCompetition,
-        home_team: homeTeam,
-        away_team: awayTeam,
-        home_goals: result.homeGoals,
-        away_goals: result.awayGoals,
-        result: result.result,
-        report_data: result.reportData,
-        ranking_impact: result.rankingChange,
-      });
+      await adminClient.from('live_matches').update({
+        stats: { ...result.stats, reportData: result.reportData, reportResult: result.result, rankingChange: result.rankingChange, matchHistoryId: historyRow.id },
+      }).eq('id', match.id);
 
-      // Build detailed notification
-      const resultEmoji = result.result === 'win' ? '🏆' : result.result === 'loss' ? '😞' : '🤝';
+      // Generate newspaper entry (this is public and doesn't spoil the result for the player directly)
       const userTeam = (isHome !== false) ? homeTeam : awayTeam;
       const oppTeam = (isHome !== false) ? awayTeam : homeTeam;
       const userGoals = (isHome !== false) ? result.homeGoals : result.awayGoals;
       const oppGoals = (isHome !== false) ? result.awayGoals : result.homeGoals;
-
-      // Build stats summary for notification
-      const stats = result.stats || {};
+      const resultStats = result.stats || {};
       const statIdx = (isHome !== false) ? 0 : 1;
-      const possession = Array.isArray(stats.possession) ? (stats.possession[statIdx] ?? 50) : 50;
-      const shots = Array.isArray(stats.shots) ? (stats.shots[statIdx] ?? 0) : 0;
-      const shotsOnTarget = Array.isArray(stats.shotsOnTarget) ? (stats.shotsOnTarget[statIdx] ?? 0) : 0;
-      const corners = Array.isArray(stats.corners) ? (stats.corners[statIdx] ?? 0) : 0;
-      const fouls = Array.isArray(stats.fouls) ? (stats.fouls[statIdx] ?? 0) : 0;
+      const possession = Array.isArray(resultStats.possession) ? (resultStats.possession[statIdx] ?? 50) : 50;
+      const shots = Array.isArray(resultStats.shots) ? (resultStats.shots[statIdx] ?? 0) : 0;
       const motm = result.manOfTheMatch || null;
 
-      const statLine = `Posse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol) | Escanteios: ${corners} | Faltas: ${fouls}`;
-      const motmLine = motm ? `⭐ Destaque: ${motm}` : '';
-      const reportPositive = result.reportData?.positives?.[0] || '';
-      const reportNegative = result.reportData?.negatives?.[0] || '';
-
-      const notifMessage = [
-        `${validCompetition}`,
-        statLine,
-        motmLine,
-        reportPositive ? `✅ ${reportPositive}` : '',
-        reportNegative ? `⚠️ ${reportNegative}` : '',
-        `Ranking: ${result.rankingChange > 0 ? '+' : ''}${result.rankingChange} pts`,
-      ].filter(Boolean).join('\n');
-
-      await adminClient.from('user_notifications').insert({
-        user_id: userId,
-        type: result.result === 'win' ? 'success' : result.result === 'loss' ? 'danger' : 'info',
-        title: `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam}`,
-        message: notifMessage,
-        icon: resultEmoji,
-        data: { matchHistoryId: historyRow.id, reportData: result.reportData },
-      });
-
-      // Generate newspaper entry with fan reaction based on stats/result
-      const goalDiff = userGoals - oppGoals;
-      let fanMood = '';
-      let fanEmoji = '';
-      if (result.result === 'win') {
-        if (goalDiff >= 3) {
-          const phrases = [
-            `Goleada histórica! Torcida do ${userTeam} em êxtase: "Time de verdade joga assim!"`,
-            `Torcida do ${userTeam} celebra a goleada por ${userGoals}x${oppGoals}: "Que show de bola!"`,
-            `Festa nas arquibancadas! Torcedores do ${userTeam} cantaram o jogo inteiro após a goleada.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '🎉';
-        } else {
-          const phrases = [
-            `Vitória conquistada! Torcida do ${userTeam} comemora: "${possession > 55 ? 'Dominamos o jogo!' : 'Sofrida mas valeu!'}".`,
-            `Torcedores do ${userTeam} aprovam a vitória${motm ? ` e elegem ${motm} como craque do jogo` : ''}.`,
-            `"Três pontos é o que importa!" — Torcida do ${userTeam} aliviada após vitória por ${userGoals}x${oppGoals}.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '👏';
-        }
-      } else if (result.result === 'draw') {
-        const phrases = [
-          `Empate frustrante. Torcida do ${userTeam} cobra mais${shotsOnTarget < 3 ? ': "Nem chutamos no gol!"' : `: "${shots} finalizações e só ${userGoals} gol${userGoals !== 1 ? 's' : ''}?!"`}.`,
-          `Torcedores divididos após empate: ${possession > 55 ? '"Tivemos posse mas faltou gol."' : '"Time sem criatividade hoje."'}`,
-          `"Empate com gosto de derrota" — diz a torcida do ${userTeam} após ${userGoals}x${oppGoals}.`,
-        ];
-        fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-        fanEmoji = '😐';
-      } else {
-        if (goalDiff <= -3) {
-          const phrases = [
-            `Vexame! Torcida do ${userTeam} revoltada após goleada sofrida: "Diretoria tem que explicar isso!"`,
-            `Torcedores do ${userTeam} vaiam o time após ${userGoals}x${oppGoals}: "Vergonha!"`,
-            `Organizadas do ${userTeam} protestam nas redes: "Esse elenco não tem nível. ${fouls} faltas e zero atitude!"`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '😡';
-        } else {
-          const phrases = [
-            `Derrota amarga. Torcida do ${userTeam} critica: "${shotsOnTarget < 3 ? 'Mal finalizamos!' : 'Faltou caprichar nas finalizações.'}".`,
-            `Torcedores do ${userTeam} lamentam a derrota${motm ? ` mas elogiam ${motm}: "Pelo menos ele tentou."` : ': "Ninguém jogou nada."'}`,
-            `"Precisamos reagir!" — Torcida do ${userTeam} pede mudanças após derrota por ${userGoals}x${oppGoals}.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '😞';
-        }
-      }
-
-      // Single consolidated newspaper entry: result + stats + fan reaction
-      const newsText = `${fanEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam} (${validCompetition}) — ${fanMood} | 📊 Posse: ${possession}%, Finalizações: ${shots}${motm ? `, ⭐ ${motm}` : ''}`;
+      const resultEmoji = result.result === 'win' ? '🎉' : result.result === 'loss' ? '😞' : '😐';
+      const newsText = `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam} (${validCompetition}) | 📊 Posse: ${possession}%, Finalizações: ${shots}${motm ? `, ⭐ ${motm}` : ''}`;
 
       await adminClient.from('newspaper_entries').insert({
         user_id: userId,
