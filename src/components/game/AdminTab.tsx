@@ -530,6 +530,7 @@ export function AdminTab({ userId, isFounder }: Props) {
               <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
               <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
               <TabsTrigger value="announcements" className="text-[10px] gap-0.5 px-2 shrink-0"><Image className="h-3 w-3" /> Anúncios IA</TabsTrigger>
+              <TabsTrigger value="direct_msg" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Msg Direta</TabsTrigger>
             </TabsList>
           </ScrollArea>
           {/* Scroll hint indicator */}
