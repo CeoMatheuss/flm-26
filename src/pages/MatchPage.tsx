@@ -1,6 +1,7 @@
 /**
- * MatchPage — Match simulation with manager-controlled substitutions.
+ * MatchPage — Match simulation with realistic manager-controlled substitutions.
  * Reports only appear after the match ends.
+ * Substitution system: 5 subs max, 3 windows, queued execution, TV-style animations.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield } from 'lucide-react';
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
@@ -122,6 +123,72 @@ export default function MatchPage() {
   return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} />;
 }
 
+/* ── SUBSTITUTION BANNER (TV-STYLE) ──────────────────────────── */
+
+interface SubBannerData {
+  minute: number;
+  playerOut: string;
+  playerIn: string;
+  teamName: string;
+  isHalftime: boolean;
+}
+
+function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 4000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div className="animate-fade-in fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-md">
+      <div className="bg-gradient-to-r from-[hsl(220,25%,12%)] via-[hsl(220,25%,15%)] to-[hsl(220,25%,12%)] border border-primary/30 rounded-xl shadow-2xl shadow-primary/20 overflow-hidden">
+        {/* Top accent bar */}
+        <div className="h-1 bg-gradient-to-r from-emerald-500 via-primary to-red-500" />
+        
+        <div className="px-4 py-3 space-y-2">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔁</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">Substituição</span>
+            </div>
+            {!data.isHalftime && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs font-mono">{data.minute}'</Badge>
+                <div className="flex items-center gap-1">
+                  <Shield className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-bold text-foreground">{data.teamName}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Players */}
+          <div className="flex items-center gap-3">
+            {/* OUT */}
+            <div className="flex-1 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+              <span className="text-red-400 text-sm">⬅️</span>
+              <div className="min-w-0">
+                <p className="text-[10px] text-red-400 font-bold uppercase">Sai</p>
+                <p className="text-sm font-black truncate text-foreground">{data.playerOut}</p>
+              </div>
+            </div>
+
+            {/* IN */}
+            <div className="flex-1 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+              <span className="text-emerald-400 text-sm">➡️</span>
+              <div className="min-w-0">
+                <p className="text-[10px] text-emerald-400 font-bold uppercase">Entra</p>
+                <p className="text-sm font-black truncate text-foreground">{data.playerIn}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
 function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
@@ -157,7 +224,6 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     const eventId = `${latestEvent.minute}-${latestEvent.type}-${latestEvent.team}`;
     if (isHighlightEvent(latestEvent.type) && eventId !== lastHighlightId.current) {
       lastHighlightId.current = eventId;
-      // Clear any pending cleanup timeout from previous highlight
       if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
         highlightTimeoutRef.current = null;
@@ -172,16 +238,59 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     if (eventsRef.current) eventsRef.current.scrollTop = 0;
   }, [visibleEvents.length]);
 
-  // Manager substitution state
+  // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
+  const [windowsUsed, setWindowsUsed] = useState(0);
   const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
+  const [substitutedPlayerIds, setSubstitutedPlayerIds] = useState<Set<string>>(new Set());
+  const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
+  const [subQueue, setSubQueue] = useState<{ outId: string; inId: string }[]>([]);
+  const [lastSubMinute, setLastSubMinute] = useState(-1);
   const maxSubs = 5;
+  const maxWindows = 3;
 
-  const handleSubstitution = useCallback((playerOutId: string, playerInId: string) => {
+  // Process queued substitutions
+  useEffect(() => {
+    if (subQueue.length === 0 || !homePlayers) return;
+    
+    // Check if it's a dead-ball moment or halftime
+    const isDeadBall = latestEvent && ['foul', 'midfield_foul', 'dangerous_foul', 'corner_danger', 'halftime', 'kickoff'].includes(latestEvent.type);
+    
+    if (isHalftime || isDeadBall) {
+      const sub = subQueue[0];
+      const playerOut = homePlayers.find(p => p.id === sub.outId);
+      const playerIn = homePlayers.find(p => p.id === sub.inId);
+      
+      if (playerOut && playerIn) {
+        // Count as window only if not halftime and different minute from last sub
+        if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed < maxWindows) {
+          setWindowsUsed(w => w + 1);
+        } else if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed >= maxWindows) {
+          // No more windows available - skip
+          setSubQueue(q => q.slice(1));
+          return;
+        }
+        
+        setLastSubMinute(currentMinute);
+        setSubsUsed(prev => prev + 1);
+        setSubstitutedPlayerIds(prev => new Set(prev).add(sub.outId));
+        
+        setActiveBanner({
+          minute: currentMinute,
+          playerOut: playerOut.name,
+          playerIn: playerIn.name,
+          teamName: homeTeam,
+          isHalftime,
+        });
+      }
+      setSubQueue(q => q.slice(1));
+    }
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, lastSubMinute, windowsUsed]);
+
+  const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string) => {
     if (subsUsed >= maxSubs || isFinished) return;
-    setSubsUsed(prev => prev + 1);
+    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId }]);
     setSelectedSubOut(null);
-    // The substitution is visual/local — we just track it
   }, [subsUsed, isFinished]);
 
   const phaseLabel = () => {
@@ -192,56 +301,60 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   };
 
   const possession = computePossession(visibleEvents, stats);
-  const substitutions = visibleEvents.filter(e => e.type === 'substitution');
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-2 sm:space-y-3">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-2.5 sm:space-y-3">
+      {/* Substitution TV Banner */}
+      {activeBanner && (
+        <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />
+      )}
+
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
           <LogOut className="h-3.5 w-3.5" /> Sair
         </Button>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] font-medium">
+          <Badge variant="outline" className="text-xs font-medium">
             {competition || 'Amistoso'}
           </Badge>
-          <span className="text-[10px] text-muted-foreground truncate max-w-[100px] sm:max-w-[120px]">🏟️ {stadiumName}</span>
+          <span className="text-xs text-muted-foreground truncate max-w-[120px]">🏟️ {stadiumName}</span>
         </div>
       </div>
 
       {/* Professional Scoreboard */}
       <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
         <div className="bg-primary/10 px-3 py-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{phaseLabel()}</span>
-          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs font-mono h-6">
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">{phaseLabel()}</span>
+          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-sm font-mono h-7 px-3">
             {currentMinute}'
           </Badge>
         </div>
 
-        <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+        <CardContent className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
           {/* Teams + Score */}
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="flex-1 text-right space-y-0.5 min-w-0">
-              <p className="text-xs sm:text-base font-black truncate">{homeTeam}</p>
+              <p className="text-sm sm:text-lg font-black truncate">{homeTeam}</p>
               <div className="flex items-center gap-1 justify-end flex-wrap">
                 {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                  <span key={i} className="text-[8px] sm:text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[9px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
 
-            <div className={`text-3xl sm:text-5xl font-black font-mono px-3 sm:px-6 py-1.5 sm:py-2 rounded-xl min-w-[80px] sm:min-w-[120px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+            <div className={`text-4xl sm:text-5xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl min-w-[90px] sm:min-w-[130px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
               <span className="text-primary">{homeGoals}</span>
-              <span className="text-muted-foreground/50 text-xl sm:text-2xl mx-0.5 sm:mx-1">:</span>
+              <span className="text-muted-foreground/50 text-2xl sm:text-3xl mx-1">:</span>
               <span className="text-primary">{awayGoals}</span>
             </div>
 
             <div className="flex-1 text-left space-y-0.5 min-w-0">
-              <p className="text-xs sm:text-base font-black truncate">{awayTeam}</p>
+              <p className="text-sm sm:text-lg font-black truncate">{awayTeam}</p>
               <div className="flex items-center gap-1 flex-wrap">
                 {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                  <span key={i} className="text-[8px] sm:text-[9px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[9px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
@@ -249,33 +362,38 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
           {/* Goal flash banner */}
           {goalFlash && latestEvent?.isGoal && (
-            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 text-center animate-fade-in">
-              <p className="text-sm font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2.5 text-center animate-fade-in">
+              <p className="text-base font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
               {latestEvent.assistName && (
-                <p className="text-[10px] text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                <p className="text-xs text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
               )}
             </div>
           )}
 
           {/* Possession bar */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-blue-400 w-8 text-right">{possession[0]}%</span>
-            <div className="flex-1 flex h-2 rounded-full overflow-hidden bg-muted/10">
+            <span className="text-xs font-bold text-blue-400 w-10 text-right">{possession[0]}%</span>
+            <div className="flex-1 flex h-2.5 rounded-full overflow-hidden bg-muted/10">
               <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
               <div className="bg-red-500 flex-1 rounded-r-full" />
             </div>
-            <span className="text-[10px] font-bold text-red-400 w-8">{possession[1]}%</span>
+            <span className="text-xs font-bold text-red-400 w-10">{possession[1]}%</span>
           </div>
 
-          {!isFinished && <Progress value={(progress || 0) * 100} className="h-1" />}
+          {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5" />}
         </CardContent>
       </Card>
 
       {/* Halftime banner */}
       {isHalftime && (
         <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
-          <p className="text-sm sm:text-base font-black text-primary">⏸ INTERVALO</p>
-          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+          <p className="text-base sm:text-lg font-black text-primary">⏸ INTERVALO</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+          {subQueue.length > 0 && (
+            <p className="text-xs text-primary mt-2 font-bold animate-pulse">
+              🔄 {subQueue.length} substituição(ões) pendente(s) será(ão) executada(s)
+            </p>
+          )}
         </Card>
       )}
 
@@ -283,7 +401,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
       {!isFinished && activeHighlight && (
         <Card className="p-2 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
           <div className="text-center mb-1">
-            <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
+            <Badge variant="outline" className="text-xs font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
           </div>
           <HighlightMiniCanvas
             type={getHighlightType(activeHighlight.type)}
@@ -297,59 +415,61 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               }, 1500);
             }}
           />
-          <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
+          <p className="text-xs text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
         </Card>
       )}
 
       {/* Live commentary */}
       {latestEvent && !goalFlash && (
-        <Card className="p-2 sm:p-3 border-border/30">
+        <Card className="p-2.5 sm:p-3 border-border/30">
           <div className="flex items-start gap-2">
-            <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-            <p className={`text-xs sm:text-sm font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
+            <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
+            <p className={`text-sm sm:text-base font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
               {getEventIcon(latestEvent.type)} {latestEvent.description}
             </p>
           </div>
         </Card>
       )}
 
-      {/* Quick Stats Row — during match */}
+      {/* Quick Stats Row */}
       {!isFinished && (
-        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           {[
             ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
             ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
             ['🏳️', 'Escanteios', stats.corners[0], stats.corners[1]],
             ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
           ].map(([icon, label, h, a]) => (
-            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2">
-              <p className="text-[8px] sm:text-[9px] text-muted-foreground">{icon} {label}</p>
-              <p className="text-xs sm:text-sm font-black font-mono">{h as number} - {a as number}</p>
+            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-2 sm:p-2.5">
+              <p className="text-[9px] sm:text-xs text-muted-foreground">{icon} {label}</p>
+              <p className="text-sm sm:text-base font-black font-mono">{h as number} - {a as number}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tabs: only Narração + Subs (manager) during match. Full tabs at end. */}
+      {/* Tabs */}
       {!isFinished ? (
         <Tabs defaultValue="events" className="space-y-2">
-          <TabsList className="w-full h-9 grid grid-cols-3">
-            <TabsTrigger value="events" className="text-[10px] gap-1">📝 Narração</TabsTrigger>
-            <TabsTrigger value="lineup" className="text-[10px] gap-1"><Shirt className="h-3 w-3" /> Time</TabsTrigger>
-            <TabsTrigger value="subs" className="text-[10px] gap-1"><ArrowUpDown className="h-3 w-3" /> Subs ({subsUsed}/{maxSubs})</TabsTrigger>
+          <TabsList className="w-full h-10 grid grid-cols-3">
+            <TabsTrigger value="events" className="text-xs gap-1">📝 Narração</TabsTrigger>
+            <TabsTrigger value="lineup" className="text-xs gap-1"><Shirt className="h-3.5 w-3.5" /> Time</TabsTrigger>
+            <TabsTrigger value="subs" className="text-xs gap-1">
+              <ArrowUpDown className="h-3.5 w-3.5" /> Subs ({subsUsed}/{maxSubs})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="events">
-            <Card className="p-2">
-              <div ref={eventsRef} className="max-h-[280px] sm:max-h-[350px] overflow-y-auto space-y-0.5">
+            <Card className="p-2.5">
+              <div ref={eventsRef} className="max-h-[320px] sm:max-h-[400px] overflow-y-auto space-y-1">
                 {visibleEvents.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
+                  <p className="text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                 )}
                 {[...visibleEvents].reverse().slice(0, 60).map((ev, i) => (
-                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-2 py-1 sm:py-1.5 rounded transition-colors ${getEventBg(ev)}`}>
-                    <Badge variant="outline" className="text-[8px] w-8 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                    <span className="text-[10px] sm:text-[11px] shrink-0">{getEventIcon(ev.type)}</span>
-                    <span className={`text-[10px] sm:text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
+                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2.5 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
+                    <Badge variant="outline" className="text-[9px] w-9 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                    <span className="text-sm shrink-0">{getEventIcon(ev.type)}</span>
+                    <span className={`text-xs sm:text-sm ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
                   </div>
                 ))}
               </div>
@@ -368,17 +488,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 homePlayers={homePlayers}
                 subsUsed={subsUsed}
                 maxSubs={maxSubs}
+                windowsUsed={windowsUsed}
+                maxWindows={maxWindows}
                 selectedSubOut={selectedSubOut}
                 onSelectSubOut={setSelectedSubOut}
-                onConfirmSub={handleSubstitution}
+                onConfirmSub={handleQueueSubstitution}
                 isHalftime={isHalftime}
                 isFinished={isFinished}
+                substitutedPlayerIds={substitutedPlayerIds}
+                subQueue={subQueue}
               />
             </Card>
           </TabsContent>
         </Tabs>
       ) : (
-        /* ── FINISHED: Full report ── */
         <FinishedSection
           stats={stats}
           homeTeam={homeTeam}
@@ -397,36 +520,56 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished }: {
+function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue }: {
   homePlayers?: Player[];
   subsUsed: number;
   maxSubs: number;
+  windowsUsed: number;
+  maxWindows: number;
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
   onConfirmSub: (outId: string, inId: string) => void;
   isHalftime: boolean;
   isFinished: boolean;
+  substitutedPlayerIds: Set<string>;
+  subQueue: { outId: string; inId: string }[];
 }) {
   if (!homePlayers || homePlayers.length <= 11) {
     return (
-      <div className="text-center py-6">
-        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+      <div className="text-center py-8">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">Banco insuficiente para substituições</p>
       </div>
     );
   }
 
-  if (subsUsed >= maxSubs) {
+  const allSubsUsed = subsUsed >= maxSubs;
+  const allWindowsUsed = windowsUsed >= maxWindows && !isHalftime;
+
+  if (allSubsUsed) {
     return (
-      <div className="text-center py-6">
-        <ArrowUpDown className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Todas as {maxSubs} substituições foram usadas</p>
+      <div className="text-center py-8">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+        <p className="text-base font-bold text-muted-foreground">Todas as {maxSubs} substituições usadas</p>
+        <p className="text-xs text-muted-foreground mt-1">Não é possível fazer mais trocas nesta partida.</p>
       </div>
     );
   }
 
-  const starters = homePlayers.slice(0, 11);
+  if (allWindowsUsed && subQueue.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+        <p className="text-base font-bold text-muted-foreground">Janelas de substituição esgotadas</p>
+        <p className="text-xs text-muted-foreground mt-1">{maxWindows} janelas usadas. Restam {maxSubs - subsUsed} subs para o intervalo.</p>
+      </div>
+    );
+  }
+
+  const starters = homePlayers.slice(0, 11).filter(p => !substitutedPlayerIds.has(p.id));
   const bench = homePlayers.slice(11);
+  const queuedOutIds = new Set(subQueue.map(s => s.outId));
+  const queuedInIds = new Set(subQueue.map(s => s.inId));
 
   const getPositionGroup = (pos: string) => {
     if (['GOL'].includes(pos)) return 'gk';
@@ -440,46 +583,83 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-primary flex items-center gap-1.5">
-          <ArrowUpDown className="h-4 w-4" /> Substituições
-        </p>
-        <div className="flex items-center gap-1">
-          {Array.from({ length: maxSubs }).map((_, i) => (
-            <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < subsUsed ? 'bg-primary' : 'bg-muted/30 border border-border/30'}`} />
-          ))}
+      {/* Header with indicators */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-primary flex items-center gap-1.5">
+            <ArrowUpDown className="h-4 w-4" /> Substituições
+          </p>
+          <div className="flex items-center gap-3">
+            {/* Subs counter */}
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground mr-1">Subs:</span>
+              {Array.from({ length: maxSubs }).map((_, i) => (
+                <div key={i} className={`w-3 h-3 rounded-full transition-all ${i < subsUsed ? 'bg-primary shadow-sm shadow-primary/30' : 'bg-muted/20 border border-border/30'}`} />
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Windows indicator */}
+        <div className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-1.5">
+          <span className="text-xs text-muted-foreground">Janelas usadas:</span>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: maxWindows }).map((_, i) => (
+              <div key={i} className={`w-5 h-1.5 rounded-full transition-all ${i < windowsUsed ? 'bg-orange-400' : 'bg-muted/20'}`} />
+            ))}
+          </div>
+          <span className="text-[10px] text-muted-foreground">({windowsUsed}/{maxWindows})</span>
+          {isHalftime && <Badge variant="secondary" className="text-[9px] ml-auto">Intervalo — não conta janela</Badge>}
+        </div>
+
+        {/* Queued subs */}
+        {subQueue.length > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 animate-pulse">
+            <p className="text-xs font-bold text-primary">
+              ⏳ {subQueue.length} substituição(ões) na fila — aguardando bola parada
+            </p>
+          </div>
+        )}
       </div>
 
       {!selectedSubOut ? (
         <>
-          <p className="text-xs text-muted-foreground">Selecione quem SAI do campo:</p>
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">📋 Selecione quem SAI do campo:</p>
+          <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
             {starters.map((p, i) => {
               const stamina = p.stamina || 100;
               const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+              const isQueued = queuedOutIds.has(p.id);
               return (
                 <button
                   key={p.id || i}
-                  onClick={() => onSelectSubOut(p.id)}
-                  className="w-full flex items-center gap-2.5 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5 hover:border-red-400/40 hover:bg-red-500/5 transition-all text-left group"
+                  onClick={() => !isQueued && onSelectSubOut(p.id)}
+                  disabled={isQueued}
+                  className={`w-full flex items-center gap-3 bg-card/60 border rounded-xl px-3 py-3 transition-all text-left group ${
+                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
+                  }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-black text-primary shrink-0">
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">OVR {p.overall}</span>
-                      <div className="flex items-center gap-1 flex-1">
-                        <div className="h-1.5 flex-1 max-w-[60px] rounded-full bg-muted/20 overflow-hidden">
+                    <p className="text-sm font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <Activity className="h-3 w-3 text-muted-foreground" />
+                        <div className="h-2 flex-1 max-w-[80px] rounded-full bg-muted/20 overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
                         </div>
-                        <span className="text-[9px] text-muted-foreground">{stamina}%</span>
+                        <span className="text-xs text-muted-foreground font-mono">{stamina}%</span>
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold">SAIR →</span>
+                  {isQueued ? (
+                    <Badge variant="outline" className="text-[9px] border-orange-400/30 text-orange-400 shrink-0">Na fila</Badge>
+                  ) : (
+                    <span className="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">SAIR →</span>
+                  )}
                 </button>
               );
             })}
@@ -487,47 +667,63 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
         </>
       ) : (
         <>
+          {/* Selected player OUT */}
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center text-sm font-black text-red-400 shrink-0">
+            <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center text-base font-black text-red-400 shrink-0">
               {selectedPlayer?.position}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-red-400 font-bold uppercase">Sai do campo</p>
-              <p className="text-sm font-black truncate">{selectedPlayer?.name}</p>
+              <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">⬅️ Sai do campo</p>
+              <p className="text-base font-black truncate">{selectedPlayer?.name}</p>
+              <p className="text-xs text-muted-foreground">OVR {selectedPlayer?.overall} · ⚡ {selectedPlayer?.stamina || 100}%</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] shrink-0" onClick={() => onSelectSubOut(null)}>Cancelar</Button>
+            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs shrink-0 gap-1" onClick={() => onSelectSubOut(null)}>
+              <X className="h-3 w-3" /> Cancelar
+            </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground">Selecione quem ENTRA:</p>
-          <div className="space-y-1.5 max-h-[220px] overflow-y-auto">
-            {bench.map((p, i) => {
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">🪑 Selecione quem ENTRA:</p>
+          <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
+            {bench.filter(p => !queuedInIds.has(p.id)).map((p, i) => {
               const sameGroup = selectedPlayer && getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
               const stamina = p.stamina || 100;
               return (
                 <button
                   key={p.id || i}
                   onClick={() => onConfirmSub(selectedSubOut, p.id)}
-                  className={`w-full flex items-center gap-2.5 bg-card/60 border rounded-xl px-3 py-2.5 hover:bg-emerald-500/5 transition-all text-left group ${
-                    sameGroup ? 'border-emerald-500/30' : 'border-border/20 hover:border-emerald-400/40'
+                  className={`w-full flex items-center gap-3 bg-card/60 border rounded-xl px-3 py-3 hover:bg-emerald-500/5 transition-all text-left group ${
+                    sameGroup ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-border/20 hover:border-emerald-400/40'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${
                     sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
                   }`}>
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-bold text-emerald-400">OVR {p.overall}</span>
-                      <span className="text-[9px] text-muted-foreground">⚡ {stamina}%</span>
-                      {sameGroup && <Badge variant="outline" className="text-[7px] h-4 border-emerald-500/30 text-emerald-400">Mesma posição</Badge>}
+                    <p className="text-sm font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs font-bold text-emerald-400">OVR {p.overall}</span>
+                      <span className="text-xs text-muted-foreground">⚡ {stamina}%</span>
+                      {sameGroup && (
+                        <Badge variant="outline" className="text-[8px] h-4 border-emerald-500/30 text-emerald-400">
+                          <Check className="h-2.5 w-2.5 mr-0.5" /> Mesma posição
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <span className="text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold">← ENTRA</span>
+                  <span className="text-xs text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">← ENTRA</span>
                 </button>
               );
             })}
+          </div>
+
+          {/* Confirmation info */}
+          <div className="bg-muted/10 border border-border/20 rounded-lg p-2.5 text-center">
+            <p className="text-[10px] text-muted-foreground">
+              📡 A substituição entrará na fila e será executada na próxima bola parada
+              {isHalftime && ' (intervalo — execução imediata)'}
+            </p>
           </div>
         </>
       )}
@@ -553,22 +749,22 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
   ];
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex justify-between text-xs font-bold">
-        <span className="text-blue-400 truncate max-w-[120px]">{homeTeam}</span>
-        <span className="text-red-400 truncate max-w-[120px]">{awayTeam}</span>
+    <div className="space-y-2.5 sm:space-y-3">
+      <div className="flex justify-between text-sm font-bold">
+        <span className="text-blue-400 truncate max-w-[140px]">{homeTeam}</span>
+        <span className="text-red-400 truncate max-w-[140px]">{awayTeam}</span>
       </div>
       {rows.map(([label, vals, suffix]) => {
         const total = vals[0] + vals[1];
         const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
         return (
-          <div key={label} className="space-y-0.5 sm:space-y-1">
-            <div className="flex items-center justify-between text-[10px] sm:text-xs">
-              <span className="font-bold w-8 sm:w-10 text-right">{vals[0]}{suffix}</span>
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">{label}</span>
-              <span className="font-bold w-8 sm:w-10 text-left">{vals[1]}{suffix}</span>
+          <div key={label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="font-bold w-10 text-right">{vals[0]}{suffix}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</span>
+              <span className="font-bold w-10 text-left">{vals[1]}{suffix}</span>
             </div>
-            <div className="flex h-1.5 sm:h-2 rounded-full overflow-hidden bg-muted/10">
+            <div className="flex h-2 rounded-full overflow-hidden bg-muted/10">
               <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
               <div className="bg-red-500 flex-1 rounded-r-full" />
             </div>
@@ -586,7 +782,7 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
     return (
       <div className="text-center py-6">
         <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">Escalação não disponível</p>
+        <p className="text-sm text-muted-foreground">Escalação não disponível</p>
       </div>
     );
   }
@@ -598,27 +794,27 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
     <div className="space-y-3 sm:space-y-4">
       {tactics && (
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] sm:text-xs">📋 {tactics.formation}</Badge>
-          {tactics.playStyle && <Badge variant="outline" className="text-[9px] sm:text-[10px]">{tactics.playStyle}</Badge>}
-          {tactics.pressing && <Badge variant="outline" className="text-[9px] sm:text-[10px]">Pressão: {tactics.pressing}</Badge>}
+          <Badge variant="secondary" className="text-xs">📋 {tactics.formation}</Badge>
+          {tactics.playStyle && <Badge variant="outline" className="text-[10px]">{tactics.playStyle}</Badge>}
+          {tactics.pressing && <Badge variant="outline" className="text-[10px]">Pressão: {tactics.pressing}</Badge>}
         </div>
       )}
 
       <div>
-        <p className="text-xs font-bold mb-2 text-primary flex items-center gap-1"><Shirt className="h-3 w-3" /> Titulares — {homeTeam}</p>
+        <p className="text-sm font-bold mb-2 text-primary flex items-center gap-1"><Shirt className="h-3.5 w-3.5" /> Titulares — {homeTeam}</p>
         <div className="space-y-1">
           {starters.map((p, i) => (
-            <div key={p.id || i} className="flex items-center gap-1.5 sm:gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
-              <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
-              <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold w-7 sm:w-8 justify-center">{p.position}</Badge>
-              <span className="text-[10px] sm:text-xs font-semibold flex-1 truncate">{p.name}</span>
-              <div className="flex items-center gap-0.5 sm:gap-1">
+            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2">
+              <span className="text-[10px] font-mono text-muted-foreground w-5">{i + 1}</span>
+              <Badge variant="outline" className="text-[9px] font-bold w-8 justify-center">{p.position}</Badge>
+              <span className="text-xs sm:text-sm font-semibold flex-1 truncate">{p.name}</span>
+              <div className="flex items-center gap-1">
                 <Star className="h-3 w-3 text-yellow-400" />
-                <span className="text-[10px] sm:text-xs font-bold">{p.overall}</span>
+                <span className="text-xs font-bold">{p.overall}</span>
               </div>
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-1">
                 <Activity className="h-3 w-3 text-emerald-400" />
-                <span className="text-[9px] sm:text-[10px] text-muted-foreground">{p.stamina || 100}%</span>
+                <span className="text-xs text-muted-foreground">{p.stamina || 100}%</span>
               </div>
             </div>
           ))}
@@ -627,13 +823,13 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
 
       {bench.length > 0 && (
         <div>
-          <p className="text-xs font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
-          <div className="grid grid-cols-2 gap-1">
+          <p className="text-sm font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
+          <div className="grid grid-cols-2 gap-1.5">
             {bench.map((p, i) => (
-              <div key={p.id || i} className="flex items-center gap-1.5 bg-muted/10 rounded px-2 py-1.5">
-                <Badge variant="outline" className="text-[8px] w-7 justify-center">{p.position}</Badge>
-                <span className="text-[10px] truncate flex-1">{p.name}</span>
-                <span className="text-[10px] font-bold">{p.overall}</span>
+              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 rounded-lg px-2.5 py-2">
+                <Badge variant="outline" className="text-[9px] w-8 justify-center">{p.position}</Badge>
+                <span className="text-xs truncate flex-1">{p.name}</span>
+                <span className="text-xs font-bold">{p.overall}</span>
               </div>
             ))}
           </div>
@@ -657,7 +853,6 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
   const goalEvents = visibleEvents.filter(e => e.isGoal);
   const substitutions = visibleEvents.filter(e => e.type === 'substitution');
 
-  // Calculate player ratings from events
   const playerRatings = homePlayers?.slice(0, 11).map(p => {
     let rating = 6.5;
     for (const ev of visibleEvents) {
@@ -677,36 +872,33 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
   return (
     <div className="space-y-3 pt-2 animate-fade-in">
-      {/* Result Summary */}
       <Card className="border-primary/30 overflow-hidden">
         <div className="bg-primary/10 px-3 py-2 text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary">Resultado Final</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-primary">Resultado Final</p>
         </div>
         <CardContent className="p-3 sm:p-4 space-y-4">
-          {/* MOTM */}
           {motm && (
             <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                <Star className="h-5 w-5 text-yellow-400" />
+              <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                <Star className="h-6 w-6 text-yellow-400" />
               </div>
               <div>
-                <p className="text-[10px] text-yellow-400 font-bold uppercase">Craque do Jogo</p>
-                <p className="text-sm font-black">{motm.name}</p>
-                <p className="text-[10px] text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
+                <p className="text-xs text-yellow-400 font-bold uppercase">Craque do Jogo</p>
+                <p className="text-base font-black">{motm.name}</p>
+                <p className="text-xs text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
               </div>
             </div>
           )}
 
-          {/* Player Ratings */}
           {playerRatings.length > 0 && (
             <div>
-              <p className="text-xs font-bold mb-2 flex items-center gap-1"><Star className="h-3 w-3 text-yellow-400" /> Notas dos Jogadores</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+              <p className="text-sm font-bold mb-2 flex items-center gap-1"><Star className="h-3.5 w-3.5 text-yellow-400" /> Notas dos Jogadores</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded px-2 py-1.5">
-                    <Badge variant="outline" className="text-[8px] w-7 justify-center">{p.position}</Badge>
-                    <span className="text-[10px] truncate flex-1">{p.name}</span>
-                    <span className={`text-xs font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2">
+                    <Badge variant="outline" className="text-[9px] w-8 justify-center">{p.position}</Badge>
+                    <span className="text-xs truncate flex-1">{p.name}</span>
+                    <span className={`text-sm font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
                       {p.rating}
                     </span>
                   </div>
@@ -715,16 +907,14 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
             </div>
           )}
 
-          {/* Full Stats */}
           <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
 
-          {/* Substitutions summary */}
           {substitutions.length > 0 && (
             <div>
-              <p className="text-xs font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
+              <p className="text-sm font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
               {substitutions.map((sub, i) => (
-                <div key={i} className="flex items-center gap-2 text-[10px] bg-sky-500/5 border border-sky-500/15 rounded px-2 py-1.5 mb-1">
-                  <Badge variant="outline" className="text-[8px] font-mono">{sub.minute}'</Badge>
+                <div key={i} className="flex items-center gap-2 text-xs bg-sky-500/5 border border-sky-500/15 rounded-lg px-3 py-2 mb-1.5">
+                  <Badge variant="outline" className="text-[9px] font-mono">{sub.minute}'</Badge>
                   <span className="flex-1">{sub.description}</span>
                   <span className="text-muted-foreground capitalize">{sub.team === 'home' ? '🔵' : '🔴'}</span>
                 </div>
@@ -732,14 +922,13 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
             </div>
           )}
 
-          {/* Narration log */}
           <div>
-            <p className="text-xs font-bold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[200px] overflow-y-auto space-y-0.5 border border-border/20 rounded-lg p-2">
+            <p className="text-sm font-bold mb-2">📝 Narração Completa</p>
+            <div className="max-h-[250px] overflow-y-auto space-y-1 border border-border/20 rounded-lg p-2.5">
               {[...visibleEvents].reverse().map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-1 py-1 rounded ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[7px] w-7 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
-                  <span className={`text-[10px] ${getEventColor(ev.type)} leading-snug`}>
+                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 py-1.5 rounded-lg ${getEventBg(ev)}`}>
+                  <Badge variant="outline" className="text-[8px] w-8 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
+                  <span className={`text-xs ${getEventColor(ev.type)} leading-relaxed`}>
                     {getEventIcon(ev.type)} {ev.description}
                   </span>
                 </div>
@@ -747,13 +936,12 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
             </div>
           </div>
 
-          <p className="text-[9px] text-muted-foreground text-center border-t border-border/20 pt-2">
+          <p className="text-xs text-muted-foreground text-center border-t border-border/20 pt-2">
             {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols
           </p>
         </CardContent>
       </Card>
 
-      {/* Goal replay */}
       {goalEvents.length > 0 && (
         <Card className="border-primary/30">
           <CardHeader className="pb-2 pt-3 px-3">
@@ -763,8 +951,8 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
           </CardHeader>
           <CardContent className="px-3 pb-3 space-y-2">
             {!showReplay ? (
-              <Button variant="outline" className="w-full gap-2 text-xs" onClick={() => { setShowReplay(true); setReplayIndex(0); }}>
-                <Film className="h-3.5 w-3.5" /> Ver Replay dos Gols
+              <Button variant="outline" className="w-full gap-2 text-sm" onClick={() => { setShowReplay(true); setReplayIndex(0); }}>
+                <Film className="h-4 w-4" /> Ver Replay dos Gols
               </Button>
             ) : goalEvents[replayIndex] ? (
               <div className="space-y-2">
@@ -774,19 +962,19 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
                   playerName={goalEvents[replayIndex].playerName}
                 />
                 <div className="text-center space-y-1">
-                  <Badge variant="outline" className="font-mono text-xs">{goalEvents[replayIndex].minute}'</Badge>
-                  <p className="text-sm font-bold">{goalEvents[replayIndex].playerName || 'Jogador'}</p>
+                  <Badge variant="outline" className="font-mono text-sm">{goalEvents[replayIndex].minute}'</Badge>
+                  <p className="text-base font-bold">{goalEvents[replayIndex].playerName || 'Jogador'}</p>
                   <div className="flex flex-wrap gap-1 justify-center">
-                    {goalEvents[replayIndex].goalType && <Badge variant="secondary" className="text-[9px]">{goalEvents[replayIndex].goalType}</Badge>}
-                    <Badge variant="outline" className="text-[9px]">{goalEvents[replayIndex].team === 'home' ? homeTeam : awayTeam}</Badge>
+                    {goalEvents[replayIndex].goalType && <Badge variant="secondary" className="text-xs">{goalEvents[replayIndex].goalType}</Badge>}
+                    <Badge variant="outline" className="text-xs">{goalEvents[replayIndex].team === 'home' ? homeTeam : awayTeam}</Badge>
                   </div>
                   {goalEvents[replayIndex].assistName && (
-                    <p className="text-[10px] text-muted-foreground">🅰️ {goalEvents[replayIndex].assistName}</p>
+                    <p className="text-xs text-muted-foreground">🅰️ {goalEvents[replayIndex].assistName}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 text-xs" disabled={replayIndex <= 0} onClick={() => setReplayIndex(i => i - 1)}>← Ant.</Button>
-                  <Badge variant="secondary" className="flex items-center text-[10px] px-2">{replayIndex + 1}/{goalEvents.length}</Badge>
+                  <Badge variant="secondary" className="flex items-center text-xs px-3">{replayIndex + 1}/{goalEvents.length}</Badge>
                   <Button variant="outline" size="sm" className="flex-1 text-xs" disabled={replayIndex >= goalEvents.length - 1} onClick={() => setReplayIndex(i => i + 1)}>Próx. →</Button>
                 </div>
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowReplay(false)}>Fechar</Button>
@@ -798,7 +986,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
       {matchDbId && (
         <>
-          <Button variant="outline" className="w-full gap-2 text-xs" onClick={() => setShowReport(true)}>
+          <Button variant="outline" className="w-full gap-2 text-sm" onClick={() => setShowReport(true)}>
             📊 Ver Relatório Pós-Jogo
           </Button>
           {showReport && <PostGameReportModal matchDbId={matchDbId} onClose={() => setShowReport(false)} />}
