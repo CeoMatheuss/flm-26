@@ -97,7 +97,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
+      <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
       <TabsContent value="squad">
         <SquadTab
           players={game.club.players}
@@ -171,6 +171,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       <TabsContent value="league">
+        {isTabBlocked('league') ? <BlockedMessage /> : (
         <MultiplayerTab
           userId={userId}
           leagues={mp.leagues}
@@ -203,6 +204,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onSimulateRound={mp.simulateRound}
           onEndSeason={mp.endSeason}
         />
+        )}
       </TabsContent>
       <TabsContent value="market">
         <OnlineMarketTab
