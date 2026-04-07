@@ -185,7 +185,10 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
     const benchPlayer = bench[benchIndex];
     const globalBenchIdx = 11 + benchIndex;
     // Swap with last starter of same position, or last starter
-    const samePosSIdx = starters.findLastIndex(p => p.position === benchPlayer.position);
+    let samePosSIdx = -1;
+    for (let j = starters.length - 1; j >= 0; j--) {
+      if (starters[j].position === benchPlayer.position) { samePosSIdx = j; break; }
+    }
     const swapIdx = samePosSIdx >= 0 ? samePosSIdx : 10;
     swapPlayers(swapIdx, globalBenchIdx);
   };
