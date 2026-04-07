@@ -23,6 +23,7 @@ interface Props {
   onGenerateFriendly: () => void;
   userId: string;
   stadiumCapacity: number;
+  fans: number;
 }
 
 function formatDate(isoStr: string): string {
@@ -54,7 +55,7 @@ function getTimeUntilReset(lastFriendlyDate: string): string {
 
 export function MatchesTab({
   matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate,
-  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity
+  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity, fans
 }: Props) {
   const navigate = useNavigate();
   const canGenerate = !alreadyPlayedToday;
