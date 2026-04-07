@@ -106,9 +106,9 @@ export default function AuthPage() {
     if (error) {
       if (error.message === 'Email not confirmed') {
         setPendingEmail(email);
-        setStep('otp');
+        setStep('verify-email');
         startResendTimer();
-        toast.info('Email não confirmado. Digite o código enviado.');
+        toast.info('Email não confirmado. Verifique sua caixa de entrada.');
         await supabase.auth.resend({ type: 'signup', email });
       } else {
         toast.error(error.message);
@@ -127,6 +127,7 @@ export default function AuthPage() {
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin,
         data: {
           display_name: displayName || 'Manager',
           favorite_country: favoriteCountry,
@@ -139,9 +140,9 @@ export default function AuthPage() {
       toast.error(error.message);
     } else {
       setPendingEmail(email);
-      setStep('otp');
+      setStep('verify-email');
       startResendTimer();
-      toast.success('Código de verificação enviado!');
+      toast.success('Email de verificação enviado!');
     }
     setLoading(false);
   };
