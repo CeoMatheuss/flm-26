@@ -1,61 +1,92 @@
 
 
-# Plano: Restaurar Design Antigo Auth, Corrigir Canvas 2D, Melhorar Substituições e Mobile
+# Plano: Correção OTP, Widget Admin com IA, Tutorial Bloqueável, Missões e Melhorias Gerais
 
 ## Diagnóstico
 
-1. **Auth/Tela Inicial**: O design atual usa `auth-hero.jpg` e `auth-manager.jpg` (imagens genéricas). O design antigo usava um carrossel de 3 imagens (`game-preview.jpg`, `game-preview-2.jpg`, `game-preview-3.jpg`) com títulos dinâmicos que rodavam automaticamente. As imagens ainda existem em `src/assets/`.
+1. **OTP não chega (só link "Verify Email")**: O `signUp` do Supabase envia um email com link de verificação por padrão, não um código OTP. O código só tenta `verifyOtp` mas o email não contém OTP. Solução: habilitar auto-confirm e usar o fluxo de OTP corretamente, OU mudar para fluxo baseado em link (redirect).
 
-2. **Canvas 2D não aparece**: O `HighlightMiniCanvas` tem `useEffect` com dependência em `currentMinute`, que muda a cada 300ms. Isso causa o canvas reiniciar sua animação a cada tick, então a animação nunca completa — fica "piscando" ou invisível. Solução: remover `currentMinute` das dependências do `useEffect` e passá-lo via ref.
+2. **Tutorial não bloqueia após uso**: Atualmente usa `localStorage` implicitamente via `isNewClub`, mas pode ser reaberto pelo menu. Precisa salvar no banco que o tutorial foi completado.
 
-3. **Substituições**: O sistema atual é funcional mas puramente visual (não afeta a simulação). O design pode ser melhorado com cards mais bonitos, feedback visual de confirmação e animação.
+3. **Logs tab → Widget de Anúncios com IA**: Substituir a aba de Logs por uma página de criação de widgets/anúncios com geração de imagem por IA.
 
-4. **Mobile**: Textos muito pequenos (7px), navbar apertada, cards sem espaçamento adequado.
+4. **Missões para players**: Sistema de missões com recompensas (gols, vitórias, etc).
+
+5. **IDs → Nomes de time/dono**: Em todo o admin, substituir UUIDs por nomes legíveis.
 
 ---
 
 ## O que será feito
 
-### 1 — Restaurar Design Antigo da Auth (Carrossel)
-- Voltar para o carrossel automático de 3 imagens com títulos/descrições
-- Imagens: `game-preview.jpg`, `game-preview-2.jpg`, `game-preview-3.jpg` (já existem)
-- Layout split-screen: carrossel lateral no desktop, header no mobile
-- Manter o fluxo multi-step (welcome → login/signup → preferences → OTP)
+### 1 — Corrigir Fluxo de Email/OTP
+- O problema: `supabase.auth.signUp()` envia email com link "Verify Email", não um código OTP de 6 dígitos
+- **Solução**: Mudar o fluxo para usar o link de verificação (redirect para o app) em vez de OTP manual, OU configurar o auth para enviar OTP via `cloud--configure_auth`
+- Redesenhar a tela de verificação: ao invés de campo OTP, mostrar mensagem "Verifique seu email e clique no link" com botão de reenviar
+- Adicionar mensagem de boas-vindas estilizada ao confirmar
 
-### 2 — Corrigir Bug do Canvas 2D
-- **Causa raiz**: `useEffect` no `HighlightMiniCanvas` inclui `currentMinute` nas dependências, fazendo reiniciar a animação a cada 300ms
-- **Correção**: Usar `useRef` para `currentMinute` em vez de incluí-lo nas deps do `useEffect`
-- O canvas vai iniciar a animação UMA vez por highlight e rodar até completar
+### 2 — Substituir Aba Logs por Widget de Anúncios com IA
+- Remover `AdminLogsPanel` da aba "Logs"
+- Criar nova aba "Anúncios" com:
+  - Editor de texto para título e corpo do anúncio
+  - Botão "Gerar Imagem com IA" que usa o modelo `google/gemini-3-pro-image-preview` para criar imagem baseada no texto
+  - Preview do anúncio antes de publicar
+  - Publicação que envia para todos os players via tabela `game_updates`
+- Incluir opção de bloquear canais (manutenção parcial)
 
-### 3 — Redesign das Substituições
-- Cards com foto/avatar do jogador, barra de stamina visual
-- Animação de transição ao confirmar substituição (slide out/in)
-- Histórico das subs feitas com timeline visual
-- Indicação de posição recomendada (mesmo tipo de posição = verde)
+### 3 — Tutorial Bloqueável + Melhorado
+- Salvar `tutorial_completed` na tabela `profiles` (migração SQL)
+- Ao completar, marcar no banco — não pode ser reaberto
+- Adicionar mais informações em cada step do tutorial
+- Ensinar o player a navegar mostrando screenshots/descrições de cada aba
+- Remover botão "Pular" após primeiro uso (ou manter mas marcar como incompleto)
 
-### 4 — Mobile Completo
-- **GameNavBar**: aumentar texto de 7px para 9px, ícones de 12px para 14px, padding mais generoso
-- **GameHeader**: compactar budget display, garantir truncate nos nomes longos
-- **DashboardTab**: cards com padding mínimo de 12px, stats row 2 colunas no mobile
-- **MatchPage**: score 4xl→3xl no mobile, tabs com texto 11px, quick stats 2 colunas
-- **AdminTab**: tabs scrolláveis com indicador visual funcional
+### 4 — Sistema de Missões
+- Criar tabela `player_missions` com missões predefinidas
+- Criar tabela `mission_progress` para tracking por user
+- Missões exemplo: "Marque 10 gols", "Vença 5 partidas", "Contrate 3 jogadores", "Complete o tutorial"
+- Recompensas em dinheiro do jogo
+- Widget no Dashboard mostrando missões ativas
+
+### 5 — IDs → Nomes (Admin)
+- Em toda a AdminTab, onde mostra UUID, fazer lookup na tabela `profiles` para mostrar `display_name` e nome do clube (de `game_saves`)
+- Nos inputs de ban/gift, permitir buscar por nome em vez de colar UUID
+
+### 6 — Manutenção no Admin (bloquear canais)
+- No widget de anúncios, opção de bloquear/desbloquear features específicas
+- Atualizar `MaintenanceScreen` com design mais informativo
+
+### 7 — Abas Admin com scroll lateral melhorado
+- Manter ScrollArea horizontal mas com indicador visual de setas funcionais
 
 ---
+
+## Migração SQL necessária
+
+```text
+- profiles: adicionar coluna tutorial_completed (boolean default false)
+- Nova tabela: player_missions (id, title, description, target_value, reward_amount, category)
+- Nova tabela: mission_progress (id, user_id, mission_id, current_value, completed, completed_at)
+```
 
 ## Arquivos Modificados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/Auth.tsx` | Restaurar carrossel de 3 imagens, layout split-screen |
-| `src/components/game/HighlightMiniCanvas.tsx` | Corrigir deps do useEffect, usar ref para currentMinute |
-| `src/pages/MatchPage.tsx` | Redesign substituições, ajustes mobile |
-| `src/components/game/GameNavBar.tsx` | Aumentar tamanhos mobile |
-| `src/components/game/DashboardTab.tsx` | Ajustes responsivos |
-| `src/components/game/GameHeader.tsx` | Compactar para mobile |
+| Migração SQL | Adicionar tutorial_completed, player_missions, mission_progress |
+| `src/pages/Auth.tsx` | Mudar OTP para fluxo de link, redesign verificação |
+| `src/components/game/AdminTab.tsx` | Substituir Logs por Anúncios IA, UUIDs por nomes, scroll melhorado |
+| `src/components/game/TutorialModal.tsx` | Bloquear após uso, mais info, missões integradas |
+| `src/components/game/DashboardTab.tsx` | Widget de missões |
+| `src/components/game/MaintenanceScreen.tsx` | Atualizar design |
+| `src/pages/Index.tsx` | Conectar tutorial_completed ao banco |
+| `supabase/functions/generate-announcement-image/index.ts` | Nova edge function para gerar imagem com IA |
 
-## Ordem
-1. Corrigir Canvas 2D (bug crítico)
-2. Restaurar Auth com carrossel
-3. Redesign substituições
-4. Passar mobile em todos os componentes
+## Ordem de Execução
+1. Migração SQL
+2. Corrigir fluxo de verificação de email
+3. Substituir aba Logs por Widget Anúncios com IA
+4. Tutorial bloqueável + melhorado
+5. Sistema de missões
+6. IDs → Nomes no Admin
+7. Melhorias de manutenção e scroll
 
