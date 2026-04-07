@@ -148,11 +148,18 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
   // Active highlight
   const [activeHighlight, setActiveHighlight] = useState<SimEvent | null>(null);
-  const lastHighlightMinute = useRef(-1);
+  const lastHighlightId = useRef('');
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!latestEvent) return;
-    if (isHighlightEvent(latestEvent.type) && latestEvent.minute !== lastHighlightMinute.current) {
-      lastHighlightMinute.current = latestEvent.minute;
+    const eventId = `${latestEvent.minute}-${latestEvent.type}-${latestEvent.team}`;
+    if (isHighlightEvent(latestEvent.type) && eventId !== lastHighlightId.current) {
+      lastHighlightId.current = eventId;
+      // Clear any pending cleanup timeout from previous highlight
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
       setActiveHighlight(latestEvent);
     }
   }, [latestEvent]);
@@ -281,7 +288,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
             playerName={activeHighlight?.playerName}
             currentMinute={currentMinute}
-            onComplete={() => setTimeout(() => setActiveHighlight(null), 1500)}
+            onComplete={() => {
+              highlightTimeoutRef.current = setTimeout(() => {
+                setActiveHighlight(null);
+                highlightTimeoutRef.current = null;
+              }, 1500);
+            }}
           />
           <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
         </Card>
@@ -415,9 +427,10 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, selectedSubOu
   const bench = homePlayers.slice(11);
 
   const getPositionGroup = (pos: string) => {
-    if (['GK'].includes(pos)) return 'gk';
-    if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) return 'def';
-    if (['CM', 'CDM', 'CAM', 'LM', 'RM'].includes(pos)) return 'mid';
+    if (['GOL'].includes(pos)) return 'gk';
+    if (['ZAG', 'LAT'].includes(pos)) return 'def';
+    if (['VOL', 'MEI'].includes(pos)) return 'mid';
+    if (['ATA'].includes(pos)) return 'atk';
     return 'atk';
   };
 
