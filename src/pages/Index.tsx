@@ -125,7 +125,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
 
-  // Check maintenance mode
+  // Check maintenance mode + tutorial status
   useEffect(() => {
     const checkMaintenance = async () => {
       const { data } = await supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
@@ -139,6 +139,19 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     const interval = setInterval(checkMaintenance, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Check tutorial completed status
+  useEffect(() => {
+    const checkTutorial = async () => {
+      const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
+      const completed = !!(data as any)?.tutorial_completed;
+      setTutorialCompleted(completed);
+      if (!completed && isNewClub) {
+        setShowTutorial(true);
+      }
+    };
+    checkTutorial();
+  }, [userId, isNewClub]);
 
   // Handle match/tournament navigation state
   useEffect(() => {
@@ -279,7 +292,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     <div className="min-h-screen bg-background">
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={() => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); }} />
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
       <PlayerSigningModal
         open={!!signingPlayer}
         onClose={() => setSigningPlayer(null)}
