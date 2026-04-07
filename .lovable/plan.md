@@ -1,65 +1,60 @@
 
 
-# Plano: Manutenção Granular por Abas + Correção Crítica de RLS
+# Plano: Corrigir Auto-Simulação, Boas-Vindas, Tutorial e Mensagem Direta Admin
 
-## Bug Crítico Encontrado
+## Diagnóstico
 
-A tabela `system_settings` tem RLS que **só permite admins lerem**. Isso significa que jogadores normais **nunca veem a tela de manutenção** — a query retorna null e `isMaintenanceMode` fica `false`. Além disso, **a manutenção está ativa agora** (`active: true`) mas ninguém está sendo bloqueado.
+### Bug: Amistosos simulando automaticamente
+O `Index.tsx` (linhas 207-219) executa `checkFinished()` ao carregar, que busca qualquer `live_match` com status `finished` e aplica o resultado automaticamente. O fallback `game.club.matches.find(m => !m.played)` pega QUALQUER partida não jogada, causando aplicação incorreta de resultados de partidas stale. Isso faz parecer que o amistoso foi "simulado automaticamente".
 
-## O que será feito
+**Correção**: Usar `match_id` como critério primário e só aplicar se o `match_id` corresponder a uma partida local real. Remover o fallback genérico. Adicionar validação de tempo (não aplicar matches com mais de 2h).
 
-### 1 — Corrigir RLS de system_settings
-- Adicionar policy SELECT para **todos os autenticados** poderem ler a chave `maintenance_mode`
-- Manter INSERT/UPDATE/DELETE restrito a admins
+### Boas-vindas no sininho
+Já existe uma mensagem de boas-vindas sendo inserida na criação do clube (linha 100-106 do Index.tsx). Precisa verificar se está funcionando e melhorar o conteúdo.
 
-### 2 — Sistema de Manutenção Granular (Admin)
-Expandir o `MaintenanceToggle` no `AdminTab.tsx` para permitir:
-- **Manutenção Total**: bloqueia TODO o jogo (tela de manutenção)
-- **Bloqueio por Aba**: escolher abas específicas para fechar (ex: mercado, treinos, liga, chat, amistosos, leilão)
-- Checkboxes para cada aba + botão "Selecionar Todas"
+### Tutorial
+O tutorial já bloqueia após uso (salvo no banco). Precisa garantir que funciona corretamente.
 
-O valor de `maintenance_mode` no banco passa de `{ active: boolean }` para:
-```json
-{
-  "active": false,
-  "blocked_tabs": ["market", "training", "auction"]
-}
-```
-
-### 3 — Bloquear Acesso no Jogo
-- **Manutenção total** (`active: true`): mostra `MaintenanceScreen` para não-admins (já existe, só precisa funcionar com a correção do RLS)
-- **Abas bloqueadas** (`blocked_tabs`): no `GameTabRouter`, verificar se a aba atual está bloqueada e mostrar mensagem inline "Esta seção está em manutenção" em vez do conteúdo
-- Admins sempre têm acesso total
-
-### 4 — UI do Admin
-- Redesenhar o card "Controle de Canais" com:
-  - Toggle principal de manutenção total
-  - Grid de checkboxes para cada aba do jogo
-  - Botões "Selecionar Todas" / "Limpar"
-  - Badge mostrando quantas abas estão bloqueadas
+### Admin enviar mensagem direta a um jogador
+Não existe. Precisa adicionar no AdminTab a funcionalidade de inserir uma notificação na tabela `user_notifications` para um user_id específico (buscando por nome do clube).
 
 ---
 
-## Migração SQL
+## O que será feito
 
-```sql
--- Permitir que todos os autenticados leiam system_settings (necessário para checar manutenção)
-DROP POLICY "Only admins can view system settings" ON public.system_settings;
-CREATE POLICY "Authenticated can read system settings" ON public.system_settings FOR SELECT TO authenticated USING (true);
-```
+### 1 — Corrigir Auto-Simulação de Amistosos
+- No `Index.tsx`, modificar `checkFinished()`:
+  - Só aplicar resultado se `match_id` do `live_match` corresponder exatamente a um `match.id` local
+  - Remover fallback `?? game.club.matches.find(m => !m.played)`
+  - Adicionar check de tempo: ignorar matches com mais de 2 horas
+  - Limpar matches stale sem aplicar resultado
+
+### 2 — Melhorar Mensagem de Boas-Vindas
+- A mensagem já existe. Melhorar o texto com mais dicas úteis.
+- Garantir que aparece no sininho corretamente.
+
+### 3 — Admin: Enviar Mensagem Direta
+- No `AdminTab.tsx`, adicionar seção "Mensagem Direta" na aba existente:
+  - Select/busca por nome do clube (via `game_saves` + `profiles`)
+  - Campo de título, mensagem e ícone
+  - Botão enviar que faz INSERT em `user_notifications`
+- RLS de `user_notifications` precisa permitir INSERT por admins para qualquer `user_id`
+
+### 4 — Migração SQL
+- Adicionar policy RLS em `user_notifications` para admins poderem inserir notificações para qualquer usuário
+
+---
 
 ## Arquivos Modificados
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Corrigir RLS de system_settings |
-| `src/components/game/AdminTab.tsx` | Redesenhar MaintenanceToggle com controle granular por aba |
-| `src/pages/Index.tsx` | Ler `blocked_tabs` do maintenance_mode e passar para GameTabRouter |
-| `src/components/game/GameTabRouter.tsx` | Verificar se aba está bloqueada e mostrar mensagem |
+| Migração SQL | RLS policy para admin INSERT em user_notifications |
+| `src/pages/Index.tsx` | Corrigir checkFinished — remover fallback genérico, validar match_id |
+| `src/components/game/AdminTab.tsx` | Adicionar seção "Mensagem Direta" para enviar notificação a jogador específico |
 
 ## Ordem
-1. Migração SQL (corrigir RLS — **urgente**)
-2. Redesenhar MaintenanceToggle no Admin
-3. Implementar bloqueio por aba no GameTabRouter
-4. Conectar tudo no Index.tsx
+1. Migração SQL (RLS admin insert)
+2. Corrigir auto-simulação no Index.tsx
+3. Adicionar mensagem direta no AdminTab
 
