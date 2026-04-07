@@ -614,11 +614,13 @@ export function AdminTab({ userId, isFounder }: Props) {
                         const isSelf = a.user_id === userId;
                         return (
                           <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/50">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono truncate">{a.user_id.slice(0, 16)}...</span>
-                                {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
-                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold truncate">
+                                    {allUsers.find(u => u.user_id === a.user_id)?.display_name || a.user_id.slice(0, 12) + '...'}
+                                  </span>
+                                  {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
+                                </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <Badge variant="outline" className={`text-[8px] ${
                                   a.role === 'admin' ? 'text-blue-400 border-blue-500/30' :
