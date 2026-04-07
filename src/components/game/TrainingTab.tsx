@@ -243,7 +243,7 @@ export function TrainingTab({
         if (newStamina < 30 && selectedIntensity === 'pesado' && Math.random() < 0.15) {
           updatedPlayers[playerIdx] = {
             ...updatedPlayers[playerIdx],
-            injury: { type: 'Lesão muscular', severity: 'média', weeksRemaining: Math.floor(Math.random() * 3) + 1 },
+            injury: { type: 'Lesão muscular', severity: 'moderada', weeksRemaining: Math.floor(Math.random() * 3) + 1 },
           };
           toast.warning(`🏥 ${player.name} se lesionou no treino!`);
         }
