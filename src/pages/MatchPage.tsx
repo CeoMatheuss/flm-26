@@ -288,7 +288,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
             playerName={activeHighlight?.playerName}
             currentMinute={currentMinute}
-            onComplete={() => setTimeout(() => setActiveHighlight(null), 1500)}
+            onComplete={() => {
+              highlightTimeoutRef.current = setTimeout(() => {
+                setActiveHighlight(null);
+                highlightTimeoutRef.current = null;
+              }, 1500);
+            }}
           />
           <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
         </Card>
