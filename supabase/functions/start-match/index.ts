@@ -17,6 +17,7 @@ interface SimPlayer {
   dribbling: number; heading: number; marking: number; vision: number; crossing: number;
   longShots: number; workRate: number; composure: number; aggression: number;
   goalkeeping: number; setPieces: number; positioning: number;
+  personality?: string;
 }
 
 interface SimEvent {
@@ -183,7 +184,8 @@ function generateReport(
 function simulateFullMatch(
   homeTeam: string, awayTeam: string, homePlayers: any[],
   homeStrength: number, awayStrength: number, tactics: any,
-  stadiumName: string, isHome: boolean, competition: string
+  stadiumName: string, isHome: boolean, competition: string,
+  stadiumCapacity: number = 5000, homeFans: number = 500
 ) {
   // Validate and clamp strengths server-side
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
@@ -204,6 +206,7 @@ function simulateFullMatch(
     composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
     goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
     positioning: p.attributes?.positioning || 50,
+    personality: p.personality || 'introvertido',
   }));
 
   const awayNames = awayTeam === 'AI FC'
@@ -222,6 +225,34 @@ function simulateFullMatch(
   });
 
   const allPlayers = [...home, ...away];
+
+  // ── PERSONALITY MODIFIERS ────────────────────────────────────────
+  const hasLider = home.some(p => p.personality === 'lider' && p.morale > 70);
+  const hasCompetitivo = home.some(p => p.personality === 'competitivo');
+  const hasDedicado = home.filter(p => p.personality === 'dedicado');
+  const hasPreguicoso = home.filter(p => p.personality === 'preguicoso');
+  const hasTemperamental = home.filter(p => p.personality === 'temperamental');
+
+  // Apply personality effects to players
+  if (hasLider) {
+    home.forEach(p => { p.morale = Math.min(100, p.morale + 5); });
+  }
+  if (hasCompetitivo && awayStrength > 70) {
+    home.filter(p => p.personality === 'competitivo').forEach(p => {
+      p.shooting += 5; p.dribbling += 5; p.composure += 5;
+    });
+  }
+  home.filter(p => p.personality === 'calmo').forEach(p => { p.composure += 5; });
+  hasDedicado.forEach(p => {
+    p.speed += 3; p.shooting += 3; p.passing += 3; p.defending += 3;
+    p.physical += 3; p.dribbling += 3;
+  });
+  hasPreguicoso.forEach(p => {
+    p.physical -= 2; p.workRate -= 2;
+  });
+  hasTemperamental.forEach(p => {
+    p.rating += (rng() - 0.5) * 1.0; // ±0.5 variance
+  });
 
   // ── MODIFIERS ─────────────────────────────────────────────────────
   const pressing = tactics?.pressing || 'medio';
@@ -242,14 +273,14 @@ function simulateFullMatch(
   const homeMidfielders = home.filter(p => ['MEI', 'VOL', 'MC', 'ME', 'MD'].includes(p.position));
   const homeAttackers = home.filter(p => ['ATA', 'PE', 'PD', 'SA'].includes(p.position));
   
-  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + p.defending, 0) / homeDefenders.length : 50;
+  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / homeDefenders.length : 50;
   const homeMidAvg = homeMidfielders.length > 0 ? homeMidfielders.reduce((s, p) => s + (p.passing + p.vision) / 2, 0) / homeMidfielders.length : 50;
-  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + p.shooting, 0) / homeAttackers.length : 50;
+  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / homeAttackers.length : 50;
 
   const awayDefenders = away.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
   const awayAttackers = away.filter(p => ['ATA'].includes(p.position));
-  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + p.defending, 0) / awayDefenders.length : 50;
-  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + p.shooting, 0) / awayAttackers.length : 50;
+  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / awayDefenders.length : 50;
+  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / awayAttackers.length : 50;
 
   const stats = {
     possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0], corners: [0, 0],
@@ -263,11 +294,11 @@ function simulateFullMatch(
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
   const homeExpected = clamp(
-    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod * pressingMod + (homeAttackVsDefense - 1) * 0.3,
+    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod * pressingMod + (homeAttackVsDefense - 1) * 0.6,
     0.3, 3.5
   );
   const awayExpected = clamp(
-    1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.3,
+    1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6,
     0.2, 3.0
   );
   
@@ -711,10 +742,14 @@ function simulateFullMatch(
 
   const finalEvents: SimEvent[] = [];
 
-  const estimatedCrowd = Math.floor(Math.min(50000, 2000 + rng() * 8000 + homeStrength * 100));
+  // Realistic crowd based on stadium capacity and fans
+  const maxCapacity = stadiumCapacity || 5000;
+  const fanFactor = clamp(homeFans / Math.max(1, maxCapacity), 0.3, 1.0);
+  const crowdResultFactor = 0.5 + rng() * 0.3 + (homeStrength / 200);
+  const estimatedCrowd = Math.floor(Math.min(maxCapacity, maxCapacity * fanFactor * crowdResultFactor));
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `🏟️ A partida começa no ${stadiumName}, com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — ${competition}! O árbitro apita e a bola rola!`,
+    description: `🏟️ A partida começa no ${stadiumName} (${maxCapacity.toLocaleString('pt-BR')} lugares), com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — ${competition}! O árbitro apita e a bola rola!`,
   });
 
   for (const ev of allPlanned.filter(e => e.minute <= 44)) {
@@ -773,7 +808,7 @@ function simulateFullMatch(
     homeTeam, awayTeam, finalHomeGoals, finalAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     isHome, competition, homeStrength, awayStrength, tactics,
-    estimatedCrowd, [...home, ...away], [...home, ...away]
+    stadiumCapacity, [...home, ...away], [...home, ...away]
   );
 
   console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length} | Penalties: ${penaltyMins.length}`);
@@ -811,7 +846,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans } = body;
 
     if (!homeTeam || !awayTeam || !matchId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -842,7 +877,7 @@ Deno.serve(async (req) => {
       homeTeam, awayTeam, homePlayers || [],
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
-      validCompetition
+      validCompetition, stadiumCapacity || 5000, fans || 500
     );
 
     const durationSeconds = 720;
@@ -904,113 +939,26 @@ Deno.serve(async (req) => {
       man_of_the_match: result.manOfTheMatch || null,
     }).select('id').single();
 
-    // Save match report
+    // Report + notification will be created when the player finishes watching the match (client-side)
+    // Store reportData in the live_matches stats field for later retrieval
     if (historyRow) {
-      await adminClient.from('match_reports').insert({
-        user_id: userId,
-        match_history_id: historyRow.id,
-        competition: validCompetition,
-        home_team: homeTeam,
-        away_team: awayTeam,
-        home_goals: result.homeGoals,
-        away_goals: result.awayGoals,
-        result: result.result,
-        report_data: result.reportData,
-        ranking_impact: result.rankingChange,
-      });
+      await adminClient.from('live_matches').update({
+        stats: { ...result.stats, reportData: result.reportData, reportResult: result.result, rankingChange: result.rankingChange, matchHistoryId: historyRow.id },
+      }).eq('id', match.id);
 
-      // Build detailed notification
-      const resultEmoji = result.result === 'win' ? '🏆' : result.result === 'loss' ? '😞' : '🤝';
+      // Generate newspaper entry (this is public and doesn't spoil the result for the player directly)
       const userTeam = (isHome !== false) ? homeTeam : awayTeam;
       const oppTeam = (isHome !== false) ? awayTeam : homeTeam;
       const userGoals = (isHome !== false) ? result.homeGoals : result.awayGoals;
       const oppGoals = (isHome !== false) ? result.awayGoals : result.homeGoals;
-
-      // Build stats summary for notification
-      const stats = result.stats || {};
+      const resultStats = result.stats || {};
       const statIdx = (isHome !== false) ? 0 : 1;
-      const possession = Array.isArray(stats.possession) ? (stats.possession[statIdx] ?? 50) : 50;
-      const shots = Array.isArray(stats.shots) ? (stats.shots[statIdx] ?? 0) : 0;
-      const shotsOnTarget = Array.isArray(stats.shotsOnTarget) ? (stats.shotsOnTarget[statIdx] ?? 0) : 0;
-      const corners = Array.isArray(stats.corners) ? (stats.corners[statIdx] ?? 0) : 0;
-      const fouls = Array.isArray(stats.fouls) ? (stats.fouls[statIdx] ?? 0) : 0;
+      const possession = Array.isArray(resultStats.possession) ? (resultStats.possession[statIdx] ?? 50) : 50;
+      const shots = Array.isArray(resultStats.shots) ? (resultStats.shots[statIdx] ?? 0) : 0;
       const motm = result.manOfTheMatch || null;
 
-      const statLine = `Posse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol) | Escanteios: ${corners} | Faltas: ${fouls}`;
-      const motmLine = motm ? `⭐ Destaque: ${motm}` : '';
-      const reportPositive = result.reportData?.positives?.[0] || '';
-      const reportNegative = result.reportData?.negatives?.[0] || '';
-
-      const notifMessage = [
-        `${validCompetition}`,
-        statLine,
-        motmLine,
-        reportPositive ? `✅ ${reportPositive}` : '',
-        reportNegative ? `⚠️ ${reportNegative}` : '',
-        `Ranking: ${result.rankingChange > 0 ? '+' : ''}${result.rankingChange} pts`,
-      ].filter(Boolean).join('\n');
-
-      await adminClient.from('user_notifications').insert({
-        user_id: userId,
-        type: result.result === 'win' ? 'success' : result.result === 'loss' ? 'danger' : 'info',
-        title: `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam}`,
-        message: notifMessage,
-        icon: resultEmoji,
-        data: { matchHistoryId: historyRow.id, reportData: result.reportData },
-      });
-
-      // Generate newspaper entry with fan reaction based on stats/result
-      const goalDiff = userGoals - oppGoals;
-      let fanMood = '';
-      let fanEmoji = '';
-      if (result.result === 'win') {
-        if (goalDiff >= 3) {
-          const phrases = [
-            `Goleada histórica! Torcida do ${userTeam} em êxtase: "Time de verdade joga assim!"`,
-            `Torcida do ${userTeam} celebra a goleada por ${userGoals}x${oppGoals}: "Que show de bola!"`,
-            `Festa nas arquibancadas! Torcedores do ${userTeam} cantaram o jogo inteiro após a goleada.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '🎉';
-        } else {
-          const phrases = [
-            `Vitória conquistada! Torcida do ${userTeam} comemora: "${possession > 55 ? 'Dominamos o jogo!' : 'Sofrida mas valeu!'}".`,
-            `Torcedores do ${userTeam} aprovam a vitória${motm ? ` e elegem ${motm} como craque do jogo` : ''}.`,
-            `"Três pontos é o que importa!" — Torcida do ${userTeam} aliviada após vitória por ${userGoals}x${oppGoals}.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '👏';
-        }
-      } else if (result.result === 'draw') {
-        const phrases = [
-          `Empate frustrante. Torcida do ${userTeam} cobra mais${shotsOnTarget < 3 ? ': "Nem chutamos no gol!"' : `: "${shots} finalizações e só ${userGoals} gol${userGoals !== 1 ? 's' : ''}?!"`}.`,
-          `Torcedores divididos após empate: ${possession > 55 ? '"Tivemos posse mas faltou gol."' : '"Time sem criatividade hoje."'}`,
-          `"Empate com gosto de derrota" — diz a torcida do ${userTeam} após ${userGoals}x${oppGoals}.`,
-        ];
-        fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-        fanEmoji = '😐';
-      } else {
-        if (goalDiff <= -3) {
-          const phrases = [
-            `Vexame! Torcida do ${userTeam} revoltada após goleada sofrida: "Diretoria tem que explicar isso!"`,
-            `Torcedores do ${userTeam} vaiam o time após ${userGoals}x${oppGoals}: "Vergonha!"`,
-            `Organizadas do ${userTeam} protestam nas redes: "Esse elenco não tem nível. ${fouls} faltas e zero atitude!"`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '😡';
-        } else {
-          const phrases = [
-            `Derrota amarga. Torcida do ${userTeam} critica: "${shotsOnTarget < 3 ? 'Mal finalizamos!' : 'Faltou caprichar nas finalizações.'}".`,
-            `Torcedores do ${userTeam} lamentam a derrota${motm ? ` mas elogiam ${motm}: "Pelo menos ele tentou."` : ': "Ninguém jogou nada."'}`,
-            `"Precisamos reagir!" — Torcida do ${userTeam} pede mudanças após derrota por ${userGoals}x${oppGoals}.`,
-          ];
-          fanMood = phrases[Math.floor(Math.random() * phrases.length)];
-          fanEmoji = '😞';
-        }
-      }
-
-      // Single consolidated newspaper entry: result + stats + fan reaction
-      const newsText = `${fanEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam} (${validCompetition}) — ${fanMood} | 📊 Posse: ${possession}%, Finalizações: ${shots}${motm ? `, ⭐ ${motm}` : ''}`;
+      const resultEmoji = result.result === 'win' ? '🎉' : result.result === 'loss' ? '😞' : '😐';
+      const newsText = `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam} (${validCompetition}) | 📊 Posse: ${possession}%, Finalizações: ${shots}${motm ? `, ⭐ ${motm}` : ''}`;
 
       await adminClient.from('newspaper_entries').insert({
         user_id: userId,

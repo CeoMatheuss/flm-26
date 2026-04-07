@@ -359,6 +359,7 @@ export function useMatchSimulation() {
     homeStrength: number; awayStrength: number; matchId: string;
     tactics: any; stadiumName: string; stadiumCapacity: number;
     isHome: boolean; competition?: string; tournamentMatchId?: string;
+    fans?: number;
   }): Promise<{ success: boolean; error?: string }> => {
     setState(s => ({ ...s, phase: 'loading' }));
 

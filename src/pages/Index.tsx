@@ -206,7 +206,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     // Check for stale finished matches — strict match_id validation only
     if (!st?.serverMatchResult) {
       const checkFinished = async () => {
-        const { data: finishedMatches } = await supabase.from('live_matches').select('match_id, home_goals, away_goals, is_home, id, status, created_at').eq('status', 'finished').order('created_at', { ascending: false }).limit(5);
+        const { data: finishedMatches } = await supabase.from('live_matches').select('match_id, home_goals, away_goals, is_home, id, status, created_at, stats, home_team, away_team, competition').eq('status', 'finished').order('created_at', { ascending: false }).limit(5);
         if (!finishedMatches || finishedMatches.length === 0) return;
         for (const fm of finishedMatches) {
           // Skip matches older than 2 hours (stale)
@@ -220,6 +220,49 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           if (localMatch) {
             game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true });
           }
+          
+          // Create report + notification NOW (post-game)
+          const fmStats = fm.stats as any;
+          if (fmStats?.reportData && fmStats?.matchHistoryId) {
+            try {
+              const reportData = fmStats.reportData;
+              const reportResult = fmStats.reportResult || 'draw';
+              const rankingChange = fmStats.rankingChange || 0;
+
+              await supabase.from('match_reports').insert({
+                user_id: userId,
+                match_history_id: fmStats.matchHistoryId,
+                competition: fm.competition || 'Amistoso',
+                home_team: fm.home_team,
+                away_team: fm.away_team,
+                home_goals: fm.home_goals,
+                away_goals: fm.away_goals,
+                result: reportResult,
+                report_data: reportData,
+                ranking_impact: rankingChange,
+              });
+
+              const resultEmoji = reportResult === 'win' ? '🏆' : reportResult === 'loss' ? '😞' : '🤝';
+              const userTeam = fm.is_home ? fm.home_team : fm.away_team;
+              const oppTeam = fm.is_home ? fm.away_team : fm.home_team;
+              const userGoals = fm.is_home ? fm.home_goals : fm.away_goals;
+              const oppGoals = fm.is_home ? fm.away_goals : fm.home_goals;
+              const statIdx = fm.is_home ? 0 : 1;
+              const possession = Array.isArray(fmStats.possession) ? (fmStats.possession[statIdx] ?? 50) : 50;
+              const shots = Array.isArray(fmStats.shots) ? (fmStats.shots[statIdx] ?? 0) : 0;
+              const shotsOnTarget = Array.isArray(fmStats.shotsOnTarget) ? (fmStats.shotsOnTarget[statIdx] ?? 0) : 0;
+
+              await supabase.from('user_notifications').insert({
+                user_id: userId,
+                type: reportResult === 'win' ? 'success' : reportResult === 'loss' ? 'danger' : 'info',
+                title: `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam}`,
+                message: `${fm.competition || 'Amistoso'}\nPosse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol)\nRanking: ${rankingChange > 0 ? '+' : ''}${rankingChange} pts`,
+                icon: resultEmoji,
+                data: { matchHistoryId: fmStats.matchHistoryId, reportData },
+              });
+            } catch (err) { console.error('Post-game report error:', err); }
+          }
+          
           await supabase.from('live_matches').delete().eq('id', fm.id);
         }
       };
@@ -301,6 +344,23 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     const lastSeenVersion = localStorage.getItem('flm-last-version-seen');
     if (lastSeenVersion !== GAME_VERSION) setShowChangelog(true);
   }, []);
+
+  // Welcome notification for ALL players (including existing ones)
+  useEffect(() => {
+    const sendWelcome = async () => {
+      const { data: existing } = await supabase.from('user_notifications').select('id').eq('user_id', userId).eq('title', 'Bem-vindo ao FLM 26!').limit(1).maybeSingle();
+      if (!existing) {
+        await supabase.from('user_notifications').insert({
+          user_id: userId,
+          icon: '👋',
+          title: 'Bem-vindo ao FLM 26!',
+          message: `Olá, Manager! Dicas: treine seus jogadores diariamente, melhore o CT e entre em ligas para competir online. Boa sorte! ⚽`,
+          type: 'success',
+        });
+      }
+    };
+    sendWelcome();
+  }, [userId]);
 
   if (maintenanceChecked && isMaintenanceMode && !isAdminRole) return <MaintenanceScreen />;
 

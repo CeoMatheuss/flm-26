@@ -32,6 +32,7 @@ interface MatchPageState {
   liveMatchDbId?: string;
   competition?: string;
   tournamentMatchId?: string;
+  fans?: number;
 }
 
 export default function MatchPage() {
@@ -64,6 +65,7 @@ export default function MatchPage() {
           isHome: locState.isHome,
           competition: locState.competition || 'Amistoso',
           tournamentMatchId: locState.tournamentMatchId,
+          fans: locState.fans || 500,
         });
       } else {
         setLoadingMsg('Buscando partida ativa');

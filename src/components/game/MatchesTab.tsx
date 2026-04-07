@@ -23,6 +23,7 @@ interface Props {
   onGenerateFriendly: () => void;
   userId: string;
   stadiumCapacity: number;
+  fans: number;
 }
 
 function formatDate(isoStr: string): string {
@@ -54,7 +55,7 @@ function getTimeUntilReset(lastFriendlyDate: string): string {
 
 export function MatchesTab({
   matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate,
-  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity
+  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity, fans
 }: Props) {
   const navigate = useNavigate();
   const canGenerate = !alreadyPlayedToday;
@@ -148,6 +149,7 @@ export function MatchesTab({
         stadiumName: match.isHome ? stadiumName : (match.stadium || 'Estádio BOT FC'),
         stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 10000),
         isHome: match.isHome ?? true,
+        fans: fans,
       },
     });
   };
@@ -168,6 +170,7 @@ export function MatchesTab({
         isHome,
         competition: tournamentNames[tm.tournament_id] || 'Campeonato',
         tournamentMatchId: tm.id,
+        fans: fans,
       },
     });
   };
