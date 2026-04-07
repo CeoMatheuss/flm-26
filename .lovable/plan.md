@@ -1,47 +1,32 @@
 
+# Plano: Corrigir Substituições e Lances 2D
 
-# Plano: Corrigir Auto-Simulação, Boas-Vindas, Tutorial e Mensagem Direta Admin
+## Bugs Encontrados
 
-## Diagnóstico
+### Bug 1 — Substituições não funcionam (posições em inglês)
+O `getPositionGroup` no `MatchPage.tsx` (linha 417-421) verifica posições em **inglês** (`GK`, `CB`, `LB`, `RB`, etc.), mas o jogo usa posições em **português** (`GOL`, `ZAG`, `LAT`, `VOL`, `MEI`, `ATA`). Resultado: o badge "Mesma posição" nunca aparece e a lógica de correspondência é inútil.
 
-### Bug: Amistosos simulando automaticamente
-O `Index.tsx` (linhas 207-219) executa `checkFinished()` ao carregar, que busca qualquer `live_match` com status `finished` e aplica o resultado automaticamente. O fallback `game.club.matches.find(m => !m.played)` pega QUALQUER partida não jogada, causando aplicação incorreta de resultados de partidas stale. Isso faz parecer que o amistoso foi "simulado automaticamente".
+**Correção**: Atualizar `getPositionGroup` para usar as posições do jogo:
+```
+GOL → gk
+ZAG → def
+LAT → def
+VOL → mid
+MEI → mid
+ATA → atk
+```
 
-**Correção**: Usar `match_id` como critério primário e só aplicar se o `match_id` corresponder a uma partida local real. Remover o fallback genérico. Adicionar validação de tempo (não aplicar matches com mais de 2h).
+### Bug 2 — Lances 2D não aparecem
+Dois problemas:
 
-### Boas-vindas no sininho
-Já existe uma mensagem de boas-vindas sendo inserida na criação do clube (linha 100-106 do Index.tsx). Precisa verificar se está funcionando e melhorar o conteúdo.
+1. **`lastHighlightMinute` bloqueia eventos no mesmo minuto**: Se dois eventos de highlight ocorrem no mesmo minuto (ex: gol + comemoração), só o primeiro mostra. A verificação `latestEvent.minute !== lastHighlightMinute.current` impede o segundo.
 
-### Tutorial
-O tutorial já bloqueia após uso (salvo no banco). Precisa garantir que funciona corretamente.
+2. **`latestEvent` muda referência a cada tick (300ms)** mas o `useEffect` verifica `.minute` que não muda — então quando o minuto avança e um evento de highlight aparece, ele funciona. MAS: o `onComplete` dispara `setTimeout(() => setActiveHighlight(null), 1500)` — isso pode conflitar com o próximo highlight. Se um novo highlight chega antes dos 1500ms, o timeout anterior limpa o novo highlight.
 
-### Admin enviar mensagem direta a um jogador
-Não existe. Precisa adicionar no AdminTab a funcionalidade de inserir uma notificação na tabela `user_notifications` para um user_id específico (buscando por nome do clube).
-
----
-
-## O que será feito
-
-### 1 — Corrigir Auto-Simulação de Amistosos
-- No `Index.tsx`, modificar `checkFinished()`:
-  - Só aplicar resultado se `match_id` do `live_match` corresponder exatamente a um `match.id` local
-  - Remover fallback `?? game.club.matches.find(m => !m.played)`
-  - Adicionar check de tempo: ignorar matches com mais de 2 horas
-  - Limpar matches stale sem aplicar resultado
-
-### 2 — Melhorar Mensagem de Boas-Vindas
-- A mensagem já existe. Melhorar o texto com mais dicas úteis.
-- Garantir que aparece no sininho corretamente.
-
-### 3 — Admin: Enviar Mensagem Direta
-- No `AdminTab.tsx`, adicionar seção "Mensagem Direta" na aba existente:
-  - Select/busca por nome do clube (via `game_saves` + `profiles`)
-  - Campo de título, mensagem e ícone
-  - Botão enviar que faz INSERT em `user_notifications`
-- RLS de `user_notifications` precisa permitir INSERT por admins para qualquer `user_id`
-
-### 4 — Migração SQL
-- Adicionar policy RLS em `user_notifications` para admins poderem inserir notificações para qualquer usuário
+**Correção**:
+- Usar um **ID único por evento** (combinar `minute + type + index`) em vez de apenas `minute` para tracking
+- Limpar o timeout anterior quando um novo highlight chega
+- Garantir que o `activeHighlight` não é limpo pelo timeout de um highlight anterior
 
 ---
 
@@ -49,12 +34,22 @@ Não existe. Precisa adicionar no AdminTab a funcionalidade de inserir uma notif
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | RLS policy para admin INSERT em user_notifications |
-| `src/pages/Index.tsx` | Corrigir checkFinished — remover fallback genérico, validar match_id |
-| `src/components/game/AdminTab.tsx` | Adicionar seção "Mensagem Direta" para enviar notificação a jogador específico |
+| `src/pages/MatchPage.tsx` | Corrigir `getPositionGroup` para posições PT-BR; Corrigir lógica de highlight com tracking por ID e cleanup de timeouts |
 
-## Ordem
-1. Migração SQL (RLS admin insert)
-2. Corrigir auto-simulação no Index.tsx
-3. Adicionar mensagem direta no AdminTab
+## Detalhes Técnicos
 
+### getPositionGroup corrigido:
+```typescript
+const getPositionGroup = (pos: string) => {
+  if (['GOL'].includes(pos)) return 'gk';
+  if (['ZAG', 'LAT'].includes(pos)) return 'def';
+  if (['VOL', 'MEI'].includes(pos)) return 'mid';
+  if (['ATA'].includes(pos)) return 'atk';
+  return 'atk'; // fallback
+};
+```
+
+### Highlight tracking corrigido:
+- Trocar `lastHighlightMinute` (number) por `lastHighlightId` (string: `${minute}-${type}`)
+- Adicionar `useRef` para o timeout de limpeza do highlight
+- Limpar timeout anterior ao criar novo highlight
