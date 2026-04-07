@@ -72,6 +72,18 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
     return { winStreak: ws, loseStreak: ls };
   }, [game.club.matches]);
 
+  const isTabBlocked = (tab: string) => !isAdmin && blockedTabs.includes(tab);
+
+  const BlockedMessage = () => (
+    <Card className="border-orange-500/30 bg-gradient-to-br from-card to-orange-500/5">
+      <CardContent className="p-8 text-center space-y-3">
+        <Lock className="h-8 w-8 mx-auto text-orange-400" />
+        <h3 className="text-sm font-bold text-orange-400">Seção em Manutenção</h3>
+        <p className="text-xs text-muted-foreground">Esta área está temporariamente indisponível. Tente novamente mais tarde.</p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <>
       <TabsContent value="dashboard">
