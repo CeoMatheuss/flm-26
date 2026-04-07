@@ -206,6 +206,7 @@ function simulateFullMatch(
     composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
     goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
     positioning: p.attributes?.positioning || 50,
+    personality: p.personality || 'introvertido',
   }));
 
   const awayNames = awayTeam === 'AI FC'
