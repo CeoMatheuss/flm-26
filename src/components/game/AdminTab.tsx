@@ -1218,6 +1218,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         <TabsContent value="announcements" className="space-y-3 mt-3">
           <AdminAnnouncementsPanel userId={userId} />
         </TabsContent>
+
+        {/* Direct Message Tab */}
+        <TabsContent value="direct_msg" className="space-y-3 mt-3">
+          <AdminDirectMessagePanel allUsers={allUsers} />
+        </TabsContent>
       </Tabs>
     </div>
   );
