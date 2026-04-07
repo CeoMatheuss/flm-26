@@ -226,6 +226,34 @@ function simulateFullMatch(
 
   const allPlayers = [...home, ...away];
 
+  // ── PERSONALITY MODIFIERS ────────────────────────────────────────
+  const hasLider = home.some(p => p.personality === 'lider' && p.morale > 70);
+  const hasCompetitivo = home.some(p => p.personality === 'competitivo');
+  const hasDedicado = home.filter(p => p.personality === 'dedicado');
+  const hasPreguicoso = home.filter(p => p.personality === 'preguicoso');
+  const hasTemperamental = home.filter(p => p.personality === 'temperamental');
+
+  // Apply personality effects to players
+  if (hasLider) {
+    home.forEach(p => { p.morale = Math.min(100, p.morale + 5); });
+  }
+  if (hasCompetitivo && awayStrength > 70) {
+    home.filter(p => p.personality === 'competitivo').forEach(p => {
+      p.shooting += 5; p.dribbling += 5; p.composure += 5;
+    });
+  }
+  home.filter(p => p.personality === 'calmo').forEach(p => { p.composure += 5; });
+  hasDedicado.forEach(p => {
+    p.speed += 3; p.shooting += 3; p.passing += 3; p.defending += 3;
+    p.physical += 3; p.dribbling += 3;
+  });
+  hasPreguicoso.forEach(p => {
+    p.physical -= 2; p.workRate -= 2;
+  });
+  hasTemperamental.forEach(p => {
+    p.rating += (rng() - 0.5) * 1.0; // ±0.5 variance
+  });
+
   // ── MODIFIERS ─────────────────────────────────────────────────────
   const pressing = tactics?.pressing || 'medio';
   const playStyle = tactics?.playStyle || 'equilibrado';
@@ -245,14 +273,14 @@ function simulateFullMatch(
   const homeMidfielders = home.filter(p => ['MEI', 'VOL', 'MC', 'ME', 'MD'].includes(p.position));
   const homeAttackers = home.filter(p => ['ATA', 'PE', 'PD', 'SA'].includes(p.position));
   
-  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + p.defending, 0) / homeDefenders.length : 50;
+  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / homeDefenders.length : 50;
   const homeMidAvg = homeMidfielders.length > 0 ? homeMidfielders.reduce((s, p) => s + (p.passing + p.vision) / 2, 0) / homeMidfielders.length : 50;
-  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + p.shooting, 0) / homeAttackers.length : 50;
+  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / homeAttackers.length : 50;
 
   const awayDefenders = away.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
   const awayAttackers = away.filter(p => ['ATA'].includes(p.position));
-  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + p.defending, 0) / awayDefenders.length : 50;
-  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + p.shooting, 0) / awayAttackers.length : 50;
+  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / awayDefenders.length : 50;
+  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / awayAttackers.length : 50;
 
   const stats = {
     possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0], corners: [0, 0],
@@ -266,11 +294,11 @@ function simulateFullMatch(
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
   const homeExpected = clamp(
-    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod * pressingMod + (homeAttackVsDefense - 1) * 0.3,
+    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod * pressingMod + (homeAttackVsDefense - 1) * 0.6,
     0.3, 3.5
   );
   const awayExpected = clamp(
-    1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.3,
+    1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6,
     0.2, 3.0
   );
   
