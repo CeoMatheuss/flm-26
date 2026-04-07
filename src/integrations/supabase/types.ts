@@ -1126,6 +1126,44 @@ export type Database = {
           },
         ]
       }
+      mission_progress: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          mission_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          mission_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          mission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_progress_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "player_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiplayer_leagues: {
         Row: {
           auto_created: boolean
@@ -1332,6 +1370,39 @@ export type Database = {
         }
         Relationships: []
       }
+      player_missions: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          reward_amount: number
+          target_value: number
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          reward_amount?: number
+          target_value?: number
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          reward_amount?: number
+          target_value?: number
+          title?: string
+        }
+        Relationships: []
+      }
       premium_users: {
         Row: {
           activated_at: string
@@ -1402,18 +1473,21 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          tutorial_completed: boolean
           user_id: string
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id?: string
+          tutorial_completed?: boolean
           user_id: string
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          tutorial_completed?: boolean
           user_id?: string
         }
         Relationships: []
