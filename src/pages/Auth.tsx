@@ -4,12 +4,12 @@ import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
-  Mail, ArrowLeft, CheckCircle2, ShieldCheck, Clock, RefreshCw,
+  Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
   ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
 } from 'lucide-react';
 import gamePreview1 from '@/assets/game-preview.jpg';
@@ -69,7 +69,7 @@ export default function AuthPage() {
   const [preferredFormation, setPreferredFormation] = useState('4-3-3');
   const [playstyle, setPlaystyle] = useState('balanced');
   const [pendingEmail, setPendingEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
   const [slideIndex, setSlideIndex] = useState(0);
