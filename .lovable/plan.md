@@ -1,92 +1,161 @@
 
 
-# Plano: Correção OTP, Widget Admin com IA, Tutorial Bloqueável, Missões e Melhorias Gerais
+# Plano: Sistema de Treinos em Tempo Real, Boas-Vindas no Sininho e Melhoria Admin
 
-## Diagnóstico
+## Resumo
 
-1. **OTP não chega (só link "Verify Email")**: O `signUp` do Supabase envia um email com link de verificação por padrão, não um código OTP. O código só tenta `verifyOtp` mas o email não contém OTP. Solução: habilitar auto-confirm e usar o fluxo de OTP corretamente, OU mudar para fluxo baseado em link (redirect).
-
-2. **Tutorial não bloqueia após uso**: Atualmente usa `localStorage` implicitamente via `isNewClub`, mas pode ser reaberto pelo menu. Precisa salvar no banco que o tutorial foi completado.
-
-3. **Logs tab → Widget de Anúncios com IA**: Substituir a aba de Logs por uma página de criação de widgets/anúncios com geração de imagem por IA.
-
-4. **Missões para players**: Sistema de missões com recompensas (gols, vitórias, etc).
-
-5. **IDs → Nomes de time/dono**: Em todo o admin, substituir UUIDs por nomes legíveis.
+Reescrever completamente o sistema de treinos para funcionar em tempo real (1 dia real = 1 dia no jogo), com sessões diárias, tipos de treino com descrições visuais, evolução progressiva acumulada, sistema de upgrade até nível 30, treino offline acumulado, e feedback diário. Também: mensagem de boas-vindas no sininho e melhorias no painel admin.
 
 ---
 
-## O que será feito
+## 1 — Migração SQL
 
-### 1 — Corrigir Fluxo de Email/OTP
-- O problema: `supabase.auth.signUp()` envia email com link "Verify Email", não um código OTP de 6 dígitos
-- **Solução**: Mudar o fluxo para usar o link de verificação (redirect para o app) em vez de OTP manual, OU configurar o auth para enviar OTP via `cloud--configure_auth`
-- Redesenhar a tela de verificação: ao invés de campo OTP, mostrar mensagem "Verifique seu email e clique no link" com botão de reenviar
-- Adicionar mensagem de boas-vindas estilizada ao confirmar
+Nova tabela `daily_training_sessions` para persistir treinos no servidor:
+- `id`, `user_id`, `player_id`, `session_date` (date), `session_slot` (1=manhã, 2=tarde)
+- `training_type` (tecnico, tatico, fisico, recuperacao, preparacao)
+- `focus` (ofensivo, defensivo, equilibrado, individual)
+- `intensity` (leve, moderado, pesado)
+- `dev_points_earned` (integer) — pontos acumulados nessa sessão
+- `fatigue_generated` (integer)
+- RLS: user can CRUD own
 
-### 2 — Substituir Aba Logs por Widget de Anúncios com IA
-- Remover `AdminLogsPanel` da aba "Logs"
-- Criar nova aba "Anúncios" com:
-  - Editor de texto para título e corpo do anúncio
-  - Botão "Gerar Imagem com IA" que usa o modelo `google/gemini-3-pro-image-preview` para criar imagem baseada no texto
-  - Preview do anúncio antes de publicar
-  - Publicação que envia para todos os players via tabela `game_updates`
-- Incluir opção de bloquear canais (manutenção parcial)
+Nova tabela `player_development_points`:
+- `id`, `user_id`, `player_id`, `attribute` (text), `accumulated_points` (integer), `threshold` (integer)
+- Quando `accumulated_points >= threshold` → atributo +1, reset pontos
+- RLS: user can CRUD own
 
-### 3 — Tutorial Bloqueável + Melhorado
-- Salvar `tutorial_completed` na tabela `profiles` (migração SQL)
-- Ao completar, marcar no banco — não pode ser reaberto
-- Adicionar mais informações em cada step do tutorial
-- Ensinar o player a navegar mostrando screenshots/descrições de cada aba
-- Remover botão "Pular" após primeiro uso (ou manter mas marcar como incompleto)
+Alterar `profiles`: adicionar `last_training_processed_at` (timestamptz) para saber último dia processado (treino offline acumulado).
 
-### 4 — Sistema de Missões
-- Criar tabela `player_missions` com missões predefinidas
-- Criar tabela `mission_progress` para tracking por user
-- Missões exemplo: "Marque 10 gols", "Vença 5 partidas", "Contrate 3 jogadores", "Complete o tutorial"
-- Recompensas em dinheiro do jogo
-- Widget no Dashboard mostrando missões ativas
-
-### 5 — IDs → Nomes (Admin)
-- Em toda a AdminTab, onde mostra UUID, fazer lookup na tabela `profiles` para mostrar `display_name` e nome do clube (de `game_saves`)
-- Nos inputs de ban/gift, permitir buscar por nome em vez de colar UUID
-
-### 6 — Manutenção no Admin (bloquear canais)
-- No widget de anúncios, opção de bloquear/desbloquear features específicas
-- Atualizar `MaintenanceScreen` com design mais informativo
-
-### 7 — Abas Admin com scroll lateral melhorado
-- Manter ScrollArea horizontal mas com indicador visual de setas funcionais
+Alterar custo de upgrade do CT: escala até nível 30 (R$10.000 → R$10.000.000).
 
 ---
 
-## Migração SQL necessária
+## 2 — Tipos de Treino e Sessões Diárias
 
-```text
-- profiles: adicionar coluna tutorial_completed (boolean default false)
-- Nova tabela: player_missions (id, title, description, target_value, reward_amount, category)
-- Nova tabela: mission_progress (id, user_id, mission_id, current_value, completed, completed_at)
-```
+Cada dia permite 1 sessão obrigatória + 1 opcional (desbloqueada em CT nível 10+).
+
+### 5 Tipos de Treino:
+| Tipo | Cor | Efeito |
+|---|---|---|
+| 🟢 Técnico | Verde | Passe, drible, finalização |
+| 🔵 Tático | Azul | Posicionamento, visão, compostura |
+| 🔴 Físico | Vermelho | Velocidade, força, resistência — mais fadiga |
+| 🟡 Recuperação | Amarelo | Reduz fadiga e risco de lesão |
+| 🟣 Preparação de Jogo | Roxo | Boost geral para próxima partida |
+
+Cada tipo tem descrição visível no card de seleção.
+
+---
+
+## 3 — Sistema de Foco
+- Ofensivo: prioriza shooting, dribbling, crossing
+- Defensivo: prioriza defending, marking, heading
+- Equilibrado: distribui entre todos
+- Individual: escolhe 1 jogador para treino especial (+50% pontos para ele)
+
+---
+
+## 4 — Evolução Progressiva (Pontos Acumulados)
+
+Cada sessão gera X pontos de desenvolvimento no atributo focado. Quando atinge threshold → +1 atributo.
+
+- Threshold base: `100 - (CT_level * 2)` pontos (nível 1 = 98, nível 30 = 40)
+- Pontos por sessão: `base(5) * intensityMult * ageFactor * personalityFactor`
+- Jovens (<22): 1.5x
+- Veteranos (>30): 0.5x
+- Dedicado: 1.2x, Preguiçoso: 0.8x
+
+---
+
+## 5 — Upgrade CT até Nível 30
+
+Escala de custos:
+- Nível 1→2: R$10.000
+- Nível 10→11: R$500.000
+- Nível 20→21: R$3.000.000
+- Nível 29→30: R$10.000.000
+
+Impactos por nível: velocidade de evolução, qualidade do treino, redução de fadiga, menor risco de lesão.
+
+---
+
+## 6 — Treino Offline Acumulado
+
+Ao abrir o jogo, calcula dias desde `last_training_processed_at`. Para cada dia não processado:
+- Aplica sessão automática com última config salva
+- Gera pontos de desenvolvimento
+- Aplica fadiga/recuperação
+- Máximo: 7 dias offline acumulados
+
+---
+
+## 7 — Fadiga, Lesões e Moral
+
+- Cada sessão gera fadiga (Físico=15, Técnico=8, Tático=5, Recuperação=-20, Preparação=3)
+- Fadiga >80: risco de lesão aumenta 3x
+- Treinos pesados consecutivos: moral -2/dia
+- Treinos equilibrados: moral +1/dia
+- Sem treino: perde ritmo (-1 stamina/dia)
+
+---
+
+## 8 — Feedback Diário
+
+Card de resumo diário mostrando:
+- Evolução dos jogadores (barras de progresso até próximo +1)
+- Nível de cansaço de cada jogador
+- Avisos de risco de lesão
+- Jogadores insatisfeitos
+
+---
+
+## 9 — UI do TrainingTab (Reescrita)
+
+Layout em 3 seções:
+1. **Painel de Sessão do Dia**: selecionar tipo de treino + foco + intensidade para sessão da manhã/tarde
+2. **Progresso dos Jogadores**: lista com barras de progresso acumulado por atributo, stamina, moral
+3. **Histórico**: últimos 7 dias de resultados
+
+Design com cards coloridos por tipo de treino, descrições visíveis, e indicadores claros.
+
+---
+
+## 10 — Mensagem de Boas-Vindas no Sininho
+
+Ao criar conta, inserir notificação na tabela `user_notifications`:
+- icon: 👋, title: "Bem-vindo ao FLM 26!", message com dicas iniciais
+- Tipo: success
+
+---
+
+## 11 — Melhoria Painel Admin
+
+- Abas com scroll horizontal funcional e setas visuais no mobile
+- Reorganizar layout para melhor uso do espaço
+- Cards de stats mais compactos
+
+---
 
 ## Arquivos Modificados
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Adicionar tutorial_completed, player_missions, mission_progress |
-| `src/pages/Auth.tsx` | Mudar OTP para fluxo de link, redesign verificação |
-| `src/components/game/AdminTab.tsx` | Substituir Logs por Anúncios IA, UUIDs por nomes, scroll melhorado |
-| `src/components/game/TutorialModal.tsx` | Bloquear após uso, mais info, missões integradas |
-| `src/components/game/DashboardTab.tsx` | Widget de missões |
-| `src/components/game/MaintenanceScreen.tsx` | Atualizar design |
-| `src/pages/Index.tsx` | Conectar tutorial_completed ao banco |
-| `supabase/functions/generate-announcement-image/index.ts` | Nova edge function para gerar imagem com IA |
+| Migração SQL | `daily_training_sessions`, `player_development_points`, alterar profiles |
+| `src/types/infrastructure.ts` | Escala CT até nível 30 |
+| `src/training/TrainingTypes.ts` | Novos tipos (sessão diária, tipos de treino, foco) |
+| `src/training/TrainingManager.ts` | Reescrever para sistema de pontos acumulados |
+| `src/training/PlayerDevelopmentEngine.ts` | Adaptar para pontos progressivos |
+| `src/components/game/TrainingTab.tsx` | Reescrita completa da UI |
+| `src/components/game/NotificationBell.tsx` | Boas-vindas ao criar conta |
+| `src/pages/Index.tsx` | Processar treino offline ao carregar + inserir welcome notification |
+| `src/components/game/AdminTab.tsx` | Melhorar scroll mobile das abas |
+| `src/hooks/useInfraState.ts` | Adaptar upgrade CT para 30 níveis |
 
 ## Ordem de Execução
-1. Migração SQL
-2. Corrigir fluxo de verificação de email
-3. Substituir aba Logs por Widget Anúncios com IA
-4. Tutorial bloqueável + melhorado
-5. Sistema de missões
-6. IDs → Nomes no Admin
-7. Melhorias de manutenção e scroll
+1. Migração SQL (tabelas + profiles)
+2. Tipos e engine de treino
+3. UI do TrainingTab
+4. Treino offline acumulado (Index.tsx)
+5. Welcome notification
+6. Admin melhorias
 
