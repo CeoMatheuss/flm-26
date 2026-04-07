@@ -1,4 +1,5 @@
 import { TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
@@ -34,6 +35,7 @@ import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useCallback, useMemo } from 'react';
+import { Lock } from 'lucide-react';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
 
