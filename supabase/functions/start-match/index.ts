@@ -808,7 +808,7 @@ function simulateFullMatch(
     homeTeam, awayTeam, finalHomeGoals, finalAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     isHome, competition, homeStrength, awayStrength, tactics,
-    estimatedCrowd, [...home, ...away], [...home, ...away]
+    stadiumCapacity, [...home, ...away], [...home, ...away]
   );
 
   console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length} | Penalties: ${penaltyMins.length}`);
