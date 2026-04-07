@@ -147,32 +147,13 @@ export default function AuthPage() {
     setLoading(false);
   };
 
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
-      toast.error('Digite o código completo de 6 dígitos');
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: pendingEmail,
-      token: otpCode,
-      type: 'signup',
-    });
-    if (error) {
-      toast.error('Código inválido ou expirado.');
-    } else {
-      toast.success('🎉 Email verificado! Bem-vindo ao FLM 26!');
-    }
-    setLoading(false);
-  };
-
-  const handleResendCode = async () => {
+  const handleResendVerification = async () => {
     if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-    if (error) toast.error('Erro ao reenviar código.');
+    if (error) toast.error('Erro ao reenviar email.');
     else {
-      toast.success('Novo código enviado!');
+      toast.success('Novo email de verificação enviado!');
       startResendTimer();
     }
     setLoading(false);
