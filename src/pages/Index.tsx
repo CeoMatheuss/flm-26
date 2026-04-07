@@ -124,6 +124,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [showTutorial, setShowTutorial] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
@@ -140,6 +141,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       if (data?.value) {
         const val = data.value as any;
         setIsMaintenanceMode(val.active === true);
+        setBlockedTabs(val.blocked_tabs || []);
       }
       setMaintenanceChecked(true);
     };
@@ -336,6 +338,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             setActiveTournamentId={setActiveTournamentId}
             onSigningPlayer={setSigningPlayer}
             saveSigningNews={saveSigningNews}
+            blockedTabs={blockedTabs}
+            isAdmin={isAdminRole}
           />
         </Tabs>
       </main>

@@ -1338,43 +1338,114 @@ function AdminAnnouncementsPanel({ userId }: { userId: string }) {
 
 function MaintenanceToggle({ userId }: { userId: string }) {
   const [active, setActive] = useState(false);
+  const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const allTabs = [
+    { key: 'market', label: 'Mercado', icon: '🏪' },
+    { key: 'training', label: 'Treinos', icon: '🏋️' },
+    { key: 'league', label: 'Liga', icon: '🏆' },
+    { key: 'chat', label: 'Chat Global', icon: '💬' },
+    { key: 'auction', label: 'Leilão', icon: '🔨' },
+    { key: 'matches', label: 'Partidas', icon: '⚽' },
+    { key: 'tactics', label: 'Táticas', icon: '📋' },
+    { key: 'sponsors', label: 'Patrocínios', icon: '💰' },
+    { key: 'youth', label: 'Base', icon: '🌱' },
+    { key: 'scouts', label: 'Olheiros', icon: '🔍' },
+    { key: 'pacotinhos', label: 'Pacotinhos', icon: '🎁' },
+    { key: 'calendar', label: 'Calendário', icon: '📅' },
+  ];
 
   useEffect(() => {
     const check = async () => {
       const { data } = await supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
-      if (data?.value) setActive((data.value as any).active === true);
+      if (data?.value) {
+        const val = data.value as any;
+        setActive(val.active === true);
+        setBlockedTabs(val.blocked_tabs || []);
+      }
       setLoading(false);
     };
     check();
   }, []);
 
-  const toggle = async () => {
-    const newState = !active;
+  const save = async (newActive: boolean, newBlocked: string[]) => {
     setLoading(true);
     const { error } = await supabase.from('system_settings').upsert({
       key: 'maintenance_mode',
-      value: { active: newState } as any,
+      value: { active: newActive, blocked_tabs: newBlocked } as any,
       updated_by: userId,
     });
     if (error) toast.error('Erro: ' + error.message);
     else {
-      setActive(newState);
-      toast.success(newState ? '🔒 Manutenção ativada' : '🔓 Jogo liberado');
+      setActive(newActive);
+      setBlockedTabs(newBlocked);
+      toast.success(newActive ? '🔒 Manutenção total ativada' : newBlocked.length > 0 ? `🔒 ${newBlocked.length} abas bloqueadas` : '🔓 Jogo totalmente liberado');
     }
     setLoading(false);
   };
 
+  const toggleTab = (key: string) => {
+    const newBlocked = blockedTabs.includes(key) ? blockedTabs.filter(t => t !== key) : [...blockedTabs, key];
+    save(active, newBlocked);
+  };
+
+  const selectAll = () => save(active, allTabs.map(t => t.key));
+  const clearAll = () => save(active, []);
+
   return (
-    <Button
-      size="sm"
-      variant={active ? 'destructive' : 'outline'}
-      className="w-full h-8 text-xs gap-1"
-      onClick={toggle}
-      disabled={loading}
-    >
-      {active ? '🔓 Desativar Manutenção' : '🔒 Ativar Manutenção'}
-    </Button>
+    <div className="space-y-3">
+      {/* Global toggle */}
+      <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/30 bg-orange-500/5">
+        <div>
+          <p className="text-xs font-semibold">Manutenção Total</p>
+          <p className="text-[9px] text-muted-foreground">Bloqueia TODO o jogo para não-admins</p>
+        </div>
+        <Button
+          size="sm"
+          variant={active ? 'destructive' : 'outline'}
+          className="h-7 text-[10px] gap-1"
+          onClick={() => save(!active, blockedTabs)}
+          disabled={loading}
+        >
+          {active ? '🔓 Desativar' : '🔒 Ativar'}
+        </Button>
+      </div>
+
+      {/* Per-tab controls */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-semibold text-muted-foreground">Bloqueio por Aba</p>
+          <div className="flex gap-1">
+            <Badge variant="outline" className="text-[8px] px-1.5">{blockedTabs.length}/{allTabs.length}</Badge>
+            <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[8px]" onClick={selectAll} disabled={loading}>Todas</Button>
+            <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[8px]" onClick={clearAll} disabled={loading}>Limpar</Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          {allTabs.map(tab => {
+            const isBlocked = blockedTabs.includes(tab.key);
+            return (
+              <button
+                key={tab.key}
+                onClick={() => toggleTab(tab.key)}
+                disabled={loading}
+                className={`flex items-center gap-1.5 p-2 rounded-md border text-left transition-colors text-[10px] ${
+                  isBlocked
+                    ? 'border-red-500/40 bg-red-500/10 text-red-400'
+                    : 'border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span className="font-medium truncate">{tab.label}</span>
+                {isBlocked && <Lock className="h-3 w-3 ml-auto shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[8px] text-muted-foreground/60 text-center">Abas bloqueadas mostram mensagem de manutenção para jogadores. Admins têm acesso total.</p>
+      </div>
+    </div>
   );
 }
 

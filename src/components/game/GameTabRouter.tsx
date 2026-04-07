@@ -1,4 +1,5 @@
 import { TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
@@ -34,6 +35,7 @@ import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useCallback, useMemo } from 'react';
+import { Lock } from 'lucide-react';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
 
@@ -50,9 +52,11 @@ interface GameTabRouterProps {
   setActiveTournamentId: (id: string | null) => void;
   onSigningPlayer: (data: { name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string }) => void;
   saveSigningNews: (playerName: string, position: string, overall: number, age: number, eventType?: 'signing' | 'renewal' | 'loan', extraInfo?: string) => void;
+  blockedTabs?: string[];
+  isAdmin?: boolean;
 }
 
-export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews }: GameTabRouterProps) {
+export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false }: GameTabRouterProps) {
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
   const { winStreak, loseStreak } = useMemo(() => {
@@ -68,6 +72,18 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
     return { winStreak: ws, loseStreak: ls };
   }, [game.club.matches]);
 
+  const isTabBlocked = (tab: string) => !isAdmin && blockedTabs.includes(tab);
+
+  const BlockedMessage = () => (
+    <Card className="border-orange-500/30 bg-gradient-to-br from-card to-orange-500/5">
+      <CardContent className="p-8 text-center space-y-3">
+        <Lock className="h-8 w-8 mx-auto text-orange-400" />
+        <h3 className="text-sm font-bold text-orange-400">Seção em Manutenção</h3>
+        <p className="text-xs text-muted-foreground">Esta área está temporariamente indisponível. Tente novamente mais tarde.</p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <>
       <TabsContent value="dashboard">
@@ -81,7 +97,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="calendar"><MatchCalendarTab userId={userId} clubName={game.club.name} /></TabsContent>
+      <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
       <TabsContent value="squad">
         <SquadTab
           players={game.club.players}
@@ -155,6 +171,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       <TabsContent value="league">
+        {isTabBlocked('league') ? <BlockedMessage /> : (
         <MultiplayerTab
           userId={userId}
           leagues={mp.leagues}
@@ -187,8 +204,10 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onSimulateRound={mp.simulateRound}
           onEndSeason={mp.endSeason}
         />
+        )}
       </TabsContent>
       <TabsContent value="market">
+        {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
           userId={userId}
           clubName={game.club.name}
@@ -230,41 +249,42 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onLoanIn={game.loanInPlayer}
           onListedPlayer={() => setActiveTab('market')}
         />
+        )}
       </TabsContent>
-      <TabsContent value="tactics"><TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} /></TabsContent>
+      <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} />}</TabsContent>
       <TabsContent value="youth">
-        <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} onPromote={game.promoteYouth} onSetInvestment={game.setYouthInvestment} onGenerateYouth={() => {}} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />
+        {isTabBlocked('youth') ? <BlockedMessage /> : <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} onPromote={game.promoteYouth} onSetInvestment={game.setYouthInvestment} onGenerateYouth={() => {}} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />}
       </TabsContent>
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
       </TabsContent>
       <TabsContent value="training">
-        <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} />
+        {isTabBlocked('training') ? <BlockedMessage /> : <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} />}
       </TabsContent>
       <TabsContent value="matches">
-        <MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} alreadyPlayedToday={game.alreadyPlayedToday} lastFriendlyDate={game.lastFriendlyDate} players={game.club.players} teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))} tactics={game.tactics} onGenerateFriendly={game.generateFriendly} userId={userId} stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)} />
+        {isTabBlocked('matches') ? <BlockedMessage /> : <MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} alreadyPlayedToday={game.alreadyPlayedToday} lastFriendlyDate={game.lastFriendlyDate} players={game.club.players} teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))} tactics={game.tactics} onGenerateFriendly={game.generateFriendly} userId={userId} stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)} />}
       </TabsContent>
       <TabsContent value="sponsors">
-        <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />
+        {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
       </TabsContent>
       <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} onUpgrade={game.upgradeFacility} /></TabsContent>
       <TabsContent value="stadium">
         <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} />
       </TabsContent>
       <TabsContent value="scouts">
-        <ScoutsTab scouts={game.club.scouts || []} scoutReports={game.club.scoutReports || []} matchesSinceLastScout={game.club.matchesSinceLastScout || 0} budget={game.club.budget} onHireScout={game.hireScout} onFireScout={game.fireScout} />
+        {isTabBlocked('scouts') ? <BlockedMessage /> : <ScoutsTab scouts={game.club.scouts || []} scoutReports={game.club.scoutReports || []} matchesSinceLastScout={game.club.matchesSinceLastScout || 0} budget={game.club.budget} onHireScout={game.hireScout} onFireScout={game.fireScout} />}
       </TabsContent>
       <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
       <TabsContent value="updates"><UpdatesTab /></TabsContent>
       <TabsContent value="settings"><SettingsTab /></TabsContent>
-      <TabsContent value="chat"><GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} /></TabsContent>
+      <TabsContent value="chat">{isTabBlocked('chat') ? <BlockedMessage /> : <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />}</TabsContent>
       <TabsContent value="journal"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="newspaper"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} sponsors={game.sponsors} players={game.club.players} clubReputation={game.club.reputation} /></TabsContent>
-      <TabsContent value="auction"><AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} /></TabsContent>
+      <TabsContent value="auction">{isTabBlocked('auction') ? <BlockedMessage /> : <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />}</TabsContent>
       <TabsContent value="pacotinhos">
-        <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />
+        {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
       </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       <TabsContent value="clubprofile"><ClubProfileTab club={game.club} season={game.season.currentSeason} profile={game.clubProfile} onSave={game.updateClubProfile} /></TabsContent>
