@@ -742,10 +742,14 @@ function simulateFullMatch(
 
   const finalEvents: SimEvent[] = [];
 
-  const estimatedCrowd = Math.floor(Math.min(50000, 2000 + rng() * 8000 + homeStrength * 100));
+  // Realistic crowd based on stadium capacity and fans
+  const maxCapacity = stadiumCapacity || 5000;
+  const fanFactor = clamp(homeFans / Math.max(1, maxCapacity), 0.3, 1.0);
+  const crowdResultFactor = 0.5 + rng() * 0.3 + (homeStrength / 200);
+  const estimatedCrowd = Math.floor(Math.min(maxCapacity, maxCapacity * fanFactor * crowdResultFactor));
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `🏟️ A partida começa no ${stadiumName}, com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — ${competition}! O árbitro apita e a bola rola!`,
+    description: `🏟️ A partida começa no ${stadiumName} (${maxCapacity.toLocaleString('pt-BR')} lugares), com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — ${competition}! O árbitro apita e a bola rola!`,
   });
 
   for (const ev of allPlanned.filter(e => e.minute <= 44)) {
