@@ -904,35 +904,37 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
       <div>
         <label className="text-sm font-bold text-muted-foreground mb-1 block">Formação</label>
-        <Select value={tactics.formation || '4-4-2'} onValueChange={(v) => onUpdate({ ...tactics, formation: v })}>
+        <Select value={tactics.formation || '4-4-2'} onValueChange={(v) => onUpdate({ ...tactics, formation: v as Formation })}>
           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {formations.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+            {formationsList.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className="text-sm font-bold text-muted-foreground mb-1 block">Mentalidade</label>
-        <Select value={tactics.mentality || 'balanced'} onValueChange={(v) => onUpdate({ ...tactics, mentality: v as any })}>
+        <label className="text-sm font-bold text-muted-foreground mb-1 block">Estilo de Jogo</label>
+        <Select value={tactics.playStyle || 'equilibrado'} onValueChange={(v) => onUpdate({ ...tactics, playStyle: v as any })}>
           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="defensive">Defensiva</SelectItem>
-            <SelectItem value="balanced">Equilibrada</SelectItem>
-            <SelectItem value="attacking">Ofensiva</SelectItem>
-            <SelectItem value="ultra-attacking">Ultra-Ofensiva</SelectItem>
+            <SelectItem value="defensivo">Defensivo</SelectItem>
+            <SelectItem value="equilibrado">Equilibrado</SelectItem>
+            <SelectItem value="ofensivo">Ofensivo</SelectItem>
+            <SelectItem value="contra-ataque">Contra-Ataque</SelectItem>
+            <SelectItem value="posse">Posse de Bola</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div>
         <label className="text-sm font-bold text-muted-foreground mb-1 block">Pressão</label>
-        <Select value={tactics.pressing || 'medium'} onValueChange={(v) => onUpdate({ ...tactics, pressing: v as any })}>
+        <Select value={tactics.pressing || 'medio'} onValueChange={(v) => onUpdate({ ...tactics, pressing: v as any })}>
           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="low">Baixa</SelectItem>
-            <SelectItem value="medium">Média</SelectItem>
-            <SelectItem value="high">Alta</SelectItem>
+            <SelectItem value="baixo">Baixa</SelectItem>
+            <SelectItem value="medio">Média</SelectItem>
+            <SelectItem value="alto">Alta</SelectItem>
+            <SelectItem value="ultra-alto">Ultra-Alta</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -942,9 +944,10 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         <Select value={tactics.tempo || 'normal'} onValueChange={(v) => onUpdate({ ...tactics, tempo: v as any })}>
           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="slow">Lento</SelectItem>
+            <SelectItem value="lento">Lento</SelectItem>
             <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="fast">Rápido</SelectItem>
+            <SelectItem value="rapido">Rápido</SelectItem>
+            <SelectItem value="muito-rapido">Muito Rápido</SelectItem>
           </SelectContent>
         </Select>
       </div>
