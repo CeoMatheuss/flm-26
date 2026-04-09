@@ -430,35 +430,37 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
             <CardContent className="p-4 space-y-4">
               <div>
                 <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Formação</label>
-                <Select value={localTactics.formation || '4-4-2'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, formation: v }))}>
+                <Select value={localTactics.formation || '4-4-2'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, formation: v as Formation }))}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {formations.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    {formationsList.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Mentalidade</label>
-                <Select value={localTactics.mentality || 'balanced'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, mentality: v as any }))}>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Estilo de Jogo</label>
+                <Select value={localTactics.playStyle || 'equilibrado'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, playStyle: v as any }))}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="defensive">Defensiva</SelectItem>
-                    <SelectItem value="balanced">Equilibrada</SelectItem>
-                    <SelectItem value="attacking">Ofensiva</SelectItem>
-                    <SelectItem value="ultra-attacking">Ultra-Ofensiva</SelectItem>
+                    <SelectItem value="defensivo">Defensivo</SelectItem>
+                    <SelectItem value="equilibrado">Equilibrado</SelectItem>
+                    <SelectItem value="ofensivo">Ofensivo</SelectItem>
+                    <SelectItem value="contra-ataque">Contra-Ataque</SelectItem>
+                    <SelectItem value="posse">Posse de Bola</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Pressão</label>
-                <Select value={localTactics.pressing || 'medium'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, pressing: v as any }))}>
+                <Select value={localTactics.pressing || 'medio'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, pressing: v as any }))}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="baixo">Baixa</SelectItem>
+                    <SelectItem value="medio">Média</SelectItem>
+                    <SelectItem value="alto">Alta</SelectItem>
+                    <SelectItem value="ultra-alto">Ultra-Alta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -468,22 +470,23 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
                 <Select value={localTactics.tempo || 'normal'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, tempo: v as any }))}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="slow">Lento</SelectItem>
+                    <SelectItem value="lento">Lento</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="fast">Rápido</SelectItem>
+                    <SelectItem value="rapido">Rápido</SelectItem>
+                    <SelectItem value="muito-rapido">Muito Rápido</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Estilo de Passe</label>
-                <Select value={localTactics.playStyle || 'mixed'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, playStyle: v as any }))}>
+                <Select value={localTactics.passingStyle || 'misto'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, passingStyle: v as any }))}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="short">Curto</SelectItem>
-                    <SelectItem value="mixed">Misto</SelectItem>
-                    <SelectItem value="long">Longo</SelectItem>
-                    <SelectItem value="direct">Direto</SelectItem>
+                    <SelectItem value="curto">Curto</SelectItem>
+                    <SelectItem value="misto">Misto</SelectItem>
+                    <SelectItem value="longo">Longo</SelectItem>
+                    <SelectItem value="direto">Direto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
