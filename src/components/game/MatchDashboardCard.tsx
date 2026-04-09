@@ -81,15 +81,32 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   }, [userId]);
 
   // Live countdown timer
+  const [isExpired, setIsExpired] = useState(false);
+
   useEffect(() => {
     if (!nextMatch?.date) return;
+    const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
     const update = () => {
-      const diff = new Date(nextMatch.date).getTime() - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('AGORA!');
+      const scheduledTime = new Date(nextMatch.date).getTime();
+      const now = Date.now();
+      const diff = scheduledTime - now;
+      const elapsed = now - scheduledTime;
+      if (diff <= 0 && elapsed >= WINDOW_MS) {
+        // Past 5-min window — auto-simulated
+        setTimeLeft('Simulada');
+        setIsReady(false);
+        setIsExpired(true);
+      } else if (diff <= 0) {
+        // Within 5-min window — can play
+        const remaining = WINDOW_MS - elapsed;
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        setTimeLeft(`${mins}:${String(secs).padStart(2, '0')} restantes`);
         setIsReady(true);
+        setIsExpired(false);
       } else {
         setIsReady(false);
+        setIsExpired(false);
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
@@ -140,8 +157,9 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           <Trophy className="h-4 w-4 text-primary" />
           <p className="text-[10px] font-bold text-primary uppercase">{nextMatch.tournament}</p>
         </div>
-        <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
-          {isReady ? '🔴 PRONTO PARA JOGAR!' :
+        <Badge variant={isExpired ? 'secondary' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
+          {isExpired ? '⚙️ Simulada automaticamente' :
+            isReady ? '🔴 PRONTO PARA JOGAR!' :
             isToday ? `⏰ HOJE às ${fmt?.timeFormatted}` :
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
@@ -150,23 +168,35 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           <span className="text-base font-black text-muted-foreground">VS</span>
           <button onClick={() => onViewClub?.(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
         </div>
-        {!isReady && (
+        {!isReady && !isExpired && (
           <div className="flex items-center justify-center gap-1.5">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <p className="text-[10px] font-bold text-muted-foreground">⏱️ {timeLeft}</p>
           </div>
         )}
+        {isReady && (
+          <div className="flex items-center justify-center gap-1.5">
+            <Clock className="h-3 w-3 text-destructive" />
+            <p className="text-[10px] font-bold text-destructive">⏱️ {timeLeft}</p>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5 pt-1">
-          <Button
-            size="sm"
-            variant={isReady ? 'default' : 'outline'}
-            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
-            onClick={handleGoToMatch}
-            disabled={!isReady}
-          >
-            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Aguardando horário...</>}
-          </Button>
-          {onGoToFriendly && !isReady && (
+          {isExpired ? (
+            <Badge variant="outline" className="text-[9px] w-full justify-center py-1.5">
+              ⏰ Janela de 5 min expirou — partida simulada pelo servidor
+            </Badge>
+          ) : (
+            <Button
+              size="sm"
+              variant={isReady ? 'default' : 'outline'}
+              className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
+              onClick={handleGoToMatch}
+              disabled={!isReady}
+            >
+              {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Aguardando horário...</>}
+            </Button>
+          )}
+          {onGoToFriendly && !isReady && !isExpired && (
             <Button size="sm" variant="ghost" className="gap-2 text-[10px] h-7" onClick={onGoToFriendly}>
               <Swords className="h-3 w-3" /> Jogar Amistoso
             </Button>

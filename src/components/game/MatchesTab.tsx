@@ -175,13 +175,23 @@ export function MatchesTab({
     });
   };
 
-  const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean } => {
-    const diff = new Date(scheduledAt).getTime() - Date.now();
-    if (diff <= 0) return { text: 'AGORA!', isNow: true };
+  const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean; isExpired: boolean } => {
+    const scheduledTime = new Date(scheduledAt).getTime();
+    const now = Date.now();
+    const diff = scheduledTime - now;
+    const WINDOW_MS = 5 * 60 * 1000;
+    if (diff <= 0) {
+      const elapsed = now - scheduledTime;
+      if (elapsed >= WINDOW_MS) return { text: 'Simulada', isNow: false, isExpired: true };
+      const remaining = WINDOW_MS - elapsed;
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      return { text: `${mins}:${String(secs).padStart(2, '0')} restantes`, isNow: true, isExpired: false };
+    }
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, isNow: false };
-    return { text: `${hours}h ${mins}min`, isNow: false };
+    if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, isNow: false, isExpired: false };
+    return { text: `${hours}h ${mins}min`, isNow: false, isExpired: false };
   };
 
   return (
@@ -292,7 +302,7 @@ export function MatchesTab({
               {tournamentMatches.map(tm => {
                 const timeInfo = getTimeUntilMatch(tm.scheduled_at);
                 return (
-                  <Card key={tm.id} className={`${timeInfo.isNow ? 'border-success/40 bg-success/5 animate-pulse' : 'border-border/30'}`}>
+                  <Card key={tm.id} className={`${timeInfo.isNow ? 'border-success/40 bg-success/5 animate-pulse' : timeInfo.isExpired ? 'border-muted/30 opacity-60' : 'border-border/30'}`}>
                     <CardContent className="p-2.5">
                       <div className="flex items-center gap-2 mb-1.5 pb-1 border-b border-border/20">
                         <Badge variant="secondary" className="text-[8px] gap-1">
@@ -313,20 +323,21 @@ export function MatchesTab({
                             <span className="text-[8px] text-muted-foreground">
                               📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <Badge variant={timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
-                              {timeInfo.isNow ? '🔴 AO VIVO' : `⏳ ${timeInfo.text}`}
+                            <Badge variant={timeInfo.isExpired ? 'secondary' : timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
+                              {timeInfo.isExpired ? '⚙️ Simulada' : timeInfo.isNow ? `🔴 ${timeInfo.text}` : `⏳ ${timeInfo.text}`}
                             </Badge>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant={timeInfo.isNow ? 'default' : 'outline'}
-                          onClick={() => goToTournamentMatch(tm)}
-                          className={`h-7 px-3 text-xs gap-1 shrink-0 ${timeInfo.isNow ? 'bg-success hover:bg-success/90' : ''}`}
-                        >
-                          <LogIn className="h-3 w-3" />
-                          {timeInfo.isNow ? 'Entrar' : 'Ver'}
-                        </Button>
+                        {timeInfo.isNow && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => goToTournamentMatch(tm)}
+                            className="h-7 px-3 text-xs gap-1 shrink-0 bg-success hover:bg-success/90"
+                          >
+                            <LogIn className="h-3 w-3" /> Entrar
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
