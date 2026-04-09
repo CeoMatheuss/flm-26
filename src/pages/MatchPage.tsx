@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Player } from '@/types/game';
-import { TacticsConfig } from '@/types/tactics';
+import { TacticsConfig, Formation } from '@/types/tactics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +41,7 @@ interface MatchPageState {
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 const posLabels: Record<string, string> = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante' };
 
-const formations = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '3-4-3', '4-5-1', '4-1-4-1', '5-3-2', '5-4-1', '4-3-2-1', '4-4-1-1', '3-4-2-1', '4-1-2-1-2', '4-2-2-2'];
+const formationsList: Formation[] = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '3-4-3', '4-5-1', '4-1-4-1', '5-3-2', '5-4-1', '4-3-2-1', '4-4-1-1', '3-4-1-2', '4-1-2-1-2'];
 
 // Map formation to required positions
 function getFormationPositions(formation: string): string[] {
