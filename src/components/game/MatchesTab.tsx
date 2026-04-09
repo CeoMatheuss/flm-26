@@ -147,7 +147,7 @@ export function MatchesTab({
         matchId: match.id,
         tactics,
         stadiumName: match.isHome ? stadiumName : (match.stadium || 'Estádio BOT FC'),
-        stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 10000),
+        stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 5000),
         isHome: match.isHome ?? true,
         fans: fans,
       },

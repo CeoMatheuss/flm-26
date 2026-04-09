@@ -13,11 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield, ChevronRight, ChevronUp, ChevronDown, Zap } from 'lucide-react';
+import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield, ChevronRight, ChevronUp, ChevronDown, Zap, Settings2 } from 'lucide-react';
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 interface MatchPageState {
   homeTeam: string;
@@ -39,6 +41,36 @@ interface MatchPageState {
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 const posLabels: Record<string, string> = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante' };
 
+const formations = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '3-4-3', '4-5-1', '4-1-4-1', '5-3-2', '5-4-1', '4-3-2-1', '4-4-1-1', '3-4-2-1', '4-1-2-1-2', '4-2-2-2'];
+
+// Map formation to required positions
+function getFormationPositions(formation: string): string[] {
+  const map: Record<string, string[]> = {
+    '4-4-2': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'MEI', 'VOL', 'VOL', 'MEI', 'ATA', 'ATA'],
+    '4-3-3': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA', 'ATA'],
+    '4-2-3-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'MEI', 'MEI', 'MEI', 'ATA'],
+    '3-5-2': ['GOL', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'LAT', 'ATA', 'ATA'],
+    '3-4-3': ['GOL', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'LAT', 'ATA', 'ATA', 'ATA'],
+    '4-5-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'MEI', 'VOL', 'MEI', 'MEI', 'MEI', 'ATA'],
+    '4-1-4-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'MEI', 'MEI', 'ATA'],
+    '5-3-2': ['GOL', 'LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA'],
+    '5-4-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'MEI', 'VOL', 'VOL', 'MEI', 'ATA'],
+    '4-3-2-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'MEI', 'ATA', 'ATA'],
+    '4-4-1-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'MEI', 'VOL', 'VOL', 'MEI', 'ATA', 'ATA'],
+    '3-4-2-1': ['GOL', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'LAT', 'MEI', 'MEI', 'ATA'],
+    '4-1-2-1-2': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'MEI', 'ATA', 'ATA'],
+    '4-2-2-2': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA'],
+  };
+  return map[formation] || map['4-4-2'];
+}
+
+function getPositionGroup(pos: string) {
+  if (pos === 'GOL') return 'gk';
+  if (['ZAG', 'LAT'].includes(pos)) return 'def';
+  if (['VOL', 'MEI'].includes(pos)) return 'mid';
+  return 'atk';
+}
+
 export default function MatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,17 +82,15 @@ export default function MatchPage() {
 
   const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
 
-  // If reconnecting to existing match, skip pre-match
   const needsPreMatch = locState && !locState.liveMatchDbId;
 
-  // Initialize selected players with first 11 starters + rest bench
   useEffect(() => {
     if (locState?.homePlayers && locState.homePlayers.length > 0) {
       setSelectedPlayers([...locState.homePlayers]);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const doStartMatch = useCallback(async (players: Player[]) => {
+  const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
     setLoadingMsg('Simulando partida no servidor');
     setPreMatchDone(true);
@@ -71,7 +101,7 @@ export default function MatchPage() {
       homeStrength: locState.homeStrength,
       awayStrength: locState.awayStrength,
       matchId: locState.matchId,
-      tactics: locState.tactics,
+      tactics: updatedTactics || locState.tactics,
       stadiumName: locState.stadiumName,
       stadiumCapacity: locState.stadiumCapacity,
       isHome: locState.isHome,
@@ -100,20 +130,18 @@ export default function MatchPage() {
         }
         if (!cancelled) setInitDone(true);
       }
-      // If locState exists but no liveMatchDbId, we wait for pre-match
     };
     init();
     return () => { cancelled = true; destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pre-match squad selection
   if (needsPreMatch && !preMatchDone && locState) {
     return (
       <PreMatchScreen
         locState={locState}
         players={selectedPlayers}
         onReorder={setSelectedPlayers}
-        onConfirm={(players) => doStartMatch(players)}
+        onConfirm={(players, updatedTactics) => doStartMatch(players, updatedTactics)}
         onCancel={() => navigate('/', { replace: true })}
       />
     );
@@ -153,7 +181,6 @@ export default function MatchPage() {
         },
       });
     } else {
-      // Mid-match exit — no result passed
       navigate('/', { replace: true });
     }
   };
@@ -167,9 +194,46 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
   locState: MatchPageState;
   players: Player[];
   onReorder: (p: Player[]) => void;
-  onConfirm: (players: Player[]) => void;
+  onConfirm: (players: Player[], tactics?: TacticsConfig) => void;
   onCancel: () => void;
 }) {
+  const [localTactics, setLocalTactics] = useState<TacticsConfig>({ ...locState.tactics });
+  const [activeTab, setActiveTab] = useState<'squad' | 'tactics'>('squad');
+
+  // Auto-suggest best lineup for formation
+  const suggestBestLineup = useCallback(() => {
+    const requiredPositions = getFormationPositions(localTactics.formation || '4-4-2');
+    const available = [...players];
+    const selected: Player[] = [];
+    const used = new Set<string>();
+
+    // For each position slot, pick the best available player
+    for (const pos of requiredPositions) {
+      // Find best player for this position that hasn't been used
+      let best: Player | null = null;
+      let bestScore = -1;
+
+      for (const p of available) {
+        if (used.has(p.id)) continue;
+        const posMatch = p.position === pos;
+        const groupMatch = getPositionGroup(p.position) === getPositionGroup(pos);
+        const score = (posMatch ? 1000 : groupMatch ? 500 : 0) + p.overall * 10 + (p.stamina || 100);
+        if (score > bestScore) {
+          bestScore = score;
+          best = p;
+        }
+      }
+      if (best) {
+        selected.push(best);
+        used.add(best.id);
+      }
+    }
+
+    // Add remaining as bench
+    const bench = available.filter(p => !used.has(p.id));
+    onReorder([...selected, ...bench]);
+  }, [players, localTactics.formation, onReorder]);
+
   const starters = players.slice(0, 11);
   const bench = players.slice(11);
   const avgOverall = starters.length > 0 ? Math.round(starters.reduce((s, p) => s + p.overall, 0) / starters.length) : 0;
@@ -181,10 +245,8 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
   };
 
   const moveToStarter = (benchIndex: number) => {
-    // Find a starter with same position to swap
     const benchPlayer = bench[benchIndex];
     const globalBenchIdx = 11 + benchIndex;
-    // Swap with last starter of same position, or last starter
     let samePosSIdx = -1;
     for (let j = starters.length - 1; j >= 0; j--) {
       if (starters[j].position === benchPlayer.position) { samePosSIdx = j; break; }
@@ -193,27 +255,31 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
     swapPlayers(swapIdx, globalBenchIdx);
   };
 
-  const moveStarterUp = (idx: number) => {
-    if (idx <= 0) return;
-    swapPlayers(idx, idx - 1);
-  };
-
-  const moveStarterDown = (idx: number) => {
-    if (idx >= 10) return;
-    swapPlayers(idx, idx + 1);
-  };
-
   const moveToBench = (starterIdx: number) => {
     if (bench.length === 0) return;
-    // Swap with first bench player of same position, or first bench
     const starterPlayer = starters[starterIdx];
     const samePosB = bench.findIndex(p => p.position === starterPlayer.position);
     const benchSwap = samePosB >= 0 ? 11 + samePosB : 11;
     swapPlayers(starterIdx, benchSwap);
   };
 
-  const sortedStarters = starters.map((p, i) => ({ ...p, _idx: i }));
-  
+  // Get required positions for current formation
+  const requiredPositions = getFormationPositions(localTactics.formation || '4-4-2');
+
+  // Find best suggestion for each starter slot
+  const getSuggestionForSlot = (slotIndex: number): Player | null => {
+    const requiredPos = requiredPositions[slotIndex];
+    const currentPlayer = starters[slotIndex];
+    if (!currentPlayer || !requiredPos) return null;
+    if (currentPlayer.position === requiredPos) return null; // Already correct
+
+    // Find a better candidate on the bench or in another starter slot
+    const betterOnBench = bench
+      .filter(p => p.position === requiredPos && p.overall > currentPlayer.overall - 5)
+      .sort((a, b) => b.overall - a.overall)[0];
+    return betterOnBench || null;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-[hsl(220,20%,6%)] p-3 sm:p-4 max-w-2xl mx-auto">
       {/* Header */}
@@ -233,111 +299,209 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
             <Badge variant="outline" className="text-sm">{locState.competition || 'Amistoso'}</Badge>
           </div>
           <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-3 text-sm flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="text-muted-foreground">🏟️</span>
                 <span className="text-muted-foreground">{locState.stadiumName}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Star className="h-3.5 w-3.5 text-yellow-400" />
-                <span className="font-bold">OVR Médio: {avgOverall}</span>
+                <span className="font-bold">OVR {avgOverall}</span>
               </div>
-              {locState.tactics?.formation && (
-                <Badge variant="secondary" className="text-xs">{locState.tactics.formation}</Badge>
-              )}
+              <Badge variant="secondary" className="text-xs">{localTactics.formation || '4-4-2'}</Badge>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Starters */}
-      <div className="mb-4">
-        <p className="text-base font-black text-primary mb-2 flex items-center gap-2">
-          <Shirt className="h-4 w-4" /> Titulares ({starters.length}/11)
-        </p>
-        <div className="space-y-1.5">
-          {sortedStarters.map((p, i) => {
-            const stamina = p.stamina || 100;
-            const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
-            return (
-              <div key={p.id} className="flex items-center gap-2 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5 group">
-                <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}</span>
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
-                  {p.position}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{p.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
-                    <div className="flex items-center gap-1 flex-1">
-                      <div className="h-1.5 w-12 rounded-full bg-muted/20 overflow-hidden">
-                        <div className={`h-full rounded-full ${staminaColor}`} style={{ width: `${stamina}%` }} />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">{stamina}%</span>
+      {/* Tab switch: Squad / Tactics */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant={activeTab === 'squad' ? 'default' : 'outline'}
+          size="sm"
+          className="flex-1 gap-1.5 text-sm"
+          onClick={() => setActiveTab('squad')}
+        >
+          <Users className="h-4 w-4" /> Escalação
+        </Button>
+        <Button
+          variant={activeTab === 'tactics' ? 'default' : 'outline'}
+          size="sm"
+          className="flex-1 gap-1.5 text-sm"
+          onClick={() => setActiveTab('tactics')}
+        >
+          <Settings2 className="h-4 w-4" /> Táticas
+        </Button>
+      </div>
+
+      {activeTab === 'squad' ? (
+        <>
+          {/* Auto-suggest button */}
+          <Button variant="outline" size="sm" className="w-full mb-3 gap-1.5 text-sm" onClick={suggestBestLineup}>
+            <Zap className="h-4 w-4 text-yellow-400" /> Sugerir Melhor Escalação
+          </Button>
+
+          {/* Starters */}
+          <div className="mb-4">
+            <p className="text-base font-black text-primary mb-2 flex items-center gap-2">
+              <Shirt className="h-4 w-4" /> Titulares ({starters.length}/11)
+            </p>
+            <div className="space-y-1.5">
+              {starters.map((p, i) => {
+                const stamina = p.stamina || 100;
+                const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+                const requiredPos = requiredPositions[i];
+                const posMatch = p.position === requiredPos;
+                const suggestion = getSuggestionForSlot(i);
+                return (
+                  <div key={p.id} className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 group ${posMatch ? 'bg-card/60 border-border/20' : 'bg-orange-500/5 border-orange-500/20'}`}>
+                    <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}</span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${posMatch ? 'bg-primary/10 text-primary' : 'bg-orange-500/15 text-orange-400'}`}>
+                      {p.position}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold truncate">{p.name}</p>
+                        {!posMatch && requiredPos && (
+                          <Badge variant="outline" className="text-[9px] border-orange-400/30 text-orange-400 shrink-0">
+                            Ideal: {requiredPos}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
+                        <div className="flex items-center gap-1 flex-1">
+                          <div className="h-1.5 w-12 rounded-full bg-muted/20 overflow-hidden">
+                            <div className={`h-full rounded-full ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">{stamina}%</span>
+                        </div>
+                      </div>
+                      {suggestion && (
+                        <button
+                          onClick={() => {
+                            const benchIdx = bench.findIndex(bp => bp.id === suggestion.id);
+                            if (benchIdx >= 0) swapPlayers(i, 11 + benchIdx);
+                          }}
+                          className="text-[10px] text-emerald-400 hover:underline mt-0.5"
+                        >
+                          💡 Sugestão: {suggestion.name} ({suggestion.position} OVR {suggestion.overall})
+                        </button>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => moveToBench(i)}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveStarterUp(i)} disabled={i === 0}>
-                    <ChevronUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveStarterDown(i)} disabled={i === 10}>
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300" onClick={() => moveToBench(i)}>
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Bench */}
-      {bench.length > 0 && (
-        <div className="mb-4">
-          <p className="text-base font-black text-muted-foreground mb-2">🪑 Reservas ({bench.length})</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {bench.map((p, i) => (
-              <button
-                key={p.id}
-                onClick={() => moveToStarter(i)}
-                className="flex items-center gap-2 bg-muted/10 border border-border/15 rounded-xl px-3 py-2.5 hover:bg-emerald-500/5 hover:border-emerald-500/20 transition-all text-left group"
-              >
-                <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                  {p.position}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{p.name}</p>
-                  <span className="text-xs text-muted-foreground">OVR {p.overall} · ⚡{p.stamina || 100}%</span>
-                </div>
-                <span className="text-xs text-emerald-400 opacity-0 group-hover:opacity-100 font-bold">↑ Escalar</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tactics info */}
-      {locState.tactics && (
-        <Card className="mb-4 border-border/20">
-          <CardContent className="p-3">
-            <p className="text-sm font-bold mb-2 flex items-center gap-1.5">⚙️ Táticas</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{locState.tactics.formation}</Badge>
-              {locState.tactics.playStyle && <Badge variant="outline">{locState.tactics.playStyle}</Badge>}
-              {locState.tactics.pressing && <Badge variant="outline">Pressão: {locState.tactics.pressing}</Badge>}
-              {locState.tactics.tempo && <Badge variant="outline">Ritmo: {locState.tactics.tempo}</Badge>}
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Bench */}
+          {bench.length > 0 && (
+            <div className="mb-4">
+              <p className="text-base font-black text-muted-foreground mb-2">🪑 Reservas ({bench.length})</p>
+              <div className="space-y-1.5">
+                {bench.map((p, i) => (
+                  <button
+                    key={p.id}
+                    onClick={() => moveToStarter(i)}
+                    className="w-full flex items-center gap-2 bg-muted/10 border border-border/15 rounded-xl px-3 py-2.5 hover:bg-emerald-500/5 hover:border-emerald-500/20 transition-all text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                      {p.position}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{p.name}</p>
+                      <span className="text-xs text-muted-foreground">OVR {p.overall} · ⚡{p.stamina || 100}%</span>
+                    </div>
+                    <span className="text-xs text-emerald-400 opacity-0 group-hover:opacity-100 font-bold shrink-0">↑ Escalar</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        /* Tactics tab */
+        <div className="space-y-4 mb-4">
+          <Card className="border-border/20">
+            <CardContent className="p-4 space-y-4">
+              <div>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Formação</label>
+                <Select value={localTactics.formation || '4-4-2'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, formation: v }))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {formations.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Mentalidade</label>
+                <Select value={localTactics.mentality || 'balanced'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, mentality: v as any }))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="defensive">Defensiva</SelectItem>
+                    <SelectItem value="balanced">Equilibrada</SelectItem>
+                    <SelectItem value="attacking">Ofensiva</SelectItem>
+                    <SelectItem value="ultra-attacking">Ultra-Ofensiva</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Pressão</label>
+                <Select value={localTactics.pressing || 'medium'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, pressing: v as any }))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Ritmo</label>
+                <Select value={localTactics.tempo || 'normal'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, tempo: v as any }))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="slow">Lento</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="fast">Rápido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-muted-foreground mb-1.5 block">Estilo de Passe</label>
+                <Select value={localTactics.playStyle || 'mixed'} onValueChange={(v) => setLocalTactics(prev => ({ ...prev, playStyle: v as any }))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">Curto</SelectItem>
+                    <SelectItem value="mixed">Misto</SelectItem>
+                    <SelectItem value="long">Longo</SelectItem>
+                    <SelectItem value="direct">Direto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-muted/10 border border-border/20 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground text-center">
+                  ⚙️ As táticas influenciam diretamente o comportamento do time na simulação
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Confirm */}
       <Button
         className="w-full h-14 text-lg font-black gap-2 shadow-lg"
-        onClick={() => onConfirm(players)}
+        onClick={() => onConfirm(players, localTactics)}
       >
         <Zap className="h-5 w-5" /> Iniciar Partida
       </Button>
@@ -416,6 +580,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
   const isFinished = phase === 'finished';
   const isHalftime = phase === 'halftime';
+
+  // In-match tactics
+  const [liveTactics, setLiveTactics] = useState<TacticsConfig>(tactics || { formation: '4-4-2' } as TacticsConfig);
 
   // Goal flash
   const [goalFlash, setGoalFlash] = useState(false);
@@ -504,7 +671,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-3 sm:space-y-4">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-2 sm:space-y-3">
       {/* Substitution TV Banner */}
       {activeBanner && <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />}
 
@@ -514,43 +681,43 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           <LogOut className="h-4 w-4" /> {isFinished ? 'Sair' : 'Abandonar'}
         </Button>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm font-medium">{competition || 'Amistoso'}</Badge>
-          <span className="text-sm text-muted-foreground truncate max-w-[140px]">🏟️ {stadiumName}</span>
+          <Badge variant="outline" className="text-xs sm:text-sm font-medium">{competition || 'Amistoso'}</Badge>
+          <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[120px] sm:max-w-[180px]">🏟️ {stadiumName}</span>
         </div>
       </div>
 
       {/* Professional Scoreboard */}
       <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
-        <div className="bg-primary/10 px-4 py-2 flex items-center justify-between">
-          <span className="text-sm font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
-          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-base font-mono h-8 px-4">
+        <div className="bg-primary/10 px-3 sm:px-4 py-2 flex items-center justify-between">
+          <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
+          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-sm sm:text-base font-mono h-7 sm:h-8 px-3 sm:px-4">
             {currentMinute}'
           </Badge>
         </div>
 
-        <CardContent className="p-4 sm:p-5 space-y-3">
+        <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
           {/* Teams + Score */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 text-right space-y-1 min-w-0">
-              <p className="text-base sm:text-xl font-black truncate">{homeTeam}</p>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex-1 text-right space-y-0.5 min-w-0">
+              <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
               <div className="flex items-center gap-1 justify-end flex-wrap">
                 {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                  <span key={i} className="text-[10px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
 
-            <div className={`text-5xl sm:text-6xl font-black font-mono px-5 sm:px-8 py-3 rounded-xl min-w-[110px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+            <div className={`text-4xl sm:text-6xl font-black font-mono px-3 sm:px-8 py-2 sm:py-3 rounded-xl min-w-[90px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
               <span className="text-primary">{homeGoals}</span>
-              <span className="text-muted-foreground/50 text-3xl sm:text-4xl mx-1.5">:</span>
+              <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
               <span className="text-primary">{awayGoals}</span>
             </div>
 
-            <div className="flex-1 text-left space-y-1 min-w-0">
-              <p className="text-base sm:text-xl font-black truncate">{awayTeam}</p>
+            <div className="flex-1 text-left space-y-0.5 min-w-0">
+              <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
               <div className="flex items-center gap-1 flex-wrap">
                 {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                  <span key={i} className="text-[10px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
                 ))}
               </div>
             </div>
@@ -558,36 +725,36 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
           {/* Goal flash banner */}
           {goalFlash && latestEvent?.isGoal && (
-            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-3 text-center animate-fade-in">
-              <p className="text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
+              <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
               {latestEvent.assistName && (
-                <p className="text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
               )}
             </div>
           )}
 
           {/* Possession bar */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-blue-400 w-12 text-right">{possession[0]}%</span>
-            <div className="flex-1 flex h-3 rounded-full overflow-hidden bg-muted/10">
+            <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
+            <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
               <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
               <div className="bg-red-500 flex-1 rounded-r-full" />
             </div>
-            <span className="text-sm font-bold text-red-400 w-12">{possession[1]}%</span>
+            <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
           </div>
 
-          {!isFinished && <Progress value={(progress || 0) * 100} className="h-2" />}
+          {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
         </CardContent>
       </Card>
 
       {/* Halftime banner */}
       {isHalftime && (
-        <Card className="border-primary/30 bg-primary/5 p-4 text-center animate-fade-in">
-          <p className="text-lg sm:text-xl font-black text-primary">⏸ INTERVALO</p>
-          <p className="text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+        <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
+          <p className="text-base sm:text-xl font-black text-primary">⏸ INTERVALO</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
           {subQueue.length > 0 && (
-            <p className="text-sm text-primary mt-2 font-bold animate-pulse">
-              🔄 {subQueue.length} substituição(ões) pendente(s) será(ão) executada(s)
+            <p className="text-xs sm:text-sm text-primary mt-2 font-bold animate-pulse">
+              🔄 {subQueue.length} substituição(ões) pendente(s)
             </p>
           )}
         </Card>
@@ -595,9 +762,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
       {/* 2D Canvas — highlights */}
       {!isFinished && activeHighlight && (
-        <Card className="p-3 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
-          <div className="text-center mb-1.5">
-            <Badge variant="outline" className="text-sm font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
+        <Card className="p-2 sm:p-3 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
+          <div className="text-center mb-1">
+            <Badge variant="outline" className="text-xs sm:text-sm font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
           </div>
           <HighlightMiniCanvas
             type={getHighlightType(activeHighlight.type)}
@@ -611,16 +778,16 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               }, 1500);
             }}
           />
-          <p className="text-sm text-center text-muted-foreground mt-1.5">{activeHighlight.description}</p>
+          <p className="text-xs sm:text-sm text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
         </Card>
       )}
 
       {/* Live commentary */}
       {latestEvent && !goalFlash && (
-        <Card className="p-3 sm:p-4 border-border/30">
-          <div className="flex items-start gap-2.5">
-            <Badge variant="outline" className="text-sm font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-            <p className={`text-base sm:text-lg font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
+        <Card className="p-2 sm:p-4 border-border/30">
+          <div className="flex items-start gap-2">
+            <Badge variant="outline" className="text-xs sm:text-sm font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
+            <p className={`text-sm sm:text-lg font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
               {getEventIcon(latestEvent.type)} {latestEvent.description}
             </p>
           </div>
@@ -629,16 +796,16 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
       {/* Quick Stats Row */}
       {!isFinished && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           {[
             ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
             ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
-            ['🏳️', 'Escanteios', stats.corners[0], stats.corners[1]],
+            ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
             ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
           ].map(([icon, label, h, a]) => (
-            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-2.5">
-              <p className="text-xs text-muted-foreground">{icon} {label}</p>
-              <p className="text-base sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
+            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2.5">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{icon} {label}</p>
+              <p className="text-sm sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
             </div>
           ))}
         </div>
@@ -647,25 +814,28 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
       {/* Tabs */}
       {!isFinished ? (
         <Tabs defaultValue="events" className="space-y-2">
-          <TabsList className="w-full h-11 grid grid-cols-3">
-            <TabsTrigger value="events" className="text-sm gap-1.5">📝 Narração</TabsTrigger>
-            <TabsTrigger value="lineup" className="text-sm gap-1.5"><Shirt className="h-4 w-4" /> Time</TabsTrigger>
-            <TabsTrigger value="subs" className="text-sm gap-1.5">
-              <ArrowUpDown className="h-4 w-4" /> Subs ({subsUsed}/{maxSubs})
+          <TabsList className="w-full h-10 sm:h-11 grid grid-cols-4">
+            <TabsTrigger value="events" className="text-xs sm:text-sm gap-1">📝 Narração</TabsTrigger>
+            <TabsTrigger value="lineup" className="text-xs sm:text-sm gap-1"><Shirt className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Time</TabsTrigger>
+            <TabsTrigger value="subs" className="text-xs sm:text-sm gap-1">
+              🔄 {subsUsed}/{maxSubs}
+            </TabsTrigger>
+            <TabsTrigger value="tactics" className="text-xs sm:text-sm gap-1">
+              <Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Tática
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="events">
-            <Card className="p-3">
-              <div ref={eventsRef} className="max-h-[350px] sm:max-h-[420px] overflow-y-auto space-y-1.5">
+            <Card className="p-2 sm:p-3">
+              <div ref={eventsRef} className="max-h-[300px] sm:max-h-[420px] overflow-y-auto space-y-1">
                 {visibleEvents.length === 0 && (
-                  <p className="text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
+                  <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
                 )}
                 {[...visibleEvents].reverse().slice(0, 60).map((ev, i) => (
-                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-colors ${getEventBg(ev)}`}>
-                    <Badge variant="outline" className="text-xs w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                    <span className="text-base shrink-0">{getEventIcon(ev.type)}</span>
-                    <span className={`text-sm sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
+                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
+                    <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                    <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
+                    <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
                   </div>
                 ))}
               </div>
@@ -673,13 +843,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </TabsContent>
 
           <TabsContent value="lineup">
-            <Card className="p-4">
-              <LineupView homePlayers={homePlayers} tactics={tactics} homeTeam={homeTeam} />
+            <Card className="p-3 sm:p-4">
+              <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
             </Card>
           </TabsContent>
 
           <TabsContent value="subs">
-            <Card className="p-4">
+            <Card className="p-3 sm:p-4">
               <ManagerSubstitutionView
                 homePlayers={homePlayers}
                 subsUsed={subsUsed}
@@ -696,6 +866,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               />
             </Card>
           </TabsContent>
+
+          <TabsContent value="tactics">
+            <Card className="p-3 sm:p-4">
+              <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+            </Card>
+          </TabsContent>
         </Tabs>
       ) : (
         <FinishedSection
@@ -710,6 +886,71 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           homePlayers={homePlayers}
         />
       )}
+    </div>
+  );
+}
+
+/* ── LIVE TACTICS VIEW ──────────────────────────────────────── */
+
+function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpdate: (t: TacticsConfig) => void }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-base font-black text-primary flex items-center gap-1.5">
+        <Settings2 className="h-5 w-5" /> Ajustes Táticos
+      </p>
+
+      <div>
+        <label className="text-sm font-bold text-muted-foreground mb-1 block">Formação</label>
+        <Select value={tactics.formation || '4-4-2'} onValueChange={(v) => onUpdate({ ...tactics, formation: v })}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {formations.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="text-sm font-bold text-muted-foreground mb-1 block">Mentalidade</label>
+        <Select value={tactics.mentality || 'balanced'} onValueChange={(v) => onUpdate({ ...tactics, mentality: v as any })}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="defensive">Defensiva</SelectItem>
+            <SelectItem value="balanced">Equilibrada</SelectItem>
+            <SelectItem value="attacking">Ofensiva</SelectItem>
+            <SelectItem value="ultra-attacking">Ultra-Ofensiva</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="text-sm font-bold text-muted-foreground mb-1 block">Pressão</label>
+        <Select value={tactics.pressing || 'medium'} onValueChange={(v) => onUpdate({ ...tactics, pressing: v as any })}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Baixa</SelectItem>
+            <SelectItem value="medium">Média</SelectItem>
+            <SelectItem value="high">Alta</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="text-sm font-bold text-muted-foreground mb-1 block">Ritmo</label>
+        <Select value={tactics.tempo || 'normal'} onValueChange={(v) => onUpdate({ ...tactics, tempo: v as any })}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="slow">Lento</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="fast">Rápido</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
+        <p className="text-xs text-muted-foreground">
+          ⚡ Mudanças táticas terão efeito imediato na dinâmica da partida
+        </p>
+      </div>
     </div>
   );
 }
@@ -732,9 +973,9 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
 }) {
   if (!homePlayers || homePlayers.length <= 11) {
     return (
-      <div className="text-center py-8">
-        <ArrowUpDown className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-base text-muted-foreground">Banco insuficiente para substituições</p>
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">Banco insuficiente para substituições</p>
       </div>
     );
   }
@@ -744,20 +985,19 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
 
   if (allSubsUsed) {
     return (
-      <div className="text-center py-8">
-        <ArrowUpDown className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-lg font-bold text-muted-foreground">Todas as {maxSubs} substituições usadas</p>
-        <p className="text-sm text-muted-foreground mt-1">Não é possível fazer mais trocas nesta partida.</p>
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-base font-bold text-muted-foreground">Todas as {maxSubs} substituições usadas</p>
       </div>
     );
   }
 
   if (allWindowsUsed && subQueue.length === 0) {
     return (
-      <div className="text-center py-8">
-        <ArrowUpDown className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-lg font-bold text-muted-foreground">Janelas de substituição esgotadas</p>
-        <p className="text-sm text-muted-foreground mt-1">{maxWindows} janelas usadas. Restam {maxSubs - subsUsed} subs para o intervalo.</p>
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-base font-bold text-muted-foreground">Janelas esgotadas</p>
+        <p className="text-xs text-muted-foreground mt-1">Restam {maxSubs - subsUsed} subs para o intervalo.</p>
       </div>
     );
   }
@@ -767,49 +1007,38 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   const queuedOutIds = new Set(subQueue.map(s => s.outId));
   const queuedInIds = new Set(subQueue.map(s => s.inId));
 
-  const getPositionGroup = (pos: string) => {
-    if (['GOL'].includes(pos)) return 'gk';
-    if (['ZAG', 'LAT'].includes(pos)) return 'def';
-    if (['VOL', 'MEI'].includes(pos)) return 'mid';
-    if (['ATA'].includes(pos)) return 'atk';
-    return 'atk';
-  };
-
   const selectedPlayer = starters.find(p => p.id === selectedSubOut);
 
   return (
     <div className="space-y-3">
-      {/* Header with indicators */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-base font-black text-primary flex items-center gap-1.5">
-            <ArrowUpDown className="h-5 w-5" /> Substituições
+          <p className="text-sm sm:text-base font-black text-primary flex items-center gap-1.5">
+            <ArrowUpDown className="h-4 w-4 sm:h-5 sm:w-5" /> Substituições
           </p>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground mr-1">Subs:</span>
-              {Array.from({ length: maxSubs }).map((_, i) => (
-                <div key={i} className={`w-3.5 h-3.5 rounded-full transition-all ${i < subsUsed ? 'bg-primary shadow-sm shadow-primary/30' : 'bg-muted/20 border border-border/30'}`} />
-              ))}
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Subs:</span>
+            {Array.from({ length: maxSubs }).map((_, i) => (
+              <div key={i} className={`w-3 h-3 rounded-full transition-all ${i < subsUsed ? 'bg-primary shadow-sm shadow-primary/30' : 'bg-muted/20 border border-border/30'}`} />
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2">
-          <span className="text-sm text-muted-foreground">Janelas usadas:</span>
+        <div className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+          <span className="text-[10px] sm:text-sm text-muted-foreground">Janelas:</span>
           <div className="flex items-center gap-1">
             {Array.from({ length: maxWindows }).map((_, i) => (
-              <div key={i} className={`w-6 h-2 rounded-full transition-all ${i < windowsUsed ? 'bg-orange-400' : 'bg-muted/20'}`} />
+              <div key={i} className={`w-5 sm:w-6 h-1.5 sm:h-2 rounded-full transition-all ${i < windowsUsed ? 'bg-orange-400' : 'bg-muted/20'}`} />
             ))}
           </div>
-          <span className="text-xs text-muted-foreground">({windowsUsed}/{maxWindows})</span>
-          {isHalftime && <Badge variant="secondary" className="text-xs ml-auto">Intervalo — não conta janela</Badge>}
+          <span className="text-[10px] sm:text-xs text-muted-foreground">({windowsUsed}/{maxWindows})</span>
+          {isHalftime && <Badge variant="secondary" className="text-[9px] ml-auto">Intervalo</Badge>}
         </div>
 
         {subQueue.length > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2.5 animate-pulse">
-            <p className="text-sm font-bold text-primary">
-              ⏳ {subQueue.length} substituição(ões) na fila — aguardando bola parada
+          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 animate-pulse">
+            <p className="text-xs sm:text-sm font-bold text-primary">
+              ⏳ {subQueue.length} na fila — aguardando bola parada
             </p>
           </div>
         )}
@@ -817,8 +1046,8 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
 
       {!selectedSubOut ? (
         <>
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Selecione quem SAI do campo:</p>
-          <div className="space-y-1.5 max-h-[320px] overflow-y-auto">
+          <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Quem SAI:</p>
+          <div className="space-y-1.5 max-h-[280px] sm:max-h-[320px] overflow-y-auto">
             {starters.map((p, i) => {
               const stamina = p.stamina || 100;
               const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
@@ -828,30 +1057,29 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
                   key={p.id || i}
                   onClick={() => !isQueued && onSelectSubOut(p.id)}
                   disabled={isQueued}
-                  className={`w-full flex items-center gap-3 bg-card/60 border rounded-xl px-3 py-3 transition-all text-left group ${
+                  className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 transition-all text-left group ${
                     isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
                   }`}
                 >
-                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-sm font-black text-primary shrink-0">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary/10 flex items-center justify-center text-xs sm:text-sm font-black text-primary shrink-0">
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-sm text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
-                      <div className="flex items-center gap-1.5 flex-1">
-                        <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-                        <div className="h-2.5 flex-1 max-w-[90px] rounded-full bg-muted/20 overflow-hidden">
+                    <p className="text-sm sm:text-base font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5 sm:mt-1">
+                      <span className="text-xs sm:text-sm text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <div className="h-2 sm:h-2.5 flex-1 max-w-[70px] sm:max-w-[90px] rounded-full bg-muted/20 overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
                         </div>
-                        <span className="text-sm text-muted-foreground font-mono">{stamina}%</span>
+                        <span className="text-[10px] sm:text-sm text-muted-foreground font-mono">{stamina}%</span>
                       </div>
                     </div>
                   </div>
                   {isQueued ? (
-                    <Badge variant="outline" className="text-xs border-orange-400/30 text-orange-400 shrink-0">Na fila</Badge>
+                    <Badge variant="outline" className="text-[9px] border-orange-400/30 text-orange-400 shrink-0">Fila</Badge>
                   ) : (
-                    <span className="text-sm text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">SAIR →</span>
+                    <span className="text-xs sm:text-sm text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">SAIR →</span>
                   )}
                 </button>
               );
@@ -860,23 +1088,22 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
         </>
       ) : (
         <>
-          {/* Selected player OUT */}
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center text-lg font-black text-red-400 shrink-0">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-500/15 flex items-center justify-center text-sm sm:text-lg font-black text-red-400 shrink-0">
               {selectedPlayer?.position}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-red-400 font-bold uppercase tracking-wider">⬅️ Sai do campo</p>
-              <p className="text-lg font-black truncate">{selectedPlayer?.name}</p>
-              <p className="text-sm text-muted-foreground">OVR {selectedPlayer?.overall} · ⚡ {selectedPlayer?.stamina || 100}%</p>
+              <p className="text-[10px] sm:text-xs text-red-400 font-bold uppercase tracking-wider">⬅️ Sai</p>
+              <p className="text-base sm:text-lg font-black truncate">{selectedPlayer?.name}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">OVR {selectedPlayer?.overall} · ⚡ {selectedPlayer?.stamina || 100}%</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-9 px-4 text-sm shrink-0 gap-1.5" onClick={() => onSelectSubOut(null)}>
-              <X className="h-4 w-4" /> Cancelar
+            <Button variant="ghost" size="sm" className="h-8 sm:h-9 px-3 text-xs sm:text-sm shrink-0 gap-1" onClick={() => onSelectSubOut(null)}>
+              <X className="h-3.5 w-3.5" /> Cancelar
             </Button>
           </div>
 
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">🪑 Selecione quem ENTRA:</p>
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+          <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">🪑 Quem ENTRA:</p>
+          <div className="space-y-1.5 max-h-[250px] sm:max-h-[280px] overflow-y-auto">
             {bench.filter(p => !queuedInIds.has(p.id)).map((p, i) => {
               const sameGroup = selectedPlayer && getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
               const stamina = p.stamina || 100;
@@ -884,36 +1111,36 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
                 <button
                   key={p.id || i}
                   onClick={() => onConfirmSub(selectedSubOut, p.id)}
-                  className={`w-full flex items-center gap-3 bg-card/60 border rounded-xl px-3 py-3 hover:bg-emerald-500/5 transition-all text-left group ${
+                  className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 hover:bg-emerald-500/5 transition-all text-left group ${
                     sameGroup ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-border/20 hover:border-emerald-400/40'
                   }`}
                 >
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shrink-0 ${
                     sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
                   }`}>
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-sm font-bold text-emerald-400">OVR {p.overall}</span>
-                      <span className="text-sm text-muted-foreground">⚡ {stamina}%</span>
+                    <p className="text-sm sm:text-base font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5">
+                      <span className="text-xs sm:text-sm font-bold text-emerald-400">OVR {p.overall}</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">⚡ {stamina}%</span>
                       {sameGroup && (
-                        <Badge variant="outline" className="text-xs h-5 border-emerald-500/30 text-emerald-400">
-                          <Check className="h-3 w-3 mr-0.5" /> Mesma posição
+                        <Badge variant="outline" className="text-[9px] sm:text-xs h-4 sm:h-5 border-emerald-500/30 text-emerald-400">
+                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" /> Mesma pos.
                         </Badge>
                       )}
                     </div>
                   </div>
-                  <span className="text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">← ENTRA</span>
+                  <span className="text-xs sm:text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">← ENTRA</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="bg-muted/10 border border-border/20 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              📡 A substituição entrará na fila e será executada na próxima bola parada
+          <div className="bg-muted/10 border border-border/20 rounded-lg p-2 sm:p-3 text-center">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
+              📡 Substituição será executada na próxima bola parada
               {isHalftime && ' (intervalo — execução imediata)'}
             </p>
           </div>
@@ -941,22 +1168,22 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
   ];
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between text-base font-bold">
-        <span className="text-blue-400 truncate max-w-[140px]">{homeTeam}</span>
-        <span className="text-red-400 truncate max-w-[140px]">{awayTeam}</span>
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex justify-between text-sm sm:text-base font-bold">
+        <span className="text-blue-400 truncate max-w-[120px] sm:max-w-[140px]">{homeTeam}</span>
+        <span className="text-red-400 truncate max-w-[120px] sm:max-w-[140px]">{awayTeam}</span>
       </div>
       {rows.map(([label, vals, suffix]) => {
         const total = vals[0] + vals[1];
         const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
         return (
-          <div key={label} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-bold w-12 text-right">{vals[0]}{suffix}</span>
-              <span className="text-xs text-muted-foreground font-medium">{label}</span>
-              <span className="font-bold w-12 text-left">{vals[1]}{suffix}</span>
+          <div key={label} className="space-y-0.5 sm:space-y-1">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="font-bold w-10 sm:w-12 text-right">{vals[0]}{suffix}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</span>
+              <span className="font-bold w-10 sm:w-12 text-left">{vals[1]}{suffix}</span>
             </div>
-            <div className="flex h-2.5 rounded-full overflow-hidden bg-muted/10">
+            <div className="flex h-2 sm:h-2.5 rounded-full overflow-hidden bg-muted/10">
               <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
               <div className="bg-red-500 flex-1 rounded-r-full" />
             </div>
@@ -974,7 +1201,7 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
     return (
       <div className="text-center py-6">
         <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-        <p className="text-base text-muted-foreground">Escalação não disponível</p>
+        <p className="text-sm text-muted-foreground">Escalação não disponível</p>
       </div>
     );
   }
@@ -983,31 +1210,25 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
   const bench = homePlayers.slice(11);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {tactics && (
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-sm">📋 {tactics.formation}</Badge>
-          {tactics.playStyle && <Badge variant="outline" className="text-xs">{tactics.playStyle}</Badge>}
-          {tactics.pressing && <Badge variant="outline" className="text-xs">Pressão: {tactics.pressing}</Badge>}
+          <Badge variant="secondary" className="text-xs sm:text-sm">📋 {tactics.formation}</Badge>
+          {tactics.playStyle && <Badge variant="outline" className="text-[10px] sm:text-xs">{tactics.playStyle}</Badge>}
+          {tactics.pressing && <Badge variant="outline" className="text-[10px] sm:text-xs">Pressão: {tactics.pressing}</Badge>}
         </div>
       )}
 
       <div>
-        <p className="text-base font-black mb-2 text-primary flex items-center gap-1.5"><Shirt className="h-4 w-4" /> Titulares — {homeTeam}</p>
-        <div className="space-y-1.5">
+        <p className="text-sm sm:text-base font-black mb-2 text-primary flex items-center gap-1.5"><Shirt className="h-4 w-4" /> Titulares</p>
+        <div className="space-y-1">
           {starters.map((p, i) => (
-            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2.5">
-              <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}</span>
-              <Badge variant="outline" className="text-xs font-bold w-9 justify-center">{p.position}</Badge>
-              <span className="text-sm font-semibold flex-1 truncate">{p.name}</span>
-              <div className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 text-yellow-400" />
-                <span className="text-sm font-bold">{p.overall}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Activity className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-sm text-muted-foreground">{p.stamina || 100}%</span>
-              </div>
+            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
+              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
+              <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-8 sm:w-9 justify-center">{p.position}</Badge>
+              <span className="text-xs sm:text-sm font-semibold flex-1 truncate">{p.name}</span>
+              <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
+              <span className="text-[10px] sm:text-sm text-muted-foreground">⚡{p.stamina || 100}%</span>
             </div>
           ))}
         </div>
@@ -1015,13 +1236,13 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
 
       {bench.length > 0 && (
         <div>
-          <p className="text-base font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <p className="text-sm sm:text-base font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
             {bench.map((p, i) => (
-              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 rounded-lg px-3 py-2.5">
-                <Badge variant="outline" className="text-xs w-9 justify-center">{p.position}</Badge>
-                <span className="text-sm truncate flex-1">{p.name}</span>
-                <span className="text-sm font-bold">{p.overall}</span>
+              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 rounded-lg px-2 sm:px-3 py-2">
+                <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
+                <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
+                <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
               </div>
             ))}
           </div>
@@ -1063,34 +1284,34 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
   const motm = playerRatings.length > 0 ? playerRatings.reduce((a, b) => a.rating > b.rating ? a : b) : null;
 
   return (
-    <div className="space-y-3 pt-2 animate-fade-in">
+    <div className="space-y-2 sm:space-y-3 pt-2 animate-fade-in">
       <Card className="border-primary/30 overflow-hidden">
         <div className="bg-primary/10 px-4 py-2.5 text-center">
-          <p className="text-base font-black uppercase tracking-wider text-primary">🏁 Resultado Final</p>
+          <p className="text-sm sm:text-base font-black uppercase tracking-wider text-primary">🏁 Resultado Final</p>
         </div>
-        <CardContent className="p-4 sm:p-5 space-y-4">
+        <CardContent className="p-3 sm:p-5 space-y-3 sm:space-y-4">
           {motm && (
-            <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-4 flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                <Star className="h-7 w-7 text-yellow-400" />
+            <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 sm:p-4 flex items-center gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                <Star className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
               </div>
               <div>
-                <p className="text-sm text-yellow-400 font-bold uppercase">⭐ Craque do Jogo</p>
-                <p className="text-lg font-black">{motm.name}</p>
-                <p className="text-sm text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
+                <p className="text-xs sm:text-sm text-yellow-400 font-bold uppercase">⭐ Craque do Jogo</p>
+                <p className="text-base sm:text-lg font-black">{motm.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
               </div>
             </div>
           )}
 
           {playerRatings.length > 0 && (
             <div>
-              <p className="text-base font-bold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-yellow-400" /> Notas dos Jogadores</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <p className="text-sm sm:text-base font-bold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-yellow-400" /> Notas</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                 {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-3 py-2.5">
-                    <Badge variant="outline" className="text-xs w-9 justify-center">{p.position}</Badge>
-                    <span className="text-sm truncate flex-1">{p.name}</span>
-                    <span className={`text-base font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
+                    <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
+                    <span className={`text-sm sm:text-base font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
                       {p.rating}
                     </span>
                   </div>
@@ -1103,24 +1324,24 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           {substitutions.length > 0 && (
             <div>
-              <p className="text-base font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
+              <p className="text-sm sm:text-base font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
               {substitutions.map((sub, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm bg-sky-500/5 border border-sky-500/15 rounded-lg px-3 py-2.5 mb-1.5">
-                  <Badge variant="outline" className="text-xs font-mono">{sub.minute}'</Badge>
+                <div key={i} className="flex items-center gap-2 text-xs sm:text-sm bg-sky-500/5 border border-sky-500/15 rounded-lg px-2 sm:px-3 py-2 mb-1">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{sub.minute}'</Badge>
                   <span className="flex-1">{sub.description}</span>
-                  <span className="text-muted-foreground capitalize">{sub.team === 'home' ? '🔵' : '🔴'}</span>
+                  <span className="text-muted-foreground">{sub.team === 'home' ? '🔵' : '🔴'}</span>
                 </div>
               ))}
             </div>
           )}
 
           <div>
-            <p className="text-base font-bold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[280px] overflow-y-auto space-y-1.5 border border-border/20 rounded-lg p-3">
+            <p className="text-sm sm:text-base font-bold mb-2">📝 Narração Completa</p>
+            <div className="max-h-[220px] sm:max-h-[280px] overflow-y-auto space-y-1 border border-border/20 rounded-lg p-2 sm:p-3">
               {[...visibleEvents].reverse().map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2.5 px-2.5 py-2 rounded-lg ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-xs w-9 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
-                  <span className={`text-sm ${getEventColor(ev.type)} leading-relaxed`}>
+                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 py-1.5 sm:py-2 rounded-lg ${getEventBg(ev)}`}>
+                  <Badge variant="outline" className="text-[9px] sm:text-xs w-8 sm:w-9 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
+                  <span className={`text-[11px] sm:text-sm ${getEventColor(ev.type)} leading-relaxed`}>
                     {getEventIcon(ev.type)} {ev.description}
                   </span>
                 </div>
@@ -1128,7 +1349,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground text-center border-t border-border/20 pt-3">
+          <p className="text-[10px] sm:text-sm text-muted-foreground text-center border-t border-border/20 pt-2 sm:pt-3">
             {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols
           </p>
         </CardContent>
@@ -1136,14 +1357,14 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
       {goalEvents.length > 0 && (
         <Card className="border-primary/30">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-base flex items-center gap-2">
+          <CardHeader className="pb-2 pt-3 sm:pt-4 px-3 sm:px-4">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <Film className="h-4 w-4 text-primary" /> Gols ({goalEvents.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
+          <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2">
             {!showReplay ? (
-              <Button variant="outline" className="w-full gap-2 text-base" onClick={() => { setShowReplay(true); setReplayIndex(0); }}>
+              <Button variant="outline" className="w-full gap-2 text-sm sm:text-base" onClick={() => { setShowReplay(true); setReplayIndex(0); }}>
                 <Film className="h-4 w-4" /> Ver Replay dos Gols
               </Button>
             ) : goalEvents[replayIndex] ? (
@@ -1154,22 +1375,22 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
                   playerName={goalEvents[replayIndex].playerName}
                 />
                 <div className="text-center space-y-1">
-                  <Badge variant="outline" className="font-mono text-base">{goalEvents[replayIndex].minute}'</Badge>
-                  <p className="text-lg font-bold">{goalEvents[replayIndex].playerName || 'Jogador'}</p>
+                  <Badge variant="outline" className="font-mono text-sm sm:text-base">{goalEvents[replayIndex].minute}'</Badge>
+                  <p className="text-base sm:text-lg font-bold">{goalEvents[replayIndex].playerName || 'Jogador'}</p>
                   <div className="flex flex-wrap gap-1 justify-center">
-                    {goalEvents[replayIndex].goalType && <Badge variant="secondary" className="text-sm">{goalEvents[replayIndex].goalType}</Badge>}
-                    <Badge variant="outline" className="text-sm">{goalEvents[replayIndex].team === 'home' ? homeTeam : awayTeam}</Badge>
+                    {goalEvents[replayIndex].goalType && <Badge variant="secondary" className="text-xs sm:text-sm">{goalEvents[replayIndex].goalType}</Badge>}
+                    <Badge variant="outline" className="text-xs sm:text-sm">{goalEvents[replayIndex].team === 'home' ? homeTeam : awayTeam}</Badge>
                   </div>
                   {goalEvents[replayIndex].assistName && (
-                    <p className="text-sm text-muted-foreground">🅰️ {goalEvents[replayIndex].assistName}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">🅰️ {goalEvents[replayIndex].assistName}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 text-sm" disabled={replayIndex <= 0} onClick={() => setReplayIndex(i => i - 1)}>← Ant.</Button>
-                  <Badge variant="secondary" className="flex items-center text-sm px-3">{replayIndex + 1}/{goalEvents.length}</Badge>
-                  <Button variant="outline" size="sm" className="flex-1 text-sm" disabled={replayIndex >= goalEvents.length - 1} onClick={() => setReplayIndex(i => i + 1)}>Próx. →</Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm" disabled={replayIndex <= 0} onClick={() => setReplayIndex(i => i - 1)}>← Ant.</Button>
+                  <Badge variant="secondary" className="flex items-center text-xs sm:text-sm px-3">{replayIndex + 1}/{goalEvents.length}</Badge>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm" disabled={replayIndex >= goalEvents.length - 1} onClick={() => setReplayIndex(i => i + 1)}>Próx. →</Button>
                 </div>
-                <Button variant="ghost" size="sm" className="w-full text-sm" onClick={() => setShowReplay(false)}>Fechar</Button>
+                <Button variant="ghost" size="sm" className="w-full text-xs sm:text-sm" onClick={() => setShowReplay(false)}>Fechar</Button>
               </div>
             ) : null}
           </CardContent>
@@ -1178,15 +1399,15 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
       {matchDbId && (
         <>
-          <Button variant="outline" className="w-full gap-2 text-base" onClick={() => setShowReport(true)}>
+          <Button variant="outline" className="w-full gap-2 text-sm sm:text-base" onClick={() => setShowReport(true)}>
             📊 Ver Relatório Pós-Jogo
           </Button>
           {showReport && <PostGameReportModal matchDbId={matchDbId} onClose={() => setShowReport(false)} />}
         </>
       )}
 
-      <Button className="w-full h-12 gap-2 text-base font-bold" onClick={onExit}>
-        <ArrowLeft className="h-5 w-5" /> Voltar ao Dashboard
+      <Button className="w-full h-11 sm:h-12 gap-2 text-sm sm:text-base font-bold" onClick={onExit}>
+        <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /> Voltar ao Dashboard
       </Button>
     </div>
   );
@@ -1257,10 +1478,9 @@ function getHighlightLabel(type: string): string {
   if (type === 'penalty_goal') return '⚽ GOL DE PÊNALTI!';
   if (type === 'penalty_miss') return '❌ PÊNALTI PERDIDO!';
   if (type === 'great_save') return '🧤 GRANDE DEFESA!';
-  if (type === 'woodwork') return '🥅 BOLA NA TRAVE!';
-  if (type === 'corner_danger') return '🏳️ ESCANTEIO PERIGOSO!';
-  if (type === 'long_shot_miss') return '🎯 CHUTE DE FORA!';
-  if (type === 'header_miss') return '🎯 CABEÇADA!';
-  if (type === 'dangerous_foul') return '⚠️ FALTA PERIGOSA!';
-  return '🎬 LANCE IMPORTANTE';
+  if (type === 'woodwork') return '🥅 NA TRAVE!';
+  if (type === 'counter_attack_goal') return '⚽ GOL DE CONTRA-ATAQUE!';
+  if (type === 'crossing_goal') return '⚽ GOL DE CRUZAMENTO!';
+  if (type === 'free_kick_goal') return '⚽ GOL DE FALTA!';
+  return '⚡ LANCE IMPORTANTE';
 }
