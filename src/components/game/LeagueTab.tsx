@@ -27,8 +27,22 @@ interface Props {
   currentTierLevel?: number;
 }
 
-export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
+export function LeagueTab({ teams, clubName, country, clubPlayers, currentTier, currentTierLevel }: Props) {
   const [showAllLeagues, setShowAllLeagues] = useState(false);
+  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
+  const [cups, setCups] = useState<CupCompetition[]>([]);
+
+  useEffect(() => {
+    if (country) {
+      supabase
+        .from('cup_competitions')
+        .select('*')
+        .eq('country', country)
+        .then(({ data }) => {
+          if (data) setCups(data as unknown as CupCompetition[]);
+        });
+    }
+  }, [country]);
 
   const sorted = useMemo(() => 
     [...teams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)),
@@ -96,9 +110,22 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
 
   const hasGames = sorted.some(t => t.played > 0);
 
+  if (selectedCupId) {
+    return <CupBracketView cupId={selectedCupId} onBack={() => setSelectedCupId(null)} />;
+  }
+
   if (showAllLeagues) {
     return <LeaguesOverview currentCountry={country} clubName={clubName} onBack={() => setShowAllLeagues(false)} />;
   }
+
+  // Tier display
+  const tierLabels: Record<string, string> = {
+    varzea: '⚽ Várzea',
+    pre_regional: '🏟️ Pré-Regional',
+    regional: '🏆 Regional',
+    nacional: '👑 Nacional',
+  };
+  const tierLabel = currentTier ? tierLabels[currentTier] || currentTier : null;
 
 
 
