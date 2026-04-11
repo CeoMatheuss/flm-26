@@ -1,18 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { LeagueTeam } from '@/types/league';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Trophy, Target } from 'lucide-react';
+import { Globe, Trophy, Target, Layers } from 'lucide-react';
 import { LeaguesOverview } from './LeaguesOverview';
+import { CupBracketView } from './CupBracketView';
+import { supabase } from '@/integrations/supabase/client';
+
+interface CupCompetition {
+  id: string;
+  name: string;
+  cup_type: string;
+  country: string | null;
+  status: string;
+}
 
 interface Props {
   teams: LeagueTeam[];
   clubName: string;
   country?: string;
   clubPlayers?: Player[];
+  currentTier?: string;
+  currentTierLevel?: number;
 }
 
 export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
