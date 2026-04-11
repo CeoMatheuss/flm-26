@@ -5,16 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Tier hierarchy
 const TIERS = ['varzea', 'pre_regional', 'regional', 'nacional'] as const;
 type Tier = typeof TIERS[number];
-
-const TIER_MAX_LEVELS: Record<Tier, number> = {
-  varzea: 1,
-  pre_regional: 8,
-  regional: 5,
-  nacional: 4,
-};
 
 const TIER_NAMES: Record<Tier, string> = {
   varzea: 'Várzea',
@@ -24,15 +16,12 @@ const TIER_NAMES: Record<Tier, string> = {
 };
 
 const TEAMS_PER_LEAGUE = 20;
-const PROMO_RELEGATION_COUNT = 3;
 
-// League match times distributed across the day
 const MATCH_TIMES = [
   '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
   '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
 ];
 
-// Bot name generator
 const BOT_PREFIXES = [
   'FC', 'SC', 'AC', 'EC', 'Clube', 'Atlético', 'Esporte', 'Sport', 'União',
   'Real', 'Inter', 'Nacional', 'Sporting', 'Racing', 'Olimpia', 'Estrela',
@@ -51,49 +40,30 @@ function generateBotName(index: number): string {
   return `${prefix} ${suffix}`;
 }
 
-function generateBotSquad(strength: number): any[] {
-  const positions = ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA', 'ATA',
-    'GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA', 'MEI', 'ZAG'];
-  const firstNames = ['João', 'Pedro', 'Carlos', 'André', 'Felipe', 'Lucas', 'Rafael', 'Bruno',
-    'Diego', 'Marcelo', 'Thiago', 'Leandro', 'Gustavo', 'Matheus', 'Gabriel', 'Daniel', 'Rodrigo', 'Victor', 'Alex'];
-  const lastNames = ['Silva', 'Santos', 'Oliveira', 'Costa', 'Lima', 'Pereira', 'Souza', 'Ferreira',
-    'Almeida', 'Rodrigues', 'Araújo', 'Barbosa', 'Ribeiro', 'Martins', 'Cardoso', 'Nascimento', 'Monteiro', 'Campos', 'Duarte'];
+// Continent mapping
+const CONTINENT_MAP: Record<string, string> = {
+  BR: 'south_america', AR: 'south_america', UY: 'south_america', PY: 'south_america',
+  CL: 'south_america', CO: 'south_america', PE: 'south_america', EC: 'south_america',
+  BO: 'south_america', VE: 'south_america',
+  EN: 'europe', ES: 'europe', DE: 'europe', IT: 'europe', FR: 'europe',
+  PT: 'europe', NL: 'europe', BE: 'europe', TR: 'europe', SC: 'europe',
+  US: 'north_america', MX: 'north_america', CA: 'north_america',
+  CR: 'north_america', HN: 'north_america', PA: 'north_america',
+  EG: 'africa', MA: 'africa', TN: 'africa', NG: 'africa',
+  SN: 'africa', ZA: 'africa', GH: 'africa', CM: 'africa',
+  JP: 'asia', KR: 'asia', CN: 'asia', SA: 'asia',
+  QA: 'asia', IR: 'asia', AU: 'asia', AE: 'asia',
+};
 
-  return positions.map((pos, i) => {
-    const variation = Math.floor(Math.random() * 15) - 7;
-    const ovr = Math.max(40, Math.min(95, strength + variation));
-    return {
-      id: `bot-player-${i}-${Date.now()}`,
-      name: `${firstNames[i]} ${lastNames[i]}`,
-      position: pos,
-      overall: ovr,
-      age: 18 + Math.floor(Math.random() * 17),
-    };
-  });
-}
+const CONTINENT_NAMES: Record<string, string> = {
+  south_america: 'América do Sul',
+  europe: 'Europa',
+  north_america: 'América do Norte',
+  africa: 'África',
+  asia: 'Ásia',
+};
 
-// Round-robin generator for N teams producing N-1 rounds
-function generateRoundRobin(teamIds: string[]): { round: number; home: string; away: string }[] {
-  const ids = [...teamIds];
-  if (ids.length % 2 !== 0) ids.push('BYE');
-  const n = ids.length;
-  const rounds: { round: number; home: string; away: string }[] = [];
-
-  for (let r = 0; r < n - 1; r++) {
-    const rotated = [ids[0], ...ids.slice(1)];
-    for (let rot = 0; rot < r; rot++) {
-      const last = rotated.pop()!;
-      rotated.splice(1, 0, last);
-    }
-    for (let i = 0; i < n / 2; i++) {
-      const home = rotated[i];
-      const away = rotated[n - 1 - i];
-      if (home === 'BYE' || away === 'BYE') continue;
-      rounds.push({ round: r + 1, home, away });
-    }
-  }
-  return rounds;
-}
+const ALL_COUNTRIES = Object.keys(CONTINENT_MAP);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -104,24 +74,17 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const now = new Date();
-    const targetMonth = now.getMonth() + 1; // next month for planning (1-12)
+    const targetMonth = now.getMonth() + 1;
     const targetYear = now.getFullYear();
-    // If called at end of month, plan for next month
     const seasonMonth = targetMonth > 12 ? 1 : targetMonth;
     const seasonYear = targetMonth > 12 ? targetYear + 1 : targetYear;
 
-    // Get all countries with players
-    const { data: allMembers } = await supabase
-      .from('league_members')
-      .select('user_id, league_id');
-
-    // Get all leagues
+    // Get existing data
     const { data: allLeagues } = await supabase
       .from('multiplayer_leagues')
       .select('*')
       .eq('auto_created', true);
 
-    // Count real players per country
     const { data: memberLeagues } = await supabase
       .from('league_members')
       .select('user_id, league_id');
@@ -137,21 +100,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // All known countries
-    const ALL_COUNTRIES = [
-      'BR', 'AR', 'UY', 'PY', 'CL', 'CO', 'PE', 'EC', 'BO', 'VE',
-      'EN', 'ES', 'DE', 'IT', 'FR', 'PT', 'NL', 'BE', 'TR', 'SC',
-      'US', 'MX', 'CA', 'CR', 'HN', 'PA',
-      'EG', 'MA', 'TN', 'NG', 'SN', 'ZA', 'GH', 'CM',
-      'JP', 'KR', 'CN', 'SA', 'QA', 'IR', 'AU', 'AE',
-    ];
-
     const results: any[] = [];
 
+    // ── PHASE 1: Create/update leagues per country ──
     for (const country of ALL_COUNTRIES) {
       const playerCount = countryPlayers[country]?.size || 0;
 
-      // Determine pyramid depth based on player count
       let tiers: { tier: Tier; levels: number }[] = [];
       if (playerCount < 20) {
         tiers = [{ tier: 'varzea', levels: 1 }];
@@ -175,19 +129,16 @@ Deno.serve(async (req) => {
         ];
       }
 
-      // Always ensure at least 1 Várzea league exists
       let leaguesCreated = 0;
       let timeIndex = 0;
 
       for (const { tier, levels } of tiers) {
         for (let level = 1; level <= levels; level++) {
-          // Check if league already exists for this tier/level
           const existing = (allLeagues || []).find(
             l => l.country === country && l.tier === tier && l.tier_level === level
           );
 
           if (existing) {
-            // League exists — ensure it has 20 members (fill with bots if needed)
             const { data: currentMembers } = await supabase
               .from('league_members')
               .select('user_id')
@@ -197,17 +148,11 @@ Deno.serve(async (req) => {
             const botsNeeded = TEAMS_PER_LEAGUE - currentCount;
 
             if (botsNeeded > 0) {
-              // Create bot members
               for (let b = 0; b < botsNeeded; b++) {
                 const botIdx = currentCount + b;
-                const botStrength = tier === 'nacional' ? 65 + Math.floor(Math.random() * 25) :
-                  tier === 'regional' ? 55 + Math.floor(Math.random() * 20) :
-                  tier === 'pre_regional' ? 45 + Math.floor(Math.random() * 20) :
-                  40 + Math.floor(Math.random() * 20);
-
                 await supabase.from('league_members').insert({
                   league_id: existing.id,
-                  user_id: crypto.randomUUID(), // bot UUID
+                  user_id: crypto.randomUUID(),
                   club_name: generateBotName(botIdx + leaguesCreated * 20),
                   club_logo: BOT_LOGOS[botIdx % BOT_LOGOS.length],
                   budget: 1000000,
@@ -215,15 +160,12 @@ Deno.serve(async (req) => {
               }
             }
 
-            // Update match time
             await supabase.from('multiplayer_leagues').update({
               match_time: MATCH_TIMES[timeIndex % MATCH_TIMES.length],
               season_month: seasonMonth,
               season_year: seasonYear,
             }).eq('id', existing.id);
-
           } else {
-            // Create new league
             const leagueName = tier === 'varzea'
               ? `${country} Várzea`
               : `${country} ${TIER_NAMES[tier]} Div ${level}`;
@@ -234,13 +176,13 @@ Deno.serve(async (req) => {
             const { data: newLeague } = await supabase.from('multiplayer_leagues').insert({
               name: leagueName,
               code,
-              owner_id: crypto.randomUUID(), // system owner
+              owner_id: crypto.randomUUID(),
               country,
               auto_created: true,
               max_members: TEAMS_PER_LEAGUE,
               status: 'waiting',
               league_type: 'main',
-              total_rounds: TEAMS_PER_LEAGUE - 1, // 19 rounds for 20 teams
+              total_rounds: TEAMS_PER_LEAGUE - 1,
               season_status: 'registration',
               tier,
               tier_level: level,
@@ -251,13 +193,7 @@ Deno.serve(async (req) => {
             }).select().single();
 
             if (newLeague) {
-              // Fill entirely with bots
               for (let b = 0; b < TEAMS_PER_LEAGUE; b++) {
-                const botStrength = tier === 'nacional' ? 65 + Math.floor(Math.random() * 25) :
-                  tier === 'regional' ? 55 + Math.floor(Math.random() * 20) :
-                  tier === 'pre_regional' ? 45 + Math.floor(Math.random() * 20) :
-                  40 + Math.floor(Math.random() * 20);
-
                 await supabase.from('league_members').insert({
                   league_id: newLeague.id,
                   user_id: crypto.randomUUID(),
@@ -290,53 +226,387 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create cups for countries with Nacional tiers
+    // ── PHASE 2: National & Regional Cups ──
     for (const country of ALL_COUNTRIES) {
       const playerCount = countryPlayers[country]?.size || 0;
-      if (playerCount < 260) continue; // Only countries with Nacional tier
 
-      // Copa Nacional
-      const { data: existingCup } = await supabase
-        .from('cup_competitions')
-        .select('id')
-        .eq('country', country)
-        .eq('cup_type', 'national')
-        .eq('season_month', seasonMonth)
-        .eq('season_year', seasonYear)
-        .maybeSingle();
+      // Copa Nacional: countries with Nacional tier (260+ players)
+      if (playerCount >= 260) {
+        const { data: existingCup } = await supabase
+          .from('cup_competitions')
+          .select('id')
+          .eq('country', country)
+          .eq('cup_type', 'national')
+          .eq('season_month', seasonMonth)
+          .eq('season_year', seasonYear)
+          .maybeSingle();
 
-      if (!existingCup) {
-        await supabase.from('cup_competitions').insert({
-          name: `Copa Nacional ${country}`,
-          cup_type: 'national',
-          country,
-          season_month: seasonMonth,
-          season_year: seasonYear,
-          format: 'knockout',
-          status: 'pending',
-        });
+        if (!existingCup) {
+          const { data: newCup } = await supabase.from('cup_competitions').insert({
+            name: `Copa Nacional ${country}`,
+            cup_type: 'national',
+            country,
+            season_month: seasonMonth,
+            season_year: seasonYear,
+            format: 'knockout',
+            status: 'pending',
+            current_round: 1,
+            total_rounds: 4,
+          }).select().single();
+
+          // Seed teams from Nacional divisions
+          if (newCup) {
+            const { data: nacLeagues } = await supabase
+              .from('multiplayer_leagues')
+              .select('id')
+              .eq('country', country)
+              .eq('tier', 'nacional')
+              .eq('auto_created', true);
+
+            if (nacLeagues) {
+              const nacLeagueIds = nacLeagues.map(l => l.id);
+              const { data: nacMembers } = await supabase
+                .from('league_members')
+                .select('user_id, club_name, club_logo')
+                .in('league_id', nacLeagueIds)
+                .order('points', { ascending: false })
+                .limit(32);
+
+              const cupTeams = (nacMembers || []).map((m, idx) => ({
+                cup_id: newCup.id,
+                user_id: m.user_id,
+                club_name: m.club_name,
+                club_logo: m.club_logo,
+                is_bot: false,
+                seed: idx + 1,
+              }));
+
+              // Fill to 32 with bots
+              while (cupTeams.length < 32) {
+                cupTeams.push({
+                  cup_id: newCup.id,
+                  user_id: null,
+                  club_name: generateBotName(cupTeams.length),
+                  club_logo: BOT_LOGOS[cupTeams.length % BOT_LOGOS.length],
+                  is_bot: true,
+                  seed: cupTeams.length + 1,
+                });
+              }
+
+              const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
+
+              // Create round 1 matches (16 matches)
+              if (insertedTeams && insertedTeams.length >= 32) {
+                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const matches = [];
+                const baseDate = new Date(now.getTime() + 7 * 24 * 3600000); // start in 7 days
+
+                for (let i = 0; i < 16; i++) {
+                  matches.push({
+                    cup_id: newCup.id,
+                    home_team_id: shuffled[i * 2].id,
+                    away_team_id: shuffled[i * 2 + 1].id,
+                    round: 1,
+                    leg: 1,
+                    scheduled_at: new Date(baseDate.getTime() + i * 3600000).toISOString(),
+                    status: 'scheduled',
+                  });
+                }
+                await supabase.from('cup_matches').insert(matches);
+              }
+            }
+          }
+        }
       }
 
-      // Copa Regional
-      const { data: existingRegCup } = await supabase
+      // Copa Regional: countries with Regional tier (80+ players)
+      if (playerCount >= 80) {
+        const { data: existingRegCup } = await supabase
+          .from('cup_competitions')
+          .select('id')
+          .eq('country', country)
+          .eq('cup_type', 'regional')
+          .eq('season_month', seasonMonth)
+          .eq('season_year', seasonYear)
+          .maybeSingle();
+
+        if (!existingRegCup) {
+          const { data: newCup } = await supabase.from('cup_competitions').insert({
+            name: `Copa Regional ${country}`,
+            cup_type: 'regional',
+            country,
+            season_month: seasonMonth,
+            season_year: seasonYear,
+            format: 'knockout',
+            status: 'pending',
+            current_round: 1,
+            total_rounds: 3,
+          }).select().single();
+
+          if (newCup) {
+            const { data: regLeagues } = await supabase
+              .from('multiplayer_leagues')
+              .select('id')
+              .eq('country', country)
+              .eq('tier', 'regional')
+              .eq('auto_created', true);
+
+            if (regLeagues) {
+              const regLeagueIds = regLeagues.map(l => l.id);
+              const { data: regMembers } = await supabase
+                .from('league_members')
+                .select('user_id, club_name, club_logo')
+                .in('league_id', regLeagueIds)
+                .order('points', { ascending: false })
+                .limit(16);
+
+              const cupTeams = (regMembers || []).map((m, idx) => ({
+                cup_id: newCup.id,
+                user_id: m.user_id,
+                club_name: m.club_name,
+                club_logo: m.club_logo,
+                is_bot: false,
+                seed: idx + 1,
+              }));
+
+              while (cupTeams.length < 16) {
+                cupTeams.push({
+                  cup_id: newCup.id,
+                  user_id: null,
+                  club_name: generateBotName(cupTeams.length + 50),
+                  club_logo: BOT_LOGOS[cupTeams.length % BOT_LOGOS.length],
+                  is_bot: true,
+                  seed: cupTeams.length + 1,
+                });
+              }
+
+              const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
+
+              if (insertedTeams && insertedTeams.length >= 16) {
+                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const matches = [];
+                const baseDate = new Date(now.getTime() + 5 * 24 * 3600000);
+
+                for (let i = 0; i < 8; i++) {
+                  matches.push({
+                    cup_id: newCup.id,
+                    home_team_id: shuffled[i * 2].id,
+                    away_team_id: shuffled[i * 2 + 1].id,
+                    round: 1,
+                    leg: 1,
+                    scheduled_at: new Date(baseDate.getTime() + i * 3600000).toISOString(),
+                    status: 'scheduled',
+                  });
+                }
+                await supabase.from('cup_matches').insert(matches);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ── PHASE 3: Continental Cups ──
+    const continents = [...new Set(Object.values(CONTINENT_MAP))];
+
+    for (const continent of continents) {
+      const continentCountries = ALL_COUNTRIES.filter(c => CONTINENT_MAP[c] === continent);
+      const totalPlayers = continentCountries.reduce((sum, c) => sum + (countryPlayers[c]?.size || 0), 0);
+
+      // Only create continental cup if there are enough players
+      if (totalPlayers < 40) continue;
+
+      const { data: existingContCup } = await supabase
         .from('cup_competitions')
         .select('id')
-        .eq('country', country)
-        .eq('cup_type', 'regional')
+        .eq('continent', continent)
+        .eq('cup_type', 'continental')
         .eq('season_month', seasonMonth)
         .eq('season_year', seasonYear)
         .maybeSingle();
 
-      if (!existingRegCup) {
-        await supabase.from('cup_competitions').insert({
-          name: `Copa Regional ${country}`,
-          cup_type: 'regional',
-          country,
+      if (!existingContCup) {
+        const { data: newCup } = await supabase.from('cup_competitions').insert({
+          name: `Copa Intercontinental ${CONTINENT_NAMES[continent]}`,
+          cup_type: 'continental',
+          continent,
           season_month: seasonMonth,
           season_year: seasonYear,
           format: 'knockout',
           status: 'pending',
-        });
+          current_round: 1,
+          total_rounds: 4,
+        }).select().single();
+
+        if (newCup) {
+          // Get top 8 teams from each country in this continent
+          const cupTeams: any[] = [];
+
+          for (const ctry of continentCountries) {
+            const { data: ctryLeagues } = await supabase
+              .from('multiplayer_leagues')
+              .select('id')
+              .eq('country', ctry)
+              .eq('auto_created', true);
+
+            if (!ctryLeagues || ctryLeagues.length === 0) continue;
+
+            const ctryLeagueIds = ctryLeagues.map(l => l.id);
+            const { data: topMembers } = await supabase
+              .from('league_members')
+              .select('user_id, club_name, club_logo')
+              .in('league_id', ctryLeagueIds)
+              .order('points', { ascending: false })
+              .limit(8);
+
+            for (const m of (topMembers || [])) {
+              cupTeams.push({
+                cup_id: newCup.id,
+                user_id: m.user_id,
+                club_name: m.club_name,
+                club_logo: m.club_logo,
+                is_bot: false,
+                seed: cupTeams.length + 1,
+              });
+            }
+          }
+
+          // Pad to nearest power of 2 (16 or 32)
+          const targetSize = cupTeams.length <= 16 ? 16 : 32;
+          while (cupTeams.length < targetSize) {
+            cupTeams.push({
+              cup_id: newCup.id,
+              user_id: null,
+              club_name: generateBotName(cupTeams.length + 100),
+              club_logo: BOT_LOGOS[cupTeams.length % BOT_LOGOS.length],
+              is_bot: true,
+              seed: cupTeams.length + 1,
+            });
+          }
+
+          const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
+
+          if (insertedTeams && insertedTeams.length >= targetSize) {
+            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const matches = [];
+            const baseDate = new Date(now.getTime() + 10 * 24 * 3600000);
+
+            for (let i = 0; i < targetSize / 2; i++) {
+              matches.push({
+                cup_id: newCup.id,
+                home_team_id: shuffled[i * 2].id,
+                away_team_id: shuffled[i * 2 + 1].id,
+                round: 1,
+                leg: 1,
+                scheduled_at: new Date(baseDate.getTime() + i * 3600000).toISOString(),
+                status: 'scheduled',
+              });
+            }
+            await supabase.from('cup_matches').insert(matches);
+          }
+        }
+      }
+    }
+
+    // ── PHASE 4: World Club Cup (season 2+) ──
+    // Check if any league has season >= 2
+    const { data: seasoned } = await supabase
+      .from('multiplayer_leagues')
+      .select('season')
+      .eq('auto_created', true)
+      .gte('season', 2)
+      .limit(1);
+
+    if (seasoned && seasoned.length > 0) {
+      const { data: existingWorld } = await supabase
+        .from('cup_competitions')
+        .select('id')
+        .eq('cup_type', 'world')
+        .eq('season_month', seasonMonth)
+        .eq('season_year', seasonYear)
+        .maybeSingle();
+
+      if (!existingWorld) {
+        const { data: newCup } = await supabase.from('cup_competitions').insert({
+          name: 'Mundial de Clubes',
+          cup_type: 'world',
+          season_month: seasonMonth,
+          season_year: seasonYear,
+          format: 'knockout',
+          status: 'pending',
+          current_round: 1,
+          total_rounds: 5,
+        }).select().single();
+
+        if (newCup) {
+          // Get champion (1st place) from each country's top league
+          const cupTeams: any[] = [];
+
+          for (const country of ALL_COUNTRIES) {
+            const { data: topLeague } = await supabase
+              .from('multiplayer_leagues')
+              .select('id')
+              .eq('country', country)
+              .eq('auto_created', true)
+              .eq('tier', 'nacional')
+              .eq('tier_level', 1)
+              .maybeSingle();
+
+            if (!topLeague) continue;
+
+            const { data: champion } = await supabase
+              .from('league_members')
+              .select('user_id, club_name, club_logo')
+              .eq('league_id', topLeague.id)
+              .order('points', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (champion) {
+              cupTeams.push({
+                cup_id: newCup.id,
+                user_id: champion.user_id,
+                club_name: champion.club_name,
+                club_logo: champion.club_logo,
+                is_bot: false,
+                seed: cupTeams.length + 1,
+              });
+            }
+          }
+
+          // Pad to 32
+          while (cupTeams.length < 32) {
+            cupTeams.push({
+              cup_id: newCup.id,
+              user_id: null,
+              club_name: generateBotName(cupTeams.length + 200),
+              club_logo: BOT_LOGOS[cupTeams.length % BOT_LOGOS.length],
+              is_bot: true,
+              seed: cupTeams.length + 1,
+            });
+          }
+
+          const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
+
+          if (insertedTeams && insertedTeams.length >= 32) {
+            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const matches = [];
+            const baseDate = new Date(now.getTime() + 14 * 24 * 3600000);
+
+            for (let i = 0; i < 16; i++) {
+              matches.push({
+                cup_id: newCup.id,
+                home_team_id: shuffled[i * 2].id,
+                away_team_id: shuffled[i * 2 + 1].id,
+                round: 1,
+                leg: 1,
+                scheduled_at: new Date(baseDate.getTime() + i * 3600000).toISOString(),
+                status: 'scheduled',
+              });
+            }
+            await supabase.from('cup_matches').insert(matches);
+          }
+        }
       }
     }
 
@@ -352,7 +622,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Plan season error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

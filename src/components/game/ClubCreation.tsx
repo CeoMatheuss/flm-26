@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles, ArrowLeft, Check } from 'lucide-react';
+import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles, ArrowLeft, Check, Lock, Users, Gift } from 'lucide-react';
 import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels } from './ShieldCrest';
 import flmLogo from '@/assets/flm26-logo.png';
 
@@ -26,6 +27,13 @@ export interface ClubConfig {
 interface Props {
   userId: string;
   onComplete: (config: ClubConfig) => void;
+}
+
+interface CountryStatusData {
+  country: string;
+  total_players: number | null;
+  is_locked: boolean | null;
+  bonus_budget: number | null;
 }
 
 const presetColors = [
@@ -62,6 +70,20 @@ const countries = [
   { code: 'TR', name: 'Turquia', flag: '🇹🇷' },
   { code: 'KR', name: 'Coreia do Sul', flag: '🇰🇷' },
   { code: 'SA', name: 'Arábia Saudita', flag: '🇸🇦' },
+  { code: 'PY', name: 'Paraguai', flag: '🇵🇾' },
+  { code: 'PE', name: 'Peru', flag: '🇵🇪' },
+  { code: 'EC', name: 'Equador', flag: '🇪🇨' },
+  { code: 'BO', name: 'Bolívia', flag: '🇧🇴' },
+  { code: 'VE', name: 'Venezuela', flag: '🇻🇪' },
+  { code: 'BE', name: 'Bélgica', flag: '🇧🇪' },
+  { code: 'CA', name: 'Canadá', flag: '🇨🇦' },
+  { code: 'EG', name: 'Egito', flag: '🇪🇬' },
+  { code: 'NG', name: 'Nigéria', flag: '🇳🇬' },
+  { code: 'ZA', name: 'África do Sul', flag: '🇿🇦' },
+  { code: 'CN', name: 'China', flag: '🇨🇳' },
+  { code: 'AU', name: 'Austrália', flag: '🇦🇺' },
+  { code: 'QA', name: 'Catar', flag: '🇶🇦' },
+  { code: 'AE', name: 'Emirados', flag: '🇦🇪' },
 ];
 
 function KitPreview({ shirtColor, secondaryColor, detailColor, pattern, label, size = 64 }: {
@@ -119,9 +141,35 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [country, setCountry] = useState('BR');
   const [countryOpen, setCountryOpen] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [countryStatuses, setCountryStatuses] = useState<Record<string, CountryStatusData>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   const selectedCountry = countries.find(c => c.code === country);
+
+  // Load country statuses
+  useEffect(() => {
+    const loadStatuses = async () => {
+      const { data } = await supabase.from('country_status').select('*');
+      if (data) {
+        const map: Record<string, CountryStatusData> = {};
+        for (const d of data) {
+          map[d.country] = d as CountryStatusData;
+        }
+        setCountryStatuses(map);
+      }
+    };
+    loadStatuses();
+  }, []);
+
+  const getCountryStatus = (code: string) => {
+    const status = countryStatuses[code];
+    if (!status) return { locked: false, players: 0, bonus: 0 };
+    return {
+      locked: status.is_locked || false,
+      players: status.total_players || 0,
+      bonus: status.bonus_budget || 0,
+    };
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,6 +192,13 @@ export function ClubCreation({ userId, onComplete }: Props) {
     if (!clubName.trim()) { toast.error('Digite o nome do clube'); return; }
     if (clubName.trim().length > 30) { toast.error('Nome do clube muito longo (máx 30 caracteres)'); return; }
     if (stadiumName.trim().length > 40) { toast.error('Nome do estádio muito longo (máx 40 caracteres)'); return; }
+
+    const status = getCountryStatus(country);
+    if (status.locked) {
+      toast.error('Este país está lotado! Escolha outro ou aguarde o próximo mês.');
+      return;
+    }
+
     setShowConfirmation(true);
   };
 
@@ -171,29 +226,28 @@ export function ClubCreation({ userId, onComplete }: Props) {
 
   // ===== CONFIRMATION PAGE =====
   if (showConfirmation) {
+    const status = getCountryStatus(country);
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-2 sm:p-4">
         <Card className="w-full max-w-md max-h-[95vh] overflow-y-auto border-primary/20">
           <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-5 px-3 sm:px-6">
-            {/* Title */}
             <div className="text-center space-y-0.5">
               <h2 className="text-base sm:text-lg font-bold">Confirme seu Clube</h2>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Verifique se está tudo certo antes de criar</p>
             </div>
 
-            {/* Shield + Name */}
             <div className="flex flex-col items-center gap-2 sm:gap-3 py-3 sm:py-4 rounded-xl border border-border" style={{ background: `linear-gradient(180deg, ${primaryColor}12, ${secondaryColor}08)` }}>
               {useCustomLogo && customLogoUrl ? (
                 <img src={customLogoUrl} alt="Logo" className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl object-cover shadow-lg" />
               ) : (
-                <div className="block sm:hidden">
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={72} />
-                </div>
-              )}
-              {!useCustomLogo && (
-                <div className="hidden sm:block">
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={96} />
-                </div>
+                <>
+                  <div className="block sm:hidden">
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={72} />
+                  </div>
+                  <div className="hidden sm:block">
+                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={96} />
+                  </div>
+                </>
               )}
               <div className="text-center space-y-0.5">
                 <p className="text-base sm:text-xl font-bold" style={{ color: primaryColor }}>{displayName}</p>
@@ -201,9 +255,17 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Stadium + Uniforms row on mobile */}
+            {/* Bonus indicator */}
+            {status.bonus > 0 && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <Gift className="h-4 w-4 text-emerald-500" />
+                <span className="text-xs text-emerald-600 font-medium">
+                  Bônus de R$ {(status.bonus / 1000).toFixed(0)}K por país em crescimento!
+                </span>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              {/* Stadium */}
               <div className="rounded-lg border border-border p-2.5 sm:p-3 flex items-center gap-2.5 sm:flex-1">
                 <span className="text-xl sm:text-2xl">🏟️</span>
                 <div className="min-w-0">
@@ -211,8 +273,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
                   <p className="font-bold text-xs sm:text-sm truncate">{displayStadium}</p>
                 </div>
               </div>
-
-              {/* Colors */}
               <div className="rounded-lg border border-border p-2.5 sm:p-3 flex items-center justify-center gap-3 sm:flex-1">
                 <div className="flex items-center gap-1">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
@@ -229,7 +289,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Uniforms */}
             <div className="rounded-lg border border-border p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-semibold text-center mb-2 sm:mb-3">Uniformes</p>
               <div className="flex items-center justify-center gap-6 sm:gap-8">
@@ -238,7 +297,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-2">
               <Button variant="outline" onClick={() => setShowConfirmation(false)} className="sm:flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
                 <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Voltar e Editar
@@ -257,7 +315,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
       <Card className="w-full max-w-lg max-h-[95vh] overflow-y-auto border-primary/20">
-        {/* Header */}
         <div className="sticky top-0 z-10 bg-card border-b border-border px-4 pt-4 pb-3">
           <div className="flex items-center gap-3">
             <img src={flmLogo} alt="FLM 26" className="w-8 h-8" />
@@ -285,7 +342,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Country */}
+            {/* Country with status */}
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> País</Label>
               <button
@@ -295,25 +352,66 @@ export function ClubCreation({ userId, onComplete }: Props) {
                 <span className="flex items-center gap-2">
                   <span className="text-base">{selectedCountry?.flag}</span>
                   <span className="font-medium text-sm">{selectedCountry?.name}</span>
+                  {(() => {
+                    const s = getCountryStatus(country);
+                    return (
+                      <span className="flex items-center gap-1">
+                        {s.locked && <Lock className="h-3 w-3 text-destructive" />}
+                        {s.bonus > 0 && <Gift className="h-3 w-3 text-emerald-500" />}
+                        <span className="text-[9px] text-muted-foreground">{s.players} managers</span>
+                      </span>
+                    );
+                  })()}
                 </span>
                 {countryOpen ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
               </button>
               {countryOpen && (
                 <div className="border border-border rounded-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                  <ScrollArea className="h-[150px]">
-                    <div className="p-1 grid grid-cols-2 gap-0.5">
-                      {countries.map(c => (
-                        <button
-                          key={c.code}
-                          onClick={() => { setCountry(c.code); setCountryOpen(false); }}
-                          className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                            country === c.code ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'
-                          }`}
-                        >
-                          <span className="text-sm">{c.flag}</span>
-                          <span className="truncate">{c.name}</span>
-                        </button>
-                      ))}
+                  <ScrollArea className="h-[220px]">
+                    <div className="p-1 grid grid-cols-1 gap-0.5">
+                      {countries.map(c => {
+                        const s = getCountryStatus(c.code);
+                        return (
+                          <button
+                            key={c.code}
+                            onClick={() => {
+                              if (s.locked) {
+                                toast.error(`${c.name} está lotado! Escolha outro país.`);
+                                return;
+                              }
+                              setCountry(c.code);
+                              setCountryOpen(false);
+                            }}
+                            className={`flex items-center justify-between px-2.5 py-2 rounded-md text-xs transition-colors ${
+                              s.locked
+                                ? 'opacity-50 cursor-not-allowed bg-destructive/5'
+                                : country === c.code
+                                ? 'bg-primary/10 text-primary font-semibold'
+                                : 'hover:bg-muted/50'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">{c.flag}</span>
+                              <span className="truncate">{c.name}</span>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              {s.locked && (
+                                <Badge variant="destructive" className="text-[8px] px-1 py-0">
+                                  <Lock className="h-2.5 w-2.5 mr-0.5" /> Lotado
+                                </Badge>
+                              )}
+                              {s.bonus > 0 && (
+                                <Badge className="text-[8px] px-1 py-0 bg-emerald-500/20 text-emerald-600 border-emerald-500/30">
+                                  <Gift className="h-2.5 w-2.5 mr-0.5" /> +{(s.bonus / 1000).toFixed(0)}K
+                                </Badge>
+                              )}
+                              <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                                <Users className="h-2.5 w-2.5" /> {s.players}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 </div>
@@ -377,7 +475,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               <Shield className="h-3 w-3" /> Personalizar Escudo
             </h3>
 
-            {/* Shape */}
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground">Forma</Label>
               <ScrollArea className="w-full whitespace-nowrap">
@@ -397,7 +494,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </ScrollArea>
             </div>
 
-            {/* Pattern */}
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground">Padrão</Label>
               <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
@@ -413,7 +509,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Icon */}
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground">Emblema Central</Label>
               <div className="grid grid-cols-7 sm:grid-cols-9 gap-1">
@@ -454,7 +549,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               <Shirt className="h-3 w-3 inline mr-1" /> Prévia do Clube
             </p>
             <div className="flex flex-col items-center gap-3">
-              {/* Shield */}
               <div className="flex flex-col items-center gap-1">
                 {useCustomLogo && customLogoUrl ? (
                   <img src={customLogoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
@@ -462,13 +556,11 @@ export function ClubCreation({ userId, onComplete }: Props) {
                   <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={64} />
                 )}
               </div>
-              {/* Name & Info */}
               <div className="text-center space-y-0.5">
                 <p className="font-bold text-base" style={{ color: primaryColor }}>{displayName}</p>
                 <p className="text-xs text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">🏟️ {displayStadium}</p>
               </div>
-              {/* Uniforms */}
               <div className="flex items-center gap-6 pt-1">
                 <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={56} />
                 <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={56} />
