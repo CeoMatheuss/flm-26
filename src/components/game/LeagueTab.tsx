@@ -1,22 +1,48 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { LeagueTeam } from '@/types/league';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Trophy, Target } from 'lucide-react';
+import { Globe, Trophy, Target, Layers } from 'lucide-react';
 import { LeaguesOverview } from './LeaguesOverview';
+import { CupBracketView } from './CupBracketView';
+import { supabase } from '@/integrations/supabase/client';
+
+interface CupCompetition {
+  id: string;
+  name: string;
+  cup_type: string;
+  country: string | null;
+  status: string;
+}
 
 interface Props {
   teams: LeagueTeam[];
   clubName: string;
   country?: string;
   clubPlayers?: Player[];
+  currentTier?: string;
+  currentTierLevel?: number;
 }
 
-export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
+export function LeagueTab({ teams, clubName, country, clubPlayers, currentTier, currentTierLevel }: Props) {
   const [showAllLeagues, setShowAllLeagues] = useState(false);
+  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
+  const [cups, setCups] = useState<CupCompetition[]>([]);
+
+  useEffect(() => {
+    if (country) {
+      supabase
+        .from('cup_competitions')
+        .select('*')
+        .eq('country', country)
+        .then(({ data }) => {
+          if (data) setCups(data as unknown as CupCompetition[]);
+        });
+    }
+  }, [country]);
 
   const sorted = useMemo(() => 
     [...teams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)),
@@ -84,9 +110,22 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
 
   const hasGames = sorted.some(t => t.played > 0);
 
+  if (selectedCupId) {
+    return <CupBracketView cupId={selectedCupId} onBack={() => setSelectedCupId(null)} />;
+  }
+
   if (showAllLeagues) {
     return <LeaguesOverview currentCountry={country} clubName={clubName} onBack={() => setShowAllLeagues(false)} />;
   }
+
+  // Tier display
+  const tierLabels: Record<string, string> = {
+    varzea: '⚽ Várzea',
+    pre_regional: '🏟️ Pré-Regional',
+    regional: '🏆 Regional',
+    nacional: '👑 Nacional',
+  };
+  const tierLabel = currentTier ? tierLabels[currentTier] || currentTier : null;
 
 
 
@@ -94,12 +133,64 @@ export function LeagueTab({ teams, clubName, country, clubPlayers }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div />
-        <Button variant="outline" size="sm" onClick={() => setShowAllLeagues(true)} className="gap-1.5 text-xs">
-          <Globe className="h-3.5 w-3.5" /> Ver Todas as Ligas
-        </Button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          {tierLabel && (
+            <Badge variant="default" className="text-[10px]">
+              <Layers className="h-3 w-3 mr-1" />
+              {tierLabel} {currentTierLevel && currentTierLevel > 1 ? `Div ${currentTierLevel}` : ''}
+            </Badge>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {cups.length > 0 && (
+            <div className="flex gap-1">
+              {cups.map(cup => (
+                <Button
+                  key={cup.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCupId(cup.id)}
+                  className="gap-1 text-[10px] h-7"
+                >
+                  <Trophy className="h-3 w-3" />
+                  {cup.name.length > 15 ? cup.name.slice(0, 15) + '…' : cup.name}
+                </Button>
+              ))}
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowAllLeagues(true)} className="gap-1.5 text-xs">
+            <Globe className="h-3.5 w-3.5" /> Ligas do Mundo
+          </Button>
+        </div>
       </div>
+
+      {/* Pyramid indicator */}
+      {currentTier && (
+        <Card className="border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="font-bold">Pirâmide:</span>
+              {['varzea', 'pre_regional', 'regional', 'nacional'].map(tier => {
+                const isActive = tier === currentTier;
+                const tierName = tier === 'varzea' ? 'Várzea' : tier === 'pre_regional' ? 'Pré-Reg' : tier === 'regional' ? 'Regional' : 'Nacional';
+                return (
+                  <Badge
+                    key={tier}
+                    variant={isActive ? 'default' : 'outline'}
+                    className={`text-[9px] ${isActive ? '' : 'opacity-50'}`}
+                  >
+                    {tierName}
+                  </Badge>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Top {3} sobem • Últimos {3} descem • Temporada mensal
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

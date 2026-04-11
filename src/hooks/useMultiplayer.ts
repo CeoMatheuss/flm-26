@@ -21,6 +21,11 @@ export interface MultiplayerLeague {
   season_start: string | null;
   season_end: string | null;
   created_at: string;
+  tier?: string;
+  tier_level?: number;
+  match_time?: string;
+  season_month?: number;
+  season_year?: number;
 }
 
 export interface LeagueMember {
