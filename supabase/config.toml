@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.summarize-update]
 verify_jwt = false
+
+[functions.plan-season]
+verify_jwt = false
