@@ -163,6 +163,198 @@ export type Database = {
           },
         ]
       }
+      country_status: {
+        Row: {
+          bonus_budget: number | null
+          country: string
+          is_locked: boolean | null
+          max_capacity: number | null
+          total_players: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_budget?: number | null
+          country: string
+          is_locked?: boolean | null
+          max_capacity?: number | null
+          total_players?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_budget?: number | null
+          country?: string
+          is_locked?: boolean | null
+          max_capacity?: number | null
+          total_players?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cup_competitions: {
+        Row: {
+          continent: string | null
+          country: string | null
+          created_at: string | null
+          cup_type: string
+          current_round: number | null
+          format: string | null
+          id: string
+          name: string
+          season_month: number | null
+          season_year: number | null
+          status: string | null
+          total_rounds: number | null
+        }
+        Insert: {
+          continent?: string | null
+          country?: string | null
+          created_at?: string | null
+          cup_type?: string
+          current_round?: number | null
+          format?: string | null
+          id?: string
+          name: string
+          season_month?: number | null
+          season_year?: number | null
+          status?: string | null
+          total_rounds?: number | null
+        }
+        Update: {
+          continent?: string | null
+          country?: string | null
+          created_at?: string | null
+          cup_type?: string
+          current_round?: number | null
+          format?: string | null
+          id?: string
+          name?: string
+          season_month?: number | null
+          season_year?: number | null
+          status?: string | null
+          total_rounds?: number | null
+        }
+        Relationships: []
+      }
+      cup_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string | null
+          created_at: string | null
+          cup_id: string
+          home_goals: number | null
+          home_team_id: string | null
+          id: string
+          leg: number | null
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          scheduled_at: string | null
+          status: string | null
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id: string
+          home_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          leg?: number | null
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id?: string
+          home_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          leg?: number | null
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cup_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "cup_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_matches_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "cup_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "cup_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cup_teams: {
+        Row: {
+          bot_name: string | null
+          bot_strength: number | null
+          club_logo: string | null
+          club_name: string
+          created_at: string | null
+          cup_id: string
+          eliminated: boolean | null
+          id: string
+          is_bot: boolean | null
+          seed: number | null
+          user_id: string | null
+        }
+        Insert: {
+          bot_name?: string | null
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name: string
+          created_at?: string | null
+          cup_id: string
+          eliminated?: boolean | null
+          id?: string
+          is_bot?: boolean | null
+          seed?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          bot_name?: string | null
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name?: string
+          created_at?: string | null
+          cup_id?: string
+          eliminated?: boolean | null
+          id?: string
+          is_bot?: boolean | null
+          seed?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cup_teams_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "cup_competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_tournament_matches: {
         Row: {
           away_goals: number | null
@@ -1216,15 +1408,20 @@ export type Database = {
           division: number | null
           id: string
           league_type: string
+          match_time: string | null
           max_members: number
           name: string
           owner_id: string
           round_interval_hours: number
           season: number
           season_end: string | null
+          season_month: number | null
           season_start: string | null
           season_status: string
+          season_year: number | null
           status: string
+          tier: string | null
+          tier_level: number | null
           total_rounds: number
         }
         Insert: {
@@ -1236,15 +1433,20 @@ export type Database = {
           division?: number | null
           id?: string
           league_type?: string
+          match_time?: string | null
           max_members?: number
           name: string
           owner_id: string
           round_interval_hours?: number
           season?: number
           season_end?: string | null
+          season_month?: number | null
           season_start?: string | null
           season_status?: string
+          season_year?: number | null
           status?: string
+          tier?: string | null
+          tier_level?: number | null
           total_rounds?: number
         }
         Update: {
@@ -1256,15 +1458,20 @@ export type Database = {
           division?: number | null
           id?: string
           league_type?: string
+          match_time?: string | null
           max_members?: number
           name?: string
           owner_id?: string
           round_interval_hours?: number
           season?: number
           season_end?: string | null
+          season_month?: number | null
           season_start?: string | null
           season_status?: string
+          season_year?: number | null
           status?: string
+          tier?: string | null
+          tier_level?: number | null
           total_rounds?: number
         }
         Relationships: []
@@ -1610,6 +1817,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rivalries_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_calendar: {
+        Row: {
+          country: string
+          created_at: string | null
+          cup_id: string | null
+          day: number
+          id: string
+          league_id: string | null
+          match_time: string | null
+          match_type: string | null
+          round: number | null
+          season_month: number
+          season_year: number
+          status: string | null
+        }
+        Insert: {
+          country: string
+          created_at?: string | null
+          cup_id?: string | null
+          day: number
+          id?: string
+          league_id?: string | null
+          match_time?: string | null
+          match_type?: string | null
+          round?: number | null
+          season_month: number
+          season_year: number
+          status?: string | null
+        }
+        Update: {
+          country?: string
+          created_at?: string | null
+          cup_id?: string | null
+          day?: number
+          id?: string
+          league_id?: string | null
+          match_time?: string | null
+          match_type?: string | null
+          round?: number | null
+          season_month?: number
+          season_year?: number
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_calendar_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "cup_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_calendar_league_id_fkey"
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "multiplayer_leagues"
