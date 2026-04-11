@@ -133,12 +133,64 @@ export function LeagueTab({ teams, clubName, country, clubPlayers, currentTier, 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div />
-        <Button variant="outline" size="sm" onClick={() => setShowAllLeagues(true)} className="gap-1.5 text-xs">
-          <Globe className="h-3.5 w-3.5" /> Ver Todas as Ligas
-        </Button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          {tierLabel && (
+            <Badge variant="default" className="text-[10px]">
+              <Layers className="h-3 w-3 mr-1" />
+              {tierLabel} {currentTierLevel && currentTierLevel > 1 ? `Div ${currentTierLevel}` : ''}
+            </Badge>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {cups.length > 0 && (
+            <div className="flex gap-1">
+              {cups.map(cup => (
+                <Button
+                  key={cup.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCupId(cup.id)}
+                  className="gap-1 text-[10px] h-7"
+                >
+                  <Trophy className="h-3 w-3" />
+                  {cup.name.length > 15 ? cup.name.slice(0, 15) + '…' : cup.name}
+                </Button>
+              ))}
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowAllLeagues(true)} className="gap-1.5 text-xs">
+            <Globe className="h-3.5 w-3.5" /> Ligas do Mundo
+          </Button>
+        </div>
       </div>
+
+      {/* Pyramid indicator */}
+      {currentTier && (
+        <Card className="border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="font-bold">Pirâmide:</span>
+              {['varzea', 'pre_regional', 'regional', 'nacional'].map(tier => {
+                const isActive = tier === currentTier;
+                const tierName = tier === 'varzea' ? 'Várzea' : tier === 'pre_regional' ? 'Pré-Reg' : tier === 'regional' ? 'Regional' : 'Nacional';
+                return (
+                  <Badge
+                    key={tier}
+                    variant={isActive ? 'default' : 'outline'}
+                    className={`text-[9px] ${isActive ? '' : 'opacity-50'}`}
+                  >
+                    {tierName}
+                  </Badge>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Top {3} sobem • Últimos {3} descem • Temporada mensal
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
