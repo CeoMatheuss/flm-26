@@ -29,6 +29,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
+import { StaffTab } from '@/components/game/StaffTab';
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { getStadiumCapacity } from '@/types/infrastructure';
@@ -278,6 +279,21 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="rules"><RulesTab /></TabsContent>
       <TabsContent value="updates"><UpdatesTab /></TabsContent>
       <TabsContent value="settings"><SettingsTab /></TabsContent>
+      <TabsContent value="staff">
+        <StaffTab
+          staff={game.club.staff || []}
+          budget={game.club.budget}
+          onHireStaff={(member) => {
+            const newStaff = { ...member, id: crypto.randomUUID() };
+            const updated = [...(game.club.staff || []), newStaff];
+            game.updateClub({ ...game.club, staff: updated });
+          }}
+          onFireStaff={(id) => {
+            const updated = (game.club.staff || []).filter(s => s.id !== id);
+            game.updateClub({ ...game.club, staff: updated });
+          }}
+        />
+      </TabsContent>
       <TabsContent value="chat">{isTabBlocked('chat') ? <BlockedMessage /> : <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />}</TabsContent>
       <TabsContent value="journal"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="newspaper"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
