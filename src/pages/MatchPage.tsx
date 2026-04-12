@@ -749,6 +749,30 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
         </CardContent>
       </Card>
 
+      {/* Match Moment Indicator */}
+      {!isFinished && matchState.currentMoment && (
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="text-xs sm:text-sm px-3 py-1 gap-1.5">
+            {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
+          </Badge>
+        </div>
+      )}
+
+      {/* Assistant Coach Tips */}
+      {!isFinished && matchState.assistantTips.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5 p-2 sm:p-3 animate-fade-in">
+          <div className="flex items-start gap-2">
+            <MessageSquare className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-0.5">Assistente Técnico</p>
+              <p className="text-xs sm:text-sm text-foreground">
+                {matchState.assistantTips[matchState.assistantTips.length - 1]?.description}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Halftime banner */}
       {isHalftime && (
         <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
@@ -813,68 +837,90 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* FLOATING ACTION BUTTONS — replaces tabs */}
       {!isFinished ? (
-        <Tabs defaultValue="events" className="space-y-2">
-          <TabsList className="w-full h-10 sm:h-11 grid grid-cols-4">
-            <TabsTrigger value="events" className="text-xs sm:text-sm gap-1">📝 Narração</TabsTrigger>
-            <TabsTrigger value="lineup" className="text-xs sm:text-sm gap-1"><Shirt className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Time</TabsTrigger>
-            <TabsTrigger value="subs" className="text-xs sm:text-sm gap-1">
-              🔄 {subsUsed}/{maxSubs}
-            </TabsTrigger>
-            <TabsTrigger value="tactics" className="text-xs sm:text-sm gap-1">
-              <Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Tática
-            </TabsTrigger>
-          </TabsList>
+        <>
+          {/* Narration feed */}
+          <Card className="p-2 sm:p-3">
+            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[300px] overflow-y-auto space-y-1">
+              {visibleEvents.length === 0 && (
+                <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
+              )}
+              {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
+                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
+                  <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                  <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
+                  <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-          <TabsContent value="events">
-            <Card className="p-2 sm:p-3">
-              <div ref={eventsRef} className="max-h-[300px] sm:max-h-[420px] overflow-y-auto space-y-1">
-                {visibleEvents.length === 0 && (
-                  <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
-                )}
-                {[...visibleEvents].reverse().slice(0, 60).map((ev, i) => (
-                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
-                    <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                    <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
-                    <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
+          {/* Floating Buttons Bar */}
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+            {/* Tactics Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
+                  <Settings2 className="h-4 w-4" /> Tática
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+                <SheetHeader><SheetTitle>Ajustes Táticos</SheetTitle></SheetHeader>
+                <div className="pt-4">
+                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Lineup / Subs Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
+                  <Users className="h-4 w-4" /> Time {subsUsed > 0 && <Badge variant="outline" className="text-[10px] ml-1">{subsUsed}/{maxSubs}</Badge>}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+                <SheetHeader><SheetTitle>Escalação & Substituições</SheetTitle></SheetHeader>
+                <div className="pt-4 space-y-4">
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} staminaData={matchState.playerStamina} />
+                  <div className="border-t border-border/20 pt-4">
+                    <ManagerSubstitutionView
+                      homePlayers={homePlayers}
+                      subsUsed={subsUsed}
+                      maxSubs={maxSubs}
+                      windowsUsed={windowsUsed}
+                      maxWindows={maxWindows}
+                      selectedSubOut={selectedSubOut}
+                      onSelectSubOut={setSelectedSubOut}
+                      onConfirmSub={handleQueueSubstitution}
+                      isHalftime={isHalftime}
+                      isFinished={isFinished}
+                      substitutedPlayerIds={substitutedPlayerIds}
+                      subQueue={subQueue}
+                      staminaData={matchState.playerStamina}
+                    />
                   </div>
-                ))}
-              </div>
-            </Card>
-          </TabsContent>
+                </div>
+              </SheetContent>
+            </Sheet>
 
-          <TabsContent value="lineup">
-            <Card className="p-3 sm:p-4">
-              <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="subs">
-            <Card className="p-3 sm:p-4">
-              <ManagerSubstitutionView
-                homePlayers={homePlayers}
-                subsUsed={subsUsed}
-                maxSubs={maxSubs}
-                windowsUsed={windowsUsed}
-                maxWindows={maxWindows}
-                selectedSubOut={selectedSubOut}
-                onSelectSubOut={setSelectedSubOut}
-                onConfirmSub={handleQueueSubstitution}
-                isHalftime={isHalftime}
-                isFinished={isFinished}
-                substitutedPlayerIds={substitutedPlayerIds}
-                subQueue={subQueue}
-              />
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tactics">
-            <Card className="p-3 sm:p-4">
-              <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
-            </Card>
-          </TabsContent>
-        </Tabs>
+            {/* Stats Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
+                  <BarChart3 className="h-4 w-4" /> Stats
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+                <SheetHeader><SheetTitle>Estatísticas</SheetTitle></SheetHeader>
+                <div className="pt-4">
+                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </>
       ) : (
         <FinishedSection
           stats={stats}
