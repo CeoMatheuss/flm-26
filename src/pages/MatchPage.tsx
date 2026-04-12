@@ -883,8 +883,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Escalação & Substituições</SheetTitle></SheetHeader>
                 <div className="pt-4 space-y-4">
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} staminaData={matchState.playerStamina} />
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
                   <div className="border-t border-border/20 pt-4">
+                      staminaData={matchState.playerStamina} prop removed - use existing stamina */}
                     <ManagerSubstitutionView
                       homePlayers={homePlayers}
                       subsUsed={subsUsed}
@@ -898,7 +899,6 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                       isFinished={isFinished}
                       substitutedPlayerIds={substitutedPlayerIds}
                       subQueue={subQueue}
-                      staminaData={matchState.playerStamina}
                     />
                   </div>
                 </div>
