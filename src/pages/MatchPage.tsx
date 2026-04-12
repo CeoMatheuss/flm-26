@@ -621,6 +621,11 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     if (eventsRef.current) eventsRef.current.scrollTop = 0;
   }, [visibleEvents.length]);
 
+  // Assistant tips expanded
+  const [showAssistantPanel, setShowAssistantPanel] = useState(false);
+  const hasAssistant = matchState.assistantTips.length > 0;
+  const latestTip = hasAssistant ? matchState.assistantTips[matchState.assistantTips.length - 1] : null;
+
   // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
   const [windowsUsed, setWindowsUsed] = useState(0);
@@ -673,196 +678,31 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] p-2 sm:p-4 max-w-3xl mx-auto space-y-2 sm:space-y-3">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] max-w-3xl mx-auto">
       {/* Substitution TV Banner */}
       {activeBanner && <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />}
 
-      {/* Top Bar */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" className="h-9 px-3 text-sm text-muted-foreground hover:text-foreground gap-1.5" onClick={onExit}>
-          <LogOut className="h-4 w-4" /> {isFinished ? 'Sair' : 'Abandonar'}
-        </Button>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs sm:text-sm font-medium">{competition || 'Amistoso'}</Badge>
-          <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[120px] sm:max-w-[180px]">🏟️ {stadiumName}</span>
-        </div>
-      </div>
-
-      {/* Professional Scoreboard */}
-      <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
-        <div className="bg-primary/10 px-3 sm:px-4 py-2 flex items-center justify-between">
-          <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
-          <Badge variant={isFinished ? 'default' : 'secondary'} className="text-sm sm:text-base font-mono h-7 sm:h-8 px-3 sm:px-4">
-            {currentMinute}'
-          </Badge>
+      {/* ═══ FIXED TOP BAR with action buttons ═══ */}
+      <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-2 sm:px-3 py-2 space-y-2">
+        {/* Row 1: Exit + Competition + Stadium */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
+            <LogOut className="h-3.5 w-3.5" /> {isFinished ? 'Sair' : 'Sair'}
+          </Button>
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline" className="text-[10px] sm:text-xs font-medium h-6">{competition || 'Amistoso'}</Badge>
+            <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[160px]">🏟️ {stadiumName}</span>
+          </div>
         </div>
 
-        <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
-          {/* Teams + Score */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <div className="flex-1 text-right space-y-0.5 min-w-0">
-              <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
-              <div className="flex items-center gap-1 justify-end flex-wrap">
-                {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                  <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                ))}
-              </div>
-            </div>
-
-            <div className={`text-4xl sm:text-6xl font-black font-mono px-3 sm:px-8 py-2 sm:py-3 rounded-xl min-w-[90px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-              <span className="text-primary">{homeGoals}</span>
-              <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
-              <span className="text-primary">{awayGoals}</span>
-            </div>
-
-            <div className="flex-1 text-left space-y-0.5 min-w-0">
-              <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
-              <div className="flex items-center gap-1 flex-wrap">
-                {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                  <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Goal flash banner */}
-          {goalFlash && latestEvent?.isGoal && (
-            <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
-              <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-              {latestEvent.assistName && (
-                <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
-              )}
-            </div>
-          )}
-
-          {/* Possession bar */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
-            <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
-              <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-              <div className="bg-red-500 flex-1 rounded-r-full" />
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
-          </div>
-
-          {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
-        </CardContent>
-      </Card>
-
-      {/* Match Moment Indicator */}
-      {!isFinished && matchState.currentMoment && (
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="text-xs sm:text-sm px-3 py-1 gap-1.5">
-            {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
-          </Badge>
-        </div>
-      )}
-
-      {/* Assistant Coach Tips */}
-      {!isFinished && matchState.assistantTips.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5 p-2 sm:p-3 animate-fade-in">
-          <div className="flex items-start gap-2">
-            <MessageSquare className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-0.5">Assistente Técnico</p>
-              <p className="text-xs sm:text-sm text-foreground">
-                {matchState.assistantTips[matchState.assistantTips.length - 1]?.description}
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Halftime banner */}
-      {isHalftime && (
-        <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
-          <p className="text-base sm:text-xl font-black text-primary">⏸ INTERVALO</p>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
-          {subQueue.length > 0 && (
-            <p className="text-xs sm:text-sm text-primary mt-2 font-bold animate-pulse">
-              🔄 {subQueue.length} substituição(ões) pendente(s)
-            </p>
-          )}
-        </Card>
-      )}
-
-      {/* 2D Canvas — highlights */}
-      {!isFinished && activeHighlight && (
-        <Card className="p-2 sm:p-3 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
-          <div className="text-center mb-1">
-            <Badge variant="outline" className="text-xs sm:text-sm font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
-          </div>
-          <HighlightMiniCanvas
-            type={getHighlightType(activeHighlight.type)}
-            team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
-            playerName={activeHighlight?.playerName}
-            currentMinute={currentMinute}
-            onComplete={() => {
-              highlightTimeoutRef.current = setTimeout(() => {
-                setActiveHighlight(null);
-                highlightTimeoutRef.current = null;
-              }, 1500);
-            }}
-          />
-          <p className="text-xs sm:text-sm text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
-        </Card>
-      )}
-
-      {/* Live commentary */}
-      {latestEvent && !goalFlash && (
-        <Card className="p-2 sm:p-4 border-border/30">
-          <div className="flex items-start gap-2">
-            <Badge variant="outline" className="text-xs sm:text-sm font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-            <p className={`text-sm sm:text-lg font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
-              {getEventIcon(latestEvent.type)} {latestEvent.description}
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Quick Stats Row */}
-      {!isFinished && (
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          {[
-            ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
-            ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
-            ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
-            ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
-          ].map(([icon, label, h, a]) => (
-            <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2.5">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{icon} {label}</p>
-              <p className="text-sm sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* FLOATING ACTION BUTTONS — replaces tabs */}
-      {!isFinished ? (
-        <>
-          {/* Narration feed */}
-          <Card className="p-2 sm:p-3">
-            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[300px] overflow-y-auto space-y-1">
-              {visibleEvents.length === 0 && (
-                <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
-              )}
-              {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                  <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Floating Buttons Bar */}
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
-            {/* Tactics Button */}
+        {/* Row 2: Action Buttons — fixed at top */}
+        {!isFinished && (
+          <div className="flex items-center gap-1.5">
+            {/* Tática */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
-                  <Settings2 className="h-4 w-4" /> Tática
+                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
+                  <Settings2 className="h-3.5 w-3.5" /> Tática
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -873,11 +713,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Lineup / Subs Button */}
+            {/* Time / Subs */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
-                  <Users className="h-4 w-4" /> Time {subsUsed > 0 && <Badge variant="outline" className="text-[10px] ml-1">{subsUsed}/{maxSubs}</Badge>}
+                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
+                  <Users className="h-3.5 w-3.5" /> Time
+                  {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
@@ -885,7 +726,6 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 <div className="pt-4 space-y-4">
                   <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
                   <div className="border-t border-border/20 pt-4">
-                      {/* Substitutions */}
                     <ManagerSubstitutionView
                       homePlayers={homePlayers}
                       subsUsed={subsUsed}
@@ -905,11 +745,11 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Stats Button */}
+            {/* Stats */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="secondary" className="h-10 px-4 gap-1.5 shadow-lg rounded-full">
-                  <BarChart3 className="h-4 w-4" /> Stats
+                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
+                  <BarChart3 className="h-3.5 w-3.5" /> Stats
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -919,21 +759,248 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 </div>
               </SheetContent>
             </Sheet>
+
+            {/* Assistente Técnico Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={hasAssistant ? 'default' : 'outline'}
+                  className={`h-9 gap-1 text-xs rounded-lg min-w-[42px] ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/30 opacity-50'}`}
+                  disabled={!hasAssistant}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  {hasAssistant && matchState.assistantTips.length > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-white/20 text-[9px] font-bold flex items-center justify-center">
+                      {matchState.assistantTips.length}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+                <SheetHeader><SheetTitle>📋 Assistente Técnico</SheetTitle></SheetHeader>
+                <div className="pt-4 space-y-3">
+                  {hasAssistant ? (
+                    <>
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                        <p className="text-xs text-amber-400 font-bold uppercase tracking-wider mb-1">Dicas do Assistente</p>
+                        <p className="text-xs text-muted-foreground">Informações em tempo real para ajudar nas suas decisões.</p>
+                      </div>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {[...matchState.assistantTips].reverse().map((tip, i) => (
+                          <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5">
+                            <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm">{tip.description}</p>
+                              {tip.priority === 'high' && (
+                                <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm font-bold text-muted-foreground">Sem Assistente Técnico</p>
+                      <p className="text-xs text-muted-foreground mt-1">Contrate um assistente na aba "Equipe Técnica" para receber dicas durante as partidas!</p>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
-        </>
-      ) : (
-        <FinishedSection
-          stats={stats}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-          finalHomeGoals={homeGoals}
-          finalAwayGoals={awayGoals}
-          visibleEvents={visibleEvents}
-          matchDbId={matchDbId}
-          onExit={onExit}
-          homePlayers={homePlayers}
-        />
-      )}
+        )}
+      </div>
+
+      {/* ═══ MATCH CONTENT ═══ */}
+      <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
+        {/* Professional Scoreboard */}
+        <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+          <div className="bg-primary/10 px-3 sm:px-4 py-2 flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
+            <Badge variant={isFinished ? 'default' : 'secondary'} className="text-sm sm:text-base font-mono h-7 sm:h-8 px-3 sm:px-4">
+              {currentMinute}'
+            </Badge>
+          </div>
+
+          <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
+            {/* Teams + Score */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex-1 text-right space-y-0.5 min-w-0">
+                <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
+                <div className="flex items-center gap-1 justify-end flex-wrap">
+                  {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`text-4xl sm:text-6xl font-black font-mono px-3 sm:px-8 py-2 sm:py-3 rounded-xl min-w-[90px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                <span className="text-primary">{homeGoals}</span>
+                <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
+                <span className="text-primary">{awayGoals}</span>
+              </div>
+
+              <div className="flex-1 text-left space-y-0.5 min-w-0">
+                <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Goal flash banner */}
+            {goalFlash && latestEvent?.isGoal && (
+              <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
+                <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+                {latestEvent.assistName && (
+                  <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                )}
+              </div>
+            )}
+
+            {/* Possession bar */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
+              <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
+                <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
+                <div className="bg-red-500 flex-1 rounded-r-full" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
+            </div>
+
+            {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
+          </CardContent>
+        </Card>
+
+        {/* Match Moment Indicator */}
+        {!isFinished && matchState.currentMoment && (
+          <div className="flex items-center justify-center">
+            <Badge variant="outline" className="text-xs sm:text-sm px-3 py-1 gap-1.5">
+              {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
+            </Badge>
+          </div>
+        )}
+
+        {/* Assistant Coach Quick Tip (inline) */}
+        {!isFinished && hasAssistant && latestTip && (
+          <div className="bg-amber-500/8 border border-amber-500/25 rounded-xl p-2.5 animate-fade-in">
+            <div className="flex items-start gap-2">
+              <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Assistente • {latestTip.minute}'</p>
+                <p className="text-xs sm:text-sm text-foreground mt-0.5">{latestTip.description}</p>
+              </div>
+              {matchState.assistantTips.length > 1 && (
+                <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400 shrink-0">
+                  +{matchState.assistantTips.length - 1}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Halftime banner */}
+        {isHalftime && (
+          <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
+            <p className="text-base sm:text-xl font-black text-primary">⏸ INTERVALO</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
+            {subQueue.length > 0 && (
+              <p className="text-xs sm:text-sm text-primary mt-2 font-bold animate-pulse">
+                🔄 {subQueue.length} substituição(ões) pendente(s)
+              </p>
+            )}
+          </Card>
+        )}
+
+        {/* 2D Canvas — highlights */}
+        {!isFinished && activeHighlight && (
+          <Card className="p-2 sm:p-3 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
+            <div className="text-center mb-1">
+              <Badge variant="outline" className="text-xs sm:text-sm font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
+            </div>
+            <HighlightMiniCanvas
+              type={getHighlightType(activeHighlight.type)}
+              team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
+              playerName={activeHighlight?.playerName}
+              currentMinute={currentMinute}
+              onComplete={() => {
+                highlightTimeoutRef.current = setTimeout(() => {
+                  setActiveHighlight(null);
+                  highlightTimeoutRef.current = null;
+                }, 1500);
+              }}
+            />
+            <p className="text-xs sm:text-sm text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
+          </Card>
+        )}
+
+        {/* Live commentary */}
+        {latestEvent && !goalFlash && (
+          <Card className="p-2 sm:p-4 border-border/30">
+            <div className="flex items-start gap-2">
+              <Badge variant="outline" className="text-xs sm:text-sm font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
+              <p className={`text-sm sm:text-lg font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
+                {getEventIcon(latestEvent.type)} {latestEvent.description}
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Quick Stats Row */}
+        {!isFinished && (
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+            {[
+              ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
+              ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
+              ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
+              ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
+            ].map(([icon, label, h, a]) => (
+              <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2.5">
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{icon} {label}</p>
+                <p className="text-sm sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Match content */}
+        {!isFinished ? (
+          /* Narration feed */
+          <Card className="p-2 sm:p-3">
+            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[300px] overflow-y-auto space-y-1">
+              {visibleEvents.length === 0 && (
+                <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
+              )}
+              {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
+                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
+                  <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                  <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
+                  <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <FinishedSection
+            stats={stats}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            finalHomeGoals={homeGoals}
+            finalAwayGoals={awayGoals}
+            visibleEvents={visibleEvents}
+            matchDbId={matchDbId}
+            onExit={onExit}
+            homePlayers={homePlayers}
+          />
+        )}
+      </div>
     </div>
   );
 }
