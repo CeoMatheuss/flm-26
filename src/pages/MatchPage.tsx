@@ -1,7 +1,7 @@
 /**
- * MatchPage — Pre-match squad selection + match simulation with realistic manager-controlled substitutions.
- * Reports only appear after the final whistle.
- * Substitution system: 5 subs max, 3 windows, queued execution, TV-style animations.
+ * MatchPage — Pre-match squad selection + match simulation with floating overlay buttons.
+ * No tabs during match — uses Sheet overlays for Tactics, Lineup, Stats.
+ * Includes Assistant Coach panel and Match Moment indicator.
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -11,15 +11,14 @@ import { TacticsConfig, Formation } from '@/types/tactics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield, ChevronRight, ChevronUp, ChevronDown, Zap, Settings2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield, ChevronRight, ChevronUp, ChevronDown, Zap, Settings2, MessageSquare } from 'lucide-react';
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 
 interface MatchPageState {
   homeTeam: string;
