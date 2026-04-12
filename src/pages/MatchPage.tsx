@@ -697,12 +697,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
         {/* Row 2: Action Buttons — fixed at top */}
         {!isFinished && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {/* Tática */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
-                  <Settings2 className="h-3.5 w-3.5" /> Tática
+                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
+                  <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Tática
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -716,8 +716,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Time / Subs */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
-                  <Users className="h-3.5 w-3.5" /> Time
+                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
+                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Time
                   {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
                 </Button>
               </SheetTrigger>
@@ -748,8 +748,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Stats */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 gap-1 text-xs rounded-lg border-border/30">
-                  <BarChart3 className="h-3.5 w-3.5" /> Stats
+                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
+                  <BarChart3 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Stats
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -766,7 +766,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 <Button
                   size="sm"
                   variant={hasAssistant ? 'default' : 'outline'}
-                  className={`h-9 gap-1 text-xs rounded-lg min-w-[42px] ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/30 opacity-50'}`}
+                  className={`h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg min-w-[36px] sm:min-w-[42px] px-1.5 sm:px-3 ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/30 opacity-50'}`}
                   disabled={!hasAssistant}
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
@@ -837,7 +837,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 </div>
               </div>
 
-              <div className={`text-4xl sm:text-6xl font-black font-mono px-3 sm:px-8 py-2 sm:py-3 rounded-xl min-w-[90px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+              <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
                 <span className="text-primary">{homeGoals}</span>
                 <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
                 <span className="text-primary">{awayGoals}</span>
@@ -955,16 +955,16 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
         {/* Quick Stats Row */}
         {!isFinished && (
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-4 gap-1 sm:gap-2">
             {[
               ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
               ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
               ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
               ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
             ].map(([icon, label, h, a]) => (
-              <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5 sm:p-2.5">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{icon} {label}</p>
-                <p className="text-sm sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
+              <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1 sm:p-2.5">
+                <p className="text-[9px] sm:text-xs text-muted-foreground">{icon} {label}</p>
+                <p className="text-xs sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
               </div>
             ))}
           </div>
@@ -974,7 +974,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
         {!isFinished ? (
           /* Narration feed */
           <Card className="p-2 sm:p-3">
-            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[300px] overflow-y-auto space-y-1">
+            <div ref={eventsRef} className="max-h-[160px] sm:max-h-[300px] overflow-y-auto space-y-1">
               {visibleEvents.length === 0 && (
                 <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
               )}
