@@ -17,6 +17,9 @@ export interface SimEvent {
   assistName?: string;
   goalType?: string;
   isGoal?: boolean;
+  staminaData?: Record<string, number>;
+  momentPhase?: string;
+  priority?: string;
 }
 
 export interface MatchStats {
@@ -56,6 +59,9 @@ export interface MatchState {
   errorMsg: string | null;
   competition: string;
   isHome: boolean;
+  currentMoment: string;
+  playerStamina: Record<string, number>;
+  assistantTips: SimEvent[];
 }
 
 const INITIAL: MatchState = {
@@ -74,6 +80,9 @@ const INITIAL: MatchState = {
   errorMsg: null,
   competition: '',
   isHome: true,
+  currentMoment: 'equilíbrio',
+  playerStamina: {},
+  assistantTips: [],
 };
 
 interface MatchData {
