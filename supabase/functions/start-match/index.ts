@@ -9,23 +9,63 @@ function clamp(v: number, min: number, max: number) { return Math.max(min, Math.
 function rng() { return Math.random(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
+// ── TYPES ──────────────────────────────────────────────────────
+
 interface SimPlayer {
   id: string; name: string; position: string; team: 'home' | 'away'; ovr: number;
   rating: number; goals: number; assists: number; yellowCards: number; isOnPitch: boolean;
-  stamina: number; morale: number;
+  stamina: number; morale: number; baseStamina: number;
   speed: number; shooting: number; passing: number; defending: number; physical: number;
   dribbling: number; heading: number; marking: number; vision: number; crossing: number;
   longShots: number; workRate: number; composure: number; aggression: number;
   goalkeeping: number; setPieces: number; positioning: number;
   personality?: string;
+  injured?: boolean;
 }
 
 interface SimEvent {
   minute: number; type: string; description: string; team: 'home' | 'away' | 'neutral';
   playerName?: string; assistName?: string; goalType?: string; isGoal?: boolean;
-  animType?: 'goal' | 'pass' | 'save' | 'foul' | 'card' | 'sub' | 'chance' | 'halftime' | 'kickoff' | 'final' | 'penalty';
-  ballX?: number; ballY?: number;
+  animType?: string; ballX?: number; ballY?: number;
+  staminaData?: Record<string, number>;
+  momentPhase?: string;
+  priority?: string;
 }
+
+// ── ATTRIBUTE-BASED ACTION POWER ──────────────────────────────
+
+function getStaminaMultiplier(stamina: number): number {
+  if (stamina >= 70) return 1.0;
+  if (stamina >= 60) return 0.95;
+  if (stamina >= 40) return 0.85;
+  return 0.75;
+}
+
+function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
+  const val = Number(player[attr]) || 50;
+  return val * getStaminaMultiplier(player.stamina);
+}
+
+function creationPower(p: SimPlayer): number {
+  return effectiveAttr(p, 'passing') + effectiveAttr(p, 'vision') * 0.5;
+}
+function tacklePower(p: SimPlayer): number {
+  return effectiveAttr(p, 'defending') + effectiveAttr(p, 'marking') * 0.5;
+}
+function finishingPower(p: SimPlayer): number {
+  return effectiveAttr(p, 'shooting') + effectiveAttr(p, 'composure') * 0.3;
+}
+function transitionPower(p: SimPlayer): number {
+  return effectiveAttr(p, 'speed') + effectiveAttr(p, 'workRate') * 0.3;
+}
+function headerPower(p: SimPlayer): number {
+  return effectiveAttr(p, 'heading') + effectiveAttr(p, 'physical') * 0.3;
+}
+function dribblePower(p: SimPlayer): number {
+  return effectiveAttr(p, 'dribbling') + effectiveAttr(p, 'speed') * 0.3;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
 
 function genAwayAttrs(ovr: number, pos: string) {
   const variance = () => clamp(Math.floor(ovr + (rng() * 16 - 8)), 30, 99);
@@ -42,7 +82,7 @@ function genAwayAttrs(ovr: number, pos: string) {
 }
 
 function pickByAttr(pool: SimPlayer[], attr: keyof SimPlayer, posFilter?: string): SimPlayer | null {
-  let filtered = pool.filter(p => p.isOnPitch);
+  let filtered = pool.filter(p => p.isOnPitch && !p.injured);
   if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
   if (filtered.length === 0) return null;
   const weights = filtered.map(p => Math.max(1, Number(p[attr]) || 50));
@@ -59,9 +99,89 @@ function poissonSample(lambda: number): number {
   return k - 1;
 }
 
-/**
- * Generate post-game report data from simulation results
- */
+// ── STAMINA SYSTEM ──────────────────────────────────────────
+
+function drainStamina(players: SimPlayer[], minute: number, pressingMod: number, tempoMod: number) {
+  for (const p of players) {
+    if (!p.isOnPitch || p.injured) continue;
+    const physicalFactor = 1 - (p.physical / 100) * 0.3;
+    const baseRate = 0.3 + rng() * 0.2;
+    const drain = baseRate * physicalFactor * pressingMod * tempoMod;
+    p.stamina = Math.max(0, p.stamina - drain);
+  }
+}
+
+// ── MOMENT SYSTEM ──────────────────────────────────────────
+
+type MomentPhase = 'pressão_home' | 'pressão_away' | 'equilíbrio' | 'domínio_home' | 'domínio_away';
+
+function computeMoment(
+  home: SimPlayer[], away: SimPlayer[],
+  homeStrength: number, awayStrength: number,
+  homeGoals: number, awayGoals: number,
+  homeAdv: number, pressingMod: number
+): MomentPhase {
+  const homeAvgStamina = home.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => p.isOnPitch).length);
+  const awayAvgStamina = away.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, away.filter(p => p.isOnPitch).length);
+  
+  let homeForce = homeStrength * homeAdv * (homeAvgStamina / 100) * pressingMod;
+  let awayForce = awayStrength * (awayAvgStamina / 100);
+  
+  // Losing team pushes harder
+  if (homeGoals < awayGoals) homeForce *= 1.15;
+  if (awayGoals < homeGoals) awayForce *= 1.15;
+  
+  const diff = homeForce - awayForce;
+  if (diff > 15) return 'domínio_home';
+  if (diff > 5) return 'pressão_home';
+  if (diff < -15) return 'domínio_away';
+  if (diff < -5) return 'pressão_away';
+  return 'equilíbrio';
+}
+
+// ── ASSISTANT TIPS ──────────────────────────────────────────
+
+function generateAssistantTips(
+  home: SimPlayer[], minute: number, hasAssistant: boolean, assistantSkill: number
+): SimEvent[] {
+  if (!hasAssistant) return [];
+  const tips: SimEvent[] = [];
+  
+  for (const p of home) {
+    if (!p.isOnPitch || p.injured) continue;
+    
+    // Stamina warnings
+    if (p.stamina < 60 && p.stamina >= 40 && assistantSkill >= 3) {
+      tips.push({
+        minute, type: 'assistant_tip', team: 'neutral',
+        playerName: p.name, priority: 'medium',
+        description: `💬 Assistente: "${p.name} está com ${Math.round(p.stamina)}% de stamina. Considere uma substituição."`,
+      });
+    } else if (p.stamina < 40 && assistantSkill >= 1) {
+      tips.push({
+        minute, type: 'assistant_tip', team: 'neutral',
+        playerName: p.name, priority: 'high',
+        description: `⚠️ Assistente: "${p.name} está ESGOTADO (${Math.round(p.stamina)}%)! Risco de lesão se continuar!"`,
+      });
+    }
+    
+    // Yellow card warning
+    if (p.yellowCards > 0 && assistantSkill >= 5) {
+      tips.push({
+        minute, type: 'assistant_tip', team: 'neutral',
+        playerName: p.name, priority: 'medium',
+        description: `💬 Assistente: "${p.name} já tem cartão amarelo. Cuidado com faltas!"`,
+      });
+    }
+  }
+  
+  // Limit to 1 tip per check (most important)
+  tips.sort((a, b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0));
+  return tips.slice(0, 1);
+}
+
+// ── REPORT GENERATOR ──────────────────────────────────────
+
 function generateReport(
   homeTeam: string, awayTeam: string, homeGoals: number, awayGoals: number,
   stats: any, playerRatings: Record<string, number>, goalScorers: any[],
@@ -75,9 +195,7 @@ function generateReport(
   const userTeam = isUserHome ? homeTeam : awayTeam;
   const oppTeam = isUserHome ? awayTeam : homeTeam;
   const idx = isUserHome ? 0 : 1;
-  const oppIdx = isUserHome ? 1 : 0;
 
-  // Result type
   let result = 'draw';
   let resultType = 'draw';
   if (userGoals > oppGoals) {
@@ -88,7 +206,6 @@ function generateReport(
     resultType = oppGoals - userGoals >= 3 ? 'rout_loss' : oppGoals - userGoals >= 2 ? 'solid_loss' : 'narrow_loss';
   }
 
-  // Ranking impact
   const strengthDiff = homeStrength - awayStrength;
   let rankingChange = 0;
   if (result === 'win') {
@@ -100,103 +217,79 @@ function generateReport(
   } else {
     rankingChange = strengthDiff > 10 ? -2 : strengthDiff < -10 ? 3 : 0;
   }
-  // Friendlies give less ranking impact
   if (competition === 'Amistoso') rankingChange = Math.round(rankingChange * 0.5);
 
-  // Positives
   const positives: string[] = [];
   if (stats.possession[idx] >= 55) positives.push(`Domínio na posse de bola (${stats.possession[idx]}%)`);
   if (stats.shotsOnTarget[idx] >= 5) positives.push(`Eficiência ofensiva: ${stats.shotsOnTarget[idx]} finalizações no gol`);
   if (oppGoals === 0) positives.push('Defesa sólida — Clean Sheet! 🧤');
   if (userGoals >= 3) positives.push(`Ataque avassalador com ${userGoals} gols marcados`);
-  if (stats.passes[idx] >= 250) positives.push(`Circulação de bola eficiente (${stats.passes[idx]} passes)`);
-  if (stats.tackles[idx] >= 10) positives.push(`Marcação agressiva com ${stats.tackles[idx]} desarmes`);
   if (positives.length === 0) positives.push('Equipe mostrou garra e determinação');
 
-  // Negatives
   const negatives: string[] = [];
   if (stats.possession[idx] < 45) negatives.push(`Posse de bola baixa (${stats.possession[idx]}%)`);
-  if (stats.fouls[idx] >= 15) negatives.push(`Jogo duro demais: ${stats.fouls[idx]} faltas cometidas`);
   if (oppGoals >= 3) negatives.push(`Defesa vulnerável: sofreu ${oppGoals} gols`);
   if (stats.yellowCards[idx] >= 3) negatives.push(`Indisciplina: ${stats.yellowCards[idx]} cartões amarelos`);
-  if (stats.shots[idx] <= 3) negatives.push('Poucas finalizações — falta de criatividade ofensiva');
   if (negatives.length === 0 && result !== 'win') negatives.push('Faltou eficiência nos momentos decisivos');
 
-  // Individual highlights
-  const sortedByRating = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away')).sort((a, b) => b.rating - a.rating);
-  const bestPlayer = sortedByRating[0];
-  const worstPlayer = sortedByRating[sortedByRating.length - 1];
-  
-  const topScorer = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away') && p.goals > 0).sort((a, b) => b.goals - a.goals)[0];
-  const topAssister = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away') && p.assists > 0).sort((a, b) => b.assists - a.assists)[0];
-
-  // Tactical analysis
   const pressing = tactics?.pressing || 'medio';
   const playStyle = tactics?.playStyle || 'equilibrado';
   const tacticalNotes: string[] = [];
   if (pressing === 'ultra-alto' || pressing === 'alto') {
-    tacticalNotes.push(stats.tackles[idx] >= 8 ? 'Pressing alto foi eficaz — muitas bolas recuperadas no campo ofensivo' : 'Pressing alto não surtiu o efeito desejado');
+    tacticalNotes.push(stats.tackles[idx] >= 8 ? 'Pressing alto foi eficaz' : 'Pressing alto não surtiu efeito');
   }
   if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
-  if (playStyle === 'posse') tacticalNotes.push(stats.possession[idx] >= 55 ? 'Posse de bola controlou o ritmo' : 'Posse sem objetividade');
   if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
 
-  // Financial impact
   const attendance = Math.floor(stadiumCapacity * (0.5 + rng() * 0.45));
   const ticketRevenue = attendance * (50 + Math.floor(rng() * 30));
-  
-  // Morale change
   let moraleChange = 0;
   if (result === 'win') moraleChange = resultType === 'rout_win' ? 15 : 10;
   else if (result === 'loss') moraleChange = resultType === 'rout_loss' ? -15 : -8;
   else moraleChange = strengthDiff > 10 ? -3 : 2;
 
+  const sortedByRating = homePlayers.filter(p => p.team === (isUserHome ? 'home' : 'away')).sort((a, b) => b.rating - a.rating);
+  const bestPlayer = sortedByRating[0];
+  const worstPlayer = sortedByRating[sortedByRating.length - 1];
+
   return {
-    result,
-    resultType,
-    rankingChange,
+    result, resultType, rankingChange,
     report: {
       general: { competition, userTeam, oppTeam, userGoals, oppGoals, resultType, isHome },
-      positives,
-      negatives,
+      positives, negatives,
       highlights: {
         bestPlayer: bestPlayer ? { name: bestPlayer.name, position: bestPlayer.position, rating: Math.round(bestPlayer.rating * 10) / 10, goals: bestPlayer.goals, assists: bestPlayer.assists } : null,
         worstPlayer: worstPlayer && worstPlayer.id !== bestPlayer?.id ? { name: worstPlayer.name, position: worstPlayer.position, rating: Math.round(worstPlayer.rating * 10) / 10 } : null,
-        topScorer: topScorer ? { name: topScorer.name, goals: topScorer.goals } : null,
-        topAssister: topAssister ? { name: topAssister.name, assists: topAssister.assists } : null,
         manOfTheMatch,
       },
       tactical: tacticalNotes,
-      impacts: {
-        moraleChange,
-        rankingChange,
-        attendance,
-        revenue: ticketRevenue,
-        fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5,
-      },
+      impacts: { moraleChange, rankingChange, attendance, revenue: ticketRevenue, fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5 },
     },
   };
 }
 
-/**
- * SIMULAÇÃO COMPLETA v2 — Placar determinístico via Poisson (sem double-check)
- */
+// ── MAIN SIMULATION ──────────────────────────────────────────
+
 function simulateFullMatch(
   homeTeam: string, awayTeam: string, homePlayers: any[],
   homeStrength: number, awayStrength: number, tactics: any,
   stadiumName: string, isHome: boolean, competition: string,
-  stadiumCapacity: number = 5000, homeFans: number = 500
+  stadiumCapacity: number = 5000, homeFans: number = 500,
+  staffData?: any
 ) {
-  // Validate and clamp strengths server-side
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
 
-  // ── BUILD PLAYERS ─────────────────────────────────────────────────
+  // Check for assistant coach
+  const hasAssistant = staffData?.some((s: any) => s.role === 'assistente') || false;
+  const assistantSkill = hasAssistant ? (staffData.find((s: any) => s.role === 'assistente')?.skill || 5) : 0;
+
+  // ── BUILD PLAYERS ──────────────────────────────────────────
   const home: SimPlayer[] = homePlayers.slice(0, 11).map((p: any, i: number) => ({
     id: p.id, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
     position: p.position || 'MEI', team: 'home' as const, ovr: p.overall || 60,
-    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true,
-    stamina: p.stamina || 80, morale: p.morale || 70,
+    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+    stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
     speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
     passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
     physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
@@ -209,9 +302,7 @@ function simulateFullMatch(
     personality: p.personality || 'introvertido',
   }));
 
-  const awayNames = awayTeam === 'AI FC'
-    ? Array.from({ length: 11 }, (_, i) => `AI #${i + 1}`)
-    : ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
+  const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
   const away: SimPlayer[] = Array.from({ length: 11 }, (_, i) => {
     const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
     const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
@@ -219,68 +310,62 @@ function simulateFullMatch(
     return {
       id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
       team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
-      isOnPitch: true, stamina: 70 + Math.floor(rng() * 20), morale: 60 + Math.floor(rng() * 30),
+      isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
       ...attrs,
     };
   });
 
   const allPlayers = [...home, ...away];
 
-  // ── PERSONALITY MODIFIERS ────────────────────────────────────────
+  // ── PERSONALITY MODIFIERS ────────────────────────────────────
   const hasLider = home.some(p => p.personality === 'lider' && p.morale > 70);
   const hasCompetitivo = home.some(p => p.personality === 'competitivo');
-  const hasDedicado = home.filter(p => p.personality === 'dedicado');
-  const hasPreguicoso = home.filter(p => p.personality === 'preguicoso');
-  const hasTemperamental = home.filter(p => p.personality === 'temperamental');
-
-  // Apply personality effects to players
-  if (hasLider) {
-    home.forEach(p => { p.morale = Math.min(100, p.morale + 5); });
-  }
+  if (hasLider) home.forEach(p => { p.morale = Math.min(100, p.morale + 5); });
   if (hasCompetitivo && awayStrength > 70) {
     home.filter(p => p.personality === 'competitivo').forEach(p => {
       p.shooting += 5; p.dribbling += 5; p.composure += 5;
     });
   }
   home.filter(p => p.personality === 'calmo').forEach(p => { p.composure += 5; });
-  hasDedicado.forEach(p => {
-    p.speed += 3; p.shooting += 3; p.passing += 3; p.defending += 3;
-    p.physical += 3; p.dribbling += 3;
+  home.filter(p => p.personality === 'dedicado').forEach(p => {
+    p.speed += 3; p.shooting += 3; p.passing += 3; p.defending += 3; p.physical += 3; p.dribbling += 3;
   });
-  hasPreguicoso.forEach(p => {
-    p.physical -= 2; p.workRate -= 2;
-  });
-  hasTemperamental.forEach(p => {
-    p.rating += (rng() - 0.5) * 1.0; // ±0.5 variance
-  });
+  home.filter(p => p.personality === 'preguicoso').forEach(p => { p.physical -= 2; p.workRate -= 2; });
 
-  // ── MODIFIERS ─────────────────────────────────────────────────────
+  // ── TACTICAL MODIFIERS ──────────────────────────────────────
   const pressing = tactics?.pressing || 'medio';
   const playStyle = tactics?.playStyle || 'equilibrado';
   const tempo = tactics?.tempo || 'normal';
 
-  const homeAdv = isHome ? 1.08 : 0.95;
+  const homeAdv = isHome ? 1.10 : 0.95;
   const avgMorale = home.reduce((s, p) => s + p.morale, 0) / Math.max(1, home.length);
   const moraleMod = 0.85 + (avgMorale / 100) * 0.3;
   const avgStamina = home.reduce((s, p) => s + p.stamina, 0) / 11;
   const fatigueMod = 0.8 + (avgStamina / 100) * 0.2;
-  const pressingMod = pressing === 'ultra-alto' ? 1.2 : pressing === 'alto' ? 1.1 : pressing === 'medio' ? 1.0 : 0.9;
-  const offensiveMod = playStyle === 'ofensivo' ? 1.15 : playStyle === 'contra-ataque' ? 1.05 : playStyle === 'equilibrado' ? 1.0 : playStyle === 'posse' ? 0.9 : 0.75;
-  const tempoMod = tempo === 'muito-rapido' ? 1.1 : tempo === 'rapido' ? 1.05 : tempo === 'normal' ? 1.0 : 0.9;
-
-  // ── Position-based strength modifiers ──────────────────────────
-  const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
-  const homeMidfielders = home.filter(p => ['MEI', 'VOL', 'MC', 'ME', 'MD'].includes(p.position));
-  const homeAttackers = home.filter(p => ['ATA', 'PE', 'PD', 'SA'].includes(p.position));
   
-  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / homeDefenders.length : 50;
-  const homeMidAvg = homeMidfielders.length > 0 ? homeMidfielders.reduce((s, p) => s + (p.passing + p.vision) / 2, 0) / homeMidfielders.length : 50;
-  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / homeAttackers.length : 50;
+  // Tactical impact on simulation
+  const pressingMod = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
+  const offensiveMod = playStyle === 'ofensivo' ? 1.20 : playStyle === 'contra-ataque' ? 1.05 : playStyle === 'equilibrado' ? 1.0 : playStyle === 'posse' ? 0.9 : 0.75;
+  const defensiveMod = playStyle === 'defensivo' ? 0.85 : playStyle === 'equilibrado' ? 1.0 : playStyle === 'ofensivo' ? 1.10 : 1.0;
+  const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
+  
+  // Stamina drain modifiers for pressing/tempo
+  const staminaDrainPressing = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
+  const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
+
+  // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
+  const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
+  const homeMidfielders = home.filter(p => ['MEI', 'VOL'].includes(p.position));
+  const homeAttackers = home.filter(p => ['ATA'].includes(p.position));
+  
+  const homeDefAvg = homeDefenders.length > 0 ? homeDefenders.reduce((s, p) => s + tacklePower(p), 0) / homeDefenders.length : 50;
+  const homeMidAvg = homeMidfielders.length > 0 ? homeMidfielders.reduce((s, p) => s + creationPower(p), 0) / homeMidfielders.length : 50;
+  const homeAtkAvg = homeAttackers.length > 0 ? homeAttackers.reduce((s, p) => s + finishingPower(p), 0) / homeAttackers.length : 50;
 
   const awayDefenders = away.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
   const awayAttackers = away.filter(p => ['ATA'].includes(p.position));
-  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + (p.defending + p.marking) / 2, 0) / awayDefenders.length : 50;
-  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + (p.shooting + p.positioning) / 2, 0) / awayAttackers.length : 50;
+  const awayDefAvg = awayDefenders.length > 0 ? awayDefenders.reduce((s, p) => s + tacklePower(p), 0) / awayDefenders.length : 50;
+  const awayAtkAvg = awayAttackers.length > 0 ? awayAttackers.reduce((s, p) => s + finishingPower(p), 0) / awayAttackers.length : 50;
 
   const stats = {
     possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0], corners: [0, 0],
@@ -288,17 +373,17 @@ function simulateFullMatch(
     tackles: [0, 0], saves: [0, 0], offsides: [0, 0],
   };
 
-  // ── RESULTADO FINAL (Poisson) — DETERMINÍSTICO ─────────────────
+  // ── POISSON GOALS ──────────────────────────────────────────
   const homeAttackVsDefense = (homeAtkAvg + homeMidAvg * 0.5) / Math.max(1, awayDefAvg);
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
   const homeExpected = clamp(
-    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod * pressingMod + (homeAttackVsDefense - 1) * 0.6,
-    0.3, 3.5
+    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6,
+    0.3, 3.0  // Capped at 3.0 for balance
   );
   const awayExpected = clamp(
-    1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6,
+    1.1 - (strengthDiff / 100) * 1.2 * defensiveMod + (awayAttackVsDefense - 1) * 0.6,
     0.2, 3.0
   );
   
@@ -307,9 +392,8 @@ function simulateFullMatch(
 
   console.log(`[Sim] H:${homeStrength} A:${awayStrength} | λH:${homeExpected.toFixed(2)} λA:${awayExpected.toFixed(2)} | Final: ${totalHomeGoals}x${totalAwayGoals}`);
 
-  // ── MINUTOS ÚNICOS ────────────────────────────────────────────────
+  // ── UNIQUE MINUTES ──────────────────────────────────────────
   const usedMinutes = new Set<number>([0, 45, 46]);
-
   function pickUnique(pool: number[]): number {
     const avail = pool.filter(m => !usedMinutes.has(m));
     if (!avail.length) return -1;
@@ -321,16 +405,15 @@ function simulateFullMatch(
   const secondHalfPool = Array.from({ length: 44 }, (_, i) => i + 47);
   const allGamePool = [...firstHalfPool, ...secondHalfPool];
 
-  // ── GOAL MINUTES ────────────────────────────────────────────────
+  // ── GOAL MINUTES ──────────────────────────────────────────
   const homeGoalMins: number[] = [];
   const awayGoalMins: number[] = [];
   for (let g = 0; g < totalHomeGoals; g++) { const m = pickUnique(allGamePool); if (m > 0) homeGoalMins.push(m); }
   for (let g = 0; g < totalAwayGoals; g++) { const m = pickUnique(allGamePool); if (m > 0) awayGoalMins.push(m); }
 
-  // ── PENALTY EVENTS ────────────────────────────────────────────────
+  // ── PENALTY EVENTS ──────────────────────────────────────────
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = (pressingMod - 0.9) * 0.15 + 0.08;
-  
+  const penaltyChance = (pressingMod - 0.9) * 0.1 + 0.07;
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
       const team: 'home' | 'away' = rng() < 0.55 ? 'home' : 'away';
@@ -342,29 +425,22 @@ function simulateFullMatch(
         const gk = team === 'home'
           ? pickByAttr(away.filter(p => p.isOnPitch), 'goalkeeping', 'GOL')
           : pickByAttr(home.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
-        
         const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) : 55;
         const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) : 50;
         const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.55, 0.85);
-        const isGoal = rng() < conversionProb;
-        
-        penaltyMins.push({ minute: m, team, isGoal });
+        penaltyMins.push({ minute: m, team, isGoal: rng() < conversionProb });
       }
     }
   }
 
-  // ── DANGEROUS FOUL EVENTS ──────────────────────────────────────
-  const dangerousFoulMins: number[] = [];
-  const dangerousFoulCount = 1 + Math.floor(rng() * 3);
-  for (let i = 0; i < dangerousFoulCount; i++) {
-    const m = pickUnique(allGamePool.filter(m => m >= 10));
-    if (m > 0) dangerousFoulMins.push(m);
-  }
-
-  // ── SUPPORT EVENTS ────────────────────────────────────────────────
+  // ── SUPPORT EVENTS ──────────────────────────────────────────
   const cardMins: number[] = [];
   for (let i = 0; i < 2 + Math.floor(rng() * 4); i++) {
     const m = pickUnique(allGamePool.filter(m => m >= 15)); if (m > 0) cardMins.push(m);
+  }
+  const dangerousFoulMins: number[] = [];
+  for (let i = 0; i < 1 + Math.floor(rng() * 3); i++) {
+    const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) dangerousFoulMins.push(m);
   }
   const subMins: number[] = [];
   for (let i = 0; i < 2 + Math.floor(rng() * 3); i++) {
@@ -374,7 +450,6 @@ function simulateFullMatch(
   for (let i = 0; i < 5 + Math.floor(rng() * 5); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
-
   const possessionMins: number[] = [];
   for (let m = 1; m <= 90; m++) {
     if (!usedMinutes.has(m) && m !== 45 && m !== 46) {
@@ -382,84 +457,53 @@ function simulateFullMatch(
     }
   }
 
-  // ── EVENT BUILDER ────────────────────────────────────────────────
-  const allPlanned: SimEvent[] = [];
-  let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
-
-  // Build chronological score tracker for correct running scores
-  const allGoalEvents: { minute: number; team: 'home' | 'away'; isPenalty: boolean }[] = [];
-  for (const m of homeGoalMins) allGoalEvents.push({ minute: m, team: 'home', isPenalty: false });
-  for (const m of awayGoalMins) allGoalEvents.push({ minute: m, team: 'away', isPenalty: false });
-  for (const pen of penaltyMins) {
-    if (pen.isGoal) allGoalEvents.push({ minute: pen.minute, team: pen.team, isPenalty: true });
-  }
+  // ── SCORE TRACKER ──────────────────────────────────────────
+  const allGoalEvents: { minute: number; team: 'home' | 'away' }[] = [];
+  for (const m of homeGoalMins) allGoalEvents.push({ minute: m, team: 'home' });
+  for (const m of awayGoalMins) allGoalEvents.push({ minute: m, team: 'away' });
+  for (const pen of penaltyMins) { if (pen.isGoal) allGoalEvents.push({ minute: pen.minute, team: pen.team }); }
   allGoalEvents.sort((a, b) => a.minute - b.minute);
 
-  // Pre-compute running score at each minute
   function getScoreAtMinute(minute: number, includeSelf: boolean): [number, number] {
     let h = 0, a = 0;
     for (const g of allGoalEvents) {
       if (g.minute < minute || (includeSelf && g.minute === minute)) {
-        if (g.team === 'home') h++;
-        else a++;
+        if (g.team === 'home') h++; else a++;
       }
     }
     return [h, a];
   }
 
+  // ── EVENT BUILDER ──────────────────────────────────────────
+  const allPlanned: SimEvent[] = [];
+  let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
+
   function buildupDesc(team: 'home' | 'away', tName: string): string {
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
-    const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
     const buildups = [
-      `${p1} recebe no meio-campo, gira sobre o marcador e toca para ${p2} que avança em velocidade pela meia-esquerda. ${p2} abre para ${p3} na ponta que cruza na área`,
-      `Troca de passes rápida do ${tName}: ${p1} para ${p2}, tabela pelo centro, a bola volta limpa para ${p1} que avança livre pelo corredor central e encontra ${p3} na entrada da área`,
-      `${p1} desarma no meio-campo e aciona ${p2} no contra-ataque fulminante! ${p2} avança em alta velocidade, dribla um adversário e encontra ${p3} sozinho dentro da área`,
-      `Combinação magistral entre ${p1} e ${p2}: parede no meio, ${p2} lança ${p3} nas costas da defesa com um passe de classe mundial. ${p3} domina no peito e fica cara a cara com o goleiro`,
-      `${p1} recebe pressão de dois marcadores mas consegue sair com categoria, rola para ${p2} que dá um lindo lançamento de primeira para ${p3} invadindo a grande área pelo lado direito`,
-      `Jogada ensaiada do ${tName}! ${p1} cobra a falta curta para ${p2}, que devolve de calcanhar para ${p3}. A defesa fica perdida e ${p3} aparece livre na marca do pênalti`,
+      `${p1} recebe no meio-campo, gira e toca para ${p2} que avança pela meia-esquerda`,
+      `Troca de passes rápida: ${p1} para ${p2}, tabela pelo centro, a bola volta limpa`,
+      `${p1} desarma no meio e aciona ${p2} no contra-ataque fulminante`,
+      `Combinação entre ${p1} e ${p2}: parede no meio, ${p2} avança livre`,
     ];
     return pick(buildups);
   }
 
-  const goalNarrations = {
-    home: (scorer: string, goalType: string, assistName: string | undefined, tName: string, opp: string, score: string) => {
-      const assistText = assistName ? ` Assistência BRILHANTE de ${assistName}, que deixou tudo mastigado!` : '';
-      const celebrations = [
-        `A torcida EXPLODE nas arquibancadas! ${scorer} corre para o setor onde está a organizada, tira a camisa e gira no ar! LOUCURA no estádio! Os companheiros pulam em cima dele formando um monte humano!`,
-        `${scorer} desliza de joelhos no gramado molhado, fecha os olhos e aponta para o céu com as duas mãos! Lágrimas de emoção! A equipe inteira corre para abraçá-lo na comemoração mais efusiva da partida!`,
-        `QUE GOLAÇO! ${scorer} sai correndo feito louco pela lateral do campo, os reservas invadem o gramado para festejar! O técnico faz gestos para a torcida e o estádio vem abaixo! Momento ÉPICO!`,
-        `O estádio treme! ${scorer} faz o famoso gesto do coração com as mãos voltado para a câmera, enquanto fogos de artifício estouram atrás da arquibancada! Festa completa!`,
-        `ARREPIANTE! ${scorer} abraça o bandeirinha de escanteio, os torcedores mais próximos jogam copos de cerveja para o alto e o estádio inteiro canta o nome dele em uníssono!`,
-      ];
-      return `⚽ GOOOOOOL DO ${tName.toUpperCase()}!!! ${scorer} finaliza com um ${goalType} ESPETACULAR e a bola morre no fundo das redes! O goleiro do ${opp} ficou estátua!${assistText} ${pick(celebrations)} [${score}]`;
-    },
-    away: (scorer: string, goalType: string, assistName: string | undefined, tName: string, opp: string, score: string) => {
-      const assistText = assistName ? ` Passe decisivo de ${assistName}!` : '';
-      const descs = [
-        `⚽ GOL DO ${tName.toUpperCase()}! ${scorer} aparece como um fantasma na área e finaliza com ${goalType} certeiro! A defesa do ${opp} foi pega no cochilo e o goleiro nem se mexeu! ${scorer} comemora com os punhos cerrados enquanto a torcida mandante fica em silêncio sepulcral!${assistText} [${score}]`,
-        `⚽ GOL DO ${tName.toUpperCase()}! Contra-ataque mortal! ${scorer} recebe em velocidade, ajusta o corpo e solta um ${goalType} impossível de defender! O estádio emudece enquanto ${scorer} celebra provocando os torcedores adversários!${assistText} [${score}]`,
-        `⚽ GOL DO ${tName.toUpperCase()}! Jogada trabalhada com maestria! ${scorer} finaliza com ${goalType} no cantinho e o goleiro do ${opp} só olha a bola entrar! Gelo no estádio! ${scorer} corre em direção ao banco de reservas e é recebido com festa!${assistText} [${score}]`,
-      ];
-      return pick(descs);
-    },
-  };
-
-  // ── Goal type picker: varies the 2D animation ──
   function pickGoalEventType(): string {
     const r = rng();
-    if (r < 0.20) return 'counter_attack_goal';  // 20%
-    if (r < 0.38) return 'crossing_goal';         // 18%
-    if (r < 0.50) return 'free_kick_goal';        // 12%
-    return 'foot_goal';                           // 50%
+    if (r < 0.20) return 'counter_attack_goal';
+    if (r < 0.38) return 'crossing_goal';
+    if (r < 0.50) return 'free_kick_goal';
+    return 'foot_goal';
   }
 
-  // ── HOME GOALS ──
+  // ── HOME GOALS ──────────────────────────────────────────────
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
     const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
-    const goalTypes = ['chute rasteiro no canto inferior esquerdo', 'chute colocado no ângulo superior direito', 'voleio espetacular de primeira', 'toque de primeira na saída do goleiro', 'chute cruzado de pé direito sem chance para o arqueiro', 'trivela precisa no cantinho', 'cabeçada certeira no segundo pau', 'chute de longe que desviou na defesa e entrou', 'finalização seca de meia-altura'];
+    const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio de primeira', 'toque na saída do goleiro', 'cabeçada certeira', 'chute de longe'];
     const goalType = pick(goalTypes);
     let assistName: string | undefined;
     if (scorer) {
@@ -473,20 +517,19 @@ function simulateFullMatch(
     }
     stats.shots[0]++; stats.shotsOnTarget[0]++;
     const buildup = buildupDesc('home', homeTeam);
-    const eventType = pickGoalEventType();
     allPlanned.push({
-      minute: m, type: eventType, team: 'home', isGoal: true,
+      minute: m, type: pickGoalEventType(), team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
-      description: `${buildup}... ${goalNarrations.home(scorer?.name || 'Jogador', goalType, assistName, homeTeam, awayTeam, `${scoreH}x${scoreA}`)}`,
+      description: `${buildup}... ⚽ GOOOOL DO ${homeTeam.toUpperCase()}!!! ${scorer?.name || 'Jogador'} finaliza com ${goalType}!${assistName ? ` Assistência de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
     });
   }
 
-  // ── AWAY GOALS ──
+  // ── AWAY GOALS ──────────────────────────────────────────────
   for (const m of awayGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
     const scorer = pickByAttr(away.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
-    const goalType = pick(['chute rasteiro cruzado', 'chute seco no canto inferior', 'cabeceio preciso no segundo pau', 'contra-ataque fulminante com toque na saída do goleiro', 'chute de fora da área que desviou na barreira', 'finalização de primeira após cruzamento perfeito']);
+    const goalType = pick(['chute rasteiro cruzado', 'cabeceio no segundo pau', 'contra-ataque com toque na saída do goleiro', 'finalização de primeira']);
     let assistName: string | undefined;
     if (scorer) {
       scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
@@ -499,16 +542,15 @@ function simulateFullMatch(
     }
     stats.shots[1]++; stats.shotsOnTarget[1]++;
     const buildup = buildupDesc('away', awayTeam);
-    const eventType = pickGoalEventType();
     allPlanned.push({
-      minute: m, type: eventType, team: 'away', isGoal: true,
+      minute: m, type: pickGoalEventType(), team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
-      description: `${buildup}... ${goalNarrations.away(scorer?.name || 'Jogador', goalType, assistName, awayTeam, homeTeam, `${scoreH}x${scoreA}`)}`,
+      description: `${buildup}... ⚽ GOL DO ${awayTeam.toUpperCase()}! ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistName ? ` Passe de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
     });
   }
 
-  // ── PENALTY EVENTS ────────────────────────────────────────────────
+  // ── PENALTIES ──────────────────────────────────────────────
   for (const pen of penaltyMins) {
     const team = pen.team;
     const tName = team === 'home' ? homeTeam : awayTeam;
@@ -516,62 +558,34 @@ function simulateFullMatch(
     const teamPlayers = team === 'home' ? home : away;
     const oppPlayers = team === 'home' ? away : home;
     const teamIdx = team === 'home' ? 0 : 1;
-    
     const kicker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'setPieces');
     const gk = pickByAttr(oppPlayers.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
-    const fouler = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'aggression');
-    const fouledPlayer = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'dribbling', 'ATA');
-    
-    const foulDescs = [
-      `🔴 PÊNALTI PARA O ${tName.toUpperCase()}! ${fouler?.name || 'Defensor'} do ${opp} derruba ${fouledPlayer?.name || 'atacante'} dentro da grande área com uma entrada irresponsável! O árbitro aponta para a marca da cal sem hesitar! Toda a torcida do ${tName} se levanta!`,
-      `🔴 PÊNALTI! ${fouledPlayer?.name || 'Atacante'} do ${tName} invade a área pelo lado direito, dribla um defensor e é derrubado por ${fouler?.name || 'zagueiro'} do ${opp}! Penalidade máxima! O estádio explode!`,
-      `🔴 O ÁRBITRO MARCA PÊNALTI! Jogada envolvente do ${tName}, a bola chega dentro da área para ${fouledPlayer?.name || 'atacante'} que é atingido por trás por ${fouler?.name || 'defensor'} do ${opp}! Decisão correta!`,
-    ];
-    
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
-    
+
     if (pen.isGoal) {
-      if (team === 'home') penaltyHomeGoals++;
-      else penaltyAwayGoals++;
-      
+      if (team === 'home') penaltyHomeGoals++; else penaltyAwayGoals++;
       const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
-      
       if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.0); }
       stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++;
-      
-      const penGoalDescs = [
-        `⚽🎯 GOOOOL DE PÊNALTI! ${kicker?.name || 'Cobrador'} do ${tName} bate com frieza no canto esquerdo! ${gk?.name || 'Goleiro'} até adivinha o lado mas a bola entra com força! PLACAR: ${scoreH}x${scoreA}! A torcida vai à loucura!`,
-        `⚽🎯 CONVERTEU! ${kicker?.name || 'Cobrador'} pega a bola com confiança, toma distância, corre e chuta forte no meio do gol! ${gk?.name || 'Goleiro'} se joga para o lado e a bola entra! ${scoreH}x${scoreA}! Nervos de aço!`,
-        `⚽🎯 GOOOL! ${kicker?.name || 'Cobrador'} do ${tName} cobra com classe! Paradinha na corrida, ${gk?.name || 'Goleiro'} se antecipa para a direita e a bola vai no canto oposto! Implacável! ${scoreH}x${scoreA}!`,
-      ];
-      
       allPlanned.push({
         minute: pen.minute, type: 'penalty_goal', team, isGoal: true,
         playerName: kicker?.name, goalType: 'pênalti',
         animType: 'penalty', ballX: team === 'home' ? 0.88 : 0.12, ballY: 0.5,
-        description: `${pick(foulDescs)}\n\n${pick(penGoalDescs)}`,
+        description: `🔴 PÊNALTI! ⚽ ${kicker?.name || 'Cobrador'} converte com frieza! ${scoreH}x${scoreA}!`,
       });
     } else {
-      stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++;
-      stats.saves[teamIdx === 0 ? 1 : 0]++;
+      stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++;
       if (gk) gk.rating = Math.min(10, gk.rating + 0.8);
-      
-      const penSaveDescs = [
-        `🧤❌ DEFENDEU! ${gk?.name || 'Goleiro'} do ${opp} adivinha o canto e faz uma defesa MONUMENTAL no pênalti de ${kicker?.name || 'cobrador'}! O estádio explode! ${gk?.name || 'Goleiro'} se levanta batendo no peito — que momento HEROICO!`,
-        `🧤❌ PERDEU O PÊNALTI! ${kicker?.name || 'Cobrador'} bate forte demais e a bola vai para fora! Por cima do gol! A pressão foi demais! ${kicker?.name || 'Cobrador'} coloca as mãos na cabeça sem acreditar!`,
-        `🧤❌ NA TRAVE! ${kicker?.name || 'Cobrador'} do ${tName} bate com força mas a bola explode na trave esquerda e volta para o campo! Que drama! ${gk?.name || 'Goleiro'} comemora como se fosse um gol!`,
-      ];
-      
       allPlanned.push({
         minute: pen.minute, type: 'penalty_miss', team,
         playerName: kicker?.name,
         animType: 'penalty', ballX: team === 'home' ? 0.88 : 0.12, ballY: 0.5,
-        description: `${pick(foulDescs)}\n\n${pick(penSaveDescs)}`,
+        description: `🔴 PÊNALTI! 🧤 ${gk?.name || 'Goleiro'} do ${opp} defende o chute de ${kicker?.name || 'cobrador'}!`,
       });
     }
   }
 
-  // ── DANGEROUS FOULS ────────────────────────────────────────────────
+  // ── DANGEROUS FOULS ──────────────────────────────────────────
   for (const m of dangerousFoulMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
@@ -579,72 +593,47 @@ function simulateFullMatch(
     const opp = team === 'home' ? awayTeam : homeTeam;
     const attacker = pickByAttr(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribbling');
     const defender = pickByAttr(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'aggression');
-    
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
-    
-    const dangerDescs = [
-      `⚠️🔥 FALTA PERIGOSA na entrada da área do ${opp}! ${defender?.name || 'Defensor'} derruba ${attacker?.name || 'atacante'} do ${tName} com uma entrada violenta! O árbitro marca a falta em posição PERIGOSÍSSIMA! A torcida pede cartão!`,
-      `⚠️🔥 LANCE QUENTE! ${attacker?.name || 'Atacante'} do ${tName} é derrubado por ${defender?.name || 'defensor'} do ${opp} na meia-lua! Falta em posição ideal para cobrança direta! O clima esquenta no jogo!`,
-      `⚠️🔥 FALTA DURA! ${defender?.name || 'Jogador'} do ${opp} chega com a sola da chuteira em ${attacker?.name || 'atacante'} do ${tName}! O árbitro para o jogo e corre para o lance! Falta perigosa na fronteira da grande área!`,
-    ];
-    
     allPlanned.push({
       minute: m, type: 'dangerous_foul', team,
-      playerName: attacker?.name,
-      animType: 'foul', ballX: team === 'home' ? 0.78 : 0.22, ballY: 0.45 + rng() * 0.1,
-      description: pick(dangerDescs),
+      playerName: attacker?.name, animType: 'foul',
+      description: `⚠️🔥 Falta perigosa! ${defender?.name || 'Defensor'} do ${opp} derruba ${attacker?.name || 'atacante'} do ${tName} na entrada da área!`,
     });
   }
 
-  // ── CARDS ──────────────────────────────────────────────────────────
+  // ── CARDS ──────────────────────────────────────────────────
   for (const m of cardMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
-    const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
-    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
-    const oppName = oppPool.length > 0 ? pick(oppPool).name : 'Adversário';
+    const player = pool.length > 0 ? pick(pool) : null;
+    if (player) player.yellowCards++;
     stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
-    const cardDescs = [
-      `🟨 CARTÃO AMARELO! ${pName} do ${tName} chega atrasado em ${oppName} do ${opp} com uma entrada desleal pelo lado! O árbitro não hesita e vai direto ao bolso! ${pName} reclama mas o juiz é firme na decisão. Cuidado, na próxima é expulsão!`,
-      `🟨 AMARELO para ${pName}! Falta violenta no meio-campo em ${oppName} do ${opp}! O jogador entrou com a sola da chuteira e acertou a canela do adversário! O árbitro mostra o cartão e avisa que não vai tolerar esse tipo de jogo duro!`,
-      `🟨 O árbitro para o jogo e mostra o CARTÃO AMARELO para ${pName} do ${tName}! Falta tática clara em ${oppName} que ia saindo em contra-ataque promissor! ${pName} sabia o que estava fazendo — falta profissional para impedir o avanço do ${opp}!`,
-      `🟨 ${pName} do ${tName} derruba ${oppName} com um carrinho por trás! O árbitro corre em direção ao lance, apita e puxa o amarelo! A torcida do ${opp} protesta pedindo vermelho, mas o juiz mantém a decisão!`,
-    ];
     allPlanned.push({
       minute: m, type: 'yellow_card', team, animType: 'card',
-      playerName: pName,
-      description: pick(cardDescs),
+      playerName: player?.name || 'Jogador',
+      description: `🟨 CARTÃO AMARELO para ${player?.name || 'Jogador'} do ${tName}! Falta dura no meio-campo!`,
     });
   }
 
-  // ── SUBSTITUTIONS ──────────────────────────────────────────────────
+  // ── SUBSTITUTIONS ──────────────────────────────────────────
   for (const m of subMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const onPitch = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const playerOut = onPitch.length > 1 ? onPitch[Math.floor(rng() * (onPitch.length - 1)) + 1] : onPitch[0];
-    const playerInName = team === 'home'
-      ? `Reserva ${Math.floor(rng() * 7 + 12)}`
-      : (awayTeam === 'AI FC' ? `AI #${Math.floor(rng() * 5 + 12)}` : `Reserva ${Math.floor(rng() * 7 + 12)}`);
-    const outName = playerOut?.name || 'Jogador';
+    const playerInName = `Reserva ${Math.floor(rng() * 7 + 12)}`;
     if (playerOut) playerOut.isOnPitch = false;
-    const subDescs = [
-      `🔄 SUBSTITUIÇÃO no ${tName}! O técnico pede a troca: sai ${outName}, que recebe aplausos da torcida e entra ${playerInName} com sangue nos olhos! O treinador quer dar fôlego novo ao time para os minutos decisivos!`,
-      `🔄 Mexida tática no ${tName}! ${outName} dá lugar a ${playerInName}. O jogador que sai caminha devagar, visivelmente cansado, e bate palmas para a torcida enquanto o substituto entra correndo e já pede a bola!`,
-      `🔄 O técnico do ${tName} não está satisfeito e faz a alteração: sai ${outName}, entra ${playerInName}! Mudança estratégica pensando nos últimos minutos da partida. ${outName} aperta a mão do companheiro e segue para o banco.`,
-    ];
     allPlanned.push({
       minute: m, type: 'substitution', team, animType: 'sub',
-      playerName: outName,
-      description: pick(subDescs),
+      playerName: playerOut?.name || 'Jogador',
+      description: `🔄 Substituição no ${tName}: sai ${playerOut?.name || 'Jogador'}, entra ${playerInName}`,
     });
   }
 
-  // ── CHANCES ────────────────────────────────────────────────────────
+  // ── CHANCES ──────────────────────────────────────────────────
   for (const m of chanceMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
@@ -652,139 +641,160 @@ function simulateFullMatch(
     const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
-    const p2 = pool.filter(p => p.name !== pName).length > 0 ? pick(pool.filter(p => p.name !== pName)).name : pName;
     stats.shots[teamIdx]++;
     const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss']);
-    const descs: Record<string, string[]> = {
-      woodwork: [
-        `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área que bate com violência na trave direita e volta para o campo! O estádio inteiro colocou a mão na cabeça! Por centímetros o ${tName} não abre o placar! Que azar!`,
-        `📐 TRAVESSÃO! ${pName} cabeceia com potência após cruzamento de ${p2}, a bola sobe e bate no ferro com uma violência absurda! Todo mundo achou que era gol! O goleiro do ${opp} só olhou e agradeceu!`,
-        `📐 NA TRAVE E PARA FORA! ${pName} do ${tName} recebe na entrada da área, ajeita e chuta colocado! A bola faz uma curva perfeita, beija a trave esquerda e sai pela linha de fundo! O goleiro estava batido!`,
-      ],
-      great_save: [
-        `🧤 Defesa FENOMENAL! ${pName} do ${tName} ficou cara a cara com o goleiro do ${opp}, chutou rasteiro no canto, mas o arqueiro se esticou todo e fez uma defesa de cinema! Que reflexo absurdo! A torcida aplaude o goleiro adversário!`,
-        `🧤 ${pName} chuta forte de primeira! A bola ia como um foguete no ângulo superior direito, mas o goleiro do ${opp} dá um salto felino e espalma com a ponta dos dedos! MILAGRE no gol! ${pName} não acredita!`,
-        `🧤 QUASE! ${pName} do ${tName} finaliza de voleio após passe genial de ${p2}, mas o goleiro do ${opp} faz defesa providencial com os pés! O rebote é afastado pela zaga!`,
-      ],
-      corner_danger: [
-        `🚩 Escanteio PERIGOSÍSSIMO do ${tName}! A bola vem fechada na primeira trave, ${pName} sobe mais alto que todo mundo mas o cabeceio vai raspando a trave! A defesa do ${opp} respira aliviada mas tremendo!`,
-        `🚩 Cobrança de escanteio perfeita! ${p2} cobra com efeito, ${pName} aparece na segunda trave completamente livre, mas cabeceia para cima! Chance claríssima desperdiçada! O técnico coloca as mãos na cabeça!`,
-        `🚩 Escanteio curto do ${tName}! ${p2} tabela com ${pName}, cruza na área, a bola desvia na primeira trave e quase engana o goleiro! Que confusão na grande área do ${opp}!`,
-      ],
-      offside_trap: [
-        `⛳ IMPEDIMENTO! ${pName} do ${tName} havia marcado um golaço com um chute certeiro no ângulo, mas o bandeirinha levanta a bandeira: posição irregular por centímetros! A torcida protesta furiosa! O VAR não está disponível!`,
-        `⛳ O árbitro levanta a bandeira: impedimento de ${pName} do ${tName}! A jogada estava linda, ${p2} fez o lançamento perfeito, mas ${pName} se adiantou por menos de um metro! Que decepção para o ${tName}!`,
-      ],
-      long_shot_miss: [
-        `💨 ${pName} do ${tName} arrisca de MUITO LONGE! A bola sai girando e desviando no ar, passa raspando a trave direita e vai para fora! Tinha veneno nesse chute! O goleiro do ${opp} só acompanhou com os olhos!`,
-        `💨 Chute de longa distância! ${pName} pega a sobra na entrada da área e solta o pé! A bola sobe demais e vai por cima do gol! Faltou pontaria, mas a intenção era boa!`,
-      ],
-      header_miss: [
-        `👤 ${pName} do ${tName} sobe de cabeça após cruzamento de ${p2} mas cabeceia fraco! A bola vai mansinha para as mãos do goleiro! Era para fazer mais nessa jogada! O técnico grita instruções da beira do campo!`,
-        `👤 Cruzamento perfeito na cabeça de ${pName}! Ele estava completamente sozinho mas cabeceou torto e a bola foi para fora sem perigo! DESPERDIÇOU uma chance incrível!`,
-      ],
+    const descs: Record<string, string> = {
+      woodwork: `📐 TRAVE! ${pName} do ${tName} solta uma bomba que bate no ferro!`,
+      great_save: `🧤 Defesa incrível! ${pName} chuta forte mas o goleiro do ${opp} espalma!`,
+      corner_danger: `🚩 Escanteio perigoso do ${tName}! ${pName} cabeceia raspando a trave!`,
+      offside_trap: `⛳ Impedimento! ${pName} do ${tName} estava adiantado por centímetros!`,
+      long_shot_miss: `💨 ${pName} arrisca de longe mas a bola sai por cima!`,
+      header_miss: `👤 ${pName} cabeceia fraco! Chance desperdiçada pelo ${tName}!`,
     };
     if (evType === 'great_save') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     if (evType === 'corner_danger') stats.corners[teamIdx]++;
     if (evType === 'offside_trap') stats.offsides[teamIdx]++;
     allPlanned.push({
       minute: m, type: evType, team, animType: 'chance', playerName: pName,
-      description: pick(descs[evType] || [`⚡ Grande chance do ${tName}!`]),
+      description: descs[evType] || `⚡ Grande chance do ${tName}!`,
     });
   }
 
-  // ── POSSESSION/PASS EVENTS ────────────────────────────────────────
-  for (const m of possessionMins) {
+  // ── POSSESSION + STAMINA + MOMENTS ──────────────────────────
+  // Process minute by minute for stamina drain and moments
+  let currentHomeGoals = 0, currentAwayGoals = 0;
+  const momentCheckMinutes = [10, 20, 30, 40, 55, 65, 75, 85];
+  let lastTipMinute = -10;
+
+  for (const m of possessionMins.sort((a, b) => a - b)) {
+    // Drain stamina
+    drainStamina(home, m, staminaDrainPressing, staminaDrainTempo);
+    drainStamina(away, m, 1.0, 1.0);
+
+    // Update score at this minute
+    const [sh, sa] = getScoreAtMinute(m, false);
+    currentHomeGoals = sh; currentAwayGoals = sa;
+
+    // Injury check for exhausted players
+    for (const p of home) {
+      if (p.isOnPitch && !p.injured && p.stamina < 40 && rng() < 0.05) {
+        p.injured = true;
+        p.isOnPitch = false;
+        allPlanned.push({
+          minute: m, type: 'injury', team: 'home',
+          playerName: p.name, animType: 'foul',
+          description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
+        });
+      }
+    }
+
+    // Moment phase check
+    const isMomentCheck = momentCheckMinutes.includes(m);
+    let momentPhase: string | undefined;
+    if (isMomentCheck) {
+      momentPhase = computeMoment(home, away, homeStrength, awayStrength, currentHomeGoals, currentAwayGoals, homeAdv, pressingMod > 1 ? pressingMod : 1);
+    }
+
+    // Assistant tips (max 1 every 10 minutes)
+    if (hasAssistant && m - lastTipMinute >= 10) {
+      const tips = generateAssistantTips(home, m, hasAssistant, assistantSkill);
+      if (tips.length > 0) {
+        allPlanned.push(...tips);
+        lastTipMinute = m;
+      }
+    }
+
+    // Possession event
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
-    const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const pool = allPlayers.filter(p => p.team === team && p.isOnPitch && !p.injured);
     const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
     const def = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
     stats.passes[teamIdx]++;
-    const bx = team === 'home' ? 0.35 + rng() * 0.35 : 0.3 + rng() * 0.35;
 
     const posTypes = [
-      { type: 'possession', desc: `⚽ ${tName} mantém a posse no campo ofensivo. ${p1} recebe de costas, gira sobre ${def} com classe e toca curto para ${p2} que busca o espaço entre as linhas. O time trabalha a bola com paciência procurando a brecha na defesa do ${opp}.`, anim: 'pass' as const },
-      { type: 'dribble_ok', desc: `✨ Jogada INDIVIDUAL espetacular! ${p1} do ${tName} recebe na ponta esquerda, faz um corte seco para dentro deixando ${def} no chão, e avança em direção à área! A torcida se levanta!`, anim: 'pass' as const },
-      { type: 'through_ball', desc: `🏃 Lançamento longo do ${tName}! ${p1} vê a movimentação de ${p2} e manda um bolão perfeito nas costas da zaga do ${opp}! ${p2} controla no peito e avança em velocidade! A defesa corre desesperada para fechar!`, anim: 'pass' as const },
-      { type: 'midfield_foul', desc: `⚠️ Falta de ${p1} do ${tName} em ${def} do ${opp} no meio-campo! Entrada forte por baixo que acerta a canela do adversário! O árbitro marca rapidamente e chama ${p1} para uma conversa séria. Jogo fica quente!`, anim: 'foul' as const },
-      { type: 'possession', desc: `📐 Triangulação perfeita do ${tName}! ${p1} toca para ${p2}, recebe de volta em tabela e tenta abrir a defesa compacta do ${opp} pelo lado direito. A bola circula com inteligência buscando o desequilíbrio.`, anim: 'pass' as const },
-      { type: 'tackle', desc: `💪 DESARME ESPETACULAR de ${def} do ${opp}! ${p1} do ${tName} vinha conduzindo em velocidade pelo meio, mas ${def} chegou com o tempo perfeito e tirou a bola com uma entrada limpa e precisa! O público aplaude a jogada defensiva!`, anim: 'pass' as const },
-      { type: 'crossing', desc: `↗️ Cruzamento do ${tName}! ${p1} recebe na ponta e cruza na área, mas a defesa do ${opp} afasta de cabeça! ${def} sobe mais alto e manda para escanteio! O ${tName} pressiona!`, anim: 'pass' as const },
-      { type: 'long_pass', desc: `🎯 Lindo passe longo de ${p1} do ${tName}! A bola cruza todo o campo e chega limpa nos pés de ${p2} do outro lado! Mudança de jogo inteligente que pegou a defesa do ${opp} desprevenida!`, anim: 'pass' as const },
-      { type: 'pressing', desc: `🔥 Pressão alta do ${tName}! ${p1} e ${p2} fecham a saída de bola do ${opp}! ${def} tenta sair jogando mas quase perde a bola na defesa! O ${tName} sufoca e não deixa o adversário respirar!`, anim: 'pass' as const },
-      { type: 'gk_distribution', desc: `🧤 Reposição rápida do goleiro do ${tName}! A bola sai pela lateral e o goleiro lança longo para ${p1} que tenta disputar a bola no alto com ${def} do ${opp}. Jogo segue disputado no meio-campo.`, anim: 'pass' as const },
-      { type: 'throw_in', desc: `📍 Lateral para o ${tName}. ${p1} cobra rápido para ${p2} que tenta ganhar a linha de fundo. ${def} do ${opp} acompanha de perto e faz o corte! Disputa intensa na lateral do campo!`, anim: 'pass' as const },
-      { type: 'free_kick', desc: `🎯 Falta para o ${tName} em boa posição! ${p1} se posiciona para a cobrança... cruza na área mas ${def} do ${opp} aparece na primeira trave e afasta o perigo com firmeza!`, anim: 'pass' as const },
+      { type: 'possession', desc: `⚽ ${tName} mantém a posse. ${p1} toca para ${p2} que busca espaço.` },
+      { type: 'dribble_ok', desc: `✨ ${p1} do ${tName} faz corte seco e avança sobre ${def}!` },
+      { type: 'through_ball', desc: `🏃 Lançamento de ${p1} para ${p2} nas costas da zaga do ${opp}!` },
+      { type: 'midfield_foul', desc: `⚠️ Falta de ${p1} do ${tName} em ${def} do ${opp} no meio-campo!` },
+      { type: 'tackle', desc: `💪 Desarme de ${def} do ${opp} em ${p1} do ${tName}!` },
+      { type: 'crossing', desc: `↗️ Cruzamento de ${p1}! A defesa do ${opp} afasta!` },
+      { type: 'pressing', desc: `🔥 Pressão alta do ${tName}! ${p1} e ${p2} sufocam a saída de bola!` },
     ];
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
     if (chosen.type === 'tackle') stats.tackles[teamIdx === 0 ? 1 : 0]++;
+
+    // Build stamina snapshot every 10 min
+    let staminaData: Record<string, number> | undefined;
+    if (isMomentCheck) {
+      staminaData = {};
+      for (const p of home) {
+        staminaData[p.id] = Math.round(p.stamina);
+      }
+    }
+
     allPlanned.push({
-      minute: m, type: chosen.type, team, animType: chosen.anim, playerName: p1,
-      ballX: bx, ballY: 0.2 + rng() * 0.6,
+      minute: m, type: chosen.type, team, animType: 'pass', playerName: p1,
+      ballX: 0.3 + rng() * 0.4, ballY: 0.2 + rng() * 0.6,
       description: chosen.desc,
+      staminaData, momentPhase,
     });
   }
 
-  // ── FINAL ASSEMBLY ────────────────────────────────────────────────
+  // ── FINAL ASSEMBLY ──────────────────────────────────────────
   allPlanned.sort((a, b) => a.minute - b.minute);
 
   const addedTime1 = 1 + Math.floor(rng() * 4);
   const halftimeMin = 45 + addedTime1;
-
   const ht_h = homeGoalMins.filter(m => m <= 45).length + penaltyMins.filter(p => p.team === 'home' && p.isGoal && p.minute <= 45).length;
   const ht_a = awayGoalMins.filter(m => m <= 45).length + penaltyMins.filter(p => p.team === 'away' && p.isGoal && p.minute <= 45).length;
 
   const finalEvents: SimEvent[] = [];
-
-  // Realistic crowd based on stadium capacity and fans
   const maxCapacity = stadiumCapacity || 5000;
   const fanFactor = clamp(homeFans / Math.max(1, maxCapacity), 0.3, 1.0);
-  const crowdResultFactor = 0.5 + rng() * 0.3 + (homeStrength / 200);
-  const estimatedCrowd = Math.floor(Math.min(maxCapacity, maxCapacity * fanFactor * crowdResultFactor));
+  const estimatedCrowd = Math.floor(Math.min(maxCapacity, maxCapacity * fanFactor * (0.5 + rng() * 0.3 + (homeStrength / 200))));
+
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `🏟️ A partida começa no ${stadiumName} (${maxCapacity.toLocaleString('pt-BR')} lugares), com público de ${estimatedCrowd.toLocaleString('pt-BR')} torcedores! ⚽ ${homeTeam} x ${awayTeam} — ${competition}! O árbitro apita e a bola rola!`,
+    description: `🏟️ A partida começa no ${stadiumName} com público de ${estimatedCrowd.toLocaleString('pt-BR')}! ⚽ ${homeTeam} x ${awayTeam} — ${competition}!`,
+    momentPhase: 'equilíbrio',
   });
 
-  for (const ev of allPlanned.filter(e => e.minute <= 44)) {
-    finalEvents.push(ev);
-  }
+  for (const ev of allPlanned.filter(e => e.minute <= 44)) finalEvents.push(ev);
 
   finalEvents.push({
-    minute: 45, type: 'added_time', team: 'neutral', animType: 'halftime', ballX: 0.5, ballY: 0.5,
+    minute: 45, type: 'added_time', team: 'neutral', animType: 'halftime',
     description: `⏱️ +${addedTime1} minutos de acréscimo no 1º tempo!`,
   });
   finalEvents.push({
-    minute: halftimeMin, type: 'halftime', team: 'neutral', animType: 'halftime', ballX: 0.5, ballY: 0.5,
-    description: `⏸️ INTERVALO! ${homeTeam} ${ht_h} x ${ht_a} ${awayTeam}. Os jogadores seguem para o vestiário. Tempo de ajustes táticos!`,
+    minute: halftimeMin, type: 'halftime', team: 'neutral', animType: 'halftime',
+    description: `⏸️ INTERVALO! ${homeTeam} ${ht_h} x ${ht_a} ${awayTeam}.`,
   });
 
-  for (const ev of allPlanned.filter(e => e.minute >= 47)) {
-    finalEvents.push(ev);
-  }
+  for (const ev of allPlanned.filter(e => e.minute >= 47)) finalEvents.push(ev);
 
   const addedTime2 = 1 + Math.floor(rng() * 5);
   const finalHomeGoals = totalHomeGoals + penaltyHomeGoals;
   const finalAwayGoals = totalAwayGoals + penaltyAwayGoals;
-  
+
   finalEvents.push({
-    minute: 90, type: 'added_time', team: 'neutral', animType: 'halftime', ballX: 0.5, ballY: 0.5,
+    minute: 90, type: 'added_time', team: 'neutral', animType: 'halftime',
     description: `⏱️ +${addedTime2} minutos de acréscimo no 2º tempo!`,
   });
   finalEvents.push({
-    minute: 90 + addedTime2, type: 'final_whistle', team: 'neutral', animType: 'final', ballX: 0.5, ballY: 0.5,
-    description: `🏁 APITO FINAL! ${homeTeam} ${finalHomeGoals} x ${finalAwayGoals} ${awayTeam}! Fim de jogo no ${stadiumName}!`,
+    minute: 90 + addedTime2, type: 'final_whistle', team: 'neutral', animType: 'final',
+    description: `🏁 APITO FINAL! ${homeTeam} ${finalHomeGoals} x ${finalAwayGoals} ${awayTeam}!`,
   });
 
-  // Possession
+  // Possession stats
   const effectiveHome = homeStrength * homeAdv * moraleMod;
-  const possRatio = effectiveHome / (effectiveHome + awayStrength);
+  const possStyle = playStyle === 'posse' ? 1.15 : playStyle === 'contra-ataque' ? 0.85 : 1.0;
+  const possRatio = (effectiveHome * possStyle) / (effectiveHome * possStyle + awayStrength);
   stats.possession = [Math.round(possRatio * 100), 100 - Math.round(possRatio * 100)];
 
   // Player ratings
@@ -793,17 +803,14 @@ function simulateFullMatch(
     playerRatings[p.id] = Math.round(p.rating * 10) / 10;
   });
 
-  // Goal scorers
   const goalScorers: { name: string; minute: number; team: 'home' | 'away'; assist?: string }[] = [];
   finalEvents.filter(e => e.isGoal).forEach(e => {
     if (e.playerName) goalScorers.push({ name: e.playerName, minute: e.minute, team: e.team as 'home' | 'away', assist: e.assistName });
   });
 
-  // Man of the match
   const homePlayers_sorted = allPlayers.filter(p => p.team === 'home').sort((a, b) => b.rating - a.rating);
   const manOfTheMatch = homePlayers_sorted.length > 0 ? homePlayers_sorted[0].name : undefined;
 
-  // Generate post-game report
   const reportResult = generateReport(
     homeTeam, awayTeam, finalHomeGoals, finalAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
@@ -811,15 +818,17 @@ function simulateFullMatch(
     stadiumCapacity, [...home, ...away], [...home, ...away]
   );
 
-  console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length} | Penalties: ${penaltyMins.length}`);
-  return { 
-    events: finalEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals, 
+  console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length}`);
+  return {
+    events: finalEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     reportData: reportResult.report,
     result: reportResult.result,
     rankingChange: reportResult.rankingChange,
   };
 }
+
+// ── DENO SERVE ──────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -846,12 +855,12 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, staff } = body;
 
     if (!homeTeam || !awayTeam || !matchId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (typeof homeTeam !== 'string' || homeTeam.length > 100 || typeof awayTeam !== 'string' || awayTeam.length > 100 || typeof matchId !== 'string' || matchId.length > 200) {
+    if (typeof homeTeam !== 'string' || homeTeam.length > 100 || typeof awayTeam !== 'string' || awayTeam.length > 100) {
       return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -869,21 +878,22 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
-      return new Response(JSON.stringify({ error: 'Já existe uma partida em andamento', matchDbId: existing.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Match already active', matchDbId: existing.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const validCompetition = typeof competition === 'string' && competition.length <= 50 ? competition : 'Amistoso';
+    // Simulate match
     const result = simulateFullMatch(
       homeTeam, awayTeam, homePlayers || [],
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
-      validCompetition, stadiumCapacity || 5000, fans || 500
+      competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
+      staff
     );
 
-    const durationSeconds = 720;
-    const now = new Date();
+    const durationSeconds = 720; // 12 minutes real time
 
-    const { data: match, error: insertError } = await adminClient
+    // Insert into live_matches
+    const { data: matchRow, error: insertError } = await adminClient
       .from('live_matches')
       .insert({
         user_id: userId,
@@ -895,153 +905,85 @@ Deno.serve(async (req) => {
         stadium_name: stadiumName || 'Estádio',
         stadium_capacity: stadiumCapacity || 5000,
         is_home: isHome !== false,
-        competition: validCompetition,
-        status: 'live',
-        started_at: now.toISOString(),
+        competition: competition || 'Amistoso',
         duration_seconds: durationSeconds,
+        events: result.events as any,
         home_goals: result.homeGoals,
         away_goals: result.awayGoals,
-        current_minute: 0,
-        events: result.events,
-        stats: result.stats,
-        player_ratings: result.playerRatings,
-        home_players: (homePlayers || []).slice(0, 11).map((p: any) => ({ id: p.id, name: p.name, position: p.position, overall: p.overall })),
-        tactics: tactics || {},
-        finished_at: new Date(now.getTime() + durationSeconds * 1000).toISOString(),
+        stats: result.stats as any,
+        home_players: (homePlayers || []) as any,
+        player_ratings: result.playerRatings as any,
+        tactics: (tactics || {}) as any,
+        status: 'live',
       })
       .select('id')
       .single();
 
     if (insertError) {
-      console.error('Failed to create match:', insertError.message);
+      console.error('[Match] Insert error:', insertError.message);
       return new Response(JSON.stringify({ error: 'Failed to create match' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Save to match_history immediately (permanent record)
-    const { data: historyRow } = await adminClient.from('match_history').insert({
+    // Insert match history
+    await adminClient.from('match_history').insert({
       user_id: userId,
-      live_match_id: match.id,
-      match_type: validCompetition === 'Amistoso' ? 'friendly' : 'competitive',
-      competition: validCompetition,
+      live_match_id: matchRow.id,
       home_team: homeTeam,
       away_team: awayTeam,
       home_goals: result.homeGoals,
       away_goals: result.awayGoals,
       is_home: isHome !== false,
+      competition: competition || 'Amistoso',
       stadium_name: stadiumName || 'Estádio',
       stadium_capacity: stadiumCapacity || 5000,
-      played_at: now.toISOString(),
-      events: result.events,
-      stats: result.stats,
-      player_ratings: result.playerRatings,
-      home_players: (homePlayers || []).slice(0, 11).map((p: any) => ({ id: p.id, name: p.name, position: p.position, overall: p.overall })),
-      goal_scorers: result.goalScorers,
-      man_of_the_match: result.manOfTheMatch || null,
-    }).select('id').single();
+      events: result.events as any,
+      stats: result.stats as any,
+      player_ratings: result.playerRatings as any,
+      home_players: (homePlayers || []) as any,
+      goal_scorers: result.goalScorers as any,
+      man_of_the_match: result.manOfTheMatch,
+      match_type: competition === 'Amistoso' ? 'friendly' : 'competitive',
+    });
 
-    // Report + notification will be created when the player finishes watching the match (client-side)
-    // Store reportData in the live_matches stats field for later retrieval
-    if (historyRow) {
-      await adminClient.from('live_matches').update({
-        stats: { ...result.stats, reportData: result.reportData, reportResult: result.result, rankingChange: result.rankingChange, matchHistoryId: historyRow.id },
-      }).eq('id', match.id);
+    // Insert match report
+    await adminClient.from('match_reports').insert({
+      user_id: userId,
+      home_team: homeTeam,
+      away_team: awayTeam,
+      home_goals: result.homeGoals,
+      away_goals: result.awayGoals,
+      competition: competition || 'Amistoso',
+      result: result.result,
+      ranking_impact: result.rankingChange,
+      report_data: result.reportData as any,
+    });
 
-      // Generate newspaper entry (this is public and doesn't spoil the result for the player directly)
-      const userTeam = (isHome !== false) ? homeTeam : awayTeam;
-      const oppTeam = (isHome !== false) ? awayTeam : homeTeam;
-      const userGoals = (isHome !== false) ? result.homeGoals : result.awayGoals;
-      const oppGoals = (isHome !== false) ? result.awayGoals : result.homeGoals;
-      const resultStats = result.stats || {};
-      const statIdx = (isHome !== false) ? 0 : 1;
-      const possession = Array.isArray(resultStats.possession) ? (resultStats.possession[statIdx] ?? 50) : 50;
-      const shots = Array.isArray(resultStats.shots) ? (resultStats.shots[statIdx] ?? 0) : 0;
-      const motm = result.manOfTheMatch || null;
-
-      const resultEmoji = result.result === 'win' ? '🎉' : result.result === 'loss' ? '😞' : '😐';
-      const newsText = `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam} (${validCompetition}) | 📊 Posse: ${possession}%, Finalizações: ${shots}${motm ? `, ⭐ ${motm}` : ''}`;
-
-      await adminClient.from('newspaper_entries').insert({
-        user_id: userId,
-        text: newsText,
-        category: 'RESULTADO',
-        is_event: false,
-      });
-    }
-
-    // Mark tournament match as played if applicable
-    if (typeof tournamentMatchId === 'string' && tournamentMatchId.length > 0) {
-      try {
-        // Get match details
-        const { data: tmMatch } = await adminClient.from('custom_tournament_matches')
-          .select('*').eq('id', tournamentMatchId).eq('status', 'scheduled').maybeSingle();
-        
-        if (tmMatch) {
-          await adminClient.from('custom_tournament_matches').update({
-            home_goals: result.homeGoals,
-            away_goals: result.awayGoals,
-            match_data: {
-              events: result.events,
-              goal_scorers: result.goalScorers,
-              player_ratings: result.playerRatings,
-              home_players: (homePlayers || []).slice(0, 11).map((p: any) => ({ id: p.id, name: p.name, position: p.position, overall: p.overall })),
-              stats: result.stats,
-            },
-            status: 'played',
-            played_at: now.toISOString(),
-          }).eq('id', tournamentMatchId);
-
-          // Update team stats
-          const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
-          const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
-
-
-
-          // Update home team
-          const { data: ht } = await adminClient.from('custom_tournament_teams').select('*').eq('id', tmMatch.home_team_id).single();
-          if (ht) {
-            await adminClient.from('custom_tournament_teams').update({
-              played: (ht.played || 0) + 1,
-              wins: (ht.wins || 0) + (homePoints === 3 ? 1 : 0),
-              draws: (ht.draws || 0) + (homePoints === 1 ? 1 : 0),
-              losses: (ht.losses || 0) + (homePoints === 0 ? 1 : 0),
-              goals_for: (ht.goals_for || 0) + result.homeGoals,
-              goals_against: (ht.goals_against || 0) + result.awayGoals,
-              points: (ht.points || 0) + homePoints,
-            }).eq('id', ht.id);
-          }
-
-          // Update away team
-          const { data: at } = await adminClient.from('custom_tournament_teams').select('*').eq('id', tmMatch.away_team_id).single();
-          if (at) {
-            await adminClient.from('custom_tournament_teams').update({
-              played: (at.played || 0) + 1,
-              wins: (at.wins || 0) + (awayPoints === 3 ? 1 : 0),
-              draws: (at.draws || 0) + (awayPoints === 1 ? 1 : 0),
-              losses: (at.losses || 0) + (awayPoints === 0 ? 1 : 0),
-              goals_for: (at.goals_for || 0) + result.awayGoals,
-              goals_against: (at.goals_against || 0) + result.homeGoals,
-              points: (at.points || 0) + awayPoints,
-            }).eq('id', at.id);
-          }
-        }
-      } catch (tmErr) {
-        console.error('Tournament match update failed:', tmErr);
-      }
+    // Update tournament match if applicable
+    if (tournamentMatchId) {
+      await adminClient.from('custom_tournament_matches')
+        .update({
+          home_goals: result.homeGoals,
+          away_goals: result.awayGoals,
+          status: 'played',
+          played_at: new Date().toISOString(),
+          match_data: {
+            events: result.events,
+            stats: result.stats,
+            playerRatings: result.playerRatings,
+            goalScorers: result.goalScorers,
+            manOfTheMatch: result.manOfTheMatch,
+          } as any,
+        })
+        .eq('id', tournamentMatchId);
     }
 
     return new Response(JSON.stringify({
-      success: true,
-      matchDbId: match.id,
-      startedAt: now.toISOString(),
-      durationSeconds,
-      totalEvents: result.events.length,
-      reportData: result.reportData,
-      result: result.result,
-      rankingChange: result.rankingChange,
-    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      success: true, matchDbId: matchRow.id,
+      homeGoals: result.homeGoals, awayGoals: result.awayGoals,
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err) {
-    console.error('start-match error:', err);
+    console.error('[Match] Error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
