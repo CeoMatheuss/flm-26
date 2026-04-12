@@ -154,4 +154,14 @@ export interface Club {
   shieldShape?: string;
   logoUrl?: string;
   country?: string;
+  staff?: StaffMember[];
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: 'assistente' | 'preparador_fisico' | 'medico';
+  skill: number; // 1-10
+  salary: number;
+  contract: number; // seasons remaining
 }
