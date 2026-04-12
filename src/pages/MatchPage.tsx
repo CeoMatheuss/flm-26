@@ -885,7 +885,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 <div className="pt-4 space-y-4">
                   <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
                   <div className="border-t border-border/20 pt-4">
-                      staminaData={matchState.playerStamina} prop removed - use existing stamina */}
+                      {/* Substitutions */}
                     <ManagerSubstitutionView
                       homePlayers={homePlayers}
                       subsUsed={subsUsed}
