@@ -1535,3 +1535,26 @@ function getHighlightLabel(type: string): string {
   if (type === 'free_kick_goal') return '⚽ GOL DE FALTA!';
   return '⚡ LANCE IMPORTANTE';
 }
+
+function getMomentIcon(moment: string): string {
+  if (moment.includes('pressão') || moment.includes('pressao')) return '🔥';
+  if (moment.includes('domínio') || moment.includes('dominio')) return '💪';
+  if (moment.includes('equilíbrio') || moment.includes('equilibrio')) return '⚖️';
+  return '⚽';
+}
+
+function getMomentLabel(moment: string): string {
+  const labels: Record<string, string> = {
+    'pressão_home': 'Pressão do Mandante',
+    'pressao_home': 'Pressão do Mandante',
+    'pressão_away': 'Pressão do Visitante',
+    'pressao_away': 'Pressão do Visitante',
+    'domínio_home': 'Domínio do Mandante',
+    'dominio_home': 'Domínio do Mandante',
+    'domínio_away': 'Domínio do Visitante',
+    'dominio_away': 'Domínio do Visitante',
+    'equilíbrio': 'Equilíbrio',
+    'equilibrio': 'Equilíbrio',
+  };
+  return labels[moment] || moment;
+}
