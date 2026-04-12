@@ -245,6 +245,17 @@ export function useMatchSimulation() {
       phase = 'halftime';
     }
 
+    // Extract moment and stamina from latest visible events
+    const momentEvents = visibleEvents.filter(e => e.momentPhase);
+    const currentMoment = momentEvents.length > 0 ? momentEvents[momentEvents.length - 1].momentPhase || 'equilíbrio' : 'equilíbrio';
+    
+    // Get latest stamina data
+    const staminaEvents = visibleEvents.filter(e => e.staminaData);
+    const playerStamina = staminaEvents.length > 0 ? staminaEvents[staminaEvents.length - 1].staminaData || {} : {};
+    
+    // Extract assistant tips
+    const assistantTips = visibleEvents.filter(e => e.type === 'assistant_tip');
+
     setState({
       phase,
       currentMinute,
@@ -261,6 +272,9 @@ export function useMatchSimulation() {
       errorMsg: null,
       competition: data.competition,
       isHome: data.isHome,
+      currentMoment,
+      playerStamina,
+      assistantTips,
     });
 
     // Persist when finished
@@ -353,6 +367,9 @@ export function useMatchSimulation() {
         errorMsg: null,
         competition: data.competition || 'Amistoso',
         isHome: data.is_home,
+        currentMoment: 'equilíbrio',
+        playerStamina: {},
+        assistantTips: [],
       });
       return true;
     }
