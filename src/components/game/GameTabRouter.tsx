@@ -285,12 +285,10 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           budget={game.club.budget}
           onHireStaff={(member) => {
             const newStaff = { ...member, id: crypto.randomUUID() };
-            const updated = [...(game.club.staff || []), newStaff];
-            game.updateClub({ ...game.club, staff: updated });
+            game.setClub((prev: any) => ({ ...prev, staff: [...(prev.staff || []), newStaff], budget: prev.budget - newStaff.salary }));
           }}
           onFireStaff={(id) => {
-            const updated = (game.club.staff || []).filter(s => s.id !== id);
-            game.updateClub({ ...game.club, staff: updated });
+            game.setClub((prev: any) => ({ ...prev, staff: (prev.staff || []).filter((s: any) => s.id !== id) }));
           }}
         />
       </TabsContent>

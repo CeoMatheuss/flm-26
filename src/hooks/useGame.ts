@@ -233,6 +233,7 @@ export function useGame(initialState?: GameState, userId?: string) {
   return {
     // State
     club: clubState.club,
+    setClub: clubState.setClub,
     tactics,
     leagueTeams,
     finances: financeState.finances,
