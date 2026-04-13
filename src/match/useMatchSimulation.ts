@@ -103,11 +103,28 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+// ── Push Notifications ──────────────────────────────────────
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendPushNotification(title: string, body: string, icon = '⚽') {
+  if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+    try {
+      new Notification(title, { body, icon: '/placeholder.svg', tag: 'match-event' });
+      if ('vibrate' in navigator) navigator.vibrate(200);
+    } catch { /* ignore */ }
+  }
+}
+
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
   const dataRef = useRef<MatchData | null>(null);
   const intervalRef = useRef<number | null>(null);
   const persistedRef = useRef(false);
+  const notifiedEventsRef = useRef<Set<string>>(new Set());
 
   // Compute stats dynamically from visible events
   const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
@@ -221,6 +238,25 @@ export function useMatchSimulation() {
 
     const visibleEvents = data.allEvents.filter(e => e.minute <= currentMinute);
 
+    // Push notifications for new important events
+    for (const ev of visibleEvents) {
+      const evKey = `${ev.minute}-${ev.type}-${ev.team}`;
+      if (!notifiedEventsRef.current.has(evKey)) {
+        notifiedEventsRef.current.add(evKey);
+        if (ev.isGoal) {
+          sendPushNotification(
+            `⚽ GOL! ${ev.team === 'home' ? data.homeTeam : data.awayTeam}`,
+            `${ev.minute}' - ${ev.playerName || 'Gol'}${ev.assistName ? ` (assist: ${ev.assistName})` : ''}`
+          );
+        } else if (ev.type === 'red_card') {
+          sendPushNotification(
+            `🟥 Cartão Vermelho!`,
+            `${ev.minute}' - ${ev.playerName || 'Jogador'} expulso`
+          );
+        }
+      }
+    }
+
     let homeGoals = 0;
     let awayGoals = 0;
     for (const ev of visibleEvents) {
@@ -277,9 +313,13 @@ export function useMatchSimulation() {
       assistantTips,
     });
 
-    // Persist when finished
+    // Persist when finished + notify
     if (isComplete && !persistedRef.current) {
       persistedRef.current = true;
+      sendPushNotification(
+        '🏁 Fim de Jogo!',
+        `${data.homeTeam} ${data.finalHomeGoals} x ${data.finalAwayGoals} ${data.awayTeam}`
+      );
       stopTick();
       supabase
         .from('live_matches')
@@ -388,6 +428,8 @@ export function useMatchSimulation() {
     fans?: number;
   }): Promise<{ success: boolean; error?: string }> => {
     setState(s => ({ ...s, phase: 'loading' }));
+    requestNotificationPermission();
+    notifiedEventsRef.current.clear();
 
     try {
       const resp = await supabase.functions.invoke('start-match', { body: params });

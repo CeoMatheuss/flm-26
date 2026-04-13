@@ -84,6 +84,21 @@ function getStaminaColor(val: number): string {
   return 'bg-red-500';
 }
 
+function getMoraleEmoji(morale: number): string {
+  if (morale >= 80) return '😄';
+  if (morale >= 60) return '🙂';
+  if (morale >= 40) return '😐';
+  if (morale >= 20) return '😟';
+  return '😡';
+}
+
+function getMoraleColor(morale: number): string {
+  if (morale >= 80) return 'text-emerald-400';
+  if (morale >= 60) return 'text-primary';
+  if (morale >= 40) return 'text-amber-400';
+  return 'text-red-400';
+}
+
 export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
@@ -455,12 +470,15 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     </div>
                   </div>
 
-                  {/* Stamina mini bar */}
-                  <div className="w-7 shrink-0 flex flex-col items-center gap-0.5">
-                    <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
+                  {/* Morale + Stamina */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-sm" title={`Moral: ${player.morale}%`}>{getMoraleEmoji(player.morale)}</span>
+                    <div className="w-7 flex flex-col items-center gap-0.5">
+                      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
+                      </div>
+                      <span className="text-[8px] text-muted-foreground">{player.stamina}%</span>
                     </div>
-                    <span className="text-[8px] text-muted-foreground">{player.stamina}%</span>
                   </div>
 
                   {/* Arrow */}
