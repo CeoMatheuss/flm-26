@@ -81,70 +81,12 @@ export default function MatchPage() {
 
   const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
 
-  const needsPreMatch = locState && !locState.liveMatchDbId;
-
+  // Auto-start match immediately (no PreMatch screen)
   useEffect(() => {
-    if (locState?.homePlayers && locState.homePlayers.length > 0) {
-      setSelectedPlayers([...locState.homePlayers]);
+    if (locState && !locState.liveMatchDbId && !preMatchDone && locState.homePlayers?.length > 0) {
+      doStartMatch(locState.homePlayers, locState.tactics);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
-    if (!locState) return;
-    setLoadingMsg('Simulando partida no servidor');
-    setPreMatchDone(true);
-    await startMatch({
-      homeTeam: locState.homeTeam,
-      awayTeam: locState.awayTeam,
-      homePlayers: players,
-      homeStrength: locState.homeStrength,
-      awayStrength: locState.awayStrength,
-      matchId: locState.matchId,
-      tactics: updatedTactics || locState.tactics,
-      stadiumName: locState.stadiumName,
-      stadiumCapacity: locState.stadiumCapacity,
-      isHome: locState.isHome,
-      competition: locState.competition || 'Amistoso',
-      tournamentMatchId: locState.tournamentMatchId,
-      fans: locState.fans || 500,
-    });
-    setInitDone(true);
-  }, [locState, startMatch]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const init = async () => {
-      if (locState?.liveMatchDbId) {
-        setLoadingMsg('Reconectando à partida');
-        setPreMatchDone(true);
-        await loadMatch(locState.liveMatchDbId);
-        if (!cancelled) setInitDone(true);
-      } else if (!locState) {
-        setLoadingMsg('Buscando partida ativa');
-        setPreMatchDone(true);
-        const found = await findActiveMatch();
-        if (!found && !cancelled) {
-          navigate('/', { replace: true });
-          return;
-        }
-        if (!cancelled) setInitDone(true);
-      }
-    };
-    init();
-    return () => { cancelled = true; destroy(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (needsPreMatch && !preMatchDone && locState) {
-    return (
-      <PreMatchScreen
-        locState={locState}
-        players={selectedPlayers}
-        onReorder={setSelectedPlayers}
-        onConfirm={(players, updatedTactics) => doStartMatch(players, updatedTactics)}
-        onCancel={() => navigate('/', { replace: true })}
-      />
-    );
-  }
 
   if (!initDone || state.phase === 'loading') {
     return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
