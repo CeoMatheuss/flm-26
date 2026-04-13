@@ -150,7 +150,9 @@ function computeMoment(
 // ── ASSISTANT TIPS ──────────────────────────────────────────
 
 function generateAssistantTips(
-  home: SimPlayer[], minute: number, hasAssistant: boolean, assistantSkill: number
+  home: SimPlayer[], away: SimPlayer[], minute: number, hasAssistant: boolean, assistantSkill: number,
+  homeGoals: number, awayGoals: number, moment: string, homeTeam: string, awayTeam: string,
+  stats: any
 ): SimEvent[] {
   if (!hasAssistant) return [];
   const tips: SimEvent[] = [];
@@ -163,13 +165,13 @@ function generateAssistantTips(
       tips.push({
         minute, type: 'assistant_tip', team: 'neutral',
         playerName: p.name, priority: 'medium',
-        description: `💬 Assistente: "${p.name} está com ${Math.round(p.stamina)}% de stamina. Considere uma substituição."`,
+        description: `💬 "${p.name} está com ${Math.round(p.stamina)}% de stamina e começando a sentir o cansaço. Considere uma substituição nos próximos minutos para manter a intensidade do time."`,
       });
     } else if (p.stamina < 40 && assistantSkill >= 1) {
       tips.push({
         minute, type: 'assistant_tip', team: 'neutral',
         playerName: p.name, priority: 'high',
-        description: `⚠️ Assistente: "${p.name} está ESGOTADO (${Math.round(p.stamina)}%)! Risco de lesão se continuar!"`,
+        description: `⚠️ ALERTA: ${p.name} está ESGOTADO com apenas ${Math.round(p.stamina)}% de stamina! Risco de lesão muscular se continuar em campo. Substituição urgente recomendada!`,
       });
     }
     
@@ -178,14 +180,51 @@ function generateAssistantTips(
       tips.push({
         minute, type: 'assistant_tip', team: 'neutral',
         playerName: p.name, priority: 'medium',
-        description: `💬 Assistente: "${p.name} já tem cartão amarelo. Cuidado com faltas!"`,
+        description: `🟨 ${p.name} já tem cartão amarelo. Peça para ele evitar divididas duras. Uma expulsão agora seria devastadora para nosso esquema tático.`,
       });
     }
   }
+
+  // Tactical analysis tips
+  if (assistantSkill >= 4 && moment.includes('pressão_away')) {
+    tips.push({
+      minute, type: 'assistant_tip', team: 'neutral', priority: 'high',
+      description: `📊 O ${awayTeam} está nos pressionando muito! Nosso meio-campo está perdendo muitos duelos. Considere recuar a pressão ou trocar para contra-ataque.`,
+    });
+  }
+  if (assistantSkill >= 4 && moment.includes('domínio_home')) {
+    tips.push({
+      minute, type: 'assistant_tip', team: 'neutral', priority: 'low',
+      description: `✅ Estamos dominando o jogo! A posse de bola está a nosso favor. Mantenha o ritmo e explore os espaços na defesa adversária.`,
+    });
+  }
+  if (assistantSkill >= 3 && homeGoals < awayGoals && minute >= 60) {
+    tips.push({
+      minute, type: 'assistant_tip', team: 'neutral', priority: 'high',
+      description: `🔴 Estamos perdendo e o tempo está passando! Sugiro colocar mais um atacante e aumentar a pressão. É hora de arriscar!`,
+    });
+  }
+  if (assistantSkill >= 5 && minute >= 70 && homeGoals > awayGoals) {
+    tips.push({
+      minute, type: 'assistant_tip', team: 'neutral', priority: 'medium',
+      description: `🛡️ Estamos vencendo e faltam poucos minutos. Considere recuar a linha defensiva e segurar o resultado com jogadores mais frescos.`,
+    });
+  }
+
+  // Sector comparison tip
+  if (assistantSkill >= 4 && minute % 20 === 0 && minute > 0) {
+    const homeDefAvg = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position) && p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position) && p.isOnPitch).length);
+    const homeMidAvg = home.filter(p => ['MEI', 'VOL'].includes(p.position) && p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => ['MEI', 'VOL'].includes(p.position) && p.isOnPitch).length);
+    const homeAtkAvg = home.filter(p => p.position === 'ATA' && p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => p.position === 'ATA' && p.isOnPitch).length);
+    tips.push({
+      minute, type: 'assistant_tip', team: 'neutral', priority: 'low',
+      description: `📈 Relatório de Setores:\n🛡️ Defesa: ${Math.round(homeDefAvg)}% stamina\n⚙️ Meio: ${Math.round(homeMidAvg)}% stamina\n⚔️ Ataque: ${Math.round(homeAtkAvg)}% stamina`,
+    });
+  }
   
-  // Limit to 1 tip per check (most important)
+  // Limit to 2 tips per check (most important)
   tips.sort((a, b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0));
-  return tips.slice(0, 1);
+  return tips.slice(0, 2);
 }
 
 // ── REPORT GENERATOR ──────────────────────────────────────
@@ -455,7 +494,7 @@ function simulateFullMatch(
     const m = pickUnique(secondHalfPool.filter(m => m >= 55)); if (m > 0) subMins.push(m);
   }
   const chanceMins: number[] = [];
-  for (let i = 0; i < 5 + Math.floor(rng() * 5); i++) {
+  for (let i = 0; i < 10 + Math.floor(rng() * 8); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
   const possessionMins: number[] = [];
@@ -648,20 +687,29 @@ function simulateFullMatch(
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
+    const p2Name = pool.filter(p => p.name !== pName).length > 0 ? pick(pool.filter(p => p.name !== pName)).name : pName;
+    const defName = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
+    const gkName = oppPool.filter(p => p.position === 'GOL').length > 0 ? pick(oppPool.filter(p => p.position === 'GOL')).name : 'Goleiro';
     stats.shots[teamIdx]++;
-    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss']);
+    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']);
     const descs: Record<string, string> = {
-      woodwork: `📐 TRAVE! ${pName} do ${tName} solta uma bomba que bate no ferro!`,
-      great_save: `🧤 Defesa incrível! ${pName} chuta forte mas o goleiro do ${opp} espalma!`,
-      corner_danger: `🚩 Escanteio perigoso do ${tName}! ${pName} cabeceia raspando a trave!`,
-      offside_trap: `⛳ Impedimento! ${pName} do ${tName} estava adiantado por centímetros!`,
-      long_shot_miss: `💨 ${pName} arrisca de longe mas a bola sai por cima!`,
-      header_miss: `👤 ${pName} cabeceia fraco! Chance desperdiçada pelo ${tName}!`,
+      woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
+      great_save: `🧤 DEFESAÇA! ${pName} recebe de ${p2Name}, gira e finaliza forte no canto. ${gkName} do ${opp} faz uma defesa espetacular com a ponta dos dedos! Que reflexo!`,
+      corner_danger: `🚩 Escanteio perigoso do ${tName}! ${pName} sobe mais que ${defName} e cabeceia forte. A bola raspa a trave e sai pela linha de fundo! Quase!`,
+      offside_trap: `⛳ Impedimento! ${pName} do ${tName} partiu antes da hora e o bandeirinha marcou posição irregular. Lance anulado por centímetros!`,
+      long_shot_miss: `💨 ${pName} puxa para o pé direito e arrisca de longa distância! A bola sobe um pouco acima do travessão. Boa tentativa do ${tName}!`,
+      header_miss: `👤 ${pName} cabeceia após cruzamento de ${p2Name}, mas a bola passa por cima do gol! Chance desperdiçada pelo ${tName}! O jogador leva as mãos à cabeça!`,
+      counter_attack: `🏃💨 CONTRA-ATAQUE VELOZ! ${pName} rouba a bola no meio e sai em velocidade! Passa por ${defName} e finaliza, mas ${gkName} se estica e defende! Quase gol do ${tName}!`,
+      buildup_play: `⚙️ Bela construção do ${tName}! Troca de passes entre ${pName} e ${p2Name}, tabela pelo lado esquerdo. ${pName} cruza rasteiro mas ${defName} corta no último segundo!`,
+      free_kick_near: `🎯 Falta perigosa para o ${tName}! ${pName} bate colocado por cima da barreira... ${gkName} espalma para escanteio! Quase um golaço de falta!`,
     };
     if (evType === 'great_save') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     if (evType === 'corner_danger') stats.corners[teamIdx]++;
     if (evType === 'offside_trap') stats.offsides[teamIdx]++;
+    if (evType === 'counter_attack') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
+    if (evType === 'free_kick_near') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     allPlanned.push({
       minute: m, type: evType, team, animType: 'chance', playerName: pName,
       description: descs[evType] || `⚡ Grande chance do ${tName}!`,
@@ -703,9 +751,10 @@ function simulateFullMatch(
       momentPhase = computeMoment(home, away, homeStrength, awayStrength, currentHomeGoals, currentAwayGoals, homeAdv, pressingMod > 1 ? pressingMod : 1);
     }
 
-    // Assistant tips (max 1 every 10 minutes)
-    if (hasAssistant && m - lastTipMinute >= 10) {
-      const tips = generateAssistantTips(home, m, hasAssistant, assistantSkill);
+    // Assistant tips (max every 8 minutes)
+    if (hasAssistant && m - lastTipMinute >= 8) {
+      const currentMomentStr = momentPhase || 'equilíbrio';
+      const tips = generateAssistantTips(home, away, m, hasAssistant, assistantSkill, currentHomeGoals, currentAwayGoals, currentMomentStr, homeTeam, awayTeam, stats);
       if (tips.length > 0) {
         allPlanned.push(...tips);
         lastTipMinute = m;
@@ -725,13 +774,17 @@ function simulateFullMatch(
     stats.passes[teamIdx]++;
 
     const posTypes = [
-      { type: 'possession', desc: `⚽ ${tName} mantém a posse. ${p1} toca para ${p2} que busca espaço.` },
-      { type: 'dribble_ok', desc: `✨ ${p1} do ${tName} faz corte seco e avança sobre ${def}!` },
-      { type: 'through_ball', desc: `🏃 Lançamento de ${p1} para ${p2} nas costas da zaga do ${opp}!` },
-      { type: 'midfield_foul', desc: `⚠️ Falta de ${p1} do ${tName} em ${def} do ${opp} no meio-campo!` },
-      { type: 'tackle', desc: `💪 Desarme de ${def} do ${opp} em ${p1} do ${tName}!` },
-      { type: 'crossing', desc: `↗️ Cruzamento de ${p1}! A defesa do ${opp} afasta!` },
-      { type: 'pressing', desc: `🔥 Pressão alta do ${tName}! ${p1} e ${p2} sufocam a saída de bola!` },
+      { type: 'possession', desc: `⚽ ${tName} troca passes no campo ofensivo. ${p1} recebe de ${p2}, protege a bola e distribui o jogo com tranquilidade.` },
+      { type: 'dribble_ok', desc: `✨ ${p1} do ${tName} puxa para o pé esquerdo, faz um corte seco em ${def} e avança pelo corredor! A torcida se anima!` },
+      { type: 'through_ball', desc: `🏃 Lançamento PERFEITO de ${p1}! ${p2} aparece nas costas da zaga do ${opp} e recebe em profundidade. A defesa não acompanha!` },
+      { type: 'midfield_foul', desc: `⚠️ ${p1} do ${tName} chega atrasado em ${def} do ${opp} no meio-campo. O árbitro marca falta sem hesitar. Bola parada para o ${opp}.` },
+      { type: 'tackle', desc: `💪 DESARME LIMPO! ${def} do ${opp} antecipa a jogada de ${p1} e fica com a bola. Ótima leitura defensiva!` },
+      { type: 'crossing', desc: `↗️ ${p1} avança pela ponta e cruza na área! ${def} do ${opp} aparece e afasta de cabeça. Pressão do ${tName}!` },
+      { type: 'pressing', desc: `🔥 Pressão intensa do ${tName}! ${p1} e ${p2} não dão espaço para a saída de bola. O ${opp} está sufocado no próprio campo!` },
+      { type: 'gk_distribution', desc: `🧤 Reposição rápida do goleiro do ${tName}! Lançamento longo que encontra ${p1} na intermediária. O jogo segue aberto.` },
+      { type: 'throw_in', desc: `📏 Lateral para o ${tName}. ${p1} cobra e encontra ${p2} que domina e tenta avançar, mas ${def} marca firme.` },
+      { type: 'long_pass', desc: `🎯 ${p1} faz um lançamento de 40 metros que cruza o campo inteiro! ${p2} amortece no peito e protege. Passe cirúrgico!` },
+      { type: 'pressing_recovery', desc: `🔄 Recuperação de bola do ${tName}! ${p1} pressiona ${def} que erra o passe. ${tName} sai jogando pelo lado esquerdo com ${p2}.` },
     ];
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;

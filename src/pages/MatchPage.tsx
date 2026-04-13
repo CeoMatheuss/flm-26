@@ -81,14 +81,6 @@ export default function MatchPage() {
 
   const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
 
-  const needsPreMatch = locState && !locState.liveMatchDbId;
-
-  useEffect(() => {
-    if (locState?.homePlayers && locState.homePlayers.length > 0) {
-      setSelectedPlayers([...locState.homePlayers]);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
     setLoadingMsg('Simulando partida no servidor');
@@ -111,6 +103,7 @@ export default function MatchPage() {
     setInitDone(true);
   }, [locState, startMatch]);
 
+  // Auto-start or reconnect
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
@@ -119,6 +112,8 @@ export default function MatchPage() {
         setPreMatchDone(true);
         await loadMatch(locState.liveMatchDbId);
         if (!cancelled) setInitDone(true);
+      } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
+        doStartMatch(locState.homePlayers, locState.tactics);
       } else if (!locState) {
         setLoadingMsg('Buscando partida ativa');
         setPreMatchDone(true);
@@ -133,18 +128,6 @@ export default function MatchPage() {
     init();
     return () => { cancelled = true; destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (needsPreMatch && !preMatchDone && locState) {
-    return (
-      <PreMatchScreen
-        locState={locState}
-        players={selectedPlayers}
-        onReorder={setSelectedPlayers}
-        onConfirm={(players, updatedTactics) => doStartMatch(players, updatedTactics)}
-        onCancel={() => navigate('/', { replace: true })}
-      />
-    );
-  }
 
   if (!initDone || state.phase === 'loading') {
     return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
@@ -184,7 +167,7 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={selectedPlayers.length > 0 ? selectedPlayers : locState?.homePlayers} tactics={locState?.tactics} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} />;
 }
 
 /* ── PRE-MATCH SCREEN ─────────────────────────────────────── */
@@ -668,10 +651,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   }, [subsUsed, isFinished]);
 
   const phaseLabel = () => {
-    if (isFinished) return 'FIM DE JOGO';
-    if (isHalftime) return 'INTERVALO';
-    if (currentMinute <= 45) return '1º TEMPO';
-    return '2º TEMPO';
+    if (isFinished) return '🏁 FIM DE JOGO';
+    if (isHalftime) return '⏸️ INTERVALO';
+    if (currentMinute <= 45) return `⚽ 1º TEMPO • ${currentMinute}'`;
+    return `⚽ 2º TEMPO • ${currentMinute}'`;
   };
 
   const possession = computePossession(visibleEvents, stats);
@@ -695,14 +678,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Buttons — fixed at top */}
+        {/* Row 2: Action Buttons — bigger, more visible */}
         {!isFinished && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {/* Tática */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Tática
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <Settings2 className="h-4 w-4" /> ⚙️ Tática
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -716,8 +699,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Time / Subs */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Time
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <Users className="h-4 w-4" /> 👥 Time
                   {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
                 </Button>
               </SheetTrigger>
@@ -748,8 +731,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Stats */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <BarChart3 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Stats
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <BarChart3 className="h-4 w-4" /> 📊 Stats
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -766,12 +749,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 <Button
                   size="sm"
                   variant={hasAssistant ? 'default' : 'outline'}
-                  className={`h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg min-w-[36px] sm:min-w-[42px] px-1.5 sm:px-3 ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/30 opacity-50'}`}
+                  className={`h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl min-w-[40px] font-bold ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/40 opacity-50'}`}
                   disabled={!hasAssistant}
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-4 w-4" /> 📋
                   {hasAssistant && matchState.assistantTips.length > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-white/20 text-[9px] font-bold flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold flex items-center justify-center">
                       {matchState.assistantTips.length}
                     </span>
                   )}
@@ -1546,29 +1529,41 @@ function computePossession(events: SimEvent[], stats: MatchStats): [number, numb
 }
 
 function getEventIcon(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal'].includes(type)) return '⚽';
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return '⚽';
   if (type === 'great_save') return '🧤';
   if (type === 'woodwork') return '🥅';
-  if (type === 'yellow_card') return '🟡';
-  if (type === 'red_card') return '🔴';
-  if (type === 'corner_danger') return '🏳️';
+  if (type === 'yellow_card') return '🟨';
+  if (type === 'red_card') return '🟥';
+  if (type === 'corner_danger') return '🚩';
   if (type === 'penalty_miss') return '❌';
   if (['dangerous_foul', 'foul', 'midfield_foul'].includes(type)) return '⚠️';
-  if (type === 'dribble_ok') return '💨';
-  if (['tackle', 'interception'].includes(type)) return '🦶';
-  if (type === 'substitution') return '🔄';
-  if (type === 'halftime') return '⏸';
+  if (type === 'dribble_ok') return '✨';
+  if (['tackle', 'interception'].includes(type)) return '💪';
+  if (type === 'substitution') return '🔁';
+  if (type === 'halftime') return '⏸️';
   if (type === 'final_whistle') return '🏁';
   if (type === 'kickoff') return '📢';
-  if (['long_shot_miss', 'header_miss'].includes(type)) return '🎯';
+  if (['long_shot_miss', 'header_miss'].includes(type)) return '💨';
   if (type === 'crossing') return '↗️';
-  if (type === 'through_ball') return '⚡';
+  if (type === 'through_ball') return '🏃';
+  if (type === 'pressing') return '🔥';
+  if (type === 'counter_attack') return '⚡';
+  if (type === 'buildup_play') return '⚙️';
+  if (type === 'free_kick_near') return '🎯';
+  if (type === 'gk_distribution') return '🧤';
+  if (type === 'throw_in') return '📏';
+  if (type === 'long_pass') return '🎯';
+  if (type === 'pressing_recovery') return '🔄';
+  if (type === 'offside_trap') return '⛳';
+  if (type === 'injury') return '🏥';
+  if (type === 'added_time') return '⏱️';
+  if (type === 'assistant_tip') return '💬';
   return '•';
 }
 
 function getEventColor(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal'].includes(type)) return 'text-emerald-400 font-bold';
-  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss'].includes(type)) return 'text-yellow-400';
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return 'text-emerald-400 font-bold';
+  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near'].includes(type)) return 'text-yellow-400';
   if (type === 'yellow_card') return 'text-yellow-300';
   if (type === 'red_card') return 'text-red-400';
   if (type === 'penalty_miss') return 'text-red-400 font-bold';
@@ -1578,13 +1573,18 @@ function getEventColor(type: string): string {
   if (type === 'final_whistle') return 'text-primary font-bold';
   if (type === 'kickoff') return 'text-blue-400 font-medium';
   if (type === 'substitution') return 'text-sky-400';
+  if (type === 'injury') return 'text-red-400 font-semibold';
+  if (type === 'assistant_tip') return 'text-amber-400';
+  if (type === 'added_time') return 'text-primary';
   return 'text-muted-foreground';
 }
 
 function getEventBg(ev: SimEvent): string {
   if (ev.isGoal) return 'bg-emerald-500/10 border border-emerald-500/20';
-  if (['halftime', 'kickoff', 'final_whistle'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
+  if (['halftime', 'kickoff', 'final_whistle', 'added_time'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
   if (['yellow_card', 'red_card'].includes(ev.type)) return 'bg-yellow-500/5 border border-yellow-500/10';
+  if (ev.type === 'injury') return 'bg-red-500/5 border border-red-500/10';
+  if (ev.type === 'assistant_tip') return 'bg-amber-500/5 border border-amber-500/10';
   if (isHighlightEvent(ev.type)) return 'bg-yellow-400/5';
   if (ev.team === 'home') return 'bg-blue-500/[0.03]';
   if (ev.team === 'away') return 'bg-red-500/[0.03]';
@@ -1600,6 +1600,8 @@ function getHighlightLabel(type: string): string {
   if (type === 'counter_attack_goal') return '⚽ GOL DE CONTRA-ATAQUE!';
   if (type === 'crossing_goal') return '⚽ GOL DE CRUZAMENTO!';
   if (type === 'free_kick_goal') return '⚽ GOL DE FALTA!';
+  if (type === 'counter_attack') return '⚡ CONTRA-ATAQUE!';
+  if (type === 'free_kick_near') return '🎯 FALTA PERIGOSA!';
   return '⚡ LANCE IMPORTANTE';
 }
 
