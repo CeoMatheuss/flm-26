@@ -313,9 +313,13 @@ export function useMatchSimulation() {
       assistantTips,
     });
 
-    // Persist when finished
+    // Persist when finished + notify
     if (isComplete && !persistedRef.current) {
       persistedRef.current = true;
+      sendPushNotification(
+        '🏁 Fim de Jogo!',
+        `${data.homeTeam} ${data.finalHomeGoals} x ${data.finalAwayGoals} ${data.awayTeam}`
+      );
       stopTick();
       supabase
         .from('live_matches')
