@@ -81,6 +81,28 @@ export default function MatchPage() {
 
   const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
 
+  const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
+    if (!locState) return;
+    setLoadingMsg('Simulando partida no servidor');
+    setPreMatchDone(true);
+    await startMatch({
+      homeTeam: locState.homeTeam,
+      awayTeam: locState.awayTeam,
+      homePlayers: players,
+      homeStrength: locState.homeStrength,
+      awayStrength: locState.awayStrength,
+      matchId: locState.matchId,
+      tactics: updatedTactics || locState.tactics,
+      stadiumName: locState.stadiumName,
+      stadiumCapacity: locState.stadiumCapacity,
+      isHome: locState.isHome,
+      competition: locState.competition || 'Amistoso',
+      tournamentMatchId: locState.tournamentMatchId,
+      fans: locState.fans || 500,
+    });
+    setInitDone(true);
+  }, [locState, startMatch]);
+
   // Auto-start match immediately (no PreMatch screen)
   useEffect(() => {
     if (locState && !locState.liveMatchDbId && !preMatchDone && locState.homePlayers?.length > 0) {
