@@ -103,11 +103,30 @@ export default function MatchPage() {
     setInitDone(true);
   }, [locState, startMatch]);
 
-  // Auto-start match immediately (no PreMatch screen)
+  // Auto-start or reconnect
   useEffect(() => {
-    if (locState && !locState.liveMatchDbId && !preMatchDone && locState.homePlayers?.length > 0) {
-      doStartMatch(locState.homePlayers, locState.tactics);
-    }
+    let cancelled = false;
+    const init = async () => {
+      if (locState?.liveMatchDbId) {
+        setLoadingMsg('Reconectando à partida');
+        setPreMatchDone(true);
+        await loadMatch(locState.liveMatchDbId);
+        if (!cancelled) setInitDone(true);
+      } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
+        doStartMatch(locState.homePlayers, locState.tactics);
+      } else if (!locState) {
+        setLoadingMsg('Buscando partida ativa');
+        setPreMatchDone(true);
+        const found = await findActiveMatch();
+        if (!found && !cancelled) {
+          navigate('/', { replace: true });
+          return;
+        }
+        if (!cancelled) setInitDone(true);
+      }
+    };
+    init();
+    return () => { cancelled = true; destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!initDone || state.phase === 'loading') {
