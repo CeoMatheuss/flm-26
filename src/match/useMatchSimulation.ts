@@ -205,7 +205,16 @@ export function useMatchSimulation() {
         case 'gk_distribution':
         case 'throw_in':
         case 'free_kick':
+        case 'pressing_recovery':
+        case 'buildup_play':
+        case 'long_pass':
           s.passes[idx]++;
+          break;
+        case 'counter_attack':
+        case 'free_kick_near':
+          s.shots[idx]++;
+          s.shotsOnTarget[idx]++;
+          s.saves[opp]++;
           break;
       }
     }
