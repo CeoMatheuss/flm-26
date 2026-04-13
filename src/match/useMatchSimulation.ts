@@ -124,6 +124,7 @@ export function useMatchSimulation() {
   const dataRef = useRef<MatchData | null>(null);
   const intervalRef = useRef<number | null>(null);
   const persistedRef = useRef(false);
+  const notifiedEventsRef = useRef<Set<string>>(new Set());
 
   // Compute stats dynamically from visible events
   const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
