@@ -103,6 +103,22 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+// ── Push Notifications ──────────────────────────────────────
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendPushNotification(title: string, body: string, icon = '⚽') {
+  if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+    try {
+      new Notification(title, { body, icon: '/placeholder.svg', tag: 'match-event' });
+      if ('vibrate' in navigator) navigator.vibrate(200);
+    } catch { /* ignore */ }
+  }
+}
+
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
   const dataRef = useRef<MatchData | null>(null);
