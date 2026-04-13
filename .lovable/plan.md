@@ -1,38 +1,55 @@
 
 
-# Plano: Melhorar Responsividade da Simulação + Aba de Equipe Técnica no Menu
+# Plano: Funcionalidades Inovadoras para o Jogo
 
-## O que será feito
+## 1 — Sistema de Moral Dinâmica dos Jogadores
+Cada jogador terá um valor de **moral (0-100)** que muda com base em:
+- Gols marcados, assistências → moral sobe
+- Derrotas consecutivas, ficar no banco → moral cai
+- Moral alta = +10% nos atributos efetivos; moral baixa = -15%
+- Ícones visuais no elenco (😄 🙂 😐 😟 😡)
 
-1. **Melhorar responsividade da tela de simulação (MatchPage)**
-   - Reduzir padding e tamanhos dos botões do top bar (Tática, Time, Stats, Assistente) para que caibam melhor em telas de 390px
-   - Diminuir altura dos botões (`h-8` em vez de `h-9`), usar `text-[10px]` em mobile
-   - Abaixar/compactar o scoreboard: reduzir `text-4xl` para `text-3xl` em mobile, diminuir padding
-   - Compactar Quick Stats grid: menor padding em mobile
-   - Narração: reduzir `max-h` do feed de eventos para caber melhor
-   - Pre-match screen: compactar player cards, reduzir padding geral
+**Impacto**: jogadores insatisfeitos podem pedir transferência.
 
-2. **Melhorar responsividade geral do jogo (Index/GameNavBar)**
-   - Garantir que o GameNavBar e GameMenu funcionem bem em 390px (já parece ok, verificar)
+## 2 — Coletivas de Imprensa Pré-Jogo
+Antes de jogos importantes (clássicos, finais), o jogador responde a perguntas da "imprensa" com opções:
+- "Vamos jogar com humildade" → moral estável
+- "Somos favoritos" → moral sobe se ganhar, cai muito se perder
+- "Sem comentários" → neutro
 
-3. **Adicionar "Equipe Técnica" ao GameMenu**
-   - Adicionar item `staff` na seção "⚽ Clube" do dropdown com ícone `Users` e label "Equipe Técnica"
-   - O StaffTab já existe e está integrado no GameTabRouter
+Resultado influencia moral do elenco e reação da torcida.
 
-## Arquivos Modificados
+## 3 — Sistema de Química entre Jogadores
+Jogadores que jogam juntos várias partidas ganham **química** (links visíveis no campo):
+- Mesma nacionalidade ou ex-clube = bônus inicial
+- Química alta = passes mais precisos entre a dupla
+- Visual: linhas coloridas conectando jogadores na formação
 
-| Arquivo | Mudança |
-|---|---|
-| `src/pages/MatchPage.tsx` | Compactar botões top bar, scoreboard, stats grid, narração para mobile |
-| `src/components/game/GameMenu.tsx` | Adicionar item "Equipe Técnica" → `onTabChange('staff')` |
+## 4 — Notificações Push em Tempo Real durante Partida
+Quando o jogo está rodando em background (aba minimizada):
+- Notificação de gol com vibração
+- Alerta de cartão vermelho
+- Fim de jogo com resultado
 
-## Detalhes Técnicos
+Usa `Notification API` do browser.
 
-**MatchPage — Top Bar buttons**: Mudar de `h-9` para `h-7 sm:h-9`, texto de `text-xs` para `text-[10px] sm:text-xs`, gap menor.
+## 5 — Replay de Gols com Narração
+Após cada gol, exibir uma mini-animação com:
+- Sequência de passes que levaram ao gol (dados dos eventos)
+- Narração textual dramática gerada por IA
+- Botão "Compartilhar Gol" que gera imagem com placar + narração
 
-**MatchPage — Scoreboard**: Placar de `text-4xl sm:text-6xl` para `text-3xl sm:text-6xl`, container min-width reduzido.
+---
 
-**MatchPage — Quick Stats**: Padding `p-1 sm:p-2.5`, texto compacto.
+## Recomendação de Implementação
 
-**GameMenu**: Adicionar `<DropdownMenuItem onClick={() => onTabChange('staff')}>` com ícone `Users` na seção Clube.
+Sugiro começar pelos itens **1 (Moral)** e **4 (Notificações Push)** por serem os mais impactantes na experiência do jogador com menor complexidade.
+
+| Funcionalidade | Arquivos Principais | Complexidade |
+|---|---|---|
+| Moral Dinâmica | `game.ts`, `start-match`, `SquadTab.tsx` | Média |
+| Coletivas de Imprensa | Novo componente + `DashboardTab.tsx` | Média |
+| Química de Jogadores | `TacticsTab.tsx`, `start-match` | Alta |
+| Notificações Push | `useMatchSimulation.ts` | Baixa |
+| Replay de Gols | `MatchPage.tsx`, edge function IA | Alta |
 
