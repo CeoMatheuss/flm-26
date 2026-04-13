@@ -678,14 +678,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Buttons — fixed at top */}
+        {/* Row 2: Action Buttons — bigger, more visible */}
         {!isFinished && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {/* Tática */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Tática
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <Settings2 className="h-4 w-4" /> ⚙️ Tática
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -699,8 +699,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Time / Subs */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Time
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <Users className="h-4 w-4" /> 👥 Time
                   {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
                 </Button>
               </SheetTrigger>
