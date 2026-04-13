@@ -605,6 +605,20 @@ Deno.serve(async (req) => {
         teamsMap[t.tournament_id].push(t as any);
       }
 
+      // Fetch real squad strength for human players in custom tournaments
+      const humanTournamentUserIds = [...new Set(
+        (allTeams || []).filter((t: any) => !t.is_bot && t.user_id).map((t: any) => t.user_id)
+      )];
+      let tournamentGameSaves: any[] = [];
+      if (humanTournamentUserIds.length > 0) {
+        const { data: saves } = await supabase
+          .from('game_saves')
+          .select('user_id, club_data')
+          .in('user_id', humanTournamentUserIds);
+        tournamentGameSaves = saves || [];
+      }
+      const tournamentSaveMap = new Map(tournamentGameSaves.map((s: any) => [s.user_id, s]));
+
       for (const match of dueMatches) {
         const teams = teamsMap[match.tournament_id] || [];
         const homeTeam = teams.find(t => t.id === match.home_team_id);
@@ -617,9 +631,28 @@ Deno.serve(async (req) => {
           const scheduledAt = new Date(match.scheduled_at).getTime();
           const hoursSinceScheduled = (now.getTime() - scheduledAt) / (1000 * 60 * 60);
           if (hoursSinceScheduled < 48) continue;
+          console.log(`[Tournament] Auto-simulating match ${match.id} after 48h timeout`);
         }
 
-        const result = simulateMatch(homeTeam, awayTeam);
+        // Enhance bot_strength for human players using their real squad
+        const enhancedHome = { ...homeTeam };
+        const enhancedAway = { ...awayTeam };
+        if (!enhancedHome.is_bot && enhancedHome.user_id) {
+          const save = tournamentSaveMap.get(enhancedHome.user_id);
+          if (save?.club_data?.squad) {
+            enhancedHome.bot_squad = save.club_data.squad;
+            enhancedHome.bot_strength = calculateSquadStrength(save.club_data.squad);
+          }
+        }
+        if (!enhancedAway.is_bot && enhancedAway.user_id) {
+          const save = tournamentSaveMap.get(enhancedAway.user_id);
+          if (save?.club_data?.squad) {
+            enhancedAway.bot_squad = save.club_data.squad;
+            enhancedAway.bot_strength = calculateSquadStrength(save.club_data.squad);
+          }
+        }
+
+        const result = simulateMatch(enhancedHome, enhancedAway);
 
         await supabase.from('custom_tournament_matches').update({
           home_goals: result.homeGoals,
