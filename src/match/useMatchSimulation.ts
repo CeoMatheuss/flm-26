@@ -428,6 +428,8 @@ export function useMatchSimulation() {
     fans?: number;
   }): Promise<{ success: boolean; error?: string }> => {
     setState(s => ({ ...s, phase: 'loading' }));
+    requestNotificationPermission();
+    notifiedEventsRef.current.clear();
 
     try {
       const resp = await supabase.functions.invoke('start-match', { body: params });
