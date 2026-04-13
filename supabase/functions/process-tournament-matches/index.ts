@@ -225,6 +225,14 @@ function simulateMatch(homeTeam: TeamData, awayTeam: TeamData) {
 // LEAGUE PROCESSING — auto-simulate league rounds
 // ══════════════════════════════════════════════
 
+function calculateSquadStrength(squadData: any[]): number {
+  if (!Array.isArray(squadData) || squadData.length === 0) return 55;
+  const starters = squadData.slice(0, 11);
+  const overalls = starters.map((p: any) => p.overall || p.ovr || 50);
+  if (overalls.length === 0) return 55;
+  return Math.round(overalls.reduce((a: number, b: number) => a + b, 0) / overalls.length);
+}
+
 async function processLeagueMatches(supabase: any, now: Date) {
   const nowISO = now.toISOString();
   let leagueProcessed = 0;
@@ -262,6 +270,14 @@ async function processLeagueMatches(supabase: any, now: Date) {
     .select('user_id, league_id, squad_data')
     .in('league_id', leagueIds);
 
+  // ── Identify human players (those who have game_saves) ──
+  const allUserIds = [...new Set(dueLeagueMatches.flatMap((m: any) => [m.home_user_id, m.away_user_id]))];
+  const { data: humanSaves } = await supabase
+    .from('game_saves')
+    .select('user_id')
+    .in('user_id', allUserIds);
+  const humanUserIds = new Set((humanSaves || []).map((s: any) => s.user_id));
+
   const memberMap = new Map<string, any>();
   for (const m of (allMembers || [])) {
     memberMap.set(`${m.league_id}:${m.user_id}`, m);
@@ -284,6 +300,19 @@ async function processLeagueMatches(supabase: any, now: Date) {
     // Only process if we're past the match time + 5 min window
     if (now.getTime() < todayMatchTime.getTime() + 5 * 60 * 1000) continue;
 
+    // ── Human player check: wait 48h before auto-simulating ──
+    const homeIsHuman = humanUserIds.has(match.home_user_id);
+    const awayIsHuman = humanUserIds.has(match.away_user_id);
+
+    if (homeIsHuman || awayIsHuman) {
+      const hoursSinceMatchTime = (now.getTime() - todayMatchTime.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceMatchTime < 48) {
+        // Skip — human has up to 48h to play manually
+        continue;
+      }
+      console.log(`[League] Auto-simulating match ${match.id} after 48h timeout (human involved)`);
+    }
+
     const homeMember = memberMap.get(`${match.league_id}:${match.home_user_id}`);
     const awayMember = memberMap.get(`${match.league_id}:${match.away_user_id}`);
     if (!homeMember || !awayMember) continue;
@@ -291,25 +320,29 @@ async function processLeagueMatches(supabase: any, now: Date) {
     const homeSquad = squadMap.get(`${match.league_id}:${match.home_user_id}`);
     const awaySquad = squadMap.get(`${match.league_id}:${match.away_user_id}`);
 
-    // Determine strength from squad or default based on tier
+    // Determine strength from squad data or tier-based default
     const tierStrength: Record<string, number> = {
       nacional: 70, regional: 60, pre_regional: 50, varzea: 45,
     };
     const baseStr = tierStrength[league.tier] || 55;
 
+    // Use real squad strength if available, otherwise tier default
+    const homeStr = homeSquad?.squad_data ? calculateSquadStrength(homeSquad.squad_data) : baseStr + Math.floor(rng() * 10);
+    const awayStr = awaySquad?.squad_data ? calculateSquadStrength(awaySquad.squad_data) : baseStr + Math.floor(rng() * 10) - 3;
+
     const homeTeam: TeamData = {
       id: match.home_user_id,
       club_name: homeMember.club_name || 'Casa',
-      bot_strength: baseStr + Math.floor(rng() * 10),
-      is_bot: true,
+      bot_strength: homeStr,
+      is_bot: !homeIsHuman,
       bot_squad: homeSquad?.squad_data || null,
       user_id: match.home_user_id,
     };
     const awayTeam: TeamData = {
       id: match.away_user_id,
       club_name: awayMember.club_name || 'Visitante',
-      bot_strength: baseStr + Math.floor(rng() * 10) - 3,
-      is_bot: true,
+      bot_strength: awayStr,
+      is_bot: !awayIsHuman,
       bot_squad: awaySquad?.squad_data || null,
       user_id: match.away_user_id,
     };
@@ -340,9 +373,7 @@ async function processLeagueMatches(supabase: any, now: Date) {
       _away_user_id: match.away_user_id,
       _home_goals: result.homeGoals,
       _away_goals: result.awayGoals,
-    }).catch(() => {
-      // Fallback: manual update if RPC doesn't exist
-    });
+    }).catch(() => {});
 
     // Manual standings update as fallback
     const { data: homeLm } = await supabase
