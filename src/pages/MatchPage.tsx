@@ -651,10 +651,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   }, [subsUsed, isFinished]);
 
   const phaseLabel = () => {
-    if (isFinished) return 'FIM DE JOGO';
-    if (isHalftime) return 'INTERVALO';
-    if (currentMinute <= 45) return '1º TEMPO';
-    return '2º TEMPO';
+    if (isFinished) return '🏁 FIM DE JOGO';
+    if (isHalftime) return '⏸️ INTERVALO';
+    if (currentMinute <= 45) return `⚽ 1º TEMPO • ${currentMinute}'`;
+    return `⚽ 2º TEMPO • ${currentMinute}'`;
   };
 
   const possession = computePossession(visibleEvents, stats);
