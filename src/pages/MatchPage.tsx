@@ -731,8 +731,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* Stats */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg border-border/30 px-1.5 sm:px-3">
-                  <BarChart3 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Stats
+                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
+                  <BarChart3 className="h-4 w-4" /> 📊 Stats
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
@@ -749,12 +749,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 <Button
                   size="sm"
                   variant={hasAssistant ? 'default' : 'outline'}
-                  className={`h-7 sm:h-9 gap-0.5 sm:gap-1 text-[10px] sm:text-xs rounded-lg min-w-[36px] sm:min-w-[42px] px-1.5 sm:px-3 ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/30 opacity-50'}`}
+                  className={`h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl min-w-[40px] font-bold ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/40 opacity-50'}`}
                   disabled={!hasAssistant}
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-4 w-4" /> 📋
                   {hasAssistant && matchState.assistantTips.length > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-white/20 text-[9px] font-bold flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold flex items-center justify-center">
                       {matchState.assistantTips.length}
                     </span>
                   )}
