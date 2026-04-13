@@ -167,7 +167,7 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={selectedPlayers.length > 0 ? selectedPlayers : locState?.homePlayers} tactics={locState?.tactics} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} />;
 }
 
 /* ── PRE-MATCH SCREEN ─────────────────────────────────────── */
@@ -1529,29 +1529,41 @@ function computePossession(events: SimEvent[], stats: MatchStats): [number, numb
 }
 
 function getEventIcon(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal'].includes(type)) return '⚽';
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return '⚽';
   if (type === 'great_save') return '🧤';
   if (type === 'woodwork') return '🥅';
-  if (type === 'yellow_card') return '🟡';
-  if (type === 'red_card') return '🔴';
-  if (type === 'corner_danger') return '🏳️';
+  if (type === 'yellow_card') return '🟨';
+  if (type === 'red_card') return '🟥';
+  if (type === 'corner_danger') return '🚩';
   if (type === 'penalty_miss') return '❌';
   if (['dangerous_foul', 'foul', 'midfield_foul'].includes(type)) return '⚠️';
-  if (type === 'dribble_ok') return '💨';
-  if (['tackle', 'interception'].includes(type)) return '🦶';
-  if (type === 'substitution') return '🔄';
-  if (type === 'halftime') return '⏸';
+  if (type === 'dribble_ok') return '✨';
+  if (['tackle', 'interception'].includes(type)) return '💪';
+  if (type === 'substitution') return '🔁';
+  if (type === 'halftime') return '⏸️';
   if (type === 'final_whistle') return '🏁';
   if (type === 'kickoff') return '📢';
-  if (['long_shot_miss', 'header_miss'].includes(type)) return '🎯';
+  if (['long_shot_miss', 'header_miss'].includes(type)) return '💨';
   if (type === 'crossing') return '↗️';
-  if (type === 'through_ball') return '⚡';
+  if (type === 'through_ball') return '🏃';
+  if (type === 'pressing') return '🔥';
+  if (type === 'counter_attack') return '⚡';
+  if (type === 'buildup_play') return '⚙️';
+  if (type === 'free_kick_near') return '🎯';
+  if (type === 'gk_distribution') return '🧤';
+  if (type === 'throw_in') return '📏';
+  if (type === 'long_pass') return '🎯';
+  if (type === 'pressing_recovery') return '🔄';
+  if (type === 'offside_trap') return '⛳';
+  if (type === 'injury') return '🏥';
+  if (type === 'added_time') return '⏱️';
+  if (type === 'assistant_tip') return '💬';
   return '•';
 }
 
 function getEventColor(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal'].includes(type)) return 'text-emerald-400 font-bold';
-  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss'].includes(type)) return 'text-yellow-400';
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return 'text-emerald-400 font-bold';
+  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near'].includes(type)) return 'text-yellow-400';
   if (type === 'yellow_card') return 'text-yellow-300';
   if (type === 'red_card') return 'text-red-400';
   if (type === 'penalty_miss') return 'text-red-400 font-bold';
@@ -1561,13 +1573,18 @@ function getEventColor(type: string): string {
   if (type === 'final_whistle') return 'text-primary font-bold';
   if (type === 'kickoff') return 'text-blue-400 font-medium';
   if (type === 'substitution') return 'text-sky-400';
+  if (type === 'injury') return 'text-red-400 font-semibold';
+  if (type === 'assistant_tip') return 'text-amber-400';
+  if (type === 'added_time') return 'text-primary';
   return 'text-muted-foreground';
 }
 
 function getEventBg(ev: SimEvent): string {
   if (ev.isGoal) return 'bg-emerald-500/10 border border-emerald-500/20';
-  if (['halftime', 'kickoff', 'final_whistle'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
+  if (['halftime', 'kickoff', 'final_whistle', 'added_time'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
   if (['yellow_card', 'red_card'].includes(ev.type)) return 'bg-yellow-500/5 border border-yellow-500/10';
+  if (ev.type === 'injury') return 'bg-red-500/5 border border-red-500/10';
+  if (ev.type === 'assistant_tip') return 'bg-amber-500/5 border border-amber-500/10';
   if (isHighlightEvent(ev.type)) return 'bg-yellow-400/5';
   if (ev.team === 'home') return 'bg-blue-500/[0.03]';
   if (ev.team === 'away') return 'bg-red-500/[0.03]';
@@ -1583,6 +1600,8 @@ function getHighlightLabel(type: string): string {
   if (type === 'counter_attack_goal') return '⚽ GOL DE CONTRA-ATAQUE!';
   if (type === 'crossing_goal') return '⚽ GOL DE CRUZAMENTO!';
   if (type === 'free_kick_goal') return '⚽ GOL DE FALTA!';
+  if (type === 'counter_attack') return '⚡ CONTRA-ATAQUE!';
+  if (type === 'free_kick_near') return '🎯 FALTA PERIGOSA!';
   return '⚡ LANCE IMPORTANTE';
 }
 
