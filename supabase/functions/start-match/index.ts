@@ -41,9 +41,17 @@ function getStaminaMultiplier(stamina: number): number {
   return 0.75;
 }
 
+function getMoraleMultiplier(morale: number): number {
+  if (morale >= 80) return 1.10;  // +10%
+  if (morale >= 60) return 1.05;  // +5%
+  if (morale >= 40) return 1.0;   // neutral
+  if (morale >= 20) return 0.90;  // -10%
+  return 0.85;                    // -15%
+}
+
 function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
   const val = Number(player[attr]) || 50;
-  return val * getStaminaMultiplier(player.stamina);
+  return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
 }
 
 function creationPower(p: SimPlayer): number {
