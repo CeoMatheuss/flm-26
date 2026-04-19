@@ -58,11 +58,7 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
 
   const filteredFinances = finances.filter(f => filter === 'all' || f.type === filter);
 
-  const formatMoney = (v: number) => {
-    if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(2)}M`;
-    if (v >= 1000) return `R$ ${(v / 1000).toFixed(0)}k`;
-    return `R$ ${v}`;
-  };
+  const balancoMensal = sponsorMonthly - totalSalaries - scoutSalaries;
 
   return (
     <div className="space-y-4">
@@ -260,14 +256,8 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
 }
 
 function CostRow({ icon, label, value, detail, isRevenue }: { icon: React.ReactNode; label: string; value: number; detail?: string; isRevenue?: boolean }) {
-  const formatMoney = (v: number) => {
-    if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(2)}M`;
-    if (v >= 1000) return `R$ ${(v / 1000).toFixed(0)}k`;
-    return `R$ ${v}`;
-  };
-
   return (
-    <div className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg">
+    <div className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg" title={formatMoneyFull(value)}>
       {icon}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium truncate">{label}</p>
