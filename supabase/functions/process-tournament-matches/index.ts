@@ -297,20 +297,23 @@ async function processLeagueMatches(supabase: any, now: Date) {
     const todayMatchTime = new Date(now);
     todayMatchTime.setHours(mH, mM, 0, 0);
 
-    // Only process if we're past the match time + 5 min window
-    if (now.getTime() < todayMatchTime.getTime() + 5 * 60 * 1000) continue;
-
-    // ── Human player check: wait 48h before auto-simulating ──
+    // ── Human player check ──
     const homeIsHuman = humanUserIds.has(match.home_user_id);
     const awayIsHuman = humanUserIds.has(match.away_user_id);
+    const hasHuman = homeIsHuman || awayIsHuman;
 
-    if (homeIsHuman || awayIsHuman) {
+    if (hasHuman) {
+      // Humans NEVER auto-simulate after 5min anymore.
+      // They have a full 48h window to play manually.
       const hoursSinceMatchTime = (now.getTime() - todayMatchTime.getTime()) / (1000 * 60 * 60);
       if (hoursSinceMatchTime < 48) {
-        // Skip — human has up to 48h to play manually
-        continue;
+        continue; // Skip — wait for manual play
       }
-      console.log(`[League] Auto-simulating match ${match.id} after 48h timeout (human involved)`);
+      console.log(`[League] Auto-simulating match ${match.id} after 48h timeout (human did not play)`);
+    } else {
+      // Bot vs bot: wait at least 30 minutes after match_time before auto-simulating
+      // (gives time for the scheduled cron to fire and avoids racing the schedule)
+      if (now.getTime() < todayMatchTime.getTime() + 30 * 60 * 1000) continue;
     }
 
     const homeMember = memberMap.get(`${match.league_id}:${match.home_user_id}`);

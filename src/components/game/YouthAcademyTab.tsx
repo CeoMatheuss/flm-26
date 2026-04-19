@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { UserPlus, Star, Info, ArrowUp, Sparkles, GraduationCap, Coins, TrendingUp } from 'lucide-react';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   prospects: YouthProspect[];
@@ -20,9 +21,9 @@ interface Props {
 
 const investmentTiers = [
   { amount: 0, label: 'R$ 0', players: '0', desc: 'Sem Investimento', emoji: '❌', hint: 'Nenhum jovem será gerado' },
-  { amount: 500000, label: 'R$ 500k', players: '1–2', desc: 'Básico', emoji: '🔹', hint: 'Poucos jovens, bom para começar' },
-  { amount: 1500000, label: 'R$ 1.5M', players: '2–3', desc: 'Médio', emoji: '🔸', hint: 'Volume moderado de jovens' },
-  { amount: 3000000, label: 'R$ 3M', players: '3–5', desc: 'Alto', emoji: '🔶', hint: 'Máximo volume de jovens' },
+  { amount: 500000, label: 'R$ 500 mil', players: '1–2', desc: 'Básico', emoji: '🔹', hint: 'Poucos jovens, bom para começar' },
+  { amount: 1500000, label: 'R$ 1,5 mi', players: '2–3', desc: 'Médio', emoji: '🔸', hint: 'Volume moderado de jovens' },
+  { amount: 3000000, label: 'R$ 3,0 mi', players: '3–5', desc: 'Alto', emoji: '🔶', hint: 'Máximo volume de jovens' },
 ];
 
 const getLevelTier = (level: number) => {
@@ -119,7 +120,7 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
                 className="w-full gap-1.5 h-10"
               >
                 <Coins className="h-3.5 w-3.5" />
-                R$ {upgradeCost >= 1000000 ? `${(upgradeCost / 1000000).toFixed(1)}M` : `${(upgradeCost / 1000).toFixed(0)}k`}
+                {formatMoney(upgradeCost)}
                 {!canUpgrade && budget < upgradeCost && <span className="text-[9px] opacity-70 ml-1">(sem orçamento)</span>}
               </Button>
             </div>
