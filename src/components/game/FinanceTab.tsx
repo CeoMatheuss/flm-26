@@ -294,6 +294,7 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   );
 }
 
