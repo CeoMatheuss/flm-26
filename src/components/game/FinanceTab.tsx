@@ -61,44 +61,77 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
   const balancoMensal = sponsorMonthly - totalSalaries - scoutSalaries;
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="space-y-4">
+      {/* Como funciona — Guia rápido */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-3 flex items-start gap-2">
+          <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <div className="text-xs text-muted-foreground leading-relaxed">
+            <span className="font-semibold text-foreground">Como funciona:</span>{' '}
+            Você ganha dinheiro com <span className="text-emerald-400 font-medium">patrocínios</span>, <span className="text-emerald-400 font-medium">ingressos</span> e <span className="text-emerald-400 font-medium">premiações</span>. Você gasta com <span className="text-red-400 font-medium">salários</span>, <span className="text-red-400 font-medium">olheiros</span> e <span className="text-red-400 font-medium">categoria de base</span>. Mantenha o balanço positivo para investir em estádio e jogadores!
+            <span className="block mt-1 text-[10px]">💡 Passe o mouse sobre os valores para ver o número exato em reais.</span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20">
           <CardContent className="p-3 flex items-center gap-2">
             <Wallet className="h-5 w-5 text-emerald-400 shrink-0" />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Saldo</p>
-              <p className="text-lg font-bold">{formatMoney(budget)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase">Saldo do Clube</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-lg font-bold cursor-help truncate">{formatMoney(budget)}</p>
+                </TooltipTrigger>
+                <TooltipContent>{formatMoneyFull(budget)}</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
           <CardContent className="p-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-400 shrink-0" />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Receitas</p>
-              <p className="text-lg font-bold text-emerald-400">{formatMoney(totalReceitas)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase">Receitas (total)</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-lg font-bold text-emerald-400 cursor-help truncate">{formatMoney(totalReceitas)}</p>
+                </TooltipTrigger>
+                <TooltipContent>{formatMoneyFull(totalReceitas)}</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
           <CardContent className="p-3 flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-red-400 shrink-0" />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Despesas</p>
-              <p className="text-lg font-bold text-red-400">{formatMoney(totalDespesas)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase">Despesas (total)</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-lg font-bold text-red-400 cursor-help truncate">{formatMoney(totalDespesas)}</p>
+                </TooltipTrigger>
+                <TooltipContent>{formatMoneyFull(totalDespesas)}</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
         <Card className={`bg-gradient-to-br ${saldo >= 0 ? 'from-emerald-500/10 border-emerald-500/20' : 'from-red-500/10 border-red-500/20'} to-transparent`}>
           <CardContent className="p-3 flex items-center gap-2">
             <DollarSign className={`h-5 w-5 shrink-0 ${saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
-            <div>
+            <div className="min-w-0">
               <p className="text-[10px] text-muted-foreground uppercase">Balanço</p>
-              <p className={`text-lg font-bold ${saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {saldo >= 0 ? '+' : ''}{formatMoney(saldo)}
-              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className={`text-lg font-bold cursor-help truncate ${saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {saldo >= 0 ? '+' : ''}{formatMoney(saldo)}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>{formatMoneyFull(saldo)}</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
@@ -111,21 +144,30 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
             <Building2 className="h-5 w-5 text-primary" />
             Custos Mensais Atuais
           </CardTitle>
+          <p className="text-xs text-muted-foreground">Quanto sai e entra do seu caixa todo mês.</p>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <CostRow icon={<Users className="h-4 w-4 text-blue-400" />} label="Folha Salarial (Jogadores)" value={totalSalaries} detail={`${players.length} jogadores`} />
-            <CostRow icon={<Eye className="h-4 w-4 text-amber-400" />} label="Salários Olheiros" value={scoutSalaries} detail={`${scouts.length} olheiro(s)`} />
-            <CostRow icon={<GraduationCap className="h-4 w-4 text-purple-400" />} label="Investimento Base" value={youthInvestment} detail={`A cada 4 jogos`} />
-            <CostRow icon={<Handshake className="h-4 w-4 text-emerald-400" />} label="Receita Patrocínios" value={sponsorMonthly} detail={`${sponsors.length}/3 ativos`} isRevenue />
+            <CostRow icon={<Users className="h-4 w-4 text-blue-400" />} label="Folha Salarial (Jogadores)" value={totalSalaries} detail={`${players.length} jogadores no elenco`} />
+            <CostRow icon={<Eye className="h-4 w-4 text-amber-400" />} label="Salários Olheiros" value={scoutSalaries} detail={`${scouts.length} olheiro(s) contratado(s)`} />
+            <CostRow icon={<GraduationCap className="h-4 w-4 text-purple-400" />} label="Investimento na Base" value={youthInvestment} detail={`Pago a cada 4 jogos`} />
+            <CostRow icon={<Handshake className="h-4 w-4 text-emerald-400" />} label="Receita de Patrocínios" value={sponsorMonthly} detail={`${sponsors.length}/3 contratos ativos`} isRevenue />
           </div>
           <Separator className="my-2" />
           <div className="flex justify-between items-center px-1">
-            <span className="text-sm font-medium text-muted-foreground">Total Mensal Estimado</span>
-            <span className={`text-sm font-bold ${(sponsorMonthly - totalSalaries - scoutSalaries) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {(sponsorMonthly - totalSalaries - scoutSalaries) >= 0 ? '+' : ''}{formatMoney(sponsorMonthly - totalSalaries - scoutSalaries)}/mês
-            </span>
+            <span className="text-sm font-medium text-muted-foreground">Balanço mensal estimado</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={`text-sm font-bold cursor-help ${balancoMensal >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {balancoMensal >= 0 ? '+' : ''}{formatMoney(balancoMensal)} / mês
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{formatMoneyFull(balancoMensal)} por mês</TooltipContent>
+            </Tooltip>
           </div>
+          {balancoMensal < 0 && (
+            <p className="text-[10px] text-red-400 px-1">⚠️ Seus gastos mensais estão maiores que suas receitas. Considere conseguir mais patrocinadores ou vender jogadores.</p>
+          )}
         </CardContent>
       </Card>
 
