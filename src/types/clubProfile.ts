@@ -13,6 +13,8 @@ export interface ClubProfile {
   foundedDate?: string;
   motto: string;
   trophies?: Trophy[];
+  /** When true, user can edit club name, stadium name, and shield. Unlocked via R$10 payment. */
+  customizationUnlocked?: boolean;
 }
 
 export const defaultClubProfile: ClubProfile = {
@@ -23,4 +25,5 @@ export const defaultClubProfile: ClubProfile = {
   foundedDate: '',
   motto: '',
   trophies: [],
+  customizationUnlocked: false,
 };
