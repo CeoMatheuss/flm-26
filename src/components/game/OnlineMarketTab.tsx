@@ -570,19 +570,31 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <Globe className="h-3 w-3" /> Mercado
           </TabsTrigger>
           <TabsTrigger value="freeagents" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
-            <EyeOff className="h-3 w-3" /> Livre
+            <EyeOff className="h-3 w-3" /> Livres
+          </TabsTrigger>
+          <TabsTrigger value="auction" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            ⚖️ Leilão
+          </TabsTrigger>
+          <TabsTrigger value="offers" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1 relative">
+            📨 Propostas
+            {incomingOffers.length > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[8px] text-destructive-foreground flex items-center justify-center font-bold">{incomingOffers.length}</span>}
           </TabsTrigger>
           <TabsTrigger value="loans" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <ArrowLeftRight className="h-3 w-3" /> Emprést.
           </TabsTrigger>
-          <TabsTrigger value="offers" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1 relative">
-            📩 Recebidas
-            {incomingOffers.length > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[8px] text-destructive-foreground flex items-center justify-center font-bold">{incomingOffers.length}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="sent" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
-            <Send className="h-3 w-3" /> Enviadas
-          </TabsTrigger>
         </TabsList>
+
+        {/* ── AUCTION (embedded) ── */}
+        <TabsContent value="auction" className="space-y-3 mt-3">
+          <AuctionTab
+            userId={userId}
+            clubName={clubName}
+            players={players}
+            budget={budget}
+            isPremium={isPremium}
+            onSellPlayer={(playerId) => onPlayerSold(playerId, 0)}
+          />
+        </TabsContent>
 
         {/* ── FREE AGENTS (Mercado Livre) ── */}
         <TabsContent value="freeagents" className="space-y-3 mt-3">
