@@ -57,6 +57,30 @@ export function YouthAcademyTab({
 
   const [observed, setObserved] = useState<YouthProspect | null>(null);
 
+  // Live ticker for construction countdown (re-render every 30s)
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    if (!academyUpgradeCompletesAt) return;
+    const interval = setInterval(() => setNowTick(t => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, [academyUpgradeCompletesAt]);
+
+  const isConstructing = !!academyUpgradeCompletesAt && new Date(academyUpgradeCompletesAt).getTime() > Date.now();
+  const constructionProgress = (() => {
+    if (!isConstructing || !academyUpgradeCompletesAt) return 0;
+    const target = new Date(academyUpgradeCompletesAt).getTime();
+    const start = target - 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - start;
+    return Math.max(0, Math.min(100, (elapsed / (24 * 60 * 60 * 1000)) * 100));
+  })();
+  const constructionRemaining = (() => {
+    if (!isConstructing || !academyUpgradeCompletesAt) return '';
+    const diff = new Date(academyUpgradeCompletesAt).getTime() - Date.now();
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+  })();
+
   return (
     <div className="space-y-4">
       {/* Quick Guide */}
@@ -112,7 +136,29 @@ export function YouthAcademyTab({
             <Badge variant="outline" className="text-[10px]">OVR {minOvr}–{maxOvr}</Badge>
           </div>
 
-          {academyLevel < 30 ? (
+          {isConstructing ? (
+            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Hammer className="h-4 w-4 text-orange-400 animate-pulse" />
+                <p className="text-sm font-bold text-orange-300">Obra em andamento → Nv {academyLevel + 1}</p>
+                <Badge variant="outline" className="ml-auto text-[10px] border-orange-500/40 text-orange-300 font-mono">
+                  ⏱ {constructionRemaining}
+                </Badge>
+              </div>
+              <Progress value={constructionProgress} className="h-2.5" />
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{Math.round(constructionProgress)}% concluído</span>
+                <span>Free: 24h · ⭐ Premium: instantâneo</span>
+              </div>
+              <Button
+                size="sm"
+                disabled
+                className="w-full gap-1.5 h-9 bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20"
+              >
+                <Crown className="h-3.5 w-3.5" /> Concluir agora (Premium)
+              </Button>
+            </div>
+          ) : academyLevel < 30 ? (
             <div className="p-3 rounded-lg bg-accent/30 border border-border/20">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -124,6 +170,16 @@ export function YouthAcademyTab({
                     OVR: {minOvr}–{maxOvr} → <strong className="text-primary">{nextMinOvr}–{nextMaxOvr}</strong>
                   </p>
                 </div>
+                {!isPremium && (
+                  <Badge variant="outline" className="text-[9px] border-orange-500/30 text-orange-400 shrink-0">
+                    ⏱ 24h obra
+                  </Badge>
+                )}
+                {isPremium && (
+                  <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400 shrink-0">
+                    ⭐ Instantâneo
+                  </Badge>
+                )}
               </div>
               <Button
                 size="sm"
