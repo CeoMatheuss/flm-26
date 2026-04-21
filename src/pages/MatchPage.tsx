@@ -849,52 +849,73 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
 
           <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
-            {/* Teams + Score */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="flex-1 text-right space-y-0.5 min-w-0">
-                <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
-                <div className="flex items-center gap-1 justify-end flex-wrap">
-                  {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                  ))}
+            {isHalftime ? (
+              /* Halftime focus banner — no team shields */
+              <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-2xl p-4 sm:p-6 text-center space-y-2 animate-fade-in">
+                <p className="text-3xl sm:text-5xl">⏸️</p>
+                <p className="text-xl sm:text-3xl font-black text-primary tracking-wide">INTERVALO</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Descanso de 15 minutos · Use o tempo para fazer ajustes</p>
+                <div className={`inline-block text-2xl sm:text-4xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl mt-2 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                  <span className="text-foreground">{homeGoals}</span>
+                  <span className="text-muted-foreground/60 mx-2">x</span>
+                  <span className="text-foreground">{awayGoals}</span>
+                </div>
+                <div className="flex items-center justify-center gap-3 sm:gap-5 text-[11px] sm:text-sm text-muted-foreground pt-1 flex-wrap">
+                  <span>📊 Posse: <strong className="text-foreground">{possession[0]}%–{possession[1]}%</strong></span>
+                  <span>⚡ Chutes: <strong className="text-foreground">{stats.shots[0]}–{stats.shots[1]}</strong></span>
+                  <span>🎯 No gol: <strong className="text-foreground">{stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}</strong></span>
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Teams + Score */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex-1 text-right space-y-0.5 min-w-0">
+                    <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
+                    <div className="flex items-center gap-1 justify-end flex-wrap">
+                      {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                <span className="text-primary">{homeGoals}</span>
-                <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
-                <span className="text-primary">{awayGoals}</span>
-              </div>
+                  <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                    <span className="text-primary">{homeGoals}</span>
+                    <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
+                    <span className="text-primary">{awayGoals}</span>
+                  </div>
 
-              <div className="flex-1 text-left space-y-0.5 min-w-0">
-                <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
-                <div className="flex items-center gap-1 flex-wrap">
-                  {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                  ))}
+                  <div className="flex-1 text-left space-y-0.5 min-w-0">
+                    <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Goal flash banner */}
-            {goalFlash && latestEvent?.isGoal && (
-              <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
-                <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-                {latestEvent.assistName && (
-                  <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                {/* Goal flash banner */}
+                {goalFlash && latestEvent?.isGoal && (
+                  <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
+                    <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+                    {latestEvent.assistName && (
+                      <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {/* Possession bar */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
-              <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
-                <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-                <div className="bg-red-500 flex-1 rounded-r-full" />
-              </div>
-              <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
-            </div>
+                {/* Possession bar */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
+                  <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
+                    <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
+                    <div className="bg-red-500 flex-1 rounded-r-full" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
+                </div>
+              </>
+            )}
 
             {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
           </CardContent>
