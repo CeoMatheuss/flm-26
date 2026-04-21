@@ -43,6 +43,8 @@ const SHAPE_LABELS: Record<ShieldShape, string> = {
   swiss: 'Suíço', iberian: 'Ibérico', nordic: 'Nórdico', 'french-modern': 'Francês',
   'italian-oval': 'Oval Italiano', 'german-tournament': 'Tournamento', 'english-heater': 'Heater Inglês',
   victorian: 'Vitoriano',
+  baroque: 'Barroco', tudor: 'Tudor', kite: 'Pipa Norman', shell: 'Concha',
+  'star-shield': 'Estrela', 'modern-hex': 'Hexa Moderno', 'wave-base': 'Onda', 'split-arch': 'Arco Duplo',
 };
 
 const PATTERN_LABELS: Partial<Record<ShieldPattern, string>> = {
@@ -65,6 +67,7 @@ const ANIMAL_ICONS: ShieldIcon[] = [
   'wolf', 'bear', 'panther', 'bull', 'deer-head', 'snake',
   'griffin', 'elephant', 'rhino', 'falcon', 'fox', 'ram',
   'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'dragon', 'swan',
+  'parrot',
 ];
 const SYMBOL_ICONS: ShieldIcon[] = [
   'crown-icon', 'fleur-de-lis', 'cross-pattee', 'star', 'sun-burst', 'crescent-moon',

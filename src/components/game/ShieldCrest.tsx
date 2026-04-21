@@ -414,11 +414,43 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
     );
   }
 
+  // Symbol sprite removed for parrot — handled separately below
+  if (icon === 'parrot') {
+    const drawSize = s * 0.46;
+    const cx = s / 2;
+    const cy = s * 0.44;
+    const dx = cx - drawSize / 2;
+    const dy = cy - drawSize / 2;
+    const hex = dc.replace('#', '');
+    const r = parseInt(hex.substring(0, 2) || '00', 16) / 255;
+    const g = parseInt(hex.substring(2, 4) || '00', 16) / 255;
+    const b = parseInt(hex.substring(4, 6) || '00', 16) / 255;
+    return (
+      <g>
+        <defs>
+          <filter id={`${filterId}-parrot`} colorInterpolationFilters="sRGB">
+            <feColorMatrix type="matrix" values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`} />
+          </filter>
+        </defs>
+        <image href={heraldicParrot} x={dx} y={dy} width={drawSize} height={drawSize} preserveAspectRatio="xMidYMid meet" filter={`url(#${filterId}-parrot)`} />
+      </g>
+    );
+  }
+
   // Heraldic symbol sprite (high-fidelity silhouettes)
   const symbolCell = SYMBOL_SPRITE_MAP[icon as string];
   if (symbolCell) {
     return (
       <HeraldicSprite
+        spriteHref={heraldicSymbolsSprite}
+        cell={symbolCell}
+        s={s}
+        color={dc}
+        filterId={filterId}
+        recolor={true}
+      />
+    );
+  }
         spriteHref={heraldicSymbolsSprite}
         cell={symbolCell}
         s={s}
