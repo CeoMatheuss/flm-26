@@ -123,7 +123,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [filterPos, setFilterPos] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
+
+  // Cancel pending swap with Esc
+  useEffect(() => {
+    if (!pendingSwap) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingSwap(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [pendingSwap]);
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
