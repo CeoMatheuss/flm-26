@@ -1,6 +1,7 @@
 import React from 'react';
 import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
 import heraldicSymbolsSprite from '@/assets/heraldic-symbols.png';
+import heraldicParrot from '@/assets/heraldic-parrot.png';
 
 /* ── Heraldic sprite sheets (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
 const SPRITE_W = 1536;
@@ -189,6 +190,8 @@ export const shieldShapes = [
   'classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest',
   // ── New heraldic shapes (v2) ──
   'swiss', 'iberian', 'nordic', 'french-modern', 'italian-oval', 'german-tournament', 'english-heater', 'victorian',
+  // ── Extra shapes (v3) ──
+  'baroque', 'tudor', 'kite', 'shell', 'star-shield', 'modern-hex', 'wave-base', 'split-arch',
 ] as const;
 export type ShieldShape = typeof shieldShapes[number];
 
@@ -214,6 +217,8 @@ export const shieldIcons = [
   // ── New animals (from sprite v2) ──
   'eagle-displayed', 'deer-head', 'falcon', 'fox', 'ram',
   'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'swan',
+  // ── New: AI-generated heraldic parrot ──
+  'parrot',
   // ── Symbols ──
   'lightning', 'castle', 'axe', 'fleur-de-lis', 'cross-pattee', 'crescent-moon', 'sun-burst',
   // ── New symbols (from sprite v2) ──
@@ -238,6 +243,7 @@ export const shieldIconLabels: Record<ShieldIcon, string> = {
   fox: '🦊 Raposa', ram: '🐏 Carneiro',
   'lion-head': '🦁 Cabeça Leão', 'eagle-head': '🦅 Cabeça Águia', 'wolf-head': '🐺 Cabeça Lobo',
   'bear-head': '🐻 Cabeça Urso', swan: '🦢 Cisne',
+  parrot: '🦜 Papagaio',
   lightning: '⚡ Raio', castle: '🏰 Castelo', axe: '🪓 Machado',
   'fleur-de-lis': '⚜ Flor de Lis', 'cross-pattee': '✚ Cruz', 'crescent-moon': '🌙 Lua', 'sun-burst': '☀ Sol',
   feather: '🪶 Pena', 'oak-leaf': '🍂 Folha',
