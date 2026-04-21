@@ -1324,42 +1324,88 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   );
 }
 
+/* ── CHAT-STYLE EVENT ROW ──────────────────────────────────── */
+
+function ChatEventRow({ ev, homeTeam, awayTeam }: { ev: SimEvent; homeTeam: string; awayTeam: string }) {
+  const teamName = ev.team === 'home' ? homeTeam : ev.team === 'away' ? awayTeam : null;
+  const initial = teamName ? teamName.trim().charAt(0).toUpperCase() : null;
+  const isGoal = ev.isGoal;
+
+  return (
+    <div className="flex items-start gap-2.5 sm:gap-3 px-1.5 sm:px-2 py-2.5 sm:py-3">
+      {/* Team badge (subtle) */}
+      {initial ? (
+        <div
+          className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-bold border ${
+            ev.team === 'home'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'bg-muted/30 text-foreground/80 border-border/40'
+          }`}
+          title={teamName ?? undefined}
+        >
+          {initial}
+        </div>
+      ) : (
+        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
+          {getEventIcon(ev.type)}
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground/80">{ev.minute}'</span>
+          {teamName && (
+            <span className="text-[10px] sm:text-xs text-muted-foreground/60 truncate">{teamName}</span>
+          )}
+          {isGoal && <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Gol</span>}
+        </div>
+        <p className={`text-xs sm:text-sm leading-relaxed ${getEventColor(ev.type)}`}>
+          {teamName && <span className="mr-1.5">{getEventIcon(ev.type)}</span>}
+          {ev.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── STATS VIEW ────────────────────────────────────────────── */
 
 function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam: string; awayTeam: string }) {
-  const rows: [string, [number, number], string][] = [
-    ['Posse de Bola', stats.possession, '%'],
-    ['Finalizações', stats.shots, ''],
-    ['Chutes no Gol', stats.shotsOnTarget, ''],
-    ['Escanteios', stats.corners, ''],
-    ['Faltas', stats.fouls, ''],
-    ['Cartões Amarelos', stats.yellowCards, ''],
-    ['Cartões Vermelhos', stats.redCards, ''],
-    ['Passes', stats.passes, ''],
-    ['Desarmes', stats.tackles, ''],
-    ['Defesas', stats.saves, ''],
-    ['Impedimentos', stats.offsides, ''],
+  const rows: { label: string; vals: [number, number]; suffix: string; icon: string }[] = [
+    { label: 'Posse de Bola', vals: stats.possession, suffix: '%', icon: '⚽' },
+    { label: 'Finalizações', vals: stats.shots, suffix: '', icon: '🎯' },
+    { label: 'No Gol', vals: stats.shotsOnTarget, suffix: '', icon: '🥅' },
+    { label: 'Escanteios', vals: stats.corners, suffix: '', icon: '🚩' },
+    { label: 'Faltas', vals: stats.fouls, suffix: '', icon: '⚠️' },
+    { label: 'Amarelos', vals: stats.yellowCards, suffix: '', icon: '🟨' },
+    { label: 'Vermelhos', vals: stats.redCards, suffix: '', icon: '🟥' },
+    { label: 'Passes', vals: stats.passes, suffix: '', icon: '↔️' },
+    { label: 'Desarmes', vals: stats.tackles, suffix: '', icon: '💪' },
+    { label: 'Defesas', vals: stats.saves, suffix: '', icon: '🧤' },
+    { label: 'Impedimentos', vals: stats.offsides, suffix: '', icon: '⛳' },
   ];
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex justify-between text-sm sm:text-base font-bold">
-        <span className="text-blue-400 truncate max-w-[120px] sm:max-w-[140px]">{homeTeam}</span>
-        <span className="text-red-400 truncate max-w-[120px] sm:max-w-[140px]">{awayTeam}</span>
+    <div className="space-y-3">
+      <div className="flex justify-between text-xs sm:text-sm font-semibold">
+        <span className="text-foreground truncate max-w-[120px] sm:max-w-[140px]">{homeTeam}</span>
+        <span className="text-muted-foreground truncate max-w-[120px] sm:max-w-[140px] text-right">{awayTeam}</span>
       </div>
-      {rows.map(([label, vals, suffix]) => {
+      {rows.map(({ label, vals, suffix, icon }) => {
         const total = vals[0] + vals[1];
         const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
         return (
-          <div key={label} className="space-y-0.5 sm:space-y-1">
+          <div key={label} className="space-y-1">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-bold w-10 sm:w-12 text-right">{vals[0]}{suffix}</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</span>
-              <span className="font-bold w-10 sm:w-12 text-left">{vals[1]}{suffix}</span>
+              <span className="font-mono font-semibold w-10 sm:w-12 text-right text-foreground">{vals[0]}{suffix}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium flex items-center gap-1">
+                <span className="text-sm">{icon}</span>{label}
+              </span>
+              <span className="font-mono font-semibold w-10 sm:w-12 text-left text-muted-foreground">{vals[1]}{suffix}</span>
             </div>
-            <div className="flex h-2 sm:h-2.5 rounded-full overflow-hidden bg-muted/10">
-              <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
-              <div className="bg-red-500 flex-1 rounded-r-full" />
+            <div className="flex h-1.5 sm:h-2 rounded-full overflow-hidden bg-muted/15">
+              <div className="bg-primary transition-all duration-500" style={{ width: `${homePercent}%` }} />
+              <div className="bg-foreground/30 flex-1" />
             </div>
           </div>
         );
@@ -1394,29 +1440,41 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
       )}
 
       <div>
-        <p className="text-sm sm:text-base font-black mb-2 text-primary flex items-center gap-1.5"><Shirt className="h-4 w-4" /> Titulares</p>
-        <div className="space-y-1">
-          {starters.map((p, i) => (
-            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
-              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
-              <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-8 sm:w-9 justify-center">{p.position}</Badge>
-              <span className="text-xs sm:text-sm font-semibold flex-1 truncate">{p.name}</span>
-              <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
-              <span className="text-[10px] sm:text-sm text-muted-foreground">⚡{p.stamina || 100}%</span>
-            </div>
-          ))}
+        <p className="text-sm sm:text-base font-semibold mb-2 text-foreground flex items-center gap-1.5">
+          <Shirt className="h-4 w-4 text-primary" /> Titulares
+        </p>
+        <div className="space-y-2.5">
+          {starters.map((p, i) => {
+            const stamina = p.stamina ?? 100;
+            const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-amber-500' : 'bg-red-500';
+            return (
+              <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
+                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
+                <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
+                  <div className="h-1.5 w-full rounded-full bg-muted/15 overflow-hidden mt-1">
+                    <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-primary/10 border border-primary/20 text-primary text-sm font-bold font-mono">
+                  {p.overall}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {bench.length > 0 && (
         <div>
-          <p className="text-sm sm:text-base font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+          <p className="text-sm sm:text-base font-semibold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {bench.map((p, i) => (
-              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 rounded-lg px-2 sm:px-3 py-2">
-                <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
-                <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
-                <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
+              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 border border-border/15 rounded-lg px-2.5 py-2">
+                <Badge variant="outline" className="text-[10px] sm:text-xs w-9 justify-center">{p.position}</Badge>
+                <span className="text-xs sm:text-sm truncate flex-1 text-foreground/80">{p.name}</span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-foreground">{p.overall}</span>
               </div>
             ))}
           </div>
