@@ -93,24 +93,20 @@ function HeraldicSprite({
   recolor?: boolean;
 }) {
   const [col, row] = cell;
-  // Target draw box on the shield (centered around cy = s*0.44)
   const drawSize = s * 0.42;
   const cx = s / 2;
   const cy = s * 0.44;
   const dx = cx - drawSize / 2;
   const dy = cy - drawSize / 2;
-  // Scale sprite so that one cell fills drawSize x drawSize
   const scale = drawSize / CELL_W;
   const fullW = SPRITE_W * scale;
   const fullH = SPRITE_H * scale;
   const offsetX = dx - col * CELL_W * scale;
   const offsetY = dy - row * CELL_H * scale;
-  // Convert hex color → RGB 0-1 for feColorMatrix
   const hex = color.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-  // Clip to single cell + recolor black pixels to target color
+  const r = parseInt(hex.substring(0, 2) || '00', 16) / 255;
+  const g = parseInt(hex.substring(2, 4) || '00', 16) / 255;
+  const b = parseInt(hex.substring(4, 6) || '00', 16) / 255;
   const clipId = `${filterId}-clip`;
   return (
     <g>
@@ -118,23 +114,24 @@ function HeraldicSprite({
         <clipPath id={clipId}>
           <rect x={dx} y={dy} width={drawSize} height={drawSize} />
         </clipPath>
-        <filter id={filterId} colorInterpolationFilters="sRGB">
-          {/* Map any non-transparent pixel to target color, preserving alpha */}
-          <feColorMatrix
-            type="matrix"
-            values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`}
-          />
-        </filter>
+        {recolor && (
+          <filter id={filterId} colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`}
+            />
+          </filter>
+        )}
       </defs>
       <g clipPath={`url(#${clipId})`}>
         <image
-          href={heraldicAnimalsSprite}
+          href={spriteHref}
           x={offsetX}
           y={offsetY}
           width={fullW}
           height={fullH}
           preserveAspectRatio="none"
-          filter={`url(#${filterId})`}
+          filter={recolor ? `url(#${filterId})` : undefined}
         />
       </g>
     </g>
