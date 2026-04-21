@@ -137,6 +137,9 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('solid');
   const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
   const [selectedIcon, setSelectedIcon] = useState<ShieldIcon>('star');
+  const [shieldConfig, setShieldConfig] = useState<ShieldConfig>(() => defaultShieldConfig({
+    primaryColor: '#2563EB', secondaryColor: '#FFFFFF', detailColor: '#DC2626', borderColor: '#DC2626',
+  }));
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
