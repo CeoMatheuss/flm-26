@@ -82,7 +82,8 @@ export function getAcademyUpgradeCost(currentLevel: number): number {
   return academyUpgradeCosts[currentLevel + 1] ?? academyUpgradeCosts[currentLevel] ?? 999999999;
 }
 
-export function getUpgradeCost(currentLevel: number): number {
+export function getUpgradeCost(currentLevel: number, facility?: 'physiotherapy' | string): number {
+  if (facility === 'physiotherapy') return physiotherapyCosts[currentLevel + 1] ?? 999_999_999;
   return facilityCosts[currentLevel + 1] ?? 999999999;
 }
 
