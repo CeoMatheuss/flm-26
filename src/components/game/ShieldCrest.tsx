@@ -288,8 +288,34 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
   const r = s * 0.13;
 
   // Heraldic animal sprite (high-fidelity silhouettes)
-  if (ANIMAL_SPRITE_MAP[icon as string]) {
-    return <HeraldicAnimalSprite iconKey={icon as string} s={s} color={dc} filterId={filterId} />;
+  const animalCell = ANIMAL_SPRITE_MAP[icon as string];
+  if (animalCell) {
+    const fullColor = FULLCOLOR_ANIMALS.has(icon as string);
+    return (
+      <HeraldicSprite
+        spriteHref={heraldicAnimalsSprite}
+        cell={animalCell}
+        s={s}
+        color={dc}
+        filterId={filterId}
+        recolor={!fullColor}
+      />
+    );
+  }
+
+  // Heraldic symbol sprite (high-fidelity silhouettes)
+  const symbolCell = SYMBOL_SPRITE_MAP[icon as string];
+  if (symbolCell) {
+    return (
+      <HeraldicSprite
+        spriteHref={heraldicSymbolsSprite}
+        cell={symbolCell}
+        s={s}
+        color={dc}
+        filterId={filterId}
+        recolor={true}
+      />
+    );
   }
 
   // Letters
