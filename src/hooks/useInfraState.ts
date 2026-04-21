@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   Infrastructure, defaultInfrastructure, getUpgradeCost, getAcademyUpgradeCost,
   getStadiumUpgradeCost, getStadiumCapacity, getTrainingCenterUpgradeCost,
+  getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
 } from '@/types/infrastructure';
