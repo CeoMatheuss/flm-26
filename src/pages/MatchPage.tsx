@@ -763,7 +763,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                       <p className="text-base sm:text-lg font-black text-foreground">{maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">subs</span></p>
                       {(() => {
                         const tired = (homePlayers || [])
-                          .filter((p: any) => !substitutedPlayerIds.includes(p.id) && (p.stamina ?? 100) < 50)
+                          .filter((p: any) => !substitutedPlayerIds.has(p.id) && (p.stamina ?? 100) < 50)
                           .sort((a: any, b: any) => (a.stamina ?? 100) - (b.stamina ?? 100))[0];
                         return tired ? (
                           <p className="text-[10px] sm:text-xs text-red-400 truncate font-bold">⚠️ {tired.name?.split(' ').slice(-1)[0] || 'Jogador'} {tired.stamina ?? 0}%</p>
