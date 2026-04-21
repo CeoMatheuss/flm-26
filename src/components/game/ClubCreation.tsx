@@ -22,6 +22,7 @@ export interface ClubConfig {
   shieldPattern?: string;
   shieldShape?: string;
   shieldIcon?: string;
+  shieldConfig?: ShieldConfig;
   country: string;
 }
 
