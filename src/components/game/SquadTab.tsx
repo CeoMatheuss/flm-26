@@ -1,14 +1,13 @@
-import { Player, PlayerAttributes, personalityLabels } from '@/types/game';
+import { Player, personalityLabels } from '@/types/game';
 import { ShieldCrest } from './ShieldCrest';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Zap, Heart, Star, Shield, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 
@@ -27,6 +26,7 @@ interface Props {
   userId: string;
   transferBudget?: number;
   onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
+  onReorderPlayers?: (newOrder: Player[]) => void;
 }
 
 const posColors: Record<string, string> = {
@@ -61,6 +61,9 @@ const attrLabels: Record<string, { label: string; icon: string }> = {
   aggression: { label: 'Agressividade', icon: '⚔️' },
 };
 
+const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
+const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
+
 function getOvrColor(val: number) {
   if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', glow: 'shadow-emerald-500/20' };
   if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/15', border: 'border-primary/40', glow: 'shadow-primary/20' };
@@ -88,6 +91,12 @@ function getStaminaColor(val: number): string {
   return 'bg-red-500';
 }
 
+function getMoraleColor(val: number): string {
+  if (val >= 70) return 'bg-emerald-500';
+  if (val >= 40) return 'bg-amber-500';
+  return 'bg-red-500';
+}
+
 function getMoraleEmoji(morale: number): string {
   if (morale >= 80) return '😄';
   if (morale >= 60) return '🙂';
@@ -96,39 +105,80 @@ function getMoraleEmoji(morale: number): string {
   return '😡';
 }
 
-function getMoraleColor(morale: number): string {
-  if (morale >= 80) return 'text-emerald-400';
-  if (morale >= 60) return 'text-primary';
-  if (morale >= 40) return 'text-amber-400';
-  return 'text-red-400';
+type Group = 'starters' | 'reserves' | 'out';
+
+function getPlayerGroup(idx: number): Group {
+  if (idx < STARTERS_END) return 'starters';
+  if (idx < RESERVES_END) return 'reserves';
+  return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer }: Props) {
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers }: Props) {
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
   const [shirtNumber, setShirtNumber] = useState<number>(0);
   const [editingNumber, setEditingNumber] = useState(false);
   const [filterPos, setFilterPos] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary'>('position');
+  const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
-  const sorted = [...players]
-    .filter(p => !filterPos || p.position === filterPos)
-    .sort((a, b) => {
-      if (sortBy === 'overall') return b.overall - a.overall;
-      if (sortBy === 'age') return a.age - b.age;
-      if (sortBy === 'salary') return b.salary - a.salary;
-      return posOrder.indexOf(a.position) - posOrder.indexOf(b.position);
-    });
 
   const expiringPlayers = players.filter(p => p.contract <= 1);
   const avgOvr = players.length > 0 ? Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length) : 0;
   const totalSalary = players.reduce((s, p) => s + p.salary, 0);
   const injuredCount = players.filter(p => p.injury).length;
+
+  // Separate players into 3 groups by their original index in the array
+  const groupedPlayers = useMemo(() => {
+    const starters: { player: Player; idx: number }[] = [];
+    const reserves: { player: Player; idx: number }[] = [];
+    const out: { player: Player; idx: number }[] = [];
+    players.forEach((p, idx) => {
+      const entry = { player: p, idx };
+      if (idx < STARTERS_END) starters.push(entry);
+      else if (idx < RESERVES_END) reserves.push(entry);
+      else out.push(entry);
+    });
+    return { starters, reserves, out };
+  }, [players]);
+
+  // Apply filter/sort to a group
+  const processList = (list: { player: Player; idx: number }[]) => {
+    return list
+      .filter(({ player }) => !filterPos || player.position === filterPos)
+      .sort((a, b) => {
+        if (sortBy === 'overall') return b.player.overall - a.player.overall;
+        if (sortBy === 'age') return a.player.age - b.player.age;
+        if (sortBy === 'salary') return b.player.salary - a.player.salary;
+        if (sortBy === 'value') return getPlayerValue(b.player) - getPlayerValue(a.player);
+        return posOrder.indexOf(a.player.position) - posOrder.indexOf(b.player.position);
+      });
+  };
+
+  // Move a player to the start of a target group while preserving overall order
+  const moveToGroup = (playerId: string, target: Group) => {
+    if (!onReorderPlayers) return;
+    const idx = players.findIndex(p => p.id === playerId);
+    if (idx < 0) return;
+    const player = players[idx];
+    const without = players.filter(p => p.id !== playerId);
+
+    let insertAt = 0;
+    if (target === 'starters') {
+      insertAt = 0; // promote to top of starters
+    } else if (target === 'reserves') {
+      // Place right after the 11th starter (so it sits in reserves zone)
+      insertAt = Math.min(without.length, STARTERS_END);
+    } else {
+      // 'out' — put it at position RESERVES_END so it falls outside both groups
+      insertAt = Math.min(without.length, RESERVES_END);
+    }
+    const newOrder = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
+    onReorderPlayers(newOrder);
+  };
 
   // ─── Full-page player profile ───
   if (viewingPlayer) {
@@ -147,7 +197,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         {/* Player Header Card */}
         <div className={`relative rounded-xl border ${ovr.border} ${ovr.bg} p-4 overflow-hidden`}>
           <div className="flex items-center gap-4">
-            {/* OVR Circle */}
             <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center ${ovr.bg} border-2 ${ovr.border} shadow-lg ${ovr.glow}`}>
               <span className={`text-2xl font-black ${ovr.text}`}>{player.overall}</span>
               <span className="text-[8px] text-muted-foreground font-medium -mt-0.5">OVR</span>
@@ -161,13 +210,13 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {player.personality && personalityLabels[player.personality] && (
                   <span className="text-sm" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
                 )}
+                {isPlayerGem(player) && <span className="text-amber-400" title="Joia!">💎</span>}
               </div>
               <h2 className="text-lg font-black text-foreground leading-tight">{player.name}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">{posLabels[player.position]} • {player.age} anos</p>
             </div>
           </div>
 
-          {/* Quick Stats Row */}
           <div className="grid grid-cols-4 gap-2 mt-4">
             <div className="text-center">
               <p className="text-[9px] text-muted-foreground">Contrato</p>
@@ -203,20 +252,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
         )}
 
-        {/* Personality */}
-        {player.personality && personalityLabels[player.personality] && (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-accent/50 border border-border/30">
-            <span className="text-xl">{personalityLabels[player.personality].emoji}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold">{personalityLabels[player.personality].label}</p>
-              <p className="text-[10px] text-muted-foreground">{personalityLabels[player.personality].desc}</p>
-            </div>
-          </div>
-        )}
-
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-primary/50 hover:bg-primary/5" onClick={() => onListForSale(player.id)}>
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-primary/50 hover:bg-primary/5" onClick={() => onListForSale(player.id)} disabled={players.length <= 11}>
             <Tag className="h-3.5 w-3.5" /> Listar no Mercado
           </Button>
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-cyan-500/50 hover:bg-cyan-500/5" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (players.length <= 11)}>
@@ -230,7 +268,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               <Trash2 className="h-3.5 w-3.5" /> Rescindir
             </Button>
           )}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 col-span-2">
             {editingNumber ? (
               <div className="flex items-center gap-1 w-full">
                 <Input type="number" min={1} max={99} value={shirtNumber}
@@ -309,7 +347,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </div>
             )}
 
-            {/* History */}
             <div>
               <p className="text-xs font-bold text-muted-foreground mb-2">📜 Histórico de Clubes</p>
               {player.history && player.history.length > 0 ? (
@@ -335,25 +372,170 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               )}
             </div>
 
-            {/* Market Value */}
             <div>
               <p className="text-xs font-bold text-muted-foreground mb-2">💰 Valor de Mercado</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
                   <p className="text-[9px] text-muted-foreground">Base</p>
-                  <p className="text-sm font-black text-emerald-400">R${(getPlayerBaseValue(player) / 1000).toFixed(0)}k</p>
+                  <p className="text-sm font-black text-emerald-400">{formatMoney(getPlayerBaseValue(player))}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
                   <p className="text-[9px] text-muted-foreground">Total</p>
-                  <p className="text-sm font-black text-primary">R${(getPlayerValue(player) / 1000).toFixed(0)}k</p>
+                  <p className="text-sm font-black text-primary">{formatMoney(getPlayerValue(player))}</p>
                 </div>
               </div>
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Rescind modal */}
+        {onRescindPlayer && (
+          <RescindModal
+            player={rescindCandidate}
+            transferBudgetAvailable={effectiveTransferBudget}
+            onClose={() => setRescindCandidate(null)}
+            onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); setViewingPlayer(null); }}
+          />
+        )}
       </div>
     );
   }
+
+  // ─── Player card render (used in 3 sub-tabs) ───
+  const renderPlayerCard = (player: Player, currentGroup: Group) => {
+    const avgRating = player.seasonRatings && player.seasonRatings.length > 0
+      ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length) : null;
+    const ovr = getOvrColor(player.overall);
+    const value = getPlayerValue(player);
+    const trend = getValueTrend(player);
+    const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+    const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
+    const auctionEligible = player.overall >= 65 && player.age <= 35;
+    const canRemoveFromSquad = players.length > 11;
+
+    const borderClass = player.injury
+      ? 'border-red-500/40 bg-red-500/5'
+      : player.contract <= 1
+      ? 'border-amber-500/30 bg-amber-500/5'
+      : 'border-border/20 bg-card/50 hover:border-border/40';
+
+    return (
+      <div
+        key={player.id}
+        className={`group rounded-xl border transition-all duration-200 ${borderClass}`}
+      >
+        {/* Top row: OVR + main info + reorder buttons */}
+        <div className="flex items-center gap-2.5 p-2.5 cursor-pointer" onClick={() => setViewingPlayer(player)}>
+          <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg}`}>
+            <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
+            <span className="text-[7px] text-muted-foreground">OVR</span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              <Badge className={`text-[8px] px-1 py-0 h-4 font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
+              {player.shirtNumber != null && player.shirtNumber > 0 && (
+                <span className="text-[9px] font-mono text-muted-foreground">#{player.shirtNumber}</span>
+              )}
+              <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
+              {player.personality && personalityLabels[player.personality] && (
+                <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
+              )}
+              {isPlayerGem(player) && <span className="text-amber-400 text-xs" title="Joia!">💎</span>}
+              {player.injury && (
+                <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30 shrink-0" variant="outline">
+                  <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
+                </Badge>
+              )}
+              {player.contract <= 1 && !player.injury && (
+                <span className="text-[9px] text-amber-400 font-bold shrink-0">⚠️</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+              <span>{player.age}a</span>
+              <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k</span>
+              <span>📄{player.contract}a</span>
+              <span className={`font-bold ${trendColor}`} title={`Valor de mercado: ${formatMoney(value)}`}>
+                💰{(value / 1000).toFixed(0)}k {trendIcon}
+              </span>
+              {avgRating != null && (
+                <span className={`font-bold ${avgRating >= 7 ? 'text-emerald-400' : avgRating >= 5.5 ? 'text-primary' : 'text-red-400'}`}>
+                  ★{avgRating.toFixed(1)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-foreground/60 shrink-0 transition-colors" />
+        </div>
+
+        {/* Stamina + Morale bars */}
+        <div className="grid grid-cols-2 gap-2 px-2.5 pb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-muted-foreground shrink-0 w-7">⚡{player.stamina}%</span>
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-muted-foreground shrink-0 w-7">{getMoraleEmoji(player.morale)}{player.morale}%</span>
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${getMoraleColor(player.morale)}`} style={{ width: `${player.morale}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Action row */}
+        <div className="flex items-center gap-1 p-2 pt-1 border-t border-border/15 flex-wrap">
+          {/* Reorder buttons */}
+          {onReorderPlayers && (
+            <>
+              {currentGroup !== 'starters' && (
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-emerald-400 hover:bg-emerald-500/10" onClick={() => moveToGroup(player.id, 'starters')} title="Promover para titular">
+                  <ArrowUp className="h-3 w-3" /> Titular
+                </Button>
+              )}
+              {currentGroup !== 'reserves' && (
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-blue-400 hover:bg-blue-500/10" onClick={() => moveToGroup(player.id, 'reserves')} title="Mandar para banco">
+                  <Armchair className="h-3 w-3" /> Banco
+                </Button>
+              )}
+              {currentGroup !== 'out' && (
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-muted-foreground hover:bg-accent/50" onClick={() => moveToGroup(player.id, 'out')} title="Fora do elenco">
+                  <Package className="h-3 w-3" /> Fora
+                </Button>
+              )}
+            </>
+          )}
+          <div className="flex-1" />
+          {/* Action icons */}
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onListForSale(player.id)} disabled={!canRemoveFromSquad} title="Listar no mercado">
+            <Tag className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-cyan-400 hover:bg-cyan-500/10" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || !canRemoveFromSquad} title="Emprestar">
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+          </Button>
+          {auctionEligible && (
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
+              <Gavel className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {onRescindPlayer && (
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={!canRemoveFromSquad} title="Rescindir">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const startersList = processList(groupedPlayers.starters);
+  const reservesList = processList(groupedPlayers.reserves);
+  const outList = processList(groupedPlayers.out);
 
   // ─── Main Squad View ───
   return (
@@ -390,8 +572,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 smooth-scroll">
+          {/* Position filter */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             <button
               className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${!filterPos ? 'bg-primary/15 text-primary border border-primary/30' : 'bg-accent/30 text-muted-foreground border border-transparent hover:bg-accent/50'}`}
               onClick={() => setFilterPos(null)}
@@ -413,109 +595,63 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
 
           {/* Sort */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[10px] text-muted-foreground shrink-0">Ordenar:</span>
-            {(['position', 'overall', 'age', 'salary'] as const).map(s => (
+            {(['position', 'overall', 'age', 'salary', 'value'] as const).map(s => (
               <button
                 key={s}
                 className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${sortBy === s ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                 onClick={() => setSortBy(s)}
               >
-                {s === 'position' ? 'Posição' : s === 'overall' ? 'OVR' : s === 'age' ? 'Idade' : 'Salário'}
+                {s === 'position' ? 'Posição' : s === 'overall' ? 'OVR' : s === 'age' ? 'Idade' : s === 'salary' ? 'Salário' : 'Valor'}
               </button>
             ))}
           </div>
 
-          {/* Player List */}
-          <div className="space-y-1.5">
-            {sorted.map(player => {
-              const avgRating = player.seasonRatings && player.seasonRatings.length > 0
-                ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length) : null;
-              const ovr = getOvrColor(player.overall);
+          {/* Sub-tabs: Titulares / Reservas / Fora do Elenco */}
+          <Tabs defaultValue="starters" className="w-full">
+            <TabsList className="grid grid-cols-3 w-full rounded-xl h-9">
+              <TabsTrigger value="starters" className="text-[11px] gap-1.5 rounded-lg">
+                <Shirt className="h-3 w-3" /> Titulares
+                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.starters.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="reserves" className="text-[11px] gap-1.5 rounded-lg">
+                <Armchair className="h-3 w-3" /> Reservas
+                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.reserves.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="out" className="text-[11px] gap-1.5 rounded-lg">
+                <Package className="h-3 w-3" /> Fora
+                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.out.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
 
-              return (
-                <div
-                  key={player.id}
-                  className={`
-                    group flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-200 cursor-pointer
-                    ${player.injury ? 'border-red-500/30 bg-red-500/5 hover:bg-red-500/10' :
-                      player.contract <= 1 ? 'border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10' :
-                      'border-border/20 bg-card/50 hover:bg-accent/50 hover:border-border/40'}
-                  `}
-                  onClick={() => setViewingPlayer(player)}
-                >
-                  {/* OVR */}
-                  <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg}`}>
-                    <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
-                    <span className="text-[7px] text-muted-foreground">OVR</span>
-                  </div>
+            <TabsContent value="starters" className="space-y-1.5 mt-3">
+              <p className="text-[10px] text-muted-foreground px-1">11 jogadores que começam as partidas e são listados primeiro nas táticas.</p>
+              {startersList.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
+              ) : (
+                startersList.map(({ player }) => renderPlayerCard(player, 'starters'))
+              )}
+            </TabsContent>
 
-                  {/* Player Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Badge className={`text-[8px] px-1 py-0 h-4 font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
-                      <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
-                      {player.personality && personalityLabels[player.personality] && (
-                        <span className="text-xs shrink-0">{personalityLabels[player.personality].emoji}</span>
-                      )}
-                      {player.injury && (
-                        <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30 shrink-0" variant="outline">
-                          <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
-                        </Badge>
-                      )}
-                      {player.contract <= 1 && !player.injury && (
-                        <span className="text-[9px] text-amber-400 font-bold shrink-0">⚠️</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-                      <span>{player.age}a</span>
-                      <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k</span>
-                      <span>📄{player.contract}a</span>
-                      {(() => {
-                        const value = getPlayerValue(player);
-                        const trend = getValueTrend(player);
-                        const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
-                        const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
-                        return (
-                          <span className={`font-bold ${trendColor}`} title={`Valor de mercado: ${formatMoney(value)}`}>
-                            💰{(value / 1000).toFixed(0)}k {trendIcon}
-                          </span>
-                        );
-                      })()}
-                      {isPlayerGem(player) && <span title="Joia!" className="text-amber-400">💎</span>}
-                      {player.goals > 0 && <span>⚽{player.goals}</span>}
-                      {player.assists > 0 && <span>🅰️{player.assists}</span>}
-                      {avgRating && (
-                        <span className={`font-bold ${avgRating >= 7 ? 'text-emerald-400' : avgRating >= 5.5 ? 'text-primary' : 'text-red-400'}`}>
-                          ★{avgRating.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <TabsContent value="reserves" className="space-y-1.5 mt-3">
+              <p className="text-[10px] text-muted-foreground px-1">Banco de reservas — disponíveis para substituições durante o jogo.</p>
+              {reservesList.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
+              ) : (
+                reservesList.map(({ player }) => renderPlayerCard(player, 'reserves'))
+              )}
+            </TabsContent>
 
-                  {/* Morale + Stamina */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-sm" title={`Moral: ${player.morale}%`}>{getMoraleEmoji(player.morale)}</span>
-                    <div className="w-7 flex flex-col items-center gap-0.5">
-                      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
-                      </div>
-                      <span className="text-[8px] text-muted-foreground">{player.stamina}%</span>
-                    </div>
-                  </div>
-
-                  {/* Arrow */}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-foreground/60 shrink-0 transition-colors" />
-                </div>
-              );
-            })}
-          </div>
-
-          {sorted.length === 0 && filterPos && (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">Nenhum jogador na posição {filterPos}</p>
-            </div>
-          )}
+            <TabsContent value="out" className="space-y-1.5 mt-3">
+              <p className="text-[10px] text-muted-foreground px-1">Jogadores não convocados para os jogos. Treinam normalmente.</p>
+              {outList.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
+              ) : (
+                outList.map(({ player }) => renderPlayerCard(player, 'out'))
+              )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="contracts" className="space-y-3 mt-3">
@@ -539,7 +675,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
               return (
                 <div key={player.id} className={`p-3 rounded-xl border ${isExpiring ? 'border-red-500/30 bg-red-500/5' : 'border-border/20 bg-card/50'}`}>
-                  {/* Header */}
                   <div className="flex items-center gap-2 mb-3">
                     <Badge className={`text-[9px] font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
                     <div className="flex-1 min-w-0">
@@ -554,7 +689,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     </div>
                   </div>
 
-                  {/* Renewal Controls */}
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <div>
                       <label className="text-[10px] text-muted-foreground block mb-1">Salário (mín: R${(player.salary / 1000).toFixed(0)}k)</label>
