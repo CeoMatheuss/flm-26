@@ -182,6 +182,29 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     onReorderPlayers(newOrder);
   };
 
+  // Swap two players' positions in the array (for substitutions)
+  const swapPlayers = (playerAId: string, playerBId: string) => {
+    if (!onReorderPlayers) return;
+    const idxA = players.findIndex(p => p.id === playerAId);
+    const idxB = players.findIndex(p => p.id === playerBId);
+    if (idxA < 0 || idxB < 0) return;
+    const newOrder = [...players];
+    [newOrder[idxA], newOrder[idxB]] = [newOrder[idxB], newOrder[idxA]];
+    const pA = players[idxA];
+    const pB = players[idxB];
+    const groupA = getPlayerGroup(idxA);
+    const groupB = getPlayerGroup(idxB);
+    if (groupA === 'starters' && groupB !== 'starters') {
+      toast.success(`${pB.name} entrou no time titular no lugar de ${pA.name}`);
+    } else if (groupB === 'starters' && groupA !== 'starters') {
+      toast.success(`${pA.name} entrou no time titular no lugar de ${pB.name}`);
+    } else {
+      toast.success(`${pA.name} ↔ ${pB.name}`);
+    }
+    onReorderPlayers(newOrder);
+  };
+
+
   // ─── Full-page player profile ───
   if (viewingPlayer) {
     const player = viewingPlayer;
