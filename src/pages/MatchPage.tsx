@@ -712,113 +712,23 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Widgets — scroll anchors to inline sections below */}
+        {/* Row 2: Compact stats nav (replaced 4 large widgets) */}
         {!isFinished && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            {/* ⚙️ Tática Widget — scroll to section */}
-            <button
-              onClick={() => scrollToSection(tacticsSectionRef)}
-              className="group flex flex-col text-left rounded-xl border border-emerald-500/30 bg-card/40 hover:border-emerald-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4"
-            >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-emerald-500/15 flex items-center justify-center mb-2">
-                <Settings2 className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-400" />
-              </div>
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Tática</span>
-              <span className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground truncate capitalize mt-0.5">
-                {(liveTactics.playStyle || 'equilibrado')} · pressão {(liveTactics.pressing || 'média')}
-              </span>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 text-xs font-bold">
+              <BarChart3 className="h-3.5 w-3.5 text-yellow-400" /> Stats
             </button>
-
-            {/* 👥 Elenco / Trocas Widget — scroll to section */}
-            <button
-              onClick={() => {
-                if (subBlocked && subBlockedReason) toast.warning(subBlockedReason);
-                scrollToSection(lineupSectionRef);
-              }}
-              className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
-                subBlocked
-                  ? 'border-blue-500/20 bg-card/30 opacity-70 hover:opacity-90'
-                  : 'border-blue-500/30 bg-card/40 hover:border-blue-500/60 hover:bg-card/60 active:scale-[0.98]'
-              }`}
-            >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-blue-500/15 flex items-center justify-center mb-2 relative">
-                <Users className="h-6 w-6 sm:h-7 sm:w-7 text-blue-400" />
-                {subBlocked && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[11px] flex items-center justify-center shadow-md" title="Bloqueado">
-                    🔒
-                  </span>
-                )}
-                {!subBlocked && subQueue.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
-                    {subQueue.length}
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Elenco</span>
-              <span className="text-base sm:text-lg font-black text-foreground">
-                {maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">trocas</span>
-              </span>
-              {(() => {
-                const tired = (homePlayers || [])
-                  .filter((p: any) => !substitutedPlayerIds.has(p.id) && (p.stamina ?? 100) < 50)
-                  .sort((a: any, b: any) => (a.stamina ?? 100) - (b.stamina ?? 100))[0];
-                return tired ? (
-                  <span className="text-[10px] sm:text-xs text-red-400 truncate font-bold mt-0.5">⚠️ {tired.name?.split(' ').slice(-1)[0] || 'Jogador'} {tired.stamina ?? 0}%</span>
-                ) : (
-                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">Elenco descansado</span>
-                );
-              })()}
+            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-xs font-bold">
+              <Users className="h-3.5 w-3.5 text-blue-400" /> Escalação
             </button>
-
-            {/* 📊 Estatísticas Widget — scroll to section */}
-            <button
-              onClick={() => scrollToSection(statsSectionRef)}
-              className="group flex flex-col text-left rounded-xl border border-yellow-500/30 bg-card/40 hover:border-yellow-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4"
-            >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-yellow-500/15 flex items-center justify-center mb-2">
-                <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
-              </div>
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Estatísticas</span>
-              <span className="text-base sm:text-lg font-black text-foreground">
-                {possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span>
-              </span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
-                ⚡ Chutes {stats.shots[0]}–{stats.shots[1]} · 🎯 {stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}
-              </span>
+            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-xs font-bold">
+              <Settings2 className="h-3.5 w-3.5 text-emerald-400" /> Tática
             </button>
-
-            {/* 📋 Técnico Widget — scroll to section */}
-            <button
-              onClick={() => hasAssistant && scrollToSection(assistantSectionRef)}
-              disabled={!hasAssistant}
-              className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
-                hasAssistant
-                  ? 'border-amber-500/30 bg-card/40 hover:border-amber-500/60 hover:bg-card/60 active:scale-[0.98]'
-                  : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
-              }`}
-            >
-              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 relative ${hasAssistant ? 'bg-amber-500/15' : 'bg-muted/20'}`}>
-                <MessageSquare className={`h-6 w-6 sm:h-7 sm:w-7 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
-                {hasAssistant && matchState.assistantTips.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
-                    {matchState.assistantTips.length}
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Técnico</span>
-              <span className="text-base sm:text-lg font-black text-foreground">
-                {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
-                {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">alertas</span>}
-              </span>
-              {hasAssistant && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground truncate italic mt-0.5">
-                  {matchState.assistantTips.length > 0
-                    ? `"${matchState.assistantTips[matchState.assistantTips.length - 1].description}"`
-                    : 'Aguardando análise...'}
-                </span>
-              )}
-            </button>
+            {hasAssistant && (
+              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-xs font-bold">
+                <MessageSquare className="h-3.5 w-3.5 text-amber-400" /> Técnico ({matchState.assistantTips.length})
+              </button>
+            )}
           </div>
         )}
       </div>

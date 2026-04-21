@@ -22,14 +22,26 @@ export const intensityConfig: Record<TrainingIntensity, {
   pesado:   { label: 'Pesado',   emoji: '🔴', progressMultiplier: 1.5, injuryRiskMultiplier: 2.5, fatiguePerSession: 14, moraleDelta: -2 },
 };
 
-// ─── Foco de Treino ────────────────────────────────────────────────────────
-export type TrainingFocusKey =
-  | 'none' | 'speed' | 'shooting' | 'passing' | 'defending' | 'physical'
+// ─── Foco de Treino V3 (Grupos + Específicos) ─────────────────────────────
+export type TrainingGroupKey =
+  | 'finalizacao_grupo' | 'tecnico_grupo' | 'defensivo_grupo' | 'fisico_grupo' | 'mental_grupo';
+
+export type TrainingSpecificKey =
+  | 'speed' | 'shooting' | 'passing' | 'defending' | 'physical'
   | 'dribbling' | 'positioning' | 'heading' | 'vision' | 'composure'
   | 'marking' | 'crossing' | 'longShots' | 'workRate' | 'aggression' | 'setPieces';
 
+export type TrainingFocusKey = 'none' | TrainingGroupKey | TrainingSpecificKey;
+
 export const focusLabels: Record<TrainingFocusKey, string> = {
   none: 'Sem foco',
+  // Grupos
+  finalizacao_grupo: '🎯 Finalização (Grupo)',
+  tecnico_grupo: '🎨 Técnico (Grupo)',
+  defensivo_grupo: '🛡️ Defensivo (Grupo)',
+  fisico_grupo: '💪 Físico (Grupo)',
+  mental_grupo: '🧠 Mental (Grupo)',
+  // Específicos
   speed: '⚡ Velocidade',
   shooting: '🎯 Finalização',
   passing: '📐 Passe',
@@ -48,8 +60,11 @@ export const focusLabels: Record<TrainingFocusKey, string> = {
   setPieces: '🎯 Bola Parada',
 };
 
+/** Mapeia foco específico → atributo */
 export const focusToAttr: Record<TrainingFocusKey, keyof PlayerAttributes | null> = {
   none: null,
+  finalizacao_grupo: null, tecnico_grupo: null, defensivo_grupo: null,
+  fisico_grupo: null, mental_grupo: null,
   speed: 'speed', shooting: 'shooting', passing: 'passing', defending: 'defending',
   physical: 'physical', dribbling: 'dribbling', positioning: 'positioning',
   heading: 'heading', vision: 'vision', composure: 'composure', marking: 'marking',
@@ -57,23 +72,58 @@ export const focusToAttr: Record<TrainingFocusKey, keyof PlayerAttributes | null
   aggression: 'aggression', setPieces: 'setPieces',
 };
 
+/** Distribuição de pesos por grupo (alto/medio/baixo). Soma = 1.0 */
+export const groupWeights: Record<TrainingGroupKey, Array<{ attr: keyof PlayerAttributes; weight: number }>> = {
+  finalizacao_grupo: [
+    { attr: 'shooting', weight: 0.6 },
+    { attr: 'longShots', weight: 0.3 },
+    { attr: 'heading', weight: 0.1 },
+  ],
+  tecnico_grupo: [
+    { attr: 'passing', weight: 0.4 },
+    { attr: 'dribbling', weight: 0.3 },
+    { attr: 'crossing', weight: 0.2 },
+    { attr: 'setPieces', weight: 0.1 },
+  ],
+  defensivo_grupo: [
+    { attr: 'marking', weight: 0.4 },
+    { attr: 'defending', weight: 0.4 },
+    { attr: 'positioning', weight: 0.2 },
+  ],
+  fisico_grupo: [
+    { attr: 'speed', weight: 0.4 },
+    { attr: 'physical', weight: 0.4 },
+    { attr: 'workRate', weight: 0.2 },
+  ],
+  mental_grupo: [
+    { attr: 'vision', weight: 0.35 },
+    { attr: 'composure', weight: 0.35 },
+    { attr: 'positioning', weight: 0.2 },
+    { attr: 'aggression', weight: 0.1 },
+  ],
+};
+
+export function isGroupFocus(focus: TrainingFocusKey): focus is TrainingGroupKey {
+  return focus in groupWeights;
+}
+
 // ─── Recomendações táticas por posição ────────────────────────────────────
 export const positionRecommendations: Record<string, TrainingFocusKey[]> = {
   GOL: ['defending', 'positioning', 'composure', 'physical'],
-  ZAG: ['defending', 'marking', 'heading', 'physical', 'aggression'],
-  LAT: ['speed', 'crossing', 'passing', 'workRate'],
-  VOL: ['defending', 'marking', 'passing', 'workRate', 'aggression'],
-  MEI: ['passing', 'vision', 'dribbling', 'composure', 'longShots'],
-  ATA: ['shooting', 'speed', 'dribbling', 'positioning', 'heading'],
+  ZAG: ['defensivo_grupo', 'heading', 'physical'],
+  LAT: ['fisico_grupo', 'crossing', 'passing'],
+  VOL: ['defensivo_grupo', 'fisico_grupo', 'passing'],
+  MEI: ['tecnico_grupo', 'mental_grupo', 'longShots'],
+  ATA: ['finalizacao_grupo', 'fisico_grupo', 'dribbling'],
 };
 
 // Mapeamento tático → foco sugerido
 export const tacticsToFocus: Partial<Record<string, TrainingFocusKey>> = {
-  ofensivo: 'shooting',
-  defensivo: 'defending',
-  'contra-ataque': 'speed',
-  posse: 'passing',
-  equilibrado: 'physical',
+  ofensivo: 'finalizacao_grupo',
+  defensivo: 'defensivo_grupo',
+  'contra-ataque': 'fisico_grupo',
+  posse: 'tecnico_grupo',
+  equilibrado: 'mental_grupo',
 };
 
 // ─── Sessão de treino ──────────────────────────────────────────────────────
