@@ -1,95 +1,94 @@
 
 
-# Plano: Finalizar Integração do Crest Builder Pro
+# Plano: Foco em Fisioterapia + Redesign da Tela de Partida
 
-Concluir a integração do novo editor de escudos no app inteiro, garantindo que o `shieldConfig` propague para todos os locais que renderizam o escudo do clube.
+## Parte 1 — Aba Infraestrutura: Apenas Fisioterapia
 
-## 1. Botão "Editar Escudo" em ClubSettingsTab
+**Arquivo**: `src/components/game/InfrastructureTab.tsx`
 
-**Arquivo**: `src/components/game/ClubSettingsTab.tsx`
+- **Remover** o card "Centro de Treinamento" (CT continua existindo no jogo, apenas não aparece nesta seção de saúde/recuperação).
+- **Manter apenas** o card "Fisioterapia", agora único e mais destacado.
+- Adicionar **botão "?" (HelpCircle)** ao lado do título "Fisioterapia". Ao clicar abre `Dialog`:
 
-- Adicionar nova `Card` "🎨 Escudo do Clube":
-  - Mostra preview pequeno (60×60) do escudo atual
-  - Botão "Editar Escudo" abre `Sheet` (lateral em desktop, bottom em mobile) com `<CrestBuilder />` em tela cheia
-  - Botões "Cancelar" / "Salvar" no rodapé do sheet
-- Estender props do componente: `shieldConfig` + `onUpdateShield(config)` para persistir no club state.
+  > **🏥 FISIOTERAPIA — COMO FUNCIONA**
+  > • Recupera stamina diariamente (+30 + nível do fisio, máx +50)
+  > • Reduz risco de lesão
+  > • Acelera recuperação de jogadores lesionados
+  > • Reduz chance de recaída
+  > • Ajuda jogadores cansados (<50 stamina)
+  >
+  > **💡 DICAS**
+  > • Jogadores com baixa stamina têm mais risco de lesão
+  > • Rotacione o elenco para evitar desgaste
+  > • Fisio alto melhora a estabilidade do time
 
-## 2. Propagar `shieldConfig` ao ShieldCrest em Todo o App
+- Adicionar **bloco "Status do Elenco"** dentro do card, calculado das props (passar `players` ao componente):
+  - Stamina média do elenco → texto "Baixo desgaste" (≥70), "Desgaste moderado" (40–69), "Alto desgaste" (<40)
+  - Lesionados ativos → "X jogador(es) em recuperação"
+  - Risco geral baseado em stamina + propensão média → badge "🟢 Baixo risco" / "🟡 Atenção" / "🔴 Alto risco"
 
-**Arquivos** que renderizam `<ShieldCrest>` e precisam priorizar `shieldConfig` sobre os campos legados:
+- Atualizar `Props` para incluir `players: Player[]` e remover a opção `'trainingCenter'` do callback `onUpgrade`.
+- Atualizar `GameTabRouter.tsx` para passar `players` e remover prop relacionada ao CT nesta aba.
 
-- `src/components/game/GameHeader.tsx` (header principal)
-- `src/components/game/GameNavBar.tsx` (nav bar inferior)
-- `src/components/game/DashboardTab.tsx` (placar/destaque)
-- `src/components/game/ClubProfilePage.tsx` (perfil público)
-- `src/components/game/ClubProfileTab.tsx`
-- `src/components/game/MatchDashboardCard.tsx`
-- `src/components/game/SeasonStartWidget.tsx`
-- `src/components/game/LeagueTab.tsx` (tabela de classificação)
-- `src/components/game/RankingTab.tsx`
-- `src/components/game/ActiveLeaguesPanel.tsx`
-- `src/components/game/CupBracketView.tsx`
-- `src/pages/MatchPage.tsx`
+## Parte 2 — Redesign da Tela de Partida (MatchPage)
 
-Criar **helper** `src/components/game/shieldHelpers.ts`:
-```typescript
-export function shieldPropsFromClub(club: Club | ClubConfig) {
-  if (club.shieldConfig) {
-    // spread completo (novas props + transformações + camadas extras)
-    return { ...club.shieldConfig };
-  }
-  // fallback legado
-  return {
-    shape: club.shieldShape,
-    pattern: club.shieldPattern,
-    icon: club.shieldIcon,
-    primaryColor: club.primaryColor,
-    secondaryColor: club.secondaryColor,
-  };
-}
-```
+**Arquivo**: `src/pages/MatchPage.tsx`
 
-Substituir os usos manuais por `<ShieldCrest {...shieldPropsFromClub(club)} size={N} />`.
+### 2.1 Narração estilo chat
+Substituir o feed atual de eventos por um layout estilo **chat vertical**:
+- Cada lance é um **bloco separado** com:
+  - **Escudo do time** (24×24) à esquerda quando `ev.team === 'home' | 'away'` (usar `<ShieldCrest>` com `shieldPropsFromClub`)
+  - Minuto em badge sutil (cinza)
+  - Texto da narração em cor neutra (`text-foreground` ou `text-muted-foreground`)
+- Espaçamento maior entre eventos (`space-y-3` em vez de `space-y-1`)
+- Sem fundos coloridos por tipo (remover `getEventBg`), apenas borda inferior sutil `border-b border-border/10`
 
-## 3. Sincronização com Multiplayer
+### 2.2 Cores neutras (remover poluição)
+Reescrever `getEventColor`:
+- **Padrão**: `text-foreground/85` (neutro)
+- **Gols**: `text-emerald-400 font-bold` (único destaque vivo)
+- **Apito final / fim de jogo**: `text-emerald-400`
+- **Cartões vermelhos / lesões graves**: `text-foreground/70` + emoji (sem vermelho exagerado)
+- **Tudo o mais**: neutro
 
-**Arquivo**: `src/hooks/useMultiplayer.ts` (e funções de sync existentes)
+Remover também `text-yellow-400`, `text-red-400` etc. dos eventos comuns no feed.
 
-- Incluir `shieldConfig` no objeto `club_metadata` enviado ao auto-sync de `league_squads` / `league_members`.
-- Ao receber dados de outros clubes (perfil público, ranking, liga), ler `shieldConfig` se presente.
+### 2.3 Card de Fim de Jogo elegante
+Refazer `FinishedSection` (parte do header):
+- Caixa central com fundo `bg-card/80` + borda `border-emerald-500/20`
+- Texto "🏁 FIM DE JOGO" grande e centralizado
+- Placar enorme (`text-6xl font-mono`) em destaque
+- Tempo total da partida e estádio em linha sutil abaixo
+- Animação `animate-fade-in` + leve `scale` na entrada
 
-## 4. Bots e Clubes Sem Configuração
+### 2.4 Escalações (lado direito / inline)
+No `LineupView`:
+- Aumentar espaçamento entre jogadores (`space-y-2.5`)
+- Substituir "stamina XX%" por **barra horizontal fina** (h-1.5) colorida (verde/amarelo/vermelho conforme valor)
+- Nota do jogador (rating) maior e em badge ao lado direito do card
 
-- Bots gerados nas Edge Functions (`get-all-clubs`, `process-tournament-matches`) continuam sem `shieldConfig` → o helper acima cai automaticamente no fallback legado, sem alterar Edge Functions.
-- Confirmar `ShieldCrest` aceita props ausentes com defaults seguros (já implementado).
+### 2.5 Estatísticas modernas
+No `StatsView`:
+- Substituir números brutos por **barras comparativas** (split bar mostrando % do total entre os dois times)
+- Menos texto, ícones maiores no rótulo
+- Cores neutras: barra azul (casa) vs barra cinza-escuro (visitante)
 
-## 5. Persistência
+### 2.6 Estilo geral
+- Remover bordas coloridas das seções (`border-yellow-500/20`, `border-blue-500/20`, etc.) → usar `border-border/20` neutro
+- Manter ícones coloridos pequenos apenas no título de cada seção
+- Sticky top bar mais limpa (chips menores, sem cores fortes)
 
-Já feito (`shieldConfig` está em `club_data` JSONB do `game_saves`). Esta etapa só garante que o `setClub({ ...club, shieldConfig })` chamado pelo Sheet dispara o auto-save reativo (debounce 2s) — verificar `useClubState`.
-
-## Arquivos Modificados / Criados
+## Arquivos Modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/shieldHelpers.ts` | **NOVO** — helper `shieldPropsFromClub()` |
-| `src/components/game/ClubSettingsTab.tsx` | Card de escudo + Sheet com CrestBuilder |
-| `src/components/game/GameHeader.tsx` | Usa helper |
-| `src/components/game/GameNavBar.tsx` | Usa helper |
-| `src/components/game/DashboardTab.tsx` | Usa helper |
-| `src/components/game/ClubProfilePage.tsx` | Usa helper (lê do club fetched) |
-| `src/components/game/ClubProfileTab.tsx` | Usa helper |
-| `src/components/game/MatchDashboardCard.tsx` | Usa helper |
-| `src/components/game/SeasonStartWidget.tsx` | Usa helper |
-| `src/components/game/LeagueTab.tsx` | Usa helper nas linhas da tabela |
-| `src/components/game/RankingTab.tsx` | Usa helper |
-| `src/components/game/ActiveLeaguesPanel.tsx` | Usa helper |
-| `src/components/game/CupBracketView.tsx` | Usa helper |
-| `src/pages/MatchPage.tsx` | Usa helper para escudos das duas equipes |
-| `src/hooks/useMultiplayer.ts` | Inclui `shieldConfig` no payload de sync |
+| `src/components/game/InfrastructureTab.tsx` | Remove CT, adiciona helper "?", adiciona Status do Elenco |
+| `src/components/game/GameTabRouter.tsx` | Passa `players` para `InfrastructureTab` |
+| `src/pages/MatchPage.tsx` | Feed estilo chat com escudos, cores neutras, novo card de fim de jogo, barras de stamina, stats com barras comparativas, redução de bordas coloridas |
 
 ## Compatibilidade
 
-- Saves antigos sem `shieldConfig` → helper retorna fallback (`shieldShape`/`shieldPattern`/`shieldIcon`) sem quebrar.
-- Bots/Edge Functions: sem mudança — campos legados continuam funcionando.
-- Sem migração de banco (tudo persiste no JSONB existente).
+- CT continua acessível e funcional em outros locais do jogo (cálculos de evolução, bônus de treino) — apenas removido visualmente desta tela.
+- Eventos de partida existentes continuam compatíveis (apenas mudou a renderização).
+- Sem mudanças de schema ou de tipos persistidos.
 
