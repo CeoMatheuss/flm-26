@@ -229,6 +229,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
+          isPremium={isPremium}
           userId={userId}
           clubName={game.club.name}
           players={game.club.players}
