@@ -1,109 +1,115 @@
 
 
-# Plano: Refinar Crest Builder Conforme Imagem de Referência
+# Plano: Criação de Clube em 4 Etapas (Wizard) + CrestBuilder Responsivo
 
-Reorganizar o editor para espelhar exatamente o layout da imagem (3 seções empilhadas: **MODELOS DE ESCUDOS / ANIMAIS / SÍMBOLOS**) e melhorar a responsividade trocando a aba "Forma" por um **botão seletor compacto**.
+Reformular `ClubCreation.tsx` em um **wizard de 4 passos** com progresso visual, e tornar o `CrestBuilder` muito mais responsivo no PC (layout 3 colunas em desktop) com mais formatos heráldicos gerados por IA.
 
-## 1. Remover aba "Forma" — virar botão seletor compacto
+## Etapa 1 — Boas-vindas + Nome do Clube + País
 
-**Arquivo**: `src/components/game/CrestBuilder.tsx`
+Card central com:
+- **Título de boas-vindas**: "Bem-vindo ao FLM 26!" + logo + subtítulo motivacional ("Vamos construir a história do seu clube")
+- Animação suave de entrada
+- Campo grande **Nome do Clube** (h-12, fonte maior)
+- Seletor de **País** (mantém lógica atual de `country_status` + bloqueio + bônus)
+- Botão **"Continuar →"** (desabilitado se nome vazio)
+- Indicador de progresso no topo: `● ○ ○ ○` (Etapa 1 de 4)
 
-- Remover `TabsTrigger value="shape"` e `TabsContent value="shape"` (5 abas → 4 abas).
-- Acima do preview, adicionar um **botão "Trocar Formato"** que abre um `Popover` (ou `Sheet` no mobile) com o grid de 10 formatos em silhueta preta.
-- O botão mostra a forma atual (mini-escudo + label "Clássico", "Gótico", etc.) e ícone de seta.
-- Ao selecionar uma forma, o popover fecha automaticamente.
-- Ganho: -1 aba, mais espaço para outras opções, layout cabe melhor em telas estreitas.
+## Etapa 2 — Nome do Estádio + Dicas Rotativas
 
-## 2. Nova aba principal "Modelos" estilo imagem de referência
+Layout split:
+- **Esquerda**: Campo grande "Nome do Estádio" + sugestões clicáveis ("Arena do Dragão", "Estádio Municipal", "Templo do Futebol", "Coliseu", "Fortaleza")
+- **Direita**: Card de **Dicas Rotativas** que muda a cada 5s, com ícone + título + texto curto:
+  - 💡 *"Treine seus jogadores diariamente para evoluir o OVR"*
+  - 🏟️ *"Suba o nível do estádio para aumentar a renda de bilheteria"*
+  - 💰 *"Patrocínios rendem mais conforme sua reputação cresce"*
+  - 🎯 *"Vença campeonatos para subir de divisão e ganhar prêmios"*
+  - 👥 *"Olheiros revelam o potencial dos jovens da base"*
+  - 🛡️ *"Ajuste a tática antes de cada partida importante"*
+  - ⚽ *"6 dicas no total, com fade transition entre elas"*
+- Botões **← Voltar** / **Continuar →**
 
-Substituir a antiga aba "Forma" por uma nova primeira aba **"Modelos"** que reproduz a tela da imagem:
+## Etapa 3 — Criação do Escudo (CrestBuilder reformulado)
 
-```
-─────── MODELOS DE ESCUDOS ───────
-[grid 3 cols mobile / 5 cols desktop com 10 escudos prontos
- — combinações curadas: forma + padrão + ícone + cores heráldicas]
-
-─────── ANIMAIS ───────
-[grid 4/6 cols com silhuetas pretas dos 15 animais]
-
-─────── SÍMBOLOS ───────
-[grid 4/6 cols com 25 símbolos (cruzes, coroas, espadas, etc.)]
-```
-
-- **MODELOS DE ESCUDOS** = catálogo de **10 presets curados** (estilo da imagem: leão+escudo gótico vermelho/dourado, cruz templária, águia bizantina, fleur-de-lis royal, castelo medieval, etc.). Clicar aplica o preset completo.
-- **ANIMAIS** = grid mono p/b dos 15 animais; clicar troca apenas o `icon`.
-- **SÍMBOLOS** = grid mono p/b dos 25 símbolos; clicar troca apenas o `icon`.
-
-Tudo numa única `ScrollArea` vertical (como na imagem), não 3 sub-abas.
-
-## 3. Nova estrutura de abas (4 abas em vez de 5)
+Tela cheia/larga (`max-w-5xl`) com o `CrestBuilder` redesenhado em **layout responsivo de 3 colunas no desktop**:
 
 ```
-[ Modelos ] [ Divisão ] [ Cores ] [ Extras ]
+┌──────────────────────────────────────────────────────────┐
+│ [PREVIEW + Formato]  │  [Modelos/Animais/Símbolos]  │ [Cores] │
+│       260px          │           1fr                │  220px  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-- "Modelos" = nova aba principal (item 2)
-- "Divisão" = mantém atual (layout patterns)
-- "Cores" = mantém atual
-- "Extras" = mantém atual (coroa, louros, estrelas, faixa, ajustes)
-- A aba "Símbolo" antiga é absorvida pela "Modelos" (animais + símbolos no mesmo lugar).
+- **Mobile** (`<md`): empilha (preview em cima, abas embaixo)
+- **Tablet** (`md`): 2 colunas `[260px_1fr]`
+- **Desktop** (`lg+`): 3 colunas `[280px_1fr_240px]` — coluna de cores fica fixa à direita, sem precisar trocar de aba
+- Reduz tabs para 2: `Modelos` (presets/animais/símbolos) e `Divisão` (patterns) — cores migram para coluna fixa no desktop, viram aba no mobile
+- Grids dos catálogos: `grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6`
+- ScrollArea altura `h-[420px] lg:h-[480px]` no desktop (muito mais espaço vertical)
+- Adicionar opção de **Upload de Logo Personalizado** dentro desta etapa
+- Botões **← Voltar** / **Continuar →**
 
-## 4. Botão "Trocar Formato" no painel de preview
+### Novos formatos de escudo via IA
 
+Adicionar **8 novos formatos heráldicos** ao `ShieldCrest.tsx` (`shieldShapes`):
+- `swiss` — escudo suíço (topo plano, base curva)
+- `iberian` — peninsular (clássico português/espanhol arredondado)
+- `nordic` — alongado vertical com base em U
+- `french-modern` — escudo francês moderno (curvas suaves)
+- `italian-oval` — oval italiano alongado
+- `german-tournament` — entalhado lateral
+- `english-heater` — heater clássico inglês
+- `victorian` — escudo vitoriano com volutas
+
+Cada um implementado como path SVG dedicado (não gerado por imagem — formas vetoriais nativas, escaláveis e leves). Labels em PT-BR adicionados em `SHAPE_LABELS`.
+
+### Novos presets curados
+
+Expandir `SHIELD_PRESETS` de 10 → 18, aproveitando os novos formatos:
+- "Escudo Suíço Vermelho", "Heater Inglês", "Oval Italiano Azul", "Vitoriano Dourado", "Nórdico Branco", "Ibérico Verde", "Francês Royal", "Tournamento Alemão"
+
+## Etapa 4 — Pré-visualização Final + Confirmação
+
+Tela de revisão (substitui a `showConfirmation` atual, melhorada):
+- **Card grande central** com:
+  - Escudo grande (140px mobile / 200px desktop) com glow no `primaryColor`
+  - Nome do clube em destaque
+  - País + Estádio
+- **Linha de uniformes**: 2 kits lado a lado (titular e reserva) — maiores no desktop (96px)
+- **Linha de cores**: 3 swatches grandes com labels
+- **Bônus de país** (se houver) destacado
+- Botões **← Editar Escudo** / **✓ Criar Clube e Começar Jornada**
+
+## Componente de Wizard (controle de etapas)
+
+Estado novo em `ClubCreation`:
+```tsx
+const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 ```
-┌─────────────────────────┐
-│       PREVIEW           │
-│   [escudo grande]       │
-│                         │
-│ [ 🛡️ Clássico  ▾ ]      │ ← novo botão (abre popover com 10 formas)
-│ [Aleatório] [Resetar]   │
-│ [   Salvar Escudo   ]   │
-└─────────────────────────┘
+
+Indicador de progresso reutilizável no topo (chips numerados clicáveis para voltar):
+```
+[1 Nome]──[2 Estádio]──[3 Escudo]──[4 Revisão]
+   ●         ●            ○           ○
 ```
 
-- Mobile: ocupa 100% da largura
-- Desktop: ocupa a coluna do preview (260px)
+Validações por etapa:
+- 1 → 2: nome preenchido + país não bloqueado
+- 2 → 3: nome do estádio (opcional, usa default)
+- 3 → 4: sempre permitido (escudo tem default)
+- 4 → criar: chama `onComplete`
 
-## 5. Presets de "Modelos de Escudos" (combinações curadas)
-
-Definir constante `SHIELD_PRESETS` com 10 combinações inspiradas na imagem:
-
-```typescript
-const SHIELD_PRESETS: Array<Partial<ShieldConfig> & { name: string }> = [
-  { name: 'Cruz Templária',   shape: 'gothic',  pattern: 'cross',    icon: 'cross-pattee', primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Lis Real',         shape: 'classic', pattern: 'per-pale', icon: 'fleur-de-lis', primaryColor: '#000080', secondaryColor: '#FFFFFF', detailColor: '#FFD700' },
-  { name: 'Leão Rampante',    shape: 'gothic',  pattern: 'solid',    icon: 'lion',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Águia Imperial',   shape: 'classic', pattern: 'solid',    icon: 'eagle-icon',   primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Quartelado Lis',   shape: 'classic', pattern: 'quartered',icon: 'fleur-de-lis', primaryColor: '#0D47A1', secondaryColor: '#FFFFFF', detailColor: '#FFD700' },
-  { name: 'Banda Diagonal',   shape: 'classic', pattern: 'per-bend', icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Cruz Pattée',      shape: 'pointed', pattern: 'solid',    icon: 'cross-pattee', primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Pala Vertical',    shape: 'classic', pattern: 'per-pale', icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Castelo Medieval', shape: 'classic', pattern: 'solid',    icon: 'castle',       primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-  { name: 'Coroa Listrada',   shape: 'classic', pattern: 'stripes',  icon: 'crown-icon',   primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
-];
-```
-
-Renderizados em mini-escudos (52×52) preto sobre branco (igual à imagem). Clicar aplica o preset completo via `onChange({ ...value, ...preset })`.
-
-## 6. Melhorias de responsividade
-
-- Layout principal: mobile empilha (preview em cima, abas embaixo); desktop usa grid `[260px_1fr]` como hoje, mas com `lg:grid-cols-[280px_1fr]` para mais respiro em telas grandes.
-- Tabs: ícones pequenos + labels curtos, já compactos.
-- Reduzir altura mínima do `ScrollArea` em mobile (`h-[280px]` em vez de `h-[340px]`) para evitar scroll duplo.
-- Grids dos catálogos:
-  - Modelos: `grid-cols-3 sm:grid-cols-4 lg:grid-cols-5`
-  - Animais/Símbolos: `grid-cols-4 sm:grid-cols-5 lg:grid-cols-6`
-- Botão "Trocar Formato" colapsa para `w-full` em mobile.
-
-## Arquivo Modificado
+## Arquivos Modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/CrestBuilder.tsx` | Remove aba "Forma"; adiciona botão "Trocar Formato" no preview com Popover; nova aba "Modelos" agrupando presets + animais + símbolos em layout vertical estilo da imagem; importa `Popover`/`PopoverTrigger`/`PopoverContent` do shadcn; define `SHIELD_PRESETS`; ajusta grids para melhor responsividade |
+| `src/components/game/ClubCreation.tsx` | Refatorar em wizard de 4 etapas com `step` state, indicador de progresso no topo, telas dedicadas para cada passo (Boas-vindas/Nome, Estádio+Dicas, Escudo, Revisão), `max-w-5xl` na etapa do escudo, novo componente interno `RotatingTips` para dicas |
+| `src/components/game/CrestBuilder.tsx` | Layout 3 colunas no desktop (`lg:grid-cols-[280px_1fr_240px]`), painel fixo de Cores na coluna direita em telas grandes, tabs reduzidas (Modelos + Divisão), ScrollArea maior em desktop, grids responsivos com mais colunas em XL, expandir `SHIELD_PRESETS` para 18 |
+| `src/components/game/ShieldCrest.tsx` | Adicionar 8 novos formatos vetoriais (`swiss`, `iberian`, `nordic`, `french-modern`, `italian-oval`, `german-tournament`, `english-heater`, `victorian`) ao `shieldShapes` e respectivos paths SVG |
 
 ## Compatibilidade
 
-- `ShieldConfig` não muda
-- Saves antigos continuam funcionando
-- Nenhuma mudança em outros arquivos, DB ou Edge Functions
+- `ClubConfig` mantém schema (mesmas chaves enviadas em `onComplete`)
+- `ShieldConfig` inalterado — apenas mais valores válidos para `shape`
+- Saves antigos continuam renderizando normalmente
+- Sem mudanças de DB / Edge Functions / RLS
 
