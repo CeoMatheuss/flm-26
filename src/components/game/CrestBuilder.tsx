@@ -61,15 +61,18 @@ const LAYOUT_PATTERNS: ShieldPattern[] = [
 ];
 
 const ANIMAL_ICONS: ShieldIcon[] = [
-  'lion', 'eagle-icon', 'wolf', 'tiger', 'bear', 'horse',
-  'dragon', 'phoenix', 'snake', 'elephant', 'rhino', 'panther',
-  'deer', 'bull', 'griffin',
+  // Full body
+  'lion', 'tiger', 'eagle-icon', 'eagle-displayed', 'phoenix', 'horse',
+  'wolf', 'bear', 'panther', 'bull', 'deer-head', 'snake',
+  'griffin', 'elephant', 'rhino', 'falcon', 'fox', 'ram',
+  // Heads
+  'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'dragon', 'swan',
 ];
 const SYMBOL_ICONS: ShieldIcon[] = [
-  'crown-icon', 'fleur-de-lis', 'cross-pattee', 'star', 'double-star', 'triple-star',
-  'sword', 'crossed-swords', 'axe', 'trident', 'laurel', 'wing',
-  'tower', 'castle', 'anchor', 'lightning', 'flame-icon', 'sun-burst',
-  'crescent-moon', 'compass', 'diamond-icon', 'shield-icon', 'ball', 'trophy', 'boot',
+  'crown-icon', 'fleur-de-lis', 'cross-pattee', 'star', 'sun-burst', 'crescent-moon',
+  'sword', 'crossed-swords', 'trident', 'laurel', 'feather', 'wing',
+  'tower', 'castle', 'anchor', 'lightning', 'flame-icon', 'compass',
+  'diamond-icon', 'shield-icon', 'ball', 'trophy', 'boot', 'oak-leaf',
 ];
 const LETTER_ICONS: ShieldIcon[] = [
   'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
