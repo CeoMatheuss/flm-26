@@ -185,7 +185,11 @@ interface ShieldProps {
   bannerColor?: string;
 }
 
-export const shieldShapes = ['classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest'] as const;
+export const shieldShapes = [
+  'classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest',
+  // ── New heraldic shapes (v2) ──
+  'swiss', 'iberian', 'nordic', 'french-modern', 'italian-oval', 'german-tournament', 'english-heater', 'victorian',
+] as const;
 export type ShieldShape = typeof shieldShapes[number];
 
 export const shieldPatterns = [
@@ -288,6 +292,49 @@ const shieldPaths: Record<ShieldShape, (s: number) => string> = {
   crest: (s) => {
     const h = s / 2;
     return `M${h} ${s * 0.04} Q${s * 0.7} ${s * 0.04} ${s * 0.88} ${s * 0.12} L${s * 0.92} ${s * 0.18} L${s * 0.88} ${s * 0.58} Q${s * 0.82} ${s * 0.8} ${h} ${s * 0.96} Q${s * 0.18} ${s * 0.8} ${s * 0.12} ${s * 0.58} L${s * 0.08} ${s * 0.18} L${s * 0.12} ${s * 0.12} Q${s * 0.3} ${s * 0.04} ${h} ${s * 0.04} Z`;
+  },
+  // ── New v2 shapes ──
+  swiss: (s) => {
+    // Flat top, curved gentle base
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.08} L${s * 0.9} ${s * 0.08} L${s * 0.9} ${s * 0.6} Q${s * 0.9} ${s * 0.9} ${h} ${s * 0.96} Q${s * 0.1} ${s * 0.9} ${s * 0.1} ${s * 0.6} Z`;
+  },
+  iberian: (s) => {
+    // Iberian peninsular: rounded top, U-shaped bottom
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.18} Q${s * 0.1} ${s * 0.06} ${s * 0.25} ${s * 0.06} L${s * 0.75} ${s * 0.06} Q${s * 0.9} ${s * 0.06} ${s * 0.9} ${s * 0.18} L${s * 0.9} ${s * 0.7} Q${s * 0.9} ${s * 0.94} ${h} ${s * 0.96} Q${s * 0.1} ${s * 0.94} ${s * 0.1} ${s * 0.7} Z`;
+  },
+  nordic: (s) => {
+    // Tall vertical with U base
+    const h = s / 2;
+    return `M${s * 0.15} ${s * 0.05} L${s * 0.85} ${s * 0.05} L${s * 0.85} ${s * 0.65} Q${s * 0.85} ${s * 0.95} ${h} ${s * 0.97} Q${s * 0.15} ${s * 0.95} ${s * 0.15} ${s * 0.65} Z`;
+  },
+  'french-modern': (s) => {
+    // Soft modern French shield with subtle curves
+    const h = s / 2;
+    return `M${s * 0.12} ${s * 0.1} Q${h} ${s * 0.02} ${s * 0.88} ${s * 0.1} L${s * 0.88} ${s * 0.55} Q${s * 0.85} ${s * 0.85} ${h} ${s * 0.96} Q${s * 0.15} ${s * 0.85} ${s * 0.12} ${s * 0.55} Z`;
+  },
+  'italian-oval': (s) => {
+    // Vertical oval italian
+    const h = s / 2;
+    const rx = s * 0.4;
+    const ry = s * 0.47;
+    return `M${h} ${s * 0.03} A${rx} ${ry} 0 1 1 ${h} ${s * 0.97} A${rx} ${ry} 0 1 1 ${h} ${s * 0.03} Z`;
+  },
+  'german-tournament': (s) => {
+    // Notched sides (heraldic à bouche)
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.06} L${s * 0.4} ${s * 0.06} L${s * 0.42} ${s * 0.14} L${s * 0.58} ${s * 0.14} L${s * 0.6} ${s * 0.06} L${s * 0.9} ${s * 0.06} L${s * 0.88} ${s * 0.55} Q${s * 0.83} ${s * 0.82} ${h} ${s * 0.96} Q${s * 0.17} ${s * 0.82} ${s * 0.12} ${s * 0.55} Z`;
+  },
+  'english-heater': (s) => {
+    // Classic English heater (triangular with curved sides)
+    const h = s / 2;
+    return `M${s * 0.08} ${s * 0.06} L${s * 0.92} ${s * 0.06} Q${s * 0.92} ${s * 0.55} ${h} ${s * 0.97} Q${s * 0.08} ${s * 0.55} ${s * 0.08} ${s * 0.06} Z`;
+  },
+  victorian: (s) => {
+    // Ornate victorian with scrollwork-suggesting curves
+    const h = s / 2;
+    return `M${s * 0.12} ${s * 0.1} Q${s * 0.05} ${s * 0.18} ${s * 0.1} ${s * 0.28} L${s * 0.1} ${s * 0.55} Q${s * 0.12} ${s * 0.78} ${s * 0.28} ${s * 0.88} Q${h} ${s * 0.99} ${s * 0.72} ${s * 0.88} Q${s * 0.88} ${s * 0.78} ${s * 0.9} ${s * 0.55} L${s * 0.9} ${s * 0.28} Q${s * 0.95} ${s * 0.18} ${s * 0.88} ${s * 0.1} Q${s * 0.7} ${s * 0.04} ${h} ${s * 0.06} Q${s * 0.3} ${s * 0.04} ${s * 0.12} ${s * 0.1} Z`;
   },
 };
 

@@ -40,6 +40,9 @@ const SHAPE_LABELS: Record<ShieldShape, string> = {
   classic: 'Clássico', rounded: 'Redondo', pointed: 'Pontudo', circle: 'Círculo',
   pentagon: 'Pentágono', gothic: 'Gótico', hexagon: 'Hexágono', 'diamond-shield': 'Diamante',
   badge: 'Badge', crest: 'Brasão',
+  swiss: 'Suíço', iberian: 'Ibérico', nordic: 'Nórdico', 'french-modern': 'Francês',
+  'italian-oval': 'Oval Italiano', 'german-tournament': 'Tournamento', 'english-heater': 'Heater Inglês',
+  victorian: 'Vitoriano',
 };
 
 const PATTERN_LABELS: Partial<Record<ShieldPattern, string>> = {
@@ -58,11 +61,9 @@ const LAYOUT_PATTERNS: ShieldPattern[] = [
 ];
 
 const ANIMAL_ICONS: ShieldIcon[] = [
-  // Full body
   'lion', 'tiger', 'eagle-icon', 'eagle-displayed', 'phoenix', 'horse',
   'wolf', 'bear', 'panther', 'bull', 'deer-head', 'snake',
   'griffin', 'elephant', 'rhino', 'falcon', 'fox', 'ram',
-  // Heads
   'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'dragon', 'swan',
 ];
 const SYMBOL_ICONS: ShieldIcon[] = [
@@ -75,18 +76,27 @@ const LETTER_ICONS: ShieldIcon[] = [
   'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
 ];
 
-/* ── Curated shield presets (full configurations) ── */
+/* ── Curated shield presets (full configurations) — 18 total ── */
 const SHIELD_PRESETS: Array<Partial<ShieldConfig> & { name: string }> = [
-  { name: 'Cruz Templária',   shape: 'gothic',  pattern: 'cross',     icon: 'cross-pattee', primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#000000' },
-  { name: 'Lis Real',         shape: 'classic', pattern: 'per-pale',  icon: 'fleur-de-lis', primaryColor: '#000080', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
-  { name: 'Leão Rampante',    shape: 'gothic',  pattern: 'solid',     icon: 'lion',         primaryColor: '#8B0000', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
-  { name: 'Águia Imperial',   shape: 'classic', pattern: 'solid',     icon: 'eagle-icon',   primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
-  { name: 'Quartelado Lis',   shape: 'classic', pattern: 'quartered', icon: 'fleur-de-lis', primaryColor: '#0D47A1', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
-  { name: 'Banda Diagonal',   shape: 'classic', pattern: 'per-bend',  icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#1A1A1A' },
-  { name: 'Cruz Pattée',      shape: 'pointed', pattern: 'solid',     icon: 'cross-pattee', primaryColor: '#B71C1C', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#FFFFFF' },
-  { name: 'Pala Vertical',    shape: 'classic', pattern: 'per-pale',  icon: 'none',         primaryColor: '#1B5E20', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#FFD700' },
-  { name: 'Castelo Medieval', shape: 'classic', pattern: 'solid',     icon: 'castle',       primaryColor: '#4A148C', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
-  { name: 'Coroa Listrada',   shape: 'classic', pattern: 'stripes',   icon: 'crown-icon',   primaryColor: '#000080', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Cruz Templária',     shape: 'gothic',            pattern: 'cross',     icon: 'cross-pattee', primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#000000' },
+  { name: 'Lis Real',           shape: 'classic',           pattern: 'per-pale',  icon: 'fleur-de-lis', primaryColor: '#000080', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Leão Rampante',      shape: 'gothic',            pattern: 'solid',     icon: 'lion',         primaryColor: '#8B0000', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Águia Imperial',     shape: 'classic',           pattern: 'solid',     icon: 'eagle-icon',   primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Quartelado Lis',     shape: 'classic',           pattern: 'quartered', icon: 'fleur-de-lis', primaryColor: '#0D47A1', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Banda Diagonal',     shape: 'classic',           pattern: 'per-bend',  icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#1A1A1A' },
+  { name: 'Cruz Pattée',        shape: 'pointed',           pattern: 'solid',     icon: 'cross-pattee', primaryColor: '#B71C1C', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#FFFFFF' },
+  { name: 'Pala Vertical',      shape: 'classic',           pattern: 'per-pale',  icon: 'none',         primaryColor: '#1B5E20', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#FFD700' },
+  { name: 'Castelo Medieval',   shape: 'classic',           pattern: 'solid',     icon: 'castle',       primaryColor: '#4A148C', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Coroa Listrada',     shape: 'classic',           pattern: 'stripes',   icon: 'crown-icon',   primaryColor: '#000080', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
+  // ── New v2 presets using the 8 new shapes ──
+  { name: 'Suíço Vermelho',     shape: 'swiss',             pattern: 'cross',     icon: 'none',         primaryColor: '#DC2626', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF', borderColor: '#FFFFFF' },
+  { name: 'Heater Inglês',      shape: 'english-heater',    pattern: 'quartered', icon: 'lion',         primaryColor: '#B71C1C', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Oval Italiano',      shape: 'italian-oval',      pattern: 'triband',   icon: 'eagle-icon',   primaryColor: '#0D47A1', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Vitoriano Dourado',  shape: 'victorian',         pattern: 'solid',     icon: 'crown-icon',   primaryColor: '#4A148C', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Nórdico Branco',     shape: 'nordic',            pattern: 'cross',     icon: 'none',         primaryColor: '#FFFFFF', secondaryColor: '#0D47A1', detailColor: '#0D47A1', borderColor: '#0D47A1' },
+  { name: 'Ibérico Verde',      shape: 'iberian',           pattern: 'per-pale',  icon: 'castle',       primaryColor: '#1B5E20', secondaryColor: '#FFD700', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Francês Royal',      shape: 'french-modern',     pattern: 'solid',     icon: 'fleur-de-lis', primaryColor: '#000080', secondaryColor: '#FFFFFF', detailColor: '#FFD700', borderColor: '#FFD700' },
+  { name: 'Tournamento Alemão', shape: 'german-tournament', pattern: 'per-pale',  icon: 'eagle-displayed', primaryColor: '#000000', secondaryColor: '#FFD700', detailColor: '#DC2626', borderColor: '#FFD700' },
 ];
 
 export function defaultShieldConfig(overrides: Partial<ShieldConfig> = {}): ShieldConfig {
@@ -145,6 +155,69 @@ function CatalogCard({
   );
 }
 
+/* ── Reusable color panel (used in lg sidebar AND mobile tab) ── */
+function ColorsPanel({
+  value, update,
+}: { value: ShieldConfig; update: (patch: Partial<ShieldConfig>) => void }) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <SectionDivider>Paletas Heráldicas</SectionDivider>
+        <div className="grid grid-cols-4 gap-1.5 mt-2">
+          {HERALDIC_PAIRS.map(([p, s, d], i) => (
+            <button
+              key={i}
+              onClick={() => update({ primaryColor: p, secondaryColor: s, detailColor: d, borderColor: d })}
+              className="h-9 rounded-md border-2 border-border hover:border-primary/50 overflow-hidden flex transition-all hover:scale-105 shadow-sm"
+            >
+              <div className="flex-1" style={{ backgroundColor: p }} />
+              <div className="flex-1" style={{ backgroundColor: s }} />
+              <div className="w-2.5" style={{ backgroundColor: d }} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { label: 'Primária', key: 'primaryColor' as const },
+          { label: 'Secundária', key: 'secondaryColor' as const },
+          { label: 'Símbolo', key: 'detailColor' as const },
+          { label: 'Borda', key: 'borderColor' as const },
+        ].map(({ label, key }) => (
+          <div key={key} className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">{label}</Label>
+            <div className="flex items-center gap-1.5 p-1.5 rounded-md border border-border bg-card">
+              <input
+                type="color"
+                value={(value[key] as string) || '#000000'}
+                onChange={e => update({ [key]: e.target.value })}
+                className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent"
+              />
+              <span className="text-[9px] font-mono text-muted-foreground uppercase truncate">{value[key]}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <Label className="text-[10px] text-muted-foreground mb-1.5 block">Acesso Rápido</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_PALETTE.map(c => (
+            <button
+              key={c}
+              onClick={() => update({ primaryColor: c })}
+              className="w-7 h-7 rounded-full border-2 border-border hover:scale-110 transition-transform shadow-sm"
+              style={{ backgroundColor: c }}
+              aria-label={c}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }: Props) {
   const [activeTab, setActiveTab] = useState('models');
   const [shapePopoverOpen, setShapePopoverOpen] = useState(false);
@@ -153,7 +226,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
   const randomize = () => {
     const [p, s, d] = HERALDIC_PAIRS[Math.floor(Math.random() * HERALDIC_PAIRS.length)];
-    const heraldicShapes: ShieldShape[] = ['classic', 'rounded', 'pointed', 'gothic', 'crest', 'badge'];
+    const heraldicShapes: ShieldShape[] = ['classic', 'rounded', 'pointed', 'gothic', 'crest', 'badge', 'english-heater', 'iberian', 'french-modern', 'italian-oval'];
     const heraldicPatterns: ShieldPattern[] = ['solid', 'per-pale', 'quartered', 'per-bend', 'chief', 'cross'];
     const allIcons = [...ANIMAL_ICONS, ...SYMBOL_ICONS];
     update({
@@ -176,7 +249,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
   const reset = () => onChange(defaultShieldConfig());
 
   return (
-    <div className="grid gap-4 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-4 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr_240px]">
       {/* ─────────────── PREVIEW PANEL ─────────────── */}
       <div className="space-y-3">
         <div className="text-center">
@@ -244,9 +317,9 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-3" align="start">
+          <PopoverContent className="w-[320px] p-3" align="start">
             <SectionDivider>Formato do Escudo</SectionDivider>
-            <div className="grid grid-cols-3 gap-2 mt-2">
+            <div className="grid grid-cols-3 gap-2 mt-2 max-h-[360px] overflow-y-auto">
               {shieldShapes.map(shape => (
                 <CatalogCard
                   key={shape}
@@ -269,7 +342,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
                       icon="none"
                       size={40}
                     />
-                    <span className="text-[8.5px] font-medium text-zinc-700 leading-tight">
+                    <span className="text-[8.5px] font-medium text-zinc-700 leading-tight text-center px-0.5">
                       {SHAPE_LABELS[shape]}
                     </span>
                   </div>
@@ -294,21 +367,22 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
         )}
       </div>
 
-      {/* ─────────────── TABS PANEL ─────────────── */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 h-auto w-full">
+      {/* ─────────────── TABS PANEL (Modelos + Divisão; Cores aparece no lg via sidebar) ─────────────── */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+        <TabsList className="grid grid-cols-3 lg:grid-cols-2 h-auto w-full">
           <TabsTrigger value="models" className="flex-col gap-0.5 py-2 text-[11px]">
             <Sparkles className="h-4 w-4" />Modelos
           </TabsTrigger>
           <TabsTrigger value="layout" className="flex-col gap-0.5 py-2 text-[11px]">
             <Layers className="h-4 w-4" />Divisão
           </TabsTrigger>
-          <TabsTrigger value="colors" className="flex-col gap-0.5 py-2 text-[11px]">
+          {/* Colors tab visible only below lg (mobile/tablet) */}
+          <TabsTrigger value="colors" className="flex-col gap-0.5 py-2 text-[11px] lg:hidden">
             <Palette className="h-4 w-4" />Cores
           </TabsTrigger>
         </TabsList>
 
-        {/* ─── MODELOS TAB (presets + animais + símbolos + letras stacked) ─── */}
+        {/* ─── MODELOS TAB ─── */}
         <TabsContent value="models" className="mt-3">
           <div className="flex items-center justify-end mb-2">
             <Button
@@ -321,10 +395,10 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
             </Button>
           </div>
 
-          <ScrollArea className="h-[280px] sm:h-[340px] pr-2">
-            {/* ── MODELOS DE ESCUDOS (presets) ── */}
+          <ScrollArea className="h-[320px] sm:h-[380px] lg:h-[480px] pr-2">
+            {/* ── MODELOS DE ESCUDOS ── */}
             <SectionDivider>Modelos de Escudos</SectionDivider>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mt-2 mb-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 mt-2 mb-4">
               {SHIELD_PRESETS.map(preset => {
                 const isActive =
                   value.shape === preset.shape &&
@@ -361,7 +435,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
             {/* ── ANIMAIS ── */}
             <SectionDivider>Animais</SectionDivider>
-            <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2 mt-2 mb-4">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 mt-2 mb-4">
               <CatalogCard
                 active={value.icon === 'none'}
                 onClick={() => update({ icon: 'none' })}
@@ -393,7 +467,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
             {/* ── SÍMBOLOS ── */}
             <SectionDivider>Símbolos</SectionDivider>
-            <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2 mt-2 mb-4">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 mt-2 mb-4">
               {SYMBOL_ICONS.map(ic => (
                 <CatalogCard
                   key={ic}
@@ -445,9 +519,9 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
         {/* ─── LAYOUT (DIVISÃO) TAB ─── */}
         <TabsContent value="layout" className="mt-3">
-          <ScrollArea className="h-[280px] sm:h-[340px] pr-2">
+          <ScrollArea className="h-[320px] sm:h-[380px] lg:h-[480px] pr-2">
             <SectionDivider>Divisões Heráldicas</SectionDivider>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mt-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 mt-2">
               {LAYOUT_PATTERNS.map(p => (
                 <CatalogCard
                   key={p}
@@ -476,7 +550,7 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
             </div>
 
             <SectionDivider>Outros Padrões</SectionDivider>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mt-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 mt-2">
               {shieldPatterns.filter(p => !LAYOUT_PATTERNS.includes(p)).map(p => (
                 <CatalogCard
                   key={p}
@@ -506,63 +580,22 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
           </ScrollArea>
         </TabsContent>
 
-        {/* ─── COLORS TAB ─── */}
-        <TabsContent value="colors" className="mt-3 space-y-3">
-          <div>
-            <SectionDivider>Paletas Heráldicas</SectionDivider>
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 mt-2">
-              {HERALDIC_PAIRS.map(([p, s, d], i) => (
-                <button
-                  key={i}
-                  onClick={() => update({ primaryColor: p, secondaryColor: s, detailColor: d, borderColor: d })}
-                  className="h-10 rounded-md border-2 border-border hover:border-primary/50 overflow-hidden flex transition-all hover:scale-105 shadow-sm"
-                >
-                  <div className="flex-1" style={{ backgroundColor: p }} />
-                  <div className="flex-1" style={{ backgroundColor: s }} />
-                  <div className="w-2.5" style={{ backgroundColor: d }} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            {[
-              { label: 'Primária', key: 'primaryColor' as const },
-              { label: 'Secundária', key: 'secondaryColor' as const },
-              { label: 'Símbolo', key: 'detailColor' as const },
-              { label: 'Borda', key: 'borderColor' as const },
-            ].map(({ label, key }) => (
-              <div key={key} className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{label}</Label>
-                <div className="flex items-center gap-1.5 p-1.5 rounded-md border border-border bg-card">
-                  <input
-                    type="color"
-                    value={(value[key] as string) || '#000000'}
-                    onChange={e => update({ [key]: e.target.value })}
-                    className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase truncate">{value[key]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <Label className="text-[10px] text-muted-foreground mb-1.5 block">Acesso Rápido</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {QUICK_PALETTE.map(c => (
-                <button
-                  key={c}
-                  onClick={() => update({ primaryColor: c })}
-                  className="w-7 h-7 rounded-full border-2 border-border hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: c }}
-                  aria-label={c}
-                />
-              ))}
-            </div>
-          </div>
+        {/* ─── COLORS TAB (mobile/tablet only) ─── */}
+        <TabsContent value="colors" className="mt-3 lg:hidden">
+          <ColorsPanel value={value} update={update} />
         </TabsContent>
       </Tabs>
+
+      {/* ─────────────── COLORS SIDEBAR (desktop lg+) ─────────────── */}
+      <aside className="hidden lg:block">
+        <div className="rounded-xl border border-border bg-card/50 p-3 sticky top-2">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Cores</span>
+          </div>
+          <ColorsPanel value={value} update={update} />
+        </div>
+      </aside>
     </div>
   );
 }
