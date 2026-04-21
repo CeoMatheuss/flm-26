@@ -19,6 +19,7 @@ import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface MatchPageState {
   homeTeam: string;
