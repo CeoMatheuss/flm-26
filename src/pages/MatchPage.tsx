@@ -678,15 +678,23 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Buttons — bigger, more visible */}
+        {/* Row 2: Action Widgets — gradient cards */}
         {!isFinished && (
-          <div className="flex items-center gap-1.5">
-            {/* Tática */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+            {/* Tática Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <Settings2 className="h-4 w-4" /> ⚙️ Tática
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 hover:from-emerald-500/25 hover:to-emerald-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                      <Settings2 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400">⚙️ Tática</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Ajustes Táticos</SheetTitle></SheetHeader>
@@ -696,13 +704,25 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Time / Subs */}
+            {/* Time / Subs Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <Users className="h-4 w-4" /> 👥 Time
-                  {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/15 to-blue-700/5 hover:from-blue-500/25 hover:to-blue-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0 relative">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                      {subsUsed > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[9px] font-black text-white flex items-center justify-center">
+                          {subsUsed}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-400">👥 Time</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">{maxSubs - subsUsed}/{maxSubs} subs</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Escalação & Substituições</SheetTitle></SheetHeader>
@@ -728,12 +748,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Stats */}
+            {/* Stats Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <BarChart3 className="h-4 w-4" /> 📊 Stats
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/15 to-yellow-700/5 hover:from-yellow-500/25 hover:to-yellow-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                      <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-yellow-400">📊 Stats</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">{possession[0]}% posse</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Estatísticas</SheetTitle></SheetHeader>
@@ -743,22 +771,34 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Assistente Técnico Button */}
+            {/* Assistente Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={hasAssistant ? 'default' : 'outline'}
-                  className={`h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl min-w-[40px] font-bold ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/40 opacity-50'}`}
+                <button
                   disabled={!hasAssistant}
+                  className={`group relative overflow-hidden rounded-2xl border transition-all p-2 sm:p-2.5 text-left ${
+                    hasAssistant
+                      ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-amber-700/5 hover:from-amber-500/25 hover:to-amber-700/10 hover:scale-[1.03] active:scale-[0.97]'
+                      : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
+                  }`}
                 >
-                  <MessageSquare className="h-4 w-4" /> 📋
-                  {hasAssistant && matchState.assistantTips.length > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold flex items-center justify-center">
-                      {matchState.assistantTips.length}
-                    </span>
-                  )}
-                </Button>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 relative ${hasAssistant ? 'bg-amber-500/20' : 'bg-muted/20'}`}>
+                      <MessageSquare className={`h-5 w-5 sm:h-6 sm:w-6 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                      {hasAssistant && matchState.assistantTips.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-[9px] font-black text-white flex items-center justify-center animate-pulse">
+                          {matchState.assistantTips.length}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`}>📋 Coach</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">
+                        {hasAssistant ? `${matchState.assistantTips.length} dicas` : 'Indisponível'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>📋 Assistente Técnico</SheetTitle></SheetHeader>
