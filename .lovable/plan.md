@@ -1,94 +1,129 @@
 
 
-# Plano: Foco em Fisioterapia + Redesign da Tela de Partida
+# Plano: Crest Builder Heráldico Profissional (Estilo Europeu Tradicional)
 
-## Parte 1 — Aba Infraestrutura: Apenas Fisioterapia
+Refinar o `CrestBuilder` existente para parecer com a imagem de referência: escudos heráldicos clássicos com silhuetas fortes em alto contraste, organização limpa por seções (MODELOS / ANIMAIS / SÍMBOLOS) e melhor responsividade.
 
-**Arquivo**: `src/components/game/InfrastructureTab.tsx`
+## 1. Novos ícones heráldicos realistas
 
-- **Remover** o card "Centro de Treinamento" (CT continua existindo no jogo, apenas não aparece nesta seção de saúde/recuperação).
-- **Manter apenas** o card "Fisioterapia", agora único e mais destacado.
-- Adicionar **botão "?" (HelpCircle)** ao lado do título "Fisioterapia". Ao clicar abre `Dialog`:
+**Arquivo**: `src/components/game/ShieldCrest.tsx`
 
-  > **🏥 FISIOTERAPIA — COMO FUNCIONA**
-  > • Recupera stamina diariamente (+30 + nível do fisio, máx +50)
-  > • Reduz risco de lesão
-  > • Acelera recuperação de jogadores lesionados
-  > • Reduz chance de recaída
-  > • Ajuda jogadores cansados (<50 stamina)
-  >
-  > **💡 DICAS**
-  > • Jogadores com baixa stamina têm mais risco de lesão
-  > • Rotacione o elenco para evitar desgaste
-  > • Fisio alto melhora a estabilidade do time
+Refazer/melhorar as silhuetas para ficarem mais robustas e reconhecíveis (estilo brasão europeu tradicional, não cartoon):
 
-- Adicionar **bloco "Status do Elenco"** dentro do card, calculado das props (passar `players` ao componente):
-  - Stamina média do elenco → texto "Baixo desgaste" (≥70), "Desgaste moderado" (40–69), "Alto desgaste" (<40)
-  - Lesionados ativos → "X jogador(es) em recuperação"
-  - Risco geral baseado em stamina + propensão média → badge "🟢 Baixo risco" / "🟡 Atenção" / "🔴 Alto risco"
+- **Animais** (refinar os existentes + adicionar): `lion-rampant` (leão em pé heráldico), `lion-head` (juba dramática), `eagle-rampant` (águia de asas abertas estilo Roma), `eagle-head`, `wolf-howling`, `horse-rampant` (cavalo empinado), `bear-standing`, `bull-head`, `dragon-rampant`, `panther-leaping`, `falcon`, `phoenix-rising`
+- **Símbolos heráldicos**: `cross-templar`, `cross-celtic`, `cross-orthodox`, `crown-royal` (3 níveis), `crown-imperial`, `fleur-de-lis-trio`, `fleur-de-lis-single`, `laurel-wreath` (grinalda completa), `crossed-axes`, `crossed-spears`, `arrows-three`, `castle-tower`, `castle-fortified`, `star-compass`, `crescent`, `sun-rays`, `wings-spread`, `letter-monogram` (S P Q R style)
 
-- Atualizar `Props` para incluir `players: Player[]` e remover a opção `'trainingCenter'` do callback `onUpgrade`.
-- Atualizar `GameTabRouter.tsx` para passar `players` e remover prop relacionada ao CT nesta aba.
+Cada ícone redesenhado com:
+- **Silhueta densa** (preenchimento sólido em `dc`, sem traços finos cartoon)
+- **Proporção heráldica** ocupando 60–70% da área do escudo
+- **Detalhes mínimos** em `sc` apenas onde necessário (olhos, contraste interno)
 
-## Parte 2 — Redesign da Tela de Partida (MatchPage)
+## 2. Nova divisão interna do escudo (heráldica clássica)
 
-**Arquivo**: `src/pages/MatchPage.tsx`
+Adicionar 3 novos `shieldPatterns` que faltam para o look europeu:
 
-### 2.1 Narração estilo chat
-Substituir o feed atual de eventos por um layout estilo **chat vertical**:
-- Cada lance é um **bloco separado** com:
-  - **Escudo do time** (24×24) à esquerda quando `ev.team === 'home' | 'away'` (usar `<ShieldCrest>` com `shieldPropsFromClub`)
-  - Minuto em badge sutil (cinza)
-  - Texto da narração em cor neutra (`text-foreground` ou `text-muted-foreground`)
-- Espaçamento maior entre eventos (`space-y-3` em vez de `space-y-1`)
-- Sem fundos coloridos por tipo (remover `getEventBg`), apenas borda inferior sutil `border-b border-border/10`
+- `quartered` — 4 quadrantes alternados (clássico brasão real)
+- `per-pale` — meio a meio vertical com cores invertidas
+- `per-bend` — divisão diagonal limpa (sem opacidade)
+- `bordure` — escudo interno com borda colorida grossa
+- `chief` — faixa horizontal sólida no topo (1/3 superior)
 
-### 2.2 Cores neutras (remover poluição)
-Reescrever `getEventColor`:
-- **Padrão**: `text-foreground/85` (neutro)
-- **Gols**: `text-emerald-400 font-bold` (único destaque vivo)
-- **Apito final / fim de jogo**: `text-emerald-400`
-- **Cartões vermelhos / lesões graves**: `text-foreground/70` + emoji (sem vermelho exagerado)
-- **Tudo o mais**: neutro
+Reescrever os patterns existentes (`split`, `quarters`, `cross`) para usar **cores sólidas a 100%** (sem `opacity={0.6}`) e linhas de divisão pretas finas como divisórias heráldicas autênticas.
 
-Remover também `text-yellow-400`, `text-red-400` etc. dos eventos comuns no feed.
+## 3. Redesign visual do CrestBuilder (organização tipo referência)
 
-### 2.3 Card de Fim de Jogo elegante
-Refazer `FinishedSection` (parte do header):
-- Caixa central com fundo `bg-card/80` + borda `border-emerald-500/20`
-- Texto "🏁 FIM DE JOGO" grande e centralizado
-- Placar enorme (`text-6xl font-mono`) em destaque
-- Tempo total da partida e estádio em linha sutil abaixo
-- Animação `animate-fade-in` + leve `scale` na entrada
+**Arquivo**: `src/components/game/CrestBuilder.tsx`
 
-### 2.4 Escalações (lado direito / inline)
-No `LineupView`:
-- Aumentar espaçamento entre jogadores (`space-y-2.5`)
-- Substituir "stamina XX%" por **barra horizontal fina** (h-1.5) colorida (verde/amarelo/vermelho conforme valor)
-- Nota do jogador (rating) maior e em badge ao lado direito do card
+### 3.1 Layout geral responsivo
 
-### 2.5 Estatísticas modernas
-No `StatsView`:
-- Substituir números brutos por **barras comparativas** (split bar mostrando % do total entre os dois times)
-- Menos texto, ícones maiores no rótulo
-- Cores neutras: barra azul (casa) vs barra cinza-escuro (visitante)
+- Mobile (`<sm`): preview no topo (180px), abas embaixo, scroll vertical natural
+- Tablet (`sm`–`md`): preview lateral fixa 220px, abas em coluna direita
+- Desktop (`md+`): preview 280px com card elegante, abas com mais respiro
+- Remover `aspect-square` rígido do preview → usar altura controlada para evitar corte
 
-### 2.6 Estilo geral
-- Remover bordas coloridas das seções (`border-yellow-500/20`, `border-blue-500/20`, etc.) → usar `border-border/20` neutro
-- Manter ícones coloridos pequenos apenas no título de cada seção
-- Sticky top bar mais limpa (chips menores, sem cores fortes)
+### 3.2 Aba "Símbolo" reformulada (estilo da imagem de referência)
+
+Em vez de tabs internas (Animais / Símbolos / Letras), exibir **três seções empilhadas** com títulos centralizados estilo "MODELOS DE ESCUDOS / ANIMAIS / SÍMBOLOS" da imagem:
+
+```
+─────── ANIMAIS ───────
+[grid 4 cols mobile / 6 cols desktop com silhuetas pretas]
+
+─────── SÍMBOLOS ───────
+[grid 4/6 cols com cruzes, coroas, espadas, etc.]
+
+─────── LETRAS ───────
+[grid 7 cols com letras estilizadas]
+```
+
+Cada item:
+- Quadrado branco com borda fina cinza
+- Silhueta preta (não usa as cores do escudo no preview do ícone — fica monocromático para clareza, igual à referência)
+- Selecionado → borda primária + fundo levemente azulado
+- Hover → leve zoom + sombra
+
+### 3.3 Aba "Forma" reformulada
+
+- Grid responsivo: 3 cols mobile, 5 cols desktop
+- Cada forma renderizada em **alto contraste preto sobre branco** (silhueta limpa) — não usa as cores atuais, fica como catálogo de formatos
+- Label maior (12px) abaixo
+- Selecionado destacado com ring azul + scale leve
+
+### 3.4 Aba "Layout" idem
+
+- Mostra o padrão aplicado em cores neutras (cinza escuro / branco) para ficar claro o desenho da divisão
+- Grid 3/5 cols responsivo
+
+### 3.5 Painel de preview elegante
+
+- Fundo limpo creme/off-white (`#FAF7F2`) — não mais xadrez cinza (que polui)
+- Sombra dupla sutil no escudo (`drop-shadow-2xl` + leve glow do `primaryColor`)
+- Pequeno título "PREVIEW" em caps tracking-widest acima
+- Largura/altura adaptativos por viewport
+- Preview maior em desktop (240px), menor em mobile (160px)
+
+### 3.6 Botões aprimorados
+
+- "🎲 Aleatório" — gera combinação heráldica curada (não totalmente random — pega de pools válidos: forma clássica + animal + cor escura + dourado)
+- "💾 Salvar" — em destaque
+- Adicionar "↺ Resetar" (volta ao default)
+
+## 4. Paleta heráldica curada
+
+Substituir `CURATED_PAIRS` por paletas inspiradas em clubes europeus tradicionais:
+
+```typescript
+const HERALDIC_PAIRS = [
+  ['#8B0000', '#FFD700', '#FFFFFF'], // Vermelho/dourado (Roma/Bayern)
+  ['#000080', '#FFFFFF', '#FFD700'], // Marinho/branco/dourado (Real)
+  ['#000000', '#FFFFFF', '#C0392B'], // Preto/branco/vermelho (Juve)
+  ['#1B5E20', '#FFFFFF', '#FFD700'], // Verde/branco (Sporting)
+  ['#0D47A1', '#E53935', '#FFFFFF'], // Azul/vermelho (Barça)
+  ['#4A148C', '#FFFFFF', '#FFD700'], // Roxo/branco
+  ['#B71C1C', '#FFFFFF', '#000000'], // Vermelho/branco/preto
+  ['#1A1A1A', '#FFD700', '#B8860B'], // Preto/dourado (premium)
+];
+```
+
+## 5. Responsividade do bloco no ClubCreation
+
+**Arquivo**: `src/components/game/ClubCreation.tsx`
+
+- O `<CrestBuilder>` precisa caber bem em modal/page de criação. Garantir `max-w-3xl mx-auto` e padding adequado.
+- Verificar overflow em telas pequenas (sem corte horizontal).
 
 ## Arquivos Modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/InfrastructureTab.tsx` | Remove CT, adiciona helper "?", adiciona Status do Elenco |
-| `src/components/game/GameTabRouter.tsx` | Passa `players` para `InfrastructureTab` |
-| `src/pages/MatchPage.tsx` | Feed estilo chat com escudos, cores neutras, novo card de fim de jogo, barras de stamina, stats com barras comparativas, redução de bordas coloridas |
+| `src/components/game/ShieldCrest.tsx` | +12 ícones heráldicos densos, refinar silhuetas existentes, +5 patterns clássicos (quartered, per-pale, per-bend, bordure, chief), divisões com cores sólidas |
+| `src/components/game/CrestBuilder.tsx` | Aba Símbolo com 3 seções tituladas estilo referência, ícones em mono p/b, preview com fundo creme + título PREVIEW, paleta heráldica curada, layout totalmente responsivo, botão Resetar |
+| `src/components/game/ClubCreation.tsx` | Container responsivo `max-w-3xl mx-auto` em volta do CrestBuilder |
 
 ## Compatibilidade
 
-- CT continua acessível e funcional em outros locais do jogo (cálculos de evolução, bônus de treino) — apenas removido visualmente desta tela.
-- Eventos de partida existentes continuam compatíveis (apenas mudou a renderização).
-- Sem mudanças de schema ou de tipos persistidos.
+- Ícones e patterns antigos continuam funcionando (apenas adições + refinamentos visuais)
+- `ShieldConfig` não muda de schema
+- Saves antigos renderizam normalmente
+- Sem alterações em DB/Edge Functions
 
