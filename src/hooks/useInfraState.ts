@@ -3,22 +3,38 @@ import {
   Infrastructure, defaultInfrastructure, getUpgradeCost, getAcademyUpgradeCost,
   getStadiumUpgradeCost, getStadiumCapacity, getTrainingCenterUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
+  computeEvolutionStatus, computeYouthTag, getPotentialTier,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
 import { MatchReport } from '@/types/matchReport';
+import { simulateYouthMatch, formatYouthMatchNews, YouthMatchReport } from '@/utils/youthMatchSimulator';
+import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export function useInfraState(initialState: any, userId?: string) {
   const [infrastructure, setInfrastructure] = useState<Infrastructure>(initialState?.infrastructure ?? defaultInfrastructure);
-  const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(initialState?.youthProspects ?? []);
-  const [youthInvestment, setYouthInvestment] = useState(initialState?.youthInvestment ?? 100000);
+  const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(() => {
+    const list: YouthProspect[] = initialState?.youthProspects ?? [];
+    // Backfill new V2 fields for old saves
+    return list.map(p => ({
+      ...p,
+      potentialTier: p.potentialTier ?? getPotentialTier(p.potential ?? 60),
+      evolutionStatus: p.evolutionStatus ?? 'estavel',
+      youthTag: p.youthTag ?? computeYouthTag(p as YouthProspect),
+      highlightStreak: p.highlightStreak ?? 0,
+      stagnationCycles: p.stagnationCycles ?? 0,
+      injuredCycles: p.injuredCycles ?? 0,
+    }));
+  });
+  const [youthInvestment, setYouthInvestment] = useState(initialState?.youthInvestment ?? 0);
   const [season, setSeason] = useState<SeasonData>(initialState?.season ?? defaultSeason);
   const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
   const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
   const [lastMatchReport, setLastMatchReport] = useState<MatchReport | undefined>(initialState?.lastMatchReport);
   const [youthPromotedCount, setYouthPromotedCount] = useState(initialState?.youthPromotedCount ?? 0);
+  const [lastYouthMatchReport, setLastYouthMatchReport] = useState<YouthMatchReport | null>(null);
 
   const upgradeFacility = useCallback((
     facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy',
@@ -73,9 +89,64 @@ export function useInfraState(initialState: any, userId?: string) {
     return true;
   }, [youthInvestment]);
 
+  /** Run end-of-cycle: simulate youth match + roll dynamic event. Updates prospects in place. */
+  const processYouthCycle = useCallback((clubName: string) => {
+    setYouthProspects(prev => {
+      // Simulate match
+      const { report, updatedProspects } = simulateYouthMatch(prev);
+      setLastYouthMatchReport(report);
+
+      // Decrement stagnation cycles
+      let next = updatedProspects.map(p => ({
+        ...p,
+        stagnationCycles: Math.max(0, (p.stagnationCycles ?? 0) - 1),
+        monthsInAcademy: (p.monthsInAcademy ?? 0) + 1,
+      }));
+
+      // Roll dynamic event
+      const { event, updatedProspects: afterEvent } = rollYouthEvent(next, infrastructure.youthAcademy.level);
+      next = afterEvent;
+
+      // Recompute derived fields
+      next = next.map(p => ({
+        ...p,
+        potentialTier: getPotentialTier(p.potential),
+        evolutionStatus: computeEvolutionStatus(p),
+        youthTag: computeYouthTag(p),
+      }));
+
+      // News entries
+      if (userId) {
+        supabase.from('newspaper_entries').insert([{
+          user_id: userId,
+          text: formatYouthMatchNews(clubName, report),
+          category: 'BASE',
+          is_event: false,
+        }]).then(() => {});
+
+        if (event) {
+          supabase.from('newspaper_entries').insert([{
+            user_id: userId,
+            text: `${event.emoji} BASE — ${event.title}: ${event.description}`,
+            category: 'BASE',
+            is_event: true,
+          }]).then(() => {});
+          toast.success(`${event.emoji} ${event.title}`, { description: event.description });
+        }
+      }
+
+      return next;
+    });
+  }, [infrastructure.youthAcademy.level, userId]);
+
   const promoteYouth = useCallback((youthId: string, addPlayerToClub: (p: any) => void) => {
     const prospect = youthProspects.find(p => p.id === youthId);
     if (!prospect) return;
+    if (prospect.age < 18 && prospect.overall < 60) {
+      toast.warning('⚠️ Promovido muito cedo', {
+        description: `${prospect.name} pode ter dificuldade no profissional. Continue acompanhando.`,
+      });
+    }
     const player = {
       id: prospect.id, name: prospect.name, position: prospect.position,
       overall: prospect.overall, attributes: prospect.attributes,
@@ -85,8 +156,91 @@ export function useInfraState(initialState: any, userId?: string) {
     };
     addPlayerToClub(player);
     setYouthProspects(prev => prev.filter(p => p.id !== youthId));
+    setYouthPromotedCount((c: number) => c + 1);
     toast.success(`${prospect.name} promovido ao time principal!`);
   }, [youthProspects]);
+
+  const sellYouth = useCallback((
+    youthId: string,
+    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addBudget: (amount: number) => void,
+  ) => {
+    const prospect = youthProspects.find(p => p.id === youthId);
+    if (!prospect) return;
+    const value = prospect.overall * 50_000;
+    addBudget(value);
+    addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
+    setYouthProspects(prev => prev.filter(p => p.id !== youthId));
+    toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
+  }, [youthProspects]);
+
+  const enrollCopinha = useCallback((clubName: string, updateClubProfile: (fn: (prev: any) => any) => void) => {
+    const eligible = youthProspects.filter(p => p.age <= 20 && (p.injuredCycles ?? 0) === 0);
+    if (eligible.length < 5) {
+      toast.error('Você precisa de pelo menos 5 jovens elegíveis (≤20 anos) para inscrever na Copinha.');
+      return;
+    }
+
+    // Simulate 5 knockout matches
+    const ourAvg = eligible.reduce((s, p) => s + p.overall, 0) / eligible.length;
+    let wins = 0;
+    for (let r = 0; r < 5; r++) {
+      const rivalAvg = 50 + Math.random() * 20 + r * 2; // gets harder
+      const winChance = 0.5 + (ourAvg - rivalAvg) * 0.02;
+      if (Math.random() < winChance) wins++;
+      else break;
+    }
+
+    const won = wins === 5;
+    const finalist = wins === 4;
+
+    let boost = 0;
+    if (won) boost = 15;
+    else if (finalist) boost = 8;
+    else boost = Math.max(2, wins);
+
+    setYouthProspects(prev => prev.map(p => {
+      if (p.age > 20) return p;
+      const newOvr = Math.min(p.potential, p.overall + boost);
+      const becomesRevelation = wins >= 3 && Math.random() < 0.3;
+      return {
+        ...p,
+        overall: newOvr,
+        highlightStreak: becomesRevelation ? 3 : (p.highlightStreak ?? 0),
+        youthTag: becomesRevelation ? 'revelacao' : p.youthTag,
+        morale: Math.min(100, (p.morale ?? 70) + (won ? 15 : finalist ? 10 : 5)),
+      };
+    }));
+
+    if (won) {
+      updateClubProfile(prev => ({
+        ...prev,
+        trophies: [...(prev.trophies ?? []), {
+          id: crypto.randomUUID(),
+          name: 'Copinha Sub-20',
+          season: season.currentSeason,
+          year: new Date().getFullYear(),
+          competition: 'Copinha',
+        }],
+      }));
+      toast.success('🏆 CAMPEÕES DA COPINHA!', { description: `Toda a base ganhou +${boost} OVR de boost!` });
+    } else if (finalist) {
+      toast.success('🥈 Vice-campeões da Copinha!', { description: `Base ganhou +${boost} OVR de boost.` });
+    } else {
+      toast.info(`Eliminados na ${wins + 1}ª fase da Copinha`, { description: `Base ganhou +${boost} OVR de experiência.` });
+    }
+
+    if (userId) {
+      const text = won
+        ? `🏆 ${clubName} CAMPEÃO DA COPINHA! Toda a base ganhou destaque nacional.`
+        : finalist
+          ? `🥈 ${clubName} foi vice-campeão da Copinha após 4 vitórias seguidas.`
+          : `📰 ${clubName} caiu na ${wins + 1}ª fase da Copinha. Base ganhou experiência.`;
+      supabase.from('newspaper_entries').insert([{
+        user_id: userId, text, category: 'BASE', is_event: true,
+      }]).then(() => {});
+    }
+  }, [youthProspects, season.currentSeason, userId]);
 
   const upgradeCTRoom = useCallback((
     room: keyof CTRooms,
@@ -108,6 +262,8 @@ export function useInfraState(initialState: any, userId?: string) {
     youthInvestment, setYouthInvestment, season, setSeason,
     ctRooms, setCTRooms, achievements, setAchievements,
     lastMatchReport, setLastMatchReport, youthPromotedCount, setYouthPromotedCount,
-    upgradeFacility, promoteYouth, upgradeCTRoom, chargeYouthInvestment,
+    lastYouthMatchReport, setLastYouthMatchReport,
+    upgradeFacility, promoteYouth, sellYouth, enrollCopinha,
+    processYouthCycle, upgradeCTRoom, chargeYouthInvestment,
   };
 }
