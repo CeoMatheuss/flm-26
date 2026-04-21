@@ -40,6 +40,7 @@ export interface GameState {
   events: GameEvent[];
   loanedPlayers?: LoanedPlayer[];
   trainingFocus?: Record<string, TrainingFocus>;
+  trainingIntensity?: Record<string, 'leve' | 'moderado' | 'pesado'>;
   achievements?: Achievement[];
   lastMatchReport?: MatchReport;
   clubProfile?: ClubProfile;
@@ -227,6 +228,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     events: matchState.events,
     loanedPlayers: clubState.loanedPlayers,
     trainingFocus: clubState.trainingFocus,
+    trainingIntensity: clubState.trainingIntensity,
     achievements: infraState.achievements,
     lastMatchReport: infraState.lastMatchReport,
     clubProfile: clubState.clubProfile,
@@ -241,7 +243,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   }), [clubState.club, tactics, financeState.finances, clubState.marketPlayers, clubState.freeAgents,
     infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.season,
     financeState.sponsors, financeState.sponsorOffers, matchState.events, clubState.loanedPlayers,
-    clubState.trainingFocus, infraState.achievements, infraState.lastMatchReport, clubState.clubProfile,
+    clubState.trainingFocus, clubState.trainingIntensity, infraState.achievements, infraState.lastMatchReport, clubState.clubProfile,
     infraState.ctRooms, infraState.youthPromotedCount, matchState.ranking, matchState.rankingHistory,
     matchState.friendliesPlayedToday, matchState.friendliesPlayedSeason, matchState.lastFriendlyDate]);
 
@@ -266,6 +268,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     listedForSale: clubState.listedForSale,
     loanedPlayers: clubState.loanedPlayers,
     trainingFocus: clubState.trainingFocus,
+    trainingIntensity: clubState.trainingIntensity,
     achievements: infraState.achievements,
     lastMatchReport: infraState.lastMatchReport,
     clubProfile: clubState.clubProfile,
@@ -308,6 +311,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     loanOutPlayer,
     loanInPlayer,
     setPlayerTrainingFocus: clubState.setPlayerTrainingFocus,
+    setPlayerTrainingIntensity: clubState.setPlayerTrainingIntensity,
     changeShirtNumber: clubState.changeShirtNumber,
     upgradeCTRoom,
     updateClubProfile: clubState.updateClubProfile,
