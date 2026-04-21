@@ -225,6 +225,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-amber-500/50 hover:bg-amber-500/5" onClick={() => onAuction(player)} disabled={!auctionEligible}>
             <Gavel className="h-3.5 w-3.5" /> Leilão {!auctionEligible && <span className="text-[8px] text-muted-foreground">(65+)</span>}
           </Button>
+          {onRescindPlayer && (
+            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={players.length <= 11}>
+              <Trash2 className="h-3.5 w-3.5" /> Rescindir
+            </Button>
+          )}
           <div className="flex items-center gap-1.5">
             {editingNumber ? (
               <div className="flex items-center gap-1 w-full">
@@ -462,10 +467,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                         <span className="text-[9px] text-amber-400 font-bold shrink-0">⚠️</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
                       <span>{player.age}a</span>
                       <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k</span>
                       <span>📄{player.contract}a</span>
+                      {(() => {
+                        const value = getPlayerValue(player);
+                        const trend = getValueTrend(player);
+                        const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+                        const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
+                        return (
+                          <span className={`font-bold ${trendColor}`} title={`Valor de mercado: ${formatMoney(value)}`}>
+                            💰{(value / 1000).toFixed(0)}k {trendIcon}
+                          </span>
+                        );
+                      })()}
+                      {isPlayerGem(player) && <span title="Joia!" className="text-amber-400">💎</span>}
                       {player.goals > 0 && <span>⚽{player.goals}</span>}
                       {player.assists > 0 && <span>🅰️{player.assists}</span>}
                       {avgRating && (
@@ -584,6 +601,16 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Rescind modal */}
+      {onRescindPlayer && (
+        <RescindModal
+          player={rescindCandidate}
+          transferBudgetAvailable={effectiveTransferBudget}
+          onClose={() => setRescindCandidate(null)}
+          onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); }}
+        />
+      )}
     </div>
   );
 }
