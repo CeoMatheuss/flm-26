@@ -46,11 +46,10 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
-    if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure[facility].level);
-    else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure[facility].level);
-    else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure[facility].level);
-    else if (facility === 'physiotherapy') cost = getPhysioUpgradeCost(infrastructure[facility].level);
-    else cost = getUpgradeCost(infrastructure[facility].level);
+    if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
+    else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure.youthAcademy.level);
+    else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure.trainingCenter.level);
+    else cost = getPhysioUpgradeCost(infrastructure.physiotherapy.level);
 
     // Hard cap on physiotherapy at level 20
     if (facility === 'physiotherapy' && infrastructure.physiotherapy.level >= 20) {
