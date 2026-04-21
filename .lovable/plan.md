@@ -1,82 +1,65 @@
 
 
-# Plano: Substituições Manuais + Widgets na Simulação + Amistosos com Simulação Completa
+# Plano: Validações de Substituição + Widgets Bonitos + Público Baseado em Torcida dos Dois Clubes
 
-## Resumo
+## 1 — Validações de Substituição com Toast Explicativo
 
-1. Remover qualquer modo de simulação automática residual (5min)
-2. Sistema de substituições 100% manual (sem IA decidindo) com até 5 trocas, mostrando minuto, sai/entra e escudo do time
-3. Trocar os botões da barra superior por **widgets visuais** mais bonitos
-4. Garantir que amistosos rodem a simulação lance-por-lance completa (igual aos campeonatos)
-5. Esconder escudos durante o intervalo
+**Onde**: `src/pages/MatchPage.tsx` (função `handleQueueSubstitution` + clique no widget "Time")
 
----
+Adicionar bloqueios duros com mensagens via `sonner.toast`:
 
-## 1 — Remover Auto-Simulação Residual
+- **Intervalo (45'-60')**: bloquear toda nova substituição enquanto `currentMinute >= 45 && currentMinute < 60`. Ao tentar abrir o painel ou confirmar uma troca:
+  > 🚫 "Substituições bloqueadas no intervalo (45'-60'). Aguarde o reinício do 2º tempo."
+- **Após 90'**: bloquear quando `currentMinute > 90`:
+  > 🚫 "Não é permitido substituir após o 90' minuto."
+- **Limite atingido**: quando `subsUsed >= 5`:
+  > 🚫 "Limite de 5 substituições já utilizado."
+- **Janelas esgotadas** (fora do intervalo, `windowsUsed >= 3`):
+  > ⚠️ "Você já usou as 3 janelas de substituição permitidas no jogo corrido."
 
-**Onde**: `supabase/functions/process-tournament-matches/index.ts`
+Os widgets continuarão clicáveis para visualizar o painel, mas os botões de "SAIR" e "ENTRA" dentro ficam `disabled` com banner vermelho explicativo no topo da Sheet quando bloqueado.
 
-Garantir que **NENHUMA** partida com humano seja simulada antes do prazo de 48h. Remover qualquer fallback de 5min/30min para ligas que envolvam jogadores reais. Bot vs Bot mantém auto-sim (30min) para a liga continuar.
+## 2 — Widgets Mais Bonitos, Maiores e Clicáveis
 
-## 2 — Sistema de Substituições Manual
+**Onde**: `src/pages/MatchPage.tsx` (linhas ~683-836, top bar)
 
-**Onde**: `src/pages/MatchPage.tsx` (painel "Time" / Sheet de elenco)
+Os 4 widgets (Tática, Time, Stats, Coach) ganham:
 
-Atualmente as substituições são automáticas (via `auto_substitutions` na Edge Function). Mudanças:
+- **Altura maior**: de `p-2 sm:p-2.5` para `p-3 sm:p-4`
+- **Ícones grandes**: container `w-12 h-12 sm:w-14 sm:h-14` (era `w-9 sm:w-10`), ícone `h-7 w-7 sm:h-8 sm:w-8`
+- **Texto MAIOR**:
+  - Label do widget: `text-xs sm:text-sm` (era `text-[10px] sm:text-xs`)
+  - Valor principal: `text-base sm:text-lg` font-black (era `text-xs sm:text-sm`)
+- **Gradient mais vibrante**: `from-X-500/25 to-X-700/10` com `shadow-lg shadow-X-500/10`
+- **Hover melhor**: `scale-[1.05]`, `shadow-xl` ao passar
+- **Animação de pulse no badge de notificação** (já existe no Coach, expandir para Time quando `subQueue.length > 0`)
+- **Borda mais grossa**: `border-2` para destacar
+- **Mantém o esquema de cores atual**: emerald (Tática), blue (Time), yellow (Stats), amber (Coach)
+- **Indicador visual de bloqueio**: quando intervalo/após 90', o widget "Time" fica com opacidade reduzida + ícone 🔒 sobreposto
 
-- **Remover IA de substituições**: Edge Function `start-match` não vai mais sugerir/forçar trocas automáticas — apenas alertar via Assistente quando algum jogador estiver cansado
-- **UI de Substituição**:
-  - No painel "Time", cada titular tem um botão "🔄 Substituir"
-  - Ao clicar, abre lista de reservas disponíveis com OVR, posição e estamina
-  - Confirmar a troca registra um evento de substituição com:
-    - ⏱️ Minuto atual
-    - ⬇️ Jogador que sai (nome + foto)
-    - ⬆️ Jogador que entra (nome + foto)
-    - 🛡️ Escudo do clube ao lado
-  - Contador visível: "Substituições: 2/5"
-  - Botão fica `disabled` ao atingir 5 trocas
-- **Restrições**:
-  - Não permitir trocas durante o **intervalo** (15-min)
-  - Não permitir trocas após o 90'
-  - Cada jogador só pode sair/entrar uma vez
+Layout em mobile (888px o user vê apenas um device pequeno) mantém `grid-cols-2`, mas com gap maior `gap-2 sm:gap-3`.
 
-## 3 — Widgets na Barra Superior (substituir botões)
+## 3 — Público no Estádio Baseado na Torcida dos Dois Clubes
 
-**Onde**: `src/pages/MatchPage.tsx`
+**Onde**: `supabase/functions/start-match/index.ts` (linhas 805-814 + assinatura da função)
 
-Trocar os 4 botões atuais (Tática, Time, Stats, Assistente) por **widgets em formato de cards compactos** com:
-- Ícone grande (32px) com gradient de fundo
-- Label curto abaixo
-- Badge dinâmico mostrando informação relevante:
-  - **⚙️ Tática**: formação atual ("4-3-3")
-  - **👥 Time**: substituições restantes ("3/5")
-  - **📊 Stats**: posse de bola ("58%")
-  - **🎙️ Assistente**: número de novas dicas ("•3")
+**Atual**: Calcula público usando apenas `homeFans` (torcida do mandante).
 
-Cada widget vira um card clicável com:
-- `rounded-2xl`, gradient de fundo (esmeralda/azul/amarelo/roxo)
-- Hover com `scale-105`
-- Animação `pulse` no badge quando há novidade
-- Em mobile (390px): grid 2x2 / em desktop: row de 4
+**Novo cálculo**:
+- Aceitar `awayFans` como parâmetro adicional
+- Fórmula:
+  - **Mandante**: `homeFans * 0.85` (85% da torcida do mandante comparece)
+  - **Visitante**: `min(awayFans * 0.05, capacity * 0.10)` (5% da torcida visitante até 10% da capacidade)
+  - **Total**: `min(capacity, homePart + awayPart)` ajustado por `homeStrength` (times melhores atraem mais)
+- Descrição do kickoff atualizada:
+  > "🏟️ A partida começa no {stadiumName}! 👥 Público: {total} (🏠 {homePart} mandante · 🛫 {awayPart} visitante)"
+- Adicionar evento extra no minuto 1 com a renda de bilheteria estimada
+- Atualizar payload do `MatchPage.tsx` para enviar `awayFans` (vindo de `locState.awayFans` — buscar do clube adversário no momento de criar a partida)
 
-## 4 — Amistosos com Simulação Lance-por-Lance
-
-**Onde**: `src/components/game/OnlineFriendliesTab.tsx` + fluxo de invite
-
-Verificar e garantir que ao aceitar um amistoso, o sistema:
-- Crie uma `live_matches` row
-- Redirecione AMBOS os jogadores para `/match/:id`
-- Use a mesma engine `start-match` que campeonatos
-- Resultado vá para `match_history` ao final
-
-## 5 — Esconder Escudos no Intervalo
-
-**Onde**: `src/pages/MatchPage.tsx`
-
-Quando `isHalftime === true`:
-- Banner grande "⏸️ INTERVALO • 15:00"
-- Não mostrar escudos dos times
-- Mostrar apenas estatísticas do 1º tempo (posse, chutes, gols)
+**Onde adicionar `awayFans` no fluxo**:
+- `src/components/game/OnlineFriendliesTab.tsx`: ao criar `live_match`, buscar `fans` do oponente via `game_saves`/`league_squads`
+- `src/components/game/MatchesTab.tsx`: idem para amistosos contra BOT (usar valor randomizado entre 200-2000)
+- `src/pages/MatchPage.tsx`: passar `fans` (mandante) e `awayFans` (visitante) no `startMatch()`
 
 ---
 
@@ -84,29 +67,35 @@ Quando `isHalftime === true`:
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/MatchPage.tsx` | Widgets na top bar, sistema manual de subs, esconder escudo no intervalo |
-| `supabase/functions/start-match/index.ts` | Remover auto-substitutions, manter apenas alertas do assistente |
-| `supabase/functions/process-tournament-matches/index.ts` | Confirmar 48h estritos para humanos, sem fallback de 5min |
-| `src/components/game/OnlineFriendliesTab.tsx` | Garantir fluxo de live_match ao aceitar amistoso |
-| `src/match/useMatchSimulation.ts` | Suportar evento `manual_substitution` enviado pelo cliente |
+| `src/pages/MatchPage.tsx` | Validações com toast, widgets maiores/bonitos, passar `awayFans` |
+| `supabase/functions/start-match/index.ts` | Aceitar `awayFans`, calcular público dos dois clubes, narração detalhada |
+| `src/components/game/OnlineFriendliesTab.tsx` | Buscar `fans` do oponente ao criar partida online |
+| `src/components/game/MatchesTab.tsx` | Passar `awayFans` em amistosos vs BOT |
+| `src/match/useMatchSimulation.ts` | Adicionar `awayFans` na interface `StartMatchOptions` |
 
 ## Detalhes Técnicos
 
-**Substituição manual (cliente)**:
-- Novo botão dispatcha update na `live_matches.events` adicionando: `{ type: 'substitution', minute, playerOut, playerIn, teamLogo }`
-- Estado local `substitutionsUsed` (max 5), bloqueia botão ao atingir
-- Bloqueio quando `currentMinute === 45.5` (intervalo) ou `currentMinute > 90`
-
-**Widget design**:
+**Validação centralizada** (helper no `MatchPage.tsx`):
+```ts
+const validateSubAllowed = (): { ok: boolean; reason?: string } => {
+  if (currentMinute >= 45 && currentMinute < 60) 
+    return { ok: false, reason: '🚫 Substituições bloqueadas no intervalo (45-60)' };
+  if (currentMinute > 90) 
+    return { ok: false, reason: '🚫 Não é permitido substituir após o 90\'' };
+  if (subsUsed >= maxSubs) 
+    return { ok: false, reason: '🚫 Limite de 5 substituições atingido' };
+  return { ok: true };
+};
 ```
-[⚙️ Tática]  [👥 Time]
-   4-3-3        3/5
-[📊 Stats]   [🎙️ Coach]
-   58%          •3
-```
-Grid `grid-cols-2 sm:grid-cols-4 gap-2`, cards com `bg-gradient-to-br from-X to-Y`.
 
-**Auto-sim removida**:
-- `start-match` não terá mais a função `autoSubstitutePlayers()`
-- Apenas avisos do tipo "💡 Considere substituir o #9, ele está com 35% de estamina"
+Chamado em `handleQueueSubstitution` antes de adicionar à fila + ao clicar no widget "Time" se bloqueado.
+
+**Cálculo de público server-side**:
+```ts
+const homePart = Math.floor(homeFans * 0.85);
+const awayPart = Math.min(Math.floor(awayFans * 0.05), Math.floor(maxCapacity * 0.10));
+const baseAttendance = homePart + awayPart;
+const strengthMultiplier = 0.85 + (homeStrength / 200);
+const estimatedCrowd = Math.min(maxCapacity, Math.floor(baseAttendance * strengthMultiplier));
+```
 
