@@ -788,93 +788,27 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             </div>
           )}
 
-          {/* Active loans */}
-          {loanedPlayers.length > 0 && (
+          {/* Active loans (only outgoing) */}
+          {loanedPlayers.filter(l => l.direction === 'out').length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Empréstimos Ativos</p>
-              {loanedPlayers.map((loan, i) => (
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Empréstimos cedidos ativos</p>
+              {loanedPlayers.filter(l => l.direction === 'out').map((loan, i) => (
                 <div key={i} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate">{loan.player.name}</p>
                     <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
                   </div>
-                  <Badge className={`text-[8px] ${loan.direction === 'out' ? 'bg-orange-500/15 text-orange-400 border-orange-500/30' : 'bg-blue-500/15 text-blue-400 border-blue-500/30'}`}>
-                    {loan.direction === 'out' ? '↗ Cedido' : '↙ Recebido'}
-                  </Badge>
+                  <Badge className="text-[8px] bg-orange-500/15 text-orange-400 border-orange-500/30">↗ Cedido</Badge>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Loan out */}
-          {onLoanOut && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Emprestar jogador (máx 3)</p>
-              <ScrollArea className="max-h-[35vh]">
-                <div className="space-y-1">
-                  {players.filter(p => !loanedPlayers.some(l => l.player.id === p.id) && !loanListings.some(l => l.seller_id === userId && (l.player_data as any)?.id === p.id)).map(player => {
-                    const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
-                    return (
-                      <div key={player.id} className="rounded-xl border border-border/15 hover:border-cyan-500/20 transition-all p-2.5 flex items-center gap-2" style={{ background: 'hsl(var(--card))' }}>
-                        <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold ${pos.bg} ${pos.text}`}>
-                          <span>{player.overall}</span>
-                          <span className="text-[7px]">{player.position}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate">{player.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{player.age}a • R${((player.salary || 0) / 1000).toFixed(0)}k/mês</p>
-                        </div>
-                        <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg gap-1" onClick={() => onLoanOut(player.id)} disabled={players.length <= 11 || loanedPlayers.filter(l => l.direction === 'out').length >= 3}>
-                          <ArrowLeftRight className="h-3 w-3" /> Emprestar
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-
-          {/* Available loans from others */}
-          {loanListings.filter(l => l.seller_id !== userId).length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Disponíveis para empréstimo</p>
-              <ScrollArea className="max-h-[35vh]">
-                <div className="space-y-1">
-                  {loanListings.filter(l => l.seller_id !== userId).map(l => {
-                    const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
-                    return (
-                      <div key={l.id} className="rounded-xl border border-emerald-500/15 hover:border-emerald-500/30 transition-all p-2.5 flex items-center gap-2" style={{ background: 'hsl(var(--card))' }}>
-                        <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold ${pos.bg} ${pos.text}`}>
-                          <span>{l.player_overall}</span>
-                          <span className="text-[7px]">{l.player_position}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate">{l.player_name}</p>
-                          <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • {l.seller_club_name}</p>
-                          <p className="text-[10px] text-muted-foreground">Salário: R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
-                        </div>
-                        <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={async () => {
-                          if (loanedPlayers.filter(lp => lp.direction === 'in').length >= 3) { toast.error('Limite de 3 empréstimos recebidos!'); return; }
-                          const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-accept', listingId: l.id, clubName } });
-                          if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
-                          else { toast.success(`${l.player_name} emprestado!`); if (onLoanIn && res.data?.playerData) onLoanIn(res.data.playerData); loadLoanListings(); }
-                        }}>
-                          <Check className="h-3 w-3" /> Aceitar
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-
-          {loanListings.length === 0 && loanedPlayers.length === 0 && (
+          {loanListings.filter(l => l.seller_id === userId).length === 0 && loanedPlayers.filter(l => l.direction === 'out').length === 0 && (
             <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
               <ArrowLeftRight className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Nenhum empréstimo no mercado.
+              Você ainda não cedeu nenhum jogador. Vá em <span className="text-foreground font-semibold">Elenco</span> para emprestar.
             </div>
           )}
         </TabsContent>
