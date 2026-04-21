@@ -712,21 +712,21 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Compact stats nav (replaced 4 large widgets) */}
+        {/* Row 2: Compact stats nav (clean neutral chips) */}
         {!isFinished && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 text-xs font-bold">
-              <BarChart3 className="h-3.5 w-3.5 text-yellow-400" /> Stats
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <BarChart3 className="h-3.5 w-3.5" /> Stats
             </button>
-            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-xs font-bold">
-              <Users className="h-3.5 w-3.5 text-blue-400" /> Escalação
+            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Users className="h-3.5 w-3.5" /> Escalação
             </button>
-            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-xs font-bold">
-              <Settings2 className="h-3.5 w-3.5 text-emerald-400" /> Tática
+            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Settings2 className="h-3.5 w-3.5" /> Tática
             </button>
             {hasAssistant && (
-              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-xs font-bold">
-                <MessageSquare className="h-3.5 w-3.5 text-amber-400" /> Técnico ({matchState.assistantTips.length})
+              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <MessageSquare className="h-3.5 w-3.5" /> Técnico ({matchState.assistantTips.length})
               </button>
             )}
           </div>
@@ -1639,33 +1639,25 @@ function getEventIcon(type: string): string {
 }
 
 function getEventColor(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return 'text-emerald-400 font-bold';
-  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near'].includes(type)) return 'text-yellow-400';
-  if (type === 'yellow_card') return 'text-yellow-300';
-  if (type === 'red_card') return 'text-red-400';
-  if (type === 'penalty_miss') return 'text-red-400 font-bold';
-  if (type === 'dangerous_foul') return 'text-orange-500 font-semibold';
-  if (['midfield_foul', 'foul'].includes(type)) return 'text-orange-400';
-  if (type === 'halftime') return 'text-primary font-semibold';
-  if (type === 'final_whistle') return 'text-primary font-bold';
-  if (type === 'kickoff') return 'text-blue-400 font-medium';
-  if (type === 'substitution') return 'text-sky-400';
-  if (type === 'injury') return 'text-red-400 font-semibold';
-  if (type === 'assistant_tip') return 'text-amber-400';
-  if (type === 'added_time') return 'text-primary';
-  return 'text-muted-foreground';
+  // Goals — único destaque vivo
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) {
+    return 'text-emerald-400 font-semibold';
+  }
+  // Apito final / fim de tempo
+  if (['final_whistle', 'halftime', 'kickoff', 'added_time'].includes(type)) {
+    return 'text-emerald-400/90 font-medium';
+  }
+  // Lances importantes mas sutis (cards, faltas perigosas, lesão)
+  if (['red_card', 'yellow_card', 'penalty_miss', 'injury', 'dangerous_foul'].includes(type)) {
+    return 'text-foreground/70';
+  }
+  // Padrão: neutro
+  return 'text-foreground/85';
 }
 
-function getEventBg(ev: SimEvent): string {
-  if (ev.isGoal) return 'bg-emerald-500/10 border border-emerald-500/20';
-  if (['halftime', 'kickoff', 'final_whistle', 'added_time'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
-  if (['yellow_card', 'red_card'].includes(ev.type)) return 'bg-yellow-500/5 border border-yellow-500/10';
-  if (ev.type === 'injury') return 'bg-red-500/5 border border-red-500/10';
-  if (ev.type === 'assistant_tip') return 'bg-amber-500/5 border border-amber-500/10';
-  if (isHighlightEvent(ev.type)) return 'bg-yellow-400/5';
-  if (ev.team === 'home') return 'bg-blue-500/[0.03]';
-  if (ev.team === 'away') return 'bg-red-500/[0.03]';
-  return 'bg-muted/5';
+function getEventBg(_ev: SimEvent): string {
+  // Visual minimalista — sem fundos coloridos por tipo. Apenas separador sutil.
+  return '';
 }
 
 function getHighlightLabel(type: string): string {
