@@ -96,7 +96,7 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
           <div className="grid grid-cols-2 gap-1.5">
             {onListForSale && (
               <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onListForSale(player.id)}>
-                <Tag className="h-3 w-3" /> Lista de Transferência
+                <Tag className="h-3 w-3" /> Anunciar à venda
               </Button>
             )}
             {onLoanOut && (
