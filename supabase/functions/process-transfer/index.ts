@@ -265,9 +265,9 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ success: true, message: 'Proposta recusada.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // ACCEPT: Set 6h decision deadline instead of instant decision
+      // ACCEPT: Set 7h decision deadline instead of instant decision
       const now = new Date();
-      const deadline = new Date(now.getTime() + 6 * 3600 * 1000); // 6 hours
+      const deadline = new Date(now.getTime() + 7 * 3600 * 1000); // 7 hours
 
       await adminClient.from('transfer_offers').update({
         status: 'awaiting_decision',
@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
         user_id: offer.buyer_id,
         icon: '⏳',
         title: `${listing.player_name} está decidindo!`,
-        message: `O ${listing.seller_club_name} aceitou sua proposta por ${listing.player_name}! O jogador tem 6 horas para decidir. Resultado até ${deadline.toLocaleString('pt-BR')}.`,
+        message: `O ${listing.seller_club_name} aceitou sua proposta por ${listing.player_name}! O jogador tem 7 horas para decidir. Resultado até ${deadline.toLocaleString('pt-BR')}.`,
         type: 'info',
       });
 
@@ -289,13 +289,13 @@ Deno.serve(async (req) => {
       await adminClient.from('newspaper_entries').insert({
         user_id: listing.seller_id,
         category: 'MERCADO',
-        text: `🤝 ${listing.seller_club_name} aceitou proposta de R$${(offer.offered_price / 1000).toFixed(0)}k do ${offer.buyer_club_name} por ${listing.player_name} (OVR ${listing.player_overall}). Jogador tem 6h para decidir.`,
+        text: `🤝 ${listing.seller_club_name} aceitou proposta de R$${(offer.offered_price / 1000).toFixed(0)}k do ${offer.buyer_club_name} por ${listing.player_name} (OVR ${listing.player_overall}). Jogador tem 7h para decidir.`,
         is_event: true,
       });
 
       return new Response(JSON.stringify({
         success: true,
-        message: `Proposta aceita! ${listing.player_name} tem 6 horas para decidir.`,
+        message: `Proposta aceita! ${listing.player_name} tem 7 horas para decidir.`,
         awaitingDecision: true,
         deadline: deadline.toISOString(),
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

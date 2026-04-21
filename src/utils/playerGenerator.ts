@@ -221,11 +221,62 @@ export function getPlayerVariableBonus(winStreak: number, leaguePosition?: numbe
   return bonus;
 }
 
-/** Valor total = fixo + variável (%) */
+/** Bônus de potencial: jovem (≤22) com OVR ≥75 ganha multiplicador (joia 💎) — até +40% */
+export function getPotentialBonusPercent(player: Player): number {
+  if (player.age > 22) return 0;
+  if (player.overall < 75) return 0;
+  // OVR 75 → +20%, OVR 80 → +30%, OVR 85+ → +40%
+  if (player.overall >= 85) return 40;
+  if (player.overall >= 80) return 30;
+  return 20;
+}
+
+/** Bônus de forma (últimas 5 notas): média ≥7.5 → +15%, ≤6.0 → -15% */
+export function getFormBonusPercent(player: Player): number {
+  const ratings = player.seasonRatings;
+  if (!ratings || ratings.length === 0) return 0;
+  const recent = ratings.slice(-5);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  if (avg >= 7.5) return 15;
+  if (avg >= 7.0) return 8;
+  if (avg <= 5.5) return -15;
+  if (avg <= 6.0) return -8;
+  return 0;
+}
+
+/** Bônus por personalidade: lider/competitivo/dedicado +10%; festeiro/preguicoso -10% */
+export function getPersonalityBonusPercent(player: Player): number {
+  const p = player.personality;
+  if (!p) return 0;
+  if (p === 'lider' || p === 'competitivo' || p === 'dedicado') return 10;
+  if (p === 'festeiro' || p === 'preguicoso') return -10;
+  return 0;
+}
+
+/** Verifica se é uma "joia" — jovem promissor com bônus de potencial */
+export function isPlayerGem(player: Player): boolean {
+  return getPotentialBonusPercent(player) > 0;
+}
+
+/** Valor total = fixo × (1 + soma de bônus%) */
 export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosition?: number, totalTeams?: number): number {
   const baseValue = getPlayerBaseValue(player);
   const variablePercent = getPlayerVariableBonus(winStreak, leaguePosition, totalTeams);
-  return Math.floor(baseValue * (1 + variablePercent / 100));
+  const potentialPercent = getPotentialBonusPercent(player);
+  const formPercent = getFormBonusPercent(player);
+  const personalityPercent = getPersonalityBonusPercent(player);
+  const totalPercent = variablePercent + potentialPercent + formPercent + personalityPercent;
+  return Math.floor(baseValue * (1 + totalPercent / 100));
+}
+
+/** Tendência do valor de mercado (↑/↓/→) */
+export function getValueTrend(player: Player, winStreak: number = 0): 'up' | 'down' | 'flat' {
+  const variablePercent = getPlayerVariableBonus(winStreak);
+  const formPercent = getFormBonusPercent(player);
+  const total = variablePercent + formPercent;
+  if (total >= 8) return 'up';
+  if (total <= -8) return 'down';
+  return 'flat';
 }
 
 export function generateScoutReport(player: Player, scoutAccuracy: number): ScoutReport {
