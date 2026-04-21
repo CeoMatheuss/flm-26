@@ -57,19 +57,17 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'signup-preferences' | 'verify-email';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [favoriteCountry, setFavoriteCountry] = useState('BR');
-  const [preferredFormation, setPreferredFormation] = useState('4-3-3');
-  const [playstyle, setPlaystyle] = useState('balanced');
   const [pendingEmail, setPendingEmail] = useState('');
-  
+
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
   const [slideIndex, setSlideIndex] = useState(0);
@@ -118,8 +116,16 @@ export default function AuthPage() {
   };
 
   const handleSignup = async () => {
+    if (!displayName.trim()) {
+      toast.error('Informe o nome do Manager');
+      return;
+    }
     if (password.length < 6) {
       toast.error('Senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('As senhas não coincidem');
       return;
     }
     setLoading(true);
@@ -129,10 +135,7 @@ export default function AuthPage() {
       options: {
         emailRedirectTo: window.location.origin,
         data: {
-          display_name: displayName || 'Manager',
-          favorite_country: favoriteCountry,
-          preferred_formation: preferredFormation,
-          playstyle,
+          display_name: displayName.trim() || 'Manager',
         },
       },
     });
