@@ -88,6 +88,10 @@ export interface Player {
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
   personality?: PlayerPersonality;
+  /** V2 — propensão a lesão (0-100). Aumenta com o histórico. */
+  injuryProneness?: number;
+  /** V2 — contador de lesões já sofridas na carreira. */
+  injuryCount?: number;
   // ── Training V3 (Progress %) ──
   /** Status de evolução visual */
   trainingStatus?: 'evoluindo' | 'normal' | 'lento' | 'travado';
