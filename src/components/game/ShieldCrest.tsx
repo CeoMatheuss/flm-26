@@ -542,7 +542,12 @@ export function ShieldCrest({
           </>
         );
       case 'split':
-        return <rect x={h} y={0} width={h} height={s} fill={secondaryColor} opacity={0.75} />;
+        return (
+          <>
+            <rect x={h} y={0} width={h} height={s} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.25} strokeWidth={s * 0.008} />
+          </>
+        );
       case 'chevron':
         return (
           <polygon
@@ -553,8 +558,12 @@ export function ShieldCrest({
       case 'cross':
         return (
           <>
-            <rect x={s * 0.4} y={s * 0.08} width={s * 0.2} height={s * 0.84} fill={secondaryColor} opacity={0.6} />
-            <rect x={s * 0.1} y={s * 0.34} width={s * 0.8} height={s * 0.18} fill={secondaryColor} opacity={0.6} />
+            <rect x={s * 0.4} y={s * 0.04} width={s * 0.2} height={s * 0.92} fill={secondaryColor} />
+            <rect x={s * 0.04} y={s * 0.36} width={s * 0.92} height={s * 0.2} fill={secondaryColor} />
+            <line x1={s * 0.4} y1={s * 0.04} x2={s * 0.4} y2={s * 0.96} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.6} y1={s * 0.04} x2={s * 0.6} y2={s * 0.96} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.04} y1={s * 0.36} x2={s * 0.96} y2={s * 0.36} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.04} y1={s * 0.56} x2={s * 0.96} y2={s * 0.56} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
           </>
         );
       case 'waves':
@@ -571,8 +580,10 @@ export function ShieldCrest({
       case 'quarters':
         return (
           <>
-            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} opacity={0.65} />
-            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} opacity={0.65} />
+            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} />
+            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.22} strokeWidth={s * 0.008} />
+            <line x1={0} y1={h} x2={s} y2={h} stroke="#000" strokeOpacity={0.22} strokeWidth={s * 0.008} />
           </>
         );
       case 'triband':
