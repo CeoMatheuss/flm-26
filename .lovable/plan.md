@@ -1,95 +1,94 @@
 
 
-# Plano: Empréstimo via mercado + Substituição inteligente + Mercado reorganizado
+# Plano: Unificar Identidade & Escudo no Perfil do Clube + Desbloqueio Pago de Edição
 
-Quatro mudanças focadas em corrigir o fluxo de empréstimo no perfil, melhorar a UX de substituição e reorganizar o Mercado em uma única central.
+## Objetivo
+Juntar tudo de identidade visual (escudo, nome do clube, nome do estádio) **dentro** do "Perfil do Clube". Edição desses campos sensíveis fica **bloqueada por padrão** e só libera após pagamento de **R$10** (entregue manualmente por você).
 
-## 1. Empréstimo no perfil → enviar para Mercado de Empréstimos
+## 1. Mesclar `ClubSettingsTab` dentro de `ClubProfileTab`
 
-**Problema:** No `PlayerProfileModal.tsx`, o botão "Emprestar" recebe `onLoanOut` que pode estar conectado a `game.loanOutPlayer` (envio direto). Já no `SquadTab.tsx` perfil interno, o botão chama o callback do router — esse já vai para o mercado.
+`ClubProfileTab.tsx` passa a ter 3 seções verticais:
 
-**Correção:** Auditar TODOS os pontos onde o botão "Emprestar" aparece e garantir que sempre invoque o edge function `process-transfer` com `action: 'loan-list'`. Toast: *"{Jogador} anunciado no Mercado de Empréstimos!"*. O jogador permanece no elenco até alguém aceitar.
+1. **Cabeçalho do clube** (já existe — escudo + nome + badges)
+2. **🛡️ Identidade Visual** (NOVO — vindo de `ClubSettingsTab`)
+   - Card "Escudo do Clube" com botão "Editar Escudo" (abre o `Sheet` com `CrestBuilder`)
+   - Card "Nome do Clube" com botão editar inline
+   - Card "Nome do Estádio" com botão editar inline
+3. **👤 Dados do Clube** (já existe — presidente, fundação, instagram, bio, lema)
 
-| Local | Estado atual | Ação |
-|---|---|---|
-| `SquadTab` perfil interno (linha ~285) | Já chama `onLoanOut` do router → loan-list ✅ | OK |
-| `PlayerProfileModal.tsx` (linha ~103) | Recebe `onLoanOut` como prop | Onde for usado, garantir handler de loan-list |
-| `GameTabRouter` SquadTab `onLoanOut` | Já correto ✅ | OK |
-| `GameTabRouter` OnlineMarketTab `onLoanOut` | Já correto ✅ | OK |
+Os botões de editar dos itens da seção 2 ficam **desabilitados** quando `customizationUnlocked = false` e mostram um cadeado 🔒 com tooltip/badge "Desbloqueio R$10".
 
-Resultado: comportamento 100% consistente — Emprestar = sempre anunciar.
+## 2. Sistema de desbloqueio (gating)
 
-## 2. Substituição inteligente: pré-seleciona e leva para o Banco/Fora
+**Estado:** novo campo `customizationUnlocked: boolean` no `clubProfile` (já é JSONB no `game_saves`, sem migração).
 
-**Problema atual:** Botão "🔁 Banco" em titular abre Popover ali mesmo, exigindo escolher manualmente o reserva. Usuário pediu: ao clicar, **levar até a aba Banco** com o titular **pré-selecionado** para ele escolher por quem trocar lá.
+**Fluxo:**
+- Por padrão `false` para todos
+- Aparece um **card de upsell** no topo da seção Identidade Visual:
+  > 🔒 **Personalização Premium — R$10**  
+  > Desbloqueie para mudar o nome do clube, nome do estádio e escudo quantas vezes quiser.  
+  > [Botão: "Desbloquear (R$10)"]
+- Clicar no botão abre um **modal de instruções de pagamento** (Pix/manual) com uma mensagem do tipo "Envie R$10 para [chave Pix] e o admin liberará em até 24h"
+- Admin libera via **Painel Admin** (nova ação) ou diretamente via DB
 
-**Novo fluxo:**
+**Liberação pelo admin:**
+- Em `AdminTab.tsx`, adicionar mini-seção "🔓 Liberar Personalização" com busca por email/usuário e botão "Ativar"
+- Edge function `admin-grant-customization` que atualiza `game_saves.club_data.clubProfile.customizationUnlocked = true` para o user_id alvo
+- Logado em `admin_logs`
 
-- Em **Titulares**: botão "🔁 Tirar" → muda automaticamente para a sub-aba "🪑 Banco" (e marca o titular como pendente)
-- Na aba Banco/Fora aparece uma **barra fixa no topo** destacada:
-  ```
-  ⚡ Trocando: [OVR] João (ZAG) — Toque em quem entra no time
-                                                    [✕ Cancelar]
-  ```
-- Cada card de reserva fica clicável (o card todo vira botão de "trocar"). Reservas da mesma posição ganham destaque verde "✓ mesma posição".
-- Ao clicar em um reserva: chama `swapPlayers(titularId, reservaId)`, exibe toast *"{Reserva} entrou no time titular no lugar de {Titular}"*, **volta para a aba Titulares** automaticamente e limpa estado.
-- O mesmo no inverso: em Banco/Fora botão "🔁 Subir" → leva para aba Titulares com o reserva pré-selecionado, barra mostra "Trocando: {Reserva}", clica em titular para finalizar.
+Quando você tiver pagamento real (Stripe/Paddle), o webhook chama a mesma lógica.
 
-**Implementação:**
-- Estado `pendingSwap: { player: Player; from: Group } | null` no `SquadTab`
-- Estado `currentSquadSubTab` controlado (em vez de `defaultValue`) para forçar mudança de aba
-- Remover Popover atual, substituir por essa barra fixa + cards clicáveis
-- Botão "Cancelar" e tecla Esc cancelam
+## 3. Remover acesso duplicado no menu
 
-## 3. Mercado reorganizado: Auction movido para dentro
+Em `GameMenu.tsx`:
+- **Remover** o item "Identidade & Escudo" (linha 33)
+- Manter apenas "Perfil do Clube" (já tudo lá dentro)
 
-**Problema:** Aba "Leilão" hoje fica solta no menu lateral (`auction`). Usuário quer **TUDO no mercado**: Mercado, Jogadores Livres, Minhas Propostas (recebidas+enviadas), Leilão.
+Em `GameTabRouter.tsx`:
+- Manter rota `clubsettings` apontando para `ClubProfileTab` (redirect) para não quebrar deep-links existentes, OU remover o `TabsContent value="clubsettings"`. Vou **remover** e adicionar redirect simples no Index se necessário.
 
-**Nova estrutura do Mercado** (em `OnlineMarketTab.tsx`):
+## 4. Passar callbacks ao `ClubProfileTab`
 
+`ClubProfileTab` recebe novas props:
+- `onRenameClub: (name: string) => void`
+- `onRenameStadium: (name: string) => void`
+- `onUpdateShield: (cfg: ShieldConfig) => void`
+- `customizationUnlocked: boolean`
+- `onRequestUnlock: () => void` (abre modal de instruções de pagamento)
+
+E o `clubProfile` ganha o novo campo `customizationUnlocked`.
+
+## 5. Atualização do tipo `ClubProfile`
+
+```ts
+// src/types/clubProfile.ts
+export interface ClubProfile {
+  // ...existing
+  customizationUnlocked?: boolean;
+}
 ```
-[🌐 Mercado]  [🕵️ Livres]  [⚖️ Leilão]  [📨 Propostas]  [🔄 Empréstimos]
-```
 
-Mudanças:
-- **Recebidas + Enviadas** unificadas em **"📨 Propostas"** com sub-toggle interno (`Recebidas | Enviadas`) ou seções empilhadas. Badge de notificação no triggers principal mantém contador de pendentes.
-- **Nova aba "⚖️ Leilão"** que renderiza o `AuctionTab` (já existe) inline dentro de `OnlineMarketTab`. O `AuctionTab` recebe os mesmos props (`userId`, `clubName`, `players`, `budget`, `isPremium`).
-- Remover entrada "Leilão de Jogadores" do `GameMenu.tsx` (ou redirecionar para `market` + tab `auction`).
-- Manter o Hero de orçamento 40/40 no topo.
-
-**Layout final do mercado** (5 abas em vez de 5 dispersas):
-
-| Aba | Conteúdo |
-|---|---|
-| 🌐 Mercado | Listagens à venda + filtros (mantém) |
-| 🕵️ Livres | `FreeAgentMarketPanel` com sub-abas Disponíveis/Ativas/Histórico (mantém) |
-| ⚖️ Leilão | `AuctionTab` embutido (NOVO aqui) |
-| 📨 Propostas | Recebidas + Enviadas em seções (consolidação) |
-| 🔄 Empréstimos | Cedidos pelo usuário (mantém) |
-
-## 4. Auditoria geral das abas
-
-Conferir consistência em todas as abas onde aparecem ações de jogador:
-
-- **PlayerProfileModal**: usar mesmo handler `loan-list` se for renderizado fora do SquadTab
-- **OnlineMarketTab "Empréstimos"**: confirmar que mostra apenas `seller_id = userId` (já está)
-- **GameMenu**: remover ou redirecionar a entrada "Leilão de Jogadores" (vira atalho para Mercado→Leilão)
-- **Toasts**: padronizar idioma — "Anunciar" em vez de "Listar" em todos os lugares restantes (ainda há "listado no mercado" no `GameTabRouter` linha 141 e "listado no mercado de empréstimos" linha 269)
+`defaultClubProfile.customizationUnlocked = false`.
 
 ## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/SquadTab.tsx` | Substituir Popover por fluxo de pré-seleção + barra fixa de troca + mudança automática de sub-aba; cards de candidatos clicáveis inteiros |
-| `src/components/game/PlayerProfileModal.tsx` | Confirmar que `onLoanOut` chama loan-list (depende de quem renderiza); padronizar label "Emprestar → Anunciar empréstimo" |
-| `src/components/game/OnlineMarketTab.tsx` | Adicionar aba "⚖️ Leilão" embutindo `AuctionTab`; consolidar Recebidas+Enviadas em "📨 Propostas"; reduzir para 5 abas reorganizadas |
-| `src/components/game/GameMenu.tsx` | Remover (ou redirecionar) item "Leilão de Jogadores" para `market` |
-| `src/components/game/GameTabRouter.tsx` | Atualizar toast de listagem para usar "anunciado"; passar `isPremium` para o OnlineMarketTab (necessário para AuctionTab) |
+| `src/types/clubProfile.ts` | Adicionar `customizationUnlocked?: boolean` |
+| `src/components/game/ClubProfileTab.tsx` | Adicionar seção "Identidade Visual" (escudo + nomes) com gating + card de upsell + Sheet do CrestBuilder |
+| `src/components/game/GameMenu.tsx` | Remover item "Identidade & Escudo" |
+| `src/components/game/GameTabRouter.tsx` | Remover `<TabsContent value="clubsettings">`; passar novas props ao `ClubProfileTab` |
+| `src/components/game/AdminTab.tsx` | Adicionar painel "Liberar Personalização" com busca por email |
+| `supabase/functions/admin-grant-customization/index.ts` | NOVA edge function: valida admin, atualiza save do user alvo, registra em `admin_logs` |
+| `src/components/game/ClubSettingsTab.tsx` | Marcar como deprecated (manter arquivo mas não usar) ou deletar |
 
 ## Compatibilidade
 
-- Schema do banco intacto
-- A aba `auction` no router permanece (acessível via deep-link), mas o ponto de entrada principal vira o Mercado
-- Fluxo de `swapPlayers` continua usando `onReorderPlayers` (sem novo callback)
-- Empréstimo continua passando pela edge function `process-transfer` com janela de 7h
+- Schema `game_saves` intacto (campo dentro de JSONB)
+- Saves antigos: `customizationUnlocked` undefined = bloqueado (default seguro)
+- Deep-link `?tab=clubsettings` redireciona para `clubprofile`
+
+## Sobre o pagamento real
+
+Hoje fica **manual**: usuário paga via Pix → você libera no painel admin. Quando quiser automatizar, conectamos Stripe/Paddle (built-in da Lovable) com webhook chamando a mesma edge function.
 
