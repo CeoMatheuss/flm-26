@@ -13,6 +13,7 @@ import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Tar
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
 import { FreeAgentMarketPanel } from './FreeAgentMarketPanel';
+import { AuctionTab } from './AuctionTab';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
