@@ -101,6 +101,7 @@ export default function MatchPage() {
       competition: locState.competition || 'Amistoso',
       tournamentMatchId: locState.tournamentMatchId,
       fans: locState.fans || 500,
+      awayFans: locState.awayFans || 500,
     });
     setInitDone(true);
   }, [locState, startMatch]);
