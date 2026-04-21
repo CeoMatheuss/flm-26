@@ -410,6 +410,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             saveSigningNews={saveSigningNews}
             blockedTabs={blockedTabs}
             isAdmin={isAdminRole}
+            isPremium={isPremium}
           />
         </Tabs>
       </main>
