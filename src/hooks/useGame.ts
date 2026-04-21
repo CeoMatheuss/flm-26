@@ -303,6 +303,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     refreshSponsorOffers,
     renameClub: clubState.renameClub,
     renameStadium: clubState.renameStadium,
+    updateShield: clubState.updateShield,
     setTicketPrice: clubState.setTicketPrice,
     hireScout,
     fireScout: clubState.fireScout,

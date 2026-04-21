@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCrest } from './ShieldCrest';
+import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import { Instagram, User, Edit3, Save, Quote, Calendar, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
-  club: { name: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; logoUrl?: string; fans: number; reputation: number; country?: string };
+  club: { name: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; shieldShape?: string; shieldIcon?: string; shieldConfig?: any; detailColor?: string; logoUrl?: string; fans: number; reputation: number; country?: string };
   season: number;
   profile: ClubProfile;
   onSave: (profile: ClubProfile) => void;
@@ -51,8 +52,8 @@ export function ClubProfileTab({ club, season, profile, onSave }: Props) {
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="shrink-0">
-              {club.shieldPattern ? (
-                <ShieldCrest primaryColor={club.primaryColor || '#2563EB'} secondaryColor={club.secondaryColor || '#FFF'} pattern={club.shieldPattern} size={72} />
+              {hasShield(club as any) ? (
+                <ShieldCrest {...shieldPropsFromClub(club as any)} size={72} />
               ) : club.logoUrl ? (
                 <img src={club.logoUrl} alt={club.name} className="w-16 h-16 rounded-xl object-cover" />
               ) : (

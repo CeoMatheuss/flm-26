@@ -1,4 +1,5 @@
 import { ShieldCrest } from '@/components/game/ShieldCrest';
+import { shieldPropsFromClub, hasShield } from '@/components/game/shieldHelpers';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Users, Star, Trophy, LogOut } from 'lucide-react';
@@ -24,8 +25,8 @@ export function GameHeader({ club, season, infrastructure, listedPlayers, userId
         {/* Club Identity */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="relative">
-            {club.shieldPattern ? (
-              <ShieldCrest primaryColor={club.primaryColor || '#2563EB'} secondaryColor={club.secondaryColor || '#FFF'} pattern={club.shieldPattern} shape={(club as any).shieldShape || 'classic'} size={36} className="shrink-0" />
+            {hasShield(club as any) ? (
+              <ShieldCrest {...shieldPropsFromClub(club as any)} size={36} className="shrink-0" />
             ) : club.logoUrl ? (
               <img src={club.logoUrl} alt={club.name} className="w-9 h-9 rounded-lg shrink-0 object-cover" />
             ) : (
