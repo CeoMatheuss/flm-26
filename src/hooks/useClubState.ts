@@ -273,7 +273,7 @@ export function useClubState(initialState: any, userId?: string) {
     totalSalaries, loansOut, loansIn,
     trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
-    loanOutPlayer, loanInPlayer, renameClub, renameStadium, setTicketPrice,
+    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
   };
 }
