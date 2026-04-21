@@ -218,6 +218,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           clubName={game.club.name}
           players={game.club.players}
           budget={game.club.budget}
+          transferBudget={(game as any).transferBudget}
+          salaryBudget={(game as any).salaryBudget}
+          currentMonthlyPayroll={game.club.players.reduce((sum, p) => sum + (p.salary || 0), 0)}
           clubShield={game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null}
           onPlayerSold={(playerId) => {
             game.sellPlayer(game.club.players.find(p => p.id === playerId)!);

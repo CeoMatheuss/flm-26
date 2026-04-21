@@ -9,13 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer } from 'lucide-react';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
+import { FreeAgentMarketPanel } from './FreeAgentMarketPanel';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface TransferListing {
   id: string;
@@ -81,6 +83,9 @@ interface Props {
   clubName: string;
   players: Player[];
   budget: number;
+  transferBudget?: number;
+  salaryBudget?: number;
+  currentMonthlyPayroll?: number;
   clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape?: string } | null;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
@@ -90,7 +95,11 @@ interface Props {
   onListedPlayer?: () => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+  // Derive budgets if not provided (backwards-compat with old saves)
+  const tBudget = transferBudget ?? Math.floor(budget * 0.4);
+  const sBudget = salaryBudget ?? Math.floor(budget * 0.4);
+  const salaryRemaining = Math.max(0, sBudget - currentMonthlyPayroll * 12);
   const [listings, setListings] = useState<TransferListing[]>([]);
   const [activeMarketTab, setActiveMarketTab] = useState('browse');
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
@@ -233,7 +242,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   const makeOffer = async (listing: TransferListing) => {
     if (offerPrice <= 0) { toast.error('Defina um valor de proposta'); return; }
     if (offerSalary <= 0) { toast.error('Defina um salário'); return; }
-    if (budget < offerPrice) { toast.error('Orçamento insuficiente!'); return; }
+
+    // 40/40 trava rígida
+    const transferCost = offerPrice + signingBonus;
+    if (transferCost > tBudget) {
+      toast.error(`Verba de transferências insuficiente! Disponível: ${formatMoney(tBudget)}, necessário: ${formatMoney(transferCost)}.`);
+      return;
+    }
+    const annualSalary = offerSalary * 12;
+    if (annualSalary > salaryRemaining) {
+      toast.error(`Verba de salários insuficiente! Disponível: ${formatMoney(salaryRemaining)}/ano, este contrato custa: ${formatMoney(annualSalary)}/ano.`);
+      return;
+    }
 
     setLoading(true);
     const res = await supabase.functions.invoke('process-transfer', {
@@ -514,14 +534,20 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
   // ── Main Market View ──
   return (
     <div className="space-y-4">
-      {/* Budget Hero */}
+      {/* Budget Hero — 40/40 split */}
       <div className="rounded-xl p-4 border border-border/20" style={{ background: 'linear-gradient(135deg, hsl(var(--card)), hsl(var(--accent) / 0.5))' }}>
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Orçamento</p>
-            <p className="text-2xl font-black text-emerald-400">R$ {(budget / 1000).toFixed(0)}k</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">💸 Verba Transferências</p>
+            <p className="text-lg font-black text-emerald-400">{formatMoney(tBudget)}</p>
+            <p className="text-[9px] text-muted-foreground">40% do orçamento</p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">🧾 Verba Salários (anual)</p>
+            <p className="text-lg font-black text-blue-400">{formatMoney(salaryRemaining)}</p>
+            <p className="text-[9px] text-muted-foreground">de {formatMoney(sBudget)} disponível</p>
+          </div>
+          <div className="flex items-center justify-end gap-3 text-[10px] text-muted-foreground">
             <div className="text-center">
               <p className="font-bold text-foreground text-lg">{otherListings.length}</p>
               <p>No mercado</p>
@@ -529,16 +555,19 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             <div className="h-8 w-px bg-border/30" />
             <div className="text-center">
               <p className="font-bold text-foreground text-lg">{myListings.length}</p>
-              <p>Seus listados</p>
+              <p>Listados</p>
             </div>
           </div>
         </div>
       </div>
 
       <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+        <TabsList className="grid grid-cols-6 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
           <TabsTrigger value="browse" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <Globe className="h-3 w-3" /> Mercado
+          </TabsTrigger>
+          <TabsTrigger value="freeagents" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <EyeOff className="h-3 w-3" /> Livre
           </TabsTrigger>
           <TabsTrigger value="list" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <Tag className="h-3 w-3" /> Listar
@@ -554,6 +583,20 @@ export function OnlineMarketTab({ userId, clubName, players, budget, clubShield,
             <Send className="h-3 w-3" /> Enviadas
           </TabsTrigger>
         </TabsList>
+
+        {/* ── FREE AGENTS (Mercado Livre) ── */}
+        <TabsContent value="freeagents" className="space-y-3 mt-3">
+          <FreeAgentMarketPanel
+            userId={userId}
+            clubName={clubName}
+            transferBudget={tBudget}
+            salaryBudgetRemaining={salaryRemaining}
+            onPlayerSigned={(playerData, salary, contractYears) => {
+              onPlayerBought(playerData, 0, salary, contractYears);
+            }}
+          />
+        </TabsContent>
+
 
         {/* ── BROWSE ── */}
         <TabsContent value="browse" className="space-y-3 mt-3">
