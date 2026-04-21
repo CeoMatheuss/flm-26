@@ -342,6 +342,54 @@ const shieldPaths: Record<ShieldShape, (s: number) => string> = {
     const h = s / 2;
     return `M${s * 0.12} ${s * 0.1} Q${s * 0.05} ${s * 0.18} ${s * 0.1} ${s * 0.28} L${s * 0.1} ${s * 0.55} Q${s * 0.12} ${s * 0.78} ${s * 0.28} ${s * 0.88} Q${h} ${s * 0.99} ${s * 0.72} ${s * 0.88} Q${s * 0.88} ${s * 0.78} ${s * 0.9} ${s * 0.55} L${s * 0.9} ${s * 0.28} Q${s * 0.95} ${s * 0.18} ${s * 0.88} ${s * 0.1} Q${s * 0.7} ${s * 0.04} ${h} ${s * 0.06} Q${s * 0.3} ${s * 0.04} ${s * 0.12} ${s * 0.1} Z`;
   },
+  // ── v3 extras ──
+  baroque: (s) => {
+    // Ornate baroque with double curves on top and pointed base
+    const h = s / 2;
+    return `M${h} ${s * 0.04} Q${s * 0.65} ${s * 0.02} ${s * 0.78} ${s * 0.1} Q${s * 0.94} ${s * 0.14} ${s * 0.92} ${s * 0.28} L${s * 0.9} ${s * 0.55} Q${s * 0.86} ${s * 0.82} ${h} ${s * 0.97} Q${s * 0.14} ${s * 0.82} ${s * 0.1} ${s * 0.55} L${s * 0.08} ${s * 0.28} Q${s * 0.06} ${s * 0.14} ${s * 0.22} ${s * 0.1} Q${s * 0.35} ${s * 0.02} ${h} ${s * 0.04} Z`;
+  },
+  tudor: (s) => {
+    // Tudor rose-inspired: rounded square top with sloped pointed base
+    const h = s / 2;
+    return `M${s * 0.14} ${s * 0.06} Q${s * 0.08} ${s * 0.06} ${s * 0.08} ${s * 0.14} L${s * 0.08} ${s * 0.5} Q${s * 0.1} ${s * 0.78} ${h} ${s * 0.96} Q${s * 0.9} ${s * 0.78} ${s * 0.92} ${s * 0.5} L${s * 0.92} ${s * 0.14} Q${s * 0.92} ${s * 0.06} ${s * 0.86} ${s * 0.06} Z`;
+  },
+  kite: (s) => {
+    // Norman kite shield — long, narrow, pointed bottom
+    const h = s / 2;
+    return `M${s * 0.18} ${s * 0.06} Q${h} ${s * 0.02} ${s * 0.82} ${s * 0.06} L${s * 0.78} ${s * 0.45} Q${s * 0.7} ${s * 0.78} ${h} ${s * 0.98} Q${s * 0.3} ${s * 0.78} ${s * 0.22} ${s * 0.45} Z`;
+  },
+  shell: (s) => {
+    // Scallop-shell inspired with scalloped top
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.16} Q${s * 0.18} ${s * 0.06} ${s * 0.28} ${s * 0.12} Q${s * 0.34} ${s * 0.04} ${s * 0.42} ${s * 0.12} Q${h} ${s * 0.06} ${s * 0.58} ${s * 0.12} Q${s * 0.66} ${s * 0.04} ${s * 0.72} ${s * 0.12} Q${s * 0.82} ${s * 0.06} ${s * 0.9} ${s * 0.16} L${s * 0.88} ${s * 0.55} Q${s * 0.84} ${s * 0.84} ${h} ${s * 0.97} Q${s * 0.16} ${s * 0.84} ${s * 0.12} ${s * 0.55} Z`;
+  },
+  'star-shield': (s) => {
+    // 6-point star outline as shield boundary (compact, modern football crest)
+    const h = s / 2;
+    const r = s * 0.46;
+    const pts: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 * i) / 12 - Math.PI / 2;
+      const rad = i % 2 === 0 ? r : r * 0.7;
+      pts.push(`${h + rad * Math.cos(angle)},${h + rad * Math.sin(angle)}`);
+    }
+    return `M${pts.join(' L')} Z`;
+  },
+  'modern-hex': (s) => {
+    // Tall hexagon — modern eSports-like
+    const h = s / 2;
+    return `M${h} ${s * 0.04} L${s * 0.92} ${s * 0.25} L${s * 0.92} ${s * 0.75} L${h} ${s * 0.96} L${s * 0.08} ${s * 0.75} L${s * 0.08} ${s * 0.25} Z`;
+  },
+  'wave-base': (s) => {
+    // Flat-top with wavy base
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.08} L${s * 0.9} ${s * 0.08} L${s * 0.9} ${s * 0.7} Q${s * 0.78} ${s * 0.86} ${s * 0.66} ${s * 0.78} Q${s * 0.54} ${s * 0.94} ${h} ${s * 0.84} Q${s * 0.46} ${s * 0.94} ${s * 0.34} ${s * 0.78} Q${s * 0.22} ${s * 0.86} ${s * 0.1} ${s * 0.7} Z`;
+  },
+  'split-arch': (s) => {
+    // Two-arched top with curved base
+    const h = s / 2;
+    return `M${s * 0.1} ${s * 0.18} Q${s * 0.1} ${s * 0.06} ${s * 0.28} ${s * 0.06} Q${s * 0.4} ${s * 0.06} ${h} ${s * 0.16} Q${s * 0.6} ${s * 0.06} ${s * 0.72} ${s * 0.06} Q${s * 0.9} ${s * 0.06} ${s * 0.9} ${s * 0.18} L${s * 0.9} ${s * 0.55} Q${s * 0.86} ${s * 0.84} ${h} ${s * 0.97} Q${s * 0.14} ${s * 0.84} ${s * 0.1} ${s * 0.55} Z`;
+  },
 };
 
 function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: string, filterId: string) {
