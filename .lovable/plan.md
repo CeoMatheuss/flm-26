@@ -1,129 +1,109 @@
 
 
-# Plano: Crest Builder Heráldico Profissional (Estilo Europeu Tradicional)
+# Plano: Refinar Crest Builder Conforme Imagem de Referência
 
-Refinar o `CrestBuilder` existente para parecer com a imagem de referência: escudos heráldicos clássicos com silhuetas fortes em alto contraste, organização limpa por seções (MODELOS / ANIMAIS / SÍMBOLOS) e melhor responsividade.
+Reorganizar o editor para espelhar exatamente o layout da imagem (3 seções empilhadas: **MODELOS DE ESCUDOS / ANIMAIS / SÍMBOLOS**) e melhorar a responsividade trocando a aba "Forma" por um **botão seletor compacto**.
 
-## 1. Novos ícones heráldicos realistas
-
-**Arquivo**: `src/components/game/ShieldCrest.tsx`
-
-Refazer/melhorar as silhuetas para ficarem mais robustas e reconhecíveis (estilo brasão europeu tradicional, não cartoon):
-
-- **Animais** (refinar os existentes + adicionar): `lion-rampant` (leão em pé heráldico), `lion-head` (juba dramática), `eagle-rampant` (águia de asas abertas estilo Roma), `eagle-head`, `wolf-howling`, `horse-rampant` (cavalo empinado), `bear-standing`, `bull-head`, `dragon-rampant`, `panther-leaping`, `falcon`, `phoenix-rising`
-- **Símbolos heráldicos**: `cross-templar`, `cross-celtic`, `cross-orthodox`, `crown-royal` (3 níveis), `crown-imperial`, `fleur-de-lis-trio`, `fleur-de-lis-single`, `laurel-wreath` (grinalda completa), `crossed-axes`, `crossed-spears`, `arrows-three`, `castle-tower`, `castle-fortified`, `star-compass`, `crescent`, `sun-rays`, `wings-spread`, `letter-monogram` (S P Q R style)
-
-Cada ícone redesenhado com:
-- **Silhueta densa** (preenchimento sólido em `dc`, sem traços finos cartoon)
-- **Proporção heráldica** ocupando 60–70% da área do escudo
-- **Detalhes mínimos** em `sc` apenas onde necessário (olhos, contraste interno)
-
-## 2. Nova divisão interna do escudo (heráldica clássica)
-
-Adicionar 3 novos `shieldPatterns` que faltam para o look europeu:
-
-- `quartered` — 4 quadrantes alternados (clássico brasão real)
-- `per-pale` — meio a meio vertical com cores invertidas
-- `per-bend` — divisão diagonal limpa (sem opacidade)
-- `bordure` — escudo interno com borda colorida grossa
-- `chief` — faixa horizontal sólida no topo (1/3 superior)
-
-Reescrever os patterns existentes (`split`, `quarters`, `cross`) para usar **cores sólidas a 100%** (sem `opacity={0.6}`) e linhas de divisão pretas finas como divisórias heráldicas autênticas.
-
-## 3. Redesign visual do CrestBuilder (organização tipo referência)
+## 1. Remover aba "Forma" — virar botão seletor compacto
 
 **Arquivo**: `src/components/game/CrestBuilder.tsx`
 
-### 3.1 Layout geral responsivo
+- Remover `TabsTrigger value="shape"` e `TabsContent value="shape"` (5 abas → 4 abas).
+- Acima do preview, adicionar um **botão "Trocar Formato"** que abre um `Popover` (ou `Sheet` no mobile) com o grid de 10 formatos em silhueta preta.
+- O botão mostra a forma atual (mini-escudo + label "Clássico", "Gótico", etc.) e ícone de seta.
+- Ao selecionar uma forma, o popover fecha automaticamente.
+- Ganho: -1 aba, mais espaço para outras opções, layout cabe melhor em telas estreitas.
 
-- Mobile (`<sm`): preview no topo (180px), abas embaixo, scroll vertical natural
-- Tablet (`sm`–`md`): preview lateral fixa 220px, abas em coluna direita
-- Desktop (`md+`): preview 280px com card elegante, abas com mais respiro
-- Remover `aspect-square` rígido do preview → usar altura controlada para evitar corte
+## 2. Nova aba principal "Modelos" estilo imagem de referência
 
-### 3.2 Aba "Símbolo" reformulada (estilo da imagem de referência)
-
-Em vez de tabs internas (Animais / Símbolos / Letras), exibir **três seções empilhadas** com títulos centralizados estilo "MODELOS DE ESCUDOS / ANIMAIS / SÍMBOLOS" da imagem:
+Substituir a antiga aba "Forma" por uma nova primeira aba **"Modelos"** que reproduz a tela da imagem:
 
 ```
+─────── MODELOS DE ESCUDOS ───────
+[grid 3 cols mobile / 5 cols desktop com 10 escudos prontos
+ — combinações curadas: forma + padrão + ícone + cores heráldicas]
+
 ─────── ANIMAIS ───────
-[grid 4 cols mobile / 6 cols desktop com silhuetas pretas]
+[grid 4/6 cols com silhuetas pretas dos 15 animais]
 
 ─────── SÍMBOLOS ───────
-[grid 4/6 cols com cruzes, coroas, espadas, etc.]
-
-─────── LETRAS ───────
-[grid 7 cols com letras estilizadas]
+[grid 4/6 cols com 25 símbolos (cruzes, coroas, espadas, etc.)]
 ```
 
-Cada item:
-- Quadrado branco com borda fina cinza
-- Silhueta preta (não usa as cores do escudo no preview do ícone — fica monocromático para clareza, igual à referência)
-- Selecionado → borda primária + fundo levemente azulado
-- Hover → leve zoom + sombra
+- **MODELOS DE ESCUDOS** = catálogo de **10 presets curados** (estilo da imagem: leão+escudo gótico vermelho/dourado, cruz templária, águia bizantina, fleur-de-lis royal, castelo medieval, etc.). Clicar aplica o preset completo.
+- **ANIMAIS** = grid mono p/b dos 15 animais; clicar troca apenas o `icon`.
+- **SÍMBOLOS** = grid mono p/b dos 25 símbolos; clicar troca apenas o `icon`.
 
-### 3.3 Aba "Forma" reformulada
+Tudo numa única `ScrollArea` vertical (como na imagem), não 3 sub-abas.
 
-- Grid responsivo: 3 cols mobile, 5 cols desktop
-- Cada forma renderizada em **alto contraste preto sobre branco** (silhueta limpa) — não usa as cores atuais, fica como catálogo de formatos
-- Label maior (12px) abaixo
-- Selecionado destacado com ring azul + scale leve
+## 3. Nova estrutura de abas (4 abas em vez de 5)
 
-### 3.4 Aba "Layout" idem
+```
+[ Modelos ] [ Divisão ] [ Cores ] [ Extras ]
+```
 
-- Mostra o padrão aplicado em cores neutras (cinza escuro / branco) para ficar claro o desenho da divisão
-- Grid 3/5 cols responsivo
+- "Modelos" = nova aba principal (item 2)
+- "Divisão" = mantém atual (layout patterns)
+- "Cores" = mantém atual
+- "Extras" = mantém atual (coroa, louros, estrelas, faixa, ajustes)
+- A aba "Símbolo" antiga é absorvida pela "Modelos" (animais + símbolos no mesmo lugar).
 
-### 3.5 Painel de preview elegante
+## 4. Botão "Trocar Formato" no painel de preview
 
-- Fundo limpo creme/off-white (`#FAF7F2`) — não mais xadrez cinza (que polui)
-- Sombra dupla sutil no escudo (`drop-shadow-2xl` + leve glow do `primaryColor`)
-- Pequeno título "PREVIEW" em caps tracking-widest acima
-- Largura/altura adaptativos por viewport
-- Preview maior em desktop (240px), menor em mobile (160px)
+```
+┌─────────────────────────┐
+│       PREVIEW           │
+│   [escudo grande]       │
+│                         │
+│ [ 🛡️ Clássico  ▾ ]      │ ← novo botão (abre popover com 10 formas)
+│ [Aleatório] [Resetar]   │
+│ [   Salvar Escudo   ]   │
+└─────────────────────────┘
+```
 
-### 3.6 Botões aprimorados
+- Mobile: ocupa 100% da largura
+- Desktop: ocupa a coluna do preview (260px)
 
-- "🎲 Aleatório" — gera combinação heráldica curada (não totalmente random — pega de pools válidos: forma clássica + animal + cor escura + dourado)
-- "💾 Salvar" — em destaque
-- Adicionar "↺ Resetar" (volta ao default)
+## 5. Presets de "Modelos de Escudos" (combinações curadas)
 
-## 4. Paleta heráldica curada
-
-Substituir `CURATED_PAIRS` por paletas inspiradas em clubes europeus tradicionais:
+Definir constante `SHIELD_PRESETS` com 10 combinações inspiradas na imagem:
 
 ```typescript
-const HERALDIC_PAIRS = [
-  ['#8B0000', '#FFD700', '#FFFFFF'], // Vermelho/dourado (Roma/Bayern)
-  ['#000080', '#FFFFFF', '#FFD700'], // Marinho/branco/dourado (Real)
-  ['#000000', '#FFFFFF', '#C0392B'], // Preto/branco/vermelho (Juve)
-  ['#1B5E20', '#FFFFFF', '#FFD700'], // Verde/branco (Sporting)
-  ['#0D47A1', '#E53935', '#FFFFFF'], // Azul/vermelho (Barça)
-  ['#4A148C', '#FFFFFF', '#FFD700'], // Roxo/branco
-  ['#B71C1C', '#FFFFFF', '#000000'], // Vermelho/branco/preto
-  ['#1A1A1A', '#FFD700', '#B8860B'], // Preto/dourado (premium)
+const SHIELD_PRESETS: Array<Partial<ShieldConfig> & { name: string }> = [
+  { name: 'Cruz Templária',   shape: 'gothic',  pattern: 'cross',    icon: 'cross-pattee', primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Lis Real',         shape: 'classic', pattern: 'per-pale', icon: 'fleur-de-lis', primaryColor: '#000080', secondaryColor: '#FFFFFF', detailColor: '#FFD700' },
+  { name: 'Leão Rampante',    shape: 'gothic',  pattern: 'solid',    icon: 'lion',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Águia Imperial',   shape: 'classic', pattern: 'solid',    icon: 'eagle-icon',   primaryColor: '#000000', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Quartelado Lis',   shape: 'classic', pattern: 'quartered',icon: 'fleur-de-lis', primaryColor: '#0D47A1', secondaryColor: '#FFFFFF', detailColor: '#FFD700' },
+  { name: 'Banda Diagonal',   shape: 'classic', pattern: 'per-bend', icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Cruz Pattée',      shape: 'pointed', pattern: 'solid',    icon: 'cross-pattee', primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Pala Vertical',    shape: 'classic', pattern: 'per-pale', icon: 'none',         primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Castelo Medieval', shape: 'classic', pattern: 'solid',    icon: 'castle',       primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
+  { name: 'Coroa Listrada',   shape: 'classic', pattern: 'stripes',  icon: 'crown-icon',   primaryColor: '#1A1A1A', secondaryColor: '#FFFFFF', detailColor: '#FFFFFF' },
 ];
 ```
 
-## 5. Responsividade do bloco no ClubCreation
+Renderizados em mini-escudos (52×52) preto sobre branco (igual à imagem). Clicar aplica o preset completo via `onChange({ ...value, ...preset })`.
 
-**Arquivo**: `src/components/game/ClubCreation.tsx`
+## 6. Melhorias de responsividade
 
-- O `<CrestBuilder>` precisa caber bem em modal/page de criação. Garantir `max-w-3xl mx-auto` e padding adequado.
-- Verificar overflow em telas pequenas (sem corte horizontal).
+- Layout principal: mobile empilha (preview em cima, abas embaixo); desktop usa grid `[260px_1fr]` como hoje, mas com `lg:grid-cols-[280px_1fr]` para mais respiro em telas grandes.
+- Tabs: ícones pequenos + labels curtos, já compactos.
+- Reduzir altura mínima do `ScrollArea` em mobile (`h-[280px]` em vez de `h-[340px]`) para evitar scroll duplo.
+- Grids dos catálogos:
+  - Modelos: `grid-cols-3 sm:grid-cols-4 lg:grid-cols-5`
+  - Animais/Símbolos: `grid-cols-4 sm:grid-cols-5 lg:grid-cols-6`
+- Botão "Trocar Formato" colapsa para `w-full` em mobile.
 
-## Arquivos Modificados
+## Arquivo Modificado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/ShieldCrest.tsx` | +12 ícones heráldicos densos, refinar silhuetas existentes, +5 patterns clássicos (quartered, per-pale, per-bend, bordure, chief), divisões com cores sólidas |
-| `src/components/game/CrestBuilder.tsx` | Aba Símbolo com 3 seções tituladas estilo referência, ícones em mono p/b, preview com fundo creme + título PREVIEW, paleta heráldica curada, layout totalmente responsivo, botão Resetar |
-| `src/components/game/ClubCreation.tsx` | Container responsivo `max-w-3xl mx-auto` em volta do CrestBuilder |
+| `src/components/game/CrestBuilder.tsx` | Remove aba "Forma"; adiciona botão "Trocar Formato" no preview com Popover; nova aba "Modelos" agrupando presets + animais + símbolos em layout vertical estilo da imagem; importa `Popover`/`PopoverTrigger`/`PopoverContent` do shadcn; define `SHIELD_PRESETS`; ajusta grids para melhor responsividade |
 
 ## Compatibilidade
 
-- Ícones e patterns antigos continuam funcionando (apenas adições + refinamentos visuais)
-- `ShieldConfig` não muda de schema
-- Saves antigos renderizam normalmente
-- Sem alterações em DB/Edge Functions
+- `ShieldConfig` não muda
+- Saves antigos continuam funcionando
+- Nenhuma mudança em outros arquivos, DB ou Edge Functions
 
