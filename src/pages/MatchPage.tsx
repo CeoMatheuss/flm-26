@@ -1262,7 +1262,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
       )}
 
       {!selectedSubOut ? (
-        <></pre>
+        <>
           <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Quem SAI:</p>
           <div className="space-y-1.5 max-h-[280px] sm:max-h-[320px] overflow-y-auto">
             {starters.map((p, i) => {
