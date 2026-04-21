@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles, ArrowLeft, Check, Lock, Users, Gift } from 'lucide-react';
-import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels } from './ShieldCrest';
+import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels, ShieldConfig } from './ShieldCrest';
+import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import flmLogo from '@/assets/flm26-logo.png';
 
 export interface ClubConfig {
