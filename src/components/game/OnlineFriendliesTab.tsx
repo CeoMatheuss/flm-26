@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Swords, Home, Plane, Search, Send, Check, XCircle, Clock,
-  Trophy, RefreshCw, Calendar, Users, Building2
+  Trophy, RefreshCw, Calendar, Users, Building2, Play
 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Player } from '@/types/game';
+import type { TacticsConfig } from '@/types/tactics';
 
 interface FriendlyInvite {
   id: string;
@@ -40,9 +43,14 @@ interface Props {
   clubName: string;
   stadiumName: string;
   stadiumCapacity: number;
+  players?: Player[];
+  teamStrength?: number;
+  tactics?: TacticsConfig;
+  fans?: number;
 }
 
-export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapacity }: Props) {
+export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapacity, players, teamStrength, tactics, fans }: Props) {
+  const navigate = useNavigate();
   const [invites, setInvites] = useState<FriendlyInvite[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
