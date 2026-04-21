@@ -36,6 +36,7 @@ interface MatchPageState {
   competition?: string;
   tournamentMatchId?: string;
   fans?: number;
+  awayFans?: number;
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
