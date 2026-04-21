@@ -106,6 +106,9 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
 
+    toast.success(`🏗️ Base atualizada — ${label} Nv.${newLevel}`, { description: desc });
+    console.log('[Persist] infrastructure upgrade', { facility, newLevel });
+
     if (userId) {
       const facilityEmoji = facility === 'trainingCenter' ? '⚽' : facility === 'youthAcademy' ? '🎓' : facility === 'physiotherapy' ? '🏥' : '🏟️';
       const fanReactions = ['"Era hora de investir!"', '"Com isso vamos longe!"', '"Infraestrutura de primeiro mundo!"', '"A diretoria está de parabéns!"'];

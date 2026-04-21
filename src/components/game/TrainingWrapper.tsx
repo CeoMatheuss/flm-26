@@ -16,11 +16,15 @@ interface Props {
   infrastructure: Infrastructure;
   trainingFocus: Record<string, TrainingFocusKey>;
   onSetTrainingFocus: (playerId: string, focus: TrainingFocusKey) => void;
+  trainingIntensity?: Record<string, 'leve' | 'moderado' | 'pesado'>;
+  onSetTrainingIntensity?: (playerId: string, intensity: 'leve' | 'moderado' | 'pesado') => void;
   tactics?: TacticsConfig;
   onPlayersUpdate?: (players: Player[]) => void;
   currentWeek?: number;
   clubName?: string;
   userId?: string;
+  budget?: number;
+  onUpgradeCT?: () => void;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
@@ -34,6 +38,7 @@ const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
 
 export function TrainingWrapper({
   players, infrastructure, trainingFocus, onSetTrainingFocus,
+  trainingIntensity, onSetTrainingIntensity, budget, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'training' | 'training2d'>('training');
@@ -93,10 +98,14 @@ export function TrainingWrapper({
           infrastructure={infrastructure}
           trainingFocus={trainingFocus}
           onSetTrainingFocus={onSetTrainingFocus}
+          trainingIntensity={trainingIntensity}
+          onSetTrainingIntensity={onSetTrainingIntensity}
           tactics={tactics}
           onPlayersUpdate={onPlayersUpdate}
           currentWeek={currentWeek}
           userId={userId}
+          budget={budget}
+          onUpgradeCT={onUpgradeCT}
         />
       ) : (
         <TrainingMatchCanvas clubName={clubName} players={players} onFinish={handleTrainingFinish} />
