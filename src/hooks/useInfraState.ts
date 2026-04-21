@@ -49,9 +49,19 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure[facility].level);
     else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure[facility].level);
     else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure[facility].level);
+    else if (facility === 'physiotherapy') cost = getPhysioUpgradeCost(infrastructure[facility].level);
     else cost = getUpgradeCost(infrastructure[facility].level);
 
-    if (clubBudget < cost) return;
+    // Hard cap on physiotherapy at level 20
+    if (facility === 'physiotherapy' && infrastructure.physiotherapy.level >= 20) {
+      toast.error('🏥 Fisioterapia já está no nível máximo (20)!');
+      return;
+    }
+
+    if (clubBudget < cost) {
+      toast.error(`💸 Orçamento insuficiente para upgrade!`);
+      return;
+    }
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
