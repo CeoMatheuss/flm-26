@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Shield, Palette, Shirt, ChevronDown, ChevronUp, Globe, Sparkles, ArrowLeft, Check, Lock, Users, Gift } from 'lucide-react';
-import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels } from './ShieldCrest';
+import { ShieldCrest, shieldPatterns, ShieldPattern, shieldShapes, ShieldShape, shieldIcons, ShieldIcon, shieldIconLabels, ShieldConfig } from './ShieldCrest';
+import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import flmLogo from '@/assets/flm26-logo.png';
 
 export interface ClubConfig {
@@ -21,6 +22,7 @@ export interface ClubConfig {
   shieldPattern?: string;
   shieldShape?: string;
   shieldIcon?: string;
+  shieldConfig?: ShieldConfig;
   country: string;
 }
 
@@ -135,6 +137,9 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [selectedPattern, setSelectedPattern] = useState<ShieldPattern>('solid');
   const [selectedShape, setSelectedShape] = useState<ShieldShape>('classic');
   const [selectedIcon, setSelectedIcon] = useState<ShieldIcon>('star');
+  const [shieldConfig, setShieldConfig] = useState<ShieldConfig>(() => defaultShieldConfig({
+    primaryColor: '#2563EB', secondaryColor: '#FFFFFF', detailColor: '#DC2626', borderColor: '#DC2626',
+  }));
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [useCustomLogo, setUseCustomLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -206,11 +211,14 @@ export function ClubCreation({ userId, onComplete }: Props) {
     onComplete({
       name: clubName.trim(),
       stadiumName: stadiumName.trim() || 'Estádio Municipal',
-      primaryColor, secondaryColor, detailColor,
-      logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
-      shieldPattern: useCustomLogo ? undefined : selectedPattern,
-      shieldShape: useCustomLogo ? undefined : selectedShape,
-      shieldIcon: useCustomLogo ? undefined : selectedIcon,
+      primaryColor: shieldConfig.primaryColor,
+      secondaryColor: shieldConfig.secondaryColor,
+      detailColor: shieldConfig.detailColor,
+      logoUrl: useCustomLogo ? customLogoUrl : shieldConfig.pattern,
+      shieldPattern: useCustomLogo ? undefined : shieldConfig.pattern,
+      shieldShape: useCustomLogo ? undefined : shieldConfig.shape,
+      shieldIcon: useCustomLogo ? undefined : shieldConfig.icon,
+      shieldConfig: useCustomLogo ? undefined : shieldConfig,
       country,
     });
   };
@@ -421,109 +429,25 @@ export function ClubCreation({ userId, onComplete }: Props) {
 
           <div className="border-t border-border" />
 
-          {/* SECTION 2: Cores */}
-          <div className="space-y-2">
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Palette className="h-3 w-3" /> Cores do Clube
-            </h3>
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-1.5 pb-1">
-                {presetColors.map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setPrimaryColor(c.primary); setSecondaryColor(c.secondary); setDetailColor(c.detail); }}
-                    className={`shrink-0 h-8 w-14 rounded-lg border-2 transition-all flex overflow-hidden ${primaryColor === c.primary && secondaryColor === c.secondary ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="flex-1" style={{ backgroundColor: c.primary }} />
-                    <div className="flex-1" style={{ backgroundColor: c.secondary }} />
-                    <div className="w-1.5" style={{ backgroundColor: c.detail }} />
-                  </button>
-                ))}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-0.5">
-                <Label className="text-[9px] text-muted-foreground">Principal</Label>
-                <div className="flex items-center gap-1">
-                  <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: primaryColor }} />
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <Label className="text-[9px] text-muted-foreground">Secundária</Label>
-                <div className="flex items-center gap-1">
-                  <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: secondaryColor }} />
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <Label className="text-[9px] text-muted-foreground">Detalhes</Label>
-                <div className="flex items-center gap-1">
-                  <input type="color" value={detailColor} onChange={e => setDetailColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0" />
-                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: detailColor }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-border" />
-
-          {/* SECTION 3: Escudo */}
+          {/* SECTION 2+3: Crest Builder Pro */}
           <div className="space-y-3">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Shield className="h-3 w-3" /> Personalizar Escudo
+              <Shield className="h-3 w-3" /> Editor de Escudo
             </h3>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Forma</Label>
-              <ScrollArea className="w-full whitespace-nowrap">
-                <div className="flex gap-1.5 pb-1">
-                  {shieldShapes.map(shape => (
-                    <button
-                      key={shape}
-                      onClick={() => setSelectedShape(shape)}
-                      className={`shrink-0 p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0.5 min-w-[50px] ${selectedShape === shape ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                    >
-                      <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={shape} size={30} />
-                      <span className="text-[7px] font-medium text-muted-foreground">{shapeNames[shape]}</span>
-                    </button>
-                  ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Padrão</Label>
-              <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
-                {shieldPatterns.map(pattern => (
-                  <button
-                    key={pattern}
-                    onClick={() => { setSelectedPattern(pattern); setUseCustomLogo(false); }}
-                    className={`p-0.5 rounded-md border-2 transition-all flex items-center justify-center aspect-square ${selectedPattern === pattern && !useCustomLogo ? 'border-primary ring-1 ring-primary/30' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={pattern} shape={selectedShape} size={24} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Emblema Central</Label>
-              <div className="grid grid-cols-7 sm:grid-cols-9 gap-1">
-                {shieldIcons.map(icon => (
-                  <button
-                    key={icon}
-                    onClick={() => { setSelectedIcon(icon); setUseCustomLogo(false); }}
-                    className={`p-1 rounded-md border-2 transition-all flex flex-col items-center gap-0 aspect-square ${selectedIcon === icon && !useCustomLogo ? 'border-primary ring-1 ring-primary/30 bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="solid" shape={selectedShape} icon={icon} size={26} />
-                    <span className="text-[6px] font-medium text-muted-foreground leading-none mt-0.5">{shieldIconLabels[icon].split(' ').pop()}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <CrestBuilder
+              value={shieldConfig}
+              onChange={(c) => {
+                setShieldConfig(c);
+                setPrimaryColor(c.primaryColor);
+                setSecondaryColor(c.secondaryColor);
+                setDetailColor(c.detailColor);
+                setSelectedPattern(c.pattern as ShieldPattern);
+                setSelectedShape(c.shape as ShieldShape);
+                setSelectedIcon(c.icon as ShieldIcon);
+                setUseCustomLogo(false);
+              }}
+              showSaveButton={false}
+            />
           </div>
 
           <div className="border-t border-border" />
@@ -532,7 +456,7 @@ export function ClubCreation({ userId, onComplete }: Props) {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-[10px] h-7 gap-1">
               <Upload className="h-3 w-3" />
-              {uploading ? 'Enviando...' : 'Upload Logo'}
+              {uploading ? 'Enviando...' : 'Upload Logo Personalizado'}
             </Button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             {useCustomLogo && customLogoUrl && (
@@ -544,27 +468,18 @@ export function ClubCreation({ userId, onComplete }: Props) {
           </div>
 
           {/* Preview */}
-          <div className="rounded-xl p-4 border border-border space-y-3" style={{ background: `linear-gradient(135deg, ${primaryColor}12, ${secondaryColor}08)` }}>
+          <div className="rounded-xl p-4 border border-border space-y-2" style={{ background: `linear-gradient(135deg, ${shieldConfig.primaryColor}12, ${shieldConfig.secondaryColor}08)` }}>
             <p className="text-[10px] font-semibold text-center text-muted-foreground uppercase tracking-widest">
               <Shirt className="h-3 w-3 inline mr-1" /> Prévia do Clube
             </p>
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex flex-col items-center gap-1">
-                {useCustomLogo && customLogoUrl ? (
-                  <img src={customLogoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
-                ) : (
-                  <ShieldCrest primaryColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern={selectedPattern} shape={selectedShape} icon={selectedIcon} size={64} />
-                )}
-              </div>
-              <div className="text-center space-y-0.5">
-                <p className="font-bold text-base" style={{ color: primaryColor }}>{displayName}</p>
-                <p className="text-xs text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">🏟️ {displayStadium}</p>
-              </div>
-              <div className="flex items-center gap-6 pt-1">
-                <KitPreview shirtColor={primaryColor} secondaryColor={secondaryColor} detailColor={detailColor} pattern="stripes" label="Uniforme 1" size={56} />
-                <KitPreview shirtColor={secondaryColor} secondaryColor={primaryColor} detailColor={detailColor} pattern="solid" label="Uniforme 2" size={56} />
-              </div>
+            <div className="text-center space-y-0.5">
+              <p className="font-bold text-base" style={{ color: shieldConfig.primaryColor }}>{displayName}</p>
+              <p className="text-xs text-muted-foreground">{selectedCountry?.flag} {selectedCountry?.name}</p>
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">🏟️ {displayStadium}</p>
+            </div>
+            <div className="flex items-center justify-center gap-6 pt-1">
+              <KitPreview shirtColor={shieldConfig.primaryColor} secondaryColor={shieldConfig.secondaryColor} detailColor={shieldConfig.detailColor} pattern="stripes" label="Uniforme 1" size={56} />
+              <KitPreview shirtColor={shieldConfig.secondaryColor} secondaryColor={shieldConfig.primaryColor} detailColor={shieldConfig.detailColor} pattern="solid" label="Uniforme 2" size={56} />
             </div>
           </div>
 

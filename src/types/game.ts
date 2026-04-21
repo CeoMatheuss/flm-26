@@ -168,6 +168,28 @@ export interface Club {
   logoUrl?: string;
   country?: string;
   staff?: StaffMember[];
+  /** V2 — full advanced shield configuration (optional, overrides legacy fields) */
+  shieldConfig?: {
+    shape: string;
+    pattern: string;
+    icon: string;
+    primaryColor: string;
+    secondaryColor: string;
+    detailColor: string;
+    borderColor?: string;
+    borderWidth?: number;
+    iconScale?: number;
+    iconOffsetX?: number;
+    iconOffsetY?: number;
+    iconRotation?: number;
+    iconOpacity?: number;
+    iconMirror?: boolean;
+    topStars?: 0 | 1 | 2 | 3;
+    showLaurels?: boolean;
+    showCrown?: boolean;
+    bannerText?: string;
+    bannerColor?: string;
+  };
 }
 
 export interface StaffMember {

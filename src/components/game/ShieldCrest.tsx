@@ -1,5 +1,27 @@
 import React from 'react';
 
+export interface ShieldConfig {
+  shape: ShieldShape;
+  pattern: ShieldPattern;
+  icon: ShieldIcon;
+  primaryColor: string;
+  secondaryColor: string;
+  detailColor: string;
+  borderColor?: string;
+  borderWidth?: number;
+  iconScale?: number;
+  iconOffsetX?: number;
+  iconOffsetY?: number;
+  iconRotation?: number;
+  iconOpacity?: number;
+  iconMirror?: boolean;
+  topStars?: 0 | 1 | 2 | 3;
+  showLaurels?: boolean;
+  showCrown?: boolean;
+  bannerText?: string;
+  bannerColor?: string;
+}
+
 interface ShieldProps {
   primaryColor: string;
   secondaryColor: string;
@@ -9,6 +31,20 @@ interface ShieldProps {
   size?: number;
   className?: string;
   icon?: ShieldIcon;
+  // Transform & decoration extras
+  borderColor?: string;
+  borderWidth?: number;
+  iconScale?: number;
+  iconOffsetX?: number;
+  iconOffsetY?: number;
+  iconRotation?: number;
+  iconOpacity?: number;
+  iconMirror?: boolean;
+  topStars?: 0 | 1 | 2 | 3;
+  showLaurels?: boolean;
+  showCrown?: boolean;
+  bannerText?: string;
+  bannerColor?: string;
 }
 
 export const shieldShapes = ['classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest'] as const;
@@ -29,6 +65,12 @@ export const shieldIcons = [
   'crossed-swords', 'laurel', 'tower', 'anchor', 'flame-icon', 'diamond-icon',
   'shield-icon', 'wing', 'trident', 'compass', 'horse', 'wolf', 'dragon',
   'trophy', 'boot', 'goal-net', 'whistle',
+  // ── New animals ──
+  'tiger', 'bear', 'phoenix', 'snake', 'elephant', 'rhino', 'panther', 'deer', 'bull', 'griffin',
+  // ── New symbols ──
+  'lightning', 'castle', 'axe', 'fleur-de-lis', 'cross-pattee', 'crescent-moon', 'sun-burst',
+  // ── Letters ──
+  'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
 ] as const;
 export type ShieldIcon = typeof shieldIcons[number];
 
@@ -40,6 +82,12 @@ export const shieldIconLabels: Record<ShieldIcon, string> = {
   'shield-icon': '🛡 Escudo', wing: '🪽 Asa', trident: '🔱 Tridente',
   compass: '🧭 Bússola', horse: '🐴 Cavalo', wolf: '🐺 Lobo', dragon: '🐉 Dragão',
   trophy: '🏆 Troféu', boot: '👟 Chuteira', 'goal-net': '🥅 Gol', whistle: '📣 Apito',
+  tiger: '🐯 Tigre', bear: '🐻 Urso', phoenix: '🔥 Fênix', snake: '🐍 Cobra',
+  elephant: '🐘 Elefante', rhino: '🦏 Rinoceronte', panther: '🐆 Pantera', deer: '🦌 Veado',
+  bull: '🐂 Touro', griffin: '🦅 Grifo',
+  lightning: '⚡ Raio', castle: '🏰 Castelo', axe: '🪓 Machado',
+  'fleur-de-lis': '⚜ Flor de Lis', 'cross-pattee': '✚ Cruz', 'crescent-moon': '🌙 Lua', 'sun-burst': '☀ Sol',
+  'letter-A': 'A', 'letter-B': 'B', 'letter-C': 'C', 'letter-F': 'F', 'letter-M': 'M', 'letter-R': 'R', 'letter-S': 'S',
 };
 
 const shieldPaths: Record<ShieldShape, (s: number) => string> = {
@@ -98,6 +146,14 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
   const h = s / 2;
   const cy = s * 0.44;
   const r = s * 0.13;
+
+  // Letters
+  if (icon.startsWith('letter-')) {
+    const letter = icon.replace('letter-', '');
+    return (
+      <text x={h} y={cy + s * 0.1} textAnchor="middle" fill={dc} fontSize={s * 0.34} fontWeight="900" fontFamily="Georgia, serif">{letter}</text>
+    );
+  }
 
   switch (icon) {
     case 'star':
@@ -292,20 +348,176 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
           <line x1={h + s * 0.08} y1={cy - s * 0.02} x2={h + s * 0.12} y2={cy - s * 0.08} stroke={dc} strokeWidth={s * 0.015} strokeLinecap="round" />
         </>
       );
+    // ── New animals ──
+    case 'tiger':
+      return (
+        <>
+          <ellipse cx={h} cy={cy + s * 0.02} rx={s * 0.1} ry={s * 0.08} fill={dc} />
+          <polygon points={`${h - s * 0.09},${cy - s * 0.06} ${h - s * 0.05},${cy - s * 0.12} ${h - s * 0.04},${cy - s * 0.02}`} fill={dc} />
+          <polygon points={`${h + s * 0.09},${cy - s * 0.06} ${h + s * 0.05},${cy - s * 0.12} ${h + s * 0.04},${cy - s * 0.02}`} fill={dc} />
+          <line x1={h - s * 0.07} y1={cy + s * 0.02} x2={h - s * 0.04} y2={cy + s * 0.02} stroke={sc} strokeWidth={s * 0.012} />
+          <line x1={h + s * 0.07} y1={cy + s * 0.02} x2={h + s * 0.04} y2={cy + s * 0.02} stroke={sc} strokeWidth={s * 0.012} />
+          <circle cx={h - s * 0.035} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
+          <circle cx={h + s * 0.035} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
+          <polygon points={`${h - s * 0.018},${cy + s * 0.05} ${h + s * 0.018},${cy + s * 0.05} ${h},${cy + s * 0.08}`} fill={sc} />
+        </>
+      );
+    case 'bear':
+      return (
+        <>
+          <circle cx={h} cy={cy + s * 0.02} r={s * 0.1} fill={dc} />
+          <circle cx={h - s * 0.075} cy={cy - s * 0.06} r={s * 0.035} fill={dc} />
+          <circle cx={h + s * 0.075} cy={cy - s * 0.06} r={s * 0.035} fill={dc} />
+          <circle cx={h - s * 0.03} cy={cy} r={s * 0.012} fill={sc} />
+          <circle cx={h + s * 0.03} cy={cy} r={s * 0.012} fill={sc} />
+          <ellipse cx={h} cy={cy + s * 0.06} rx={s * 0.025} ry={s * 0.018} fill={sc} />
+        </>
+      );
+    case 'phoenix':
+      return (
+        <>
+          <path d={`M${h},${cy - s * 0.13} Q${h + s * 0.04},${cy - s * 0.04} ${h + s * 0.12},${cy - s * 0.06} Q${h + s * 0.06},${cy + s * 0.04} ${h + s * 0.04},${cy + s * 0.12} Q${h},${cy + s * 0.06} ${h - s * 0.04},${cy + s * 0.12} Q${h - s * 0.06},${cy + s * 0.04} ${h - s * 0.12},${cy - s * 0.06} Q${h - s * 0.04},${cy - s * 0.04} ${h},${cy - s * 0.13}`} fill={dc} />
+          <circle cx={h} cy={cy - s * 0.04} r={s * 0.015} fill={sc} />
+        </>
+      );
+    case 'snake':
+      return (
+        <>
+          <path d={`M${h - s * 0.1},${cy + s * 0.08} Q${h},${cy} ${h + s * 0.08},${cy + s * 0.06} Q${h + s * 0.04},${cy - s * 0.06} ${h - s * 0.04},${cy - s * 0.04} Q${h - s * 0.1},${cy - s * 0.1} ${h},${cy - s * 0.12}`} fill="none" stroke={dc} strokeWidth={s * 0.025} strokeLinecap="round" />
+          <circle cx={h + s * 0.005} cy={cy - s * 0.115} r={s * 0.012} fill={sc} />
+        </>
+      );
+    case 'elephant':
+      return (
+        <>
+          <ellipse cx={h} cy={cy + s * 0.02} rx={s * 0.1} ry={s * 0.07} fill={dc} />
+          <ellipse cx={h - s * 0.08} cy={cy - s * 0.02} rx={s * 0.04} ry={s * 0.05} fill={dc} />
+          <ellipse cx={h + s * 0.08} cy={cy - s * 0.02} rx={s * 0.04} ry={s * 0.05} fill={dc} />
+          <path d={`M${h},${cy + s * 0.06} Q${h - s * 0.02},${cy + s * 0.13} ${h + s * 0.02},${cy + s * 0.12}`} fill="none" stroke={dc} strokeWidth={s * 0.022} strokeLinecap="round" />
+          <circle cx={h - s * 0.025} cy={cy + s * 0.005} r={s * 0.01} fill={sc} />
+          <circle cx={h + s * 0.025} cy={cy + s * 0.005} r={s * 0.01} fill={sc} />
+        </>
+      );
+    case 'rhino':
+      return (
+        <>
+          <ellipse cx={h + s * 0.01} cy={cy + s * 0.03} rx={s * 0.11} ry={s * 0.06} fill={dc} />
+          <polygon points={`${h - s * 0.1},${cy + s * 0.02} ${h - s * 0.14},${cy - s * 0.02} ${h - s * 0.08},${cy - s * 0.04}`} fill={dc} />
+          <polygon points={`${h - s * 0.11},${cy - s * 0.02} ${h - s * 0.13},${cy - s * 0.08} ${h - s * 0.07},${cy - s * 0.03}`} fill={sc} />
+          <circle cx={h - s * 0.02} cy={cy} r={s * 0.012} fill={sc} />
+        </>
+      );
+    case 'panther':
+      return (
+        <>
+          <path d={`M${h - s * 0.1},${cy + s * 0.06} Q${h - s * 0.04},${cy - s * 0.04} ${h + s * 0.04},${cy - s * 0.02} Q${h + s * 0.12},${cy} ${h + s * 0.1},${cy + s * 0.08} L${h - s * 0.04},${cy + s * 0.1} Z`} fill={dc} />
+          <polygon points={`${h - s * 0.06},${cy - s * 0.08} ${h - s * 0.02},${cy - s * 0.04} ${h - s * 0.07},${cy - s * 0.02}`} fill={dc} />
+          <polygon points={`${h + s * 0.02},${cy - s * 0.08} ${h + s * 0.06},${cy - s * 0.04} ${h + s * 0.01},${cy - s * 0.02}`} fill={dc} />
+          <circle cx={h - s * 0.02} cy={cy} r={s * 0.01} fill={sc} />
+          <circle cx={h + s * 0.04} cy={cy} r={s * 0.01} fill={sc} />
+        </>
+      );
+    case 'deer':
+      return (
+        <>
+          <ellipse cx={h} cy={cy + s * 0.04} rx={s * 0.05} ry={s * 0.07} fill={dc} />
+          <path d={`M${h - s * 0.05},${cy - s * 0.04} Q${h - s * 0.1},${cy - s * 0.13} ${h - s * 0.04},${cy - s * 0.13} M${h - s * 0.05},${cy - s * 0.04} Q${h - s * 0.13},${cy - s * 0.08} ${h - s * 0.12},${cy - s * 0.13}`} fill="none" stroke={dc} strokeWidth={s * 0.018} strokeLinecap="round" />
+          <path d={`M${h + s * 0.05},${cy - s * 0.04} Q${h + s * 0.1},${cy - s * 0.13} ${h + s * 0.04},${cy - s * 0.13} M${h + s * 0.05},${cy - s * 0.04} Q${h + s * 0.13},${cy - s * 0.08} ${h + s * 0.12},${cy - s * 0.13}`} fill="none" stroke={dc} strokeWidth={s * 0.018} strokeLinecap="round" />
+          <circle cx={h - s * 0.018} cy={cy + s * 0.02} r={s * 0.01} fill={sc} />
+          <circle cx={h + s * 0.018} cy={cy + s * 0.02} r={s * 0.01} fill={sc} />
+        </>
+      );
+    case 'bull':
+      return (
+        <>
+          <ellipse cx={h} cy={cy + s * 0.04} rx={s * 0.08} ry={s * 0.07} fill={dc} />
+          <path d={`M${h - s * 0.07},${cy - s * 0.02} Q${h - s * 0.14},${cy - s * 0.1} ${h - s * 0.1},${cy - s * 0.12}`} fill="none" stroke={dc} strokeWidth={s * 0.022} strokeLinecap="round" />
+          <path d={`M${h + s * 0.07},${cy - s * 0.02} Q${h + s * 0.14},${cy - s * 0.1} ${h + s * 0.1},${cy - s * 0.12}`} fill="none" stroke={dc} strokeWidth={s * 0.022} strokeLinecap="round" />
+          <circle cx={h - s * 0.025} cy={cy + s * 0.02} r={s * 0.012} fill={sc} />
+          <circle cx={h + s * 0.025} cy={cy + s * 0.02} r={s * 0.012} fill={sc} />
+          <circle cx={h} cy={cy + s * 0.08} r={s * 0.012} fill={sc} />
+        </>
+      );
+    case 'griffin':
+      return (
+        <>
+          <path d={`M${h},${cy - s * 0.12} Q${h + s * 0.06},${cy - s * 0.06} ${h + s * 0.04},${cy + s * 0.02} Q${h + s * 0.1},${cy + s * 0.04} ${h + s * 0.12},${cy + s * 0.1} L${h - s * 0.12},${cy + s * 0.1} Q${h - s * 0.1},${cy + s * 0.04} ${h - s * 0.04},${cy + s * 0.02} Q${h - s * 0.06},${cy - s * 0.06} ${h},${cy - s * 0.12}`} fill={dc} />
+          <circle cx={h} cy={cy - s * 0.06} r={s * 0.012} fill={sc} />
+        </>
+      );
+    // ── New symbols ──
+    case 'lightning':
+      return (
+        <polygon points={`${h - s * 0.04},${cy - s * 0.13} ${h + s * 0.06},${cy - s * 0.13} ${h - s * 0.005},${cy - s * 0.01} ${h + s * 0.05},${cy - s * 0.01} ${h - s * 0.06},${cy + s * 0.13} ${h + s * 0.005},${cy + s * 0.02} ${h - s * 0.05},${cy + s * 0.02}`} fill={dc} />
+      );
+    case 'castle':
+      return (
+        <>
+          <rect x={h - s * 0.1} y={cy - s * 0.02} width={s * 0.2} height={s * 0.12} fill={dc} />
+          <rect x={h - s * 0.1} y={cy - s * 0.08} width={s * 0.04} height={s * 0.06} fill={dc} />
+          <rect x={h - s * 0.02} y={cy - s * 0.08} width={s * 0.04} height={s * 0.06} fill={dc} />
+          <rect x={h + s * 0.06} y={cy - s * 0.08} width={s * 0.04} height={s * 0.06} fill={dc} />
+          <rect x={h - s * 0.04} y={cy + s * 0.04} width={s * 0.08} height={s * 0.06} fill={sc} opacity={0.55} />
+          <polygon points={`${h - s * 0.08},${cy - s * 0.08} ${h},${cy - s * 0.14} ${h + s * 0.08},${cy - s * 0.08}`} fill={dc} opacity={0.6} />
+        </>
+      );
+    case 'axe':
+      return (
+        <>
+          <rect x={h - s * 0.012} y={cy - s * 0.12} width={s * 0.024} height={s * 0.24} fill={dc} />
+          <path d={`M${h + s * 0.01},${cy - s * 0.1} Q${h + s * 0.12},${cy - s * 0.06} ${h + s * 0.1},${cy + s * 0.02} L${h + s * 0.012},${cy - s * 0.02} Z`} fill={dc} />
+          <path d={`M${h - s * 0.01},${cy - s * 0.1} Q${h - s * 0.12},${cy - s * 0.06} ${h - s * 0.1},${cy + s * 0.02} L${h - s * 0.012},${cy - s * 0.02} Z`} fill={dc} />
+        </>
+      );
+    case 'fleur-de-lis':
+      return (
+        <text x={h} y={cy + s * 0.1} textAnchor="middle" fill={dc} fontSize={s * 0.32} fontWeight="bold">⚜</text>
+      );
+    case 'cross-pattee':
+      return (
+        <>
+          <polygon points={`${h - s * 0.025},${cy - s * 0.12} ${h + s * 0.025},${cy - s * 0.12} ${h + s * 0.06},${cy - s * 0.08} ${h + s * 0.06},${cy - s * 0.025} ${h + s * 0.12},${cy - s * 0.025} ${h + s * 0.12},${cy + s * 0.025} ${h + s * 0.06},${cy + s * 0.025} ${h + s * 0.06},${cy + s * 0.08} ${h + s * 0.025},${cy + s * 0.12} ${h - s * 0.025},${cy + s * 0.12} ${h - s * 0.06},${cy + s * 0.08} ${h - s * 0.06},${cy + s * 0.025} ${h - s * 0.12},${cy + s * 0.025} ${h - s * 0.12},${cy - s * 0.025} ${h - s * 0.06},${cy - s * 0.025} ${h - s * 0.06},${cy - s * 0.08}`} fill={dc} />
+        </>
+      );
+    case 'crescent-moon':
+      return (
+        <path d={`M${h + s * 0.05},${cy - s * 0.1} A${s * 0.11} ${s * 0.11} 0 1 0 ${h + s * 0.05},${cy + s * 0.1} A${s * 0.085} ${s * 0.085} 0 1 1 ${h + s * 0.05},${cy - s * 0.1} Z`} fill={dc} />
+      );
+    case 'sun-burst':
+      return (
+        <>
+          <circle cx={h} cy={cy} r={s * 0.05} fill={dc} />
+          {Array.from({ length: 8 }).map((_, i) => {
+            const angle = (Math.PI * 2 * i) / 8;
+            const x1 = h + Math.cos(angle) * s * 0.07;
+            const y1 = cy + Math.sin(angle) * s * 0.07;
+            const x2 = h + Math.cos(angle) * s * 0.13;
+            const y2 = cy + Math.sin(angle) * s * 0.13;
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={dc} strokeWidth={s * 0.018} strokeLinecap="round" />;
+          })}
+        </>
+      );
     default:
       return null;
   }
 }
 
-export function ShieldCrest({ primaryColor, secondaryColor, detailColor, pattern, shape = 'classic', size = 64, className = '', icon }: ShieldProps) {
+export function ShieldCrest({
+  primaryColor, secondaryColor, detailColor, pattern, shape = 'classic', size = 64, className = '', icon,
+  borderColor, borderWidth, iconScale = 1, iconOffsetX = 0, iconOffsetY = 0, iconRotation = 0,
+  iconOpacity = 1, iconMirror = false, topStars = 0, showLaurels = false, showCrown = false,
+  bannerText, bannerColor,
+}: ShieldProps) {
   const s = size;
   const h = s / 2;
   const dc = detailColor || secondaryColor;
+  const bc = borderColor || dc;
+  const bw = typeof borderWidth === 'number' ? borderWidth : s * 0.035;
   const shapeKey = (shieldShapes.includes(shape as ShieldShape) ? shape : 'classic') as ShieldShape;
   const shieldPath = shieldPaths[shapeKey](s);
-  const clipId = `clip-${Math.random().toString(36).substr(2, 8)}`;
-  const gradId = `grad-${Math.random().toString(36).substr(2, 8)}`;
-  const shineId = `shine-${Math.random().toString(36).substr(2, 8)}`;
+  const clipId = React.useId().replace(/:/g, '');
+  const gradId = `grad-${clipId}`;
+  const shineId = `shine-${clipId}`;
 
   const renderPattern = () => {
     // Patterns are ONLY background decoration — NO central elements
@@ -462,8 +674,14 @@ export function ShieldCrest({ primaryColor, secondaryColor, detailColor, pattern
     }
   };
 
+  // Icon transform: translate to center, apply transforms, then translate back
+  const iconCx = h;
+  const iconCy = s * 0.44;
+  const mirror = iconMirror ? -1 : 1;
+  const iconTransform = `translate(${iconOffsetX} ${iconOffsetY}) translate(${iconCx} ${iconCy}) rotate(${iconRotation}) scale(${iconScale * mirror} ${iconScale}) translate(${-iconCx} ${-iconCy})`;
+
   return (
-    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} className={className} xmlns="http://www.w3.org/2000/svg">
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} className={className} xmlns="http://www.w3.org/2000/svg" style={{ transition: 'all 200ms ease' }}>
       <defs>
         <clipPath id={clipId}>
           <path d={shieldPath} />
@@ -477,10 +695,72 @@ export function ShieldCrest({ primaryColor, secondaryColor, detailColor, pattern
       <path d={shieldPath} fill={primaryColor} />
       <g clipPath={`url(#${clipId})`}>
         {renderPattern()}
-        {renderIcon(icon, s, dc, primaryColor)}
+        <g transform={iconTransform} opacity={iconOpacity} style={{ transition: 'all 200ms ease' }}>
+          {renderIcon(icon, s, dc, primaryColor)}
+        </g>
+        {/* Top stars (inside shield) */}
+        {topStars > 0 && (
+          <g>
+            {Array.from({ length: topStars }).map((_, i) => {
+              const spacing = s * 0.06;
+              const startX = h - ((topStars - 1) * spacing) / 2;
+              return (
+                <text key={i} x={startX + i * spacing} y={s * 0.16} textAnchor="middle" fill={dc} fontSize={s * 0.07} fontWeight="bold">★</text>
+              );
+            })}
+          </g>
+        )}
       </g>
       <path d={shieldPath} fill={`url(#${shineId})`} />
-      <path d={shieldPath} fill="none" stroke={dc} strokeWidth={s * 0.035} opacity={0.9} />
+      <path d={shieldPath} fill="none" stroke={bc} strokeWidth={bw} opacity={0.92} />
+
+      {/* Decorative layers OUTSIDE the clip */}
+      {showCrown && (
+        <g>
+          <polygon
+            points={`${h - s * 0.18},${s * 0.06} ${h - s * 0.12},${s * -0.02} ${h - s * 0.06},${s * 0.05} ${h},${s * -0.04} ${h + s * 0.06},${s * 0.05} ${h + s * 0.12},${s * -0.02} ${h + s * 0.18},${s * 0.06}`}
+            fill={bc}
+          />
+          <rect x={h - s * 0.18} y={s * 0.06} width={s * 0.36} height={s * 0.025} fill={bc} />
+          <circle cx={h - s * 0.12} cy={s * -0.02} r={s * 0.014} fill={dc} />
+          <circle cx={h} cy={s * -0.04} r={s * 0.014} fill={dc} />
+          <circle cx={h + s * 0.12} cy={s * -0.02} r={s * 0.014} fill={dc} />
+        </g>
+      )}
+      {showLaurels && (
+        <g>
+          {/* Left laurel */}
+          <path d={`M${s * 0.04},${s * 0.85} Q${s * -0.04},${s * 0.5} ${s * 0.1},${s * 0.2}`} fill="none" stroke={bc} strokeWidth={s * 0.018} strokeLinecap="round" />
+          {[0.25, 0.4, 0.55, 0.7].map((y, i) => (
+            <ellipse key={`ll-${i}`} cx={s * (0.025 + i * 0.005)} cy={s * y} rx={s * 0.025} ry={s * 0.014} fill={bc} opacity={0.85} transform={`rotate(${-30 - i * 5} ${s * 0.025} ${s * y})`} />
+          ))}
+          {/* Right laurel */}
+          <path d={`M${s * 0.96},${s * 0.85} Q${s * 1.04},${s * 0.5} ${s * 0.9},${s * 0.2}`} fill="none" stroke={bc} strokeWidth={s * 0.018} strokeLinecap="round" />
+          {[0.25, 0.4, 0.55, 0.7].map((y, i) => (
+            <ellipse key={`rl-${i}`} cx={s * (0.975 - i * 0.005)} cy={s * y} rx={s * 0.025} ry={s * 0.014} fill={bc} opacity={0.85} transform={`rotate(${30 + i * 5} ${s * 0.975} ${s * y})`} />
+          ))}
+        </g>
+      )}
+      {bannerText && (
+        <g>
+          <path
+            d={`M${s * 0.05},${s * 0.86} Q${h},${s * 0.92} ${s * 0.95},${s * 0.86} L${s * 0.9},${s * 0.99} Q${h},${s * 1.02} ${s * 0.1},${s * 0.99} Z`}
+            fill={bannerColor || bc}
+          />
+          <text
+            x={h}
+            y={s * 0.95}
+            textAnchor="middle"
+            fill={primaryColor}
+            fontSize={s * 0.07}
+            fontWeight="bold"
+            fontFamily="Georgia, serif"
+            style={{ letterSpacing: s * 0.005 }}
+          >
+            {bannerText.slice(0, 14).toUpperCase()}
+          </text>
+        </g>
+      )}
     </svg>
   );
 }
