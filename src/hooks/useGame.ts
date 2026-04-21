@@ -257,6 +257,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     marketPlayers: clubState.marketPlayers,
     freeAgents: clubState.freeAgents,
     totalSalaries: clubState.totalSalaries,
+    transferBudget: clubState.transferBudget,
+    salaryBudget: clubState.salaryBudget,
+    reservaBudget: clubState.reservaBudget,
+    salaryBudgetRemaining: clubState.salaryBudgetRemaining,
+    annualSalaries: clubState.annualSalaries,
     infrastructure: infraState.infrastructure,
     youthProspects: infraState.youthProspects,
     youthInvestment: infraState.youthInvestment,
@@ -321,5 +326,6 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     updatePlayers: clubState.updatePlayers,
     addPackPlayers,
     addBonus,
+    rescindPlayer: clubState.rescindPlayer,
   };
 }

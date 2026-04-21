@@ -267,13 +267,48 @@ export function useClubState(initialState: any, userId?: string) {
 
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
+  // ── Budget breakdown (40/40/20) ──
+  const transferBudget = Math.floor(club.budget * 0.4);
+  const salaryBudget = Math.floor(club.budget * 0.4);
+  const reservaBudget = Math.floor(club.budget * 0.2);
+  const annualSalaries = totalSalaries * 12;
+  const salaryBudgetRemaining = Math.max(0, salaryBudget - annualSalaries);
+
+  // ── Rescind contract: debits transfer budget, removes player, lists in free market ──
+  const rescindPlayer = useCallback(async (player: Player, fee: number) => {
+    if (!userId) { toast.error('Sessão expirada'); return; }
+    if (club.players.length <= 11) { toast.error('Elenco muito pequeno para rescindir!'); return; }
+    if (transferBudget < fee) {
+      toast.error(`Verba de transferências insuficiente: ${fee}`);
+      return;
+    }
+
+    const res = await supabase.functions.invoke('process-free-agent', {
+      body: { action: 'rescind-player', player, fee, clubName: club.name },
+    });
+
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error || 'Erro ao rescindir contrato');
+      return;
+    }
+
+    setClub(prev => ({
+      ...prev,
+      budget: prev.budget - fee,
+      players: prev.players.filter(p => p.id !== player.id),
+    }));
+    toast.success(`${player.name} liberado para o Mercado Livre. Taxa: R$${(fee / 1000).toFixed(0)}k`);
+  }, [club.budget, club.players.length, club.name, transferBudget, userId]);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
     totalSalaries, loansOut, loansIn,
+    transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
     trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
+    rescindPlayer,
   };
 }
