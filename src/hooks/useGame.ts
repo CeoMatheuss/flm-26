@@ -150,6 +150,21 @@ export function useGame(initialState?: GameState, userId?: string) {
     });
   }, [infraState.promoteYouth, clubState.setClub]);
 
+  const sellYouth = useCallback((youthId: string) => {
+    infraState.sellYouth(
+      youthId,
+      financeState.addFinance,
+      (amount: number) => clubState.setClub(prev => ({ ...prev, budget: prev.budget + amount })),
+    );
+  }, [infraState.sellYouth, financeState.addFinance, clubState.setClub]);
+
+  const enrollCopinha = useCallback(() => {
+    infraState.enrollCopinha(clubState.club.name, (fn: (prev: any) => any) => {
+      const next = fn(clubState.clubProfile ?? {});
+      clubState.updateClubProfile(next);
+    });
+  }, [infraState.enrollCopinha, clubState.club.name, clubState.clubProfile, clubState.updateClubProfile]);
+
   const upgradeCTRoom = useCallback((room: keyof CTRooms) => {
     infraState.upgradeCTRoom(
       room,
@@ -277,6 +292,8 @@ export function useGame(initialState?: GameState, userId?: string) {
     getFullState,
     upgradeFacility,
     promoteYouth,
+    sellYouth,
+    enrollCopinha,
     setYouthInvestment: infraState.setYouthInvestment,
     endSeason,
     acceptSponsor,

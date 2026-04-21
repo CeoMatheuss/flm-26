@@ -1,10 +1,18 @@
-import { YouthProspect } from '@/types/infrastructure';
-import { getAcademyUpgradeCost, getYouthMinOverall, getYouthMaxOverall } from '@/types/infrastructure';
+import { useState } from 'react';
+import {
+  YouthProspect, getAcademyUpgradeCost, getYouthMinOverall, getYouthMaxOverall,
+  youthInvestmentTiers, getYouthTierByCost, potentialTierInfo, evolutionStatusInfo, youthTagInfo,
+  computeEvolutionStatus, computeYouthTag, getPotentialTier,
+} from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { UserPlus, Star, Info, ArrowUp, Sparkles, GraduationCap, Coins, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  UserPlus, Info, ArrowUp, Sparkles, GraduationCap, Coins, TrendingUp,
+  DollarSign, Eye, Trophy,
+} from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
@@ -13,29 +21,26 @@ interface Props {
   monthlyInvestment: number;
   budget: number;
   hasScouts: boolean;
+  currentSeason: number;
   onPromote: (id: string) => void;
+  onSell: (id: string) => void;
+  onEnrollCopinha: () => void;
   onSetInvestment: (amount: number) => void;
-  onGenerateYouth?: () => void;
   onUpgradeAcademy?: () => void;
 }
 
-const investmentTiers = [
-  { amount: 0, label: 'R$ 0', players: '0', desc: 'Sem Investimento', emoji: '❌', hint: 'Nenhum jovem será gerado' },
-  { amount: 500000, label: 'R$ 500 mil', players: '1–2', desc: 'Básico', emoji: '🔹', hint: 'Poucos jovens, bom para começar' },
-  { amount: 1500000, label: 'R$ 1,5 mi', players: '2–3', desc: 'Médio', emoji: '🔸', hint: 'Volume moderado de jovens' },
-  { amount: 3000000, label: 'R$ 3,0 mi', players: '3–5', desc: 'Alto', emoji: '🔶', hint: 'Máximo volume de jovens' },
-];
-
 const getLevelTier = (level: number) => {
-  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jogadores fracos (OVR baixo)' };
-  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Jogadores com algum potencial' };
-  if (level <= 15) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Bons jogadores para o elenco' };
-  if (level <= 20) return { label: 'Avançado', color: 'text-orange-400', emoji: '🔴', desc: 'Promessas frequentes' };
-  if (level <= 25) return { label: 'Elite', color: 'text-purple-400', emoji: '🟣', desc: 'Talentos de alto potencial' };
-  return { label: 'Mundial', color: 'text-primary', emoji: '🟡', desc: '⭐ Craques geracionais possíveis!' };
+  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens fracos (OVR 40-55)' };
+  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Algum potencial (OVR 45-60)' };
+  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas promessas (OVR 50-70)' };
+  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Talentos raros (OVR 55-80)' };
+  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Craques geracionais (OVR 60-85, POT 99)' };
 };
 
-export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, budget, hasScouts, onPromote, onSetInvestment, onGenerateYouth, onUpgradeAcademy }: Props) {
+export function YouthAcademyTab({
+  prospects, academyLevel, monthlyInvestment, budget, hasScouts, currentSeason,
+  onPromote, onSell, onEnrollCopinha, onSetInvestment, onUpgradeAcademy,
+}: Props) {
   const upgradeCost = getAcademyUpgradeCost(academyLevel);
   const canUpgrade = budget >= upgradeCost && academyLevel < 30;
   const tier = getLevelTier(academyLevel);
@@ -43,21 +48,28 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
   const maxOvr = getYouthMaxOverall(academyLevel);
   const nextMinOvr = academyLevel < 30 ? getYouthMinOverall(academyLevel + 1) : minOvr;
   const nextMaxOvr = academyLevel < 30 ? getYouthMaxOverall(academyLevel + 1) : maxOvr;
+  const currentTier = getYouthTierByCost(monthlyInvestment);
+  const copinhaUnlocked = currentSeason >= 2;
+  const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
+
+  const [observed, setObserved] = useState<YouthProspect | null>(null);
 
   return (
     <div className="space-y-4">
-      {/* How it works - Quick Guide */}
+      {/* Quick Guide */}
       <Card className="game-card border-primary/20">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs sm:text-sm">
-              <p className="font-bold text-foreground">Como funciona a Base?</p>
+              <p className="font-bold text-foreground">Como funciona a Base V2?</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-muted-foreground">
-                <p>🏗️ <strong className="text-foreground">Nível da Base</strong> = Qualidade (OVR) dos jovens</p>
-                <p>💰 <strong className="text-foreground">Investimento</strong> = Quantidade de jovens gerados</p>
-                <p>📅 Jovens chegam a cada <strong className="text-foreground">4 rodadas</strong></p>
+                <p>🏗️ <strong className="text-foreground">Nível</strong> = Qualidade dos jovens (OVR/POT)</p>
+                <p>💰 <strong className="text-foreground">Investimento</strong> = Quantidade de jovens/mês</p>
+                <p>👶 Jovens surgem com <strong className="text-foreground">16 anos</strong></p>
                 <p>🔍 <strong className="text-foreground">Olheiros</strong> revelam o Potencial (POT)</p>
+                <p>⚽ Partidas da base aceleram a evolução</p>
+                <p>🏆 <strong className="text-foreground">Copinha</strong> dá grande boost (≤20 anos)</p>
               </div>
             </div>
           </div>
@@ -74,7 +86,6 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-3">
-          {/* Level Display */}
           <div className="flex items-center gap-4 p-3 rounded-lg bg-accent/50 border border-border/20">
             <div className="text-center min-w-[50px]">
               <p className="text-3xl font-bold text-primary">{academyLevel}</p>
@@ -89,7 +100,6 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
             </div>
           </div>
 
-          {/* OVR Range */}
           <div className="flex items-center gap-3 p-2.5 rounded-lg bg-accent/30">
             <TrendingUp className="h-4 w-4 text-primary shrink-0" />
             <div className="flex-1">
@@ -99,7 +109,6 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
             <Badge variant="outline" className="text-[10px]">OVR {minOvr}–{maxOvr}</Badge>
           </div>
 
-          {/* Upgrade Button */}
           {academyLevel < 30 ? (
             <div className="p-3 rounded-lg bg-accent/30 border border-border/20">
               <div className="flex items-center justify-between mb-2">
@@ -113,8 +122,8 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
                   </p>
                 </div>
               </div>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 disabled={!canUpgrade}
                 onClick={onUpgradeAcademy}
                 className="w-full gap-1.5 h-10"
@@ -125,46 +134,83 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
               </Button>
             </div>
           ) : (
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-              <p className="text-sm font-bold text-emerald-400">🏆 Base no nível máximo!</p>
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+              <p className="text-sm font-bold text-amber-400">🌟 Base no nível máximo!</p>
               <p className="text-xs text-muted-foreground">Sua academia é referência mundial</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Investment Tier Card */}
+      {/* Investment Tiers — 2x3 grid */}
       <Card className="game-card">
         <CardHeader className="section-header pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Coins className="h-4 w-4 text-primary" />
-            Investimento por Temporada
+            Plano Mensal de Investimento
           </CardTitle>
           <CardDescription className="text-[10px]">
-            Escolha quanto investir — mais dinheiro = mais jovens (não melhores)
+            Mais investimento = mais jovens gerados por mês (qualidade depende do nível da base)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-2">
           <div className="grid grid-cols-2 gap-2">
-            {investmentTiers.map(t => {
-              const isActive = monthlyInvestment === t.amount;
+            {youthInvestmentTiers.map(t => {
+              const isActive = currentTier.tier === t.tier;
               return (
                 <button
-                  key={t.amount}
-                  onClick={() => onSetInvestment(t.amount)}
-                  className={`flex flex-col items-start p-3 rounded-xl text-left transition-all border ${
-                    isActive 
-                      ? 'bg-primary/15 border-primary/30 ring-1 ring-primary/20' 
-                      : 'bg-accent/40 border-border/20 hover:bg-accent/60 hover:border-primary/20'
+                  key={t.tier}
+                  onClick={() => onSetInvestment(t.cost)}
+                  className={`flex flex-col text-left rounded-xl border transition-all p-3 ${
+                    isActive
+                      ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
+                      : 'bg-card/40 border-border/30 hover:border-primary/40 hover:bg-card/60'
                   }`}
                 >
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t.emoji} {t.desc}</span>
-                  <span className="text-sm font-bold mt-0.5">{t.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{t.players} jogadores/ciclo</span>
-                  <span className="text-[9px] text-muted-foreground/70 mt-0.5">{t.hint}</span>
+                  <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center mb-2 text-lg">
+                    {t.emoji}
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t.label}</span>
+                  <span className="text-base font-black mt-0.5">{formatMoney(t.cost)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t.minPlayers === 0 ? '0 jogadores' : t.minPlayers === t.maxPlayers ? `${t.minPlayers} jogador${t.minPlayers > 1 ? 'es' : ''}/mês` : `${t.minPlayers}–${t.maxPlayers} jogadores/mês`}
+                  </span>
                 </button>
               );
             })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Copinha */}
+      <Card className={`game-card ${copinhaUnlocked ? 'border-amber-500/30' : ''}`}>
+        <CardHeader className="section-header pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-400" />
+            Copinha Sub-20
+            {!copinhaUnlocked && <Badge variant="outline" className="text-[9px] ml-auto">Temporada 2+</Badge>}
+          </CardTitle>
+          <CardDescription className="text-[10px]">
+            {copinhaUnlocked
+              ? 'Inscreva sua base na Copinha — apenas jogadores ≤20 anos. Boost de até +15 OVR para os campeões!'
+              : 'Disponível a partir da 2ª temporada do save.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/30 border border-border/20">
+            <div className="flex-1">
+              <p className="text-xs font-medium">Jogadores elegíveis</p>
+              <p className="text-[10px] text-muted-foreground">{eligibleForCopinha} jovens com 20 anos ou menos</p>
+            </div>
+            <Button
+              size="sm"
+              disabled={!copinhaUnlocked || eligibleForCopinha < 5}
+              onClick={onEnrollCopinha}
+              className="gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30"
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              Inscrever
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -182,55 +228,143 @@ export function YouthAcademyTab({ prospects, academyLevel, monthlyInvestment, bu
           {!hasScouts && prospects.length > 0 && (
             <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <span className="text-sm">🔍</span>
-              <p className="text-[11px] text-amber-300">Contrate um <strong>olheiro</strong> para revelar o potencial (POT) dos jovens!</p>
+              <p className="text-[11px] text-amber-300">Contrate um <strong>olheiro</strong> para revelar o potencial (POT) e o tier dos jovens!</p>
             </div>
           )}
           {prospects.length === 0 ? (
             <div className="text-center py-8">
               <GraduationCap className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Nenhum jovem na base</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">Invista e aguarde 4 rodadas para gerar uma safra</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">Invista e aguarde a próxima geração mensal</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {prospects.map(p => (
-                <div key={p.id} className="flex items-center gap-2 sm:gap-3 p-2.5 rounded-lg bg-accent/30 border border-border/10 hover:bg-accent/50 transition-colors">
-                  <Badge variant="outline" className="text-[10px] shrink-0">{p.position}</Badge>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs sm:text-sm truncate">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.age} anos • {p.monthsInAcademy}m na base</p>
+              {prospects.map(p => {
+                const evoStatus = p.evolutionStatus ?? computeEvolutionStatus(p);
+                const tag = p.youthTag ?? computeYouthTag(p);
+                const potTier = p.potentialTier ?? getPotentialTier(p.potential);
+                const tagInfo = tag ? youthTagInfo[tag] : null;
+                const evoInfo = evolutionStatusInfo[evoStatus];
+                const potInfo = potentialTierInfo[potTier];
+                const isInjured = (p.injuredCycles ?? 0) > 0;
+
+                return (
+                  <div key={p.id} className={`flex flex-col gap-2 p-3 rounded-lg bg-accent/30 border border-border/10 hover:bg-accent/50 transition-colors ${isInjured ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Badge variant="outline" className="text-[10px] shrink-0">{p.position}</Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-xs sm:text-sm truncate">{p.name}</p>
+                          {tagInfo && (
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${tagInfo.color}`}>
+                              {tagInfo.emoji} {tagInfo.label}
+                            </span>
+                          )}
+                          {isInjured && <span className="text-[9px] px-1.5 py-0.5 rounded border bg-red-500/20 text-red-300 border-red-500/40">🏥 Lesionado</span>}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {p.age} anos • {p.monthsInAcademy ?? 0}m na base • <span className={evoInfo.color}>{evoInfo.emoji} {evoInfo.label}</span>
+                        </p>
+                      </div>
+                      <div className="text-center shrink-0">
+                        <p className="text-base font-bold">{p.overall}</p>
+                        <p className="text-[8px] text-muted-foreground uppercase">OVR</p>
+                      </div>
+                      {hasScouts ? (
+                        <div className="text-center shrink-0">
+                          <p className={`text-base font-bold ${potInfo.color}`}>{p.potential}</p>
+                          <p className="text-[8px] text-muted-foreground uppercase">POT</p>
+                        </div>
+                      ) : (
+                        <div className="text-center shrink-0">
+                          <p className="text-base font-bold text-muted-foreground/30">???</p>
+                          <p className="text-[8px] text-muted-foreground uppercase">POT</p>
+                        </div>
+                      )}
+                    </div>
+                    {hasScouts && (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-semibold ${potInfo.color} shrink-0`}>{potInfo.emoji} {potInfo.label}</span>
+                        <Progress value={(p.overall / Math.max(1, p.potential)) * 100} className="h-1.5 progress-glow flex-1" />
+                        <span className="text-[9px] text-muted-foreground shrink-0">{Math.round((p.overall / Math.max(1, p.potential)) * 100)}%</span>
+                      </div>
+                    )}
+                    <div className="flex gap-1.5">
+                      <Button size="sm" onClick={() => onPromote(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] gap-1">
+                        <UserPlus className="h-3 w-3" /> Promover
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => onSell(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] gap-1">
+                        <DollarSign className="h-3 w-3" /> Vender ({formatMoney(p.overall * 50_000)})
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setObserved(p)} className="h-8 text-[10px] gap-1 px-2">
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                   <div className="text-center shrink-0">
-                     <p className="text-base font-bold">{p.overall}</p>
-                     <p className="text-[8px] text-muted-foreground uppercase">OVR</p>
-                   </div>
-                   {hasScouts ? (
-                     <div className="text-center shrink-0">
-                       <p className="text-base font-bold text-primary">{p.potential}</p>
-                       <p className="text-[8px] text-muted-foreground uppercase">POT</p>
-                     </div>
-                   ) : (
-                     <div className="text-center shrink-0">
-                       <p className="text-base font-bold text-muted-foreground/30">???</p>
-                       <p className="text-[8px] text-muted-foreground uppercase">POT</p>
-                     </div>
-                   )}
-                   <div className="w-10 shrink-0">
-                     {hasScouts ? (
-                       <Progress value={(p.overall / p.potential) * 100} className="h-1.5 progress-glow" />
-                     ) : (
-                       <Progress value={50} className="h-1.5 opacity-30" />
-                     )}
-                   </div>
-                  <Button size="sm" onClick={() => onPromote(p.id)} className="shrink-0 h-7 text-[10px] sm:text-xs px-2 sm:px-3">
-                    <UserPlus className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Promover</span>
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Observe modal */}
+      <Dialog open={!!observed} onOpenChange={(o) => !o && setObserved(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> Observar Jovem
+            </DialogTitle>
+          </DialogHeader>
+          {observed && (
+            <div className="space-y-3 text-sm">
+              <div className="p-3 rounded-lg bg-accent/40 space-y-1">
+                <p className="font-bold text-base">{observed.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {observed.position} • {observed.age} anos • {observed.monthsInAcademy ?? 0} meses na base
+                </p>
+                {observed.personality && (
+                  <p className="text-xs"><strong>Personalidade:</strong> <span className="capitalize">{observed.personality}</span></p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded bg-accent/40 text-center">
+                  <p className="text-2xl font-bold">{observed.overall}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">OVR Atual</p>
+                </div>
+                <div className="p-2 rounded bg-accent/40 text-center">
+                  {hasScouts ? (
+                    <>
+                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].color}`}>
+                        {observed.potential}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase">POT Máximo</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-muted-foreground/30">???</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">POT (precisa olheiro)</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1 text-xs">
+                <p><strong>Status:</strong> <span className={evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].color}>
+                  {evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].emoji} {evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].label}
+                </span></p>
+                <p><strong>Jogos pela base:</strong> {observed.gamesPlayed ?? 0}</p>
+                <p><strong>Moral:</strong> {observed.morale ?? 0}/100</p>
+                <p><strong>Estamina:</strong> {observed.stamina ?? 0}/100</p>
+                {hasScouts && (
+                  <p><strong>Tier de potencial:</strong> <span className={potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].color}>
+                    {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].emoji} {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].label}
+                  </span></p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
