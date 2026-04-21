@@ -47,9 +47,13 @@ export interface PlayerAttributes {
 
 export interface Injury {
   type: string;
-  severity: 'leve' | 'moderada' | 'grave';
+  severity: 'leve' | 'moderada' | 'grave' | 'cronica';
   weeksRemaining: number;
   originalWeeks: number;
+  /** V2 — região corporal afetada (muscular/joelho/ligamento/tornozelo/fadiga) */
+  bodyPart?: 'muscular' | 'joelho' | 'ligamento' | 'tornozelo' | 'fadiga';
+  /** V2 — flag de recaída (lesão dobrou tempo) */
+  isRelapse?: boolean;
 }
 
 export interface PlayerHistoryEntry {
