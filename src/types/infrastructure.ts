@@ -82,7 +82,8 @@ export function getAcademyUpgradeCost(currentLevel: number): number {
   return academyUpgradeCosts[currentLevel + 1] ?? academyUpgradeCosts[currentLevel] ?? 999999999;
 }
 
-export function getUpgradeCost(currentLevel: number): number {
+export function getUpgradeCost(currentLevel: number, facility?: 'physiotherapy' | string): number {
+  if (facility === 'physiotherapy') return physiotherapyCosts[currentLevel + 1] ?? 999_999_999;
   return facilityCosts[currentLevel + 1] ?? 999999999;
 }
 
@@ -90,8 +91,44 @@ export const defaultInfrastructure: Infrastructure = {
   trainingCenter: { level: 1, maxLevel: 30 },
   youthAcademy: { level: 0, maxLevel: 30 },
   stadium: { level: 1, maxLevel: 15 },
-  physiotherapy: { level: 0, maxLevel: 10 },
+  physiotherapy: { level: 1, maxLevel: 20 },
 };
+
+// ─── Physiotherapy V2 (Nv 1-20) ───────────────────────────────────────────
+export const physiotherapyCosts: Record<number, number> = {
+  1: 300_000, 2: 500_000, 3: 800_000, 4: 1_200_000, 5: 1_800_000,
+  6: 2_500_000, 7: 3_500_000, 8: 4_800_000, 9: 6_000_000,
+  10: 8_000_000, 11: 10_000_000, 12: 13_000_000, 13: 16_000_000, 14: 20_000_000,
+  15: 25_000_000, 16: 32_000_000, 17: 40_000_000, 18: 50_000_000, 19: 65_000_000,
+};
+
+export function getPhysioUpgradeCost(currentLevel: number): number {
+  return physiotherapyCosts[currentLevel] ?? 999_999_999;
+}
+
+/** Bônus do fisio por nível (V2). */
+export interface PhysioBonuses {
+  /** % a mais de velocidade na recuperação de lesão. */
+  recoverySpeed: number;
+  /** % de redução do risco de lesão. */
+  injuryRiskReduction: number;
+  /** % de redução da chance de recaída. */
+  relapseReduction: number;
+  /** % de proteção quando jogador atua com stamina baixa. */
+  lowStaminaProtection: number;
+}
+
+export function getPhysioBonuses(level: number): PhysioBonuses {
+  if (level >= 16) return { recoverySpeed: 0.15, injuryRiskReduction: 0.15, relapseReduction: 0.20, lowStaminaProtection: 0.15 };
+  if (level >= 11) return { recoverySpeed: 0.10, injuryRiskReduction: 0.10, relapseReduction: 0.10, lowStaminaProtection: 0.10 };
+  if (level >= 6)  return { recoverySpeed: 0.05, injuryRiskReduction: 0.05, relapseReduction: 0.05, lowStaminaProtection: 0.05 };
+  return { recoverySpeed: 0, injuryRiskReduction: 0, relapseReduction: 0, lowStaminaProtection: 0 };
+}
+
+/** Recuperação diária de stamina V2: base 30 + 1 por nível, máx 50. */
+export function getDailyStaminaRecovery(physioLevel: number): number {
+  return Math.min(50, 30 + Math.max(0, physioLevel));
+}
 
 // Training system helpers
 export function getTrainingThreshold(ctLevel: number): number {

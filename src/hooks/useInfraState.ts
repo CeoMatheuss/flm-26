@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   Infrastructure, defaultInfrastructure, getUpgradeCost, getAcademyUpgradeCost,
   getStadiumUpgradeCost, getStadiumCapacity, getTrainingCenterUpgradeCost,
+  getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
 } from '@/types/infrastructure';
@@ -45,12 +46,21 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
-    if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure[facility].level);
-    else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure[facility].level);
-    else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure[facility].level);
-    else cost = getUpgradeCost(infrastructure[facility].level);
+    if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
+    else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure.youthAcademy.level);
+    else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure.trainingCenter.level);
+    else cost = getPhysioUpgradeCost(infrastructure.physiotherapy.level);
 
-    if (clubBudget < cost) return;
+    // Hard cap on physiotherapy at level 20
+    if (facility === 'physiotherapy' && infrastructure.physiotherapy.level >= 20) {
+      toast.error('🏥 Fisioterapia já está no nível máximo (20)!');
+      return;
+    }
+
+    if (clubBudget < cost) {
+      toast.error(`💸 Orçamento insuficiente para upgrade!`);
+      return;
+    }
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 

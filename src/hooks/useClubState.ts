@@ -20,6 +20,7 @@ export function useClubState(initialState: any, userId?: string) {
   const [freeAgents, setFreeAgents] = useState<Player[]>(initialState?.freeAgents ?? generateFreeAgents(12));
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
   const [trainingFocus, setTrainingFocus] = useState<Record<string, TrainingFocus>>(initialState?.trainingFocus ?? {});
+  const [trainingIntensity, setTrainingIntensity] = useState<Record<string, 'leve' | 'moderado' | 'pesado'>>(initialState?.trainingIntensity ?? {});
   const [listedForSale, setListedForSale] = useState<string[]>([]);
   const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
 
@@ -52,6 +53,11 @@ export function useClubState(initialState: any, userId?: string) {
       const focusNames: Record<string, string> = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Defesa', physical: 'Físico', dribbling: 'Drible', positioning: 'Posicionamento', heading: 'Cabeceio', vision: 'Visão', composure: 'Compostura' };
       toast.success(`Treino focado em ${focusNames[focus] || focus}!`);
     }
+  }, []);
+
+  const setPlayerTrainingIntensity = useCallback((playerId: string, intensity: 'leve' | 'moderado' | 'pesado') => {
+    setTrainingIntensity(prev => ({ ...prev, [playerId]: intensity }));
+    console.log('[Persist] trainingIntensity', playerId, intensity);
   }, []);
 
   const restPlayer = useCallback((playerId: string) => {
@@ -248,9 +254,9 @@ export function useClubState(initialState: any, userId?: string) {
 
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
-    loanedPlayers, setLoanedPlayers, trainingFocus, listedForSale, clubProfile, setClubProfile,
+    loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
     totalSalaries, loansOut, loansIn,
-    trainPlayer, setPlayerTrainingFocus, restPlayer, buyPlayer, signFreeAgent, renewContract,
+    trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,

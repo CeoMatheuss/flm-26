@@ -47,9 +47,13 @@ export interface PlayerAttributes {
 
 export interface Injury {
   type: string;
-  severity: 'leve' | 'moderada' | 'grave';
+  severity: 'leve' | 'moderada' | 'grave' | 'cronica';
   weeksRemaining: number;
   originalWeeks: number;
+  /** V2 — região corporal afetada (muscular/joelho/ligamento/tornozelo/fadiga) */
+  bodyPart?: 'muscular' | 'joelho' | 'ligamento' | 'tornozelo' | 'fadiga';
+  /** V2 — flag de recaída (lesão dobrou tempo) */
+  isRelapse?: boolean;
 }
 
 export interface PlayerHistoryEntry {
@@ -84,6 +88,10 @@ export interface Player {
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
   personality?: PlayerPersonality;
+  /** V2 — propensão a lesão (0-100). Aumenta com o histórico. */
+  injuryProneness?: number;
+  /** V2 — contador de lesões já sofridas na carreira. */
+  injuryCount?: number;
   // ── Training V3 (Progress %) ──
   /** Status de evolução visual */
   trainingStatus?: 'evoluindo' | 'normal' | 'lento' | 'travado';
