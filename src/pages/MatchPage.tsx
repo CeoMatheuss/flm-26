@@ -717,6 +717,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Tática</p>
                       <p className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate capitalize">
+                        {(liveTactics.playStyle || 'equilibrado')} · pressão {(liveTactics.pressing || 'medio')}
+                      </p>
                     </div>
                   </div>
                 </button>
