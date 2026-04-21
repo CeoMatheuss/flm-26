@@ -467,7 +467,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
     const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
     const auctionEligible = player.overall >= 65 && player.age <= 35;
-    const canRemoveFromSquad = players.length > 11;
 
     const stateBorder = player.injury
       ? 'border-l-red-500'
@@ -475,14 +474,35 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       ? 'border-l-amber-500'
       : 'border-l-transparent';
 
+    // Swap mode logic
+    const isPendingSelf = pendingSwap?.player.id === player.id;
+    const isCandidate = !!pendingSwap && !isPendingSelf && (
+      (pendingSwap.from === 'starters' && currentGroup !== 'starters') ||
+      (pendingSwap.from !== 'starters' && currentGroup === 'starters')
+    );
+    const samePosition = pendingSwap && pendingSwap.player.position === player.position;
+    const swapHighlight = isPendingSelf
+      ? 'ring-2 ring-primary/60 bg-primary/5'
+      : isCandidate
+        ? (samePosition ? 'ring-1 ring-emerald-500/50 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10' : 'cursor-pointer hover:ring-1 hover:ring-primary/40')
+        : '';
+
+    const handleRowClick = () => {
+      if (isCandidate) {
+        completeSwap(player.id);
+      } else {
+        setViewingPlayer(player);
+      }
+    };
+
     return (
       <div
         key={player.id}
-        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder}`}
+        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder} ${swapHighlight}`}
       >
         <div className="flex items-center gap-2 p-2">
           <button
-            onClick={() => setViewingPlayer(player)}
+            onClick={handleRowClick}
             className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg} hover:scale-105 transition-transform`}
           >
             <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
@@ -490,7 +510,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </button>
 
           <button
-            onClick={() => setViewingPlayer(player)}
+            onClick={handleRowClick}
             className="flex-1 min-w-0 text-left"
           >
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -506,6 +526,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               {player.injury && (
                 <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30" variant="outline">
                   <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
+                </Badge>
+              )}
+              {isCandidate && samePosition && (
+                <Badge className="text-[8px] px-1 h-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30" variant="outline">
+                  ✓ mesma posição
                 </Badge>
               )}
             </div>
@@ -542,65 +567,43 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </button>
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
-            {onReorderPlayers && (
-              <Popover>
-                <PopoverTrigger asChild>
+            {!pendingSwap && (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+                {onReorderPlayers && (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 px-1.5 text-[10px] gap-1 text-primary hover:bg-primary/10"
-                    title={currentGroup === 'starters' ? 'Substituir por reserva' : 'Subir ao time titular'}
+                    title={currentGroup === 'starters' ? 'Tirar do time titular' : 'Subir ao time titular'}
+                    onClick={() => startSwap(player, currentGroup)}
                   >
                     <Repeat className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Banco' : 'Subir'}</span>
+                    <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Tirar' : 'Subir'}</span>
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 p-2">
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
-                    {currentGroup === 'starters' ? 'Trocar por um reserva' : 'Trocar por um titular'}
-                  </p>
-                  <div className="max-h-64 overflow-y-auto space-y-0.5">
-                    {(() => {
-                      const candidates = currentGroup === 'starters'
-                        ? [...groupedPlayers.reserves, ...groupedPlayers.out]
-                        : groupedPlayers.starters;
-                      const sorted = [
-                        ...candidates.filter(c => c.player.position === player.position),
-                        ...candidates.filter(c => c.player.position !== player.position),
-                      ];
-                      if (sorted.length === 0) {
-                        return <p className="text-[10px] text-muted-foreground p-2 text-center">Nenhum jogador disponível</p>;
-                      }
-                      return sorted.map(({ player: cand }) => {
-                        const candOvr = getOvrColor(cand.overall);
-                        const samePos = cand.position === player.position;
-                        return (
-                          <button
-                            key={cand.id}
-                            onClick={() => swapPlayers(player.id, cand.id)}
-                            className="w-full flex items-center gap-2 p-1.5 rounded-md hover:bg-accent/60 transition-colors text-left"
-                          >
-                            <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${candOvr.border} ${candOvr.bg}`}>
-                              <span className={`text-[10px] font-black ${candOvr.text}`}>{cand.overall}</span>
-                            </div>
-                            <Badge className={`text-[8px] px-1 py-0 h-3.5 font-bold border ${posColors[cand.position]}`} variant="outline">{cand.position}</Badge>
-                            <span className="text-[11px] font-medium truncate flex-1">{cand.name}</span>
-                            {samePos && <span className="text-[8px] text-emerald-400 shrink-0">✓</span>}
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                )}
+                {auctionEligible && (
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
+                    <Gavel className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </>
             )}
-            {auctionEligible && (
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
-                <Gavel className="h-3.5 w-3.5" />
+            {isCandidate && (
+              <Button
+                size="sm"
+                className="h-7 px-2 text-[10px] gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={(e) => { e.stopPropagation(); completeSwap(player.id); }}
+              >
+                <CheckCircle className="h-3.5 w-3.5" /> Trocar
               </Button>
+            )}
+            {isPendingSelf && (
+              <Badge className="text-[9px] bg-primary/15 text-primary border-primary/30" variant="outline">
+                ⚡ Selecionado
+              </Badge>
             )}
           </div>
         </div>
