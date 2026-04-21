@@ -255,7 +255,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-primary/50 hover:bg-primary/5" onClick={() => onListForSale(player.id)} disabled={players.length <= 11}>
-            <Tag className="h-3.5 w-3.5" /> Listar no Mercado
+            <Tag className="h-3.5 w-3.5" /> Anunciar no Mercado
           </Button>
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-cyan-500/50 hover:bg-cyan-500/5" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (players.length <= 11)}>
             <ArrowLeftRight className="h-3.5 w-3.5" /> Emprestar
