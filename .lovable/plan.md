@@ -1,90 +1,95 @@
 
 
-# Plano: Elenco mais simples + Empréstimo via mercado + Renomear "Listar" → "Anunciar" + Botão Substituir
+# Plano: Empréstimo via mercado + Substituição inteligente + Mercado reorganizado
 
-5 mudanças focadas em clareza e em corrigir o fluxo de empréstimo:
+Quatro mudanças focadas em corrigir o fluxo de empréstimo no perfil, melhorar a UX de substituição e reorganizar o Mercado em uma única central.
 
-## 1. Empréstimo: enviar para o **Mercado de Empréstimos** (não emprestar direto)
+## 1. Empréstimo no perfil → enviar para Mercado de Empréstimos
 
-**Problema atual:** `SquadTab → onLoanOut` chama `game.loanOutPlayer(playerId)` que **remove o jogador do elenco imediatamente** sem passar pelo mercado.
+**Problema:** No `PlayerProfileModal.tsx`, o botão "Emprestar" recebe `onLoanOut` que pode estar conectado a `game.loanOutPlayer` (envio direto). Já no `SquadTab.tsx` perfil interno, o botão chama o callback do router — esse já vai para o mercado.
 
-**Correção:** No `GameTabRouter.tsx`, trocar o handler `onLoanOut` da `SquadTab` para usar a **mesma lógica do `OnlineMarketTab`** — invocar a edge function `process-transfer` com `action: 'loan-list'`. O jogador continua no elenco, fica anunciado em `loan_listings`, e só sai quando outro clube aceitar.
+**Correção:** Auditar TODOS os pontos onde o botão "Emprestar" aparece e garantir que sempre invoque o edge function `process-transfer` com `action: 'loan-list'`. Toast: *"{Jogador} anunciado no Mercado de Empréstimos!"*. O jogador permanece no elenco até alguém aceitar.
 
-```
-onLoanOut(playerId) →
-  supabase.functions.invoke('process-transfer', { 
-    action: 'loan-list', playerData, salary, clubName, sellerShield 
-  })
-  toast: "Jogador anunciado no Mercado de Empréstimos!"
-```
-
-A função antiga `game.loanOutPlayer` continua existindo (ainda é usada como fallback interno em `useClubState`), mas o `SquadTab` para de chamá-la diretamente.
-
-## 2. Renomear todos os "Listar" → "Anunciar"
-
-Trocas globais de texto/label:
-
-| Componente | Antes | Depois |
+| Local | Estado atual | Ação |
 |---|---|---|
-| `SquadTab.tsx` (botão de perfil) | "Listar no Mercado" | **"Anunciar no Mercado"** |
-| `SquadTab.tsx` (tooltip do ícone) | "Listar à venda" | **"Anunciar venda"** |
-| `PlayerProfileModal.tsx` | "Lista de Transferência" | **"Anunciar à venda"** |
-| `OnlineMarketTab.tsx` (qualquer "Listar" remanescente) | "Listar" | **"Anunciar"** |
-| Toasts | "listado no mercado" | **"anunciado no mercado"** |
+| `SquadTab` perfil interno (linha ~285) | Já chama `onLoanOut` do router → loan-list ✅ | OK |
+| `PlayerProfileModal.tsx` (linha ~103) | Recebe `onLoanOut` como prop | Onde for usado, garantir handler de loan-list |
+| `GameTabRouter` SquadTab `onLoanOut` | Já correto ✅ | OK |
+| `GameTabRouter` OnlineMarketTab `onLoanOut` | Já correto ✅ | OK |
 
-Internamente as variáveis (`onListForSale`, `listForSale`) ficam — só o **texto visível** muda.
+Resultado: comportamento 100% consistente — Emprestar = sempre anunciar.
 
-## 3. Tela inicial do Elenco: remover botões inline (Anunciar / Emprestar / Rescindir)
+## 2. Substituição inteligente: pré-seleciona e leva para o Banco/Fora
 
-**Problema:** Os 3 ícones (🏷 / ↔ / 🗑) na linha de cada jogador da tela principal poluem a interface.
+**Problema atual:** Botão "🔁 Banco" em titular abre Popover ali mesmo, exigindo escolher manualmente o reserva. Usuário pediu: ao clicar, **levar até a aba Banco** com o titular **pré-selecionado** para ele escolher por quem trocar lá.
 
-**Solução:** No `renderPlayerRow` do `SquadTab.tsx`, remover esses 3 botões. **Mantém apenas:**
-- 👁 **Ver perfil** (para abrir o detalhe completo)
-- 🔁 **Substituir** (NOVO — ver item 4)
-- Botão de leilão só fica para jogadores elegíveis (mantém)
+**Novo fluxo:**
 
-As ações de Anunciar / Emprestar / Rescindir continuam disponíveis **dentro do perfil completo do jogador** (que já tem essas ações).
+- Em **Titulares**: botão "🔁 Tirar" → muda automaticamente para a sub-aba "🪑 Banco" (e marca o titular como pendente)
+- Na aba Banco/Fora aparece uma **barra fixa no topo** destacada:
+  ```
+  ⚡ Trocando: [OVR] João (ZAG) — Toque em quem entra no time
+                                                    [✕ Cancelar]
+  ```
+- Cada card de reserva fica clicável (o card todo vira botão de "trocar"). Reservas da mesma posição ganham destaque verde "✓ mesma posição".
+- Ao clicar em um reserva: chama `swapPlayers(titularId, reservaId)`, exibe toast *"{Reserva} entrou no time titular no lugar de {Titular}"*, **volta para a aba Titulares** automaticamente e limpa estado.
+- O mesmo no inverso: em Banco/Fora botão "🔁 Subir" → leva para aba Titulares com o reserva pré-selecionado, barra mostra "Trocando: {Reserva}", clica em titular para finalizar.
 
-Resultado: linha mais limpa com no máximo 2-3 ícones em vez de 5-6.
+**Implementação:**
+- Estado `pendingSwap: { player: Player; from: Group } | null` no `SquadTab`
+- Estado `currentSquadSubTab` controlado (em vez de `defaultValue`) para forçar mudança de aba
+- Remover Popover atual, substituir por essa barra fixa + cards clicáveis
+- Botão "Cancelar" e tecla Esc cancelam
 
-## 4. Novo botão **"🔁 Substituir"** em cada jogador
+## 3. Mercado reorganizado: Auction movido para dentro
 
-Funcionalidade: trocar rapidamente um jogador entre **Titular ↔ Banco** (caso de uso mais comum).
+**Problema:** Aba "Leilão" hoje fica solta no menu lateral (`auction`). Usuário quer **TUDO no mercado**: Mercado, Jogadores Livres, Minhas Propostas (recebidas+enviadas), Leilão.
 
-**Comportamento:**
-- **Em Titulares:** botão "🔁 Banco" — abre um pequeno menu listando todos os reservas com mesma posição (ou todos os reservas se nenhum bater); ao escolher, troca a posição dos dois no array `players` e chama `onReorderPlayers`.
-- **Em Banco/Fora:** botão "🔁 Subir" — abre menu com todos os titulares da mesma posição; ao escolher, troca os dois.
-- Toast: *"Pedro entrou no time titular no lugar de João"*.
+**Nova estrutura do Mercado** (em `OnlineMarketTab.tsx`):
 
-UI: Popover compacto do shadcn ancorado no botão, com lista filtrada (mesma posição primeiro, outras depois).
+```
+[🌐 Mercado]  [🕵️ Livres]  [⚖️ Leilão]  [📨 Propostas]  [🔄 Empréstimos]
+```
 
-Substitui também o atual painel de "Mover: Titular / Banco / Fora" — mais intuitivo e menos confuso (a comunidade reclamou).
+Mudanças:
+- **Recebidas + Enviadas** unificadas em **"📨 Propostas"** com sub-toggle interno (`Recebidas | Enviadas`) ou seções empilhadas. Badge de notificação no triggers principal mantém contador de pendentes.
+- **Nova aba "⚖️ Leilão"** que renderiza o `AuctionTab` (já existe) inline dentro de `OnlineMarketTab`. O `AuctionTab` recebe os mesmos props (`userId`, `clubName`, `players`, `budget`, `isPremium`).
+- Remover entrada "Leilão de Jogadores" do `GameMenu.tsx` (ou redirecionar para `market` + tab `auction`).
+- Manter o Hero de orçamento 40/40 no topo.
 
-## 5. Card de jogador mais informativo (menos botões, mais dados)
+**Layout final do mercado** (5 abas em vez de 5 dispersas):
 
-Já que tiramos os botões da linha, **liberamos espaço** para deixar a linha mais informativa. Adicionar (sem inflar):
+| Aba | Conteúdo |
+|---|---|
+| 🌐 Mercado | Listagens à venda + filtros (mantém) |
+| 🕵️ Livres | `FreeAgentMarketPanel` com sub-abas Disponíveis/Ativas/Histórico (mantém) |
+| ⚖️ Leilão | `AuctionTab` embutido (NOVO aqui) |
+| 📨 Propostas | Recebidas + Enviadas em seções (consolidação) |
+| 🔄 Empréstimos | Cedidos pelo usuário (mantém) |
 
-- ⚽ **Gols/Assistências** da temporada inline (pequeno: `⚽3 🅰️5`)
-- 🏟️ **Jogos disputados** (`🏟️12`)
-- Personalidade com **nome curto** ao lado do emoji em viewport ≥ md (ex: `🦁 Líder`)
+## 4. Auditoria geral das abas
 
-Mantém: OVR, posição, nome, idade, salário, contrato, valor com tendência, ★ média, barras estamina/moral.
+Conferir consistência em todas as abas onde aparecem ações de jogador:
 
-Indicador de status na borda esquerda permanece (vermelho lesão, âmbar contrato).
+- **PlayerProfileModal**: usar mesmo handler `loan-list` se for renderizado fora do SquadTab
+- **OnlineMarketTab "Empréstimos"**: confirmar que mostra apenas `seller_id = userId` (já está)
+- **GameMenu**: remover ou redirecionar a entrada "Leilão de Jogadores" (vira atalho para Mercado→Leilão)
+- **Toasts**: padronizar idioma — "Anunciar" em vez de "Listar" em todos os lugares restantes (ainda há "listado no mercado" no `GameTabRouter` linha 141 e "listado no mercado de empréstimos" linha 269)
 
 ## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/GameTabRouter.tsx` | `onLoanOut` da `SquadTab` agora chama `supabase.functions.invoke('process-transfer', { action: 'loan-list', ... })` em vez de `game.loanOutPlayer` |
-| `src/components/game/SquadTab.tsx` | Remover ícones inline Anunciar/Emprestar/Rescindir do `renderPlayerRow`; trocar texto "Listar" → "Anunciar" no perfil; adicionar botão "🔁 Substituir" com Popover de troca; adicionar gols/assistências/jogos na linha; remover painel "Mover: Titular/Banco/Fora" (substituído pelo novo botão) |
-| `src/components/game/PlayerProfileModal.tsx` | Trocar label "Lista de Transferência" → "Anunciar à venda" |
-| `src/components/game/OnlineMarketTab.tsx` | Trocar quaisquer ocorrências visíveis de "Listar/Listado" por "Anunciar/Anunciado" |
+| `src/components/game/SquadTab.tsx` | Substituir Popover por fluxo de pré-seleção + barra fixa de troca + mudança automática de sub-aba; cards de candidatos clicáveis inteiros |
+| `src/components/game/PlayerProfileModal.tsx` | Confirmar que `onLoanOut` chama loan-list (depende de quem renderiza); padronizar label "Emprestar → Anunciar empréstimo" |
+| `src/components/game/OnlineMarketTab.tsx` | Adicionar aba "⚖️ Leilão" embutindo `AuctionTab`; consolidar Recebidas+Enviadas em "📨 Propostas"; reduzir para 5 abas reorganizadas |
+| `src/components/game/GameMenu.tsx` | Remover (ou redirecionar) item "Leilão de Jogadores" para `market` |
+| `src/components/game/GameTabRouter.tsx` | Atualizar toast de listagem para usar "anunciado"; passar `isPremium` para o OnlineMarketTab (necessário para AuctionTab) |
 
 ## Compatibilidade
 
-- Schema do banco inalterado
-- `loanOutPlayer` ainda existe em `useClubState` e `useGame` (não removo — pode estar em uso em flows futuros)
-- A janela de 7h e o fluxo de aceite via `process-transfer` action `loan-accept` continuam iguais
-- Usuário enxerga: ao clicar em "Emprestar" no perfil, recebe toast "Anunciado no Mercado de Empréstimos!" e o jogador **continua no elenco** até outro clube aceitar
+- Schema do banco intacto
+- A aba `auction` no router permanece (acessível via deep-link), mas o ponto de entrada principal vira o Mercado
+- Fluxo de `swapPlayers` continua usando `onReorderPlayers` (sem novo callback)
+- Empréstimo continua passando pela edge function `process-transfer` com janela de 7h
 
