@@ -821,6 +821,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-yellow-300">Stats</p>
                       <p className="text-base sm:text-lg font-black text-foreground">{possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span></p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                        ⚡ Chutes {stats.shots[0]}–{stats.shots[1]} · 🎯 {stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}
+                      </p>
                     </div>
                   </div>
                 </button>
