@@ -1165,7 +1165,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue }: {
+function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason }: {
   homePlayers?: Player[];
   subsUsed: number;
   maxSubs: number;
@@ -1178,6 +1178,8 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   isFinished: boolean;
   substitutedPlayerIds: Set<string>;
   subQueue: { outId: string; inId: string }[];
+  blocked?: boolean;
+  blockedReason?: string;
 }) {
   if (!homePlayers || homePlayers.length <= 11) {
     return (
