@@ -1,5 +1,5 @@
 import { Player, PlayerAttributes, PlayerHistoryEntry, ScoutReport, PlayerPersonality, allPersonalities } from '@/types/game';
-import { YouthProspect, getYouthMinOverall, getYouthMaxOverall } from '@/types/infrastructure';
+import { YouthProspect, getYouthMinOverall, getYouthMaxOverall, getPotentialTier, computeEvolutionStatus, computeYouthTag } from '@/types/infrastructure';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -255,16 +255,31 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
   const pos = positions[Math.floor(Math.random() * positions.length)];
   const minOvr = getYouthMinOverall(academyLevel);
   const maxOvr = getYouthMaxOverall(academyLevel);
-  const targetOverall = Math.floor(Math.random() * (maxOvr - minOvr) + minOvr);
+  const targetOverall = Math.floor(Math.random() * (maxOvr - minOvr + 1) + minOvr);
   const age = Math.floor(Math.random() * 3 + 16);
   const attributes = generateAttributes(pos, targetOverall);
   const overall = calculateOverall(attributes, pos);
-  // Potential by academy level: lvl1=+3~5, lvl15=+3~15, lvl26-30=chance of generational talent
-  const maxPotentialBonus = Math.min(30, 3 + Math.floor(academyLevel * 0.9));
-  const isGenerational = academyLevel >= 26 && Math.random() < (academyLevel - 25) * 0.02; // up to 10% at lvl 30
-  const potential = Math.min(99, overall + Math.floor(Math.random() * maxPotentialBonus + 3) + (isGenerational ? 10 : 0));
 
-  return {
+  // Potential cap by academy level (Base V2)
+  let maxPot = 65;
+  if (academyLevel <= 5) maxPot = 70;
+  else if (academyLevel <= 10) maxPot = 78;
+  else if (academyLevel <= 20) maxPot = 88;
+  else if (academyLevel <= 25) maxPot = 94;
+  else maxPot = 99;
+
+  const minBonus = 3;
+  const maxBonus = Math.max(minBonus + 1, maxPot - overall);
+  let potential = overall + Math.floor(Math.random() * (maxBonus - minBonus + 1) + minBonus);
+
+  // Generational chance (POT 95-99) only at lvl 26+
+  const generationalChance = academyLevel >= 26 ? (academyLevel - 25) * 0.025 : 0;
+  if (Math.random() < generationalChance) {
+    potential = Math.max(potential, 95 + Math.floor(Math.random() * 5));
+  }
+  potential = Math.min(99, Math.max(overall + 1, potential));
+
+  const baseProspect: YouthProspect = {
     id: generateId(),
     name: randomName(),
     position: pos,
@@ -282,7 +297,14 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
     potential,
     monthsInAcademy: 0,
     personality: randomPersonality(),
+    potentialTier: getPotentialTier(potential),
+    highlightStreak: 0,
+    stagnationCycles: 0,
+    injuredCycles: 0,
   };
+  baseProspect.evolutionStatus = computeEvolutionStatus(baseProspect);
+  baseProspect.youthTag = computeYouthTag(baseProspect);
+  return baseProspect;
 }
 
 export function generateYouthBatch(count: number, academyLevel: number): YouthProspect[] {
