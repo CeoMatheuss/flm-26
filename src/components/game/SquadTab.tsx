@@ -401,8 +401,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     );
   }
 
-  // ─── Player card render (used in 3 sub-tabs) ───
-  const renderPlayerCard = (player: Player, currentGroup: Group) => {
+  // ─── Compact Player Row (single line, scannable) ───
+  const renderPlayerRow = (player: Player, currentGroup: Group) => {
     const avgRating = player.seasonRatings && player.seasonRatings.length > 0
       ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length) : null;
     const ovr = getOvrColor(player.overall);
@@ -413,49 +413,51 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const auctionEligible = player.overall >= 65 && player.age <= 35;
     const canRemoveFromSquad = players.length > 11;
 
-    const borderClass = player.injury
-      ? 'border-red-500/40 bg-red-500/5'
+    const stateBorder = player.injury
+      ? 'border-l-red-500'
       : player.contract <= 1
-      ? 'border-amber-500/30 bg-amber-500/5'
-      : 'border-border/20 bg-card/50 hover:border-border/40';
+      ? 'border-l-amber-500'
+      : 'border-l-transparent';
 
     return (
       <div
         key={player.id}
-        className={`group rounded-xl border transition-all duration-200 ${borderClass}`}
+        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder}`}
       >
-        {/* Top row: OVR + main info + reorder buttons */}
-        <div className="flex items-center gap-2.5 p-2.5 cursor-pointer" onClick={() => setViewingPlayer(player)}>
-          <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg}`}>
+        <div className="flex items-center gap-2 p-2">
+          <button
+            onClick={() => setViewingPlayer(player)}
+            className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg} hover:scale-105 transition-transform`}
+          >
             <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
-            <span className="text-[7px] text-muted-foreground">OVR</span>
-          </div>
+            <span className="text-[7px] text-muted-foreground -mt-0.5">OVR</span>
+          </button>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-              <Badge className={`text-[8px] px-1 py-0 h-4 font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
+          <button
+            onClick={() => setViewingPlayer(player)}
+            className="flex-1 min-w-0 text-left"
+          >
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Badge className={`text-[9px] px-1 py-0 h-4 font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
               {player.shirtNumber != null && player.shirtNumber > 0 && (
                 <span className="text-[9px] font-mono text-muted-foreground">#{player.shirtNumber}</span>
               )}
               <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
+              {isPlayerGem(player) && <span className="text-amber-400 text-xs" title="Joia!">💎</span>}
               {player.personality && personalityLabels[player.personality] && (
                 <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
               )}
-              {isPlayerGem(player) && <span className="text-amber-400 text-xs" title="Joia!">💎</span>}
               {player.injury && (
-                <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30 shrink-0" variant="outline">
+                <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30" variant="outline">
                   <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
                 </Badge>
               )}
-              {player.contract <= 1 && !player.injury && (
-                <span className="text-[9px] text-amber-400 font-bold shrink-0">⚠️</span>
-              )}
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5 flex-wrap">
               <span>{player.age}a</span>
-              <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k</span>
-              <span>📄{player.contract}a</span>
-              <span className={`font-bold ${trendColor}`} title={`Valor de mercado: ${formatMoney(value)}`}>
+              <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k/m</span>
+              <span className={player.contract <= 1 ? 'text-amber-400 font-bold' : ''}>📄{player.contract}a</span>
+              <span className={`font-bold ${trendColor}`} title={`Valor: ${formatMoney(value)}`}>
                 💰{(value / 1000).toFixed(0)}k {trendIcon}
               </span>
               {avgRating != null && (
@@ -464,71 +466,65 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </span>
               )}
             </div>
-          </div>
-
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-foreground/60 shrink-0 transition-colors" />
-        </div>
-
-        {/* Stamina + Morale bars */}
-        <div className="grid grid-cols-2 gap-2 px-2.5 pb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-muted-foreground shrink-0 w-7">⚡{player.stamina}%</span>
-            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className={`h-full rounded-full transition-all ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
+                <span className="text-[8px] text-muted-foreground">⚡</span>
+                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                  <div className={`h-full rounded-full ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
+                <span className="text-[8px]">{getMoraleEmoji(player.morale)}</span>
+                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                  <div className={`h-full rounded-full ${getMoraleColor(player.morale)}`} style={{ width: `${player.morale}%` }} />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-muted-foreground shrink-0 w-7">{getMoraleEmoji(player.morale)}{player.morale}%</span>
-            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className={`h-full rounded-full transition-all ${getMoraleColor(player.morale)}`} style={{ width: `${player.morale}%` }} />
-            </div>
+          </button>
+
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onListForSale(player.id)} disabled={!canRemoveFromSquad} title="Listar à venda">
+              <Tag className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-cyan-400 hover:bg-cyan-500/10" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || !canRemoveFromSquad} title="Emprestar">
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+            </Button>
+            {auctionEligible && (
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
+                <Gavel className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onRescindPlayer && (
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={!canRemoveFromSquad} title="Rescindir">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Action row */}
-        <div className="flex items-center gap-1 p-2 pt-1 border-t border-border/15 flex-wrap">
-          {/* Reorder buttons */}
-          {onReorderPlayers && (
-            <>
-              {currentGroup !== 'starters' && (
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-emerald-400 hover:bg-emerald-500/10" onClick={() => moveToGroup(player.id, 'starters')} title="Promover para titular">
-                  <ArrowUp className="h-3 w-3" /> Titular
-                </Button>
-              )}
-              {currentGroup !== 'reserves' && (
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-blue-400 hover:bg-blue-500/10" onClick={() => moveToGroup(player.id, 'reserves')} title="Mandar para banco">
-                  <Armchair className="h-3 w-3" /> Banco
-                </Button>
-              )}
-              {currentGroup !== 'out' && (
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] gap-1 text-muted-foreground hover:bg-accent/50" onClick={() => moveToGroup(player.id, 'out')} title="Fora do elenco">
-                  <Package className="h-3 w-3" /> Fora
-                </Button>
-              )}
-            </>
-          )}
-          <div className="flex-1" />
-          {/* Action icons */}
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
-            <Eye className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onListForSale(player.id)} disabled={!canRemoveFromSquad} title="Listar no mercado">
-            <Tag className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-cyan-400 hover:bg-cyan-500/10" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || !canRemoveFromSquad} title="Emprestar">
-            <ArrowLeftRight className="h-3.5 w-3.5" />
-          </Button>
-          {auctionEligible && (
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
-              <Gavel className="h-3.5 w-3.5" />
-            </Button>
-          )}
-          {onRescindPlayer && (
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={!canRemoveFromSquad} title="Rescindir">
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+        {onReorderPlayers && (
+          <div className="flex items-center gap-1 px-2 pb-1.5 -mt-0.5">
+            <span className="text-[8px] uppercase tracking-wider text-muted-foreground/50 mr-1">Mover:</span>
+            {currentGroup !== 'starters' && (
+              <button onClick={() => moveToGroup(player.id, 'starters')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-0.5">
+                <ArrowUp className="h-2.5 w-2.5" /> Titular
+              </button>
+            )}
+            {currentGroup !== 'reserves' && (
+              <button onClick={() => moveToGroup(player.id, 'reserves')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center gap-0.5">
+                <Armchair className="h-2.5 w-2.5" /> Banco
+              </button>
+            )}
+            {currentGroup !== 'out' && (
+              <button onClick={() => moveToGroup(player.id, 'out')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground hover:bg-muted/70 transition-colors flex items-center gap-0.5">
+                <Package className="h-2.5 w-2.5" /> Fora
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -552,104 +548,126 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         </TabsList>
 
         <TabsContent value="squad" className="space-y-3 mt-3">
-          {/* Squad Overview */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center p-2.5 rounded-xl bg-accent/50 border border-border/20">
-              <p className="text-base font-black text-foreground">{players.length}</p>
-              <p className="text-[9px] text-muted-foreground">Jogadores</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-primary/10 to-card border border-primary/20">
+              <p className="text-base font-black text-foreground leading-none">{players.length}</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Plantel</p>
             </div>
-            <div className="text-center p-2.5 rounded-xl bg-accent/50 border border-border/20">
-              <p className="text-base font-black text-primary">{avgOvr}</p>
-              <p className="text-[9px] text-muted-foreground">Média OVR</p>
+            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-emerald-500/10 to-card border border-emerald-500/20">
+              <p className="text-base font-black text-emerald-400 leading-none">{avgOvr}</p>
+              <p className="text-[9px] text-muted-foreground mt-1">OVR Médio</p>
             </div>
-            <div className="text-center p-2.5 rounded-xl bg-accent/50 border border-border/20">
-              <p className="text-base font-black text-foreground">R${(totalSalary / 1000).toFixed(0)}k</p>
-              <p className="text-[9px] text-muted-foreground">Folha/mês</p>
+            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-amber-500/10 to-card border border-amber-500/20">
+              <p className="text-base font-black text-amber-400 leading-none">R${(totalSalary / 1000).toFixed(0)}k</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Folha/mês</p>
             </div>
-            <div className="text-center p-2.5 rounded-xl bg-accent/50 border border-border/20">
-              <p className={`text-base font-black ${injuredCount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>{injuredCount}</p>
-              <p className="text-[9px] text-muted-foreground">Lesionados</p>
+            <div className={`text-center p-2 rounded-xl bg-gradient-to-br ${injuredCount > 0 ? 'from-red-500/10 border-red-500/20' : 'from-muted/20 border-border/20'} to-card border`}>
+              <p className={`text-base font-black leading-none ${injuredCount > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{injuredCount}</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Lesionados</p>
             </div>
           </div>
 
-          {/* Position filter */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             <button
-              className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${!filterPos ? 'bg-primary/15 text-primary border border-primary/30' : 'bg-accent/30 text-muted-foreground border border-transparent hover:bg-accent/50'}`}
+              className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${!filterPos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
               onClick={() => setFilterPos(null)}
             >
-              Todos
+              Todos ({players.length})
             </button>
             {posOrder.map(pos => {
               const count = players.filter(p => p.position === pos).length;
               return (
                 <button
                   key={pos}
-                  className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${filterPos === pos ? 'bg-primary/15 text-primary border border-primary/30' : 'bg-accent/30 text-muted-foreground border border-transparent hover:bg-accent/50'}`}
+                  className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${filterPos === pos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
                   onClick={() => setFilterPos(filterPos === pos ? null : pos)}
                 >
                   {pos} ({count})
                 </button>
               );
             })}
+            <div className="shrink-0 ml-auto flex items-center gap-1 border-l border-border/30 pl-1.5">
+              <span className="text-[9px] text-muted-foreground shrink-0">↕</span>
+              {(['position', 'overall', 'age', 'value'] as const).map(s => (
+                <button
+                  key={s}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${sortBy === s ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setSortBy(s)}
+                >
+                  {s === 'position' ? 'Pos' : s === 'overall' ? 'OVR' : s === 'age' ? 'Idade' : 'Valor'}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Sort */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-muted-foreground shrink-0">Ordenar:</span>
-            {(['position', 'overall', 'age', 'salary', 'value'] as const).map(s => (
-              <button
-                key={s}
-                className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${sortBy === s ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={() => setSortBy(s)}
-              >
-                {s === 'position' ? 'Posição' : s === 'overall' ? 'OVR' : s === 'age' ? 'Idade' : s === 'salary' ? 'Salário' : 'Valor'}
-              </button>
-            ))}
-          </div>
-
-          {/* Sub-tabs: Titulares / Reservas / Fora do Elenco */}
           <Tabs defaultValue="starters" className="w-full">
-            <TabsList className="grid grid-cols-3 w-full rounded-xl h-9">
-              <TabsTrigger value="starters" className="text-[11px] gap-1.5 rounded-lg">
-                <Shirt className="h-3 w-3" /> Titulares
-                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.starters.length}</Badge>
+            <TabsList className="grid grid-cols-3 w-full rounded-xl h-11 p-1">
+              <TabsTrigger value="starters" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400">
+                <div className="flex items-center gap-1">
+                  <Shirt className="h-3 w-3" /> <span className="font-bold">Titulares</span>
+                </div>
+                <span className="text-[9px] opacity-70">{groupedPlayers.starters.length}/11</span>
               </TabsTrigger>
-              <TabsTrigger value="reserves" className="text-[11px] gap-1.5 rounded-lg">
-                <Armchair className="h-3 w-3" /> Reservas
-                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.reserves.length}</Badge>
+              <TabsTrigger value="reserves" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-blue-500/15 data-[state=active]:text-blue-400">
+                <div className="flex items-center gap-1">
+                  <Armchair className="h-3 w-3" /> <span className="font-bold">Banco</span>
+                </div>
+                <span className="text-[9px] opacity-70">{groupedPlayers.reserves.length} reservas</span>
               </TabsTrigger>
-              <TabsTrigger value="out" className="text-[11px] gap-1.5 rounded-lg">
-                <Package className="h-3 w-3" /> Fora
-                <Badge variant="outline" className="h-4 px-1 text-[8px]">{groupedPlayers.out.length}</Badge>
+              <TabsTrigger value="out" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-muted data-[state=active]:text-foreground">
+                <div className="flex items-center gap-1">
+                  <Package className="h-3 w-3" /> <span className="font-bold">Fora</span>
+                </div>
+                <span className="text-[9px] opacity-70">{groupedPlayers.out.length} jogadores</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="starters" className="space-y-1.5 mt-3">
-              <p className="text-[10px] text-muted-foreground px-1">11 jogadores que começam as partidas e são listados primeiro nas táticas.</p>
-              {startersList.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
-              ) : (
-                startersList.map(({ player }) => renderPlayerCard(player, 'starters'))
-              )}
+            <TabsContent value="starters" className="mt-3 space-y-2">
+              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
+                <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <span className="text-emerald-400 font-bold">11 titulares</span> que começam as partidas. Listados primeiro na escalação tática.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {startersList.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
+                ) : (
+                  startersList.map(({ player }) => renderPlayerRow(player, 'starters'))
+                )}
+              </div>
             </TabsContent>
 
-            <TabsContent value="reserves" className="space-y-1.5 mt-3">
-              <p className="text-[10px] text-muted-foreground px-1">Banco de reservas — disponíveis para substituições durante o jogo.</p>
-              {reservesList.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
-              ) : (
-                reservesList.map(({ player }) => renderPlayerCard(player, 'reserves'))
-              )}
+            <TabsContent value="reserves" className="mt-3 space-y-2">
+              <div className="rounded-lg bg-blue-500/5 border border-blue-500/15 p-2 flex items-start gap-2">
+                <Armchair className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <span className="text-blue-400 font-bold">Banco de reservas</span> — disponíveis para substituições durante o jogo.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {reservesList.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
+                ) : (
+                  reservesList.map(({ player }) => renderPlayerRow(player, 'reserves'))
+                )}
+              </div>
             </TabsContent>
 
-            <TabsContent value="out" className="space-y-1.5 mt-3">
-              <p className="text-[10px] text-muted-foreground px-1">Jogadores não convocados para os jogos. Treinam normalmente.</p>
-              {outList.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
-              ) : (
-                outList.map(({ player }) => renderPlayerCard(player, 'out'))
-              )}
+            <TabsContent value="out" className="mt-3 space-y-2">
+              <div className="rounded-lg bg-muted/30 border border-border/20 p-2 flex items-start gap-2">
+                <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <span className="text-foreground font-bold">Fora do elenco</span> — não convocados para os jogos. Treinam normalmente.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {outList.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
+                ) : (
+                  outList.map(({ player }) => renderPlayerRow(player, 'out'))
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </TabsContent>

@@ -153,7 +153,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   }, []);
 
   useEffect(() => {
-    seedPool().then(() => resolveDecisions()).then(() => {
+    resolveDecisions().then(() => {
       loadAgents();
       loadActiveOffers();
       loadHistory();
@@ -331,86 +331,39 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
           </TabsTrigger>
         </TabsList>
 
-        {/* ── DISPONÍVEIS ── */}
-        <TabsContent value="available" className="space-y-3 mt-3">
-          {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[150px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar jogador..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-8 pl-8 text-xs rounded-lg" />
+        {/* ── DISPONÍVEIS — Drop schedule notice ── */}
+        <TabsContent value="available" className="mt-3">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-6 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center">
+              <Clock className="h-7 w-7 text-primary" />
             </div>
-            <div className="flex gap-1">
-              {['all', 'GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => (
-                <Button key={p} size="sm" variant={posFilter === p ? 'default' : 'outline'} className="h-8 px-2 text-[10px]" onClick={() => setPosFilter(p)}>
-                  {p === 'all' ? 'Todos' : p}
-                </Button>
-              ))}
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-foreground">Drop semanal de Agentes Livres</h3>
+              <p className="text-[11px] text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                Todo <span className="font-bold text-primary">sábado</span> são gerados <span className="font-bold text-foreground">10 novos jogadores livres</span> no mercado.
+              </p>
             </div>
-            <Button variant="outline" size="sm" onClick={loadAgents} className="h-8 text-xs gap-1.5">
-              <RefreshCw className="h-3 w-3" /> Atualizar
-            </Button>
-          </div>
 
-          <ScrollArea className="h-[480px] pr-2">
-            {filtered.length === 0 ? (
-              <div className="text-center py-10 text-xs text-muted-foreground">
-                <EyeOff className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                Nenhum jogador no Mercado Livre no momento.
+            <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto">
+              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
+                <p className="text-[9px] text-muted-foreground">Frequência</p>
+                <p className="text-xs font-bold text-foreground mt-0.5">Semanal</p>
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                {filtered.map(agent => {
-                  const stats = agent.visible_stats || {};
-                  const isPending = !!pendingOffersByAgent[agent.id];
-                  const onCooldown = new Date(agent.available_from) > new Date();
-                  return (
-                    <div key={agent.id} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/20 bg-card/50 hover:border-primary/30 transition-colors">
-                      <div className="w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border border-border/30 bg-muted/30">
-                        <span className="text-sm font-black text-muted-foreground/60">???</span>
-                        <span className="text-[7px] text-muted-foreground">OVR</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <Badge variant="outline" className={`text-[8px] px-1 py-0 h-4 ${posColors[agent.player_position]}`}>{agent.player_position}</Badge>
-                          <span className="font-semibold text-xs truncate">{agent.player_name}</span>
-                          {agent.origin === 'rescinded' && (
-                            <Badge variant="outline" className="text-[8px] h-4 bg-orange-500/15 text-orange-400 border-orange-500/30">
-                              Rescindido{agent.origin_club_name ? ` por ${agent.origin_club_name}` : ''}
-                            </Badge>
-                          )}
-                          {agent.origin === 'generated' && (
-                            <Badge variant="outline" className="text-[8px] h-4 text-muted-foreground">Livre</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          <span>{agent.player_age}a</span>
-                          <span>🏟️ {stats.gamesPlayed ?? 0}</span>
-                          <span>⚽ {stats.goals ?? 0}</span>
-                          <span>🅰️ {stats.assists ?? 0}</span>
-                          {stats.avgRating != null && (
-                            <span className={`font-bold ${stats.avgRating >= 7 ? 'text-emerald-400' : stats.avgRating >= 6 ? 'text-primary' : 'text-red-400'}`}>
-                              ★{Number(stats.avgRating).toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        {onCooldown && (
-                          <p className="text-[9px] text-amber-400 mt-0.5">Disponível em {formatCountdown(agent.available_from)}</p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        className="h-8 text-[10px] gap-1"
-                        disabled={isPending || onCooldown}
-                        onClick={() => openOfferDialog(agent)}
-                      >
-                        {isPending ? 'Em proposta' : <><Send className="h-3 w-3" /> Propor</>}
-                      </Button>
-                    </div>
-                  );
-                })}
+              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
+                <p className="text-[9px] text-muted-foreground">Quantidade</p>
+                <p className="text-xs font-bold text-primary mt-0.5">10 jogadores</p>
               </div>
-            )}
-          </ScrollArea>
+              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
+                <p className="text-[9px] text-muted-foreground">Decisão</p>
+                <p className="text-xs font-bold text-foreground mt-0.5">7 horas</p>
+              </div>
+            </div>
+
+            <div className="pt-2 text-[10px] text-muted-foreground leading-relaxed max-w-md mx-auto">
+              <EyeOff className="h-3 w-3 inline mr-1 text-primary" />
+              Atributos ocultos até a assinatura. Você só verá nome, idade, posição e estatísticas básicas.
+            </div>
+          </div>
         </TabsContent>
 
         {/* ── ATIVAS ── */}
