@@ -57,19 +57,17 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'signup-preferences' | 'verify-email';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [favoriteCountry, setFavoriteCountry] = useState('BR');
-  const [preferredFormation, setPreferredFormation] = useState('4-3-3');
-  const [playstyle, setPlaystyle] = useState('balanced');
   const [pendingEmail, setPendingEmail] = useState('');
-  
+
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
   const [slideIndex, setSlideIndex] = useState(0);
@@ -118,8 +116,16 @@ export default function AuthPage() {
   };
 
   const handleSignup = async () => {
+    if (!displayName.trim()) {
+      toast.error('Informe o nome do Manager');
+      return;
+    }
     if (password.length < 6) {
       toast.error('Senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('As senhas não coincidem');
       return;
     }
     setLoading(true);
@@ -129,10 +135,7 @@ export default function AuthPage() {
       options: {
         emailRedirectTo: window.location.origin,
         data: {
-          display_name: displayName || 'Manager',
-          favorite_country: favoriteCountry,
-          preferred_formation: preferredFormation,
-          playstyle,
+          display_name: displayName.trim() || 'Manager',
         },
       },
     });
@@ -259,95 +262,7 @@ export default function AuthPage() {
     );
   }
 
-  // ── SIGNUP PREFERENCES STEP ──
-  if (step === 'signup-preferences') {
-    return (
-      <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={slides[2].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
-        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
-          <CardContent className="p-6 space-y-5">
-            <div className="text-center space-y-2">
-              <Gamepad2 className="w-10 h-10 text-primary mx-auto" />
-              <h2 className="text-xl font-black">Seu Perfil de Manager</h2>
-              <p className="text-xs text-muted-foreground">Configure suas preferências iniciais</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground">🌍 País da Liga</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {countryOptions.map(c => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setFavoriteCountry(c.value)}
-                    className={`p-2 rounded-lg border text-center transition-all text-lg ${
-                      favoriteCountry === c.value
-                        ? 'bg-primary/15 border-primary shadow-sm ring-1 ring-primary/30'
-                        : 'bg-card/50 border-border/30 hover:border-primary/30'
-                    }`}
-                    title={c.label}
-                  >
-                    {c.flag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground">📋 Formação Preferida</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {formationOptions.map(f => (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => setPreferredFormation(f)}
-                    className={`py-2 px-1 rounded-lg text-xs font-black border transition-all ${
-                      preferredFormation === f
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                        : 'bg-card/50 border-border/30 text-muted-foreground hover:border-primary/30'
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground">🎮 Estilo de Jogo</label>
-              <div className="grid grid-cols-2 gap-2">
-                {playstyleOptions.map(ps => (
-                  <button
-                    key={ps.value}
-                    type="button"
-                    onClick={() => setPlaystyle(ps.value)}
-                    className={`p-3 rounded-lg border text-left transition-all ${
-                      playstyle === ps.value
-                        ? 'bg-primary/10 border-primary shadow-sm ring-1 ring-primary/30'
-                        : 'bg-card/50 border-border/30 hover:border-primary/30'
-                    }`}
-                  >
-                    <span className="text-sm font-bold block">{ps.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{ps.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Button onClick={handleSignup} disabled={loading} className="w-full h-12 font-bold gap-2">
-              <ChevronRight className="w-4 h-4" />
-              {loading ? 'Criando conta...' : 'Criar Conta'}
-            </Button>
-
-            <Button variant="ghost" size="sm" onClick={() => setStep('signup-info')} className="w-full text-xs text-muted-foreground gap-1">
-              <ArrowLeft className="w-3 h-3" /> Voltar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // (signup-preferences step removed — preferences are no longer collected at signup)
 
   // ── SIGNUP INFO STEP ──
   if (step === 'signup-info') {
@@ -389,17 +304,29 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Confirmar Senha</label>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Repita a senha"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 text-sm"
+                />
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <p className="text-[10px] text-destructive">As senhas não coincidem</p>
+                )}
+              </div>
             </div>
 
             <Button
-              onClick={() => {
-                if (!email) { toast.error('Preencha o email'); return; }
-                if (password.length < 6) { toast.error('Senha deve ter no mínimo 6 caracteres'); return; }
-                setStep('signup-preferences');
-              }}
+              onClick={handleSignup}
+              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword}
               className="w-full h-12 font-bold gap-2"
             >
-              Próximo <ChevronRight className="w-4 h-4" />
+              {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
             </Button>
 
             <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">

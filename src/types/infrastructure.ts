@@ -24,6 +24,8 @@ export function getTrainingCenterUpgradeCost(currentLevel: number): number {
 export interface FacilityLevel {
   level: number;
   maxLevel: number;
+  /** ISO date string when an in-progress upgrade completes (used for non-Premium 24h delay). */
+  upgradeCompletesAt?: string;
 }
 
 export const facilityCosts: Record<number, number> = {

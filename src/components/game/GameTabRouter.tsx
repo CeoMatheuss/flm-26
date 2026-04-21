@@ -55,9 +55,10 @@ interface GameTabRouterProps {
   saveSigningNews: (playerName: string, position: string, overall: number, age: number, eventType?: 'signing' | 'renewal' | 'loan', extraInfo?: string) => void;
   blockedTabs?: string[];
   isAdmin?: boolean;
+  isPremium?: boolean;
 }
 
-export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false }: GameTabRouterProps) {
+export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false, isPremium = false }: GameTabRouterProps) {
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
   const { winStreak, loseStreak } = useMemo(() => {
@@ -254,7 +255,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} />}</TabsContent>
       <TabsContent value="youth">
-        {isTabBlocked('youth') ? <BlockedMessage /> : <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} currentSeason={game.season?.currentSeason ?? 1} onPromote={game.promoteYouth} onSell={game.sellYouth} onEnrollCopinha={game.enrollCopinha} onSetInvestment={game.setYouthInvestment} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />}
+        {isTabBlocked('youth') ? <BlockedMessage /> : <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} academyUpgradeCompletesAt={game.infrastructure.youthAcademy.upgradeCompletesAt} isPremium={isPremium} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} currentSeason={game.season?.currentSeason ?? 1} onPromote={game.promoteYouth} onSell={game.sellYouth} onEnrollCopinha={game.enrollCopinha} onSetInvestment={game.setYouthInvestment} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />}
       </TabsContent>
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
