@@ -514,45 +514,65 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
               <Eye className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onListForSale(player.id)} disabled={!canRemoveFromSquad} title="Listar à venda">
-              <Tag className="h-3.5 w-3.5" />
-            </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-cyan-400 hover:bg-cyan-500/10" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || !canRemoveFromSquad} title="Emprestar">
-              <ArrowLeftRight className="h-3.5 w-3.5" />
-            </Button>
+            {onReorderPlayers && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-1.5 text-[10px] gap-1 text-primary hover:bg-primary/10"
+                    title={currentGroup === 'starters' ? 'Substituir por reserva' : 'Subir ao time titular'}
+                  >
+                    <Repeat className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Banco' : 'Subir'}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-2">
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                    {currentGroup === 'starters' ? 'Trocar por um reserva' : 'Trocar por um titular'}
+                  </p>
+                  <div className="max-h-64 overflow-y-auto space-y-0.5">
+                    {(() => {
+                      const candidates = currentGroup === 'starters'
+                        ? [...groupedPlayers.reserves, ...groupedPlayers.out]
+                        : groupedPlayers.starters;
+                      const sorted = [
+                        ...candidates.filter(c => c.player.position === player.position),
+                        ...candidates.filter(c => c.player.position !== player.position),
+                      ];
+                      if (sorted.length === 0) {
+                        return <p className="text-[10px] text-muted-foreground p-2 text-center">Nenhum jogador disponível</p>;
+                      }
+                      return sorted.map(({ player: cand }) => {
+                        const candOvr = getOvrColor(cand.overall);
+                        const samePos = cand.position === player.position;
+                        return (
+                          <button
+                            key={cand.id}
+                            onClick={() => swapPlayers(player.id, cand.id)}
+                            className="w-full flex items-center gap-2 p-1.5 rounded-md hover:bg-accent/60 transition-colors text-left"
+                          >
+                            <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${candOvr.border} ${candOvr.bg}`}>
+                              <span className={`text-[10px] font-black ${candOvr.text}`}>{cand.overall}</span>
+                            </div>
+                            <Badge className={`text-[8px] px-1 py-0 h-3.5 font-bold border ${posColors[cand.position]}`} variant="outline">{cand.position}</Badge>
+                            <span className="text-[11px] font-medium truncate flex-1">{cand.name}</span>
+                            {samePos && <span className="text-[8px] text-emerald-400 shrink-0">✓</span>}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             {auctionEligible && (
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
                 <Gavel className="h-3.5 w-3.5" />
               </Button>
             )}
-            {onRescindPlayer && (
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={!canRemoveFromSquad} title="Rescindir">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            )}
           </div>
         </div>
-
-        {onReorderPlayers && (
-          <div className="flex items-center gap-1 px-2 pb-1.5 -mt-0.5">
-            <span className="text-[8px] uppercase tracking-wider text-muted-foreground/50 mr-1">Mover:</span>
-            {currentGroup !== 'starters' && (
-              <button onClick={() => moveToGroup(player.id, 'starters')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-0.5">
-                <ArrowUp className="h-2.5 w-2.5" /> Titular
-              </button>
-            )}
-            {currentGroup !== 'reserves' && (
-              <button onClick={() => moveToGroup(player.id, 'reserves')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center gap-0.5">
-                <Armchair className="h-2.5 w-2.5" /> Banco
-              </button>
-            )}
-            {currentGroup !== 'out' && (
-              <button onClick={() => moveToGroup(player.id, 'out')} className="text-[9px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground hover:bg-muted/70 transition-colors flex items-center gap-0.5">
-                <Package className="h-2.5 w-2.5" /> Fora
-              </button>
-            )}
-          </div>
-        )}
       </div>
     );
   };
