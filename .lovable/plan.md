@@ -1,75 +1,154 @@
 
 
-# Plano: Widgets da Partida no Estilo "Cards de Estilo de Jogo" + Tudo em PT-BR
+# Plano: Sistema de Base V2 (FLM 26) — Custos de Investimento Reduzidos
 
-## Referência Visual (da imagem enviada)
+Reformulação completa da Academia de Base com **planos de investimento mais acessíveis** conforme solicitado. Mantém compatibilidade com saves existentes.
 
-Os cards mostrados na imagem (Equilibrada, Contra-ataque, Marcação Pressão, Tiki-Taka, Bola na Área, etc.) têm este padrão:
-- Borda fina arredondada (`rounded-xl border border-border`)
-- Ícone colorido grande no canto **superior esquerdo** (não ao lado do texto)
-- Título em **negrito** logo abaixo do ícone
-- Selecionado: **borda destacada** + leve glow (ex: ciano para Tiki-Taka ativo)
-- Layout limpo, sem gradient pesado de fundo
+---
 
-## Mudanças nos 4 Widgets da Partida
+## 1. Novos Planos de Investimento (4 tiers fixos — VALORES REDUZIDOS)
 
-**Onde**: `src/pages/MatchPage.tsx` (linhas 707-887)
+**Arquivo**: `src/types/infrastructure.ts` + `src/components/game/YouthAcademyTab.tsx`
 
-### Novo layout de cada card
+| Plano | Custo/mês | Jogadores |
+|---|---|---|
+| ❌ Sem Investimento | R$ 0 | 0 |
+| 🔹 Básico | **R$ 250k** | 1 |
+| 🔸 Intermediário | **R$ 500k** | 2–3 |
+| 🔶 Avançado | **R$ 1M** | 4 |
+| 🔴 Elite | **R$ 2M** | 5 (máximo) |
+
+Atualizar `getYouthMonthlyPlayers()` para refletir as novas faixas. Botões grandes em grid 2×2 com selecionado destacado (estilo cards de tática).
+
+---
+
+## 2. Custos de Upgrade Rebalanceados (Nv 1 → 30)
+
+**Arquivo**: `src/types/infrastructure.ts` (`academyUpgradeCosts`)
 
 ```
-┌────────────────────┐
-│ 🟢 [ícone grande]  │  ← ícone no topo, com bg colorido suave
-│                    │
-│ TÁTICA             │  ← título uppercase, fonte média
-│ 4-4-2              │  ← valor principal grande, font-black
-│ ofensivo · alta    │  ← subtexto em muted
-└────────────────────┘
+Nv 1→5:    0.5M, 1M, 1.5M, 2M, 3M
+Nv 6→10:   4M, 6M, 8M, 10M, 13M
+Nv 11→15:  16M, 20M, 25M, 30M, 36M
+Nv 16→20:  45M, 55M, 65M, 80M, 95M
+Nv 21→25:  110M, 130M, 155M, 185M, 220M
+Nv 26→30:  260M, 300M, 350M, 400M, 450M
 ```
 
-- `flex flex-col` (vertical) em vez de `flex items-center` (horizontal)
-- Ícone container: `w-11 h-11 rounded-lg` com `bg-{cor}-500/15` no canto superior esquerdo
-- Padding: `p-3 sm:p-4`
-- Bordas: `border border-{cor}-500/30` (mais sutil, tipo a imagem); ao ativo/com queue, `border-{cor}-500/70` + ring
-- Sem gradient pesado — fundo `bg-card/40` com sutil `from-{cor}-500/5 to-transparent`
-- Hover: `hover:border-{cor}-500/60 hover:bg-card/60` (sem scale exagerado)
+---
 
-### Renomeações para PT-BR
+## 3. Faixas de OVR + Sistema de Potencial Oculto
 
-| Atual | Novo |
-|---|---|
-| `Tática` | **Tática** (mantém) |
-| `Time` | **Elenco** |
-| `subs` | **trocas** |
-| `Stats` | **Estatísticas** |
-| `posse` | **posse** (mantém) |
-| `Coach` | **Técnico** |
-| `dicas` | **alertas** |
-| `Aguardando análise...` | **Aguardando análise...** (mantém) |
-| Header da Sheet `Stats` → **Estatísticas** | |
-| Header `📋 Assistente Técnico` → **🎙️ Auxiliar Técnico** | |
-| Header `Ajustes Táticos` → **Ajustes Táticos** (mantém) | |
-| Header `Escalação & Substituições` → **Escalação & Trocas** | |
-| Toast `Substituições Bloqueadas` → **Trocas Bloqueadas** | |
-| `Elenco descansado` → **Elenco descansado** (mantém) | |
+**Arquivo**: `src/types/infrastructure.ts` + `src/utils/playerGenerator.ts`
 
-### Indicadores especiais (mantém comportamento)
+| Nível | OVR Min | OVR Max |
+|---|---|---|
+| 1–5 | 40 | 55 |
+| 6–10 | 45 | 60 |
+| 11–20 | 50 | 70 |
+| 21–25 | 55 | 80 |
+| 26–30 | 60 | 85 (chance POT 99) |
 
-- 🔒 vermelho no Elenco quando bloqueado
-- Badge laranja com contador de fila no Elenco
-- Badge âmbar pulsante no Técnico com nº de alertas
-- Card desativado (opacidade reduzida) quando sem assistente
+**Tier de potencial oculto** (novo campo `potentialTier`):
+- `comum` (POT até 70)
+- `promissor` (71–80)
+- `alto_potencial` (81–88)
+- `talento_raro` (89–94)
+- `geracional` (95–99) — só nível 26+
+
+Olheiros continuam necessários para revelar POT exato.
+
+---
+
+## 4. Status de Evolução do Jogador
+
+Novo campo `evolutionStatus: 'evoluindo' | 'estavel' | 'travado'` calculado a partir de tempo de jogo, treino, moral e idade.
+
+Indicador visual: 📈 verde / ➡️ amarelo / ⚠️ vermelho.
+
+---
+
+## 5. Simulação Automática de Partidas da Base
+
+**Novo arquivo**: `src/utils/youthMatchSimulator.ts`
+
+A cada 4 rodadas, simula partida fictícia contra "academia rival":
+- Placar baseado na média de OVR
+- Cada prospect recebe nota 4–10 e ganha `gamesPlayed`
+- Destaques aceleram evolução (+5% trainingProgress)
+- Relatório no Jornal (categoria `BASE`)
+
+---
+
+## 6. Eventos Dinâmicos da Base
+
+**Novo arquivo**: `src/utils/youthEvents.ts`
+
+~25% de chance pós-ciclo:
+- 🌟 Novo talento surgiu (+1 prospect acima da média)
+- 🚀 Jogador evoluindo rápido (+10 OVR boost)
+- 😴 Promessa estagnou (`travado` por 2 ciclos)
+- 🏥 Lesão na base (indisponível 1 ciclo)
+
+---
+
+## 7. Sistema de Destaque (Tags)
+
+Campo `youthTag`:
+- `promessa_clube` — OVR ≥ 65 e < 20 anos
+- `talento_base` — POT ≥ 85
+- `revelacao` — destaque em 3+ partidas seguidas
+
+Badge colorida no card.
+
+---
+
+## 8. Integração com Copinha (Sub-20)
+
+- Desbloqueada na temporada ≥ 2
+- Apenas prospects ≤ 20 anos
+- 5 partidas mata-mata simplificadas
+- Vencedores: +15 OVR boost; vice: +8; revelados ganham tag `revelacao`
+- Troféu salvo em `clubProfile.trophies`
+
+---
+
+## 9. Decisões do Jogador
+
+Já existe **Promover**. Adicionar:
+- **Vender Jovem**: OVR × 50.000
+- Aviso ao promover muito cedo (idade < 18 e OVR < 60)
+
+---
+
+## 10. UI Redesign (estilo cards modernos)
+
+**Arquivo**: `src/components/game/YouthAcademyTab.tsx`
+
+- Card de nível da Base com progresso visual até 30
+- Grid 2×2 de planos (cards estilo tática)
+- Lista de prospects com nome, idade, OVR grande, barra de evolução, tier de potencial (oculto sem olheiro = "???"), status (📈/➡️/⚠️), tag de destaque, botões Promover/Vender/Observar
+- Banner "Última partida da base" no topo
+- Botão "🏆 Inscrever na Copinha" quando desbloqueado
+
+---
 
 ## Arquivos Modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/MatchPage.tsx` | Reescrever 4 widgets (linhas 707-887) com layout vertical estilo "card de estilo de jogo"; renomear textos para PT-BR; atualizar headers das Sheets |
+| `src/types/infrastructure.ts` | Novos custos (250k/500k/1M/2M), faixas OVR, novos campos |
+| `src/utils/playerGenerator.ts` | Geração com tiers de potencial e novas faixas OVR |
+| `src/utils/youthMatchSimulator.ts` | **NOVO** — simula partidas e relatórios |
+| `src/utils/youthEvents.ts` | **NOVO** — eventos dinâmicos pós-ciclo |
+| `src/hooks/useInfraState.ts` | Cobrar nova faixa, processar eventos, simulação por ciclo, `sellYouth`, `enrollCopinha` |
+| `src/components/game/YouthAcademyTab.tsx` | UI completa nova |
+| `src/components/game/GameTabRouter.tsx` | Passar novos handlers |
+| `src/hooks/useGame.ts` | Expor novos handlers |
 
-## Não muda
+## Compatibilidade
 
-- Lógica de validação de substituições (`validateSubAllowed`)
-- Sheet content (LiveTacticsView, ManagerSubstitutionView, StatsView)
-- Cores temáticas (emerald/blue/yellow/amber)
-- Dados exibidos em cada widget (formação, subs restantes, posse, dicas)
+- Saves antigos com `youthInvestment` numérico são normalizados automaticamente para o tier mais próximo
+- Prospects existentes ganham `evolutionStatus = 'estavel'` e `potentialTier` calculado a partir do POT atual
+- Sistema 100% client-side (sem nova tabela ou edge function)
 
