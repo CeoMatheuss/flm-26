@@ -1,149 +1,145 @@
 
 
-# Plano: Treino em Grupo (até 5) + Persistência + Sistema Stamina/Lesões V2
+# Plano: Editor de Escudos Avançado (Crest Builder Pro)
 
-## Parte 1 — Treino em Grupo (Multi-seleção até 5 jogadores)
+Substituir o painel atual de escudo (formas/padrões/ícones em listas planas) por um **editor visual modular** estilo FIFA/Football Manager, com preview ao vivo, controles de transformação e mais opções.
 
-**Arquivo**: `src/components/game/TrainingTab.tsx`
+## 1. Novo componente: `CrestBuilder.tsx`
 
-- Adicionar **modo de seleção múltipla**: botão "👥 Treinar em Grupo" no topo da lista.
-- Ao ativar: cada card de jogador ganha checkbox no canto. Limite de **5 jogadores**.
-- Aparece **painel flutuante inferior** (sticky bottom) com:
-  - Contador "X/5 selecionados"
-  - Seletor de **Tipo** (Grupo / Específico)
-  - Seletor de **Foco** (depende do tipo)
-  - Botões de **Intensidade** (🟢 Leve / 🟡 Médio / 🔴 Pesado)
-  - Botão "✅ Aplicar a todos" → grava o mesmo `PlayerTrainingConfig` para cada ID selecionado
-- Sair do modo de seleção limpa as marcações.
+**Arquivo**: `src/components/game/CrestBuilder.tsx` (NOVO)
 
-## Parte 2 — Persistência das Ações de Treino e Base (BUG FIX)
+Editor standalone, reutilizável tanto na criação de clube (`ClubCreation`) quanto em ajustes (`ClubSettingsTab`).
 
-**Arquivos**: `src/hooks/useGame.ts`, `src/hooks/useInfraState.ts`, `src/components/game/TrainingTab.tsx`
-
-**Problema reportado**: ao atualizar a base, mudanças não persistem.
-
-- Auditar o fluxo de salvamento: confirmar que toda mutação em `infrastructure` e em `trainingConfigs` dispara o auto-save em `game_saves.club_data` (debounce 2s).
-- Adicionar `trainingConfigs: Record<playerId, PlayerTrainingConfig>` ao `club_data` salvo (hoje pode estar só em estado local).
-- Garantir que `useInfraState.upgradeFacility` e o setter de `youthInvestment` chamem o `setClub()` que aciona o save reativo.
-- Adicionar **toast visível** "💾 Treino salvo" / "🏗️ Base atualizada" para feedback imediato.
-- Adicionar log em console `[Persist]` para depuração.
-
-## Parte 3 — Sistema de Stamina V2
-
-**Arquivo**: `src/types/infrastructure.ts` + `src/training/FatigueSystem.ts` + simulação de partida
-
-### 3.1 Recuperação Diária
-```
-Base: +30/dia
-Fisio: +1 por nível (Nv 1 = 31 ... Nv 20 = 50 máx)
-```
-
-### 3.2 Desgaste por Partida (baseado no atributo `physical`)
-```
-Físico 80–100 → -20
-Físico 60–79  → -25
-Físico 40–59  → -30
-Físico 0–39   → -40
-```
-
-### 3.3 Modificadores de Recuperação
-- Jogou partida no dia: -20%
-- Stamina < 50: -30%
-- Ambos: -50%
-
-### 3.4 Zona de Risco (afeta desempenho na partida)
-| Stamina | Desempenho | Risco lesão |
-|---|---|---|
-| 50–100 | Normal | Normal |
-| 40–49  | -10%   | +20% |
-| 20–39  | -25%   | +50% |
-| 0–19   | -40%   | +80% |
-
-## Parte 4 — Sistema de Lesões V2
-
-**Arquivo**: `src/training/InjuryRiskSystem.ts` + novo `src/types/injury.ts`
-
-### 4.1 Tipos por Severidade
-- **Leve**: 1–5 dias | -5% a -10% desempenho
-- **Moderada**: 5–15 dias | -15% a -25%
-- **Grave**: 15–60 dias | bloqueia jogo
-- **Crônica** (novo): recorrente, risco constante
-
-### 4.2 Tipos Específicos (efeitos)
-- Muscular → -velocidade
-- Joelho → -mobilidade geral
-- Ligamento → alto risco de piorar
-- Tornozelo → -agilidade
-- Fadiga extrema → lesão leve automática
-
-### 4.3 Propensão a Lesão (novo campo `injuryProneness` 0-100 no Player)
-- Baixa (0–30) → x1.0
-- Média (31–70) → x1.3
-- Alta (71–100) → x1.6
-
-### 4.4 Recaída
-- Base 30% → até 60% (alta propensão) → -20% com fisio alto
-- Recaída dobra tempo, pode subir severidade
-
-### 4.5 Histórico de Lesões
-- Cada lesão soma +5 em `injuryProneness` (até 100)
-- Acumular cria jogador "de vidro"
-
-## Parte 5 — Bônus do Fisioterapeuta (Nv 1–20)
-
-**Arquivo**: `src/types/infrastructure.ts`
-
-| Nível | Recup. lesão | Risco | Recaída | Stamina baixa |
-|---|---|---|---|---|
-| 1–5   | normal | 0%   | 0%   | 0%   |
-| 6–10  | +5%    | -5%  | -5%  | -5%  |
-| 11–15 | +10%   | -10% | -10% | -10% |
-| 16–20 | +15%   | -15% | -20% | -15% |
-
-## Parte 6 — Custos Fisioterapia (Atualizados, Nv 1→20)
+### Layout (responsivo)
 
 ```
-1→2: 300K   | 2→3: 500K   | 3→4: 800K   | 4→5: 1.2M   | 5→6: 1.8M
-6→7: 2.5M   | 7→8: 3.5M   | 8→9: 4.8M   | 9→10: 6M
-10→11: 8M   | 11→12: 10M  | 12→13: 13M  | 13→14: 16M  | 14→15: 20M
-15→16: 25M  | 16→17: 32M  | 17→18: 40M  | 18→19: 50M  | 19→20: 65M
+┌──────────────────────────────────────────────────────────┐
+│  [Preview Grande 240x240]   │  [Painel de abas]          │
+│  - Escudo renderizado       │  ┌──────────────────────┐  │
+│  - Fundo xadrez claro       │  │ 🛡 Forma | 🎨 Cores  │  │
+│  - Sombra suave             │  │ 🐺 Símbolo | ✨ Extras│  │
+│                              │  │ 🧩 Layout | 🔧 Ajuste │  │
+│  [🎲 Aleatório][💾 Salvar]   │  └──────────────────────┘  │
+│                              │  [Conteúdo da aba ativa] │
+└──────────────────────────────────────────────────────────┘
 ```
-Reduzir `maxLevel` da fisioterapia de 30 → 20.
 
-## Parte 7 — Treinar Lesionado (regras)
-- Leve: permitido (-30% evolução, +30% risco, +10 fadiga)
-- Moderada: alto risco de piorar (toast warning)
-- Grave: bloqueado (botão de treino desabilitado no card)
+Mobile: empilha (preview no topo, abas abaixo).
 
-## Parte 8 — Alertas no Jogo
+### Abas
 
-Toasts/notificações automáticas:
-- ⚠️ "Jogador cansado" (stamina < 40)
-- 🚨 "Alto risco de lesão" (zona vermelha + propensão alta)
-- 🩹 "Pode jogar com risco" (lesão leve, jogador escalado)
-- 🔄 "Recuperado, mas instável" (saiu de lesão moderada+)
+| Aba | Conteúdo |
+|---|---|
+| 🛡 **Forma** | Grid 5×2 com 10 formas (`shieldShapes` já existe). Hover destaca, click seleciona. |
+| 🎨 **Cores** | 4 color pickers (Primária, Secundária, Símbolo, Borda) + paleta rápida (12 swatches comuns: vermelho, azul, verde, preto, branco, dourado, etc). |
+| 🐺 **Símbolo** | Tabs internas: **Animais** / **Símbolos** / **Letras**. Grid de ícones (~30 itens). Botão "↔ Espelhar". |
+| ✨ **Extras** | Sub-elementos opcionais: estrelas no topo, coroa, louros laterais, faixa com texto. Cada item tem toggle on/off. |
+| 🧩 **Layout** | 6 cards visuais: Sólido, Dividido ao meio, Listrado, Diagonal, Faixa horizontal, Quadrantes. Reaproveita `shieldPatterns`. |
+| 🔧 **Ajustes** | Sliders: Tamanho do símbolo (0.5x–1.5x), Posição X (-30 a +30), Posição Y (-30 a +30), Rotação (-180° a 180°), Opacidade (20%–100%), Espessura da borda (0–8px). |
 
----
+## 2. Expansão do `ShieldCrest.tsx`
+
+**Arquivo**: `src/components/game/ShieldCrest.tsx`
+
+### 2.1 Novos ícones (animais conforme imagem de referência)
+Adicionar à lista `shieldIcons`:
+- **Animais novos**: `tiger`, `bear`, `phoenix`, `snake`, `elephant`, `rhino`, `panther`, `deer`, `bull`, `griffin`, `unicorn`, `pegasus`
+- **Símbolos extras**: `lightning`, `castle`, `axe`, `bow`, `fleur-de-lis`, `cross-pattee`, `crescent-moon`, `sun-burst`
+
+Cada ícone desenhado em SVG vetorial preto/branco (estilo flat heráldico, igual ao padrão atual). Cerca de **20 novos ícones**.
+
+### 2.2 Novas props de transformação
+
+```typescript
+interface ShieldProps {
+  // existentes...
+  iconScale?: number;        // 0.5 - 1.5 (default 1)
+  iconOffsetX?: number;      // -30 a 30
+  iconOffsetY?: number;      // -30 a 30
+  iconRotation?: number;     // graus
+  iconOpacity?: number;      // 0-1
+  iconMirror?: boolean;      // espelhar horizontalmente
+  borderColor?: string;
+  borderWidth?: number;      // 0-8
+  // Camadas extras
+  topStars?: 0 | 1 | 2 | 3;  // estrelinhas no topo
+  showLaurels?: boolean;     // louros laterais
+  showCrown?: boolean;       // coroa no topo
+  bannerText?: string;       // texto na faixa inferior
+  bannerColor?: string;
+}
+```
+
+Aplicadas via `<g transform="translate(x,y) scale(s) rotate(r)">` envolvendo o `renderIcon()`.
+
+### 2.3 Camada de decoração externa
+
+Renderizar camadas adicionais (coroa, louros, faixa) **fora do clip do escudo**, sobrepondo bordas para efeito heráldico premium.
+
+## 3. Integração
+
+### 3.1 `ClubCreation.tsx`
+- Substituir o bloco atual de escudo (linhas ~480-540) por `<CrestBuilder value={...} onChange={...} />`.
+- Manter o resto do fluxo (nome, estádio, país) inalterado.
+
+### 3.2 `ClubSettingsTab.tsx`
+- Adicionar botão "🎨 Editar Escudo" abre o `CrestBuilder` em modal/sheet, salva ao confirmar.
+
+### 3.3 Persistência
+Adicionar ao tipo `Club` em `src/types/game.ts`:
+```typescript
+shieldConfig?: {
+  shape: ShieldShape;
+  pattern: ShieldPattern;
+  icon: ShieldIcon;
+  primaryColor: string;
+  secondaryColor: string;
+  detailColor: string;
+  borderColor: string;
+  borderWidth: number;
+  iconScale: number;
+  iconOffsetX: number;
+  iconOffsetY: number;
+  iconRotation: number;
+  iconOpacity: number;
+  iconMirror: boolean;
+  topStars: number;
+  showLaurels: boolean;
+  showCrown: boolean;
+  bannerText?: string;
+};
+```
+Salvo dentro de `game_saves.club_data` (JSONB existente, sem migração).
+
+Compatibilidade: se `shieldConfig` ausente, usa os campos antigos (`shieldPattern`, `shieldShape`, `shieldIcon`) como fallback.
+
+## 4. Botão "🎲 Aleatório"
+
+Função `randomizeShield()`:
+- Sorteia forma, padrão, ícone das listas
+- Sorteia 2 cores complementares de uma paleta curada (evita combinações feias tipo amarelo + branco)
+- Reseta transformações para defaults
+- Anima preview com fade rápido (200ms)
+
+## 5. Preview ao Vivo + Animação
+
+- Preview reage instantaneamente a qualquer mudança (controlado por estado React)
+- Transições CSS suaves (`transition: all 200ms ease`) no SVG ao trocar cores/escala
+- Card de preview com fundo xadrez sutil (`bg-[url('checkerboard')]`) para mostrar opacidade
 
 ## Arquivos Modificados / Criados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/TrainingTab.tsx` | Modo grupo (até 5), painel flutuante, toast salvar |
-| `src/hooks/useGame.ts` | Persistir `trainingConfigs` em `club_data` |
-| `src/hooks/useInfraState.ts` | Garantir trigger de save em upgrades + youthInvestment |
-| `src/types/infrastructure.ts` | Custos fisio Nv 1–20, bônus por nível, recuperação stamina |
-| `src/types/game.ts` | Adicionar `injuryProneness` ao Player |
-| `src/types/injury.ts` | **NOVO** — tipos específicos, severidade, recaída |
-| `src/training/FatigueSystem.ts` | Nova lógica de recuperação +30 base + bônus fisio |
-| `src/training/InjuryRiskSystem.ts` | Propensão, recaída, tipos específicos, bônus fisio |
-| `src/components/game/InfrastructureTab.tsx` | Mostrar bônus fisio (recup, risco, recaída) |
-| `src/pages/MatchPage.tsx` (e simulação) | Aplicar zona de risco no desempenho + alerta de lesão |
+| `src/components/game/CrestBuilder.tsx` | **NOVO** — editor com 6 abas, preview, sliders |
+| `src/components/game/ShieldCrest.tsx` | +20 ícones, props de transformação, camadas extras (coroa/louros/faixa) |
+| `src/components/game/ClubCreation.tsx` | Substitui painel de escudo por `<CrestBuilder>` |
+| `src/components/game/ClubSettingsTab.tsx` | Botão "Editar Escudo" abre `CrestBuilder` em sheet |
+| `src/types/game.ts` | Adiciona `shieldConfig` opcional ao Club |
 
 ## Compatibilidade
 
-- Saves antigos sem `injuryProneness` → assumido 30 (média-baixa)
-- Saves com fisio nível > 20 → cap em 20 sem perda de progresso
-- `trainingConfigs` ausente → assume `{}` ao carregar
-- Sem alteração de schema no Supabase (tudo persiste em `game_saves.club_data` JSONB)
+- Clubes existentes sem `shieldConfig` continuam usando `shieldShape`/`shieldPattern`/`shieldIcon` (fallback)
+- Nenhuma migração de banco — tudo persistido em `game_saves.club_data` JSONB
+- `ShieldCrest` mantém props antigas funcionando (todos os novos parâmetros são opcionais com defaults)
 
