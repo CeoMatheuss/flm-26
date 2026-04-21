@@ -347,14 +347,24 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'wolf':
+      // Heraldic wolf head — sharp triangular profile
       return (
-        <>
-          <polygon points={`${h - s * 0.06},${cy - s * 0.1} ${h - s * 0.1},${cy - s * 0.04} ${h - s * 0.06},${cy + s * 0.06}`} fill={dc} opacity={0.7} />
-          <polygon points={`${h + s * 0.06},${cy - s * 0.1} ${h + s * 0.1},${cy - s * 0.04} ${h + s * 0.06},${cy + s * 0.06}`} fill={dc} opacity={0.7} />
-          <ellipse cx={h} cy={cy + s * 0.02} rx={s * 0.08} ry={s * 0.06} fill={dc} opacity={0.8} />
-          <circle cx={h - s * 0.03} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
-          <circle cx={h + s * 0.03} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.13},${cy + s * 0.04}
+            L${h - s * 0.1},${cy - s * 0.08}
+            L${h - s * 0.05},${cy - s * 0.13}
+            L${h - s * 0.02},${cy - s * 0.06}
+            L${h + s * 0.02},${cy - s * 0.06}
+            L${h + s * 0.05},${cy - s * 0.13}
+            L${h + s * 0.1},${cy - s * 0.08}
+            L${h + s * 0.13},${cy + s * 0.04}
+            L${h + s * 0.06},${cy + s * 0.04}
+            L${h},${cy + s * 0.13}
+            L${h - s * 0.06},${cy + s * 0.04} Z`} />
+          <polygon points={`${h - s * 0.025},${cy + s * 0.04} ${h + s * 0.025},${cy + s * 0.04} ${h},${cy + s * 0.09}`} fill={sc} />
+          <circle cx={h - s * 0.045} cy={cy - s * 0.03} r={s * 0.013} fill={sc} />
+          <circle cx={h + s * 0.045} cy={cy - s * 0.03} r={s * 0.013} fill={sc} />
+        </g>
       );
     case 'dragon':
       return (
