@@ -306,17 +306,13 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="rules"><RulesTab /></TabsContent>
       <TabsContent value="updates"><UpdatesTab /></TabsContent>
       <TabsContent value="settings"><SettingsTab /></TabsContent>
+      {/* clubsettings deep-link redirect: render ClubProfileTab so existing links keep working */}
       <TabsContent value="clubsettings">
-        <ClubSettingsTab
-          clubName={game.club.name}
-          stadiumName={game.club.stadiumName || 'Arena'}
-          shieldConfig={(game.club as any).shieldConfig}
-          primaryColor={game.club.primaryColor}
-          secondaryColor={game.club.secondaryColor}
-          detailColor={(game.club as any).detailColor}
-          shieldPattern={game.club.shieldPattern}
-          shieldShape={(game.club as any).shieldShape}
-          shieldIcon={(game.club as any).shieldIcon}
+        <ClubProfileTab
+          club={game.club}
+          season={game.season.currentSeason}
+          profile={game.clubProfile}
+          onSave={game.updateClubProfile}
           onRenameClub={game.renameClub}
           onRenameStadium={game.renameStadium}
           onUpdateShield={game.updateShield}
@@ -344,7 +340,17 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
       </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
-      <TabsContent value="clubprofile"><ClubProfileTab club={game.club} season={game.season.currentSeason} profile={game.clubProfile} onSave={game.updateClubProfile} /></TabsContent>
+      <TabsContent value="clubprofile">
+        <ClubProfileTab
+          club={game.club}
+          season={game.season.currentSeason}
+          profile={game.clubProfile}
+          onSave={game.updateClubProfile}
+          onRenameClub={game.renameClub}
+          onRenameStadium={game.renameStadium}
+          onUpdateShield={game.updateShield}
+        />
+      </TabsContent>
       <TabsContent value="ctrooms"><CTRoomsTab rooms={game.ctRooms} budget={game.club.budget} trainingCenterLevel={game.infrastructure.trainingCenter.level} onUpgradeRoom={game.upgradeCTRoom} /></TabsContent>
       <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
