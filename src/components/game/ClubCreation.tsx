@@ -482,8 +482,6 @@ export function ClubCreation({ userId, onComplete }: Props) {
               <KitPreview shirtColor={shieldConfig.secondaryColor} secondaryColor={shieldConfig.primaryColor} detailColor={shieldConfig.detailColor} pattern="solid" label="Uniforme 2" size={56} />
             </div>
           </div>
-            </div>
-          </div>
 
           <Button onClick={handleGoToConfirm} className="w-full h-10" disabled={!clubName.trim()}>
             Avançar para Confirmação →
