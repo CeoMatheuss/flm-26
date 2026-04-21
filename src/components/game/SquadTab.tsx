@@ -215,6 +215,26 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     onReorderPlayers(newOrder);
   };
 
+  // Start a swap: pre-select player and switch sub-tab to candidate group
+  const startSwap = (player: Player, from: Group) => {
+    setPendingSwap({ player, from });
+    if (from === 'starters') {
+      // Take this starter to the bench: open reserves tab
+      setSquadSubTab('reserves');
+    } else {
+      // Promote a reserve/out: open starters tab
+      setSquadSubTab('starters');
+    }
+  };
+
+  // Complete a pending swap by clicking a candidate
+  const completeSwap = (candidateId: string) => {
+    if (!pendingSwap) return;
+    swapPlayers(pendingSwap.player.id, candidateId);
+    setPendingSwap(null);
+    // Return to whichever tab the original player belongs to so user sees the result
+    setSquadSubTab(pendingSwap.from);
+  };
 
   // ─── Full-page player profile ───
   if (viewingPlayer) {
