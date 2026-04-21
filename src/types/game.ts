@@ -84,6 +84,13 @@ export interface Player {
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
   personality?: PlayerPersonality;
+  // ── Training V3 (Progress %) ──
+  /** 0-100 — semanal; ao chegar 100 → +1 atributo principal e reseta */
+  trainingProgress?: number;
+  /** Status de evolução visual */
+  trainingStatus?: 'evoluindo' | 'normal' | 'lento' | 'travado';
+  /** Último atributo treinado (para aplicar +1 ao completar 100%) */
+  lastTrainedAttr?: keyof PlayerAttributes;
   trainingBonuses?: {
     shooting?: number;
     setPieces?: number;
