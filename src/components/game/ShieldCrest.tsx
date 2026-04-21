@@ -451,15 +451,8 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
       />
     );
   }
-        spriteHref={heraldicSymbolsSprite}
-        cell={symbolCell}
-        s={s}
-        color={dc}
-        filterId={filterId}
-        recolor={true}
-      />
-    );
-  }
+
+
 
   // Letters
   if (icon.startsWith('letter-')) {
