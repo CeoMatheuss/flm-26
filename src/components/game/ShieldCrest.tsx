@@ -185,20 +185,71 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'lion':
-      return <text x={h} y={cy + r * 0.7} textAnchor="middle" fill={dc} fontSize={s * 0.26} fontWeight="bold">♛</text>;
-    case 'eagle-icon':
+      // Heraldic lion-rampant silhouette (dense, profile)
       return (
-        <>
-          <path d={`M${h},${cy - s * 0.1} L${h + s * 0.14},${cy + s * 0.02} L${h + s * 0.1},${cy + s * 0.1} L${h},${cy + s * 0.05} L${h - s * 0.1},${cy + s * 0.1} L${h - s * 0.14},${cy + s * 0.02} Z`} fill={dc} />
-          <circle cx={h} cy={cy - s * 0.04} r={s * 0.02} fill={sc} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.11},${cy + s * 0.13}
+            L${h - s * 0.11},${cy - s * 0.02}
+            Q${h - s * 0.13},${cy - s * 0.1} ${h - s * 0.06},${cy - s * 0.13}
+            Q${h - s * 0.02},${cy - s * 0.16} ${h + s * 0.03},${cy - s * 0.13}
+            L${h + s * 0.04},${cy - s * 0.05}
+            L${h + s * 0.1},${cy - s * 0.08}
+            L${h + s * 0.13},${cy - s * 0.02}
+            L${h + s * 0.1},${cy + s * 0.06}
+            L${h + s * 0.13},${cy + s * 0.13}
+            L${h + s * 0.06},${cy + s * 0.13}
+            L${h + s * 0.04},${cy + s * 0.07}
+            L${h - s * 0.04},${cy + s * 0.07}
+            L${h - s * 0.05},${cy + s * 0.13} Z`} />
+          {/* mane spikes */}
+          <polygon points={`${h - s * 0.13},${cy - s * 0.08} ${h - s * 0.16},${cy - s * 0.04} ${h - s * 0.11},${cy - s * 0.04}`} />
+          <polygon points={`${h - s * 0.13},${cy + s * 0.02} ${h - s * 0.17},${cy + s * 0.02} ${h - s * 0.13},${cy + s * 0.06}`} />
+          {/* eye */}
+          <circle cx={h - s * 0.05} cy={cy - s * 0.07} r={s * 0.01} fill={sc} />
+        </g>
+      );
+    case 'eagle-icon':
+      // Heraldic eagle with spread wings
+      return (
+        <g fill={dc}>
+          <path d={`M${h},${cy - s * 0.13}
+            L${h - s * 0.02},${cy - s * 0.04}
+            L${h - s * 0.16},${cy - s * 0.08}
+            L${h - s * 0.13},${cy + s * 0.02}
+            L${h - s * 0.07},${cy + s * 0.02}
+            L${h - s * 0.05},${cy + s * 0.1}
+            L${h - s * 0.02},${cy + s * 0.04}
+            L${h},${cy + s * 0.13}
+            L${h + s * 0.02},${cy + s * 0.04}
+            L${h + s * 0.05},${cy + s * 0.1}
+            L${h + s * 0.07},${cy + s * 0.02}
+            L${h + s * 0.13},${cy + s * 0.02}
+            L${h + s * 0.16},${cy - s * 0.08}
+            L${h + s * 0.02},${cy - s * 0.04} Z`} />
+          <circle cx={h} cy={cy - s * 0.085} r={s * 0.012} fill={sc} />
+        </g>
       );
     case 'crown-icon':
+      // Royal crown — heraldic 5-point with jewels
       return (
-        <>
-          <polygon points={`${h - s * 0.14},${cy + s * 0.06} ${h - s * 0.1},${cy - s * 0.1} ${h - s * 0.04},${cy} ${h},${cy - s * 0.12} ${h + s * 0.04},${cy} ${h + s * 0.1},${cy - s * 0.1} ${h + s * 0.14},${cy + s * 0.06}`} fill={dc} />
-          <rect x={h - s * 0.14} y={cy + s * 0.06} width={s * 0.28} height={s * 0.04} fill={dc} rx={s * 0.008} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.16},${cy + s * 0.08}
+            L${h - s * 0.16},${cy - s * 0.02}
+            L${h - s * 0.1},${cy + s * 0.02}
+            L${h - s * 0.08},${cy - s * 0.1}
+            L${h - s * 0.02},${cy + s * 0.02}
+            L${h},${cy - s * 0.13}
+            L${h + s * 0.02},${cy + s * 0.02}
+            L${h + s * 0.08},${cy - s * 0.1}
+            L${h + s * 0.1},${cy + s * 0.02}
+            L${h + s * 0.16},${cy - s * 0.02}
+            L${h + s * 0.16},${cy + s * 0.08} Z`} />
+          <rect x={h - s * 0.16} y={cy + s * 0.08} width={s * 0.32} height={s * 0.04} rx={s * 0.005} />
+          {/* jewels */}
+          <circle cx={h - s * 0.08} cy={cy - s * 0.1} r={s * 0.018} fill={sc} />
+          <circle cx={h} cy={cy - s * 0.13} r={s * 0.022} fill={sc} />
+          <circle cx={h + s * 0.08} cy={cy - s * 0.1} r={s * 0.018} fill={sc} />
+        </g>
       );
     case 'sword':
       return (
