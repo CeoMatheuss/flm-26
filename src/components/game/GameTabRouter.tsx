@@ -27,6 +27,7 @@ import { TrophiesTab } from '@/components/game/TrophiesTab';
 import { TournamentExpandedView } from '@/components/game/TournamentDashboardCard';
 import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
+import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { StaffTab } from '@/components/game/StaffTab';
@@ -280,6 +281,22 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="rules"><RulesTab /></TabsContent>
       <TabsContent value="updates"><UpdatesTab /></TabsContent>
       <TabsContent value="settings"><SettingsTab /></TabsContent>
+      <TabsContent value="clubsettings">
+        <ClubSettingsTab
+          clubName={game.club.name}
+          stadiumName={game.club.stadiumName || 'Arena'}
+          shieldConfig={(game.club as any).shieldConfig}
+          primaryColor={game.club.primaryColor}
+          secondaryColor={game.club.secondaryColor}
+          detailColor={(game.club as any).detailColor}
+          shieldPattern={game.club.shieldPattern}
+          shieldShape={(game.club as any).shieldShape}
+          shieldIcon={(game.club as any).shieldIcon}
+          onRenameClub={game.renameClub}
+          onRenameStadium={game.renameStadium}
+          onUpdateShield={game.updateShield}
+        />
+      </TabsContent>
       <TabsContent value="staff">
         <StaffTab
           staff={game.club.staff || []}
