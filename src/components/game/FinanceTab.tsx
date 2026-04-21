@@ -9,6 +9,7 @@ import { Player, Scout } from '@/types/game';
 import { useState } from 'react';
 import { formatMoney, formatMoneyFull } from '@/lib/formatMoney';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { BudgetBreakdown } from './BudgetBreakdown';
 
 interface Props {
   budget: number;
@@ -63,6 +64,9 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
   return (
     <TooltipProvider delayDuration={150}>
     <div className="space-y-4">
+      {/* Verbas 40/40/20 — trava rígida do orçamento */}
+      <BudgetBreakdown budget={budget} totalSalaries={totalSalaries} variant="full" />
+
       {/* Como funciona — Guia rápido */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-3 flex items-start gap-2">

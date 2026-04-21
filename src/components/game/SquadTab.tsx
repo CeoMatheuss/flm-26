@@ -6,9 +6,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Zap, Heart, Star, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Zap, Heart, Star, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue } from '@/utils/playerGenerator';
+import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
+import { RescindModal } from './RescindModal';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   players: Player[];
@@ -23,6 +25,8 @@ interface Props {
   onChangeNumber: (playerId: string, number: number) => void;
   canLoanOut: boolean;
   userId: string;
+  transferBudget?: number;
+  onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
 }
 
 const posColors: Record<string, string> = {
@@ -99,7 +103,7 @@ function getMoraleColor(morale: number): string {
   return 'text-red-400';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
@@ -108,6 +112,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [editingNumber, setEditingNumber] = useState(false);
   const [filterPos, setFilterPos] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary'>('position');
+  const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
   const sorted = [...players]
@@ -219,6 +225,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-amber-500/50 hover:bg-amber-500/5" onClick={() => onAuction(player)} disabled={!auctionEligible}>
             <Gavel className="h-3.5 w-3.5" /> Leilão {!auctionEligible && <span className="text-[8px] text-muted-foreground">(65+)</span>}
           </Button>
+          {onRescindPlayer && (
+            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setRescindCandidate(player)} disabled={players.length <= 11}>
+              <Trash2 className="h-3.5 w-3.5" /> Rescindir
+            </Button>
+          )}
           <div className="flex items-center gap-1.5">
             {editingNumber ? (
               <div className="flex items-center gap-1 w-full">
@@ -456,10 +467,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                         <span className="text-[9px] text-amber-400 font-bold shrink-0">⚠️</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
                       <span>{player.age}a</span>
                       <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k</span>
                       <span>📄{player.contract}a</span>
+                      {(() => {
+                        const value = getPlayerValue(player);
+                        const trend = getValueTrend(player);
+                        const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+                        const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
+                        return (
+                          <span className={`font-bold ${trendColor}`} title={`Valor de mercado: ${formatMoney(value)}`}>
+                            💰{(value / 1000).toFixed(0)}k {trendIcon}
+                          </span>
+                        );
+                      })()}
+                      {isPlayerGem(player) && <span title="Joia!" className="text-amber-400">💎</span>}
                       {player.goals > 0 && <span>⚽{player.goals}</span>}
                       {player.assists > 0 && <span>🅰️{player.assists}</span>}
                       {avgRating && (
@@ -578,6 +601,16 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Rescind modal */}
+      {onRescindPlayer && (
+        <RescindModal
+          player={rescindCandidate}
+          transferBudgetAvailable={effectiveTransferBudget}
+          onClose={() => setRescindCandidate(null)}
+          onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); }}
+        />
+      )}
     </div>
   );
 }

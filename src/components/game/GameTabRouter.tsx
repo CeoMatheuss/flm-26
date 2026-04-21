@@ -171,6 +171,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               toast.success(`${player.name} colocado em leilão!`);
             }
           }}
+          transferBudget={(game as any).transferBudget}
+          onRescindPlayer={(game as any).rescindPlayer}
         />
       </TabsContent>
       <TabsContent value="league">
