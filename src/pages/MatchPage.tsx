@@ -623,6 +623,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const maxSubs = 5;
   const maxWindows = 3;
 
+  // ── Inline section refs (for scroll-to-section navigation) ──
+  const tacticsSectionRef = useRef<HTMLDivElement>(null);
+  const lineupSectionRef = useRef<HTMLDivElement>(null);
+  const statsSectionRef = useRef<HTMLDivElement>(null);
+  const assistantSectionRef = useRef<HTMLDivElement>(null);
+  const scrollToSection = useCallback((ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   // Process queued substitutions
   useEffect(() => {
     if (subQueue.length === 0 || !homePlayers) return;
