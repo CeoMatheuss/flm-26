@@ -13,7 +13,7 @@ import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export function useInfraState(initialState: any, userId?: string) {
+export function useInfraState(initialState: any, userId?: string, isPremium: boolean = false) {
   const [infrastructure, setInfrastructure] = useState<Infrastructure>(initialState?.infrastructure ?? defaultInfrastructure);
   const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(() => {
     const list: YouthProspect[] = initialState?.youthProspects ?? [];
