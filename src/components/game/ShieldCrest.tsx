@@ -682,6 +682,44 @@ export function ShieldCrest({
             fill={secondaryColor} opacity={0.6}
           />
         );
+      // ── Heraldic divisions (clean, solid colors) ──
+      case 'quartered':
+        return (
+          <>
+            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} />
+            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.4} strokeWidth={s * 0.012} />
+            <line x1={0} y1={h} x2={s} y2={h} stroke="#000" strokeOpacity={0.4} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'per-pale':
+        return (
+          <>
+            <rect x={h} y={0} width={h} height={s} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.35} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'per-bend':
+        return (
+          <>
+            <polygon points={`0,0 ${s},0 ${s},${s}`} fill={secondaryColor} />
+            <line x1={0} y1={0} x2={s} y2={s} stroke="#000" strokeOpacity={0.35} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'bordure':
+        return (
+          <>
+            <rect x={0} y={0} width={s} height={s} fill={secondaryColor} />
+            <rect x={s * 0.14} y={s * 0.1} width={s * 0.72} height={s * 0.78} fill={primaryColor} rx={s * 0.04} />
+          </>
+        );
+      case 'chief':
+        return (
+          <>
+            <rect x={0} y={0} width={s} height={s * 0.34} fill={secondaryColor} />
+            <line x1={0} y1={s * 0.34} x2={s} y2={s * 0.34} stroke="#000" strokeOpacity={0.3} strokeWidth={s * 0.01} />
+          </>
+        );
       default:
         return null;
     }
