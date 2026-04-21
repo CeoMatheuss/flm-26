@@ -153,7 +153,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   }, []);
 
   useEffect(() => {
-    seedPool().then(() => resolveDecisions()).then(() => {
+    resolveDecisions().then(() => {
       loadAgents();
       loadActiveOffers();
       loadHistory();
