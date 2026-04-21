@@ -756,65 +756,6 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           })()}
         </TabsContent>
 
-        {/* ── LIST PLAYERS ── */}
-        <TabsContent value="list" className="space-y-3 mt-3">
-          <h3 className="font-bold text-sm flex items-center gap-2">
-            <Tag className="h-4 w-4 text-primary" /> Listar Jogadores
-            <Badge variant="outline" className="text-[9px]">{myListings.length}/5</Badge>
-          </h3>
-
-          {myListings.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado</p>
-              {myListings.map(l => {
-                const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
-                return (
-                  <div key={l.id} className="rounded-xl border border-primary/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                    <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
-                      <span className={`text-xs font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
-                      <span className={`text-[7px] font-bold ${pos.text}`}>{l.player_position}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">{l.player_name}</p>
-                      <p className="text-[10px] text-emerald-400 font-bold">R${(l.asking_price / 1000).toFixed(0)}k</p>
-                    </div>
-                    <Button size="sm" variant="destructive" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => delistPlayer(l.id)} disabled={loading}>
-                      <X className="h-3 w-3" /> Retirar
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {myListings.length < 5 && (
-            <ScrollArea className="max-h-[45vh]">
-              <div className="space-y-1.5">
-                {listablePlayers.map(player => {
-                  const value = getPlayerValue(player);
-                  const pos = posColors[player.position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
-                  return (
-                    <div key={player.id} className="rounded-xl border border-border/15 hover:border-primary/20 transition-all p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                      <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
-                        <span className={`text-xs font-black ${getOvrColor(player.overall)}`}>{player.overall}</span>
-                        <span className={`text-[7px] font-bold ${pos.text}`}>{player.position}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate">{player.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{player.age}a</p>
-                      </div>
-                      <p className="text-[10px] text-emerald-400 font-bold shrink-0">R${(value / 1000).toFixed(0)}k</p>
-                      <Button size="sm" variant="outline" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => listPlayer(player)} disabled={loading || players.length <= 11}>
-                        <Tag className="h-3 w-3" /> Listar
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
-
         {/* ── LOANS ── */}
         <TabsContent value="loans" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
