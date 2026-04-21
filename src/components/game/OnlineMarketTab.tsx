@@ -562,15 +562,12 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       </div>
 
       <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+        <TabsList className="grid grid-cols-5 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
           <TabsTrigger value="browse" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <Globe className="h-3 w-3" /> Mercado
           </TabsTrigger>
           <TabsTrigger value="freeagents" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <EyeOff className="h-3 w-3" /> Livre
-          </TabsTrigger>
-          <TabsTrigger value="list" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
-            <Tag className="h-3 w-3" /> Listar
           </TabsTrigger>
           <TabsTrigger value="loans" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <ArrowLeftRight className="h-3 w-3" /> Emprést.
