@@ -221,9 +221,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     });
 
     if (res.error || res.data?.error) {
-      toast.error(res.data?.error || 'Erro ao listar jogador');
+      toast.error(res.data?.error || 'Erro ao anunciar jogador');
     } else {
-      toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
+      toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k!`);
       loadListings();
       setActiveMarketTab('browse');
       onListedPlayer?.();
@@ -555,7 +555,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="h-8 w-px bg-border/30" />
             <div className="text-center">
               <p className="font-bold text-foreground text-lg">{myListings.length}</p>
-              <p>Listados</p>
+              <p>Anunciados</p>
             </div>
           </div>
         </div>
