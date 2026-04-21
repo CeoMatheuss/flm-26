@@ -35,9 +35,10 @@ export function InfrastructureTab({ infrastructure, budget, onUpgrade }: Props) 
         const facility = infrastructure?.[key] ?? { level: 1, maxLevel: 10 };
         const info = facilityInfo[key];
         const Icon = info.icon;
-        const cost = getUpgradeCost(facility.level);
+        const cost = getUpgradeCost(facility.level, key);
         const isMaxed = facility.level >= facility.maxLevel;
         const pct = (facility.level / facility.maxLevel) * 100;
+        const physioBonuses = key === 'physiotherapy' ? getPhysioBonuses(facility.level) : null;
 
         return (
           <Card key={key} className="game-card-accent overflow-hidden">
@@ -69,6 +70,27 @@ export function InfrastructureTab({ infrastructure, budget, onUpgrade }: Props) 
                   />
                 ))}
               </div>
+
+              {physioBonuses && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-muted/30 p-2">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Recup. lesão</p>
+                    <p className="font-bold text-emerald-400">+{Math.round(physioBonuses.recoverySpeed * 100)}%</p>
+                  </div>
+                  <div className="rounded-md bg-muted/30 p-2">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Risco lesão</p>
+                    <p className="font-bold text-emerald-400">-{Math.round(physioBonuses.injuryRiskReduction * 100)}%</p>
+                  </div>
+                  <div className="rounded-md bg-muted/30 p-2">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Recaída</p>
+                    <p className="font-bold text-emerald-400">-{Math.round(physioBonuses.relapseReduction * 100)}%</p>
+                  </div>
+                  <div className="rounded-md bg-muted/30 p-2">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Stamina baixa</p>
+                    <p className="font-bold text-emerald-400">-{Math.round(physioBonuses.lowStaminaProtection * 100)}%</p>
+                  </div>
+                </div>
+              )}
 
               {!isMaxed ? (
                 <Button onClick={() => onUpgrade(key)} disabled={budget < cost} className="w-full gap-2 h-11 text-sm font-semibold">
