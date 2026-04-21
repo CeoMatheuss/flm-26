@@ -950,17 +950,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         )}
 
-        {/* Halftime banner */}
-        {isHalftime && (
-          <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
-            <p className="text-base sm:text-xl font-black text-primary">⏸ INTERVALO</p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
-            {subQueue.length > 0 && (
-              <p className="text-xs sm:text-sm text-primary mt-2 font-bold animate-pulse">
-                🔄 {subQueue.length} substituição(ões) pendente(s)
-              </p>
-            )}
-          </Card>
+        {/* Halftime sub queue indicator */}
+        {isHalftime && subQueue.length > 0 && (
+          <div className="bg-primary/10 border border-primary/30 rounded-xl px-3 py-2 text-center animate-pulse">
+            <p className="text-xs sm:text-sm text-primary font-bold">
+              🔄 {subQueue.length} substituição(ões) na fila — execute pelo painel "Time"
+            </p>
+          </div>
         )}
 
         {/* 2D Canvas — highlights */}
