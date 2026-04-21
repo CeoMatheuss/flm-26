@@ -568,27 +568,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         </div>
       </div>
 
-      <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full flex flex-col md:flex-row gap-3">
-        <TabsList className="md:flex-col md:w-44 md:h-auto md:items-stretch md:justify-start md:p-2 md:gap-1 md:shrink-0 md:rounded-xl flex flex-row w-full h-auto p-1.5 gap-1 rounded-xl overflow-x-auto" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
-          <TabsTrigger value="browse" className="md:w-full md:justify-start md:px-3 md:py-2.5 md:h-auto text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-2 shrink-0">
-            <Globe className="h-3.5 w-3.5" /> <span>Mercado</span>
-          </TabsTrigger>
-          <TabsTrigger value="freeagents" className="md:w-full md:justify-start md:px-3 md:py-2.5 md:h-auto text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-2 shrink-0">
-            <EyeOff className="h-3.5 w-3.5" /> <span>Livres</span>
-          </TabsTrigger>
-          <TabsTrigger value="auction" className="md:w-full md:justify-start md:px-3 md:py-2.5 md:h-auto text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-2 shrink-0">
-            <span>⚖️</span> <span>Leilão</span>
-          </TabsTrigger>
-          <TabsTrigger value="offers" className="md:w-full md:justify-start md:px-3 md:py-2.5 md:h-auto text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-2 relative shrink-0">
-            <span>📨</span> <span>Propostas</span>
-            {incomingOffers.length > 0 && <span className="md:ml-auto h-4 min-w-4 px-1 rounded-full bg-destructive text-[8px] text-destructive-foreground inline-flex items-center justify-center font-bold">{incomingOffers.length}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="loans" className="md:w-full md:justify-start md:px-3 md:py-2.5 md:h-auto text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-2 shrink-0">
-            <ArrowLeftRight className="h-3.5 w-3.5" /> <span>Empréstimos</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="flex-1 min-w-0">
+      <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
+        <div>
 
         {/* ── AUCTION (embedded) ── */}
         <TabsContent value="auction" className="space-y-3 mt-3">
