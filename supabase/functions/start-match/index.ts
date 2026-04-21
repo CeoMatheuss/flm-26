@@ -322,7 +322,7 @@ function simulateFullMatch(
   homeStrength: number, awayStrength: number, tactics: any,
   stadiumName: string, isHome: boolean, competition: string,
   stadiumCapacity: number = 5000, homeFans: number = 500,
-  staffData?: any
+  staffData?: any, awayFans: number = 500
 ) {
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
