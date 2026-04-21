@@ -533,8 +533,28 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'fleur-de-lis':
+      // Proper heraldic fleur-de-lis silhouette
       return (
-        <text x={h} y={cy + s * 0.1} textAnchor="middle" fill={dc} fontSize={s * 0.32} fontWeight="bold">⚜</text>
+        <g fill={dc}>
+          {/* center petal */}
+          <path d={`M${h},${cy - s * 0.13}
+            Q${h - s * 0.025},${cy - s * 0.04} ${h - s * 0.018},${cy + s * 0.04}
+            Q${h},${cy + s * 0.06} ${h + s * 0.018},${cy + s * 0.04}
+            Q${h + s * 0.025},${cy - s * 0.04} ${h},${cy - s * 0.13} Z`} />
+          {/* left petal curling out */}
+          <path d={`M${h - s * 0.005},${cy - s * 0.04}
+            Q${h - s * 0.13},${cy - s * 0.06} ${h - s * 0.11},${cy + s * 0.06}
+            Q${h - s * 0.06},${cy + s * 0.02} ${h - s * 0.005},${cy + s * 0.04} Z`} />
+          {/* right petal curling out */}
+          <path d={`M${h + s * 0.005},${cy - s * 0.04}
+            Q${h + s * 0.13},${cy - s * 0.06} ${h + s * 0.11},${cy + s * 0.06}
+            Q${h + s * 0.06},${cy + s * 0.02} ${h + s * 0.005},${cy + s * 0.04} Z`} />
+          {/* horizontal band */}
+          <rect x={h - s * 0.1} y={cy + s * 0.04} width={s * 0.2} height={s * 0.022} rx={s * 0.004} />
+          {/* lower stem */}
+          <path d={`M${h - s * 0.05},${cy + s * 0.062}
+            Q${h},${cy + s * 0.14} ${h + s * 0.05},${cy + s * 0.062} Z`} />
+        </g>
       );
     case 'cross-pattee':
       return (
