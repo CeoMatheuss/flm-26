@@ -1,145 +1,95 @@
 
 
-# Plano: Editor de Escudos Avançado (Crest Builder Pro)
+# Plano: Finalizar Integração do Crest Builder Pro
 
-Substituir o painel atual de escudo (formas/padrões/ícones em listas planas) por um **editor visual modular** estilo FIFA/Football Manager, com preview ao vivo, controles de transformação e mais opções.
+Concluir a integração do novo editor de escudos no app inteiro, garantindo que o `shieldConfig` propague para todos os locais que renderizam o escudo do clube.
 
-## 1. Novo componente: `CrestBuilder.tsx`
+## 1. Botão "Editar Escudo" em ClubSettingsTab
 
-**Arquivo**: `src/components/game/CrestBuilder.tsx` (NOVO)
+**Arquivo**: `src/components/game/ClubSettingsTab.tsx`
 
-Editor standalone, reutilizável tanto na criação de clube (`ClubCreation`) quanto em ajustes (`ClubSettingsTab`).
+- Adicionar nova `Card` "🎨 Escudo do Clube":
+  - Mostra preview pequeno (60×60) do escudo atual
+  - Botão "Editar Escudo" abre `Sheet` (lateral em desktop, bottom em mobile) com `<CrestBuilder />` em tela cheia
+  - Botões "Cancelar" / "Salvar" no rodapé do sheet
+- Estender props do componente: `shieldConfig` + `onUpdateShield(config)` para persistir no club state.
 
-### Layout (responsivo)
+## 2. Propagar `shieldConfig` ao ShieldCrest em Todo o App
 
-```
-┌──────────────────────────────────────────────────────────┐
-│  [Preview Grande 240x240]   │  [Painel de abas]          │
-│  - Escudo renderizado       │  ┌──────────────────────┐  │
-│  - Fundo xadrez claro       │  │ 🛡 Forma | 🎨 Cores  │  │
-│  - Sombra suave             │  │ 🐺 Símbolo | ✨ Extras│  │
-│                              │  │ 🧩 Layout | 🔧 Ajuste │  │
-│  [🎲 Aleatório][💾 Salvar]   │  └──────────────────────┘  │
-│                              │  [Conteúdo da aba ativa] │
-└──────────────────────────────────────────────────────────┘
-```
+**Arquivos** que renderizam `<ShieldCrest>` e precisam priorizar `shieldConfig` sobre os campos legados:
 
-Mobile: empilha (preview no topo, abas abaixo).
+- `src/components/game/GameHeader.tsx` (header principal)
+- `src/components/game/GameNavBar.tsx` (nav bar inferior)
+- `src/components/game/DashboardTab.tsx` (placar/destaque)
+- `src/components/game/ClubProfilePage.tsx` (perfil público)
+- `src/components/game/ClubProfileTab.tsx`
+- `src/components/game/MatchDashboardCard.tsx`
+- `src/components/game/SeasonStartWidget.tsx`
+- `src/components/game/LeagueTab.tsx` (tabela de classificação)
+- `src/components/game/RankingTab.tsx`
+- `src/components/game/ActiveLeaguesPanel.tsx`
+- `src/components/game/CupBracketView.tsx`
+- `src/pages/MatchPage.tsx`
 
-### Abas
-
-| Aba | Conteúdo |
-|---|---|
-| 🛡 **Forma** | Grid 5×2 com 10 formas (`shieldShapes` já existe). Hover destaca, click seleciona. |
-| 🎨 **Cores** | 4 color pickers (Primária, Secundária, Símbolo, Borda) + paleta rápida (12 swatches comuns: vermelho, azul, verde, preto, branco, dourado, etc). |
-| 🐺 **Símbolo** | Tabs internas: **Animais** / **Símbolos** / **Letras**. Grid de ícones (~30 itens). Botão "↔ Espelhar". |
-| ✨ **Extras** | Sub-elementos opcionais: estrelas no topo, coroa, louros laterais, faixa com texto. Cada item tem toggle on/off. |
-| 🧩 **Layout** | 6 cards visuais: Sólido, Dividido ao meio, Listrado, Diagonal, Faixa horizontal, Quadrantes. Reaproveita `shieldPatterns`. |
-| 🔧 **Ajustes** | Sliders: Tamanho do símbolo (0.5x–1.5x), Posição X (-30 a +30), Posição Y (-30 a +30), Rotação (-180° a 180°), Opacidade (20%–100%), Espessura da borda (0–8px). |
-
-## 2. Expansão do `ShieldCrest.tsx`
-
-**Arquivo**: `src/components/game/ShieldCrest.tsx`
-
-### 2.1 Novos ícones (animais conforme imagem de referência)
-Adicionar à lista `shieldIcons`:
-- **Animais novos**: `tiger`, `bear`, `phoenix`, `snake`, `elephant`, `rhino`, `panther`, `deer`, `bull`, `griffin`, `unicorn`, `pegasus`
-- **Símbolos extras**: `lightning`, `castle`, `axe`, `bow`, `fleur-de-lis`, `cross-pattee`, `crescent-moon`, `sun-burst`
-
-Cada ícone desenhado em SVG vetorial preto/branco (estilo flat heráldico, igual ao padrão atual). Cerca de **20 novos ícones**.
-
-### 2.2 Novas props de transformação
-
+Criar **helper** `src/components/game/shieldHelpers.ts`:
 ```typescript
-interface ShieldProps {
-  // existentes...
-  iconScale?: number;        // 0.5 - 1.5 (default 1)
-  iconOffsetX?: number;      // -30 a 30
-  iconOffsetY?: number;      // -30 a 30
-  iconRotation?: number;     // graus
-  iconOpacity?: number;      // 0-1
-  iconMirror?: boolean;      // espelhar horizontalmente
-  borderColor?: string;
-  borderWidth?: number;      // 0-8
-  // Camadas extras
-  topStars?: 0 | 1 | 2 | 3;  // estrelinhas no topo
-  showLaurels?: boolean;     // louros laterais
-  showCrown?: boolean;       // coroa no topo
-  bannerText?: string;       // texto na faixa inferior
-  bannerColor?: string;
+export function shieldPropsFromClub(club: Club | ClubConfig) {
+  if (club.shieldConfig) {
+    // spread completo (novas props + transformações + camadas extras)
+    return { ...club.shieldConfig };
+  }
+  // fallback legado
+  return {
+    shape: club.shieldShape,
+    pattern: club.shieldPattern,
+    icon: club.shieldIcon,
+    primaryColor: club.primaryColor,
+    secondaryColor: club.secondaryColor,
+  };
 }
 ```
 
-Aplicadas via `<g transform="translate(x,y) scale(s) rotate(r)">` envolvendo o `renderIcon()`.
+Substituir os usos manuais por `<ShieldCrest {...shieldPropsFromClub(club)} size={N} />`.
 
-### 2.3 Camada de decoração externa
+## 3. Sincronização com Multiplayer
 
-Renderizar camadas adicionais (coroa, louros, faixa) **fora do clip do escudo**, sobrepondo bordas para efeito heráldico premium.
+**Arquivo**: `src/hooks/useMultiplayer.ts` (e funções de sync existentes)
 
-## 3. Integração
+- Incluir `shieldConfig` no objeto `club_metadata` enviado ao auto-sync de `league_squads` / `league_members`.
+- Ao receber dados de outros clubes (perfil público, ranking, liga), ler `shieldConfig` se presente.
 
-### 3.1 `ClubCreation.tsx`
-- Substituir o bloco atual de escudo (linhas ~480-540) por `<CrestBuilder value={...} onChange={...} />`.
-- Manter o resto do fluxo (nome, estádio, país) inalterado.
+## 4. Bots e Clubes Sem Configuração
 
-### 3.2 `ClubSettingsTab.tsx`
-- Adicionar botão "🎨 Editar Escudo" abre o `CrestBuilder` em modal/sheet, salva ao confirmar.
+- Bots gerados nas Edge Functions (`get-all-clubs`, `process-tournament-matches`) continuam sem `shieldConfig` → o helper acima cai automaticamente no fallback legado, sem alterar Edge Functions.
+- Confirmar `ShieldCrest` aceita props ausentes com defaults seguros (já implementado).
 
-### 3.3 Persistência
-Adicionar ao tipo `Club` em `src/types/game.ts`:
-```typescript
-shieldConfig?: {
-  shape: ShieldShape;
-  pattern: ShieldPattern;
-  icon: ShieldIcon;
-  primaryColor: string;
-  secondaryColor: string;
-  detailColor: string;
-  borderColor: string;
-  borderWidth: number;
-  iconScale: number;
-  iconOffsetX: number;
-  iconOffsetY: number;
-  iconRotation: number;
-  iconOpacity: number;
-  iconMirror: boolean;
-  topStars: number;
-  showLaurels: boolean;
-  showCrown: boolean;
-  bannerText?: string;
-};
-```
-Salvo dentro de `game_saves.club_data` (JSONB existente, sem migração).
+## 5. Persistência
 
-Compatibilidade: se `shieldConfig` ausente, usa os campos antigos (`shieldPattern`, `shieldShape`, `shieldIcon`) como fallback.
-
-## 4. Botão "🎲 Aleatório"
-
-Função `randomizeShield()`:
-- Sorteia forma, padrão, ícone das listas
-- Sorteia 2 cores complementares de uma paleta curada (evita combinações feias tipo amarelo + branco)
-- Reseta transformações para defaults
-- Anima preview com fade rápido (200ms)
-
-## 5. Preview ao Vivo + Animação
-
-- Preview reage instantaneamente a qualquer mudança (controlado por estado React)
-- Transições CSS suaves (`transition: all 200ms ease`) no SVG ao trocar cores/escala
-- Card de preview com fundo xadrez sutil (`bg-[url('checkerboard')]`) para mostrar opacidade
+Já feito (`shieldConfig` está em `club_data` JSONB do `game_saves`). Esta etapa só garante que o `setClub({ ...club, shieldConfig })` chamado pelo Sheet dispara o auto-save reativo (debounce 2s) — verificar `useClubState`.
 
 ## Arquivos Modificados / Criados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/CrestBuilder.tsx` | **NOVO** — editor com 6 abas, preview, sliders |
-| `src/components/game/ShieldCrest.tsx` | +20 ícones, props de transformação, camadas extras (coroa/louros/faixa) |
-| `src/components/game/ClubCreation.tsx` | Substitui painel de escudo por `<CrestBuilder>` |
-| `src/components/game/ClubSettingsTab.tsx` | Botão "Editar Escudo" abre `CrestBuilder` em sheet |
-| `src/types/game.ts` | Adiciona `shieldConfig` opcional ao Club |
+| `src/components/game/shieldHelpers.ts` | **NOVO** — helper `shieldPropsFromClub()` |
+| `src/components/game/ClubSettingsTab.tsx` | Card de escudo + Sheet com CrestBuilder |
+| `src/components/game/GameHeader.tsx` | Usa helper |
+| `src/components/game/GameNavBar.tsx` | Usa helper |
+| `src/components/game/DashboardTab.tsx` | Usa helper |
+| `src/components/game/ClubProfilePage.tsx` | Usa helper (lê do club fetched) |
+| `src/components/game/ClubProfileTab.tsx` | Usa helper |
+| `src/components/game/MatchDashboardCard.tsx` | Usa helper |
+| `src/components/game/SeasonStartWidget.tsx` | Usa helper |
+| `src/components/game/LeagueTab.tsx` | Usa helper nas linhas da tabela |
+| `src/components/game/RankingTab.tsx` | Usa helper |
+| `src/components/game/ActiveLeaguesPanel.tsx` | Usa helper |
+| `src/components/game/CupBracketView.tsx` | Usa helper |
+| `src/pages/MatchPage.tsx` | Usa helper para escudos das duas equipes |
+| `src/hooks/useMultiplayer.ts` | Inclui `shieldConfig` no payload de sync |
 
 ## Compatibilidade
 
-- Clubes existentes sem `shieldConfig` continuam usando `shieldShape`/`shieldPattern`/`shieldIcon` (fallback)
-- Nenhuma migração de banco — tudo persistido em `game_saves.club_data` JSONB
-- `ShieldCrest` mantém props antigas funcionando (todos os novos parâmetros são opcionais com defaults)
+- Saves antigos sem `shieldConfig` → helper retorna fallback (`shieldShape`/`shieldPattern`/`shieldIcon`) sem quebrar.
+- Bots/Edge Functions: sem mudança — campos legados continuam funcionando.
+- Sem migração de banco (tudo persiste no JSONB existente).
 
