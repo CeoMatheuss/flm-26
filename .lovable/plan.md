@@ -1,143 +1,127 @@
 
 
-# Plano: Refinar UI da Partida + Sistema de Treinamento V3 (Progresso %)
+# Plano: Treino em Grupo (até 5) + Persistência + Sistema Stamina/Lesões V2
 
-## Parte 1 — UI da Página de Partida (Simulação ao Lado, Stats Maiores)
-
-**Arquivo**: `src/pages/MatchPage.tsx`
-
-Reorganizar o layout para colocar o **canvas/simulação 2D ao lado direito** e os **stats principais maiores ao lado esquerdo**, removendo os widgets pequenos atuais do topo.
-
-### Layout novo (≥ md / desktop)
-
-```
-┌─────────────────────────────────┬─────────────────────────┐
-│  PLACAR + COMPETIÇÃO            │                         │
-│  TIME A  2 — 1  TIME B          │                         │
-│  45'  ⏸️                        │       SIMULAÇÃO 2D      │
-├─────────────────────────────────┤        (canvas)         │
-│  📊 ESTATÍSTICAS GRANDES        │       full-height       │
-│  Posse 54% — 46%                │                         │
-│  Finalizações 17 — 13           │                         │
-│  Passes 77% — 70%               │                         │
-│  xG / Faltas / Escanteios       │                         │
-├─────────────────────────────────┴─────────────────────────┤
-│  📰 NARRAÇÃO (rolagem inversa)                            │
-└───────────────────────────────────────────────────────────┘
-↓ Logo abaixo, seções inline empilhadas:
-[ ESCALAÇÕES ] [ ESTILO DE JOGO ] [ SUBSTITUIÇÕES ]
-```
-
-### Layout mobile (< md)
-
-Mantém vertical: Placar → Stats compactos → Simulação 2D (height 280px) → Narração → Seções.
-
-### Mudanças concretas
-
-- **Remover** os 4 mini-widgets de navegação atuais (Tática/Elenco/Stats/Técnico) — viram apenas links/abas no header.
-- **Stats principais** (Posse, Finalizações, Passes) ficam num card grande do lado esquerdo: números grandes (`text-3xl`), barras visuais centralizadas estilo `── 54% — Posse — 46% ──`.
-- **Simulação** (`HighlightMiniCanvas`) ocupa coluna direita full-height (sticky) em desktop.
-- **Narração** abaixo dos dois, full-width.
-- Seções inline já existentes (Escalações, Estilo, Subs, Stats Detalhados) continuam abaixo, mas como cards menores (`max-w-4xl mx-auto`).
-
----
-
-## Parte 2 — Sistema de Treinamento V3 (Progresso %)
-
-### 2.1 Modelo de Dados
-
-**Arquivo**: `src/types/game.ts` + `src/training/TrainingTypes.ts`
-
-Adicionar ao `Player`:
-```typescript
-trainingProgress?: number;        // 0-100, sobe semanalmente; ao chegar 100 → +1 OVR e reseta
-trainingStatus?: 'evoluindo' | 'normal' | 'lento' | 'travado';
-lastTrainedAttr?: keyof PlayerAttributes;
-```
-
-Novos focos de treino (substituem os atuais em `TrainingTypes.ts`):
-- **Grupos** (evolução equilibrada): `finalizacao_grupo`, `tecnico_grupo`, `defensivo_grupo`, `fisico_grupo`, `mental_grupo`
-- **Específicos** (foco em 1 atributo): mapear cada atributo individualmente
-
-Cada grupo distribui o ganho entre múltiplos atributos com pesos (alto/médio/baixo conforme spec).
-
-### 2.2 Eficiência do CT (1–30)
-
-**Arquivo**: `src/types/infrastructure.ts`
-
-Tabela `ctEfficiencyByLevel` (% por semana) conforme spec:
-```
-Lv 1: 1.0% | Lv 5: 2.2% | Lv 10: 4.5% | Lv 15: 7.0%
-Lv 20: 9.5% | Lv 25: 12.0% | Lv 30: 15.0%
-```
-
-**Custos do CT rebalanceados** (`getUpgradeCost` ou nova tabela):
-```
-Lv 1→5:  0.3M, 0.6M, 1M, 1.5M, 2M
-Lv 6→10: 2.5M, 3.5M, 5M, 6.5M, 8M
-Lv 11→15: 10M, 13M, 16M, 20M, 25M
-Lv 16→20: 30M, 38M, 46M, 55M, 65M
-Lv 21→25: 75M, 90M, 110M, 130M, 150M
-Lv 26→30: 180M, 210M, 250M, 300M, 350M
-```
-
-### 2.3 Lógica de Progresso
-
-**Arquivo**: `src/training/PlayerDevelopmentEngine.ts`
-
-Substituir lógica atual ("chance de +1") por:
-```
-1. Calcula gain semanal = ctEfficiency × intensityMult × ageFactor × personalityFactor × moraleFactor
-2. Treino Específico: 100% no atributo escolhido
-3. Treino Grupo: 60% atr_alto, 30% atr_medio, 10% atr_baixo
-4. trainingProgress += gain
-5. Se progress ≥ 100 → +1 no atributo principal, recalcula OVR, reseta progress
-6. Bônus por jogos: +0.5% por minuto jogado na semana (jogar acelera)
-```
-
-**Status visual** (calculado a partir do gain semanal médio):
-- Gain ≥ 8% → 🔥 Evoluindo rápido
-- Gain 4–8% → ⚖️ Normal
-- Gain 1–4% → 🐢 Lento
-- Gain < 1% (idade > 33 ou cap atingido) → ❌ Travado
-
-### 2.4 Intensidade
-
-Mantém `leve` / `moderado` / `pesado` com multiplicadores existentes; pesado aumenta risco de lesão (já existe em `InjuryRiskSystem`).
-
-### 2.5 UI da Aba de Treinamento
+## Parte 1 — Treino em Grupo (Multi-seleção até 5 jogadores)
 
 **Arquivo**: `src/components/game/TrainingTab.tsx`
 
-- **Header**: card grande do CT com nível, eficiência semanal (%), botão "Melhorar CT" mostrando próximo custo
-- **Lista de jogadores** (cards verticais):
-  - Nome • Idade • OVR grande
-  - **Barra de progresso (0–100%)** colorida por status
-  - Status (🔥/⚖️/🐢/❌) com label
-  - Dropdown 1: Tipo de treino (Grupo / Específico)
-  - Dropdown 2: Foco (depende do tipo — 5 grupos OU lista de atributos)
-  - Toggle de intensidade (3 botões: 🟢 Leve / 🟡 Médio / 🔴 Pesado)
-- **Ícone ❓** ao lado de cada label clicável (Treino, Tipo, Intensidade, Progresso) abre o popup de ajuda
+- Adicionar **modo de seleção múltipla**: botão "👥 Treinar em Grupo" no topo da lista.
+- Ao ativar: cada card de jogador ganha checkbox no canto. Limite de **5 jogadores**.
+- Aparece **painel flutuante inferior** (sticky bottom) com:
+  - Contador "X/5 selecionados"
+  - Seletor de **Tipo** (Grupo / Específico)
+  - Seletor de **Foco** (depende do tipo)
+  - Botões de **Intensidade** (🟢 Leve / 🟡 Médio / 🔴 Pesado)
+  - Botão "✅ Aplicar a todos" → grava o mesmo `PlayerTrainingConfig` para cada ID selecionado
+- Sair do modo de seleção limpa as marcações.
 
-### 2.6 Popup de Ajuda
+## Parte 2 — Persistência das Ações de Treino e Base (BUG FIX)
 
-**Novo arquivo**: `src/components/game/TrainingHelpPopup.tsx`
+**Arquivos**: `src/hooks/useGame.ts`, `src/hooks/useInfraState.ts`, `src/components/game/TrainingTab.tsx`
 
-Modal único reaproveitável com seções:
-- 🧠 Como funciona o Treinamento
-- 🏟️ Centro de Treinamento
-- 👥 Treino por Grupo / 🎯 Treino Específico
-- ⚙️ Intensidade
-- ⚽ Partidas aceleram evolução
+**Problema reportado**: ao atualizar a base, mudanças não persistem.
 
-Botão "Entendi" fecha. Aceita prop `section` opcional para abrir já no tópico clicado.
+- Auditar o fluxo de salvamento: confirmar que toda mutação em `infrastructure` e em `trainingConfigs` dispara o auto-save em `game_saves.club_data` (debounce 2s).
+- Adicionar `trainingConfigs: Record<playerId, PlayerTrainingConfig>` ao `club_data` salvo (hoje pode estar só em estado local).
+- Garantir que `useInfraState.upgradeFacility` e o setter de `youthInvestment` chamem o `setClub()` que aciona o save reativo.
+- Adicionar **toast visível** "💾 Treino salvo" / "🏗️ Base atualizada" para feedback imediato.
+- Adicionar log em console `[Persist]` para depuração.
 
-### 2.7 Notificações
+## Parte 3 — Sistema de Stamina V2
 
-Aproveitar sistema existente (`toast.success`):
-- ✨ "Jogador evoluiu! (+1 Finalização)" quando progress completa
-- ⚠️ "Jogador fatigado" se stamina < 30%
-- 🔥 "Evolução acelerada" se gain semanal > 12%
+**Arquivo**: `src/types/infrastructure.ts` + `src/training/FatigueSystem.ts` + simulação de partida
+
+### 3.1 Recuperação Diária
+```
+Base: +30/dia
+Fisio: +1 por nível (Nv 1 = 31 ... Nv 20 = 50 máx)
+```
+
+### 3.2 Desgaste por Partida (baseado no atributo `physical`)
+```
+Físico 80–100 → -20
+Físico 60–79  → -25
+Físico 40–59  → -30
+Físico 0–39   → -40
+```
+
+### 3.3 Modificadores de Recuperação
+- Jogou partida no dia: -20%
+- Stamina < 50: -30%
+- Ambos: -50%
+
+### 3.4 Zona de Risco (afeta desempenho na partida)
+| Stamina | Desempenho | Risco lesão |
+|---|---|---|
+| 50–100 | Normal | Normal |
+| 40–49  | -10%   | +20% |
+| 20–39  | -25%   | +50% |
+| 0–19   | -40%   | +80% |
+
+## Parte 4 — Sistema de Lesões V2
+
+**Arquivo**: `src/training/InjuryRiskSystem.ts` + novo `src/types/injury.ts`
+
+### 4.1 Tipos por Severidade
+- **Leve**: 1–5 dias | -5% a -10% desempenho
+- **Moderada**: 5–15 dias | -15% a -25%
+- **Grave**: 15–60 dias | bloqueia jogo
+- **Crônica** (novo): recorrente, risco constante
+
+### 4.2 Tipos Específicos (efeitos)
+- Muscular → -velocidade
+- Joelho → -mobilidade geral
+- Ligamento → alto risco de piorar
+- Tornozelo → -agilidade
+- Fadiga extrema → lesão leve automática
+
+### 4.3 Propensão a Lesão (novo campo `injuryProneness` 0-100 no Player)
+- Baixa (0–30) → x1.0
+- Média (31–70) → x1.3
+- Alta (71–100) → x1.6
+
+### 4.4 Recaída
+- Base 30% → até 60% (alta propensão) → -20% com fisio alto
+- Recaída dobra tempo, pode subir severidade
+
+### 4.5 Histórico de Lesões
+- Cada lesão soma +5 em `injuryProneness` (até 100)
+- Acumular cria jogador "de vidro"
+
+## Parte 5 — Bônus do Fisioterapeuta (Nv 1–20)
+
+**Arquivo**: `src/types/infrastructure.ts`
+
+| Nível | Recup. lesão | Risco | Recaída | Stamina baixa |
+|---|---|---|---|---|
+| 1–5   | normal | 0%   | 0%   | 0%   |
+| 6–10  | +5%    | -5%  | -5%  | -5%  |
+| 11–15 | +10%   | -10% | -10% | -10% |
+| 16–20 | +15%   | -15% | -20% | -15% |
+
+## Parte 6 — Custos Fisioterapia (Atualizados, Nv 1→20)
+
+```
+1→2: 300K   | 2→3: 500K   | 3→4: 800K   | 4→5: 1.2M   | 5→6: 1.8M
+6→7: 2.5M   | 7→8: 3.5M   | 8→9: 4.8M   | 9→10: 6M
+10→11: 8M   | 11→12: 10M  | 12→13: 13M  | 13→14: 16M  | 14→15: 20M
+15→16: 25M  | 16→17: 32M  | 17→18: 40M  | 18→19: 50M  | 19→20: 65M
+```
+Reduzir `maxLevel` da fisioterapia de 30 → 20.
+
+## Parte 7 — Treinar Lesionado (regras)
+- Leve: permitido (-30% evolução, +30% risco, +10 fadiga)
+- Moderada: alto risco de piorar (toast warning)
+- Grave: bloqueado (botão de treino desabilitado no card)
+
+## Parte 8 — Alertas no Jogo
+
+Toasts/notificações automáticas:
+- ⚠️ "Jogador cansado" (stamina < 40)
+- 🚨 "Alto risco de lesão" (zona vermelha + propensão alta)
+- 🩹 "Pode jogar com risco" (lesão leve, jogador escalado)
+- 🔄 "Recuperado, mas instável" (saiu de lesão moderada+)
 
 ---
 
@@ -145,20 +129,21 @@ Aproveitar sistema existente (`toast.success`):
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/MatchPage.tsx` | Layout 2 colunas (stats grandes + simulação ao lado), remove mini-widgets do topo |
-| `src/types/game.ts` | Adiciona `trainingProgress`, `trainingStatus`, `lastTrainedAttr` ao Player |
-| `src/types/infrastructure.ts` | Nova tabela de custos CT (1–30) e `ctEfficiencyByLevel` |
-| `src/training/TrainingTypes.ts` | Novos focos (grupos + específicos), pesos por atributo |
-| `src/training/PlayerDevelopmentEngine.ts` | Lógica de progresso % em vez de chance |
-| `src/training/TrainingManager.ts` | Atualiza para usar gain % e calcular status |
-| `src/components/game/TrainingTab.tsx` | UI nova: cards com barra %, dropdowns, intensidade, status |
-| `src/components/game/TrainingHelpPopup.tsx` | **NOVO** — modal de ajuda reutilizável |
-| `src/components/game/InfrastructureTab.tsx` | Mostrar eficiência semanal do CT no card |
+| `src/components/game/TrainingTab.tsx` | Modo grupo (até 5), painel flutuante, toast salvar |
+| `src/hooks/useGame.ts` | Persistir `trainingConfigs` em `club_data` |
+| `src/hooks/useInfraState.ts` | Garantir trigger de save em upgrades + youthInvestment |
+| `src/types/infrastructure.ts` | Custos fisio Nv 1–20, bônus por nível, recuperação stamina |
+| `src/types/game.ts` | Adicionar `injuryProneness` ao Player |
+| `src/types/injury.ts` | **NOVO** — tipos específicos, severidade, recaída |
+| `src/training/FatigueSystem.ts` | Nova lógica de recuperação +30 base + bônus fisio |
+| `src/training/InjuryRiskSystem.ts` | Propensão, recaída, tipos específicos, bônus fisio |
+| `src/components/game/InfrastructureTab.tsx` | Mostrar bônus fisio (recup, risco, recaída) |
+| `src/pages/MatchPage.tsx` (e simulação) | Aplicar zona de risco no desempenho + alerta de lesão |
 
 ## Compatibilidade
 
-- Saves antigos sem `trainingProgress` → assumido `0`, status `normal`
-- Custos antigos do CT (em `getUpgradeCost`) substituídos pela nova tabela; saves com nível ≥ 1 continuam válidos
-- Focos de treino antigos (ex: `physical`, `shooting`) mapeados automaticamente para os novos grupos equivalentes
-- Sem mudança de schema no banco (tudo client-side em `game_saves.club_data`)
+- Saves antigos sem `injuryProneness` → assumido 30 (média-baixa)
+- Saves com fisio nível > 20 → cap em 20 sem perda de progresso
+- `trainingConfigs` ausente → assume `{}` ao carregar
+- Sem alteração de schema no Supabase (tudo persiste em `game_saves.club_data` JSONB)
 
