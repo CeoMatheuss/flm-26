@@ -57,9 +57,11 @@ interface GameTabRouterProps {
   blockedTabs?: string[];
   isAdmin?: boolean;
   isPremium?: boolean;
+  marketSubTab?: string;
+  setMarketSubTab?: (tab: string) => void;
 }
 
-export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false, isPremium = false }: GameTabRouterProps) {
+export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false, isPremium = false, marketSubTab, setMarketSubTab }: GameTabRouterProps) {
   const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
 
   const { winStreak, loseStreak } = useMemo(() => {
@@ -229,6 +231,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
+          activeMarketTab={marketSubTab}
+          onMarketTabChange={setMarketSubTab}
           isPremium={isPremium}
           userId={userId}
           clubName={game.club.name}

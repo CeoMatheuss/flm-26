@@ -143,6 +143,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [marketSubTab, setMarketSubTab] = useState('browse');
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
 
@@ -409,7 +410,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={tutorialCompleted ? undefined : () => setShowTutorial(true)} />
+            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={tutorialCompleted ? undefined : () => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} />
             <GameNavBar />
           </div>
           <GameTabRouter
@@ -428,6 +429,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             blockedTabs={blockedTabs}
             isAdmin={isAdminRole}
             isPremium={isPremium}
+            marketSubTab={marketSubTab}
+            setMarketSubTab={setMarketSubTab}
           />
         </Tabs>
       </main>
