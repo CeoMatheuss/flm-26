@@ -1,7 +1,8 @@
 import React from 'react';
 import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
+import heraldicSymbolsSprite from '@/assets/heraldic-symbols.png';
 
-/* ── Heraldic animal sprite sheet (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
+/* ── Heraldic sprite sheets (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
 const SPRITE_W = 1536;
 const SPRITE_H = 1024;
 const SPRITE_COLS = 6;
@@ -9,32 +10,88 @@ const SPRITE_ROWS = 4;
 const CELL_W = SPRITE_W / SPRITE_COLS; // 256
 const CELL_H = SPRITE_H / SPRITE_ROWS; // 256
 
-// Map animal icon → [col, row] in the sprite sheet
+// Map animal icon → [col, row] in heraldic-animals.png
+// Some animals (phoenix, dragon-head) keep their natural color (red/flame)
 const ANIMAL_SPRITE_MAP: Partial<Record<string, [number, number]>> = {
+  // Row 0
   lion: [0, 0],
-  dragon: [2, 0],
-  'eagle-icon': [3, 0],
-  phoenix: [5, 0],
-  horse: [0, 1],
-  wolf: [2, 1],
-  bear: [4, 1],
-  bull: [0, 2],
-  deer: [2, 2],
-  panther: [3, 2],
-  tiger: [4, 2],
-  snake: [2, 3],
-  griffin: [3, 3],
+  tiger: [1, 0],
+  'eagle-icon': [2, 0],
+  'eagle-displayed': [3, 0],
+  phoenix: [4, 0],
+  horse: [5, 0],
+  // Row 1
+  wolf: [0, 1],
+  bear: [1, 1],
+  panther: [2, 1],
+  bull: [3, 1],
+  'deer-head': [4, 1],
+  snake: [5, 1],
+  // Row 2
+  griffin: [0, 2],
+  elephant: [1, 2],
+  rhino: [2, 2],
+  falcon: [3, 2],
+  fox: [4, 2],
+  ram: [5, 2],
+  // Row 3 — heads
+  'lion-head': [0, 3],
+  'eagle-head': [1, 3],
+  'wolf-head': [2, 3],
+  'bear-head': [3, 3],
+  dragon: [4, 3],
+  swan: [5, 3],
+};
+
+// Animals that should preserve their original colors (multi-color silhouettes)
+const FULLCOLOR_ANIMALS = new Set(['phoenix', 'dragon']);
+
+// Map symbol icon → [col, row] in heraldic-symbols.png
+const SYMBOL_SPRITE_MAP: Partial<Record<string, [number, number]>> = {
+  // Row 0
+  'crown-icon': [0, 0],
+  'fleur-de-lis': [1, 0],
+  'cross-pattee': [2, 0],
+  star: [3, 0],
+  'sun-burst': [4, 0],
+  'crescent-moon': [5, 0],
+  // Row 1
+  sword: [0, 1],
+  'crossed-swords': [1, 1],
+  trident: [2, 1],
+  laurel: [3, 1],
+  feather: [4, 1],
+  wing: [5, 1],
+  // Row 2
+  tower: [0, 2],
+  castle: [1, 2],
+  anchor: [2, 2],
+  lightning: [3, 2],
+  'flame-icon': [4, 2],
+  compass: [5, 2],
+  // Row 3
+  'diamond-icon': [0, 3],
+  'shield-icon': [1, 3],
+  ball: [2, 3],
+  trophy: [3, 3],
+  boot: [4, 3],
+  'oak-leaf': [5, 3],
 };
 
 /**
- * Renders a cropped heraldic animal silhouette from the sprite sheet,
- * recolored to `color` via SVG filter. Renders inside an SVG <g>.
+ * Renders a cropped heraldic silhouette from a sprite sheet, optionally
+ * recolored via SVG filter. Renders inside an SVG <g>.
  */
-function HeraldicAnimalSprite({
-  iconKey, s, color, filterId,
-}: { iconKey: string; s: number; color: string; filterId: string }) {
-  const cell = ANIMAL_SPRITE_MAP[iconKey];
-  if (!cell) return null;
+function HeraldicSprite({
+  spriteHref, cell, s, color, filterId, recolor = true,
+}: {
+  spriteHref: string;
+  cell: [number, number];
+  s: number;
+  color: string;
+  filterId: string;
+  recolor?: boolean;
+}) {
   const [col, row] = cell;
   // Target draw box on the shield (centered around cy = s*0.44)
   const drawSize = s * 0.42;
