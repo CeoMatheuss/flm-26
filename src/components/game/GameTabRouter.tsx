@@ -266,7 +266,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             if (res.error || res.data?.error) {
               toast.error(res.data?.error || 'Erro ao listar para empréstimo');
             } else {
-              toast.success(`${player.name} listado no mercado de empréstimos!`);
+              toast.success(`${player.name} anunciado no mercado de empréstimos!`);
             }
           }}
           onLoanIn={game.loanInPlayer}
