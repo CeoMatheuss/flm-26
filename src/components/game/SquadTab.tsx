@@ -5,11 +5,13 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair } from 'lucide-react';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useState, useMemo } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
+import { toast } from 'sonner';
 
 interface Props {
   players: Player[];
