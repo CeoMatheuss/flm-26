@@ -361,6 +361,10 @@ export function MatchesTab({
           clubName={clubName}
           stadiumName={stadiumName || 'Arena'}
           stadiumCapacity={stadiumCapacity}
+          players={players}
+          teamStrength={teamStrength}
+          tactics={tactics}
+          fans={fans}
         />
       </TabsContent>
 

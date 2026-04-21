@@ -678,15 +678,23 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Buttons — bigger, more visible */}
+        {/* Row 2: Action Widgets — gradient cards */}
         {!isFinished && (
-          <div className="flex items-center gap-1.5">
-            {/* Tática */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+            {/* Tática Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <Settings2 className="h-4 w-4" /> ⚙️ Tática
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 hover:from-emerald-500/25 hover:to-emerald-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                      <Settings2 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400">⚙️ Tática</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Ajustes Táticos</SheetTitle></SheetHeader>
@@ -696,13 +704,25 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Time / Subs */}
+            {/* Time / Subs Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <Users className="h-4 w-4" /> 👥 Time
-                  {subsUsed > 0 && <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{subsUsed}/{maxSubs}</Badge>}
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/15 to-blue-700/5 hover:from-blue-500/25 hover:to-blue-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0 relative">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                      {subsUsed > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[9px] font-black text-white flex items-center justify-center">
+                          {subsUsed}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-400">👥 Time</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">{maxSubs - subsUsed}/{maxSubs} subs</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Escalação & Substituições</SheetTitle></SheetHeader>
@@ -728,12 +748,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Stats */}
+            {/* Stats Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl border-border/40 font-bold">
-                  <BarChart3 className="h-4 w-4" /> 📊 Stats
-                </Button>
+                <button className="group relative overflow-hidden rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/15 to-yellow-700/5 hover:from-yellow-500/25 hover:to-yellow-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                      <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-yellow-400">📊 Stats</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">{possession[0]}% posse</p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Estatísticas</SheetTitle></SheetHeader>
@@ -743,22 +771,34 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Assistente Técnico Button */}
+            {/* Assistente Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={hasAssistant ? 'default' : 'outline'}
-                  className={`h-9 sm:h-10 gap-1 text-xs sm:text-sm rounded-xl min-w-[40px] font-bold ${hasAssistant ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500/50' : 'border-border/40 opacity-50'}`}
+                <button
                   disabled={!hasAssistant}
+                  className={`group relative overflow-hidden rounded-2xl border transition-all p-2 sm:p-2.5 text-left ${
+                    hasAssistant
+                      ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-amber-700/5 hover:from-amber-500/25 hover:to-amber-700/10 hover:scale-[1.03] active:scale-[0.97]'
+                      : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
+                  }`}
                 >
-                  <MessageSquare className="h-4 w-4" /> 📋
-                  {hasAssistant && matchState.assistantTips.length > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold flex items-center justify-center">
-                      {matchState.assistantTips.length}
-                    </span>
-                  )}
-                </Button>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 relative ${hasAssistant ? 'bg-amber-500/20' : 'bg-muted/20'}`}>
+                      <MessageSquare className={`h-5 w-5 sm:h-6 sm:w-6 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                      {hasAssistant && matchState.assistantTips.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-[9px] font-black text-white flex items-center justify-center animate-pulse">
+                          {matchState.assistantTips.length}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`}>📋 Coach</p>
+                      <p className="text-xs sm:text-sm font-black text-foreground">
+                        {hasAssistant ? `${matchState.assistantTips.length} dicas` : 'Indisponível'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>📋 Assistente Técnico</SheetTitle></SheetHeader>
@@ -809,52 +849,73 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
 
           <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
-            {/* Teams + Score */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="flex-1 text-right space-y-0.5 min-w-0">
-                <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
-                <div className="flex items-center gap-1 justify-end flex-wrap">
-                  {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                  ))}
+            {isHalftime ? (
+              /* Halftime focus banner — no team shields */
+              <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-2xl p-4 sm:p-6 text-center space-y-2 animate-fade-in">
+                <p className="text-3xl sm:text-5xl">⏸️</p>
+                <p className="text-xl sm:text-3xl font-black text-primary tracking-wide">INTERVALO</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Descanso de 15 minutos · Use o tempo para fazer ajustes</p>
+                <div className={`inline-block text-2xl sm:text-4xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl mt-2 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                  <span className="text-foreground">{homeGoals}</span>
+                  <span className="text-muted-foreground/60 mx-2">x</span>
+                  <span className="text-foreground">{awayGoals}</span>
+                </div>
+                <div className="flex items-center justify-center gap-3 sm:gap-5 text-[11px] sm:text-sm text-muted-foreground pt-1 flex-wrap">
+                  <span>📊 Posse: <strong className="text-foreground">{possession[0]}%–{possession[1]}%</strong></span>
+                  <span>⚡ Chutes: <strong className="text-foreground">{stats.shots[0]}–{stats.shots[1]}</strong></span>
+                  <span>🎯 No gol: <strong className="text-foreground">{stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}</strong></span>
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Teams + Score */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex-1 text-right space-y-0.5 min-w-0">
+                    <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
+                    <div className="flex items-center gap-1 justify-end flex-wrap">
+                      {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                <span className="text-primary">{homeGoals}</span>
-                <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
-                <span className="text-primary">{awayGoals}</span>
-              </div>
+                  <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                    <span className="text-primary">{homeGoals}</span>
+                    <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
+                    <span className="text-primary">{awayGoals}</span>
+                  </div>
 
-              <div className="flex-1 text-left space-y-0.5 min-w-0">
-                <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
-                <div className="flex items-center gap-1 flex-wrap">
-                  {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                    <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                  ))}
+                  <div className="flex-1 text-left space-y-0.5 min-w-0">
+                    <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Goal flash banner */}
-            {goalFlash && latestEvent?.isGoal && (
-              <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
-                <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-                {latestEvent.assistName && (
-                  <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                {/* Goal flash banner */}
+                {goalFlash && latestEvent?.isGoal && (
+                  <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
+                    <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+                    {latestEvent.assistName && (
+                      <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {/* Possession bar */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
-              <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
-                <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-                <div className="bg-red-500 flex-1 rounded-r-full" />
-              </div>
-              <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
-            </div>
+                {/* Possession bar */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
+                  <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
+                    <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
+                    <div className="bg-red-500 flex-1 rounded-r-full" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
+                </div>
+              </>
+            )}
 
             {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
           </CardContent>
@@ -889,17 +950,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         )}
 
-        {/* Halftime banner */}
-        {isHalftime && (
-          <Card className="border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in">
-            <p className="text-base sm:text-xl font-black text-primary">⏸ INTERVALO</p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Os jogadores descansam. O 2º tempo começa em instantes.</p>
-            {subQueue.length > 0 && (
-              <p className="text-xs sm:text-sm text-primary mt-2 font-bold animate-pulse">
-                🔄 {subQueue.length} substituição(ões) pendente(s)
-              </p>
-            )}
-          </Card>
+        {/* Halftime sub queue indicator */}
+        {isHalftime && subQueue.length > 0 && (
+          <div className="bg-primary/10 border border-primary/30 rounded-xl px-3 py-2 text-center animate-pulse">
+            <p className="text-xs sm:text-sm text-primary font-bold">
+              🔄 {subQueue.length} substituição(ões) na fila — execute pelo painel "Time"
+            </p>
+          </div>
         )}
 
         {/* 2D Canvas — highlights */}

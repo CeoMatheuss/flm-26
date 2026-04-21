@@ -489,10 +489,8 @@ function simulateFullMatch(
   for (let i = 0; i < 1 + Math.floor(rng() * 3); i++) {
     const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) dangerousFoulMins.push(m);
   }
-  const subMins: number[] = [];
-  for (let i = 0; i < 2 + Math.floor(rng() * 3); i++) {
-    const m = pickUnique(secondHalfPool.filter(m => m >= 55)); if (m > 0) subMins.push(m);
-  }
+  // NOTE: Substitutions are 100% manual now — controlled by the player from MatchPage.
+  // No server-side automatic substitutions are generated.
   const chanceMins: number[] = [];
   for (let i = 0; i < 10 + Math.floor(rng() * 8); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
@@ -664,21 +662,10 @@ function simulateFullMatch(
     });
   }
 
-  // ── SUBSTITUTIONS ──────────────────────────────────────────
-  for (const m of subMins) {
-    const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
-    const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
-    const tName = team === 'home' ? homeTeam : awayTeam;
-    const onPitch = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const playerOut = onPitch.length > 1 ? onPitch[Math.floor(rng() * (onPitch.length - 1)) + 1] : onPitch[0];
-    const playerInName = `Reserva ${Math.floor(rng() * 7 + 12)}`;
-    if (playerOut) playerOut.isOnPitch = false;
-    allPlanned.push({
-      minute: m, type: 'substitution', team, animType: 'sub',
-      playerName: playerOut?.name || 'Jogador',
-      description: `🔄 Substituição no ${tName}: sai ${playerOut?.name || 'Jogador'}, entra ${playerInName}`,
-    });
-  }
+  // ── SUBSTITUTIONS: REMOVED ──────────────────────────────────
+  // Substitutions are now 100% manual: the player triggers them from MatchPage,
+  // and they are inserted into live_matches.events via client-side updates.
+  // The server only produces "💡 Considere substituir" tips through the assistant coach.
 
   // ── CHANCES ──────────────────────────────────────────────────
   for (const m of chanceMins) {
