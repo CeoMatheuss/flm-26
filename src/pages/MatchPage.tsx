@@ -1254,8 +1254,15 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
         )}
       </div>
 
+      {blocked && blockedReason && (
+        <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-3 py-2.5 flex items-start gap-2">
+          <span className="text-lg">⛔</span>
+          <p className="text-xs sm:text-sm font-bold text-red-400 flex-1">{blockedReason}</p>
+        </div>
+      )}
+
       {!selectedSubOut ? (
-        <>
+        <></pre>
           <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Quem SAI:</p>
           <div className="space-y-1.5 max-h-[280px] sm:max-h-[320px] overflow-y-auto">
             {starters.map((p, i) => {
