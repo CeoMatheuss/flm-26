@@ -1,14 +1,19 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight } from 'lucide-react';
 
 interface GameMenuProps {
   showAdmin: boolean;
   onTabChange: (tab: string) => void;
   onShowTutorial: () => void;
+  onMarketSubTabChange?: (subTab: string) => void;
 }
 
-export function GameMenu({ showAdmin, onTabChange, onShowTutorial }: GameMenuProps) {
+export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange }: GameMenuProps) {
+  const goToMarket = (sub: string) => {
+    onMarketSubTabChange?.(sub);
+    onTabChange('market');
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
