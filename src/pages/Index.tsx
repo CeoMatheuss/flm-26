@@ -77,6 +77,8 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       detailColor: config.detailColor,
       shieldPattern: config.shieldPattern,
       shieldShape: config.shieldShape,
+      shieldIcon: (config as any).shieldIcon,
+      shieldConfig: (config as any).shieldConfig,
       logoUrl: config.logoUrl,
       country: config.country,
     };
@@ -341,6 +343,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       secondaryColor: game.club.secondaryColor,
       shieldPattern: game.club.shieldPattern,
       shieldShape: game.club.shieldShape,
+      shieldIcon: (game.club as any).shieldIcon,
+      shieldConfig: (game.club as any).shieldConfig,
       country: game.club.country,
       reputation: game.club.reputation,
       fans: game.club.fans,
@@ -352,7 +356,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     mp.syncSquad(game.club.players, game.tactics, clubMeta);
     const interval = setInterval(() => mp.syncSquad(game.club.players, game.tactics, clubMeta), 10000);
     return () => clearInterval(interval);
-  }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, (game.club as any).shieldConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show changelog
   useEffect(() => {

@@ -180,6 +180,21 @@ export function useClubState(initialState: any, userId?: string) {
     toast.success(`Estádio renomeado para ${newName}!`);
   }, []);
 
+  const updateShield = useCallback((cfg: any) => {
+    setClub(prev => ({
+      ...prev,
+      shieldConfig: cfg,
+      // Also mirror to legacy fields for backward compatibility
+      primaryColor: cfg?.primaryColor ?? prev.primaryColor,
+      secondaryColor: cfg?.secondaryColor ?? prev.secondaryColor,
+      detailColor: cfg?.detailColor ?? (prev as any).detailColor,
+      shieldPattern: cfg?.pattern ?? prev.shieldPattern,
+      shieldShape: cfg?.shape ?? prev.shieldShape,
+      shieldIcon: cfg?.icon ?? (prev as any).shieldIcon,
+    } as any));
+    toast.success('Escudo atualizado!');
+  }, []);
+
   const setTicketPrice = useCallback((price: number) => {
     setClub(prev => ({ ...prev, ticketPrice: Math.max(5, Math.min(200, price)) }));
   }, []);
