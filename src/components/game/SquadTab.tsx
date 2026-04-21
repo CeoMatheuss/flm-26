@@ -6,9 +6,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Zap, Heart, Star, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Zap, Heart, Star, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue } from '@/utils/playerGenerator';
+import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
+import { RescindModal } from './RescindModal';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   players: Player[];
@@ -23,6 +25,8 @@ interface Props {
   onChangeNumber: (playerId: string, number: number) => void;
   canLoanOut: boolean;
   userId: string;
+  transferBudget?: number;
+  onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
 }
 
 const posColors: Record<string, string> = {
@@ -99,7 +103,7 @@ function getMoraleColor(morale: number): string {
   return 'text-red-400';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
@@ -108,6 +112,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [editingNumber, setEditingNumber] = useState(false);
   const [filterPos, setFilterPos] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary'>('position');
+  const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
   const sorted = [...players]
