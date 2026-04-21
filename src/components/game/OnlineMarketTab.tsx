@@ -83,6 +83,9 @@ interface Props {
   clubName: string;
   players: Player[];
   budget: number;
+  transferBudget?: number;
+  salaryBudget?: number;
+  currentMonthlyPayroll?: number;
   clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape?: string } | null;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
@@ -92,7 +95,11 @@ interface Props {
   onListedPlayer?: () => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+  // Derive budgets if not provided (backwards-compat with old saves)
+  const tBudget = transferBudget ?? Math.floor(budget * 0.4);
+  const sBudget = salaryBudget ?? Math.floor(budget * 0.4);
+  const salaryRemaining = Math.max(0, sBudget - currentMonthlyPayroll * 12);
   const [listings, setListings] = useState<TransferListing[]>([]);
   const [activeMarketTab, setActiveMarketTab] = useState('browse');
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
