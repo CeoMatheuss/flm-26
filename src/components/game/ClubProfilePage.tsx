@@ -278,7 +278,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             {shieldData ? (
-              <ShieldCrest primaryColor={shieldData.primaryColor} secondaryColor={shieldData.secondaryColor} pattern={shieldData.pattern} shape={shieldData.shape as ShieldShape} size={56} />
+              <ShieldCrest {...(shieldData as any)} shape={(shieldData as any).shape as ShieldShape} size={56} />
             ) : (
               <ShieldCrest primaryColor={getTeamColor(member.club_name)} secondaryColor="#ffffff" pattern="solid" shape="classic" size={56} />
             )}
