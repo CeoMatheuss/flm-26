@@ -1,133 +1,164 @@
 
 
-# Plano: Premium 24h Base + Auth Simplificado + Perfil Auto + Widgets Partida
+# Plano: Refinar UI da Partida + Sistema de Treinamento V3 (Progresso %)
 
-## 1. Premium: Construção da Base em 24h para Não-Premium
+## Parte 1 — UI da Página de Partida (Simulação ao Lado, Stats Maiores)
 
-**Onde**: `src/hooks/useInfraState.ts` + `src/components/game/YouthAcademyTab.tsx`
+**Arquivo**: `src/pages/MatchPage.tsx`
 
-- Usuários **não-Premium** que upgradearem a Academia ficam com a obra em construção por **24h reais** antes do nível subir efetivamente.
-- Premium: sobe instantaneamente (comportamento atual).
-- Adicionar campo `youthAcademy.upgradeCompletesAt?: string` (ISO date) no `Infrastructure`.
-- Ao iniciar upgrade (não-Premium): debita o valor, marca `upgradeCompletesAt = now + 24h` e mantém nível atual. Toast: "🏗️ Obra iniciada! Conclui em 24h."
-- Hook periódico (a cada 60s) verifica se passou; quando completa, incrementa `level` e dispara toast + entrada no Jornal.
-- Card mostra **barra de progresso da construção** (00:00 até 24:00) com botão "⭐ Concluir agora (Premium)" desabilitado para free.
+Reorganizar o layout para colocar o **canvas/simulação 2D ao lado direito** e os **stats principais maiores ao lado esquerdo**, removendo os widgets pequenos atuais do topo.
 
-## 2. Auth: Remover Etapas Desnecessárias
-
-**Onde**: `src/pages/Auth.tsx`
-
-- **Eliminar etapa `signup-preferences`** (formação preferida + estilo de jogo). Esses dados não são necessários no cadastro.
-- Manter apenas: **Nome do Manager**, **Email**, **Senha**, **Confirmar Senha** (campo novo).
-- Validação: senhas devem ser iguais; mínimo 6 caracteres; mostra erro inline se diferentes.
-- Removidos do `data` no signUp: `preferred_formation`, `playstyle`. Mantém `display_name` e `favorite_country` (selecionado em outra etapa simples se quiser, ou removido também — **vamos remover**, país é definido na criação do clube).
-- Fluxo final: `welcome → signup-info (nome/email/senha/confirmar) → verify-email`.
-
-## 3. Perfil Automático ao Criar Clube
-
-**Onde**: `src/components/game/ClubCreation.tsx` + `src/hooks/useClubState.ts` + `src/types/clubProfile.ts`
-
-Quando o clube é criado (`onComplete` no ClubCreation), preencher automaticamente o `clubProfile`:
-- **`foundedDate`**: data atual no formato `DD/MM/AAAA` (`new Date().toLocaleDateString('pt-BR')`)
-- **`foundedSeason`**: temporada atual do jogo (1 por padrão)
-- **`ownerName`**: o `display_name` do usuário (vindo do `auth.user.user_metadata.display_name`)
-- **`motto`**: vazio (usuário pode editar depois)
-- **`bio`**: vazio
-- **`instagram`**: vazio
-
-No `useClubState.ts`, criar função `initializeClubProfile(displayName)` chamada na primeira criação que devolve o `defaultClubProfile` já populado com os dados acima. Isso garante que ao abrir "Meu Perfil" pela primeira vez, o usuário já vê data de fundação e nome do dono pré-configurados.
-
-## 4. Atualizar Widget "Temporada vai Começar" em Táticas
-
-**Onde**: `src/components/game/SeasonStartWidget.tsx` + `src/components/game/TacticsTab.tsx`
-
-- Aumentar tamanhos para PC e celular:
-  - Padding: `p-3` → `p-4 sm:p-5`
-  - Ícone container: `h-12 w-12` → `h-14 w-14 sm:h-16 sm:w-16`
-  - Ícone interno: `h-6 w-6` → `h-7 w-7 sm:h-8 sm:w-8`
-  - Título: `text-sm` → `text-base sm:text-lg`
-  - Subtexto: `text-[10px]` → `text-xs sm:text-sm`
-  - Contador: `text-[10px]` → `text-sm sm:text-base font-mono`
-  - Badges inferiores: `text-[7px]` → `text-[10px] sm:text-xs`
-- Adicionar exibição também na aba **Táticas** (atualmente só aparece no Dashboard) — incluir `<SeasonStartWidget seasonNumber={season} userId={userId} />` no topo do `TacticsTab`.
-
-## 5. Widgets da Partida no Estilo das Imagens (cards horizontais full-width)
-
-**Onde**: `src/pages/MatchPage.tsx`
-
-As imagens mostram o estilo correto: **modais grandes empilhados verticalmente** ocupando largura total (Estatísticas da Partida, Escalações, Estilo de Jogo, Substituições Automáticas, Substituições) — em vez dos pequenos `Sheet` bottom-sheet atuais.
-
-**Mudanças**:
-
-### 5a. Trocar o grid de 4 botões por **seções inline expandidas/colapsáveis** (estilo accordion)
-
-Em vez de `Sheet` que abre por baixo, cada seção fica visível na própria página (logo abaixo da narração), com header e conteúdo:
+### Layout novo (≥ md / desktop)
 
 ```
-┌─────────────────────────────────────────┐
-│ 📊 Estatísticas da Partida              │  (sempre visível)
-│   54% — Posse de Bola — 46%             │
-│   17  — Finalizações — 13               │
-│   77% — Precisão de Passes — 70%        │
-│   [▼ Estatísticas de Jogadores]         │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│ 👥 Escalações  V Time A | Time B        │
-│   1  Rafael Santos    GOL  74%   8.1    │
-│   2  Rafael Martins   ZAG  80%   6.3    │
-│   ...                                   │
-│   [▼ Ver Reservas]                      │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│ 🔄 Substituições Automáticas      0/5   │
-│   ⚠️ Programe substituições...          │
-│   [+ PROGRAMAR SUBSTITUIÇÃO]            │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│ Estilo de Jogo                          │
-│ ✨ Tiki-Taka                    [Ativa] │
-│   Pontos Fortes  ✓...  Pontos Fracos ✗.│
-│   [grid 5×2 de estilos selecionáveis]   │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│ 🔄 Substituições              5/5 rest. │
-│   [lista de subs feitas + botão trocar] │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────┬─────────────────────────┐
+│  PLACAR + COMPETIÇÃO            │                         │
+│  TIME A  2 — 1  TIME B          │                         │
+│  45'  ⏸️                        │       SIMULAÇÃO 2D      │
+├─────────────────────────────────┤        (canvas)         │
+│  📊 ESTATÍSTICAS GRANDES        │       full-height       │
+│  Posse 54% — 46%                │                         │
+│  Finalizações 17 — 13           │                         │
+│  Passes 77% — 70%               │                         │
+│  xG / Faltas / Escanteios       │                         │
+├─────────────────────────────────┴─────────────────────────┤
+│  📰 NARRAÇÃO (rolagem inversa)                            │
+└───────────────────────────────────────────────────────────┘
+↓ Logo abaixo, seções inline empilhadas:
+[ ESCALAÇÕES ] [ ESTILO DE JOGO ] [ SUBSTITUIÇÕES ]
 ```
 
-### 5b. Manter widgets compactos no topo (sticky bar) só como **navegação rápida (anchor scroll)**
+### Layout mobile (< md)
 
-Os 4 cards verticais (Tática/Elenco/Estatísticas/Técnico) viram **botões de navegação** que rolam suavemente até a seção correspondente abaixo (em vez de abrir um Sheet). Mantém o mesmo visual atual mas com `onClick={() => scrollToRef(...)}`.
+Mantém vertical: Placar → Stats compactos → Simulação 2D (height 280px) → Narração → Seções.
 
-### 5c. Componente novo: `MatchSection`
+### Mudanças concretas
 
-Criar `MatchSection` (header verde com ícone + linha + conteúdo full-width dentro de Card com borda colorida sutil) reutilizado pelas 5 seções.
+- **Remover** os 4 mini-widgets de navegação atuais (Tática/Elenco/Stats/Técnico) — viram apenas links/abas no header.
+- **Stats principais** (Posse, Finalizações, Passes) ficam num card grande do lado esquerdo: números grandes (`text-3xl`), barras visuais centralizadas estilo `── 54% — Posse — 46% ──`.
+- **Simulação** (`HighlightMiniCanvas`) ocupa coluna direita full-height (sticky) em desktop.
+- **Narração** abaixo dos dois, full-width.
+- Seções inline já existentes (Escalações, Estilo, Subs, Stats Detalhados) continuam abaixo, mas como cards menores (`max-w-4xl mx-auto`).
 
-### 5d. PT-BR já está aplicado, manter
+---
 
-## Arquivos Modificados
+## Parte 2 — Sistema de Treinamento V3 (Progresso %)
+
+### 2.1 Modelo de Dados
+
+**Arquivo**: `src/types/game.ts` + `src/training/TrainingTypes.ts`
+
+Adicionar ao `Player`:
+```typescript
+trainingProgress?: number;        // 0-100, sobe semanalmente; ao chegar 100 → +1 OVR e reseta
+trainingStatus?: 'evoluindo' | 'normal' | 'lento' | 'travado';
+lastTrainedAttr?: keyof PlayerAttributes;
+```
+
+Novos focos de treino (substituem os atuais em `TrainingTypes.ts`):
+- **Grupos** (evolução equilibrada): `finalizacao_grupo`, `tecnico_grupo`, `defensivo_grupo`, `fisico_grupo`, `mental_grupo`
+- **Específicos** (foco em 1 atributo): mapear cada atributo individualmente
+
+Cada grupo distribui o ganho entre múltiplos atributos com pesos (alto/médio/baixo conforme spec).
+
+### 2.2 Eficiência do CT (1–30)
+
+**Arquivo**: `src/types/infrastructure.ts`
+
+Tabela `ctEfficiencyByLevel` (% por semana) conforme spec:
+```
+Lv 1: 1.0% | Lv 5: 2.2% | Lv 10: 4.5% | Lv 15: 7.0%
+Lv 20: 9.5% | Lv 25: 12.0% | Lv 30: 15.0%
+```
+
+**Custos do CT rebalanceados** (`getUpgradeCost` ou nova tabela):
+```
+Lv 1→5:  0.3M, 0.6M, 1M, 1.5M, 2M
+Lv 6→10: 2.5M, 3.5M, 5M, 6.5M, 8M
+Lv 11→15: 10M, 13M, 16M, 20M, 25M
+Lv 16→20: 30M, 38M, 46M, 55M, 65M
+Lv 21→25: 75M, 90M, 110M, 130M, 150M
+Lv 26→30: 180M, 210M, 250M, 300M, 350M
+```
+
+### 2.3 Lógica de Progresso
+
+**Arquivo**: `src/training/PlayerDevelopmentEngine.ts`
+
+Substituir lógica atual ("chance de +1") por:
+```
+1. Calcula gain semanal = ctEfficiency × intensityMult × ageFactor × personalityFactor × moraleFactor
+2. Treino Específico: 100% no atributo escolhido
+3. Treino Grupo: 60% atr_alto, 30% atr_medio, 10% atr_baixo
+4. trainingProgress += gain
+5. Se progress ≥ 100 → +1 no atributo principal, recalcula OVR, reseta progress
+6. Bônus por jogos: +0.5% por minuto jogado na semana (jogar acelera)
+```
+
+**Status visual** (calculado a partir do gain semanal médio):
+- Gain ≥ 8% → 🔥 Evoluindo rápido
+- Gain 4–8% → ⚖️ Normal
+- Gain 1–4% → 🐢 Lento
+- Gain < 1% (idade > 33 ou cap atingido) → ❌ Travado
+
+### 2.4 Intensidade
+
+Mantém `leve` / `moderado` / `pesado` com multiplicadores existentes; pesado aumenta risco de lesão (já existe em `InjuryRiskSystem`).
+
+### 2.5 UI da Aba de Treinamento
+
+**Arquivo**: `src/components/game/TrainingTab.tsx`
+
+- **Header**: card grande do CT com nível, eficiência semanal (%), botão "Melhorar CT" mostrando próximo custo
+- **Lista de jogadores** (cards verticais):
+  - Nome • Idade • OVR grande
+  - **Barra de progresso (0–100%)** colorida por status
+  - Status (🔥/⚖️/🐢/❌) com label
+  - Dropdown 1: Tipo de treino (Grupo / Específico)
+  - Dropdown 2: Foco (depende do tipo — 5 grupos OU lista de atributos)
+  - Toggle de intensidade (3 botões: 🟢 Leve / 🟡 Médio / 🔴 Pesado)
+- **Ícone ❓** ao lado de cada label clicável (Treino, Tipo, Intensidade, Progresso) abre o popup de ajuda
+
+### 2.6 Popup de Ajuda
+
+**Novo arquivo**: `src/components/game/TrainingHelpPopup.tsx`
+
+Modal único reaproveitável com seções:
+- 🧠 Como funciona o Treinamento
+- 🏟️ Centro de Treinamento
+- 👥 Treino por Grupo / 🎯 Treino Específico
+- ⚙️ Intensidade
+- ⚽ Partidas aceleram evolução
+
+Botão "Entendi" fecha. Aceita prop `section` opcional para abrir já no tópico clicado.
+
+### 2.7 Notificações
+
+Aproveitar sistema existente (`toast.success`):
+- ✨ "Jogador evoluiu! (+1 Finalização)" quando progress completa
+- ⚠️ "Jogador fatigado" se stamina < 30%
+- 🔥 "Evolução acelerada" se gain semanal > 12%
+
+---
+
+## Arquivos Modificados / Criados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/types/infrastructure.ts` | Campo `upgradeCompletesAt` na `youthAcademy` |
-| `src/hooks/useInfraState.ts` | Lógica de upgrade com timer 24h para não-Premium; tick periódico |
-| `src/components/game/YouthAcademyTab.tsx` | UI da construção em andamento (barra de progresso, contador) |
-| `src/pages/Auth.tsx` | Remover etapa de preferências; adicionar campo "Confirmar Senha" |
-| `src/components/game/ClubCreation.tsx` | No `onComplete`, popular `clubProfile` com dados automáticos |
-| `src/hooks/useClubState.ts` | Função `initializeClubProfile(displayName)` |
-| `src/types/clubProfile.ts` | (sem mudança estrutural — só uso) |
-| `src/components/game/SeasonStartWidget.tsx` | Aumentar tamanhos para PC/celular |
-| `src/components/game/TacticsTab.tsx` | Adicionar `SeasonStartWidget` no topo |
-| `src/pages/MatchPage.tsx` | Refatorar widgets: substituir Sheets por seções inline empilhadas estilo das imagens; widgets do topo viram âncoras de scroll |
+| `src/pages/MatchPage.tsx` | Layout 2 colunas (stats grandes + simulação ao lado), remove mini-widgets do topo |
+| `src/types/game.ts` | Adiciona `trainingProgress`, `trainingStatus`, `lastTrainedAttr` ao Player |
+| `src/types/infrastructure.ts` | Nova tabela de custos CT (1–30) e `ctEfficiencyByLevel` |
+| `src/training/TrainingTypes.ts` | Novos focos (grupos + específicos), pesos por atributo |
+| `src/training/PlayerDevelopmentEngine.ts` | Lógica de progresso % em vez de chance |
+| `src/training/TrainingManager.ts` | Atualiza para usar gain % e calcular status |
+| `src/components/game/TrainingTab.tsx` | UI nova: cards com barra %, dropdowns, intensidade, status |
+| `src/components/game/TrainingHelpPopup.tsx` | **NOVO** — modal de ajuda reutilizável |
+| `src/components/game/InfrastructureTab.tsx` | Mostrar eficiência semanal do CT no card |
 
 ## Compatibilidade
 
-- Saves antigos sem `upgradeCompletesAt` continuam funcionando (campo opcional)
-- `clubProfile` antigo sem `foundedDate` mostra `foundedSeason` (fallback já existe no Dashboard)
-- Auth signup novo não envia `preferred_formation`/`playstyle` — campos do perfil que dependiam disso passam a usar defaults (`4-3-3` / `balanced`)
-- Premium status é lido da tabela `premium_users` que já existe; passar `isPremium` como prop para `YouthAcademyTab`
+- Saves antigos sem `trainingProgress` → assumido `0`, status `normal`
+- Custos antigos do CT (em `getUpgradeCost`) substituídos pela nova tabela; saves com nível ≥ 1 continuam válidos
+- Focos de treino antigos (ex: `physical`, `shooting`) mapeados automaticamente para os novos grupos equivalentes
+- Sem mudança de schema no banco (tudo client-side em `game_saves.club_data`)
 
