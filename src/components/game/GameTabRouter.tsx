@@ -141,13 +141,27 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
             }
           }}
-          onLoanOut={(playerId) => {
+          onLoanOut={async (playerId) => {
             const player = game.club.players.find(p => p.id === playerId);
-            game.loanOutPlayer(playerId);
-            if (player) {
-              const extra = 'Emprestado por 1 temporada';
-              onSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'loan', extraInfo: extra });
-              saveSigningNews(player.name, player.position, player.overall, player.age, 'loan', extra);
+            if (!player) return;
+            if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
+            const res = await supabase.functions.invoke('process-transfer', {
+              body: {
+                action: 'loan-list',
+                playerData: player,
+                playerName: player.name,
+                playerPosition: player.position,
+                playerOverall: player.overall,
+                playerAge: player.age,
+                salary: player.salary || 0,
+                clubName: game.club.name,
+                sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+              },
+            });
+            if (res.error || res.data?.error) {
+              toast.error(res.data?.error || 'Erro ao anunciar empréstimo');
+            } else {
+              toast.success(`${player.name} anunciado no Mercado de Empréstimos! 🔄`);
             }
           }}
           onChangeNumber={game.changeShirtNumber}
