@@ -227,11 +227,16 @@ const shieldPaths: Record<ShieldShape, (s: number) => string> = {
   },
 };
 
-function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: string) {
+function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: string, filterId: string) {
   if (!icon || icon === 'none') return null;
   const h = s / 2;
   const cy = s * 0.44;
   const r = s * 0.13;
+
+  // Heraldic animal sprite (high-fidelity silhouettes)
+  if (ANIMAL_SPRITE_MAP[icon as string]) {
+    return <HeraldicAnimalSprite iconKey={icon as string} s={s} color={dc} filterId={filterId} />;
+  }
 
   // Letters
   if (icon.startsWith('letter-')) {
