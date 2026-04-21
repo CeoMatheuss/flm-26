@@ -55,6 +55,11 @@ export function useClubState(initialState: any, userId?: string) {
     }
   }, []);
 
+  const setPlayerTrainingIntensity = useCallback((playerId: string, intensity: 'leve' | 'moderado' | 'pesado') => {
+    setTrainingIntensity(prev => ({ ...prev, [playerId]: intensity }));
+    console.log('[Persist] trainingIntensity', playerId, intensity);
+  }, []);
+
   const restPlayer = useCallback((playerId: string) => {
     setClub(prev => ({
       ...prev,
