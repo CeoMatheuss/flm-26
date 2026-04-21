@@ -97,7 +97,7 @@ export function useInfraState(initialState: any, userId?: string) {
       setLastYouthMatchReport(report);
 
       // Decrement stagnation cycles
-      let next = updatedProspects.map(p => ({
+      let next: YouthProspect[] = updatedProspects.map(p => ({
         ...p,
         stagnationCycles: Math.max(0, (p.stagnationCycles ?? 0) - 1),
         monthsInAcademy: (p.monthsInAcademy ?? 0) + 1,
