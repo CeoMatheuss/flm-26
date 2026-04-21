@@ -1,4 +1,4 @@
-import { Infrastructure, getUpgradeCost, getPhysiotherapyRecovery } from '@/types/infrastructure';
+import { Infrastructure, getUpgradeCost, getPhysiotherapyRecovery, getPhysioBonuses, getDailyStaminaRecovery } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -21,10 +21,10 @@ const facilityInfo = {
   physiotherapy: {
     name: 'Centro de Fisioterapia',
     icon: HeartPulse,
-    desc: 'Recupera a energia dos jogadores após cada partida. Nível maior = recuperação mais rápida.',
+    desc: 'Recupera a energia diária dos jogadores e reduz risco/recaída de lesões.',
     color: 'text-pink-400',
     emoji: '💊',
-    getExtra: (level: number) => `+${getPhysiotherapyRecovery(level)} energia/partida`,
+    getExtra: (level: number) => `+${getDailyStaminaRecovery(level)} stamina/dia`,
   },
 };
 
