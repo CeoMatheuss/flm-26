@@ -211,11 +211,14 @@ export function ClubCreation({ userId, onComplete }: Props) {
     onComplete({
       name: clubName.trim(),
       stadiumName: stadiumName.trim() || 'Estádio Municipal',
-      primaryColor, secondaryColor, detailColor,
-      logoUrl: useCustomLogo ? customLogoUrl : selectedPattern,
-      shieldPattern: useCustomLogo ? undefined : selectedPattern,
-      shieldShape: useCustomLogo ? undefined : selectedShape,
-      shieldIcon: useCustomLogo ? undefined : selectedIcon,
+      primaryColor: shieldConfig.primaryColor,
+      secondaryColor: shieldConfig.secondaryColor,
+      detailColor: shieldConfig.detailColor,
+      logoUrl: useCustomLogo ? customLogoUrl : shieldConfig.pattern,
+      shieldPattern: useCustomLogo ? undefined : shieldConfig.pattern,
+      shieldShape: useCustomLogo ? undefined : shieldConfig.shape,
+      shieldIcon: useCustomLogo ? undefined : shieldConfig.icon,
+      shieldConfig: useCustomLogo ? undefined : shieldConfig,
       country,
     });
   };
