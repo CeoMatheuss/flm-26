@@ -682,7 +682,28 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </div>
           </div>
 
-          <Tabs defaultValue="starters" className="w-full">
+          {pendingSwap && (
+            <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
+              <div className="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-primary font-bold">⚡ Trocando</p>
+                <p className="text-xs font-bold text-foreground truncate">
+                  <Badge className={`text-[8px] px-1 mr-1 h-3.5 ${posColors[pendingSwap.player.position]}`} variant="outline">{pendingSwap.player.position}</Badge>
+                  {pendingSwap.player.name} ({pendingSwap.player.overall})
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Toque em quem {pendingSwap.from === 'starters' ? 'entra no time' : 'sai do time'}
+                </p>
+              </div>
+              <Button size="sm" variant="ghost" className="h-8 px-2 text-[10px] gap-1 text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
+                <X className="h-3.5 w-3.5" /> Cancelar
+              </Button>
+            </div>
+          )}
+
+          <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
             <TabsList className="grid grid-cols-3 w-full rounded-xl h-11 p-1">
               <TabsTrigger value="starters" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400">
                 <div className="flex items-center gap-1">
