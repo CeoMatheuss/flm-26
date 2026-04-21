@@ -1516,34 +1516,58 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
   const motm = playerRatings.length > 0 ? playerRatings.reduce((a, b) => a.rating > b.rating ? a : b) : null;
 
   return (
-    <div className="space-y-2 sm:space-y-3 pt-2 animate-fade-in">
-      <Card className="border-primary/30 overflow-hidden">
-        <div className="bg-primary/10 px-4 py-2.5 text-center">
-          <p className="text-sm sm:text-base font-black uppercase tracking-wider text-primary">🏁 Resultado Final</p>
-        </div>
+    <div className="space-y-3 sm:space-y-4 pt-2 animate-fade-in">
+      {/* Elegant final scoreboard */}
+      <Card className="border-emerald-500/20 bg-card/80 overflow-hidden animate-scale-in">
+        <CardContent className="p-5 sm:p-7 text-center space-y-4">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-emerald-400/80">🏁 Fim de Jogo</p>
+
+          <div className="flex items-center justify-center gap-4 sm:gap-6">
+            <div className="flex-1 text-right min-w-0">
+              <p className="text-sm sm:text-lg font-semibold truncate text-foreground">{homeTeam}</p>
+            </div>
+            <div className="text-5xl sm:text-7xl font-black font-mono tracking-tight text-foreground">
+              {finalHomeGoals}<span className="text-muted-foreground/40 mx-2 sm:mx-3">:</span>{finalAwayGoals}
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm sm:text-lg font-semibold truncate text-muted-foreground">{awayTeam}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 text-[11px] sm:text-xs text-muted-foreground pt-1">
+            <span>⏱️ 90'</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>⚽ {finalHomeGoals + finalAwayGoals} gols</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>{visibleEvents.length} lances</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/20 overflow-hidden">
         <CardContent className="p-3 sm:p-5 space-y-3 sm:space-y-4">
           {motm && (
-            <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 sm:p-4 flex items-center gap-3">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                <Star className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
+            <div className="bg-amber-400/8 border border-amber-400/20 rounded-lg p-3 sm:p-4 flex items-center gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-400/15 flex items-center justify-center">
+                <Star className="h-6 w-6 sm:h-7 sm:w-7 text-amber-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-yellow-400 font-bold uppercase">⭐ Craque do Jogo</p>
-                <p className="text-base sm:text-lg font-black">{motm.name}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
+                <p className="text-xs sm:text-sm text-amber-400 font-semibold uppercase tracking-wider">⭐ Craque do Jogo</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{motm.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{motm.position} · Nota {motm.rating}</p>
               </div>
             </div>
           )}
 
           {playerRatings.length > 0 && (
             <div>
-              <p className="text-sm sm:text-base font-bold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-yellow-400" /> Notas</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+              <p className="text-sm sm:text-base font-semibold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-amber-400" /> Notas</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
-                    <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
+                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2.5 py-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs w-9 justify-center">{p.position}</Badge>
                     <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
-                    <span className={`text-sm sm:text-base font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    <span className={`text-sm sm:text-base font-bold font-mono ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-foreground' : p.rating >= 6 ? 'text-foreground/70' : 'text-foreground/50'}`}>
                       {p.rating}
                     </span>
                   </div>
@@ -1556,34 +1580,26 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           {substitutions.length > 0 && (
             <div>
-              <p className="text-sm sm:text-base font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
-              {substitutions.map((sub, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs sm:text-sm bg-sky-500/5 border border-sky-500/15 rounded-lg px-2 sm:px-3 py-2 mb-1">
-                  <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{sub.minute}'</Badge>
-                  <span className="flex-1">{sub.description}</span>
-                  <span className="text-muted-foreground">{sub.team === 'home' ? '🔵' : '🔴'}</span>
-                </div>
-              ))}
+              <p className="text-sm sm:text-base font-semibold mb-2">🔄 Substituições ({substitutions.length})</p>
+              <div className="space-y-1">
+                {substitutions.map((sub, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs sm:text-sm bg-card/40 border border-border/20 rounded-lg px-2.5 py-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{sub.minute}'</Badge>
+                    <span className="flex-1 text-foreground/85">{sub.description}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           <div>
-            <p className="text-sm sm:text-base font-bold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[220px] sm:max-h-[280px] overflow-y-auto space-y-1 border border-border/20 rounded-lg p-2 sm:p-3">
+            <p className="text-sm sm:text-base font-semibold mb-2">📝 Narração Completa</p>
+            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/10">
               {[...visibleEvents].reverse().map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 py-1.5 sm:py-2 rounded-lg ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[9px] sm:text-xs w-8 sm:w-9 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
-                  <span className={`text-[11px] sm:text-sm ${getEventColor(ev.type)} leading-relaxed`}>
-                    {getEventIcon(ev.type)} {ev.description}
-                  </span>
-                </div>
+                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
               ))}
             </div>
           </div>
-
-          <p className="text-[10px] sm:text-sm text-muted-foreground text-center border-t border-border/20 pt-2 sm:pt-3">
-            {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols
-          </p>
         </CardContent>
       </Card>
 
