@@ -917,7 +917,7 @@ export function ShieldCrest({
       <g clipPath={`url(#${clipId})`}>
         {renderPattern()}
         <g transform={iconTransform} opacity={iconOpacity} style={{ transition: 'all 200ms ease' }}>
-          {renderIcon(icon, s, dc, primaryColor)}
+          {renderIcon(icon, s, dc, primaryColor, `anim-${clipId}`)}
         </g>
         {/* Top stars (inside shield) */}
         {topStars > 0 && (
