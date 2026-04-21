@@ -908,18 +908,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
         {/* Match content */}
         {!isFinished ? (
-          /* Narration feed */
-          <Card className="p-2 sm:p-3">
-            <div ref={eventsRef} className="max-h-[160px] sm:max-h-[300px] overflow-y-auto space-y-1">
+          /* Chat-style narration feed */
+          <Card className="p-2 sm:p-3 border-border/20">
+            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[340px] overflow-y-auto divide-y divide-border/10">
               {visibleEvents.length === 0 && (
                 <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
               )}
               {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                  <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
-                </div>
+                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
               ))}
             </div>
           </Card>
@@ -937,15 +933,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           />
         )}
 
-        {/* ═══ INLINE SECTIONS (full-width accordion-style) ═══ */}
+        {/* ═══ INLINE SECTIONS (clean neutral borders) ═══ */}
         {!isFinished && (
           <>
             {/* 📊 Estatísticas Section */}
             <div ref={statsSectionRef} className="scroll-mt-32">
-              <Card className="border-yellow-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-yellow-400">
-                    <BarChart3 className="h-5 w-5" /> Estatísticas da Partida
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-yellow-400" /> Estatísticas
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -956,10 +952,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* 👥 Escalações Section */}
             <div ref={lineupSectionRef} className="scroll-mt-32">
-              <Card className="border-blue-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-blue-400">
-                    <Users className="h-5 w-5" /> Escalações
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" /> Escalações
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -970,10 +966,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* ⚙️ Estilo de Jogo / Táticas Section */}
             <div ref={tacticsSectionRef} className="scroll-mt-32">
-              <Card className="border-emerald-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-emerald-400">
-                    <Settings2 className="h-5 w-5" /> Estilo de Jogo
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-emerald-400" /> Estilo de Jogo
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -984,20 +980,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* 🔄 Substituições Section */}
             <div className="scroll-mt-32">
-              <Card className="border-orange-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-orange-400">
-                    <ArrowUpDown className="h-5 w-5" /> Substituições
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <ArrowUpDown className="h-5 w-5 text-orange-400" /> Substituições
                     <Badge variant="outline" className="ml-auto text-xs">{maxSubs - subsUsed}/{maxSubs} restantes</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {subBlocked && subBlockedReason && (
-                    <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
+                    <div className="bg-muted/30 border border-border/30 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
                       <span className="text-xl">⛔</span>
                       <div className="flex-1">
-                        <p className="text-sm font-black text-red-400">Trocas Bloqueadas</p>
-                        <p className="text-xs text-red-300/80 mt-0.5">{subBlockedReason}</p>
+                        <p className="text-sm font-semibold text-foreground">Trocas Bloqueadas</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{subBlockedReason}</p>
                       </div>
                     </div>
                   )}
@@ -1024,10 +1020,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* 🎙️ Auxiliar Técnico Section */}
             {hasAssistant && (
               <div ref={assistantSectionRef} className="scroll-mt-32">
-                <Card className="border-amber-500/20">
+                <Card className="border-border/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-400">
-                      <MessageSquare className="h-5 w-5" /> Auxiliar Técnico
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-amber-400" /> Auxiliar Técnico
                       <Badge variant="outline" className="ml-auto text-xs">{matchState.assistantTips.length} alertas</Badge>
                     </CardTitle>
                   </CardHeader>
