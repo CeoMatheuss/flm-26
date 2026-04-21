@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
-  ShieldCrest, shieldShapes, shieldPatterns, shieldIcons,
+  ShieldCrest, shieldShapes, shieldPatterns,
   ShieldShape, ShieldPattern, ShieldIcon, ShieldConfig, shieldIconLabels,
 } from './ShieldCrest';
-import { Shuffle, FlipHorizontal, Save, Crown, Palette, Layers, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
+import { Shuffle, FlipHorizontal, Save, Palette, Layers, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
