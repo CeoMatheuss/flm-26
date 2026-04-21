@@ -1272,10 +1272,10 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
               return (
                 <button
                   key={p.id || i}
-                  onClick={() => !isQueued && onSelectSubOut(p.id)}
-                  disabled={isQueued}
+                  onClick={() => !isQueued && !blocked && onSelectSubOut(p.id)}
+                  disabled={isQueued || blocked}
                   className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 transition-all text-left group ${
-                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
+                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : blocked ? 'border-border/20 opacity-40 cursor-not-allowed' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
                   }`}
                 >
                   <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary/10 flex items-center justify-center text-xs sm:text-sm font-black text-primary shrink-0">
