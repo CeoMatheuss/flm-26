@@ -56,6 +56,8 @@ export const shieldPatterns = [
   'sash', 'hoop', 'gradient-fade', 'pinstripes',
   'checkered', 'shield-band', 'frame', 'inner-circle',
   'double-split', 'arrow', 'zigzag',
+  // ── Heraldic divisions (clean, solid) ──
+  'quartered', 'per-pale', 'per-bend', 'bordure', 'chief',
 ] as const;
 
 export type ShieldPattern = typeof shieldPatterns[number];
