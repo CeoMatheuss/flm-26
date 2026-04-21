@@ -485,6 +485,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               <span className={`font-bold ${trendColor}`} title={`Valor: ${formatMoney(value)}`}>
                 💰{(value / 1000).toFixed(0)}k {trendIcon}
               </span>
+              <span title="Jogos">🏟️{player.gamesPlayed ?? 0}</span>
+              <span title="Gols">⚽{player.goals ?? 0}</span>
+              <span title="Assistências">🅰️{player.assists ?? 0}</span>
               {avgRating != null && (
                 <span className={`font-bold ${avgRating >= 7 ? 'text-emerald-400' : avgRating >= 5.5 ? 'text-primary' : 'text-red-400'}`}>
                   ★{avgRating.toFixed(1)}
