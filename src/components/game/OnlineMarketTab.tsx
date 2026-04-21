@@ -242,7 +242,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const makeOffer = async (listing: TransferListing) => {
     if (offerPrice <= 0) { toast.error('Defina um valor de proposta'); return; }
     if (offerSalary <= 0) { toast.error('Defina um salário'); return; }
-    if (budget < offerPrice) { toast.error('Orçamento insuficiente!'); return; }
+
+    // 40/40 trava rígida
+    const transferCost = offerPrice + signingBonus;
+    if (transferCost > tBudget) {
+      toast.error(`Verba de transferências insuficiente! Disponível: ${formatMoney(tBudget)}, necessário: ${formatMoney(transferCost)}.`);
+      return;
+    }
+    const annualSalary = offerSalary * 12;
+    if (annualSalary > salaryRemaining) {
+      toast.error(`Verba de salários insuficiente! Disponível: ${formatMoney(salaryRemaining)}/ano, este contrato custa: ${formatMoney(annualSalary)}/ano.`);
+      return;
+    }
 
     setLoading(true);
     const res = await supabase.functions.invoke('process-transfer', {
