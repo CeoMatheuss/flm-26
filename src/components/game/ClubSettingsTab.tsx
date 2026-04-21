@@ -2,25 +2,96 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Pencil, Landmark, Check } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import { Pencil, Landmark, Check, Shield, X } from 'lucide-react';
+import { ShieldCrest, ShieldConfig } from './ShieldCrest';
+import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
+import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 
 interface Props {
   clubName: string;
   stadiumName: string;
+  shieldConfig?: ShieldConfig;
+  // Legacy fallback fields
+  primaryColor?: string;
+  secondaryColor?: string;
+  detailColor?: string;
+  shieldPattern?: string;
+  shieldShape?: string;
+  shieldIcon?: string;
   onRenameClub: (name: string) => void;
   onRenameStadium: (name: string) => void;
+  onUpdateShield?: (cfg: ShieldConfig) => void;
 }
 
-export function ClubSettingsTab({ clubName, stadiumName, onRenameClub, onRenameStadium }: Props) {
+export function ClubSettingsTab({
+  clubName, stadiumName, shieldConfig,
+  primaryColor, secondaryColor, detailColor, shieldPattern, shieldShape, shieldIcon,
+  onRenameClub, onRenameStadium, onUpdateShield,
+}: Props) {
   const [editingClub, setEditingClub] = useState(false);
   const [editingStadium, setEditingStadium] = useState(false);
   const [newClubName, setNewClubName] = useState(clubName);
   const [newStadiumName, setNewStadiumName] = useState(stadiumName);
+  const [shieldOpen, setShieldOpen] = useState(false);
+
+  // Build initial config for the editor: prefer shieldConfig, fallback to legacy fields
+  const initialConfig: ShieldConfig = shieldConfig ?? defaultShieldConfig({
+    shape: (shieldShape as any) || 'classic',
+    pattern: (shieldPattern as any) || 'solid',
+    icon: (shieldIcon as any) || 'star',
+    primaryColor: primaryColor || '#2563EB',
+    secondaryColor: secondaryColor || '#FFFFFF',
+    detailColor: detailColor || '#DC2626',
+  });
+
+  const [draftConfig, setDraftConfig] = useState<ShieldConfig>(initialConfig);
+
+  const openShieldEditor = () => {
+    setDraftConfig(initialConfig);
+    setShieldOpen(true);
+  };
+
+  const handleSaveShield = () => {
+    onUpdateShield?.(draftConfig);
+    setShieldOpen(false);
+  };
+
+  const clubLike = { shieldConfig, primaryColor, secondaryColor, detailColor, shieldPattern, shieldShape, shieldIcon };
 
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-sm sm:text-lg">⚙️ Configurações do Clube</h3>
+
+      {/* Shield Editor Card */}
+      {onUpdateShield && (
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" /> Escudo do Clube
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="shrink-0 p-2 rounded-lg bg-card/60 border border-border/30">
+                  {hasShield(clubLike as any) ? (
+                    <ShieldCrest {...shieldPropsFromClub(clubLike as any)} size={56} />
+                  ) : (
+                    <ShieldCrest primaryColor="#2563EB" secondaryColor="#FFF" pattern="solid" shape="classic" size={56} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Personalize forma, cores, símbolo e mais.</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={openShieldEditor} className="shrink-0">
+                <Pencil className="h-3 w-3 mr-1" /> Editar Escudo
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Club Name */}
       <Card>
@@ -74,6 +145,27 @@ export function ClubSettingsTab({ clubName, stadiumName, onRenameClub, onRenameS
         </CardContent>
       </Card>
 
+      {/* Shield Editor Sheet */}
+      <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" /> Editor de Escudo
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <CrestBuilder value={draftConfig} onChange={setDraftConfig} showSaveButton={false} />
+          </div>
+          <SheetFooter className="mt-6 gap-2">
+            <Button variant="outline" onClick={() => setShieldOpen(false)}>
+              <X className="h-3 w-3 mr-1" /> Cancelar
+            </Button>
+            <Button onClick={handleSaveShield}>
+              <Check className="h-3 w-3 mr-1" /> Salvar Escudo
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
