@@ -96,15 +96,19 @@ interface Props {
   onLoanIn?: (player: Player) => void;
   onListedPlayer?: () => void;
   onAuction?: (player: Player) => void;
+  activeMarketTab?: string;
+  onMarketTabChange?: (tab: string) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer, onAuction }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer, onAuction, activeMarketTab: activeMarketTabProp, onMarketTabChange }: Props) {
   // Derive budgets if not provided (backwards-compat with old saves)
   const tBudget = transferBudget ?? Math.floor(budget * 0.4);
   const sBudget = salaryBudget ?? Math.floor(budget * 0.4);
   const salaryRemaining = Math.max(0, sBudget - currentMonthlyPayroll * 12);
   const [listings, setListings] = useState<TransferListing[]>([]);
-  const [activeMarketTab, setActiveMarketTab] = useState('browse');
+  const [internalTab, setInternalTab] = useState('browse');
+  const activeMarketTab = activeMarketTabProp ?? internalTab;
+  const setActiveMarketTab = (t: string) => { onMarketTabChange ? onMarketTabChange(t) : setInternalTab(t); };
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loanListings, setLoanListings] = useState<any[]>([]);
