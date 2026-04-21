@@ -53,13 +53,13 @@ export interface GameState {
   lastFriendlyDate?: string;
 }
 
-export function useGame(initialState?: GameState, userId?: string) {
+export function useGame(initialState?: GameState, userId?: string, isPremium: boolean = false) {
   const [tactics, setTactics] = useState<TacticsConfig>(initialState?.tactics ?? defaultTactics);
 
   // Domain hooks
   const clubState = useClubState(initialState, userId);
   const financeState = useFinanceState(initialState);
-  const infraState = useInfraState(initialState, userId);
+  const infraState = useInfraState(initialState, userId, isPremium);
   const matchState = useMatchState(initialState, userId);
 
   // Bridged methods that need cross-hook access
