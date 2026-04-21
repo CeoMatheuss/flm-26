@@ -862,6 +862,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                         {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
                         {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">dicas</span>}
                       </p>
+                      {hasAssistant && (
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate italic">
+                          {matchState.assistantTips.length > 0
+                            ? `"${matchState.assistantTips[matchState.assistantTips.length - 1].description}"`
+                            : 'Aguardando análise...'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </button>
