@@ -88,58 +88,58 @@ export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
 
   return (
     <Card className="border-cyan-500/30 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(190 80% 50% / 0.06), hsl(var(--primary) / 0.03))' }}>
-      <CardContent className="p-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-12 w-12 rounded-xl shrink-0" style={{ background: 'linear-gradient(135deg, hsl(190 80% 50% / 0.25), hsl(var(--primary) / 0.15))' }}>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl shrink-0" style={{ background: 'linear-gradient(135deg, hsl(190 80% 50% / 0.25), hsl(var(--primary) / 0.15))' }}>
             {isStarted ? (
-              <Zap className="h-6 w-6 text-cyan-400" />
+              <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-cyan-400" />
             ) : (
-              <CalendarDays className="h-6 w-6 text-cyan-400" />
+              <CalendarDays className="h-7 w-7 sm:h-8 sm:w-8 text-cyan-400" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-black">
+              <p className="text-base sm:text-lg font-black">
                 {isStarted ? '🏟️ Temporada em Andamento!' : '🏟️ Temporada vai Começar!'}
               </p>
-              <Badge variant="outline" className="text-[7px] border-cyan-500/30 text-cyan-400 shrink-0">
+              <Badge variant="outline" className="text-[10px] sm:text-xs border-cyan-500/30 text-cyan-400 shrink-0">
                 T{seasonNumber}
               </Badge>
             </div>
             {isStarted ? (
-              <div className="space-y-1 mt-0.5">
-                <p className="text-[10px] text-muted-foreground">
+              <div className="space-y-1 mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   A primeira temporada oficial já começou!
                 </p>
                 {nextMatch && (
-                  <p className="text-[10px] text-foreground">
+                  <p className="text-xs sm:text-sm text-foreground">
                     ⚽ Próximo jogo: <span className="font-bold">{nextMatch.opponent}</span> — {nextMatch.time}
                   </p>
                 )}
               </div>
             ) : (
               <>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Início oficial: <span className="font-bold text-foreground">01/05/2026</span>
                 </p>
                 {timeLeft && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Clock className="h-3 w-3 text-cyan-400" />
-                    <span className="text-[10px] font-mono font-bold text-cyan-400">{timeLeft}</span>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <Clock className="h-4 w-4 text-cyan-400" />
+                    <span className="text-sm sm:text-base font-mono font-bold text-cyan-400">{timeLeft}</span>
                   </div>
                 )}
               </>
             )}
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              <Badge variant="secondary" className="text-[7px] gap-0.5">
-                <Trophy className="h-2.5 w-2.5" /> Campeonatos
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
+                <Trophy className="h-3 w-3" /> Campeonatos
               </Badge>
-              <Badge variant="secondary" className="text-[7px] gap-0.5">
-                <Zap className="h-2.5 w-2.5" /> 4 Divisões
+              <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
+                <Zap className="h-3 w-3" /> 4 Divisões
               </Badge>
               {enrolledCount > 0 && (
-                <Badge variant="secondary" className="text-[7px] gap-0.5">
-                  <Users className="h-2.5 w-2.5" /> {enrolledCount} inscritos
+                <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
+                  <Users className="h-3 w-3" /> {enrolledCount} inscritos
                 </Badge>
               )}
             </div>

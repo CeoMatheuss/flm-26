@@ -253,7 +253,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
         )}
       </TabsContent>
-      <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} />}</TabsContent>
+      <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} season={game.season?.currentSeason ?? 1} userId={userId} />}</TabsContent>
       <TabsContent value="youth">
         {isTabBlocked('youth') ? <BlockedMessage /> : <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} academyUpgradeCompletesAt={game.infrastructure.youthAcademy.upgradeCompletesAt} isPremium={isPremium} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} currentSeason={game.season?.currentSeason ?? 1} onPromote={game.promoteYouth} onSell={game.sellYouth} onEnrollCopinha={game.enrollCopinha} onSetInvestment={game.setYouthInvestment} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />}
       </TabsContent>

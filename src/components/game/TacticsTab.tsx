@@ -9,11 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Zap, Target, Users, Star, Info, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { SeasonStartWidget } from './SeasonStartWidget';
 
 interface Props {
   tactics: TacticsConfig;
   players: Player[];
   onUpdate: (tactics: TacticsConfig) => void;
+  season?: number;
+  userId?: string;
 }
 
 const allFormations: Formation[] = [
@@ -46,7 +49,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   const activePlayers = players.filter(p => !p.injury);
@@ -79,6 +82,9 @@ export function TacticsTab({ tactics, players, onUpdate }: Props) {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Season Start Widget — shows countdown / current season info */}
+      <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
+
       {/* Tactical Overview Bar */}
       <Card className="border-primary/20">
         <CardContent className="p-3 sm:p-4">
