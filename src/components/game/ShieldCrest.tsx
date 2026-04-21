@@ -185,7 +185,11 @@ interface ShieldProps {
   bannerColor?: string;
 }
 
-export const shieldShapes = ['classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest'] as const;
+export const shieldShapes = [
+  'classic', 'rounded', 'pointed', 'circle', 'pentagon', 'gothic', 'hexagon', 'diamond-shield', 'badge', 'crest',
+  // ── New heraldic shapes (v2) ──
+  'swiss', 'iberian', 'nordic', 'french-modern', 'italian-oval', 'german-tournament', 'english-heater', 'victorian',
+] as const;
 export type ShieldShape = typeof shieldShapes[number];
 
 export const shieldPatterns = [
