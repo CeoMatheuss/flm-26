@@ -1026,6 +1026,121 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             homePlayers={homePlayers}
           />
         )}
+
+        {/* ═══ INLINE SECTIONS (full-width accordion-style) ═══ */}
+        {!isFinished && (
+          <>
+            {/* 📊 Estatísticas Section */}
+            <div ref={statsSectionRef} className="scroll-mt-32">
+              <Card className="border-yellow-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-yellow-400">
+                    <BarChart3 className="h-5 w-5" /> Estatísticas da Partida
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 👥 Escalações Section */}
+            <div ref={lineupSectionRef} className="scroll-mt-32">
+              <Card className="border-blue-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-blue-400">
+                    <Users className="h-5 w-5" /> Escalações
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ⚙️ Estilo de Jogo / Táticas Section */}
+            <div ref={tacticsSectionRef} className="scroll-mt-32">
+              <Card className="border-emerald-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-emerald-400">
+                    <Settings2 className="h-5 w-5" /> Estilo de Jogo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 🔄 Substituições Section */}
+            <div className="scroll-mt-32">
+              <Card className="border-orange-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-orange-400">
+                    <ArrowUpDown className="h-5 w-5" /> Substituições
+                    <Badge variant="outline" className="ml-auto text-xs">{maxSubs - subsUsed}/{maxSubs} restantes</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {subBlocked && subBlockedReason && (
+                    <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
+                      <span className="text-xl">⛔</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-red-400">Trocas Bloqueadas</p>
+                        <p className="text-xs text-red-300/80 mt-0.5">{subBlockedReason}</p>
+                      </div>
+                    </div>
+                  )}
+                  <ManagerSubstitutionView
+                    homePlayers={homePlayers}
+                    subsUsed={subsUsed}
+                    maxSubs={maxSubs}
+                    windowsUsed={windowsUsed}
+                    maxWindows={maxWindows}
+                    selectedSubOut={selectedSubOut}
+                    onSelectSubOut={setSelectedSubOut}
+                    onConfirmSub={handleQueueSubstitution}
+                    isHalftime={isHalftime}
+                    isFinished={isFinished}
+                    substitutedPlayerIds={substitutedPlayerIds}
+                    subQueue={subQueue}
+                    blocked={subBlocked}
+                    blockedReason={subBlockedReason}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 🎙️ Auxiliar Técnico Section */}
+            {hasAssistant && (
+              <div ref={assistantSectionRef} className="scroll-mt-32">
+                <Card className="border-amber-500/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-400">
+                      <MessageSquare className="h-5 w-5" /> Auxiliar Técnico
+                      <Badge variant="outline" className="ml-auto text-xs">{matchState.assistantTips.length} alertas</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {[...matchState.assistantTips].reverse().map((tip, i) => (
+                        <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5">
+                          <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm">{tip.description}</p>
+                            {tip.priority === 'high' && (
+                              <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
