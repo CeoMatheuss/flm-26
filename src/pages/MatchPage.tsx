@@ -712,21 +712,21 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Compact stats nav (replaced 4 large widgets) */}
+        {/* Row 2: Compact stats nav (clean neutral chips) */}
         {!isFinished && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 text-xs font-bold">
-              <BarChart3 className="h-3.5 w-3.5 text-yellow-400" /> Stats
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <BarChart3 className="h-3.5 w-3.5" /> Stats
             </button>
-            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-xs font-bold">
-              <Users className="h-3.5 w-3.5 text-blue-400" /> Escalação
+            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Users className="h-3.5 w-3.5" /> Escalação
             </button>
-            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-xs font-bold">
-              <Settings2 className="h-3.5 w-3.5 text-emerald-400" /> Tática
+            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Settings2 className="h-3.5 w-3.5" /> Tática
             </button>
             {hasAssistant && (
-              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-xs font-bold">
-                <MessageSquare className="h-3.5 w-3.5 text-amber-400" /> Técnico ({matchState.assistantTips.length})
+              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <MessageSquare className="h-3.5 w-3.5" /> Técnico ({matchState.assistantTips.length})
               </button>
             )}
           </div>
@@ -908,18 +908,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
         {/* Match content */}
         {!isFinished ? (
-          /* Narration feed */
-          <Card className="p-2 sm:p-3">
-            <div ref={eventsRef} className="max-h-[160px] sm:max-h-[300px] overflow-y-auto space-y-1">
+          /* Chat-style narration feed */
+          <Card className="p-2 sm:p-3 border-border/20">
+            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[340px] overflow-y-auto divide-y divide-border/10">
               {visibleEvents.length === 0 && (
                 <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
               )}
               {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[10px] sm:text-xs w-9 sm:w-10 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                  <span className="text-sm sm:text-base shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`text-xs sm:text-base ${getEventColor(ev.type)} leading-relaxed`}>{ev.description}</span>
-                </div>
+                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
               ))}
             </div>
           </Card>
@@ -937,15 +933,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           />
         )}
 
-        {/* ═══ INLINE SECTIONS (full-width accordion-style) ═══ */}
+        {/* ═══ INLINE SECTIONS (clean neutral borders) ═══ */}
         {!isFinished && (
           <>
             {/* 📊 Estatísticas Section */}
             <div ref={statsSectionRef} className="scroll-mt-32">
-              <Card className="border-yellow-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-yellow-400">
-                    <BarChart3 className="h-5 w-5" /> Estatísticas da Partida
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-yellow-400" /> Estatísticas
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -956,10 +952,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* 👥 Escalações Section */}
             <div ref={lineupSectionRef} className="scroll-mt-32">
-              <Card className="border-blue-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-blue-400">
-                    <Users className="h-5 w-5" /> Escalações
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" /> Escalações
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -970,10 +966,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* ⚙️ Estilo de Jogo / Táticas Section */}
             <div ref={tacticsSectionRef} className="scroll-mt-32">
-              <Card className="border-emerald-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-emerald-400">
-                    <Settings2 className="h-5 w-5" /> Estilo de Jogo
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-emerald-400" /> Estilo de Jogo
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -984,20 +980,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
             {/* 🔄 Substituições Section */}
             <div className="scroll-mt-32">
-              <Card className="border-orange-500/20">
+              <Card className="border-border/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-orange-400">
-                    <ArrowUpDown className="h-5 w-5" /> Substituições
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <ArrowUpDown className="h-5 w-5 text-orange-400" /> Substituições
                     <Badge variant="outline" className="ml-auto text-xs">{maxSubs - subsUsed}/{maxSubs} restantes</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {subBlocked && subBlockedReason && (
-                    <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
+                    <div className="bg-muted/30 border border-border/30 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
                       <span className="text-xl">⛔</span>
                       <div className="flex-1">
-                        <p className="text-sm font-black text-red-400">Trocas Bloqueadas</p>
-                        <p className="text-xs text-red-300/80 mt-0.5">{subBlockedReason}</p>
+                        <p className="text-sm font-semibold text-foreground">Trocas Bloqueadas</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{subBlockedReason}</p>
                       </div>
                     </div>
                   )}
@@ -1024,10 +1020,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {/* 🎙️ Auxiliar Técnico Section */}
             {hasAssistant && (
               <div ref={assistantSectionRef} className="scroll-mt-32">
-                <Card className="border-amber-500/20">
+                <Card className="border-border/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-400">
-                      <MessageSquare className="h-5 w-5" /> Auxiliar Técnico
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-amber-400" /> Auxiliar Técnico
                       <Badge variant="outline" className="ml-auto text-xs">{matchState.assistantTips.length} alertas</Badge>
                     </CardTitle>
                   </CardHeader>
@@ -1328,42 +1324,88 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   );
 }
 
+/* ── CHAT-STYLE EVENT ROW ──────────────────────────────────── */
+
+function ChatEventRow({ ev, homeTeam, awayTeam }: { ev: SimEvent; homeTeam: string; awayTeam: string }) {
+  const teamName = ev.team === 'home' ? homeTeam : ev.team === 'away' ? awayTeam : null;
+  const initial = teamName ? teamName.trim().charAt(0).toUpperCase() : null;
+  const isGoal = ev.isGoal;
+
+  return (
+    <div className="flex items-start gap-2.5 sm:gap-3 px-1.5 sm:px-2 py-2.5 sm:py-3">
+      {/* Team badge (subtle) */}
+      {initial ? (
+        <div
+          className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-bold border ${
+            ev.team === 'home'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'bg-muted/30 text-foreground/80 border-border/40'
+          }`}
+          title={teamName ?? undefined}
+        >
+          {initial}
+        </div>
+      ) : (
+        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
+          {getEventIcon(ev.type)}
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground/80">{ev.minute}'</span>
+          {teamName && (
+            <span className="text-[10px] sm:text-xs text-muted-foreground/60 truncate">{teamName}</span>
+          )}
+          {isGoal && <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Gol</span>}
+        </div>
+        <p className={`text-xs sm:text-sm leading-relaxed ${getEventColor(ev.type)}`}>
+          {teamName && <span className="mr-1.5">{getEventIcon(ev.type)}</span>}
+          {ev.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── STATS VIEW ────────────────────────────────────────────── */
 
 function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam: string; awayTeam: string }) {
-  const rows: [string, [number, number], string][] = [
-    ['Posse de Bola', stats.possession, '%'],
-    ['Finalizações', stats.shots, ''],
-    ['Chutes no Gol', stats.shotsOnTarget, ''],
-    ['Escanteios', stats.corners, ''],
-    ['Faltas', stats.fouls, ''],
-    ['Cartões Amarelos', stats.yellowCards, ''],
-    ['Cartões Vermelhos', stats.redCards, ''],
-    ['Passes', stats.passes, ''],
-    ['Desarmes', stats.tackles, ''],
-    ['Defesas', stats.saves, ''],
-    ['Impedimentos', stats.offsides, ''],
+  const rows: { label: string; vals: [number, number]; suffix: string; icon: string }[] = [
+    { label: 'Posse de Bola', vals: stats.possession, suffix: '%', icon: '⚽' },
+    { label: 'Finalizações', vals: stats.shots, suffix: '', icon: '🎯' },
+    { label: 'No Gol', vals: stats.shotsOnTarget, suffix: '', icon: '🥅' },
+    { label: 'Escanteios', vals: stats.corners, suffix: '', icon: '🚩' },
+    { label: 'Faltas', vals: stats.fouls, suffix: '', icon: '⚠️' },
+    { label: 'Amarelos', vals: stats.yellowCards, suffix: '', icon: '🟨' },
+    { label: 'Vermelhos', vals: stats.redCards, suffix: '', icon: '🟥' },
+    { label: 'Passes', vals: stats.passes, suffix: '', icon: '↔️' },
+    { label: 'Desarmes', vals: stats.tackles, suffix: '', icon: '💪' },
+    { label: 'Defesas', vals: stats.saves, suffix: '', icon: '🧤' },
+    { label: 'Impedimentos', vals: stats.offsides, suffix: '', icon: '⛳' },
   ];
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex justify-between text-sm sm:text-base font-bold">
-        <span className="text-blue-400 truncate max-w-[120px] sm:max-w-[140px]">{homeTeam}</span>
-        <span className="text-red-400 truncate max-w-[120px] sm:max-w-[140px]">{awayTeam}</span>
+    <div className="space-y-3">
+      <div className="flex justify-between text-xs sm:text-sm font-semibold">
+        <span className="text-foreground truncate max-w-[120px] sm:max-w-[140px]">{homeTeam}</span>
+        <span className="text-muted-foreground truncate max-w-[120px] sm:max-w-[140px] text-right">{awayTeam}</span>
       </div>
-      {rows.map(([label, vals, suffix]) => {
+      {rows.map(({ label, vals, suffix, icon }) => {
         const total = vals[0] + vals[1];
         const homePercent = total > 0 ? (vals[0] / total) * 100 : 50;
         return (
-          <div key={label} className="space-y-0.5 sm:space-y-1">
+          <div key={label} className="space-y-1">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-bold w-10 sm:w-12 text-right">{vals[0]}{suffix}</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</span>
-              <span className="font-bold w-10 sm:w-12 text-left">{vals[1]}{suffix}</span>
+              <span className="font-mono font-semibold w-10 sm:w-12 text-right text-foreground">{vals[0]}{suffix}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium flex items-center gap-1">
+                <span className="text-sm">{icon}</span>{label}
+              </span>
+              <span className="font-mono font-semibold w-10 sm:w-12 text-left text-muted-foreground">{vals[1]}{suffix}</span>
             </div>
-            <div className="flex h-2 sm:h-2.5 rounded-full overflow-hidden bg-muted/10">
-              <div className="bg-blue-500 transition-all duration-500 rounded-l-full" style={{ width: `${homePercent}%` }} />
-              <div className="bg-red-500 flex-1 rounded-r-full" />
+            <div className="flex h-1.5 sm:h-2 rounded-full overflow-hidden bg-muted/15">
+              <div className="bg-primary transition-all duration-500" style={{ width: `${homePercent}%` }} />
+              <div className="bg-foreground/30 flex-1" />
             </div>
           </div>
         );
@@ -1398,29 +1440,41 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
       )}
 
       <div>
-        <p className="text-sm sm:text-base font-black mb-2 text-primary flex items-center gap-1.5"><Shirt className="h-4 w-4" /> Titulares</p>
-        <div className="space-y-1">
-          {starters.map((p, i) => (
-            <div key={p.id || i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
-              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
-              <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-8 sm:w-9 justify-center">{p.position}</Badge>
-              <span className="text-xs sm:text-sm font-semibold flex-1 truncate">{p.name}</span>
-              <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
-              <span className="text-[10px] sm:text-sm text-muted-foreground">⚡{p.stamina || 100}%</span>
-            </div>
-          ))}
+        <p className="text-sm sm:text-base font-semibold mb-2 text-foreground flex items-center gap-1.5">
+          <Shirt className="h-4 w-4 text-primary" /> Titulares
+        </p>
+        <div className="space-y-2.5">
+          {starters.map((p, i) => {
+            const stamina = p.stamina ?? 100;
+            const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-amber-500' : 'bg-red-500';
+            return (
+              <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
+                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
+                <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
+                  <div className="h-1.5 w-full rounded-full bg-muted/15 overflow-hidden mt-1">
+                    <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-primary/10 border border-primary/20 text-primary text-sm font-bold font-mono">
+                  {p.overall}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {bench.length > 0 && (
         <div>
-          <p className="text-sm sm:text-base font-bold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+          <p className="text-sm sm:text-base font-semibold mb-2 text-muted-foreground">🪑 Banco ({bench.length})</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {bench.map((p, i) => (
-              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 rounded-lg px-2 sm:px-3 py-2">
-                <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
-                <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
-                <span className="text-xs sm:text-sm font-bold">{p.overall}</span>
+              <div key={p.id || i} className="flex items-center gap-2 bg-muted/10 border border-border/15 rounded-lg px-2.5 py-2">
+                <Badge variant="outline" className="text-[10px] sm:text-xs w-9 justify-center">{p.position}</Badge>
+                <span className="text-xs sm:text-sm truncate flex-1 text-foreground/80">{p.name}</span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-foreground">{p.overall}</span>
               </div>
             ))}
           </div>
@@ -1462,34 +1516,58 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
   const motm = playerRatings.length > 0 ? playerRatings.reduce((a, b) => a.rating > b.rating ? a : b) : null;
 
   return (
-    <div className="space-y-2 sm:space-y-3 pt-2 animate-fade-in">
-      <Card className="border-primary/30 overflow-hidden">
-        <div className="bg-primary/10 px-4 py-2.5 text-center">
-          <p className="text-sm sm:text-base font-black uppercase tracking-wider text-primary">🏁 Resultado Final</p>
-        </div>
+    <div className="space-y-3 sm:space-y-4 pt-2 animate-fade-in">
+      {/* Elegant final scoreboard */}
+      <Card className="border-emerald-500/20 bg-card/80 overflow-hidden animate-scale-in">
+        <CardContent className="p-5 sm:p-7 text-center space-y-4">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-emerald-400/80">🏁 Fim de Jogo</p>
+
+          <div className="flex items-center justify-center gap-4 sm:gap-6">
+            <div className="flex-1 text-right min-w-0">
+              <p className="text-sm sm:text-lg font-semibold truncate text-foreground">{homeTeam}</p>
+            </div>
+            <div className="text-5xl sm:text-7xl font-black font-mono tracking-tight text-foreground">
+              {finalHomeGoals}<span className="text-muted-foreground/40 mx-2 sm:mx-3">:</span>{finalAwayGoals}
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm sm:text-lg font-semibold truncate text-muted-foreground">{awayTeam}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 text-[11px] sm:text-xs text-muted-foreground pt-1">
+            <span>⏱️ 90'</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>⚽ {finalHomeGoals + finalAwayGoals} gols</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>{visibleEvents.length} lances</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/20 overflow-hidden">
         <CardContent className="p-3 sm:p-5 space-y-3 sm:space-y-4">
           {motm && (
-            <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3 sm:p-4 flex items-center gap-3">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                <Star className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
+            <div className="bg-amber-400/8 border border-amber-400/20 rounded-lg p-3 sm:p-4 flex items-center gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-400/15 flex items-center justify-center">
+                <Star className="h-6 w-6 sm:h-7 sm:w-7 text-amber-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-yellow-400 font-bold uppercase">⭐ Craque do Jogo</p>
-                <p className="text-base sm:text-lg font-black">{motm.name}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">{motm.position} · Nota: {motm.rating}</p>
+                <p className="text-xs sm:text-sm text-amber-400 font-semibold uppercase tracking-wider">⭐ Craque do Jogo</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{motm.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{motm.position} · Nota {motm.rating}</p>
               </div>
             </div>
           )}
 
           {playerRatings.length > 0 && (
             <div>
-              <p className="text-sm sm:text-base font-bold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-yellow-400" /> Notas</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+              <p className="text-sm sm:text-base font-semibold mb-2 flex items-center gap-1.5"><Star className="h-4 w-4 text-amber-400" /> Notas</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {playerRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-2">
-                    <Badge variant="outline" className="text-[10px] sm:text-xs w-8 sm:w-9 justify-center">{p.position}</Badge>
+                  <div key={i} className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2.5 py-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs w-9 justify-center">{p.position}</Badge>
                     <span className="text-xs sm:text-sm truncate flex-1">{p.name}</span>
-                    <span className={`text-sm sm:text-base font-black ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-blue-400' : p.rating >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    <span className={`text-sm sm:text-base font-bold font-mono ${p.rating >= 8 ? 'text-emerald-400' : p.rating >= 7 ? 'text-foreground' : p.rating >= 6 ? 'text-foreground/70' : 'text-foreground/50'}`}>
                       {p.rating}
                     </span>
                   </div>
@@ -1502,34 +1580,26 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           {substitutions.length > 0 && (
             <div>
-              <p className="text-sm sm:text-base font-bold mb-2">🔄 Substituições ({substitutions.length})</p>
-              {substitutions.map((sub, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs sm:text-sm bg-sky-500/5 border border-sky-500/15 rounded-lg px-2 sm:px-3 py-2 mb-1">
-                  <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{sub.minute}'</Badge>
-                  <span className="flex-1">{sub.description}</span>
-                  <span className="text-muted-foreground">{sub.team === 'home' ? '🔵' : '🔴'}</span>
-                </div>
-              ))}
+              <p className="text-sm sm:text-base font-semibold mb-2">🔄 Substituições ({substitutions.length})</p>
+              <div className="space-y-1">
+                {substitutions.map((sub, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs sm:text-sm bg-card/40 border border-border/20 rounded-lg px-2.5 py-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{sub.minute}'</Badge>
+                    <span className="flex-1 text-foreground/85">{sub.description}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           <div>
-            <p className="text-sm sm:text-base font-bold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[220px] sm:max-h-[280px] overflow-y-auto space-y-1 border border-border/20 rounded-lg p-2 sm:p-3">
+            <p className="text-sm sm:text-base font-semibold mb-2">📝 Narração Completa</p>
+            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/10">
               {[...visibleEvents].reverse().map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 py-1.5 sm:py-2 rounded-lg ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[9px] sm:text-xs w-8 sm:w-9 justify-center shrink-0 font-mono">{ev.minute}'</Badge>
-                  <span className={`text-[11px] sm:text-sm ${getEventColor(ev.type)} leading-relaxed`}>
-                    {getEventIcon(ev.type)} {ev.description}
-                  </span>
-                </div>
+                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
               ))}
             </div>
           </div>
-
-          <p className="text-[10px] sm:text-sm text-muted-foreground text-center border-t border-border/20 pt-2 sm:pt-3">
-            {visibleEvents.length} lances · ⚽ {finalHomeGoals + finalAwayGoals} gols
-          </p>
         </CardContent>
       </Card>
 
@@ -1639,33 +1709,25 @@ function getEventIcon(type: string): string {
 }
 
 function getEventColor(type: string): string {
-  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) return 'text-emerald-400 font-bold';
-  if (['great_save', 'woodwork', 'corner_danger', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near'].includes(type)) return 'text-yellow-400';
-  if (type === 'yellow_card') return 'text-yellow-300';
-  if (type === 'red_card') return 'text-red-400';
-  if (type === 'penalty_miss') return 'text-red-400 font-bold';
-  if (type === 'dangerous_foul') return 'text-orange-500 font-semibold';
-  if (['midfield_foul', 'foul'].includes(type)) return 'text-orange-400';
-  if (type === 'halftime') return 'text-primary font-semibold';
-  if (type === 'final_whistle') return 'text-primary font-bold';
-  if (type === 'kickoff') return 'text-blue-400 font-medium';
-  if (type === 'substitution') return 'text-sky-400';
-  if (type === 'injury') return 'text-red-400 font-semibold';
-  if (type === 'assistant_tip') return 'text-amber-400';
-  if (type === 'added_time') return 'text-primary';
-  return 'text-muted-foreground';
+  // Goals — único destaque vivo
+  if (['foot_goal', 'header_goal', 'penalty_goal', 'counter_attack_goal', 'crossing_goal', 'free_kick_goal'].includes(type)) {
+    return 'text-emerald-400 font-semibold';
+  }
+  // Apito final / fim de tempo
+  if (['final_whistle', 'halftime', 'kickoff', 'added_time'].includes(type)) {
+    return 'text-emerald-400/90 font-medium';
+  }
+  // Lances importantes mas sutis (cards, faltas perigosas, lesão)
+  if (['red_card', 'yellow_card', 'penalty_miss', 'injury', 'dangerous_foul'].includes(type)) {
+    return 'text-foreground/70';
+  }
+  // Padrão: neutro
+  return 'text-foreground/85';
 }
 
-function getEventBg(ev: SimEvent): string {
-  if (ev.isGoal) return 'bg-emerald-500/10 border border-emerald-500/20';
-  if (['halftime', 'kickoff', 'final_whistle', 'added_time'].includes(ev.type)) return 'bg-primary/5 border border-primary/10';
-  if (['yellow_card', 'red_card'].includes(ev.type)) return 'bg-yellow-500/5 border border-yellow-500/10';
-  if (ev.type === 'injury') return 'bg-red-500/5 border border-red-500/10';
-  if (ev.type === 'assistant_tip') return 'bg-amber-500/5 border border-amber-500/10';
-  if (isHighlightEvent(ev.type)) return 'bg-yellow-400/5';
-  if (ev.team === 'home') return 'bg-blue-500/[0.03]';
-  if (ev.team === 'away') return 'bg-red-500/[0.03]';
-  return 'bg-muted/5';
+function getEventBg(_ev: SimEvent): string {
+  // Visual minimalista — sem fundos coloridos por tipo. Apenas separador sutil.
+  return '';
 }
 
 function getHighlightLabel(type: string): string {

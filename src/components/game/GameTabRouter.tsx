@@ -270,7 +270,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="sponsors">
         {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
       </TabsContent>
-      <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} onUpgrade={game.upgradeFacility} /></TabsContent>
+      <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} players={game.club.players} onUpgrade={game.upgradeFacility} /></TabsContent>
       <TabsContent value="stadium">
         <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} />
       </TabsContent>
