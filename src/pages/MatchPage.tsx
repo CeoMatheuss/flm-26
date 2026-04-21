@@ -717,6 +717,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Tática</p>
                       <p className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate capitalize">
+                        {(liveTactics.playStyle || 'equilibrado')} · pressão {(liveTactics.pressing || 'medio')}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -758,6 +761,16 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-blue-300">Time</p>
                       <p className="text-base sm:text-lg font-black text-foreground">{maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">subs</span></p>
+                      {(() => {
+                        const tired = (homePlayers || [])
+                          .filter((p: any) => !substitutedPlayerIds.has(p.id) && (p.stamina ?? 100) < 50)
+                          .sort((a: any, b: any) => (a.stamina ?? 100) - (b.stamina ?? 100))[0];
+                        return tired ? (
+                          <p className="text-[10px] sm:text-xs text-red-400 truncate font-bold">⚠️ {tired.name?.split(' ').slice(-1)[0] || 'Jogador'} {tired.stamina ?? 0}%</p>
+                        ) : (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Elenco descansado</p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </button>
@@ -808,6 +821,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-yellow-300">Stats</p>
                       <p className="text-base sm:text-lg font-black text-foreground">{possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span></p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                        ⚡ Chutes {stats.shots[0]}–{stats.shots[1]} · 🎯 {stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -846,6 +862,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                         {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
                         {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">dicas</span>}
                       </p>
+                      {hasAssistant && (
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate italic">
+                          {matchState.assistantTips.length > 0
+                            ? `"${matchState.assistantTips[matchState.assistantTips.length - 1].description}"`
+                            : 'Aguardando análise...'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </button>

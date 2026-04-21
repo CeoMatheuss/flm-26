@@ -311,11 +311,14 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
         const gameMin = Math.floor(progress * maxMin);
         setCurrentMinute(gameMin);
 
-        // CORREÇÃO Bug #5: usar home_goals/away_goals diretamente do banco.
-        // Não recalcular contando eventos — isso causava placares divergentes.
-        // Os gols já vêm corretos do Edge Function.
-        setCurrentHomeGoals(data.home_goals);
-        setCurrentAwayGoals(data.away_goals);
+        // ANTI-SPOILER: contar gols apenas dos eventos já "ocorridos" até o minuto atual.
+        // Os campos home_goals/away_goals do banco contém o placar FINAL pré-calculado,
+        // então usar diretamente revelaria o resultado antecipadamente no dashboard.
+        const visibleGoals = events.filter((e: any) => e.minute <= gameMin && (e.isGoal || e.type === 'goal'));
+        const liveHomeGoals = visibleGoals.filter((e: any) => e.team === 'home').length;
+        const liveAwayGoals = visibleGoals.filter((e: any) => e.team === 'away').length;
+        setCurrentHomeGoals(liveHomeGoals);
+        setCurrentAwayGoals(liveAwayGoals);
 
         // If match time has elapsed, treat as finished locally (visual only)
         // NOTE: Actual finalization is handled exclusively by MatchResultLocker
