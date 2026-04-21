@@ -299,18 +299,15 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
       {/* ─────────────── TABS PANEL ─────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 h-auto w-full">
-          <TabsTrigger value="models" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Sparkles className="h-3.5 w-3.5" />Modelos
+        <TabsList className="grid grid-cols-3 h-auto w-full">
+          <TabsTrigger value="models" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Sparkles className="h-4 w-4" />Modelos
           </TabsTrigger>
-          <TabsTrigger value="layout" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Layers className="h-3.5 w-3.5" />Divisão
+          <TabsTrigger value="layout" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Layers className="h-4 w-4" />Divisão
           </TabsTrigger>
-          <TabsTrigger value="colors" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Palette className="h-3.5 w-3.5" />Cores
-          </TabsTrigger>
-          <TabsTrigger value="extras" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Crown className="h-3.5 w-3.5" />Extras
+          <TabsTrigger value="colors" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Palette className="h-4 w-4" />Cores
           </TabsTrigger>
         </TabsList>
 
