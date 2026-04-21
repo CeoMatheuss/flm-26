@@ -5,9 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useState, useMemo } from 'react';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
@@ -124,7 +123,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [filterPos, setFilterPos] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
+
+  // Cancel pending swap with Esc
+  useEffect(() => {
+    if (!pendingSwap) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingSwap(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [pendingSwap]);
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
@@ -204,6 +215,26 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     onReorderPlayers(newOrder);
   };
 
+  // Start a swap: pre-select player and switch sub-tab to candidate group
+  const startSwap = (player: Player, from: Group) => {
+    setPendingSwap({ player, from });
+    if (from === 'starters') {
+      // Take this starter to the bench: open reserves tab
+      setSquadSubTab('reserves');
+    } else {
+      // Promote a reserve/out: open starters tab
+      setSquadSubTab('starters');
+    }
+  };
+
+  // Complete a pending swap by clicking a candidate
+  const completeSwap = (candidateId: string) => {
+    if (!pendingSwap) return;
+    swapPlayers(pendingSwap.player.id, candidateId);
+    setPendingSwap(null);
+    // Return to whichever tab the original player belongs to so user sees the result
+    setSquadSubTab(pendingSwap.from);
+  };
 
   // ─── Full-page player profile ───
   if (viewingPlayer) {
@@ -436,7 +467,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
     const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
     const auctionEligible = player.overall >= 65 && player.age <= 35;
-    const canRemoveFromSquad = players.length > 11;
 
     const stateBorder = player.injury
       ? 'border-l-red-500'
@@ -444,14 +474,35 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       ? 'border-l-amber-500'
       : 'border-l-transparent';
 
+    // Swap mode logic
+    const isPendingSelf = pendingSwap?.player.id === player.id;
+    const isCandidate = !!pendingSwap && !isPendingSelf && (
+      (pendingSwap.from === 'starters' && currentGroup !== 'starters') ||
+      (pendingSwap.from !== 'starters' && currentGroup === 'starters')
+    );
+    const samePosition = pendingSwap && pendingSwap.player.position === player.position;
+    const swapHighlight = isPendingSelf
+      ? 'ring-2 ring-primary/60 bg-primary/5'
+      : isCandidate
+        ? (samePosition ? 'ring-1 ring-emerald-500/50 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10' : 'cursor-pointer hover:ring-1 hover:ring-primary/40')
+        : '';
+
+    const handleRowClick = () => {
+      if (isCandidate) {
+        completeSwap(player.id);
+      } else {
+        setViewingPlayer(player);
+      }
+    };
+
     return (
       <div
         key={player.id}
-        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder}`}
+        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder} ${swapHighlight}`}
       >
         <div className="flex items-center gap-2 p-2">
           <button
-            onClick={() => setViewingPlayer(player)}
+            onClick={handleRowClick}
             className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg} hover:scale-105 transition-transform`}
           >
             <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
@@ -459,7 +510,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </button>
 
           <button
-            onClick={() => setViewingPlayer(player)}
+            onClick={handleRowClick}
             className="flex-1 min-w-0 text-left"
           >
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -475,6 +526,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               {player.injury && (
                 <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30" variant="outline">
                   <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
+                </Badge>
+              )}
+              {isCandidate && samePosition && (
+                <Badge className="text-[8px] px-1 h-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30" variant="outline">
+                  ✓ mesma posição
                 </Badge>
               )}
             </div>
@@ -511,65 +567,43 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </button>
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
-            {onReorderPlayers && (
-              <Popover>
-                <PopoverTrigger asChild>
+            {!pendingSwap && (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+                {onReorderPlayers && (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 px-1.5 text-[10px] gap-1 text-primary hover:bg-primary/10"
-                    title={currentGroup === 'starters' ? 'Substituir por reserva' : 'Subir ao time titular'}
+                    title={currentGroup === 'starters' ? 'Tirar do time titular' : 'Subir ao time titular'}
+                    onClick={() => startSwap(player, currentGroup)}
                   >
                     <Repeat className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Banco' : 'Subir'}</span>
+                    <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Tirar' : 'Subir'}</span>
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 p-2">
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
-                    {currentGroup === 'starters' ? 'Trocar por um reserva' : 'Trocar por um titular'}
-                  </p>
-                  <div className="max-h-64 overflow-y-auto space-y-0.5">
-                    {(() => {
-                      const candidates = currentGroup === 'starters'
-                        ? [...groupedPlayers.reserves, ...groupedPlayers.out]
-                        : groupedPlayers.starters;
-                      const sorted = [
-                        ...candidates.filter(c => c.player.position === player.position),
-                        ...candidates.filter(c => c.player.position !== player.position),
-                      ];
-                      if (sorted.length === 0) {
-                        return <p className="text-[10px] text-muted-foreground p-2 text-center">Nenhum jogador disponível</p>;
-                      }
-                      return sorted.map(({ player: cand }) => {
-                        const candOvr = getOvrColor(cand.overall);
-                        const samePos = cand.position === player.position;
-                        return (
-                          <button
-                            key={cand.id}
-                            onClick={() => swapPlayers(player.id, cand.id)}
-                            className="w-full flex items-center gap-2 p-1.5 rounded-md hover:bg-accent/60 transition-colors text-left"
-                          >
-                            <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${candOvr.border} ${candOvr.bg}`}>
-                              <span className={`text-[10px] font-black ${candOvr.text}`}>{cand.overall}</span>
-                            </div>
-                            <Badge className={`text-[8px] px-1 py-0 h-3.5 font-bold border ${posColors[cand.position]}`} variant="outline">{cand.position}</Badge>
-                            <span className="text-[11px] font-medium truncate flex-1">{cand.name}</span>
-                            {samePos && <span className="text-[8px] text-emerald-400 shrink-0">✓</span>}
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                )}
+                {auctionEligible && (
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
+                    <Gavel className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </>
             )}
-            {auctionEligible && (
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
-                <Gavel className="h-3.5 w-3.5" />
+            {isCandidate && (
+              <Button
+                size="sm"
+                className="h-7 px-2 text-[10px] gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={(e) => { e.stopPropagation(); completeSwap(player.id); }}
+              >
+                <CheckCircle className="h-3.5 w-3.5" /> Trocar
               </Button>
+            )}
+            {isPendingSelf && (
+              <Badge className="text-[9px] bg-primary/15 text-primary border-primary/30" variant="outline">
+                ⚡ Selecionado
+              </Badge>
             )}
           </div>
         </div>
@@ -648,7 +682,28 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </div>
           </div>
 
-          <Tabs defaultValue="starters" className="w-full">
+          {pendingSwap && (
+            <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
+              <div className="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-primary font-bold">⚡ Trocando</p>
+                <p className="text-xs font-bold text-foreground truncate">
+                  <Badge className={`text-[8px] px-1 mr-1 h-3.5 ${posColors[pendingSwap.player.position]}`} variant="outline">{pendingSwap.player.position}</Badge>
+                  {pendingSwap.player.name} ({pendingSwap.player.overall})
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Toque em quem {pendingSwap.from === 'starters' ? 'entra no time' : 'sai do time'}
+                </p>
+              </div>
+              <Button size="sm" variant="ghost" className="h-8 px-2 text-[10px] gap-1 text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
+                <X className="h-3.5 w-3.5" /> Cancelar
+              </Button>
+            </div>
+          )}
+
+          <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
             <TabsList className="grid grid-cols-3 w-full rounded-xl h-11 p-1">
               <TabsTrigger value="starters" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400">
                 <div className="flex items-center gap-1">

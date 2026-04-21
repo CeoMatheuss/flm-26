@@ -13,6 +13,7 @@ import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Tar
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
 import { FreeAgentMarketPanel } from './FreeAgentMarketPanel';
+import { AuctionTab } from './AuctionTab';
 import { toast } from 'sonner';
 import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
@@ -87,15 +88,17 @@ interface Props {
   salaryBudget?: number;
   currentMonthlyPayroll?: number;
   clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape?: string } | null;
+  isPremium?: boolean;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
   loanedPlayers?: LoanedPlayer[];
   onLoanOut?: (playerId: string) => void;
   onLoanIn?: (player: Player) => void;
   onListedPlayer?: () => void;
+  onAuction?: (player: Player) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer, onAuction }: Props) {
   // Derive budgets if not provided (backwards-compat with old saves)
   const tBudget = transferBudget ?? Math.floor(budget * 0.4);
   const sBudget = salaryBudget ?? Math.floor(budget * 0.4);
@@ -567,19 +570,31 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <Globe className="h-3 w-3" /> Mercado
           </TabsTrigger>
           <TabsTrigger value="freeagents" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
-            <EyeOff className="h-3 w-3" /> Livre
+            <EyeOff className="h-3 w-3" /> Livres
+          </TabsTrigger>
+          <TabsTrigger value="auction" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            ⚖️ Leilão
+          </TabsTrigger>
+          <TabsTrigger value="offers" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1 relative">
+            📨 Propostas
+            {incomingOffers.length > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[8px] text-destructive-foreground flex items-center justify-center font-bold">{incomingOffers.length}</span>}
           </TabsTrigger>
           <TabsTrigger value="loans" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <ArrowLeftRight className="h-3 w-3" /> Emprést.
           </TabsTrigger>
-          <TabsTrigger value="offers" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1 relative">
-            📩 Recebidas
-            {incomingOffers.length > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[8px] text-destructive-foreground flex items-center justify-center font-bold">{incomingOffers.length}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="sent" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
-            <Send className="h-3 w-3" /> Enviadas
-          </TabsTrigger>
         </TabsList>
+
+        {/* ── AUCTION (embedded) ── */}
+        <TabsContent value="auction" className="space-y-3 mt-3">
+          <AuctionTab
+            userId={userId}
+            clubName={clubName}
+            players={players}
+            budget={budget}
+            isPremium={isPremium}
+            onSellPlayer={(playerId) => onPlayerSold(playerId, 0)}
+          />
+        </TabsContent>
 
         {/* ── FREE AGENTS (Mercado Livre) ── */}
         <TabsContent value="freeagents" className="space-y-3 mt-3">
@@ -813,12 +828,126 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           )}
         </TabsContent>
 
-        {/* ── INCOMING OFFERS ── */}
-        <TabsContent value="offers" className="space-y-3 mt-3">
-          <h3 className="font-bold text-sm flex items-center gap-2">
-            📩 Propostas Recebidas
-            {incomingOffers.length > 0 && <Badge className="bg-destructive/15 text-destructive text-[9px]">{incomingOffers.length}</Badge>}
-          </h3>
+        {/* ── PROPOSTAS (recebidas + enviadas) ── */}
+        <TabsContent value="offers" className="space-y-4 mt-3">
+          {/* Recebidas */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              📩 Recebidas
+              {incomingOffers.length > 0 && <Badge className="bg-destructive/15 text-destructive text-[9px]">{incomingOffers.length}</Badge>}
+            </h3>
+
+            {incomingOffers.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                Nenhuma proposta pendente.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {incomingOffers.map(offer => {
+                  const listing = myListings.find(l => l.id === offer.listing_id);
+                  const pos = posColors[listing?.player_position || ''] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                  return (
+                    <div key={offer.id} className="rounded-xl border border-amber-500/20 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
+                      <div className="p-3 bg-gradient-to-r from-amber-500/10 to-transparent">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                              <span className={`text-xs font-black ${getOvrColor(listing?.player_overall || 0)}`}>{listing?.player_overall}</span>
+                              <span className={`text-[7px] font-bold ${pos.text}`}>{listing?.player_position}</span>
+                            </div>
+                            <div>
+                              <p className="text-xs font-black">{listing?.player_name || 'Jogador'}</p>
+                              <p className="text-[10px] text-muted-foreground">De: <span className="text-primary">{offer.buyer_club_name}</span></p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-black text-emerald-400">R${(offer.offered_price / 1000).toFixed(0)}k</p>
+                            <p className="text-[9px] text-muted-foreground">pedido: R${((listing?.asking_price || 0) / 1000).toFixed(0)}k</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-3 pb-3">
+                        <div className="grid grid-cols-2 gap-1.5 mb-3 mt-2">
+                          <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>💰 Sal: R${offer.offered_salary}/mês</div>
+                          <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>📄 Contrato: {offer.offered_contract_years}a</div>
+                          {offer.signing_bonus > 0 && <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>🎁 Luvas: R${(offer.signing_bonus / 1000).toFixed(0)}k</div>}
+                          {offer.bonus_goals > 0 && <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>⚽ Bônus/gol: R${offer.bonus_goals}</div>}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" className="flex-1 h-9 text-xs rounded-lg gap-1.5" onClick={() => respondOffer(offer.id, true, listing)}>
+                            <Check className="h-3.5 w-3.5" /> Aceitar
+                          </Button>
+                          <Button size="sm" variant="destructive" className="flex-1 h-9 text-xs rounded-lg gap-1.5" onClick={() => respondOffer(offer.id, false, listing)}>
+                            <X className="h-3.5 w-3.5" /> Recusar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border/20" />
+
+          {/* Enviadas */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Send className="h-4 w-4 text-primary" /> Enviadas
+              <Badge variant="outline" className="text-[9px]">{myOffers.length}</Badge>
+            </h3>
+
+            {myOffers.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                Nenhuma proposta enviada.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {myOffers.slice(0, 20).map(offer => {
+                  const listing = listings.find(l => l.id === offer.listing_id);
+                  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                    pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
+                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                    awaiting_decision: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '⏳ Jogador decidindo...' },
+                    rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
+                    player_rejected: { bg: 'bg-orange-500/15', text: 'text-orange-400', label: '🚫 Jogador recusou' },
+                    player_accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Jogador aceitou!' },
+                  };
+                  const sc = statusConfig[offer.decision_status || offer.status] || statusConfig.pending;
+                  const deadlineStr = offer.decision_deadline;
+                  let timeLeft = '';
+                  if (deadlineStr && (offer.decision_status === 'awaiting_decision' || offer.status === 'awaiting_decision')) {
+                    const remaining = new Date(deadlineStr).getTime() - Date.now();
+                    if (remaining > 0) {
+                      const hours = Math.floor(remaining / 3600000);
+                      const mins = Math.floor((remaining % 3600000) / 60000);
+                      timeLeft = `⏱️ ${hours}h${mins}m restantes`;
+                    } else {
+                      timeLeft = '⏱️ Decisão pendente...';
+                    }
+                  }
+
+                  return (
+                    <div key={offer.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{listing?.player_name || 'Jogador'}</p>
+                        <p className="text-[10px] text-muted-foreground">R${(offer.offered_price / 1000).toFixed(0)}k • Sal: R${offer.offered_salary}/mês</p>
+                        {timeLeft && <p className="text-[9px] text-blue-400 mt-0.5 flex items-center gap-1"><Timer className="h-3 w-3" /> {timeLeft}</p>}
+                        {offer.rejection_reason && (
+                          <p className="text-[9px] text-orange-400 mt-1 leading-relaxed">💬 {offer.rejection_reason}</p>
+                        )}
+                      </div>
+                      <Badge className={`text-[8px] ${sc.bg} ${sc.text} border-0 shrink-0`}>{sc.label}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
           {incomingOffers.length === 0 ? (
             <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>

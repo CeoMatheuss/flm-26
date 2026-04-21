@@ -101,7 +101,7 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
             )}
             {onLoanOut && (
               <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (playersCount <= 11)}>
-                <ArrowLeftRight className="h-3 w-3" /> Emprestar
+                <ArrowLeftRight className="h-3 w-3" /> Anunciar empréstimo
               </Button>
             )}
             {onAuction && (

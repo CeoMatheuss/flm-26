@@ -138,7 +138,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             if (res.error || res.data?.error) {
               toast.error(res.data?.error || 'Erro ao listar jogador');
             } else {
-              toast.success(`${player.name} listado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
+              toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
             }
           }}
           onLoanOut={async (playerId) => {
@@ -229,6 +229,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
+          isPremium={isPremium}
           userId={userId}
           clubName={game.club.name}
           players={game.club.players}
@@ -266,7 +267,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             if (res.error || res.data?.error) {
               toast.error(res.data?.error || 'Erro ao listar para empréstimo');
             } else {
-              toast.success(`${player.name} listado no mercado de empréstimos!`);
+              toast.success(`${player.name} anunciado no mercado de empréstimos!`);
             }
           }}
           onLoanIn={game.loanInPlayer}
