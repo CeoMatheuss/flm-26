@@ -647,11 +647,33 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     }
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, lastSubMinute, windowsUsed]);
 
+  // Validation helper for substitutions — used by widget click + queue
+  const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
+    if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
+    if (currentMinute >= 45 && currentMinute < 60)
+      return { ok: false, reason: "🚫 Substituições bloqueadas no intervalo (45'-60'). Aguarde o reinício do 2º tempo." };
+    if (currentMinute > 90)
+      return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
+    if (subsUsed >= maxSubs)
+      return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
+    if (windowsUsed >= maxWindows && !isHalftime)
+      return { ok: false, reason: `⚠️ Você já usou as ${maxWindows} janelas de substituição permitidas no jogo corrido.` };
+    return { ok: true };
+  }, [currentMinute, isFinished, isHalftime, subsUsed, windowsUsed]);
+
   const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string) => {
-    if (subsUsed >= maxSubs || isFinished) return;
+    const check = validateSubAllowed();
+    if (!check.ok) {
+      toast.error(check.reason || 'Substituição não permitida');
+      return;
+    }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId }]);
     setSelectedSubOut(null);
-  }, [subsUsed, isFinished]);
+    toast.success('✅ Substituição enviada à fila — será aplicada na próxima bola parada.');
+  }, [validateSubAllowed]);
+
+  const subBlocked = !validateSubAllowed().ok;
+  const subBlockedReason = validateSubAllowed().reason;
 
   const phaseLabel = () => {
     if (isFinished) return '🏁 FIM DE JOGO';
