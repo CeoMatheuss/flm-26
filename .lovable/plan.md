@@ -1,57 +1,75 @@
 
 
-# Plano: Corrigir Spoiler do Placar no Dashboard + Enriquecer Widgets da Partida
+# Plano: Widgets da Partida no Estilo "Cards de Estilo de Jogo" + Tudo em PT-BR
 
-## Problema 1 — Spoiler do Placar Final no Dashboard
+## Referência Visual (da imagem enviada)
 
-Quando o usuário sai da partida em andamento, o card "PARTIDA ATUAL" no dashboard mostra **0-2** mesmo quando o jogo está só no 75'. Isso acontece porque a Edge Function `start-match` já grava o **placar FINAL** nas colunas `home_goals` e `away_goals` da `live_matches` no momento da criação (linhas 970-995 da Edge Function), e o dashboard lê esses campos brutos como se fossem o placar atual.
+Os cards mostrados na imagem (Equilibrada, Contra-ataque, Marcação Pressão, Tiki-Taka, Bola na Área, etc.) têm este padrão:
+- Borda fina arredondada (`rounded-xl border border-border`)
+- Ícone colorido grande no canto **superior esquerdo** (não ao lado do texto)
+- Título em **negrito** logo abaixo do ícone
+- Selecionado: **borda destacada** + leve glow (ex: ciano para Tiki-Taka ativo)
+- Layout limpo, sem gradient pesado de fundo
 
-### Solução
+## Mudanças nos 4 Widgets da Partida
 
-Em `src/components/game/MatchDashboardCard.tsx` (função `fetchLive`, linhas ~289-333), em vez de usar `data.home_goals`/`data.away_goals` diretamente, **contar gols dos `events` filtrados por `currentMinute`**:
+**Onde**: `src/pages/MatchPage.tsx` (linhas 707-887)
 
-```ts
-const visibleGoals = events.filter(e => e.minute <= gameMin && e.isGoal);
-const liveHomeGoals = visibleGoals.filter(e => e.team === 'home').length;
-const liveAwayGoals = visibleGoals.filter(e => e.team === 'away').length;
-setCurrentHomeGoals(liveHomeGoals);
-setCurrentAwayGoals(liveAwayGoals);
+### Novo layout de cada card
+
+```
+┌────────────────────┐
+│ 🟢 [ícone grande]  │  ← ícone no topo, com bg colorido suave
+│                    │
+│ TÁTICA             │  ← título uppercase, fonte média
+│ 4-4-2              │  ← valor principal grande, font-black
+│ ofensivo · alta    │  ← subtexto em muted
+└────────────────────┘
 ```
 
-Assim o placar exibido no dashboard fica sincronizado com o minuto atual e nunca mostra antecipadamente o resultado final.
+- `flex flex-col` (vertical) em vez de `flex items-center` (horizontal)
+- Ícone container: `w-11 h-11 rounded-lg` com `bg-{cor}-500/15` no canto superior esquerdo
+- Padding: `p-3 sm:p-4`
+- Bordas: `border border-{cor}-500/30` (mais sutil, tipo a imagem); ao ativo/com queue, `border-{cor}-500/70` + ring
+- Sem gradient pesado — fundo `bg-card/40` com sutil `from-{cor}-500/5 to-transparent`
+- Hover: `hover:border-{cor}-500/60 hover:bg-card/60` (sem scale exagerado)
 
-Aplicar a mesma lógica no `MatchPage.tsx` quando exibir o placar ao vivo, garantindo consistência entre dashboard e página da partida.
+### Renomeações para PT-BR
 
----
-
-## Problema 2 — Widgets na Partida (Tática / Time / Stats / Técnico)
-
-Os widgets já existem dentro de `MatchPage.tsx` (linhas 707-887), substituindo os botões antigos. Cada um mostra:
-
-- **⚙️ Tática** → formação atual (ex: "4-4-2")
-- **👥 Time** → "X/5 subs" + badge de fila/cadeado
-- **📊 Stats** → "X% posse"
-- **📋 Técnico** → "X dicas" + badge pulsante
-
-### Melhorias para deixar mais informativos
-
-Enriquecer cada widget com mais dados em tempo real:
-
-| Widget | Info adicional |
+| Atual | Novo |
 |---|---|
-| **Tática** | Linha extra abaixo da formação: estilo + pressão (ex: "Ofensivo · Alta pressão") |
-| **Time** | Mostrar jogador mais cansado abaixo (ex: "⚠️ #9 35% energia") quando algum titular estiver < 50% estamina |
-| **Stats** | Adicionar mini-display: "Chutes 4-2" abaixo da posse |
-| **Técnico** | Preview da última dica truncada (ex: "Substitua o #9...") |
+| `Tática` | **Tática** (mantém) |
+| `Time` | **Elenco** |
+| `subs` | **trocas** |
+| `Stats` | **Estatísticas** |
+| `posse` | **posse** (mantém) |
+| `Coach` | **Técnico** |
+| `dicas` | **alertas** |
+| `Aguardando análise...` | **Aguardando análise...** (mantém) |
+| Header da Sheet `Stats` → **Estatísticas** | |
+| Header `📋 Assistente Técnico` → **🎙️ Auxiliar Técnico** | |
+| Header `Ajustes Táticos` → **Ajustes Táticos** (mantém) | |
+| Header `Escalação & Substituições` → **Escalação & Trocas** | |
+| Toast `Substituições Bloqueadas` → **Trocas Bloqueadas** | |
+| `Elenco descansado` → **Elenco descansado** (mantém) | |
 
-Manter o tamanho atual dos widgets e cores (emerald/blue/yellow/amber). Apenas adicionar uma segunda linha de texto menor (`text-[10px] sm:text-xs text-muted-foreground`) abaixo do valor principal em cada um.
+### Indicadores especiais (mantém comportamento)
 
----
+- 🔒 vermelho no Elenco quando bloqueado
+- Badge laranja com contador de fila no Elenco
+- Badge âmbar pulsante no Técnico com nº de alertas
+- Card desativado (opacidade reduzida) quando sem assistente
 
 ## Arquivos Modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/MatchDashboardCard.tsx` | Calcular placar a partir de `events` filtrados por minuto (corrige spoiler) |
-| `src/pages/MatchPage.tsx` | Adicionar 2ª linha de info nos 4 widgets (tática/time/stats/coach) |
+| `src/pages/MatchPage.tsx` | Reescrever 4 widgets (linhas 707-887) com layout vertical estilo "card de estilo de jogo"; renomear textos para PT-BR; atualizar headers das Sheets |
+
+## Não muda
+
+- Lógica de validação de substituições (`validateSubAllowed`)
+- Sheet content (LiveTacticsView, ManagerSubstitutionView, StatsView)
+- Cores temáticas (emerald/blue/yellow/amber)
+- Dados exibidos em cada widget (formação, subs restantes, posse, dicas)
 
