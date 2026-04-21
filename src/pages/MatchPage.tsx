@@ -712,197 +712,113 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Widgets — vertical cards style "estilo de jogo" */}
+        {/* Row 2: Action Widgets — scroll anchors to inline sections below */}
         {!isFinished && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            {/* ⚙️ Tática Widget */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="group flex flex-col text-left rounded-xl border border-emerald-500/30 bg-card/40 hover:border-emerald-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-emerald-500/15 flex items-center justify-center mb-2">
-                    <Settings2 className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-400" />
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Tática</span>
-                  <span className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate capitalize mt-0.5">
-                    {(liveTactics.playStyle || 'equilibrado')} · pressão {(liveTactics.pressing || 'média')}
-                  </span>
-                </button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
-                <SheetHeader><SheetTitle>Ajustes Táticos</SheetTitle></SheetHeader>
-                <div className="pt-4">
-                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
-                </div>
-              </SheetContent>
-            </Sheet>
+            {/* ⚙️ Tática Widget — scroll to section */}
+            <button
+              onClick={() => scrollToSection(tacticsSectionRef)}
+              className="group flex flex-col text-left rounded-xl border border-emerald-500/30 bg-card/40 hover:border-emerald-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4"
+            >
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-emerald-500/15 flex items-center justify-center mb-2">
+                <Settings2 className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-400" />
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Tática</span>
+              <span className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground truncate capitalize mt-0.5">
+                {(liveTactics.playStyle || 'equilibrado')} · pressão {(liveTactics.pressing || 'média')}
+              </span>
+            </button>
 
-            {/* 👥 Elenco / Trocas Widget */}
-            <Sheet onOpenChange={(open) => {
-              if (open && subBlocked && subBlockedReason) {
-                toast.warning(subBlockedReason);
-              }
-            }}>
-              <SheetTrigger asChild>
-                <button className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
-                  subBlocked
-                    ? 'border-blue-500/20 bg-card/30 opacity-70 hover:opacity-90'
-                    : 'border-blue-500/30 bg-card/40 hover:border-blue-500/60 hover:bg-card/60 active:scale-[0.98]'
-                }`}>
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-blue-500/15 flex items-center justify-center mb-2 relative">
-                    <Users className="h-6 w-6 sm:h-7 sm:w-7 text-blue-400" />
-                    {subBlocked && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[11px] flex items-center justify-center shadow-md" title="Bloqueado">
-                        🔒
-                      </span>
-                    )}
-                    {!subBlocked && subQueue.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
-                        {subQueue.length}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Elenco</span>
-                  <span className="text-base sm:text-lg font-black text-foreground">
-                    {maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">trocas</span>
+            {/* 👥 Elenco / Trocas Widget — scroll to section */}
+            <button
+              onClick={() => {
+                if (subBlocked && subBlockedReason) toast.warning(subBlockedReason);
+                scrollToSection(lineupSectionRef);
+              }}
+              className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
+                subBlocked
+                  ? 'border-blue-500/20 bg-card/30 opacity-70 hover:opacity-90'
+                  : 'border-blue-500/30 bg-card/40 hover:border-blue-500/60 hover:bg-card/60 active:scale-[0.98]'
+              }`}
+            >
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-blue-500/15 flex items-center justify-center mb-2 relative">
+                <Users className="h-6 w-6 sm:h-7 sm:w-7 text-blue-400" />
+                {subBlocked && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[11px] flex items-center justify-center shadow-md" title="Bloqueado">
+                    🔒
                   </span>
-                  {(() => {
-                    const tired = (homePlayers || [])
-                      .filter((p: any) => !substitutedPlayerIds.has(p.id) && (p.stamina ?? 100) < 50)
-                      .sort((a: any, b: any) => (a.stamina ?? 100) - (b.stamina ?? 100))[0];
-                    return tired ? (
-                      <span className="text-[10px] sm:text-xs text-red-400 truncate font-bold mt-0.5">⚠️ {tired.name?.split(' ').slice(-1)[0] || 'Jogador'} {tired.stamina ?? 0}%</span>
-                    ) : (
-                      <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">Elenco descansado</span>
-                    );
-                  })()}
-                </button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
-                <SheetHeader><SheetTitle>Escalação & Trocas</SheetTitle></SheetHeader>
-                <div className="pt-4 space-y-4">
-                  {subBlocked && subBlockedReason && (
-                    <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2">
-                      <span className="text-xl">⛔</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-red-400">Trocas Bloqueadas</p>
-                        <p className="text-xs text-red-300/80 mt-0.5">{subBlockedReason}</p>
-                      </div>
-                    </div>
-                  )}
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
-                  <div className="border-t border-border/20 pt-4">
-                    <ManagerSubstitutionView
-                      homePlayers={homePlayers}
-                      subsUsed={subsUsed}
-                      maxSubs={maxSubs}
-                      windowsUsed={windowsUsed}
-                      maxWindows={maxWindows}
-                      selectedSubOut={selectedSubOut}
-                      onSelectSubOut={setSelectedSubOut}
-                      onConfirmSub={handleQueueSubstitution}
-                      isHalftime={isHalftime}
-                      isFinished={isFinished}
-                      substitutedPlayerIds={substitutedPlayerIds}
-                      subQueue={subQueue}
-                      blocked={subBlocked}
-                      blockedReason={subBlockedReason}
-                    />
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+                )}
+                {!subBlocked && subQueue.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
+                    {subQueue.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Elenco</span>
+              <span className="text-base sm:text-lg font-black text-foreground">
+                {maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">trocas</span>
+              </span>
+              {(() => {
+                const tired = (homePlayers || [])
+                  .filter((p: any) => !substitutedPlayerIds.has(p.id) && (p.stamina ?? 100) < 50)
+                  .sort((a: any, b: any) => (a.stamina ?? 100) - (b.stamina ?? 100))[0];
+                return tired ? (
+                  <span className="text-[10px] sm:text-xs text-red-400 truncate font-bold mt-0.5">⚠️ {tired.name?.split(' ').slice(-1)[0] || 'Jogador'} {tired.stamina ?? 0}%</span>
+                ) : (
+                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">Elenco descansado</span>
+                );
+              })()}
+            </button>
 
-            {/* 📊 Estatísticas Widget */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="group flex flex-col text-left rounded-xl border border-yellow-500/30 bg-card/40 hover:border-yellow-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-yellow-500/15 flex items-center justify-center mb-2">
-                    <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Estatísticas</span>
-                  <span className="text-base sm:text-lg font-black text-foreground">
-                    {possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span>
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
-                    ⚡ Chutes {stats.shots[0]}–{stats.shots[1]} · 🎯 {stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}
-                  </span>
-                </button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
-                <SheetHeader><SheetTitle>Estatísticas</SheetTitle></SheetHeader>
-                <div className="pt-4">
-                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-                </div>
-              </SheetContent>
-            </Sheet>
+            {/* 📊 Estatísticas Widget — scroll to section */}
+            <button
+              onClick={() => scrollToSection(statsSectionRef)}
+              className="group flex flex-col text-left rounded-xl border border-yellow-500/30 bg-card/40 hover:border-yellow-500/60 hover:bg-card/60 active:scale-[0.98] transition-all p-3 sm:p-4"
+            >
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-yellow-500/15 flex items-center justify-center mb-2">
+                <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Estatísticas</span>
+              <span className="text-base sm:text-lg font-black text-foreground">
+                {possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span>
+              </span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
+                ⚡ Chutes {stats.shots[0]}–{stats.shots[1]} · 🎯 {stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}
+              </span>
+            </button>
 
-            {/* 📋 Técnico Widget */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <button
-                  disabled={!hasAssistant}
-                  className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
-                    hasAssistant
-                      ? 'border-amber-500/30 bg-card/40 hover:border-amber-500/60 hover:bg-card/60 active:scale-[0.98]'
-                      : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
-                  }`}
-                >
-                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 relative ${hasAssistant ? 'bg-amber-500/15' : 'bg-muted/20'}`}>
-                    <MessageSquare className={`h-6 w-6 sm:h-7 sm:w-7 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
-                    {hasAssistant && matchState.assistantTips.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
-                        {matchState.assistantTips.length}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Técnico</span>
-                  <span className="text-base sm:text-lg font-black text-foreground">
-                    {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
-                    {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">alertas</span>}
+            {/* 📋 Técnico Widget — scroll to section */}
+            <button
+              onClick={() => hasAssistant && scrollToSection(assistantSectionRef)}
+              disabled={!hasAssistant}
+              className={`group flex flex-col text-left rounded-xl border transition-all p-3 sm:p-4 ${
+                hasAssistant
+                  ? 'border-amber-500/30 bg-card/40 hover:border-amber-500/60 hover:bg-card/60 active:scale-[0.98]'
+                  : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 relative ${hasAssistant ? 'bg-amber-500/15' : 'bg-muted/20'}`}>
+                <MessageSquare className={`h-6 w-6 sm:h-7 sm:w-7 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                {hasAssistant && matchState.assistantTips.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
+                    {matchState.assistantTips.length}
                   </span>
-                  {hasAssistant && (
-                    <span className="text-[10px] sm:text-xs text-muted-foreground truncate italic mt-0.5">
-                      {matchState.assistantTips.length > 0
-                        ? `"${matchState.assistantTips[matchState.assistantTips.length - 1].description}"`
-                        : 'Aguardando análise...'}
-                    </span>
-                  )}
-                </button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
-                <SheetHeader><SheetTitle>🎙️ Auxiliar Técnico</SheetTitle></SheetHeader>
-                <div className="pt-4 space-y-3">
-                  {hasAssistant ? (
-                    <>
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-                        <p className="text-xs text-amber-400 font-bold uppercase tracking-wider mb-1">Dicas do Assistente</p>
-                        <p className="text-xs text-muted-foreground">Informações em tempo real para ajudar nas suas decisões.</p>
-                      </div>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {[...matchState.assistantTips].reverse().map((tip, i) => (
-                          <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5">
-                            <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm">{tip.description}</p>
-                              {tip.priority === 'high' && (
-                                <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm font-bold text-muted-foreground">Sem Assistente Técnico</p>
-                      <p className="text-xs text-muted-foreground mt-1">Contrate um assistente na aba "Equipe Técnica" para receber dicas durante as partidas!</p>
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
+                )}
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Técnico</span>
+              <span className="text-base sm:text-lg font-black text-foreground">
+                {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
+                {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">alertas</span>}
+              </span>
+              {hasAssistant && (
+                <span className="text-[10px] sm:text-xs text-muted-foreground truncate italic mt-0.5">
+                  {matchState.assistantTips.length > 0
+                    ? `"${matchState.assistantTips[matchState.assistantTips.length - 1].description}"`
+                    : 'Aguardando análise...'}
+                </span>
+              )}
+            </button>
           </div>
         )}
       </div>
