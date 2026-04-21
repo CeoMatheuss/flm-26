@@ -432,22 +432,24 @@ export function ClubCreation({ userId, onComplete }: Props) {
           {/* SECTION 2+3: Crest Builder Pro */}
           <div className="space-y-3">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Shield className="h-3 w-3" /> Editor de Escudo
+              <Shield className="h-3 w-3" /> Editor de Escudo Heráldico
             </h3>
-            <CrestBuilder
-              value={shieldConfig}
-              onChange={(c) => {
-                setShieldConfig(c);
-                setPrimaryColor(c.primaryColor);
-                setSecondaryColor(c.secondaryColor);
-                setDetailColor(c.detailColor);
-                setSelectedPattern(c.pattern as ShieldPattern);
-                setSelectedShape(c.shape as ShieldShape);
-                setSelectedIcon(c.icon as ShieldIcon);
-                setUseCustomLogo(false);
-              }}
-              showSaveButton={false}
-            />
+            <div className="max-w-3xl mx-auto w-full overflow-x-hidden">
+              <CrestBuilder
+                value={shieldConfig}
+                onChange={(c) => {
+                  setShieldConfig(c);
+                  setPrimaryColor(c.primaryColor);
+                  setSecondaryColor(c.secondaryColor);
+                  setDetailColor(c.detailColor);
+                  setSelectedPattern(c.pattern as ShieldPattern);
+                  setSelectedShape(c.shape as ShieldShape);
+                  setSelectedIcon(c.icon as ShieldIcon);
+                  setUseCustomLogo(false);
+                }}
+                showSaveButton={false}
+              />
+            </div>
           </div>
 
           <div className="border-t border-border" />

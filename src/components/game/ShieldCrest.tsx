@@ -56,6 +56,8 @@ export const shieldPatterns = [
   'sash', 'hoop', 'gradient-fade', 'pinstripes',
   'checkered', 'shield-band', 'frame', 'inner-circle',
   'double-split', 'arrow', 'zigzag',
+  // ── Heraldic divisions (clean, solid) ──
+  'quartered', 'per-pale', 'per-bend', 'bordure', 'chief',
 ] as const;
 
 export type ShieldPattern = typeof shieldPatterns[number];
@@ -183,20 +185,71 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'lion':
-      return <text x={h} y={cy + r * 0.7} textAnchor="middle" fill={dc} fontSize={s * 0.26} fontWeight="bold">♛</text>;
-    case 'eagle-icon':
+      // Heraldic lion-rampant silhouette (dense, profile)
       return (
-        <>
-          <path d={`M${h},${cy - s * 0.1} L${h + s * 0.14},${cy + s * 0.02} L${h + s * 0.1},${cy + s * 0.1} L${h},${cy + s * 0.05} L${h - s * 0.1},${cy + s * 0.1} L${h - s * 0.14},${cy + s * 0.02} Z`} fill={dc} />
-          <circle cx={h} cy={cy - s * 0.04} r={s * 0.02} fill={sc} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.11},${cy + s * 0.13}
+            L${h - s * 0.11},${cy - s * 0.02}
+            Q${h - s * 0.13},${cy - s * 0.1} ${h - s * 0.06},${cy - s * 0.13}
+            Q${h - s * 0.02},${cy - s * 0.16} ${h + s * 0.03},${cy - s * 0.13}
+            L${h + s * 0.04},${cy - s * 0.05}
+            L${h + s * 0.1},${cy - s * 0.08}
+            L${h + s * 0.13},${cy - s * 0.02}
+            L${h + s * 0.1},${cy + s * 0.06}
+            L${h + s * 0.13},${cy + s * 0.13}
+            L${h + s * 0.06},${cy + s * 0.13}
+            L${h + s * 0.04},${cy + s * 0.07}
+            L${h - s * 0.04},${cy + s * 0.07}
+            L${h - s * 0.05},${cy + s * 0.13} Z`} />
+          {/* mane spikes */}
+          <polygon points={`${h - s * 0.13},${cy - s * 0.08} ${h - s * 0.16},${cy - s * 0.04} ${h - s * 0.11},${cy - s * 0.04}`} />
+          <polygon points={`${h - s * 0.13},${cy + s * 0.02} ${h - s * 0.17},${cy + s * 0.02} ${h - s * 0.13},${cy + s * 0.06}`} />
+          {/* eye */}
+          <circle cx={h - s * 0.05} cy={cy - s * 0.07} r={s * 0.01} fill={sc} />
+        </g>
+      );
+    case 'eagle-icon':
+      // Heraldic eagle with spread wings
+      return (
+        <g fill={dc}>
+          <path d={`M${h},${cy - s * 0.13}
+            L${h - s * 0.02},${cy - s * 0.04}
+            L${h - s * 0.16},${cy - s * 0.08}
+            L${h - s * 0.13},${cy + s * 0.02}
+            L${h - s * 0.07},${cy + s * 0.02}
+            L${h - s * 0.05},${cy + s * 0.1}
+            L${h - s * 0.02},${cy + s * 0.04}
+            L${h},${cy + s * 0.13}
+            L${h + s * 0.02},${cy + s * 0.04}
+            L${h + s * 0.05},${cy + s * 0.1}
+            L${h + s * 0.07},${cy + s * 0.02}
+            L${h + s * 0.13},${cy + s * 0.02}
+            L${h + s * 0.16},${cy - s * 0.08}
+            L${h + s * 0.02},${cy - s * 0.04} Z`} />
+          <circle cx={h} cy={cy - s * 0.085} r={s * 0.012} fill={sc} />
+        </g>
       );
     case 'crown-icon':
+      // Royal crown — heraldic 5-point with jewels
       return (
-        <>
-          <polygon points={`${h - s * 0.14},${cy + s * 0.06} ${h - s * 0.1},${cy - s * 0.1} ${h - s * 0.04},${cy} ${h},${cy - s * 0.12} ${h + s * 0.04},${cy} ${h + s * 0.1},${cy - s * 0.1} ${h + s * 0.14},${cy + s * 0.06}`} fill={dc} />
-          <rect x={h - s * 0.14} y={cy + s * 0.06} width={s * 0.28} height={s * 0.04} fill={dc} rx={s * 0.008} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.16},${cy + s * 0.08}
+            L${h - s * 0.16},${cy - s * 0.02}
+            L${h - s * 0.1},${cy + s * 0.02}
+            L${h - s * 0.08},${cy - s * 0.1}
+            L${h - s * 0.02},${cy + s * 0.02}
+            L${h},${cy - s * 0.13}
+            L${h + s * 0.02},${cy + s * 0.02}
+            L${h + s * 0.08},${cy - s * 0.1}
+            L${h + s * 0.1},${cy + s * 0.02}
+            L${h + s * 0.16},${cy - s * 0.02}
+            L${h + s * 0.16},${cy + s * 0.08} Z`} />
+          <rect x={h - s * 0.16} y={cy + s * 0.08} width={s * 0.32} height={s * 0.04} rx={s * 0.005} />
+          {/* jewels */}
+          <circle cx={h - s * 0.08} cy={cy - s * 0.1} r={s * 0.018} fill={sc} />
+          <circle cx={h} cy={cy - s * 0.13} r={s * 0.022} fill={sc} />
+          <circle cx={h + s * 0.08} cy={cy - s * 0.1} r={s * 0.018} fill={sc} />
+        </g>
       );
     case 'sword':
       return (
@@ -294,14 +347,24 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'wolf':
+      // Heraldic wolf head — sharp triangular profile
       return (
-        <>
-          <polygon points={`${h - s * 0.06},${cy - s * 0.1} ${h - s * 0.1},${cy - s * 0.04} ${h - s * 0.06},${cy + s * 0.06}`} fill={dc} opacity={0.7} />
-          <polygon points={`${h + s * 0.06},${cy - s * 0.1} ${h + s * 0.1},${cy - s * 0.04} ${h + s * 0.06},${cy + s * 0.06}`} fill={dc} opacity={0.7} />
-          <ellipse cx={h} cy={cy + s * 0.02} rx={s * 0.08} ry={s * 0.06} fill={dc} opacity={0.8} />
-          <circle cx={h - s * 0.03} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
-          <circle cx={h + s * 0.03} cy={cy - s * 0.02} r={s * 0.012} fill={sc} />
-        </>
+        <g fill={dc}>
+          <path d={`M${h - s * 0.13},${cy + s * 0.04}
+            L${h - s * 0.1},${cy - s * 0.08}
+            L${h - s * 0.05},${cy - s * 0.13}
+            L${h - s * 0.02},${cy - s * 0.06}
+            L${h + s * 0.02},${cy - s * 0.06}
+            L${h + s * 0.05},${cy - s * 0.13}
+            L${h + s * 0.1},${cy - s * 0.08}
+            L${h + s * 0.13},${cy + s * 0.04}
+            L${h + s * 0.06},${cy + s * 0.04}
+            L${h},${cy + s * 0.13}
+            L${h - s * 0.06},${cy + s * 0.04} Z`} />
+          <polygon points={`${h - s * 0.025},${cy + s * 0.04} ${h + s * 0.025},${cy + s * 0.04} ${h},${cy + s * 0.09}`} fill={sc} />
+          <circle cx={h - s * 0.045} cy={cy - s * 0.03} r={s * 0.013} fill={sc} />
+          <circle cx={h + s * 0.045} cy={cy - s * 0.03} r={s * 0.013} fill={sc} />
+        </g>
       );
     case 'dragon':
       return (
@@ -470,8 +533,28 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
         </>
       );
     case 'fleur-de-lis':
+      // Proper heraldic fleur-de-lis silhouette
       return (
-        <text x={h} y={cy + s * 0.1} textAnchor="middle" fill={dc} fontSize={s * 0.32} fontWeight="bold">⚜</text>
+        <g fill={dc}>
+          {/* center petal */}
+          <path d={`M${h},${cy - s * 0.13}
+            Q${h - s * 0.025},${cy - s * 0.04} ${h - s * 0.018},${cy + s * 0.04}
+            Q${h},${cy + s * 0.06} ${h + s * 0.018},${cy + s * 0.04}
+            Q${h + s * 0.025},${cy - s * 0.04} ${h},${cy - s * 0.13} Z`} />
+          {/* left petal curling out */}
+          <path d={`M${h - s * 0.005},${cy - s * 0.04}
+            Q${h - s * 0.13},${cy - s * 0.06} ${h - s * 0.11},${cy + s * 0.06}
+            Q${h - s * 0.06},${cy + s * 0.02} ${h - s * 0.005},${cy + s * 0.04} Z`} />
+          {/* right petal curling out */}
+          <path d={`M${h + s * 0.005},${cy - s * 0.04}
+            Q${h + s * 0.13},${cy - s * 0.06} ${h + s * 0.11},${cy + s * 0.06}
+            Q${h + s * 0.06},${cy + s * 0.02} ${h + s * 0.005},${cy + s * 0.04} Z`} />
+          {/* horizontal band */}
+          <rect x={h - s * 0.1} y={cy + s * 0.04} width={s * 0.2} height={s * 0.022} rx={s * 0.004} />
+          {/* lower stem */}
+          <path d={`M${h - s * 0.05},${cy + s * 0.062}
+            Q${h},${cy + s * 0.14} ${h + s * 0.05},${cy + s * 0.062} Z`} />
+        </g>
       );
     case 'cross-pattee':
       return (
@@ -540,7 +623,12 @@ export function ShieldCrest({
           </>
         );
       case 'split':
-        return <rect x={h} y={0} width={h} height={s} fill={secondaryColor} opacity={0.75} />;
+        return (
+          <>
+            <rect x={h} y={0} width={h} height={s} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.25} strokeWidth={s * 0.008} />
+          </>
+        );
       case 'chevron':
         return (
           <polygon
@@ -551,8 +639,12 @@ export function ShieldCrest({
       case 'cross':
         return (
           <>
-            <rect x={s * 0.4} y={s * 0.08} width={s * 0.2} height={s * 0.84} fill={secondaryColor} opacity={0.6} />
-            <rect x={s * 0.1} y={s * 0.34} width={s * 0.8} height={s * 0.18} fill={secondaryColor} opacity={0.6} />
+            <rect x={s * 0.4} y={s * 0.04} width={s * 0.2} height={s * 0.92} fill={secondaryColor} />
+            <rect x={s * 0.04} y={s * 0.36} width={s * 0.92} height={s * 0.2} fill={secondaryColor} />
+            <line x1={s * 0.4} y1={s * 0.04} x2={s * 0.4} y2={s * 0.96} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.6} y1={s * 0.04} x2={s * 0.6} y2={s * 0.96} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.04} y1={s * 0.36} x2={s * 0.96} y2={s * 0.36} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
+            <line x1={s * 0.04} y1={s * 0.56} x2={s * 0.96} y2={s * 0.56} stroke="#000" strokeOpacity={0.18} strokeWidth={s * 0.006} />
           </>
         );
       case 'waves':
@@ -569,8 +661,10 @@ export function ShieldCrest({
       case 'quarters':
         return (
           <>
-            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} opacity={0.65} />
-            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} opacity={0.65} />
+            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} />
+            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.22} strokeWidth={s * 0.008} />
+            <line x1={0} y1={h} x2={s} y2={h} stroke="#000" strokeOpacity={0.22} strokeWidth={s * 0.008} />
           </>
         );
       case 'triband':
@@ -668,6 +762,44 @@ export function ShieldCrest({
             d={`M0,${s * 0.35} L${s * 0.15},${s * 0.25} L${s * 0.3},${s * 0.35} L${s * 0.45},${s * 0.25} L${s * 0.6},${s * 0.35} L${s * 0.75},${s * 0.25} L${s * 0.9},${s * 0.35} L${s},${s * 0.35} L${s},${s * 0.55} L${s * 0.9},${s * 0.55} L${s * 0.75},${s * 0.65} L${s * 0.6},${s * 0.55} L${s * 0.45},${s * 0.65} L${s * 0.3},${s * 0.55} L${s * 0.15},${s * 0.65} L0,${s * 0.55} Z`}
             fill={secondaryColor} opacity={0.6}
           />
+        );
+      // ── Heraldic divisions (clean, solid colors) ──
+      case 'quartered':
+        return (
+          <>
+            <rect x={0} y={0} width={h} height={h} fill={secondaryColor} />
+            <rect x={h} y={h} width={h} height={h} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.4} strokeWidth={s * 0.012} />
+            <line x1={0} y1={h} x2={s} y2={h} stroke="#000" strokeOpacity={0.4} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'per-pale':
+        return (
+          <>
+            <rect x={h} y={0} width={h} height={s} fill={secondaryColor} />
+            <line x1={h} y1={0} x2={h} y2={s} stroke="#000" strokeOpacity={0.35} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'per-bend':
+        return (
+          <>
+            <polygon points={`0,0 ${s},0 ${s},${s}`} fill={secondaryColor} />
+            <line x1={0} y1={0} x2={s} y2={s} stroke="#000" strokeOpacity={0.35} strokeWidth={s * 0.012} />
+          </>
+        );
+      case 'bordure':
+        return (
+          <>
+            <rect x={0} y={0} width={s} height={s} fill={secondaryColor} />
+            <rect x={s * 0.14} y={s * 0.1} width={s * 0.72} height={s * 0.78} fill={primaryColor} rx={s * 0.04} />
+          </>
+        );
+      case 'chief':
+        return (
+          <>
+            <rect x={0} y={0} width={s} height={s * 0.34} fill={secondaryColor} />
+            <line x1={0} y1={s * 0.34} x2={s} y2={s * 0.34} stroke="#000" strokeOpacity={0.3} strokeWidth={s * 0.01} />
+          </>
         );
       default:
         return null;
