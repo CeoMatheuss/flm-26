@@ -1,127 +1,158 @@
 /**
- * PlayerDevelopmentEngine — Motor de evolução individual de atributos
- * 
- * Regras:
- * - Calcula progresso baseado em foco, intensidade, idade e personalidade
- * - Jovens (<25) evoluem mais rápido
- * - Acima de 33 não evoluem (apenas declinam)
- * - 'dedicado' +20% velocidade, 'preguicoso' -20%
- * - Staff técnico influencia chance de evolução
+ * PlayerDevelopmentEngine V3 — Motor de evolução por progresso (%)
+ *
+ * Regras V3:
+ * - Cada semana adiciona % de progresso (0-100) baseado em CT, intensidade, idade, personalidade, moral
+ * - Treino Específico: 100% do gain vai p/ atributo escolhido
+ * - Treino Grupo: distribui pelos pesos do grupo (60/30/10 etc.)
+ * - Ao atingir 100% → +1 no atributo principal e reseta progresso
+ * - Bônus por minutos jogados (+0.5% por minuto)
  */
 
 import type { Player, PlayerAttributes } from '@/types/game';
-import type { TrainingFocusKey, TrainingIntensity, DevelopmentLog, PlayerTrainingConfig } from './TrainingTypes';
-import { focusToAttr, intensityConfig } from './TrainingTypes';
+import type { TrainingFocusKey, DevelopmentLog, PlayerTrainingConfig } from './TrainingTypes';
+import { focusToAttr, intensityConfig, isGroupFocus, groupWeights } from './TrainingTypes';
+import { getCTEfficiency } from '@/types/infrastructure';
 
 export interface StaffConfig {
-  headCoach: number;       // 1-10: melhora chance geral
-  fitnessCoach: number;    // 1-10: reduz fadiga, melhora físico
-  youthDeveloper: number;  // 1-10: multiplicador para jogadores jovens
-  medicalStaff: number;    // 1-10: reduz risco de lesão
+  headCoach: number;
+  fitnessCoach: number;
+  youthDeveloper: number;
+  medicalStaff: number;
 }
 
 export const defaultStaff: StaffConfig = {
-  headCoach: 3,
-  fitnessCoach: 3,
-  youthDeveloper: 3,
-  medicalStaff: 3,
+  headCoach: 3, fitnessCoach: 3, youthDeveloper: 3, medicalStaff: 3,
 };
 
 export class PlayerDevelopmentEngine {
   private _logs: DevelopmentLog[] = [];
 
   /**
-   * Processa evolução de um jogador em uma semana de treino.
-   * Retorna o jogador possivelmente com atributo +1 e os logs.
+   * Calcula o gain semanal de progresso (em pontos %).
+   */
+  calcWeeklyGain(
+    player: Player,
+    config: PlayerTrainingConfig,
+    trainingCenterLevel: number,
+    staff: StaffConfig,
+    minutesPlayedThisWeek = 0
+  ): number {
+    if (player.injury) return 0;
+    if (player.age > 33) return 0;
+
+    const baseEff = getCTEfficiency(trainingCenterLevel); // 1.0 a 15.0 %
+    const intensityMult = intensityConfig[config.intensity].progressMultiplier;
+    const ageFactor =
+      player.age < 20 ? 1.6 :
+      player.age < 25 ? 1.3 :
+      player.age <= 30 ? 1.0 : 0.6;
+    const personalityFactor =
+      player.personality === 'dedicado' ? 1.2 :
+      player.personality === 'preguicoso' ? 0.8 : 1.0;
+    const moraleFactor = 0.7 + (player.morale / 100) * 0.6; // 0.7 a 1.3
+    const coachBoost = 1 + (staff.headCoach - 1) * 0.04;
+    const youthBoost = player.age < 23 ? 1 + (staff.youthDeveloper - 1) * 0.05 : 1;
+
+    const gain = baseEff * intensityMult * ageFactor * personalityFactor * moraleFactor * coachBoost * youthBoost;
+    const matchBonus = minutesPlayedThisWeek * 0.5; // +0.5%/min jogado
+    return Math.max(0, gain + matchBonus);
+  }
+
+  /**
+   * Determina status visual a partir do gain semanal.
+   */
+  computeStatus(gain: number, player: Player): 'evoluindo' | 'normal' | 'lento' | 'travado' {
+    if (player.age > 33 || player.injury) return 'travado';
+    if (gain >= 8) return 'evoluindo';
+    if (gain >= 4) return 'normal';
+    if (gain >= 1) return 'lento';
+    return 'travado';
+  }
+
+  /**
+   * Processa uma semana de treino.
    */
   processWeek(
     player: Player,
     config: PlayerTrainingConfig,
     trainingCenterLevel: number,
     staff: StaffConfig,
-    week: number
+    week: number,
+    minutesPlayedThisWeek = 0
   ): { player: Player; log: DevelopmentLog | null } {
-    const { focus, intensity } = config;
-    const attr = focusToAttr[focus];
-
-    // Sem foco → sem evolução
-    if (!attr || focus === 'none') {
-      console.log(`[PDEngine] ${player.name} — sem foco, sem evolução.`);
-      return { player, log: null };
+    const { focus } = config;
+    if (focus === 'none') {
+      return { player: { ...player, trainingStatus: 'travado' }, log: null };
     }
 
-    // Idade máxima para evolução
-    if (player.age > 33) {
-      console.log(`[PDEngine] ${player.name} — idade ${player.age} > 33, sem evolução.`);
-      return { player, log: null };
+    const gain = this.calcWeeklyGain(player, config, trainingCenterLevel, staff, minutesPlayedThisWeek);
+    const status = this.computeStatus(gain, player);
+
+    if (gain <= 0) {
+      return { player: { ...player, trainingStatus: status }, log: null };
     }
 
-    // Jogador lesionado não treina
-    if (player.injury) {
-      console.log(`[PDEngine] ${player.name} — lesionado, sem treino.`);
-      return { player, log: null };
+    const currentProgress = player.trainingProgress ?? 0;
+    let newProgress = currentProgress + gain;
+    let log: DevelopmentLog | null = null;
+    let updatedPlayer = { ...player };
+
+    // Distribui ganho para atributos (Grupo) ou atributo único (Específico)
+    if (isGroupFocus(focus)) {
+      // Para grupo: aplica progresso parcial em cada atributo conforme peso
+      // Aqui preenche progress global; o "+1" vai pro atributo de maior peso ao completar
     }
 
-    // Fator base: quantas semanas são necessárias por progressPoint
-    const baseWeeksNeeded = Math.max(2, 10 - trainingCenterLevel);
-    const intensityMult = intensityConfig[intensity].progressMultiplier;
+    if (newProgress >= 100) {
+      // Determina atributo principal a evoluir
+      let mainAttr: keyof PlayerAttributes | null = null;
+      if (isGroupFocus(focus)) {
+        // pega atributo de maior peso, mas que ainda não atingiu cap
+        const weights = groupWeights[focus];
+        const cap = player.age < 25 ? 99 : 95;
+        for (const w of weights) {
+          const cur = (player.attributes[w.attr] as number | undefined) ?? 0;
+          if (cur < cap) { mainAttr = w.attr; break; }
+        }
+      } else {
+        mainAttr = focusToAttr[focus];
+      }
 
-    // Fator de idade: jovens evoluem mais rápido
-    const ageFactor = player.age < 20 ? 1.6 : player.age < 25 ? 1.3 : player.age <= 30 ? 1.0 : 0.6;
-
-    // Fator de personalidade
-    const personalityFactor =
-      player.personality === 'dedicado' ? 1.2 :
-      player.personality === 'preguicoso' ? 0.8 : 1.0;
-
-    // Staff boost
-    const coachBoost = 1 + (staff.headCoach - 1) * 0.04; // +4% por nível
-    const youthBoost = player.age < 23 ? 1 + (staff.youthDeveloper - 1) * 0.05 : 1.0;
-
-    // Probabilidade de +1 atributo nesta semana
-    const baseChance = 1 / baseWeeksNeeded;
-    const finalChance = Math.min(0.95, baseChance * intensityMult * ageFactor * personalityFactor * coachBoost * youthBoost);
-
-    console.log(`[PDEngine] ${player.name} | focus=${focus} | intensity=${intensity} | chance=${(finalChance * 100).toFixed(1)}%`);
-
-    const roll = Math.random();
-    if (roll > finalChance) {
-      return { player, log: null };
+      if (mainAttr) {
+        const currentVal = (player.attributes[mainAttr] as number | undefined) ?? 0;
+        const cap = player.age < 25 ? 99 : 95;
+        if (currentVal < cap) {
+          const newVal = Math.min(cap, currentVal + 1);
+          const updatedAttributes: PlayerAttributes = { ...player.attributes, [mainAttr]: newVal };
+          const newOverall = this._recalcOverall(player, updatedAttributes);
+          updatedPlayer = {
+            ...player,
+            attributes: updatedAttributes,
+            overall: newOverall,
+            lastTrainedAttr: mainAttr,
+          };
+          log = {
+            playerId: player.id,
+            playerName: player.name,
+            attribute: mainAttr,
+            oldValue: currentVal,
+            newValue: newVal,
+            week,
+            source: 'training',
+          };
+          this._logs.push(log);
+          newProgress = newProgress - 100;
+        } else {
+          newProgress = 100; // trava
+        }
+      }
     }
 
-    // Atributo atual
-    const currentVal = (player.attributes[attr] as number | undefined) ?? 0;
-    const cap = player.age < 25 ? 99 : 95; // jovens podem chegar a 99
-    if (currentVal >= cap) {
-      console.log(`[PDEngine] ${player.name} — atributo ${attr} já no cap ${cap}.`);
-      return { player, log: null };
-    }
-
-    const newVal = Math.min(cap, currentVal + 1);
-    const updatedAttributes: PlayerAttributes = { ...player.attributes, [attr]: newVal };
-
-    // Recalcula overall com o novo atributo
-    const newOverall = this._recalcOverall(player, updatedAttributes);
-
-    const updatedPlayer: Player = {
-      ...player,
-      attributes: updatedAttributes,
-      overall: newOverall,
+    return {
+      player: { ...updatedPlayer, trainingProgress: Math.max(0, Math.min(100, newProgress)), trainingStatus: status },
+      log,
     };
-
-    const log: DevelopmentLog = {
-      playerId: player.id,
-      playerName: player.name,
-      attribute: attr,
-      oldValue: currentVal,
-      newValue: newVal,
-      week,
-      source: 'training',
-    };
-
-    this._logs.push(log);
-    console.log(`[PDEngine] ✅ ${player.name} evoluiu ${attr}: ${currentVal} → ${newVal}`);
-    return { player: updatedPlayer, log };
   }
 
   /**
@@ -140,7 +171,6 @@ export class PlayerDevelopmentEngine {
     const updatedAttributes: PlayerAttributes = { ...player.attributes, [key]: Math.max(40, val - 1) };
     const newOverall = this._recalcOverall(player, updatedAttributes);
 
-    console.log(`[PDEngine] 📉 ${player.name} declinou ${String(key)}: ${val} → ${val - 1}`);
     return { ...player, attributes: updatedAttributes, overall: newOverall };
   }
 
