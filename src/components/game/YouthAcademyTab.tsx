@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   YouthProspect, getAcademyUpgradeCost, getYouthMinOverall, getYouthMaxOverall,
   youthInvestmentTiers, getYouthTierByCost, potentialTierInfo, evolutionStatusInfo, youthTagInfo,
@@ -11,13 +11,15 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   UserPlus, Info, ArrowUp, Sparkles, GraduationCap, Coins, TrendingUp,
-  DollarSign, Eye, Trophy,
+  DollarSign, Eye, Trophy, Hammer, Crown,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   prospects: YouthProspect[];
   academyLevel: number;
+  academyUpgradeCompletesAt?: string;
+  isPremium?: boolean;
   monthlyInvestment: number;
   budget: number;
   hasScouts: boolean;
@@ -38,7 +40,8 @@ const getLevelTier = (level: number) => {
 };
 
 export function YouthAcademyTab({
-  prospects, academyLevel, monthlyInvestment, budget, hasScouts, currentSeason,
+  prospects, academyLevel, academyUpgradeCompletesAt, isPremium = false,
+  monthlyInvestment, budget, hasScouts, currentSeason,
   onPromote, onSell, onEnrollCopinha, onSetInvestment, onUpgradeAcademy,
 }: Props) {
   const upgradeCost = getAcademyUpgradeCost(academyLevel);
