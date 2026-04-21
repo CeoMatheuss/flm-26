@@ -80,6 +80,18 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       logoUrl: config.logoUrl,
       country: config.country,
     };
+    // Auto-populate clubProfile with foundation data
+    const today = new Date();
+    const foundedDate = today.toLocaleDateString('pt-BR'); // DD/MM/AAAA
+    const initialClubProfile = {
+      ownerName: displayName || 'Manager',
+      instagram: '',
+      bio: '',
+      foundedSeason: defaultSeason.currentSeason ?? 1,
+      foundedDate,
+      motto: '',
+      trophies: [],
+    };
     const newState: GameState = {
       club: customClub,
       tactics: defaultTactics,
@@ -94,6 +106,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       sponsors: [],
       sponsorOffers: generateSponsorOffers(65, 4),
       events: [],
+      clubProfile: initialClubProfile,
     };
     const jsonState = JSON.parse(JSON.stringify(newState));
     await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
@@ -109,7 +122,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     setHasSave(true);
     setIsNewClub(true);
     toast.success(`${config.name} criado com sucesso! 🏆`);
-  }, [userId]);
+  }, [userId, displayName]);
 
   if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
   if (!hasSave) return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
