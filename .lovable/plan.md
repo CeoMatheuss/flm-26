@@ -1,188 +1,114 @@
 
 
-# Plano: Sistema Financeiro + Mercado Completo (Direto, Livre, Empréstimos, Rescisão)
+# Plano: Histórico do Mercado Livre + Reorganização do Elenco + Empréstimos limpos
 
-Reformular o sistema econômico e de transferências em **5 pilares integrados**: orçamento dividido com travas, mercado direto (com decisão do jogador), Mercado Livre online compartilhado (atributos ocultos), empréstimos repaginados, e rescisão de contrato. Tudo com janela de **7 horas** de decisão.
+Cinco mudanças focadas em organização e clareza:
 
-## 1. Sistema Financeiro — Orçamento 40/40 com TRAVA RÍGIDA
+## 1. Mercado Livre — Nova aba "📜 Histórico" (envio + recebido juntos)
 
-**Lógica:** O orçamento total do clube é dividido em 3 categorias visíveis:
+Em `FreeAgentMarketPanel.tsx`, transformar o painel em **3 sub-abas internas**:
+
+| Aba | Conteúdo |
+|---|---|
+| 🌐 **Disponíveis** | Lista atual de jogadores livres (mantém) |
+| ⏳ **Ativas** | Propostas pendentes/contraproposta/aceitas aguardando finalização |
+| 📜 **Histórico** | Tudo arquivado: enviadas + recebidas, com data e status |
+
+**Histórico**: carregar TODAS as `free_agent_offers` onde `buyer_id = userId` **OU** o `agent_id` veio de jogadores rescindidos pelo próprio clube (recebidas). Cada linha mostra:
+- Nome do jogador + posição
+- Tipo: 📤 Enviada / 📥 Recebida
+- Status com badge colorido: ✅ Assinado, 💰 Contraproposta, ❌ Recusado, 🚫 Cancelado, ⏳ Pendente
+- Salário oferecido + duração + luvas
+- Data (`created_at`) + data de resolução (`resolved_at`)
+- Filtros: tudo / só assinaturas / só recusas
+
+Carregamento: SELECT em `free_agent_offers` ordenado por `created_at DESC` limitando 100.
+
+## 2. Mercado Online — Remover aba "Listar"
+
+Em `OnlineMarketTab.tsx`:
+- Apagar `<TabsTrigger value="list">` e o `<TabsContent value="list">` inteiro
+- Reduzir o grid de tabs de `grid-cols-6` → `grid-cols-5`
+- A função `listPlayer` agora será chamada **a partir do Elenco** (próximo item)
+
+Estrutura final das tabs do mercado:
+`Mercado | Livre | Empréstimos | Recebidas | Enviadas`
+
+## 3. Mercado Online — Aba "Empréstimos" só com cedidos pelo usuário
+
+Em `OnlineMarketTab.tsx` aba `loans`:
+- Manter: "Seus jogadores no mercado de empréstimo" (`loan_listings` onde `seller_id = userId`)
+- Manter: "Empréstimos Ativos" (somente `loanedPlayers` com `direction === 'out'`)
+- **Remover** a seção "Disponíveis para empréstimo" (loans de outros usuários) e a seção "Emprestar jogador" (lista de seleção)
+- A ação **emprestar** migra para o Elenco (próximo item)
+
+## 4. Elenco — Redesign com 3 abas: Titulares / Reservas / Fora do Elenco
+
+Reorganizar `SquadTab.tsx` em 3 sub-abas dentro de "Elenco" (mantém aba externa "Contratos"):
 
 ```
-💰 Orçamento Total: R$ X
-├─ 40% → 💸 Verba de Transferências (compras/luvas)
-├─ 40% → 🧾 Verba de Salários (folha mensal acumulada)
-└─ 20% → 🏛️ Reserva (infraestrutura/operação)
+[👕 Titulares (11)]  [🪑 Reservas]  [📦 Fora do Elenco]  [📄 Contratos]
 ```
 
-**Cálculo:**
-- `transferBudget = budget * 0.40`
-- `salaryBudget = budget * 0.40` — comparado contra **folha mensal projetada × 12** (ou seja, a verba precisa cobrir o ano inteiro de salários)
-- `reservaBudget = budget * 0.20` (informativo, sem trava)
+**Definição** (baseada em `players.slice(0, 11)` que já é a convenção do `MatchPage`):
+- **Titulares**: posições 0–10 do array `players`
+- **Reservas**: posições 11–17 (próximos 7 jogadores no banco)
+- **Fora do Elenco**: posições 18+ (resto do plantel — não convocados em jogo)
 
-**Travas rígidas:**
-- ❌ Compra direta / aceitar contraproposta de mercado livre / pagar luvas → bloqueado se valor > `transferBudget`
-- ❌ Adicionar jogador ao elenco → bloqueado se `(folha atual + novo salário) × 12 > salaryBudget`
-- ❌ Renovar contrato com aumento → bloqueado se ultrapassar `salaryBudget`
-- Mensagem clara: *"Verba de transferências esgotada (R$ X de R$ Y disponível). Venda jogadores ou aguarde próximo ciclo."*
+**Configuração**: cada card tem botões `↑ Subir para Titular` / `↓ Mandar para Reservas` / `📦 Fora do Elenco` que reordenam o array via novo callback `onReorderToGroup(playerId, group)`. Esse callback move o jogador para o início/meio/fim do array `players` e dispara `updatePlayers()` que já existe em `useClubState`.
 
-**UI:** Novo widget no topo do `FinanceTab` + barra compacta no header do `OnlineMarketTab` mostrando ambas as barras (verde/laranja/vermelho conforme % usado).
-
-## 2. Valor Dinâmico do Jogador (revisão do `getPlayerValue`)
-
-Hoje o cálculo usa OVR + idade + bônus de vitórias. **Adicionar:**
-
-| Fator | Peso | Implementação |
-|---|---|---|
-| Overall ⭐ | base | mantém curva atual |
-| Idade 🎂 | mantém | curva existente |
-| **Potencial 📈** | **+ até 40%** | jogador novo (≤22) com OVR ≥75 ganha multiplicador (joia) |
-| **Forma 🔥** | ±15% | últimas 5 notas (`seasonRatings.slice(-5)`): média ≥7.5 → +15%, ≤6.0 → -15% |
-| **Personalidade 🧠** | ±10% | `lider`/`competitivo`/`dedicado` → +10%; `festeiro`/`preguicoso` → -10% |
-| Sequência clube | mantém | bônus existente de win-streak / colocação |
-
-Resultado: jovem dedicado em alta = **muito caro**; veterano festeiro fora de forma = **muito barato**. Mercado vivo.
-
-## 3. Mercado de Transferências Direto (revisão do que existe)
-
-Mantém o fluxo atual `OnlineMarketTab` com ajustes:
-
-- ⏱️ **Janela de decisão muda de 6h → 7h** (em `process-transfer/index.ts`, ação `respond` e `resolve-decisions`).
-- Aplicar **trava 40/40** ao enviar oferta (`makeOffer`).
-- Mostrar valor calculado pelo novo `getPlayerValue` na listagem (com badge de "joia 💎" para jovens com bônus de potencial).
-
-## 4. Mercado Livre Online (NOVO — pool global compartilhado)
-
-Pool global de jogadores soltos (sem clube) que **todos os usuários veem e disputam**.
-
-### Schema (nova tabela)
-
-```sql
-CREATE TABLE public.free_agents_market (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  player_data jsonb NOT NULL,           -- Player completo
-  player_name text NOT NULL,
-  player_position text NOT NULL,
-  player_age integer NOT NULL,
-  player_overall integer NOT NULL,      -- escondido na UI
-  visible_stats jsonb NOT NULL,         -- só { goals, assists, avgRating, age, position, gamesPlayed }
-  origin text NOT NULL DEFAULT 'generated',  -- 'generated' | 'rescinded' | 'released'
-  available_until timestamptz,          -- expira em 7 dias
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE public.free_agent_offers (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_id uuid REFERENCES free_agents_market(id) ON DELETE CASCADE,
-  buyer_id uuid NOT NULL,
-  buyer_club_name text NOT NULL,
-  offered_salary bigint NOT NULL,
-  offered_contract_years int NOT NULL DEFAULT 2,
-  signing_bonus bigint NOT NULL DEFAULT 0,
-  status text NOT NULL DEFAULT 'pending',   -- pending | accepted | rejected | counter_salary
-  decision_deadline timestamptz NOT NULL,    -- created_at + 7h
-  rejection_reason text,
-  counter_salary bigint,                     -- se pediu mais
-  created_at timestamptz DEFAULT now()
-);
+**Card redesenhado** (mais limpo e legível):
+```
+┌──────────────────────────────────────────────┐
+│ [OVR] [#10] Jogador Nome           ↑ ↓ 📦   │
+│       ZAG · 28a · 🧠Líder · 😄Moral         │
+│       💰 R$1.2M ↑  📄 3a  💵 R$5k  🔥85%   │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│ [👁 Ver]  [🏷 Listar]  [↔ Emprestar]  [💔]  │
+└──────────────────────────────────────────────┘
 ```
 
-RLS: SELECT autenticado em ambas; INSERT em `free_agent_offers` só para `auth.uid() = buyer_id`.
+Ações expostas direto no card (não escondidas no detalhe):
+- 👁 Ver Perfil
+- 🏷 **Listar no Mercado** (nova entrada — chama `onListForSale` que dispara `process-transfer` action `list`)
+- ↔ **Mandar para Empréstimo** (novo botão — chama `onLoanOut`)
+- 🔨 Leilão (se `OVR ≥ 65 && age ≤ 35`)
+- 💔 Rescindir
 
-### Edge Function: `process-free-agent`
+**Indicadores visuais melhores**:
+- Badge de **valor de mercado** sempre visível com tendência ↑↓→ (já existe, manter)
+- Badge 💎 para joias (já existe)
+- Pílula de personalidade com cor própria
+- Barra dupla compacta (estamina + moral) lado a lado
+- Borda colorida por estado: vermelho (lesionado), âmbar (contrato expirando), normal (ok)
 
-Ações:
-- `make-offer` → cria oferta com `decision_deadline = now + 7h`, valida trava 40/40 do salário
-- `resolve-decisions` → cron-like (chamado on-load): para cada oferta vencida, executa lógica de aceite:
-  - **Aceita** se salário ≥ valor sugerido + clube tem boa reputação
-  - **Pede mais salário** (`counter_salary`) se proposta razoável mas baixa
-  - **Recusa** se salário muito abaixo
-- `accept-counter` → buyer aceita contraproposta, valida trava 40/40, fecha o negócio
-- `seed-pool` (cron diário) → mantém ~100 jogadores no pool, expira os antigos
+**Filtros melhorados** (linha única acima da lista):
+- Chips de posição (`Todos · GOL · ZAG · LAT · VOL · MEI · ATA`)
+- Ordenação: Posição / OVR / Idade / Salário / Valor
 
-### UI: Nova sub-aba "🕵️ Mercado Livre" em `OnlineMarketTab`
+**Estatísticas no topo** (mantém o grid 4-cols): Jogadores · Média OVR · Folha/mês · Lesionados
 
-Card de jogador mostra **APENAS**:
-- ✅ Nome, Idade, Posição
-- ✅ Gols, Assistências, Nota média (se tiver histórico)
-- ❌ Overall, Potencial, Atributos (ocultos — substituídos por "???")
-- 🏷️ Badge de origem: "Gerado", "Rescindido por X", "Liberado por Y"
+## 5. Props novas e fluxo de dados
 
-Botão **"Enviar Proposta"** → modal com salário + contrato + luvas → envia, espera 7h.
+| Componente | Mudança |
+|---|---|
+| `SquadTab.tsx` | Nova prop `onListForSale: (player: Player) => void` que invoca o edge function `process-transfer` action `list` (mesma lógica do `OnlineMarketTab.listPlayer`); nova prop `onReorderPlayers: (newOrder: Player[]) => void` para reorganizar entre titulares/reservas/fora |
+| `GameTabRouter.tsx` | Plugar `onListForSale` (chamando edge function diretamente) e `onReorderPlayers` (dispara `updatePlayers` do `useClubState`) |
+| `OnlineMarketTab.tsx` | Remover aba "Listar" e seções de loan-in/loan-accept; reduzir tabs para 5 colunas |
+| `FreeAgentMarketPanel.tsx` | Nova estrutura interna com `<Tabs>` (Disponíveis / Ativas / Histórico); novo loader `loadHistory()` que busca todas as ofertas (não só pending); render de linha de histórico com badges de status |
 
-Tela de "Propostas pendentes" mostra contador regressivo até a deadline.
-
-## 5. Sistema de Empréstimos (refinado)
-
-Mantém estrutura atual de `loan_listings`, com mudanças:
-
-- ⏱️ Janela de decisão muda para **7h** (hoje é instantâneo no aceite — adicionar lógica de espera)
-- 💰 Adicionar campo `salary_share` no schema (default 100% para o receptor — já é o comportamento atual)
-- 📈 Bônus de evolução: jovens emprestados (`age ≤ 21`) ganham +25% de XP de treino enquanto emprestados
-- Travas: `loans_in ≤ 3` e `loans_out ≤ 3` (já existe, manter)
-
-## 6. Rescisão de Contrato (NOVO)
-
-Botão **"Rescindir contrato"** no card de jogador em `SquadTab`.
-
-### Cálculo da taxa
-```typescript
-function rescissionFee(player: Player): number {
-  const baseValue = getPlayerBaseValue(player);
-  const monthsLeft = player.contract * 12;
-  const salaryWeight = player.salary * Math.min(monthsLeft, 24); // teto 2 anos
-  const valueWeight = baseValue * 0.4; // 40% do valor base
-  return Math.floor(valueWeight + salaryWeight * 0.5);
-}
-```
-
-Resultado: taxa varia entre **30%–60% do valor do jogador** (depende do contrato/salário).
-
-### Fluxo
-1. Modal de confirmação mostra: taxa exata, impacto na verba, aviso de moral (-5 pontos para jogadores com personalidade `lider`/`leal`).
-2. Confirma → debita `transferBudget`, remove do elenco, **insere automaticamente em `free_agents_market`** com `origin = 'rescinded'` (com cooldown de 24h antes de aceitar ofertas, pra evitar swap-abuse).
-3. Notificação no `newspaper_entries`: *"💔 [Clube X] rescindiu contrato de [Jogador Y]. Disponível no Mercado Livre em 24h."*
-4. Bloqueado se `players.length ≤ 11` (manter mínimo de elenco).
-
-## 7. Elenco (SquadTab) — Atualização
-
-Cada card de jogador mostra (já tem a maioria):
-- Nome ✅, Posição ✅, OVR ✅, Idade ✅, Personalidade ✅, Forma ✅ (notas), Energia ✅
-- **NOVO: Valor de mercado SEMPRE VISÍVEL** com badge de tendência (↑/↓/→) baseado no win-streak/forma
-- **NOVO: Botão "Rescindir"** (com ícone vermelho), separado dos botões existentes (Listar, Emprestar, Leiloar)
-
-## Arquivos Modificados / Criados
+## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/utils/playerGenerator.ts` | Expandir `getPlayerValue` com fatores Potencial, Forma, Personalidade |
-| `src/hooks/useClubState.ts` | Adicionar `transferBudget`/`salaryBudget` derivados; novo `rescindPlayer(playerId)` que chama edge function |
-| `src/hooks/useGame.ts` | Expor `transferBudget`, `salaryBudget`, `rescindPlayer` |
-| `src/components/game/FinanceTab.tsx` | Novo widget "Verbas 40/40" com barras de progresso e travas visuais |
-| `src/components/game/OnlineMarketTab.tsx` | Aplicar trava 40/40 em `makeOffer`; nova sub-aba "Mercado Livre"; banner de verbas no topo |
-| `src/components/game/FreeAgentMarketPanel.tsx` (**NOVO**) | UI do Mercado Livre: lista com OVR oculto, modal de proposta, lista de propostas pendentes com contador 7h |
-| `src/components/game/SquadTab.tsx` | Adicionar botão "Rescindir" + modal de confirmação com taxa calculada; valor de mercado sempre visível com tendência |
-| `src/components/game/RescindModal.tsx` (**NOVO**) | Modal de rescisão com cálculo de taxa, aviso de impacto |
-| `supabase/functions/process-transfer/index.ts` | Mudar deadline de 6h → **7h** em `respond` e `resolve-decisions` |
-| `supabase/functions/process-free-agent/index.ts` (**NOVO**) | Edge function para mercado livre + rescisão (ações: `make-offer`, `resolve-decisions`, `accept-counter`, `rescind-player`, `seed-pool`) |
-| **Migration SQL** (**NOVO**) | Cria `free_agents_market` + `free_agent_offers` com RLS; cron job diário para `seed-pool` |
-
-## Ordem de Implementação
-
-1. Migration: criar tabelas `free_agents_market` + `free_agent_offers` com RLS
-2. Edge function `process-free-agent` (todas as ações)
-3. Atualizar `process-transfer` para 7h
-4. Atualizar `getPlayerValue` com novos fatores
-5. Expor `transferBudget`/`salaryBudget` em `useGame`
-6. UI do `FinanceTab` com widget de verbas
-7. Aplicar travas em `OnlineMarketTab` + nova sub-aba Mercado Livre
-8. `RescindModal` + integração no `SquadTab`
-9. Cron job para `seed-pool` (manter pool com ~100 jogadores)
+| `src/components/game/SquadTab.tsx` | Reescrita: 3 sub-abas (Titulares/Reservas/Fora), card redesenhado, botões inline (Listar/Emprestar/Rescindir), novo sistema de reordenação por grupo |
+| `src/components/game/OnlineMarketTab.tsx` | Remover aba "Listar"; aba "Empréstimos" mostra só cedidos pelo usuário; tabs em 5 colunas |
+| `src/components/game/FreeAgentMarketPanel.tsx` | Adicionar 3 sub-abas internas (Disponíveis/Ativas/Histórico); criar `loadHistory()` SELECT completo de `free_agent_offers` |
+| `src/components/game/GameTabRouter.tsx` | Adicionar callbacks `onListForSale` e `onReorderPlayers` no `SquadTab` |
 
 ## Compatibilidade
 
-- Saves antigos continuam: `transferBudget`/`salaryBudget` são derivados de `budget`, sem schema novo no `Player`
-- Mercado direto atual continua funcionando (só muda 6h → 7h)
-- Empréstimos atuais continuam, com janela de decisão adicionada
-- Pool inicial de Mercado Livre é populado por seed inicial (50 jogadores) + crescimento orgânico via rescisões
+- Schema do banco inalterado (`free_agent_offers` já tem `created_at`, `resolved_at`, `status`)
+- A noção de titular/reserva continua sendo derivada da ordem do array `players` (compatível com `MatchPage` e `useMatchState`)
+- Saves antigos: nada quebra — todos os jogadores começam como "Titular" se nas 11 primeiras posições, do contrário "Reserva"/"Fora"
 
