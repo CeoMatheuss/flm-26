@@ -1,4 +1,88 @@
 import React from 'react';
+import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
+
+/* ── Heraldic animal sprite sheet (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
+const SPRITE_W = 1536;
+const SPRITE_H = 1024;
+const SPRITE_COLS = 6;
+const SPRITE_ROWS = 4;
+const CELL_W = SPRITE_W / SPRITE_COLS; // 256
+const CELL_H = SPRITE_H / SPRITE_ROWS; // 256
+
+// Map animal icon → [col, row] in the sprite sheet
+const ANIMAL_SPRITE_MAP: Partial<Record<string, [number, number]>> = {
+  lion: [0, 0],
+  dragon: [2, 0],
+  'eagle-icon': [3, 0],
+  phoenix: [5, 0],
+  horse: [0, 1],
+  wolf: [2, 1],
+  bear: [4, 1],
+  bull: [0, 2],
+  deer: [2, 2],
+  panther: [3, 2],
+  tiger: [4, 2],
+  snake: [2, 3],
+  griffin: [3, 3],
+};
+
+/**
+ * Renders a cropped heraldic animal silhouette from the sprite sheet,
+ * recolored to `color` via SVG filter. Renders inside an SVG <g>.
+ */
+function HeraldicAnimalSprite({
+  iconKey, s, color, filterId,
+}: { iconKey: string; s: number; color: string; filterId: string }) {
+  const cell = ANIMAL_SPRITE_MAP[iconKey];
+  if (!cell) return null;
+  const [col, row] = cell;
+  // Target draw box on the shield (centered around cy = s*0.44)
+  const drawSize = s * 0.42;
+  const cx = s / 2;
+  const cy = s * 0.44;
+  const dx = cx - drawSize / 2;
+  const dy = cy - drawSize / 2;
+  // Scale sprite so that one cell fills drawSize x drawSize
+  const scale = drawSize / CELL_W;
+  const fullW = SPRITE_W * scale;
+  const fullH = SPRITE_H * scale;
+  const offsetX = dx - col * CELL_W * scale;
+  const offsetY = dy - row * CELL_H * scale;
+  // Convert hex color → RGB 0-1 for feColorMatrix
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  // Clip to single cell + recolor black pixels to target color
+  const clipId = `${filterId}-clip`;
+  return (
+    <g>
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={dx} y={dy} width={drawSize} height={drawSize} />
+        </clipPath>
+        <filter id={filterId} colorInterpolationFilters="sRGB">
+          {/* Map any non-transparent pixel to target color, preserving alpha */}
+          <feColorMatrix
+            type="matrix"
+            values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`}
+          />
+        </filter>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <image
+          href={heraldicAnimalsSprite}
+          x={offsetX}
+          y={offsetY}
+          width={fullW}
+          height={fullH}
+          preserveAspectRatio="none"
+          filter={`url(#${filterId})`}
+        />
+      </g>
+    </g>
+  );
+}
 
 export interface ShieldConfig {
   shape: ShieldShape;
