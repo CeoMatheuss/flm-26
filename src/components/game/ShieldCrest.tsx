@@ -1,7 +1,8 @@
 import React from 'react';
 import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
+import heraldicSymbolsSprite from '@/assets/heraldic-symbols.png';
 
-/* ── Heraldic animal sprite sheet (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
+/* ── Heraldic sprite sheets (1536×1024, 6 cols × 4 rows, 256×256 cells) ── */
 const SPRITE_W = 1536;
 const SPRITE_H = 1024;
 const SPRITE_COLS = 6;
@@ -9,51 +10,103 @@ const SPRITE_ROWS = 4;
 const CELL_W = SPRITE_W / SPRITE_COLS; // 256
 const CELL_H = SPRITE_H / SPRITE_ROWS; // 256
 
-// Map animal icon → [col, row] in the sprite sheet
+// Map animal icon → [col, row] in heraldic-animals.png
+// Some animals (phoenix, dragon-head) keep their natural color (red/flame)
 const ANIMAL_SPRITE_MAP: Partial<Record<string, [number, number]>> = {
+  // Row 0
   lion: [0, 0],
-  dragon: [2, 0],
-  'eagle-icon': [3, 0],
-  phoenix: [5, 0],
-  horse: [0, 1],
-  wolf: [2, 1],
-  bear: [4, 1],
-  bull: [0, 2],
-  deer: [2, 2],
-  panther: [3, 2],
-  tiger: [4, 2],
-  snake: [2, 3],
-  griffin: [3, 3],
+  tiger: [1, 0],
+  'eagle-icon': [2, 0],
+  'eagle-displayed': [3, 0],
+  phoenix: [4, 0],
+  horse: [5, 0],
+  // Row 1
+  wolf: [0, 1],
+  bear: [1, 1],
+  panther: [2, 1],
+  bull: [3, 1],
+  'deer-head': [4, 1],
+  snake: [5, 1],
+  // Row 2
+  griffin: [0, 2],
+  elephant: [1, 2],
+  rhino: [2, 2],
+  falcon: [3, 2],
+  fox: [4, 2],
+  ram: [5, 2],
+  // Row 3 — heads
+  'lion-head': [0, 3],
+  'eagle-head': [1, 3],
+  'wolf-head': [2, 3],
+  'bear-head': [3, 3],
+  dragon: [4, 3],
+  swan: [5, 3],
+};
+
+// Animals that should preserve their original colors (multi-color silhouettes)
+const FULLCOLOR_ANIMALS = new Set(['phoenix', 'dragon']);
+
+// Map symbol icon → [col, row] in heraldic-symbols.png
+const SYMBOL_SPRITE_MAP: Partial<Record<string, [number, number]>> = {
+  // Row 0
+  'crown-icon': [0, 0],
+  'fleur-de-lis': [1, 0],
+  'cross-pattee': [2, 0],
+  star: [3, 0],
+  'sun-burst': [4, 0],
+  'crescent-moon': [5, 0],
+  // Row 1
+  sword: [0, 1],
+  'crossed-swords': [1, 1],
+  trident: [2, 1],
+  laurel: [3, 1],
+  feather: [4, 1],
+  wing: [5, 1],
+  // Row 2
+  tower: [0, 2],
+  castle: [1, 2],
+  anchor: [2, 2],
+  lightning: [3, 2],
+  'flame-icon': [4, 2],
+  compass: [5, 2],
+  // Row 3
+  'diamond-icon': [0, 3],
+  'shield-icon': [1, 3],
+  ball: [2, 3],
+  trophy: [3, 3],
+  boot: [4, 3],
+  'oak-leaf': [5, 3],
 };
 
 /**
- * Renders a cropped heraldic animal silhouette from the sprite sheet,
- * recolored to `color` via SVG filter. Renders inside an SVG <g>.
+ * Renders a cropped heraldic silhouette from a sprite sheet, optionally
+ * recolored via SVG filter. Renders inside an SVG <g>.
  */
-function HeraldicAnimalSprite({
-  iconKey, s, color, filterId,
-}: { iconKey: string; s: number; color: string; filterId: string }) {
-  const cell = ANIMAL_SPRITE_MAP[iconKey];
-  if (!cell) return null;
+function HeraldicSprite({
+  spriteHref, cell, s, color, filterId, recolor = true,
+}: {
+  spriteHref: string;
+  cell: [number, number];
+  s: number;
+  color: string;
+  filterId: string;
+  recolor?: boolean;
+}) {
   const [col, row] = cell;
-  // Target draw box on the shield (centered around cy = s*0.44)
   const drawSize = s * 0.42;
   const cx = s / 2;
   const cy = s * 0.44;
   const dx = cx - drawSize / 2;
   const dy = cy - drawSize / 2;
-  // Scale sprite so that one cell fills drawSize x drawSize
   const scale = drawSize / CELL_W;
   const fullW = SPRITE_W * scale;
   const fullH = SPRITE_H * scale;
   const offsetX = dx - col * CELL_W * scale;
   const offsetY = dy - row * CELL_H * scale;
-  // Convert hex color → RGB 0-1 for feColorMatrix
   const hex = color.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-  // Clip to single cell + recolor black pixels to target color
+  const r = parseInt(hex.substring(0, 2) || '00', 16) / 255;
+  const g = parseInt(hex.substring(2, 4) || '00', 16) / 255;
+  const b = parseInt(hex.substring(4, 6) || '00', 16) / 255;
   const clipId = `${filterId}-clip`;
   return (
     <g>
@@ -61,23 +114,24 @@ function HeraldicAnimalSprite({
         <clipPath id={clipId}>
           <rect x={dx} y={dy} width={drawSize} height={drawSize} />
         </clipPath>
-        <filter id={filterId} colorInterpolationFilters="sRGB">
-          {/* Map any non-transparent pixel to target color, preserving alpha */}
-          <feColorMatrix
-            type="matrix"
-            values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`}
-          />
-        </filter>
+        {recolor && (
+          <filter id={filterId} colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values={`0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0`}
+            />
+          </filter>
+        )}
       </defs>
       <g clipPath={`url(#${clipId})`}>
         <image
-          href={heraldicAnimalsSprite}
+          href={spriteHref}
           x={offsetX}
           y={offsetY}
           width={fullW}
           height={fullH}
           preserveAspectRatio="none"
-          filter={`url(#${filterId})`}
+          filter={recolor ? `url(#${filterId})` : undefined}
         />
       </g>
     </g>
@@ -151,10 +205,15 @@ export const shieldIcons = [
   'crossed-swords', 'laurel', 'tower', 'anchor', 'flame-icon', 'diamond-icon',
   'shield-icon', 'wing', 'trident', 'compass', 'horse', 'wolf', 'dragon',
   'trophy', 'boot', 'goal-net', 'whistle',
-  // ── New animals ──
+  // ── Animals ──
   'tiger', 'bear', 'phoenix', 'snake', 'elephant', 'rhino', 'panther', 'deer', 'bull', 'griffin',
-  // ── New symbols ──
+  // ── New animals (from sprite v2) ──
+  'eagle-displayed', 'deer-head', 'falcon', 'fox', 'ram',
+  'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'swan',
+  // ── Symbols ──
   'lightning', 'castle', 'axe', 'fleur-de-lis', 'cross-pattee', 'crescent-moon', 'sun-burst',
+  // ── New symbols (from sprite v2) ──
+  'feather', 'oak-leaf',
   // ── Letters ──
   'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
 ] as const;
@@ -171,8 +230,13 @@ export const shieldIconLabels: Record<ShieldIcon, string> = {
   tiger: '🐯 Tigre', bear: '🐻 Urso', phoenix: '🔥 Fênix', snake: '🐍 Cobra',
   elephant: '🐘 Elefante', rhino: '🦏 Rinoceronte', panther: '🐆 Pantera', deer: '🦌 Veado',
   bull: '🐂 Touro', griffin: '🦅 Grifo',
+  'eagle-displayed': '🦅 Águia Real', 'deer-head': '🦌 Cervo', falcon: '🦅 Falcão',
+  fox: '🦊 Raposa', ram: '🐏 Carneiro',
+  'lion-head': '🦁 Cabeça Leão', 'eagle-head': '🦅 Cabeça Águia', 'wolf-head': '🐺 Cabeça Lobo',
+  'bear-head': '🐻 Cabeça Urso', swan: '🦢 Cisne',
   lightning: '⚡ Raio', castle: '🏰 Castelo', axe: '🪓 Machado',
   'fleur-de-lis': '⚜ Flor de Lis', 'cross-pattee': '✚ Cruz', 'crescent-moon': '🌙 Lua', 'sun-burst': '☀ Sol',
+  feather: '🪶 Pena', 'oak-leaf': '🍂 Folha',
   'letter-A': 'A', 'letter-B': 'B', 'letter-C': 'C', 'letter-F': 'F', 'letter-M': 'M', 'letter-R': 'R', 'letter-S': 'S',
 };
 
@@ -234,8 +298,34 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
   const r = s * 0.13;
 
   // Heraldic animal sprite (high-fidelity silhouettes)
-  if (ANIMAL_SPRITE_MAP[icon as string]) {
-    return <HeraldicAnimalSprite iconKey={icon as string} s={s} color={dc} filterId={filterId} />;
+  const animalCell = ANIMAL_SPRITE_MAP[icon as string];
+  if (animalCell) {
+    const fullColor = FULLCOLOR_ANIMALS.has(icon as string);
+    return (
+      <HeraldicSprite
+        spriteHref={heraldicAnimalsSprite}
+        cell={animalCell}
+        s={s}
+        color={dc}
+        filterId={filterId}
+        recolor={!fullColor}
+      />
+    );
+  }
+
+  // Heraldic symbol sprite (high-fidelity silhouettes)
+  const symbolCell = SYMBOL_SPRITE_MAP[icon as string];
+  if (symbolCell) {
+    return (
+      <HeraldicSprite
+        spriteHref={heraldicSymbolsSprite}
+        cell={symbolCell}
+        s={s}
+        color={dc}
+        filterId={filterId}
+        recolor={true}
+      />
+    );
   }
 
   // Letters

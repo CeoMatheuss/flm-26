@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
-  ShieldCrest, shieldShapes, shieldPatterns, shieldIcons,
+  ShieldCrest, shieldShapes, shieldPatterns,
   ShieldShape, ShieldPattern, ShieldIcon, ShieldConfig, shieldIconLabels,
 } from './ShieldCrest';
-import { Shuffle, FlipHorizontal, Save, Crown, Palette, Layers, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
+import { Shuffle, FlipHorizontal, Save, Palette, Layers, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -61,15 +58,18 @@ const LAYOUT_PATTERNS: ShieldPattern[] = [
 ];
 
 const ANIMAL_ICONS: ShieldIcon[] = [
-  'lion', 'eagle-icon', 'wolf', 'tiger', 'bear', 'horse',
-  'dragon', 'phoenix', 'snake', 'elephant', 'rhino', 'panther',
-  'deer', 'bull', 'griffin',
+  // Full body
+  'lion', 'tiger', 'eagle-icon', 'eagle-displayed', 'phoenix', 'horse',
+  'wolf', 'bear', 'panther', 'bull', 'deer-head', 'snake',
+  'griffin', 'elephant', 'rhino', 'falcon', 'fox', 'ram',
+  // Heads
+  'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'dragon', 'swan',
 ];
 const SYMBOL_ICONS: ShieldIcon[] = [
-  'crown-icon', 'fleur-de-lis', 'cross-pattee', 'star', 'double-star', 'triple-star',
-  'sword', 'crossed-swords', 'axe', 'trident', 'laurel', 'wing',
-  'tower', 'castle', 'anchor', 'lightning', 'flame-icon', 'sun-burst',
-  'crescent-moon', 'compass', 'diamond-icon', 'shield-icon', 'ball', 'trophy', 'boot',
+  'crown-icon', 'fleur-de-lis', 'cross-pattee', 'star', 'sun-burst', 'crescent-moon',
+  'sword', 'crossed-swords', 'trident', 'laurel', 'feather', 'wing',
+  'tower', 'castle', 'anchor', 'lightning', 'flame-icon', 'compass',
+  'diamond-icon', 'shield-icon', 'ball', 'trophy', 'boot', 'oak-leaf',
 ];
 const LETTER_ICONS: ShieldIcon[] = [
   'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
@@ -296,18 +296,15 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
 
       {/* ─────────────── TABS PANEL ─────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 h-auto w-full">
-          <TabsTrigger value="models" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Sparkles className="h-3.5 w-3.5" />Modelos
+        <TabsList className="grid grid-cols-3 h-auto w-full">
+          <TabsTrigger value="models" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Sparkles className="h-4 w-4" />Modelos
           </TabsTrigger>
-          <TabsTrigger value="layout" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Layers className="h-3.5 w-3.5" />Divisão
+          <TabsTrigger value="layout" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Layers className="h-4 w-4" />Divisão
           </TabsTrigger>
-          <TabsTrigger value="colors" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Palette className="h-3.5 w-3.5" />Cores
-          </TabsTrigger>
-          <TabsTrigger value="extras" className="flex-col gap-0.5 py-1.5 text-[10px]">
-            <Crown className="h-3.5 w-3.5" />Extras
+          <TabsTrigger value="colors" className="flex-col gap-0.5 py-2 text-[11px]">
+            <Palette className="h-4 w-4" />Cores
           </TabsTrigger>
         </TabsList>
 
@@ -564,86 +561,6 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
               ))}
             </div>
           </div>
-        </TabsContent>
-
-        {/* ─── EXTRAS TAB ─── */}
-        <TabsContent value="extras" className="mt-3 space-y-3">
-          <ScrollArea className="h-[280px] sm:h-[320px] pr-2">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2.5 rounded-lg border border-border">
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-medium">Coroa Real</span>
-                </div>
-                <Switch checked={!!value.showCrown} onCheckedChange={c => update({ showCrown: c })} />
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-lg border border-border">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🌿</span>
-                  <span className="text-sm font-medium">Folhas de Louro</span>
-                </div>
-                <Switch checked={!!value.showLaurels} onCheckedChange={c => update({ showLaurels: c })} />
-              </div>
-
-              <div className="space-y-1.5 p-2.5 rounded-lg border border-border">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Estrelas no topo</Label>
-                  <span className="text-xs font-mono text-muted-foreground">{value.topStars || 0}</span>
-                </div>
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => update({ topStars: n as 0 | 1 | 2 | 3 })}
-                      className={cn(
-                        'flex-1 h-8 rounded border-2 text-xs transition-all',
-                        (value.topStars || 0) === n ? 'border-primary bg-primary/5 font-bold' : 'border-border hover:border-primary/40'
-                      )}
-                    >
-                      {n === 0 ? '—' : '★'.repeat(n)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1.5 p-2.5 rounded-lg border border-border">
-                <Label className="text-sm font-medium">Faixa com Texto</Label>
-                <Input
-                  value={value.bannerText || ''}
-                  onChange={e => update({ bannerText: e.target.value.slice(0, 14) })}
-                  placeholder="Ex: SINCE 1903"
-                  maxLength={14}
-                  className="h-8 text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">Deixe vazio para esconder. Máx. 14 caracteres.</p>
-              </div>
-
-              <SectionDivider>Ajustes do Símbolo</SectionDivider>
-              {[
-                { label: 'Tamanho', key: 'iconScale' as const, min: 0.5, max: 1.5, step: 0.05, format: (v: number) => `${v.toFixed(2)}x` },
-                { label: 'Posição X', key: 'iconOffsetX' as const, min: -30, max: 30, step: 1, format: (v: number) => `${v}px` },
-                { label: 'Posição Y', key: 'iconOffsetY' as const, min: -30, max: 30, step: 1, format: (v: number) => `${v}px` },
-                { label: 'Rotação', key: 'iconRotation' as const, min: -180, max: 180, step: 5, format: (v: number) => `${v}°` },
-                { label: 'Opacidade', key: 'iconOpacity' as const, min: 0.2, max: 1, step: 0.05, format: (v: number) => `${Math.round(v * 100)}%` },
-                { label: 'Borda', key: 'borderWidth' as const, min: 0, max: 8, step: 0.5, format: (v: number) => `${v}px` },
-              ].map(({ label, key, min, max, step, format }) => (
-                <div key={key} className="space-y-1.5 p-2.5 rounded-lg border border-border">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium">{label}</Label>
-                    <span className="text-[10px] font-mono text-muted-foreground">{format((value[key] as number) ?? 0)}</span>
-                  </div>
-                  <Slider
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={[(value[key] as number) ?? 0]}
-                    onValueChange={([v]) => update({ [key]: v })}
-                  />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>
