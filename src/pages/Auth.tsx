@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, Gamepad2, UserPlus, LogIn
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn
 } from 'lucide-react';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
@@ -22,28 +22,6 @@ const slides = [
   { img: gamePreview1, title: 'Gerencie seu Clube', desc: 'Escale, treine e leve seu time ao topo' },
   { img: gamePreview2, title: 'Disputas Online', desc: 'Campeonatos multiplayer competitivos' },
   { img: gamePreview3, title: 'Conquiste Títulos', desc: 'Infraestrutura, base e mercado dinâmico' },
-];
-
-const countryOptions = [
-  { value: 'BR', label: '🇧🇷 Brasil', flag: '🇧🇷' },
-  { value: 'AR', label: '🇦🇷 Argentina', flag: '🇦🇷' },
-  { value: 'PT', label: '🇵🇹 Portugal', flag: '🇵🇹' },
-  { value: 'ES', label: '🇪🇸 Espanha', flag: '🇪🇸' },
-  { value: 'EN', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { value: 'IT', label: '🇮🇹 Itália', flag: '🇮🇹' },
-  { value: 'DE', label: '🇩🇪 Alemanha', flag: '🇩🇪' },
-  { value: 'FR', label: '🇫🇷 França', flag: '🇫🇷' },
-  { value: 'MX', label: '🇲🇽 México', flag: '🇲🇽' },
-  { value: 'CO', label: '🇨🇴 Colômbia', flag: '🇨🇴' },
-];
-
-const formationOptions = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1'];
-
-const playstyleOptions = [
-  { value: 'offensive', label: '⚔️ Ofensivo', desc: 'Posse alta, pressão constante' },
-  { value: 'defensive', label: '🛡️ Defensivo', desc: 'Contra-ataques mortais' },
-  { value: 'balanced', label: '⚖️ Equilibrado', desc: 'Adaptável a qualquer rival' },
-  { value: 'possession', label: '🎯 Posse de Bola', desc: 'Tiki-taka, toque curto' },
 ];
 
 const features = [
