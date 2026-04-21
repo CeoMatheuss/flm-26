@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, Gavel, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight } from 'lucide-react';
 
 interface GameMenuProps {
   showAdmin: boolean;
@@ -38,7 +38,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial }: GameMenuPro
         <p className="menu-category">💰 Finanças</p>
         <DropdownMenuItem onClick={() => onTabChange('finance')} className="menu-item"><DollarSign className="h-3.5 w-3.5 text-primary/70" /> Relatório Financeiro <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('sponsors')} className="menu-item"><Handshake className="h-3.5 w-3.5 text-primary/70" /> Patrocínios <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('market')} className="menu-item"><Gavel className="h-3.5 w-3.5 text-primary/70" /> Leilão de Jogadores <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('market')} className="menu-item"><ShoppingCart className="h-3.5 w-3.5 text-primary/70" /> Mercado <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🌍 Comunidade</p>
