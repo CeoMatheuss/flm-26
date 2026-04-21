@@ -254,9 +254,9 @@ export function useClubState(initialState: any, userId?: string) {
 
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
-    loanedPlayers, setLoanedPlayers, trainingFocus, listedForSale, clubProfile, setClubProfile,
+    loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
     totalSalaries, loansOut, loansIn,
-    trainPlayer, setPlayerTrainingFocus, restPlayer, buyPlayer, signFreeAgent, renewContract,
+    trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, setTicketPrice,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
