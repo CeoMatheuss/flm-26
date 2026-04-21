@@ -517,8 +517,39 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
               <div className="space-y-1.5">
                 {accepted.map(invite => {
                   const { oppClub, isHome, homeClub, homeStadium, homeCapacity } = getInviteTeams(invite);
+                  const matchTs = new Date(invite.match_date).getTime();
+                  const now = Date.now();
+                  const minsUntil = Math.floor((matchTs - now) / 60000);
+                  // Open the play window from 5 min before scheduled time, valid for 2h after
+                  const canPlay = minsUntil <= 5 && minsUntil >= -120;
+                  const playLater = minsUntil > 5;
+
+                  const handlePlay = () => {
+                    if (!players || players.length === 0) {
+                      toast.error('Carregando elenco... aguarde um instante e tente novamente.');
+                      return;
+                    }
+                    const oppCapacity = invite.home_team_id === invite.sender_id ? invite.sender_stadium_capacity : invite.receiver_stadium_capacity;
+                    navigate('/match', {
+                      state: {
+                        homeTeam: isHome ? clubName : oppClub,
+                        awayTeam: isHome ? oppClub : clubName,
+                        homePlayers: players,
+                        homeStrength: teamStrength || 60,
+                        awayStrength: teamStrength || 60,
+                        matchId: `friendly-${invite.id}`,
+                        tactics: tactics || { formation: '4-4-2' },
+                        stadiumName: homeStadium,
+                        stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
+                        isHome,
+                        competition: 'Amistoso Online',
+                        fans: fans || 500,
+                      },
+                    });
+                  };
+
                   return (
-                    <div key={invite.id} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <div key={invite.id} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
                       <div className="flex items-center gap-2">
                         {isHome ? <Home className="h-3.5 w-3.5 text-emerald-400 shrink-0" /> : <Plane className="h-3.5 w-3.5 text-blue-400 shrink-0" />}
                         <div className="flex-1 min-w-0">
@@ -536,6 +567,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                           ✅ Confirmado
                         </Badge>
                       </div>
+                      {canPlay ? (
+                        <Button size="sm" onClick={handlePlay} className="w-full h-8 text-xs gap-1.5 font-bold bg-emerald-600 hover:bg-emerald-700">
+                          <Play className="h-3.5 w-3.5" /> ⚽ JOGAR AGORA (lance por lance)
+                        </Button>
+                      ) : playLater ? (
+                        <p className="text-[9px] text-center text-muted-foreground italic">
+                          ⏳ Botão "Jogar" liberado 5 min antes do horário ({minsUntil > 60 ? `~${Math.floor(minsUntil / 60)}h ${minsUntil % 60}min` : `${minsUntil}min`})
+                        </p>
+                      ) : (
+                        <p className="text-[9px] text-center text-muted-foreground italic">
+                          ⌛ Janela expirada
+                        </p>
+                      )}
                     </div>
                   );
                 })}
