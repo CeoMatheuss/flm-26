@@ -87,15 +87,17 @@ interface Props {
   salaryBudget?: number;
   currentMonthlyPayroll?: number;
   clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape?: string } | null;
+  isPremium?: boolean;
   onPlayerSold: (playerId: string, price: number) => void;
   onPlayerBought: (playerData: any, price: number, salary: number, contractYears: number) => void;
   loanedPlayers?: LoanedPlayer[];
   onLoanOut?: (playerId: string) => void;
   onLoanIn?: (player: Player) => void;
   onListedPlayer?: () => void;
+  onAuction?: (player: Player) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer, onAuction }: Props) {
   // Derive budgets if not provided (backwards-compat with old saves)
   const tBudget = transferBudget ?? Math.floor(budget * 0.4);
   const sBudget = salaryBudget ?? Math.floor(budget * 0.4);
