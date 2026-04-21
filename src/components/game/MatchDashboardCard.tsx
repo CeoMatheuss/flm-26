@@ -395,8 +395,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   // Club logo renderer
   const renderClubLogo = (isClub: boolean) => {
     if (isClub) {
-      if (club.shieldPattern) {
-        return <ShieldCrest primaryColor={club.primaryColor || '#2563EB'} secondaryColor={club.secondaryColor || '#FFF'} pattern={club.shieldPattern} size={40} className="mx-auto mb-1" />;
+      if (hasShield(club as any)) {
+        return <ShieldCrest {...shieldPropsFromClub(club as any)} size={40} className="mx-auto mb-1" />;
       } else if (club.logoUrl) {
         return <img src={club.logoUrl} alt={club.name} className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded object-cover" />;
       } else {
