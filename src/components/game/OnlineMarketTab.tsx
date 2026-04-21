@@ -950,6 +950,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
         </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
