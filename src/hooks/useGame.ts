@@ -160,9 +160,10 @@ export function useGame(initialState?: GameState, userId?: string) {
 
   const enrollCopinha = useCallback(() => {
     infraState.enrollCopinha(clubState.club.name, (fn: (prev: any) => any) => {
-      clubState.setClub(prev => ({ ...prev, clubProfile: fn(prev.clubProfile ?? {}) }));
+      const next = fn(clubState.clubProfile ?? {});
+      clubState.updateClubProfile(next);
     });
-  }, [infraState.enrollCopinha, clubState.club.name, clubState.setClub]);
+  }, [infraState.enrollCopinha, clubState.club.name, clubState.clubProfile, clubState.updateClubProfile]);
 
   const upgradeCTRoom = useCallback((room: keyof CTRooms) => {
     infraState.upgradeCTRoom(
