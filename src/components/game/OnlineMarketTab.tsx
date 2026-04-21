@@ -534,14 +534,20 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   // ── Main Market View ──
   return (
     <div className="space-y-4">
-      {/* Budget Hero */}
+      {/* Budget Hero — 40/40 split */}
       <div className="rounded-xl p-4 border border-border/20" style={{ background: 'linear-gradient(135deg, hsl(var(--card)), hsl(var(--accent) / 0.5))' }}>
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Orçamento</p>
-            <p className="text-2xl font-black text-emerald-400">R$ {(budget / 1000).toFixed(0)}k</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">💸 Verba Transferências</p>
+            <p className="text-lg font-black text-emerald-400">{formatMoney(tBudget)}</p>
+            <p className="text-[9px] text-muted-foreground">40% do orçamento</p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">🧾 Verba Salários (anual)</p>
+            <p className="text-lg font-black text-blue-400">{formatMoney(salaryRemaining)}</p>
+            <p className="text-[9px] text-muted-foreground">de {formatMoney(sBudget)} disponível</p>
+          </div>
+          <div className="flex items-center justify-end gap-3 text-[10px] text-muted-foreground">
             <div className="text-center">
               <p className="font-bold text-foreground text-lg">{otherListings.length}</p>
               <p>No mercado</p>
@@ -549,16 +555,19 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="h-8 w-px bg-border/30" />
             <div className="text-center">
               <p className="font-bold text-foreground text-lg">{myListings.length}</p>
-              <p>Seus listados</p>
+              <p>Listados</p>
             </div>
           </div>
         </div>
       </div>
 
       <Tabs value={activeMarketTab} onValueChange={setActiveMarketTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
+        <TabsList className="grid grid-cols-6 w-full h-10 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
           <TabsTrigger value="browse" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <Globe className="h-3 w-3" /> Mercado
+          </TabsTrigger>
+          <TabsTrigger value="freeagents" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
+            <EyeOff className="h-3 w-3" /> Livre
           </TabsTrigger>
           <TabsTrigger value="list" className="text-[9px] sm:text-xs rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary gap-1">
             <Tag className="h-3 w-3" /> Listar
@@ -574,6 +583,20 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <Send className="h-3 w-3" /> Enviadas
           </TabsTrigger>
         </TabsList>
+
+        {/* ── FREE AGENTS (Mercado Livre) ── */}
+        <TabsContent value="freeagents" className="space-y-3 mt-3">
+          <FreeAgentMarketPanel
+            userId={userId}
+            clubName={clubName}
+            transferBudget={tBudget}
+            salaryBudgetRemaining={salaryRemaining}
+            onPlayerSigned={(playerData, salary, contractYears) => {
+              onPlayerBought(playerData, 0, salary, contractYears);
+            }}
+          />
+        </TabsContent>
+
 
         {/* ── BROWSE ── */}
         <TabsContent value="browse" className="space-y-3 mt-3">
