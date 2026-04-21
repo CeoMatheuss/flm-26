@@ -613,6 +613,107 @@ export type Database = {
         }
         Relationships: []
       }
+      free_agent_offers: {
+        Row: {
+          agent_id: string
+          buyer_club_name: string
+          buyer_id: string
+          counter_salary: number | null
+          created_at: string
+          decision_deadline: string
+          id: string
+          offered_contract_years: number
+          offered_salary: number
+          rejection_reason: string | null
+          resolved_at: string | null
+          signing_bonus: number
+          status: string
+        }
+        Insert: {
+          agent_id: string
+          buyer_club_name: string
+          buyer_id: string
+          counter_salary?: number | null
+          created_at?: string
+          decision_deadline?: string
+          id?: string
+          offered_contract_years?: number
+          offered_salary?: number
+          rejection_reason?: string | null
+          resolved_at?: string | null
+          signing_bonus?: number
+          status?: string
+        }
+        Update: {
+          agent_id?: string
+          buyer_club_name?: string
+          buyer_id?: string
+          counter_salary?: number | null
+          created_at?: string
+          decision_deadline?: string
+          id?: string
+          offered_contract_years?: number
+          offered_salary?: number
+          rejection_reason?: string | null
+          resolved_at?: string | null
+          signing_bonus?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_agent_offers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "free_agents_market"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      free_agents_market: {
+        Row: {
+          available_from: string
+          available_until: string
+          created_at: string
+          id: string
+          origin: string
+          origin_club_name: string | null
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position: string
+          visible_stats: Json
+        }
+        Insert: {
+          available_from?: string
+          available_until?: string
+          created_at?: string
+          id?: string
+          origin?: string
+          origin_club_name?: string | null
+          player_age: number
+          player_data: Json
+          player_name: string
+          player_overall: number
+          player_position: string
+          visible_stats?: Json
+        }
+        Update: {
+          available_from?: string
+          available_until?: string
+          created_at?: string
+          id?: string
+          origin?: string
+          origin_club_name?: string | null
+          player_age?: number
+          player_data?: Json
+          player_name?: string
+          player_overall?: number
+          player_position?: string
+          visible_stats?: Json
+        }
+        Relationships: []
+      }
       friendly_invites: {
         Row: {
           created_at: string
