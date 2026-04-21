@@ -304,17 +304,29 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">Confirmar Senha</label>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Repita a senha"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 text-sm"
+                />
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <p className="text-[10px] text-destructive">As senhas não coincidem</p>
+                )}
+              </div>
             </div>
 
             <Button
-              onClick={() => {
-                if (!email) { toast.error('Preencha o email'); return; }
-                if (password.length < 6) { toast.error('Senha deve ter no mínimo 6 caracteres'); return; }
-                setStep('signup-preferences');
-              }}
+              onClick={handleSignup}
+              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword}
               className="w-full h-12 font-bold gap-2"
             >
-              Próximo <ChevronRight className="w-4 h-4" />
+              {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
             </Button>
 
             <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
