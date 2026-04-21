@@ -205,10 +205,15 @@ export const shieldIcons = [
   'crossed-swords', 'laurel', 'tower', 'anchor', 'flame-icon', 'diamond-icon',
   'shield-icon', 'wing', 'trident', 'compass', 'horse', 'wolf', 'dragon',
   'trophy', 'boot', 'goal-net', 'whistle',
-  // ── New animals ──
+  // ── Animals ──
   'tiger', 'bear', 'phoenix', 'snake', 'elephant', 'rhino', 'panther', 'deer', 'bull', 'griffin',
-  // ── New symbols ──
+  // ── New animals (from sprite v2) ──
+  'eagle-displayed', 'deer-head', 'falcon', 'fox', 'ram',
+  'lion-head', 'eagle-head', 'wolf-head', 'bear-head', 'swan',
+  // ── Symbols ──
   'lightning', 'castle', 'axe', 'fleur-de-lis', 'cross-pattee', 'crescent-moon', 'sun-burst',
+  // ── New symbols (from sprite v2) ──
+  'feather', 'oak-leaf',
   // ── Letters ──
   'letter-A', 'letter-B', 'letter-C', 'letter-F', 'letter-M', 'letter-R', 'letter-S',
 ] as const;
@@ -225,8 +230,13 @@ export const shieldIconLabels: Record<ShieldIcon, string> = {
   tiger: '🐯 Tigre', bear: '🐻 Urso', phoenix: '🔥 Fênix', snake: '🐍 Cobra',
   elephant: '🐘 Elefante', rhino: '🦏 Rinoceronte', panther: '🐆 Pantera', deer: '🦌 Veado',
   bull: '🐂 Touro', griffin: '🦅 Grifo',
+  'eagle-displayed': '🦅 Águia Real', 'deer-head': '🦌 Cervo', falcon: '🦅 Falcão',
+  fox: '🦊 Raposa', ram: '🐏 Carneiro',
+  'lion-head': '🦁 Cabeça Leão', 'eagle-head': '🦅 Cabeça Águia', 'wolf-head': '🐺 Cabeça Lobo',
+  'bear-head': '🐻 Cabeça Urso', swan: '🦢 Cisne',
   lightning: '⚡ Raio', castle: '🏰 Castelo', axe: '🪓 Machado',
   'fleur-de-lis': '⚜ Flor de Lis', 'cross-pattee': '✚ Cruz', 'crescent-moon': '🌙 Lua', 'sun-burst': '☀ Sol',
+  feather: '🪶 Pena', 'oak-leaf': '🍂 Folha',
   'letter-A': 'A', 'letter-B': 'B', 'letter-C': 'C', 'letter-F': 'F', 'letter-M': 'M', 'letter-R': 'R', 'letter-S': 'S',
 };
 
