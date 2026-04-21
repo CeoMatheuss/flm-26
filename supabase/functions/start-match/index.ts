@@ -322,7 +322,7 @@ function simulateFullMatch(
   homeStrength: number, awayStrength: number, tactics: any,
   stadiumName: string, isHome: boolean, competition: string,
   stadiumCapacity: number = 5000, homeFans: number = 500,
-  staffData?: any
+  staffData?: any, awayFans: number = 500
 ) {
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
@@ -804,14 +804,26 @@ function simulateFullMatch(
 
   const finalEvents: SimEvent[] = [];
   const maxCapacity = stadiumCapacity || 5000;
-  const fanFactor = clamp(homeFans / Math.max(1, maxCapacity), 0.3, 1.0);
-  const estimatedCrowd = Math.floor(Math.min(maxCapacity, maxCapacity * fanFactor * (0.5 + rng() * 0.3 + (homeStrength / 200))));
+
+  // ── PUBLIC NO ESTÁDIO: torcida do mandante (85%) + visitante (até 5% / 10% capacidade)
+  const homePart = Math.floor((homeFans || 0) * 0.85);
+  const awayPart = Math.min(Math.floor((awayFans || 0) * 0.05), Math.floor(maxCapacity * 0.10));
+  const baseAttendance = homePart + awayPart;
+  const strengthMultiplier = 0.85 + (homeStrength / 200);
+  const estimatedCrowd = Math.min(maxCapacity, Math.floor(baseAttendance * strengthMultiplier));
+  const ticketRevenue = Math.floor(estimatedCrowd * 25); // R$ 25 médio por ingresso
 
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `🏟️ A partida começa no ${stadiumName} com público de ${estimatedCrowd.toLocaleString('pt-BR')}! ⚽ ${homeTeam} x ${awayTeam} — ${competition}!`,
+    description: `🏟️ A partida começa no ${stadiumName}! 👥 Público: ${estimatedCrowd.toLocaleString('pt-BR')} (🏠 ${homePart.toLocaleString('pt-BR')} mandante · 🛫 ${awayPart.toLocaleString('pt-BR')} visitante) — ${homeTeam} x ${awayTeam} • ${competition}!`,
     momentPhase: 'equilíbrio',
   });
+
+  finalEvents.push({
+    minute: 1, type: 'attendance', team: 'neutral', animType: 'pass', ballX: 0.5, ballY: 0.5,
+    description: `💰 Renda de bilheteria estimada: R$ ${ticketRevenue.toLocaleString('pt-BR')} (${estimatedCrowd.toLocaleString('pt-BR')} pagantes).`,
+  });
+
 
   for (const ev of allPlanned.filter(e => e.minute <= 44)) finalEvents.push(ev);
 
@@ -903,7 +915,8 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, staff } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff } = body;
+
 
     if (!homeTeam || !awayTeam || !matchId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -935,7 +948,7 @@ Deno.serve(async (req) => {
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
       competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
-      staff
+      staff, awayFans || 500
     );
 
     const durationSeconds = 720; // 12 minutes real time

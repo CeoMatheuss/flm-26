@@ -19,6 +19,7 @@ import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface MatchPageState {
   homeTeam: string;
@@ -35,6 +36,7 @@ interface MatchPageState {
   competition?: string;
   tournamentMatchId?: string;
   fans?: number;
+  awayFans?: number;
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -99,6 +101,7 @@ export default function MatchPage() {
       competition: locState.competition || 'Amistoso',
       tournamentMatchId: locState.tournamentMatchId,
       fans: locState.fans || 500,
+      awayFans: locState.awayFans || 500,
     });
     setInitDone(true);
   }, [locState, startMatch]);
@@ -644,11 +647,33 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     }
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, lastSubMinute, windowsUsed]);
 
+  // Validation helper for substitutions — used by widget click + queue
+  const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
+    if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
+    if (currentMinute >= 45 && currentMinute < 60)
+      return { ok: false, reason: "🚫 Substituições bloqueadas no intervalo (45'-60'). Aguarde o reinício do 2º tempo." };
+    if (currentMinute > 90)
+      return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
+    if (subsUsed >= maxSubs)
+      return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
+    if (windowsUsed >= maxWindows && !isHalftime)
+      return { ok: false, reason: `⚠️ Você já usou as ${maxWindows} janelas de substituição permitidas no jogo corrido.` };
+    return { ok: true };
+  }, [currentMinute, isFinished, isHalftime, subsUsed, windowsUsed]);
+
   const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string) => {
-    if (subsUsed >= maxSubs || isFinished) return;
+    const check = validateSubAllowed();
+    if (!check.ok) {
+      toast.error(check.reason || 'Substituição não permitida');
+      return;
+    }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId }]);
     setSelectedSubOut(null);
-  }, [subsUsed, isFinished]);
+    toast.success('✅ Substituição enviada à fila — será aplicada na próxima bola parada.');
+  }, [validateSubAllowed]);
+
+  const subBlocked = !validateSubAllowed().ok;
+  const subBlockedReason = validateSubAllowed().reason;
 
   const phaseLabel = () => {
     if (isFinished) return '🏁 FIM DE JOGO';
@@ -678,20 +703,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           </div>
         </div>
 
-        {/* Row 2: Action Widgets — gradient cards */}
+        {/* Row 2: Action Widgets — gradient cards (bigger, bolder) */}
         {!isFinished && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-            {/* Tática Widget */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {/* ⚙️ Tática Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <button className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 hover:from-emerald-500/25 hover:to-emerald-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <Settings2 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
+                <button className="group relative overflow-hidden rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/25 to-emerald-700/10 hover:from-emerald-500/35 hover:to-emerald-700/15 hover:scale-[1.05] hover:shadow-xl hover:shadow-emerald-500/20 active:scale-[0.97] transition-all p-3 sm:p-4 text-left shadow-lg shadow-emerald-500/10">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-500/30 flex items-center justify-center shrink-0 ring-1 ring-emerald-400/30">
+                      <Settings2 className="h-7 w-7 sm:h-8 sm:w-8 text-emerald-300" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400">⚙️ Tática</p>
-                      <p className="text-xs sm:text-sm font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
+                      <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Tática</p>
+                      <p className="text-base sm:text-lg font-black text-foreground truncate">{liveTactics.formation || '4-4-2'}</p>
                     </div>
                   </div>
                 </button>
@@ -704,22 +729,35 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Time / Subs Widget */}
-            <Sheet>
+            {/* 👥 Time / Subs Widget */}
+            <Sheet onOpenChange={(open) => {
+              if (open && subBlocked && subBlockedReason) {
+                toast.warning(subBlockedReason);
+              }
+            }}>
               <SheetTrigger asChild>
-                <button className="group relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/15 to-blue-700/5 hover:from-blue-500/25 hover:to-blue-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0 relative">
-                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
-                      {subsUsed > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[9px] font-black text-white flex items-center justify-center">
-                          {subsUsed}
+                <button className={`group relative overflow-hidden rounded-2xl border-2 transition-all p-3 sm:p-4 text-left shadow-lg ${
+                  subBlocked
+                    ? 'border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-700/5 opacity-70 hover:opacity-90'
+                    : 'border-blue-500/40 bg-gradient-to-br from-blue-500/25 to-blue-700/10 hover:from-blue-500/35 hover:to-blue-700/15 hover:scale-[1.05] hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.97] shadow-blue-500/10'
+                }`}>
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/30 flex items-center justify-center shrink-0 relative ring-1 ring-blue-400/30">
+                      <Users className="h-7 w-7 sm:h-8 sm:w-8 text-blue-300" />
+                      {subBlocked && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[11px] flex items-center justify-center shadow-md" title="Bloqueado">
+                          🔒
+                        </span>
+                      )}
+                      {!subBlocked && subQueue.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
+                          {subQueue.length}
                         </span>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-400">👥 Time</p>
-                      <p className="text-xs sm:text-sm font-black text-foreground">{maxSubs - subsUsed}/{maxSubs} subs</p>
+                      <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-blue-300">Time</p>
+                      <p className="text-base sm:text-lg font-black text-foreground">{maxSubs - subsUsed}/{maxSubs}<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">subs</span></p>
                     </div>
                   </div>
                 </button>
@@ -727,6 +765,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
                 <SheetHeader><SheetTitle>Escalação & Substituições</SheetTitle></SheetHeader>
                 <div className="pt-4 space-y-4">
+                  {subBlocked && subBlockedReason && (
+                    <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2">
+                      <span className="text-xl">⛔</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-red-400">Substituições Bloqueadas</p>
+                        <p className="text-xs text-red-300/80 mt-0.5">{subBlockedReason}</p>
+                      </div>
+                    </div>
+                  )}
                   <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
                   <div className="border-t border-border/20 pt-4">
                     <ManagerSubstitutionView
@@ -742,23 +789,25 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                       isFinished={isFinished}
                       substitutedPlayerIds={substitutedPlayerIds}
                       subQueue={subQueue}
+                      blocked={subBlocked}
+                      blockedReason={subBlockedReason}
                     />
                   </div>
                 </div>
               </SheetContent>
             </Sheet>
 
-            {/* Stats Widget */}
+            {/* 📊 Stats Widget */}
             <Sheet>
               <SheetTrigger asChild>
-                <button className="group relative overflow-hidden rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/15 to-yellow-700/5 hover:from-yellow-500/25 hover:to-yellow-700/10 hover:scale-[1.03] active:scale-[0.97] transition-all p-2 sm:p-2.5 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
-                      <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
+                <button className="group relative overflow-hidden rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/25 to-yellow-700/10 hover:from-yellow-500/35 hover:to-yellow-700/15 hover:scale-[1.05] hover:shadow-xl hover:shadow-yellow-500/20 active:scale-[0.97] transition-all p-3 sm:p-4 text-left shadow-lg shadow-yellow-500/10">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-yellow-500/30 flex items-center justify-center shrink-0 ring-1 ring-yellow-400/30">
+                      <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-yellow-300" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-yellow-400">📊 Stats</p>
-                      <p className="text-xs sm:text-sm font-black text-foreground">{possession[0]}% posse</p>
+                      <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-yellow-300">Stats</p>
+                      <p className="text-base sm:text-lg font-black text-foreground">{possession[0]}%<span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">posse</span></p>
                     </div>
                   </div>
                 </button>
@@ -771,30 +820,31 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </SheetContent>
             </Sheet>
 
-            {/* Assistente Widget */}
+            {/* 📋 Coach Widget */}
             <Sheet>
               <SheetTrigger asChild>
                 <button
                   disabled={!hasAssistant}
-                  className={`group relative overflow-hidden rounded-2xl border transition-all p-2 sm:p-2.5 text-left ${
+                  className={`group relative overflow-hidden rounded-2xl border-2 transition-all p-3 sm:p-4 text-left shadow-lg ${
                     hasAssistant
-                      ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-amber-700/5 hover:from-amber-500/25 hover:to-amber-700/10 hover:scale-[1.03] active:scale-[0.97]'
+                      ? 'border-amber-500/40 bg-gradient-to-br from-amber-500/25 to-amber-700/10 hover:from-amber-500/35 hover:to-amber-700/15 hover:scale-[1.05] hover:shadow-xl hover:shadow-amber-500/20 active:scale-[0.97] shadow-amber-500/10'
                       : 'border-border/20 bg-muted/5 opacity-50 cursor-not-allowed'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 relative ${hasAssistant ? 'bg-amber-500/20' : 'bg-muted/20'}`}>
-                      <MessageSquare className={`h-5 w-5 sm:h-6 sm:w-6 ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 relative ring-1 ${hasAssistant ? 'bg-amber-500/30 ring-amber-400/30' : 'bg-muted/20 ring-muted/20'}`}>
+                      <MessageSquare className={`h-7 w-7 sm:h-8 sm:w-8 ${hasAssistant ? 'text-amber-300' : 'text-muted-foreground'}`} />
                       {hasAssistant && matchState.assistantTips.length > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-[9px] font-black text-white flex items-center justify-center animate-pulse">
+                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-black text-white flex items-center justify-center animate-pulse">
                           {matchState.assistantTips.length}
                         </span>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${hasAssistant ? 'text-amber-400' : 'text-muted-foreground'}`}>📋 Coach</p>
-                      <p className="text-xs sm:text-sm font-black text-foreground">
-                        {hasAssistant ? `${matchState.assistantTips.length} dicas` : 'Indisponível'}
+                      <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${hasAssistant ? 'text-amber-300' : 'text-muted-foreground'}`}>Coach</p>
+                      <p className="text-base sm:text-lg font-black text-foreground">
+                        {hasAssistant ? `${matchState.assistantTips.length}` : '—'}
+                        {hasAssistant && <span className="text-xs sm:text-sm font-bold text-muted-foreground ml-1">dicas</span>}
                       </p>
                     </div>
                   </div>
@@ -1115,7 +1165,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue }: {
+function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason }: {
   homePlayers?: Player[];
   subsUsed: number;
   maxSubs: number;
@@ -1128,6 +1178,8 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   isFinished: boolean;
   substitutedPlayerIds: Set<string>;
   subQueue: { outId: string; inId: string }[];
+  blocked?: boolean;
+  blockedReason?: string;
 }) {
   if (!homePlayers || homePlayers.length <= 11) {
     return (
@@ -1202,6 +1254,13 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
         )}
       </div>
 
+      {blocked && blockedReason && (
+        <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-3 py-2.5 flex items-start gap-2">
+          <span className="text-lg">⛔</span>
+          <p className="text-xs sm:text-sm font-bold text-red-400 flex-1">{blockedReason}</p>
+        </div>
+      )}
+
       {!selectedSubOut ? (
         <>
           <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Quem SAI:</p>
@@ -1213,10 +1272,10 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
               return (
                 <button
                   key={p.id || i}
-                  onClick={() => !isQueued && onSelectSubOut(p.id)}
-                  disabled={isQueued}
+                  onClick={() => !isQueued && !blocked && onSelectSubOut(p.id)}
+                  disabled={isQueued || blocked}
                   className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 transition-all text-left group ${
-                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
+                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : blocked ? 'border-border/20 opacity-40 cursor-not-allowed' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
                   }`}
                 >
                   <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary/10 flex items-center justify-center text-xs sm:text-sm font-black text-primary shrink-0">
