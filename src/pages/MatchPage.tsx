@@ -1620,11 +1620,13 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
               </Button>
             ) : goalEvents[replayIndex] ? (
               <div className="space-y-2">
-                <HighlightMiniCanvas
-                  type={getHighlightType(goalEvents[replayIndex].type)}
-                  team={goalEvents[replayIndex].team === 'neutral' ? 'home' : goalEvents[replayIndex].team}
-                  playerName={goalEvents[replayIndex].playerName}
-                />
+                <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
+                  <HighlightMiniCanvas
+                    type={getHighlightType(goalEvents[replayIndex].type)}
+                    team={goalEvents[replayIndex].team === 'neutral' ? 'home' : goalEvents[replayIndex].team}
+                    playerName={goalEvents[replayIndex].playerName}
+                  />
+                </div>
                 <div className="text-center space-y-1">
                   <Badge variant="outline" className="font-mono text-sm sm:text-base">{goalEvents[replayIndex].minute}'</Badge>
                   <p className="text-base sm:text-lg font-bold">{goalEvents[replayIndex].playerName || 'Jogador'}</p>
