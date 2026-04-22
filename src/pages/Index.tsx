@@ -23,6 +23,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
+import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -153,6 +154,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const game = useGame(initialState, userId, isPremium);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
+  usePendingMatchFlush(userId);
 
   // Check maintenance mode + tutorial status
   useEffect(() => {
