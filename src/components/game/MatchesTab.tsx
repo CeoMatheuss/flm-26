@@ -177,6 +177,15 @@ export function MatchesTab({
     });
   };
 
+  // Open lobby first only when opponent is human; bots → straight to match
+  const openTournamentMatch = (tm: any) => {
+    if (tm.opponentIsBot) {
+      goToTournamentMatch(tm);
+      return;
+    }
+    setLobbyMatch(tm);
+  };
+
   const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean; isExpired: boolean } => {
     const scheduledTime = new Date(scheduledAt).getTime();
     const now = Date.now();
