@@ -330,6 +330,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={p} value={p} current={tactics.pressing} label={p === 'ultra-alto' ? 'ultra' : p} onClick={v => setField('pressing', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="pressing" value={tactics.pressing} />
               </div>
               <div>
                 <SectionLabel icon={Zap} label="Ritmo" />
@@ -338,6 +339,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={t} value={t} current={tactics.tempo} label={t === 'rapido' ? 'rápido' : t === 'muito-rapido' ? 'intenso' : t} onClick={v => setField('tempo', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="tempo" value={tactics.tempo} />
               </div>
               <div>
                 <SectionLabel icon={Shield} label="Marcação" />
@@ -346,6 +348,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={m} value={m} current={tactics.marking} onClick={v => setField('marking', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="marking" value={tactics.marking} />
               </div>
               <div>
                 <SectionLabel icon={Target} label="Passe" />
@@ -354,6 +357,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={p} value={p} current={tactics.passingStyle} onClick={v => setField('passingStyle', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="passingStyle" value={tactics.passingStyle} />
               </div>
               <div>
                 <SectionLabel icon={Shield} label="Linha Defensiva" />
@@ -362,6 +366,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={d} value={d} current={tactics.defenseLine} label={d === 'media' ? 'média' : d} onClick={v => setField('defenseLine', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="defenseLine" value={tactics.defenseLine} />
               </div>
               <div>
                 <SectionLabel icon={Users} label="Largura" />
@@ -370,6 +375,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={w} value={w} current={tactics.width} onClick={v => setField('width', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="width" value={tactics.width} />
               </div>
             </CardContent>
           </Card>
