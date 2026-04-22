@@ -148,6 +148,41 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     return () => clearInterval(interval);
   }, [infrastructure.youthAcademy.upgradeCompletesAt, userId]);
 
+  // ⭐ Premium ativado durante obra: concluir imediatamente
+  useEffect(() => {
+    if (!isPremium) return;
+    const completesAt = infrastructure.youthAcademy.upgradeCompletesAt;
+    if (!completesAt) return;
+    // Already past — handled by other effect
+    if (new Date(completesAt).getTime() <= Date.now()) return;
+
+    setInfrastructure(prev => {
+      if (!prev.youthAcademy.upgradeCompletesAt) return prev;
+      const newLevel = prev.youthAcademy.level + 1;
+      toast.success('⭐ Obra concluída instantaneamente pelo Premium!', {
+        description: `Academia agora é nível ${newLevel}.`,
+      });
+      if (userId) {
+        supabase.from('user_notifications').insert([{
+          user_id: userId,
+          icon: '🏗️',
+          type: 'success',
+          title: 'Obra Concluída — Premium',
+          message: `Sua obra na Academia foi concluída automaticamente devido ao seu Premium ativo. Academia agora é Nv.${newLevel}.`,
+        }]).then(() => {});
+        supabase.from('newspaper_entries').insert([{
+          user_id: userId,
+          text: `⭐ Premium ativado: obra na Academia concluída instantaneamente — Nv.${newLevel}.`,
+          category: 'EVOLUÇÃO', is_event: true,
+        }]).then(() => {});
+      }
+      return {
+        ...prev,
+        youthAcademy: { ...prev.youthAcademy, level: newLevel, upgradeCompletesAt: undefined },
+      };
+    });
+  }, [isPremium, infrastructure.youthAcademy.upgradeCompletesAt, userId]);
+
   const chargeYouthInvestment = useCallback((
     clubBudget: number,
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
