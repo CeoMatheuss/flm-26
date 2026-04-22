@@ -861,7 +861,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                   <ShieldCrest size={18} {...(activeHighlight.team === 'away' ? awayShield : homeShield)} />
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
                 </div>
-                <div className="w-full max-w-[480px] mx-auto">
+                <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
                   <HighlightMiniCanvas
                     type={getHighlightType(activeHighlight.type)}
                     team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
@@ -879,8 +879,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </Card>
             )}
 
-            {/* Live commentary — compact */}
-            {latestEvent && !goalFlash && (
+            {/* Live commentary — compact (hidden during 2D highlight, returns updated after) */}
+            {latestEvent && !goalFlash && !activeHighlight && (
               <Card className="py-2 px-3 border-border/30">
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>

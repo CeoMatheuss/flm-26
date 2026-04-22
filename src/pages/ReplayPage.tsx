@@ -141,7 +141,7 @@ export default function ReplayPage() {
               <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
             </div>
           )}
-          <div className="w-full max-w-[480px] mx-auto">
+          <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
             <HighlightMiniCanvas
               type={activeHighlight ? getHighlightType(activeHighlight.type) : 'idle'}
               team={activeHighlight ? (activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team) : 'home'}
