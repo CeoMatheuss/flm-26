@@ -11,6 +11,21 @@ interface Update {
 
 const updates: Update[] = [
   {
+    version: '2.4.0',
+    date: '22/04/2026',
+    type: 'feature',
+    items: [
+      '🔁 Substituições durante a partida agora aparecem na narração e somem do widget após 5 segundos',
+      '📱 Widget de substituição totalmente responsivo para celulares',
+      '⏳ Barra visual de duração do Premium no Dashboard (verde → amarelo → vermelho conforme expira)',
+      '🚫 Removido widget fixo "Partida ao Vivo" que cobria toda a interface',
+      '🔔 Notificações lidas no sininho agora ficam salvas mesmo após relogar (persistência em nuvem)',
+      '🆘 Nova aba "Suporte" — envie mensagens diretas para a equipe administrativa',
+      '📜 Nova aba "Termos de Uso" com regras e políticas do FLM 26',
+      '🛠️ Painel ADM recebeu nova seção de Suporte para responder tickets dos jogadores',
+    ],
+  },
+  {
     version: '2.3.0',
     date: '12/03/2026',
     type: 'feature',

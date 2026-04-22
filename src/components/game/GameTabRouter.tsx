@@ -34,6 +34,8 @@ import { UpdatesTab } from '@/components/game/UpdatesTab';
 import { StaffTab } from '@/components/game/StaffTab';
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
+import { SupportTab } from '@/components/game/SupportTab';
+import { TermsTab } from '@/components/game/TermsTab';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -475,6 +477,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="ctrooms"><CTRoomsTab rooms={game.ctRooms} budget={game.club.budget} trainingCenterLevel={game.infrastructure.trainingCenter.level} onUpgradeRoom={game.upgradeCTRoom} /></TabsContent>
       <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
+      <TabsContent value="support"><SupportTab userId={userId} displayName={displayName} /></TabsContent>
+      <TabsContent value="terms"><TermsTab /></TabsContent>
       {showAdmin && (
         <TabsContent value="admin"><AdminTab userId={userId} isFounder={isFounder} /></TabsContent>
       )}

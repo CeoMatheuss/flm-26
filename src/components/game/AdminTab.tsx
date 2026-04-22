@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
 import { SystemPanel } from './admin/SystemPanel';
+import { AdminSupportPanel } from './admin/AdminSupportPanel';
 import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -114,7 +115,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       cups:       ['system', 'tournaments'],
       clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
       players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
+      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support'],
       simulation: ['system'],
     };
     const list = map[activeCategory] || ['users'];
@@ -495,7 +496,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     cups:       ['system', 'tournaments'],
     clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
+    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support'],
     simulation: ['system'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -514,6 +515,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     updates_mgmt:   { label: 'Atualizações', icon: Megaphone },
     announcements:  { label: 'Anúncios IA',  icon: Image },
     direct_msg:     { label: 'Msg Direta',   icon: Megaphone },
+    support:        { label: 'Suporte',      icon: LifeBuoy },
   };
 
   return (
@@ -1336,6 +1338,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         {/* Direct Message Tab */}
         <TabsContent value="direct_msg" className="space-y-3 mt-3">
           <AdminDirectMessagePanel allUsers={allUsers} />
+        </TabsContent>
+
+        {/* Support Tickets Tab */}
+        <TabsContent value="support" className="space-y-3 mt-3">
+          <AdminSupportPanel adminUserId={userId} />
         </TabsContent>
       </Tabs>
       </AdminLayout>
