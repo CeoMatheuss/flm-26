@@ -1,163 +1,178 @@
 
 
-# Plano: Táticas em Tempo Real + Lobby Online 5min + Painel Admin Reorganizado
+# Plano: Bloqueios Durante Partida + Sistema de Premiações de Fim de Temporada com IA
 
-## 1. Táticas em tempo real (impacto vivo na simulação)
+## Parte 1 — Bloqueios durante partida ao vivo
 
-### 1.1 Adicionar estilos pedidos
-Hoje existem 9 estilos. Faltam 2 do pedido com nomes próprios:
-- `'retranca-total'` → versão extrema do `defensivo` (atk 0.65 / def 1.45)
-- `'pressao-alta'` → renomear interno para alinhar com pedido (alias do `gegenpressing`, mas com label "Pressão Alta")
+### 1.1 Detecção global de partida ativa
+Criar hook `useActiveMatch` em `src/hooks/useActiveMatch.ts`:
+- Lê `live_matches` do usuário com `status = 'live'` (e `current_minute < 90`)
+- Realtime listener (postgres_changes) reage a início/fim
+- Retorna `{ isInLiveMatch: boolean, matchId: string | null, minute: number }`
 
-Os 6 estilos do pedido mapeiam para:
-| Pedido | Engine |
-|---|---|
-| Retranca Total | `retranca-total` (novo) |
-| Equilibrado | `equilibrado` |
-| Ataque Total | `ofensivo` (label muda para "Ataque Total") |
-| Contra-Ataque | `contra-ataque` |
-| Pressão Alta | `pressao-alta` (alias gegenpressing) |
-| Defesa Total | `defensivo` (label "Defesa Total") |
+### 1.2 Snapshot anti-exploit
+Quando partida começa (`start-match` edge function): já persiste `home_players` em `live_matches` (snapshot real do elenco no minuto 0). Reforçar:
+- Edge function `start-match` adiciona campo `roster_locked_at = now()` 
+- Migration: nova coluna `roster_locked_at TIMESTAMPTZ` em `live_matches`
 
-Os outros 5 estilos avançados (tiki-taka, parking-bus, etc) ficam como **"Avançadas"** num accordion separado.
+### 1.3 Bloqueio em ações sensíveis
+Componente novo `LiveMatchGuard` (HOC/wrapper) — exibe mensagem "🔒 Ação indisponível durante a partida" e bloqueia clique.
 
-### 1.2 Interações entre táticas (matchups)
-No `start-match/index.ts`, adicionar matriz `MATCHUP_BONUS` que ajusta `homeExpected`/`awayExpected` baseado no par de estilos:
+Pontos onde aplicar (envolvendo botões/handlers):
+- `SquadTab.tsx` — botões: Rescindir, Listar venda, Emprestar, Trocar número, Renovar, Reordenar
+- `OnlineMarketTab.tsx` — botões: Comprar, Listar, Fazer oferta, Empréstimo
+- `AuctionTab.tsx` — botão Dar lance + criar leilão
+- `PacotinhosTab.tsx` — botão Comprar pacote
+- `InfrastructureTab.tsx` — botão Melhorar (qualquer facility)
+- `StadiumTab.tsx` — botão Expandir + alterar preço ingresso
+- `YouthAcademyTab.tsx` — botão Promover, Vender, Investimento
+- `ScoutsTab.tsx` — Contratar/demitir olheiro
+- `StaffTab.tsx` — Contratar/demitir staff
+- `TacticsTab.tsx` — botão "Salvar" (persistir alteração permanente). Mudança rápida via "⚡ Aplicar Tática" do MatchPage CONTINUA permitida (única exceção)
+
+### 1.4 Toast padrão
+Mensagem fixa via `sonner`:
 ```ts
-const MATCHUP: Record<string, Record<string, { homeAtk: number; homeDef: number }>> = {
-  'ofensivo':       { 'contra-ataque': { homeAtk: 1.05, homeDef: 0.85 } },     // jogo aberto
-  'retranca-total': { 'ofensivo':     { homeAtk: 0.80, homeDef: 1.20 } },      // poucos gols
-  'defensivo':      { 'contra-ataque': { homeAtk: 0.85, homeDef: 1.10 } },     // jogo travado
-  'pressao-alta':   { 'posse':       { homeAtk: 1.15, homeDef: 0.95 } },       // press funciona
-  // ... 6x6 matriz simétrica
-};
-```
-Aplicado depois dos `STYLE_MODS` antes do cálculo de Poisson. Resultado: trocar Ataque Total contra Contra-Ataque produz mais finalizações; Retranca vs Ataque produz menos gols.
-
-### 1.3 Mudança em tempo real durante a partida
-Hoje a simulação inteira é gerada **uma única vez** no servidor antes do tick começar. Para que mudar tática durante o jogo tenha efeito:
-
-**Solução híbrida**: persistir mudança em `live_matches.tactics` (já existe coluna). Adicionar nova edge function `re-simulate-from-minute`:
-- Recebe `live_match_id` + `from_minute` + `new_tactics`
-- Lê o estado atual (placar até X', stats acumuladas, players com stamina/morale do último evento)
-- Re-simula minutos `from+1 .. 90` com novos modificadores
-- Substitui o array `events` mantendo eventos de `minute <= from_minute`
-- Atualiza `live_matches` com novo array; o tick do cliente continua revelando
-
-No cliente (`MatchPage.tsx`): no botão "Aplicar Tática" durante partida ao vivo, chamar a função, aguardar 1-2s, recarregar `dataRef` do hook. Toast: "🔄 Time se ajusta — efeito a partir do minuto X'".
-
-**Limitação documentada**: mudanças válidas no máximo 1x a cada 15 min de jogo (cooldown), evita spam.
-
-### 1.4 UI da troca rápida em jogo
-Card flutuante novo "⚡ Tática Rápida" no `MatchPage.tsx`:
-- 6 botões grandes (1 por estilo principal) em grid 3x2
-- Indicador do estilo atual com glow
-- Cooldown visível (badge "🔒 Disponível em 8 min")
-- Texto curto do efeito previsto vs adversário ("vs Ataque Total: jogo aberto, mais gols")
-
-## 2. Sistema online — Lobby de 5 minutos com fallback IA
-
-### 2.1 Diagnóstico atual
-- Amistosos online (`friendly_invites`): match começa quando ambos clicam "JOGAR PARTIDA" na janela existente.
-- Partidas de liga (`league_matches`): cada usuário simula localmente o seu lado.
-- Não há "lobby compartilhado" onde ambos esperam — cada um simula isolado.
-
-### 2.2 Nova máquina de estados de partida online
-Adicionar coluna em `friendly_invites` e `league_matches`:
-- `lobby_opened_at TIMESTAMP` — quando o primeiro jogador entrou
-- `home_joined BOOL DEFAULT false` / `away_joined BOOL DEFAULT false`
-- `auto_sim_at TIMESTAMP` — `lobby_opened_at + 5 min`
-
-Estados:
-1. **Pré-jogo** — janela de início aberta (já existe)
-2. **Lobby** — primeiro jogador clicou "Entrar"; timer de 5min começa
-3. **Ao vivo (sincronizado)** — ambos entraram, partida tempo real para os dois
-4. **Ao vivo (1 lado IA)** — só 1 entrou após 5min; segundo time vira IA (usa squad real do ausente)
-5. **Auto-simulada** — ninguém entrou em 5min; resultado gerado server-side via `auto-simulate-expired-matches` (já existe)
-6. **Finalizada** — placar + eventos persistidos
-
-### 2.3 Implementação
-**Edge function nova `match-lobby-join`**:
-- Recebe `match_type` (friendly/league) + `match_id` + `user_id`
-- Atomicamente: marca `home_joined`/`away_joined`, set `lobby_opened_at` se primeiro
-- Retorna estado: `'waiting_other'` | `'both_ready'` | `'start_with_ai'` (se já passou 5min)
-
-**Edge function `auto-simulate-expired-matches`** (existente): adicionar verificação para `friendly_invites` e `league_matches` com `auto_sim_at < now()` E nenhum entrou. Já roda via `pg_cron`.
-
-**Cliente — novo `MatchLobbyScreen`**:
-- Mostra "⏳ Aguardando adversário... 4:23"
-- Status do oponente: "🟢 Online" (via `user_presence`) / "🔴 Offline"
-- Após 5min: 2 botões "▶ Jogar contra IA do oponente" ou "🤖 Deixar simular"
-- Realtime listener no row da partida → quando oponente entra, navega ambos para `/match`
-
-**Resultado**: nenhuma partida trava; sempre há fim em ≤ 12 min reais (5min lobby + 7min sim curta) ou simulação instantânea pelo cron.
-
-## 3. Reorganização do Painel Admin (mobile-first)
-
-### 3.1 Hoje: 13 abas planas em scroll horizontal — confuso, não cabe no mobile.
-
-### 3.2 Nova estrutura: 6 categorias com sub-abas
-Sidebar (desktop) / Drawer (mobile) com:
-
-```
-🌍 Ligas       → SystemPanel atual (Países & Pirâmide, Temporada)
-🏆 Copas       → SystemPanel (Copas, Torneios admin)
-👥 Clubes      → Usuários + Premium + Bans + GameBan
-👤 Players     → Gerar (founder), Anti-abuso
-⚙️ Sistema     → Atualizações, Anúncios IA, Msg Direta, Moderação Chat, Equipe (founder)
-📊 Simulação   → SimulationValidationTab + estatísticas
+toast.error("🔒 Ação indisponível durante a partida", { 
+  description: "Aguarde o fim do jogo para fazer alterações no elenco/finanças" 
+});
 ```
 
-### 3.3 Layout responsivo
-- **Desktop ≥1024px**: Sidebar fixa (224px) à esquerda + conteúdo à direita
-- **Tablet 640-1024px**: Top tabs com ícones grandes + label
-- **Mobile <640px**: Drawer lateral via hamburger no header da página + bottom-bar com 6 ícones
+### 1.5 Indicador visual
+Banner fixo no topo do `GameNavBar.tsx` quando `isInLiveMatch`:
+- Badge vermelho pulsante "🔴 PARTIDA AO VIVO — Modo Estratégia"
+- Botão "Voltar à partida" → navega `/match`
 
-Componente novo `AdminLayout` envolve `AdminTab.tsx`:
-- Usa `Sidebar` do shadcn em desktop (`collapsible="icon"`)
-- Usa `Drawer` em mobile
-- Cada categoria carrega suas sub-abas em `Tabs` interno
+### 1.6 Validação server-side (defesa em profundidade)
+Edge functions `process-transfer`, `admin-grant-customization`, `process-free-agent` verificam se `live_matches` ativa do user existe → bloqueiam com erro 423 "Locked".
 
-### 3.4 Hierarquia visual limpa
-- Cards com padding consistente (`p-4`)
-- Stats cards no topo de cada aba (não duplicar números)
-- Filtros e ações sempre no header da aba (não espalhados)
-- Remover ícones em duplicidade
+---
 
-## 4. Validação
+## Parte 2 — Sistema de Premiações de Fim de Temporada
 
-- ✅ Trocar tática durante a partida muda eventos do minuto seguinte em diante
-- ✅ Matriz de matchup torna confronto Retranca vs Ataque previsivelmente baixo (≤ 1.5 gols esperados)
-- ✅ Lobby de 5min sempre converge: ambos online → tempo real / 1 online → IA / 0 online → cron simula
-- ✅ Painel admin ≤ 6 cliques para qualquer ação; 100% navegável em viewport 375px
-- ✅ Cron `auto-simulate-expired-matches` roda a cada 5min (verificar agendamento)
-- ✅ Cooldown 15min em troca de tática evita abuso
+### 2.1 Schema novo
+Migration: tabela `season_awards`:
+```sql
+CREATE TABLE season_awards (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  season integer NOT NULL,
+  scope text NOT NULL, -- 'global' | 'league'
+  scope_id uuid,       -- league_id quando scope='league'
+  award_type text NOT NULL, -- 'ballon_dor' | 'top_scorer' | 'top_assists' | 'best_gk' | 'best_team' | 'team_of_season'
+  player_name text,
+  player_position text,
+  player_overall integer,
+  user_id uuid,        -- dono do jogador
+  club_name text,
+  club_logo text,
+  stats jsonb DEFAULT '{}',
+  score numeric DEFAULT 0,
+  ai_image_url text,
+  ai_narrative text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE season_awards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone authenticated can view awards" ON season_awards FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admins manage awards" ON season_awards FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'));
+```
 
-## 5. Arquivos modificados
+### 2.2 Edge function `process-season-awards`
+Nova função `supabase/functions/process-season-awards/index.ts`:
+
+**Fluxo**:
+1. Recebe `{ season: number, league_id?: string }`. Sem `league_id` = processa TUDO (global + todas ligas)
+2. Agrega stats dos jogadores via `match_history` (extraindo `goal_scorers`, `events`, `player_ratings` da temporada)
+3. Calcula score por jogador:
+   ```ts
+   score = goals*4 + assists*3 + cleanSheets*2 + (avgRating-6)*5 + titles*10
+   minGames = 10 // filtrar
+   ```
+4. Para cada categoria, escolhe vencedor (tiebreaker: rating médio → jogos → idade)
+5. Para cada award: chama Lovable AI Gateway:
+   - `google/gemini-3.1-flash-image-preview` → imagem 1024x1024 (jogador erguendo troféu, estilo cartaz)
+   - `google/gemini-2.5-flash` → narrativa pt-BR estilo jornalista esportivo (3 parágrafos)
+6. Sobe imagem ao bucket `club-logos` (reaproveitado) → URL público
+7. INSERT em `season_awards`
+8. INSERT em `journal_updates` com manchete + imagem
+9. INSERT em `user_notifications` para vencedores: "🏆 Você ganhou Bola de Ouro temporada X!"
+
+**Categorias geradas**:
+- **Globais (1 cada)**: Bola de Ouro, Artilheiro Mundial, Rei das Assistências, Luva de Ouro (melhor GK), Melhor Time do Mundo
+- **Por liga (1 cada)**: Melhor Jogador, Artilheiro, Assistências, Melhor GK, Campeão
+- **Time da Temporada por liga**: 11 jogadores (1 GK, 4 DEF, 3 MEI, 3 ATA) com maior score por posição → formação 4-3-3
+
+### 2.3 Trigger automático
+Edge function `plan-season` (existente, roda via pg_cron no fim do mês) chama `process-season-awards` antes de avançar season. Adicionar bloco no final do handler.
+
+### 2.4 UI — Tela de Premiação
+Novo componente `src/components/game/SeasonAwardsModal.tsx`:
+- Modal full-screen com fundo dourado animado
+- Carrossel de cards (1 award por slide, navegação por setas)
+- Cada card: imagem IA (16:9), título do prêmio, jogador + escudo, stats principais, narrativa IA
+- Slide especial "Time da Temporada": campo 2D com 11 jogadores posicionados (reusar `FormationView`)
+- Footer: botão "Compartilhar no Jornal" (já vai automático) + "Fechar"
+- Trigger: ao abrir o jogo, se houver `season_awards` da última season ainda não vista → mostra modal. Persiste `viewed_awards_season` em `profiles`
+
+### 2.5 Aba dedicada
+Nova aba "🏆 Premiações" dentro de `TrophiesTab.tsx`:
+- Tabs internos: "Esta Temporada" / "Histórico"
+- Lista todos awards com filtros (Global / Minha Liga)
+- Click no card → reabre `SeasonAwardsModal` naquele award
+
+### 2.6 Newspaper integration
+`process-season-awards` insere automaticamente em `journal_updates` com:
+- `category: 'awards'`
+- `title: "🏆 [Nome] conquista Bola de Ouro da Temporada X!"`
+- `content: <narrativa IA>`
+- `image_url: <url IA>`
+Filtro novo "🏆 Premiações" no `NewspaperFullPage.tsx`.
+
+### 2.7 Notificação push
+Para vencedores, INSERT em `user_notifications` com `notification_type: 'award'` → toca som + browser notification (sistema existente).
+
+---
+
+## 3. Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/types/tactics.ts` | +`'retranca-total'`, +`'pressao-alta'` em `PlayStyle`; entradas em `playStyleEffects` com filosofia/bullets |
-| `src/components/game/TacticsTab.tsx` | Reorganizar grid em "Principais (6)" + accordion "Avançadas (5)" |
-| `supabase/functions/start-match/index.ts` | +`MATCHUP` matriz; +entradas no `STYLE_MODS` para 2 novos estilos; usa matchup para ajustar `homeExpected`/`awayExpected` |
-| `supabase/functions/re-simulate-from-minute/index.ts` | **NOVA** — re-simula minutos restantes com novas táticas |
-| `supabase/functions/match-lobby-join/index.ts` | **NOVA** — registra entrada no lobby, retorna estado |
-| `src/pages/MatchPage.tsx` | Card flutuante "⚡ Tática Rápida" com 6 botões + cooldown; chama `re-simulate-from-minute` ao trocar |
-| `src/components/game/MatchLobbyScreen.tsx` | **NOVO** — tela de espera 5min com countdown e fallback |
-| `src/components/game/OnlineFriendliesTab.tsx` | Botão "JOGAR" agora abre `MatchLobbyScreen` antes de `/match` |
-| `src/components/game/MatchesTab.tsx` | Idem para partidas de liga |
-| `src/components/game/AdminLayout.tsx` | **NOVO** — Sidebar/Drawer responsivo com 6 categorias |
-| `src/components/game/AdminTab.tsx` | Refatorar para usar `AdminLayout`; agrupar 13 abas atuais em 6 categorias |
-| Migration SQL | +colunas `lobby_opened_at`, `home_joined`, `away_joined`, `auto_sim_at` em `friendly_invites` e `league_matches`; cron `auto-simulate-expired-matches` a cada 2min |
+| `src/hooks/useActiveMatch.ts` | **NOVO** — detecta partida ativa via realtime |
+| `src/components/game/LiveMatchGuard.tsx` | **NOVO** — wrapper que bloqueia ações sensíveis com toast |
+| `src/components/game/GameNavBar.tsx` | +banner "🔴 PARTIDA AO VIVO" quando ativa |
+| `src/components/game/SquadTab.tsx` | Envolver handlers de venda/empréstimo/rescindir |
+| `src/components/game/OnlineMarketTab.tsx` | Bloquear botões de compra/listagem |
+| `src/components/game/AuctionTab.tsx`, `PacotinhosTab.tsx`, `InfrastructureTab.tsx`, `StadiumTab.tsx`, `YouthAcademyTab.tsx`, `ScoutsTab.tsx`, `StaffTab.tsx` | Aplicar `LiveMatchGuard` |
+| `src/components/game/TacticsTab.tsx` | Bloquear botão "Salvar" permanente; permitir só via MatchPage |
+| Edge `process-transfer`, `process-free-agent` | Validação server-side: 423 se live match |
+| Migration | +`roster_locked_at` em `live_matches`; +tabela `season_awards`; +`viewed_awards_season` em `profiles` |
+| `supabase/functions/process-season-awards/index.ts` | **NOVA** — agrega stats, gera awards, IA imagens+narrativas, popula tabelas |
+| `supabase/functions/plan-season/index.ts` | Chama `process-season-awards` antes de fechar season |
+| `src/components/game/SeasonAwardsModal.tsx` | **NOVO** — modal carrossel full-screen |
+| `src/components/game/TrophiesTab.tsx` | +Tab "Premiações" com histórico |
+| `src/components/game/NewspaperFullPage.tsx` | +filtro "🏆 Premiações" |
+| `src/pages/Index.tsx` | Trigger SeasonAwardsModal se houver awards não vistos |
+| `supabase/config.toml` | +`[functions.process-season-awards] verify_jwt = false` |
 
-## 6. Anti-bug
+## 4. Validação
 
-- ✅ `re-simulate-from-minute` valida minuto < 90 e cooldown server-side (não confia no cliente)
-- ✅ Lobby join é idempotente (UPDATE ... WHERE NOT joined) — duplo clique não quebra
-- ✅ Realtime listener no lobby usa filtro por `match_id` para evitar leak entre partidas
-- ✅ Auto-simulação respeita squad real (já implementado em `awayPlayers`) → resultado é justo
-- ✅ AdminLayout preserva estado atual de aba ao trocar viewport (drawer ↔ sidebar)
-- ✅ Matchup matrix é simétrica e tem fallback `{ homeAtk: 1.0, homeDef: 1.0 }` para combos não definidos
-- ✅ Estilos antigos (tiki-taka etc) continuam funcionando — só ficam em "Avançadas"
-- ✅ Cooldown de troca tática armazenado em `live_matches.tactics.lastChangedAt` (não nova tabela)
+- ✅ Tentar comprar jogador durante live match → toast "🔒 Ação indisponível"
+- ✅ Tentar iniciar obra → bloqueado
+- ✅ Trocar tática rápida no MatchPage → continua funcionando (única exceção)
+- ✅ Banner vermelho aparece em todas as abas durante partida
+- ✅ Final de temporada → todos vencedores recebem notificação + abrem modal automaticamente no próximo login
+- ✅ Imagens IA salvas em bucket público com URL persistente
+- ✅ Time da Temporada respeita posições (1 GK, 4 DEF, 3 MEI, 3 ATA)
+- ✅ Tiebreaker funciona: empate em gols → desempate por rating médio
+
+## 5. Anti-bug
+
+- ✅ `useActiveMatch` re-checa a cada 30s além de realtime (fallback se WS cair)
+- ✅ Snapshot `home_players` já existe em `live_matches` — fonte da verdade durante simulação
+- ✅ Validação server-side em edge functions evita bypass via DevTools
+- ✅ `process-season-awards` é idempotente: `UNIQUE(season, scope, scope_id, award_type)` evita duplicação
+- ✅ Filtro `minGames = 10` evita awards para jogadores com 1 jogo
+- ✅ Geração IA com `Promise.allSettled` — se imagem falha, award ainda é criado (só sem foto)
+- ✅ Modal de awards usa flag em `profiles` — não mostra duas vezes
+- ✅ Bucket `club-logos` reusado (já público) para imagens — sem custo de novo bucket
+- ✅ TacticsTab: distinção clara entre "Salvar permanente" (bloqueado) vs "Aplicar agora" no MatchPage (livre)
 
