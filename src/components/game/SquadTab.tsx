@@ -5,12 +5,14 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap } from 'lucide-react';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Wand2, Target } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
+import type { TacticsConfig, Formation } from '@/types/tactics';
+import { formationPositions } from '@/types/tactics';
 
 interface Props {
   players: Player[];
@@ -28,6 +30,7 @@ interface Props {
   transferBudget?: number;
   onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
   onReorderPlayers?: (newOrder: Player[]) => void;
+  tactics?: TacticsConfig;
 }
 
 const posColors: Record<string, string> = {
@@ -114,7 +117,7 @@ function getPlayerGroup(idx: number): Group {
   return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers, tactics }: Props) {
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
