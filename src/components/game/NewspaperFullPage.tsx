@@ -37,6 +37,7 @@ const categoryColors: Record<string, string> = {
   BASTIDORES: 'bg-red-500/80',
   PREMIAÇÃO: 'bg-amber-600/80',
   INSATISFAÇÃO: 'bg-red-700/80',
+  AWARDS: 'bg-amber-500/80',
 };
 
 interface SavedEntry {

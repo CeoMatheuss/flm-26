@@ -626,6 +626,24 @@ Deno.serve(async (req) => {
       console.error('[plan-season] international cups error:', e);
     }
 
+    // ── PHASE 6: Process Season Awards (Bola de Ouro, Artilheiros, etc) ──
+    // Compute the season just ENDED (current season - 1, or previous month)
+    try {
+      const closingSeason = seasonMonth === 1 ? seasonYear - 1 : seasonYear;
+      const awardsRes = await fetch(`${supabaseUrl}/functions/v1/process-season-awards`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ season: closingSeason }),
+      });
+      const awardsJson = await awardsRes.json();
+      console.log('[plan-season] season awards:', awardsJson);
+    } catch (e) {
+      console.error('[plan-season] season awards error:', e);
+    }
+
     return new Response(JSON.stringify({
       success: true,
       seasonMonth,
