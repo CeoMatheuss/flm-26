@@ -573,9 +573,12 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                         isHome,
                         competition: 'Amistoso Online',
                         fans: fans || 500,
+                        tieBreaker: invite.tie_breaker || 'none',
                       },
                     });
                   };
+
+                  const tb = (invite.tie_breaker || 'none') as TieBreaker;
 
                   return (
                     <div key={invite.id} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
@@ -596,6 +599,11 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                           ✅ Confirmado
                         </Badge>
                       </div>
+                      {tb !== 'none' && (
+                        <Badge variant="outline" className="text-[9px] gap-1">
+                          {TIE_BREAKER_LABELS[tb].emoji} {TIE_BREAKER_LABELS[tb].short}
+                        </Badge>
+                      )}
                       {canPlay ? (
                         <Button size="sm" onClick={handlePlay} className="w-full h-8 text-xs gap-1.5 font-bold bg-emerald-600 hover:bg-emerald-700">
                           <Play className="h-3.5 w-3.5" /> ⚽ JOGAR AGORA (lance por lance)
