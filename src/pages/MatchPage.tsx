@@ -1344,156 +1344,215 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
     );
   }
 
-  const starters = homePlayers.slice(0, 11).filter(p => !substitutedPlayerIds.has(p.id));
-  const bench = homePlayers.slice(11);
+  return <ImprovedSubsView
+    starters={homePlayers.slice(0, 11).filter(p => !substitutedPlayerIds.has(p.id))}
+    bench={homePlayers.slice(11)}
+    subQueue={subQueue}
+    selectedSubOut={selectedSubOut}
+    onSelectSubOut={onSelectSubOut}
+    onConfirmSub={onConfirmSub}
+    subsUsed={subsUsed}
+    maxSubs={maxSubs}
+    windowsUsed={windowsUsed}
+    maxWindows={maxWindows}
+    isHalftime={isHalftime}
+    blocked={blocked}
+    blockedReason={blockedReason}
+  />;
+}
+
+function ImprovedSubsView({
+  starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub,
+  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason,
+}: {
+  starters: Player[]; bench: Player[];
+  subQueue: { outId: string; inId: string }[];
+  selectedSubOut: string | null;
+  onSelectSubOut: (id: string | null) => void;
+  onConfirmSub: (outId: string, inId: string) => void;
+  subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
+  isHalftime: boolean;
+  blocked?: boolean; blockedReason?: string;
+}) {
+  const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
+
   const queuedOutIds = new Set(subQueue.map(s => s.outId));
   const queuedInIds = new Set(subQueue.map(s => s.inId));
-
   const selectedPlayer = starters.find(p => p.id === selectedSubOut);
 
+  // Find best suggested replacement: same position group + highest OVR + good stamina
+  const suggestedId = useMemo(() => {
+    if (!selectedPlayer) return null;
+    const eligible = bench
+      .filter(p => !queuedInIds.has(p.id))
+      .filter(p => getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position));
+    if (eligible.length === 0) return null;
+    const sorted = [...eligible].sort((a, b) => {
+      const samePos = (p: Player) => p.position === selectedPlayer.position ? 1000 : 0;
+      const score = (p: Player) => samePos(p) + p.overall * 10 + (p.stamina || 100) * 0.3;
+      return score(b) - score(a);
+    });
+    return sorted[0].id;
+  }, [selectedPlayer, bench, queuedInIds]);
+
+  // Filter bench by position group
+  const filteredBench = bench.filter(p => !queuedInIds.has(p.id)).filter(p => {
+    if (posFilter === 'all') return true;
+    return getPositionGroup(p.position) === posFilter;
+  });
+
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm sm:text-base font-black text-primary flex items-center gap-1.5">
-            <ArrowUpDown className="h-4 w-4 sm:h-5 sm:w-5" /> Substituições
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] sm:text-xs text-muted-foreground">Subs:</span>
-            {Array.from({ length: maxSubs }).map((_, i) => (
-              <div key={i} className={`w-3 h-3 rounded-full transition-all ${i < subsUsed ? 'bg-primary shadow-sm shadow-primary/30' : 'bg-muted/20 border border-border/30'}`} />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 bg-card/50 border border-border/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
-          <span className="text-[10px] sm:text-sm text-muted-foreground">Janelas:</span>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: maxWindows }).map((_, i) => (
-              <div key={i} className={`w-5 sm:w-6 h-1.5 sm:h-2 rounded-full transition-all ${i < windowsUsed ? 'bg-orange-400' : 'bg-muted/20'}`} />
-            ))}
-          </div>
-          <span className="text-[10px] sm:text-xs text-muted-foreground">({windowsUsed}/{maxWindows})</span>
-          {isHalftime && <Badge variant="secondary" className="text-[9px] ml-auto">Intervalo</Badge>}
-        </div>
-
+    <div className="space-y-2">
+      {/* Compact indicator: subs + windows on one row */}
+      <div className="flex items-center gap-2 flex-wrap text-[10px]">
+        <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
+          <span>⚡</span>
+          <span className="font-mono font-bold">{subsUsed}/{maxSubs}</span>
+          <span className="text-muted-foreground">subs</span>
+        </span>
+        <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
+          <span>🪟</span>
+          <span className="font-mono font-bold">{windowsUsed}/{maxWindows}</span>
+          <span className="text-muted-foreground">janelas</span>
+        </span>
+        {isHalftime && <Badge variant="secondary" className="text-[9px] h-4 px-1">Intervalo</Badge>}
         {subQueue.length > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 animate-pulse">
-            <p className="text-xs sm:text-sm font-bold text-primary">
-              ⏳ {subQueue.length} na fila — aguardando bola parada
-            </p>
-          </div>
+          <Badge variant="outline" className="text-[9px] h-4 px-1 border-orange-400/50 text-orange-400 animate-pulse">
+            ⏳ {subQueue.length} na fila
+          </Badge>
         )}
       </div>
 
       {blocked && blockedReason && (
-        <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl px-3 py-2.5 flex items-start gap-2">
-          <span className="text-lg">⛔</span>
-          <p className="text-xs sm:text-sm font-bold text-red-400 flex-1">{blockedReason}</p>
+        <div className="bg-red-500/10 border border-red-500/30 rounded px-2 py-1 text-[10px] text-red-400 font-medium">
+          ⛔ {blockedReason}
         </div>
       )}
 
-      {!selectedSubOut ? (
-        <>
-          <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">📋 Quem SAI:</p>
-          <div className="space-y-1.5 max-h-[280px] sm:max-h-[320px] overflow-y-auto">
-            {starters.map((p, i) => {
+      {/* 2-column layout: SAI | ENTRA */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* COL 1: SAI */}
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">⬅ Quem SAI</p>
+          <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
+            {starters.map((p) => {
               const stamina = p.stamina || 100;
               const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
               const isQueued = queuedOutIds.has(p.id);
+              const isSelected = p.id === selectedSubOut;
               return (
                 <button
-                  key={p.id || i}
-                  onClick={() => !isQueued && !blocked && onSelectSubOut(p.id)}
+                  key={p.id}
+                  onClick={() => !isQueued && !blocked && onSelectSubOut(isSelected ? null : p.id)}
                   disabled={isQueued || blocked}
-                  className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 transition-all text-left group ${
-                    isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60' : blocked ? 'border-border/20 opacity-40 cursor-not-allowed' : 'border-border/20 hover:border-red-400/40 hover:bg-red-500/5'
+                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
+                    isSelected ? 'bg-red-500/15 border-red-500/50 ring-1 ring-red-400/50'
+                    : isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60'
+                    : blocked ? 'border-border/20 opacity-40 cursor-not-allowed'
+                    : 'bg-card/60 border-border/30 hover:border-red-400/40 hover:bg-red-500/5'
                   }`}
                 >
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary/10 flex items-center justify-center text-xs sm:text-sm font-black text-primary shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary shrink-0">
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm sm:text-base font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5 sm:mt-1">
-                      <span className="text-xs sm:text-sm text-muted-foreground">OVR <span className="font-bold text-foreground">{p.overall}</span></span>
-                      <div className="flex items-center gap-1 flex-1">
-                        <div className="h-2 sm:h-2.5 flex-1 max-w-[70px] sm:max-w-[90px] rounded-full bg-muted/20 overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
-                        </div>
-                        <span className="text-[10px] sm:text-sm text-muted-foreground font-mono">{stamina}%</span>
+                    <p className="text-[11px] font-bold truncate">{p.name}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[9px] text-muted-foreground">OVR {p.overall}</span>
+                      <div className="h-1 flex-1 max-w-[40px] rounded-full bg-muted/20 overflow-hidden">
+                        <div className={`h-full ${staminaColor}`} style={{ width: `${stamina}%` }} />
                       </div>
+                      <span className="text-[8px] font-mono text-muted-foreground">{stamina}%</span>
                     </div>
                   </div>
-                  {isQueued ? (
-                    <Badge variant="outline" className="text-[9px] border-orange-400/30 text-orange-400 shrink-0">Fila</Badge>
-                  ) : (
-                    <span className="text-xs sm:text-sm text-red-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">SAIR →</span>
-                  )}
                 </button>
               );
             })}
           </div>
-        </>
-      ) : (
-        <>
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-500/15 flex items-center justify-center text-sm sm:text-lg font-black text-red-400 shrink-0">
-              {selectedPlayer?.position}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] sm:text-xs text-red-400 font-bold uppercase tracking-wider">⬅️ Sai</p>
-              <p className="text-base sm:text-lg font-black truncate">{selectedPlayer?.name}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">OVR {selectedPlayer?.overall} · ⚡ {selectedPlayer?.stamina || 100}%</p>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 sm:h-9 px-3 text-xs sm:text-sm shrink-0 gap-1" onClick={() => onSelectSubOut(null)}>
-              <X className="h-3.5 w-3.5" /> Cancelar
-            </Button>
+        </div>
+
+        {/* COL 2: ENTRA */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Quem ENTRA →</p>
+            {selectedPlayer && (
+              <button onClick={() => onSelectSubOut(null)} className="text-[9px] text-muted-foreground hover:text-foreground">
+                ✕ limpar
+              </button>
+            )}
           </div>
 
-          <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">🪑 Quem ENTRA:</p>
-          <div className="space-y-1.5 max-h-[250px] sm:max-h-[280px] overflow-y-auto">
-            {bench.filter(p => !queuedInIds.has(p.id)).map((p, i) => {
-              const sameGroup = selectedPlayer && getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
+          {/* Position filter chips */}
+          <div className="flex gap-0.5 overflow-x-auto pb-0.5">
+            {([
+              { k: 'all', l: 'Todos' },
+              { k: 'gk', l: '🥅' },
+              { k: 'def', l: '🛡️' },
+              { k: 'mid', l: '⚙️' },
+              { k: 'atk', l: '⚔️' },
+            ] as const).map(f => (
+              <button
+                key={f.k}
+                onClick={() => setPosFilter(f.k)}
+                className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded transition-colors ${
+                  posFilter === f.k ? 'bg-primary text-primary-foreground' : 'bg-card/60 border border-border/30 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {f.l}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-1 max-h-[230px] overflow-y-auto pr-1">
+            {!selectedPlayer && (
+              <p className="text-[10px] text-muted-foreground text-center py-3">
+                ← Selecione um titular primeiro
+              </p>
+            )}
+            {selectedPlayer && filteredBench.length === 0 && (
+              <p className="text-[10px] text-muted-foreground text-center py-3">Nenhum reserva nesta posição</p>
+            )}
+            {selectedPlayer && filteredBench.map((p) => {
               const stamina = p.stamina || 100;
+              const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
+              const isSuggested = p.id === suggestedId;
               return (
                 <button
-                  key={p.id || i}
-                  onClick={() => onConfirmSub(selectedSubOut, p.id)}
-                  className={`w-full flex items-center gap-2 sm:gap-3 bg-card/60 border rounded-xl px-2 sm:px-3 py-2 sm:py-3 hover:bg-emerald-500/5 transition-all text-left group ${
-                    sameGroup ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-border/20 hover:border-emerald-400/40'
+                  key={p.id}
+                  onClick={() => onConfirmSub(selectedSubOut!, p.id)}
+                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
+                    isSuggested ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-400/40'
+                    : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
+                    : 'bg-card/60 border-border/30 hover:border-emerald-400/40'
                   }`}
                 >
-                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shrink-0 ${
-                    sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${
+                    isSuggested ? 'bg-emerald-500/25 text-emerald-300' : sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
                   }`}>
                     {p.position}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm sm:text-base font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5">
-                      <span className="text-xs sm:text-sm font-bold text-emerald-400">OVR {p.overall}</span>
-                      <span className="text-xs sm:text-sm text-muted-foreground">⚡ {stamina}%</span>
-                      {sameGroup && (
-                        <Badge variant="outline" className="text-[9px] sm:text-xs h-4 sm:h-5 border-emerald-500/30 text-emerald-400">
-                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" /> Mesma pos.
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-1">
+                      <p className="text-[11px] font-bold truncate">{p.name}</p>
+                      {isSuggested && <span className="text-[8px] text-emerald-400 font-bold shrink-0">🟢</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[9px] font-bold text-emerald-400">OVR {p.overall}</span>
+                      <span className="text-[8px] text-muted-foreground">⚡{stamina}%</span>
                     </div>
                   </div>
-                  <span className="text-xs sm:text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">← ENTRA</span>
                 </button>
               );
             })}
           </div>
+        </div>
+      </div>
 
-          <div className="bg-muted/10 border border-border/20 rounded-lg p-2 sm:p-3 text-center">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
-              📡 Substituição será executada na próxima bola parada
-              {isHalftime && ' (intervalo — execução imediata)'}
-            </p>
-          </div>
-        </>
+      {selectedPlayer && (
+        <p className="text-[9px] text-muted-foreground text-center">
+          📡 Clique em um reserva para confirmar a substituição
+          {isHalftime && ' (intervalo — execução imediata)'}
+        </p>
       )}
     </div>
   );
