@@ -19,8 +19,10 @@ import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { MatchSidebar } from '@/components/game/MatchSidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShieldCrest } from '@/components/game/ShieldCrest';
+import { useMatchShields } from '@/hooks/useMatchShields';
+import type { ShieldRenderProps } from '@/components/game/shieldHelpers';
 import { toast } from 'sonner';
 
 interface MatchPageState {
