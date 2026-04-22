@@ -203,6 +203,7 @@ export type Database = {
           season_month: number | null
           season_year: number | null
           status: string | null
+          tier: string | null
           total_rounds: number | null
         }
         Insert: {
@@ -217,6 +218,7 @@ export type Database = {
           season_month?: number | null
           season_year?: number | null
           status?: string | null
+          tier?: string | null
           total_rounds?: number | null
         }
         Update: {
@@ -231,6 +233,7 @@ export type Database = {
           season_month?: number | null
           season_year?: number | null
           status?: string | null
+          tier?: string | null
           total_rounds?: number | null
         }
         Relationships: []
@@ -2351,6 +2354,10 @@ export type Database = {
       process_season_transition: {
         Args: { _country: string }
         Returns: undefined
+      }
+      qualify_international_teams: {
+        Args: { _continent: string; _season_year: number }
+        Returns: Json
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
     }
