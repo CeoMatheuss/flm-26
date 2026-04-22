@@ -5,7 +5,19 @@ export type Formation =
 
 export type PlayStyle =
   | 'ofensivo' | 'equilibrado' | 'defensivo' | 'contra-ataque' | 'posse'
-  | 'tiki-taka' | 'gegenpressing' | 'parking-bus' | 'long-ball';
+  | 'tiki-taka' | 'gegenpressing' | 'parking-bus' | 'long-ball'
+  | 'retranca-total' | 'pressao-alta';
+
+// Os 6 estilos principais (mostrados sempre)
+export const MAIN_PLAY_STYLES: PlayStyle[] = [
+  'retranca-total', 'defensivo', 'equilibrado',
+  'contra-ataque', 'pressao-alta', 'ofensivo',
+];
+
+// Estilos avançados (em accordion)
+export const ADVANCED_PLAY_STYLES: PlayStyle[] = [
+  'posse', 'tiki-taka', 'gegenpressing', 'parking-bus', 'long-ball',
+];
 
 export interface PlayStyleEffect {
   label: string;
@@ -59,6 +71,16 @@ export const playStyleEffects: Record<PlayStyle, PlayStyleEffect> = {
     label: 'Bola Longa', icon: '🚀',
     philosophy: 'Saída direta com lançamentos para o ataque.',
     bullets: ['✅ +10% ataque, +8 chutes longos', '✅ +5 físico', '⚠️ Pouco controle do meio'],
+  },
+  'retranca-total': {
+    label: 'Retranca Total', icon: '🔒',
+    philosophy: 'Defesa férrea com 11 atrás da linha da bola. Gols difíceis nos 2 lados.',
+    bullets: ['✅ +35% defesa, +10 marcação', '⚠️ -35% ataque', '🔋 Pouquíssimo desgaste', '🆚 Forte vs Ataque Total'],
+  },
+  'pressao-alta': {
+    label: 'Pressão Alta', icon: '🔥',
+    philosophy: 'Pressionar o adversário no campo dele, recuperar a bola rápido.',
+    bullets: ['✅ +15% chances, +8 agressividade', '🔥 Stamina cai +20%', '⚠️ Defesa exposta nas costas', '🆚 Forte vs Posse'],
   },
 };
 export type Pressing = 'ultra-alto' | 'alto' | 'medio' | 'baixo';
