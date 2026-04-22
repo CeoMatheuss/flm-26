@@ -103,6 +103,100 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+const TICK_MS = 300;
+
+// ── Deterministic seed-based RNG (mulberry32) for offline simulation ────────
+function hashString(str: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Build a complete deterministic match locally — used when server is unreachable. */
+function buildOfflineMatch(params: {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeStrength: number;
+  awayStrength: number;
+  stadiumName: string;
+  isHome: boolean;
+  competition: string;
+}): { events: SimEvent[]; homeGoals: number; awayGoals: number; stats: MatchStats } {
+  const rand = mulberry32(hashString(params.matchId));
+  const totalStr = params.homeStrength + params.awayStrength;
+  const homeProb = totalStr > 0 ? params.homeStrength / totalStr : 0.5;
+  // Expected goals via Poisson-ish approximation
+  const homeXG = 0.6 + homeProb * 2.0;
+  const awayXG = 0.6 + (1 - homeProb) * 2.0;
+  const drawGoals = (xg: number) => {
+    let g = 0;
+    for (let i = 0; i < 6; i++) if (rand() < xg / 6) g++;
+    return g;
+  };
+  const homeGoals = drawGoals(homeXG);
+  const awayGoals = drawGoals(awayXG);
+
+  const events: SimEvent[] = [
+    { minute: 0, type: 'kickoff', team: 'neutral', description: '⚽ Início da partida!' },
+  ];
+  const totalGoals = homeGoals + awayGoals;
+  const goalMinutes: { min: number; team: 'home' | 'away' }[] = [];
+  for (let i = 0; i < homeGoals; i++) goalMinutes.push({ min: Math.floor(rand() * 88) + 1, team: 'home' });
+  for (let i = 0; i < awayGoals; i++) goalMinutes.push({ min: Math.floor(rand() * 88) + 1, team: 'away' });
+  goalMinutes.sort((a, b) => a.min - b.min);
+  for (const g of goalMinutes) {
+    events.push({
+      minute: g.min,
+      type: 'goal_open_play',
+      team: g.team,
+      isGoal: true,
+      description: `⚽ GOL! ${g.team === 'home' ? params.homeTeam : params.awayTeam}`,
+    });
+  }
+  // Filler events for stats
+  const fillerCount = 18 + Math.floor(rand() * 10);
+  for (let i = 0; i < fillerCount; i++) {
+    const minute = Math.floor(rand() * 90);
+    const team: 'home' | 'away' = rand() < homeProb ? 'home' : 'away';
+    const types = ['possession', 'long_pass', 'tackle', 'foul', 'corner_danger', 'long_shot_miss'];
+    const type = types[Math.floor(rand() * types.length)];
+    events.push({ minute, type, team, description: type });
+  }
+  events.push({ minute: 45, type: 'halftime', team: 'neutral', description: '🟡 Fim do 1º tempo' });
+  events.push({ minute: 90, type: 'final_whistle', team: 'neutral', description: '🏁 Fim de jogo!' });
+  events.sort((a, b) => a.minute - b.minute);
+
+  const stats: MatchStats = {
+    possession: [Math.round(homeProb * 100), Math.round((1 - homeProb) * 100)],
+    shots: [homeGoals + Math.floor(rand() * 8) + 3, awayGoals + Math.floor(rand() * 8) + 3],
+    shotsOnTarget: [homeGoals + Math.floor(rand() * 3), awayGoals + Math.floor(rand() * 3)],
+    corners: [Math.floor(rand() * 8) + 2, Math.floor(rand() * 8) + 2],
+    fouls: [Math.floor(rand() * 12) + 5, Math.floor(rand() * 12) + 5],
+    yellowCards: [Math.floor(rand() * 4), Math.floor(rand() * 4)],
+    redCards: [rand() < 0.05 ? 1 : 0, rand() < 0.05 ? 1 : 0],
+    passes: [Math.floor(rand() * 200) + 250, Math.floor(rand() * 200) + 250],
+    tackles: [Math.floor(rand() * 15) + 5, Math.floor(rand() * 15) + 5],
+    saves: [Math.floor(rand() * 5) + 1, Math.floor(rand() * 5) + 1],
+    offsides: [Math.floor(rand() * 4), Math.floor(rand() * 4)],
+  };
+
+  return { events, homeGoals, awayGoals, stats };
+}
+
 // ── Push Notifications ──────────────────────────────────────
 function requestNotificationPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
