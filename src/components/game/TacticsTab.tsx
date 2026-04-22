@@ -89,8 +89,8 @@ function TacticInfoCard({ category, value }: { category: string; value: string }
       <p className="text-[10px] sm:text-[11px] font-bold text-primary">{info.title}</p>
       <p className="text-[9px] sm:text-[10px] text-foreground/80 italic leading-tight">{info.desc}</p>
       <div className="flex flex-col gap-0.5 pt-0.5">
-        <p className="text-[9px] text-emerald-500 dark:text-emerald-400 leading-tight">{info.pros}</p>
-        <p className="text-[9px] text-orange-500 dark:text-orange-400 leading-tight">{info.cons}</p>
+        <p className="text-[9px] text-success leading-tight">{info.pros}</p>
+        <p className="text-[9px] text-warning leading-tight">{info.cons}</p>
       </div>
     </div>
   );
