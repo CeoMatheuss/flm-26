@@ -2,7 +2,7 @@
  * useGame — Compositor hook that combines domain-specific hooks.
  * Exposes the same interface as before for backward compatibility.
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Player } from '@/types/game';
 import { TacticsConfig, defaultTactics } from '@/types/tactics';
 import { FinanceEntry } from '@/types/finance';
@@ -14,6 +14,7 @@ import { MatchReport } from '@/types/matchReport';
 import { ClubProfile } from '@/types/clubProfile';
 import { CTRooms } from '@/types/ctRooms';
 import { TrainingFocus } from '@/components/game/TrainingTab';
+import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
 
 import { useClubState, LoanedPlayer } from './useClubState';
