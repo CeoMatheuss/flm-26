@@ -41,7 +41,7 @@ function generateStadiumName(teamName: string): string {
 function generateBotSquad(teamStrength: number): Player[] {
   const squad: Player[] = [];
   const posCount: [Player['position'], number][] = [
-    ['GOL', 2], ['ZAG', 4], ['LAT', 3], ['VOL', 3], ['MEI', 4], ['ATA', 4],
+    ['GOL', 2], ['ZAG', 2], ['LAT', 2], ['VOL', 2], ['MEI', 2], ['ATA', 2],
   ];
   const minOvr = Math.max(40, teamStrength - 15);
   const maxOvr = Math.min(95, teamStrength + 5);

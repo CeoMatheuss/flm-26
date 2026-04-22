@@ -155,15 +155,33 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
 
 export function generateInitialSquad(clubName?: string): Player[] {
   const squad: Player[] = [];
+  // Máx 2 por posição → 12 jogadores no total (variedade tática sem inflar elenco)
   const posCount: [Player['position'], number][] = [
-    ['GOL', 2], ['ZAG', 4], ['LAT', 3], ['VOL', 3], ['MEI', 4], ['ATA', 4],
+    ['GOL', 2], ['ZAG', 2], ['LAT', 2], ['VOL', 2], ['MEI', 2], ['ATA', 2],
   ];
   for (const [pos, count] of posCount) {
     for (let i = 0; i < count; i++) {
       squad.push(generatePlayer([35, 55], [18, 32], pos, clubName));
     }
   }
-  return squad;
+
+  // Pré-escalação 4-4-2: ordenar com os 11 melhores titulares no topo do array
+  // (o jogo trata os 11 primeiros do array como titulares)
+  const formation442: Player['position'][] = ['GOL', 'ZAG', 'ZAG', 'LAT', 'LAT', 'VOL', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA'];
+  const pool = [...squad];
+  const starters: Player[] = [];
+  const usedIds = new Set<string>();
+  for (const slot of formation442) {
+    const candidates = pool
+      .filter(p => !usedIds.has(p.id) && p.position === slot)
+      .sort((a, b) => b.overall - a.overall);
+    if (candidates.length > 0) {
+      starters.push(candidates[0]);
+      usedIds.add(candidates[0].id);
+    }
+  }
+  const bench = pool.filter(p => !usedIds.has(p.id));
+  return [...starters, ...bench];
 }
 
 export function generateMarketPlayer(): Player {
