@@ -62,6 +62,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<AdminCategory>('clubs');
   const [adminPassword, setAdminPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [blocked, setBlocked] = useState(false);
