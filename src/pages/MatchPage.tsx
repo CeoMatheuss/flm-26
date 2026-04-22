@@ -24,6 +24,7 @@ import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { useMatchShields } from '@/hooks/useMatchShields';
 import type { ShieldRenderProps } from '@/components/game/shieldHelpers';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MatchPageState {
   homeTeam: string;
