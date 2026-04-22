@@ -108,11 +108,15 @@ export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget,
               <p className="text-xs font-bold text-amber-400">🎁 Olheiros Disponíveis</p>
               <p className="text-[10px] text-muted-foreground">Próximo automático em: <strong>{nextScoutLabel}</strong></p>
             </div>
-            {_onBuyPremiumScout && (
+            {_onBuyPremiumScout ? (
               <Button size="sm" onClick={onBuyPremiumScout} className="h-7 text-[10px] gap-1 bg-amber-500 hover:bg-amber-600 text-black">
                 🌟 Olheiro Lendário (Premium)
               </Button>
-            )}
+            ) : onUpgradePremium ? (
+              <Button size="sm" variant="outline" onClick={onUpgradePremium} className="h-7 text-[10px] gap-1 border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
+                🔒 Olheiro Lendário — Premium R$10
+              </Button>
+            ) : null}
           </div>
           {availableScouts.length > 0 ? (
             <div className="space-y-1.5">
