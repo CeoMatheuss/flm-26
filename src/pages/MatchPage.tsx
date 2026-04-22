@@ -1562,12 +1562,12 @@ function ImprovedSubsView({
 
 function MinuteSeparator({ minute }: { minute: number }) {
   return (
-    <div className="flex items-center gap-2 py-1.5 px-1 bg-muted/5">
-      <div className="h-px flex-1 bg-border/30" />
-      <span className="text-[10px] font-mono font-bold text-muted-foreground/70 px-2 py-0.5 rounded-full bg-card/60 border border-border/30">
+    <div className="flex items-center gap-2 py-1.5 px-1 bg-gradient-to-r from-transparent via-primary/[0.06] to-transparent">
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border/40" />
+      <span className="text-[10px] font-mono font-bold text-primary/70 px-2 py-0.5 rounded-full bg-card/80 border border-primary/20 shadow-sm">
         {minute}'
       </span>
-      <div className="h-px flex-1 bg-border/30" />
+      <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border/40" />
     </div>
   );
 }
@@ -1607,14 +1607,20 @@ function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: 
     }
   }, [isGoal]);
 
+  // Team-tinted background + side border (subtle, opacity ≤ 6%)
+  const teamBg =
+    isGoal
+      ? 'bg-emerald-500/15 border-l-4 border-l-emerald-400 animate-goal-flash'
+      : ev.team === 'home'
+        ? 'bg-gradient-to-r from-primary/[0.05] to-transparent border-l-2 border-l-primary/30'
+        : ev.team === 'away'
+          ? 'bg-gradient-to-l from-destructive/[0.05] to-transparent border-r-2 border-r-destructive/30'
+          : '';
+
   return (
     <div
       ref={rowRef}
-      className={`flex items-start gap-2.5 px-2 sm:px-3 py-2.5 sm:py-3 transition-all border-b border-border/10 ${
-        isGoal
-          ? 'bg-emerald-500/15 border-l-4 border-l-emerald-400 animate-goal-flash'
-          : ''
-      }`}
+      className={`flex items-start gap-2.5 px-2 sm:px-3 py-2.5 sm:py-3 transition-all border-b border-border/10 ${teamBg}`}
     >
       {/* Team shield (or neutral icon for kickoff/halftime/final) */}
       {shield ? (
