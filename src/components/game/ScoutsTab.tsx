@@ -54,7 +54,7 @@ const attrLabels: Record<string, string> = {
   aggression: '⚔️ Agr',
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout }: Props) {
+export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout, onUpgradePremium }: Props) {
   const { guard } = useLiveMatchGuard();
   const onHireScout = guard(_onHireScout);
   const onFireScout = guard(_onFireScout);
