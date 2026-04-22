@@ -516,43 +516,43 @@ interface SubBannerData {
 
 function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 4000);
+    const t = setTimeout(onDone, 5000);
     return () => clearTimeout(t);
   }, [onDone]);
 
   return (
-    <div className="animate-fade-in fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-md">
+    <div className="animate-fade-in fixed top-2 left-2 right-2 sm:top-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:w-[90vw] sm:max-w-md">
       <div className="bg-gradient-to-r from-[hsl(220,25%,12%)] via-[hsl(220,25%,15%)] to-[hsl(220,25%,12%)] border border-primary/30 rounded-xl shadow-2xl shadow-primary/20 overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-emerald-500 via-primary to-red-500" />
-        <div className="px-4 py-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🔁</span>
-              <span className="text-sm font-black uppercase tracking-wider text-primary">Substituição</span>
+        <div className="px-2.5 py-2 sm:px-4 sm:py-3 space-y-1.5 sm:space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="text-base sm:text-xl">🔁</span>
+              <span className="text-[10px] sm:text-sm font-black uppercase tracking-wider text-primary truncate">Substituição</span>
             </div>
             {!data.isHalftime && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-sm font-mono">{data.minute}'</Badge>
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <Badge variant="outline" className="text-[10px] sm:text-sm font-mono px-1.5 sm:px-2.5">{data.minute}'</Badge>
+                <div className="hidden sm:flex items-center gap-1">
                   <Shield className="h-4 w-4 text-primary" />
                   <span className="text-sm font-bold text-foreground">{data.teamName}</span>
                 </div>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
-              <span className="text-red-400 text-base">⬅️</span>
+          <div className="flex items-stretch gap-1.5 sm:gap-3">
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2.5">
+              <span className="text-red-400 text-sm sm:text-base shrink-0">⬅️</span>
               <div className="min-w-0">
-                <p className="text-xs text-red-400 font-bold uppercase">Sai</p>
-                <p className="text-base font-black truncate text-foreground">{data.playerOut}</p>
+                <p className="text-[8px] sm:text-xs text-red-400 font-bold uppercase leading-tight">Sai</p>
+                <p className="text-xs sm:text-base font-black truncate text-foreground leading-tight">{data.playerOut}</p>
               </div>
             </div>
-            <div className="flex-1 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2.5">
-              <span className="text-emerald-400 text-base">➡️</span>
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2.5">
+              <span className="text-emerald-400 text-sm sm:text-base shrink-0">➡️</span>
               <div className="min-w-0">
-                <p className="text-xs text-emerald-400 font-bold uppercase">Entra</p>
-                <p className="text-base font-black truncate text-foreground">{data.playerIn}</p>
+                <p className="text-[8px] sm:text-xs text-emerald-400 font-bold uppercase leading-tight">Entra</p>
+                <p className="text-xs sm:text-base font-black truncate text-foreground leading-tight">{data.playerIn}</p>
               </div>
             </div>
           </div>
