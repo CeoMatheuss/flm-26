@@ -737,317 +737,353 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
 
       {/* ═══ MATCH CONTENT ═══ */}
       <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
-        {/* Professional Scoreboard */}
-        <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
-          <div className="bg-primary/10 px-3 sm:px-4 py-2 flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
-            <Badge variant={isFinished ? 'default' : 'secondary'} className="text-sm sm:text-base font-mono h-7 sm:h-8 px-3 sm:px-4">
-              {currentMinute}'
-            </Badge>
-          </div>
-
-          <CardContent className="p-3 sm:p-5 space-y-2 sm:space-y-3">
-            {isHalftime ? (
-              /* Halftime focus banner — no team shields */
-              <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-2xl p-4 sm:p-6 text-center space-y-2 animate-fade-in">
-                <p className="text-3xl sm:text-5xl">⏸️</p>
-                <p className="text-xl sm:text-3xl font-black text-primary tracking-wide">INTERVALO</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Descanso de 15 minutos · Use o tempo para fazer ajustes</p>
-                <div className={`inline-block text-2xl sm:text-4xl font-black font-mono px-4 sm:px-6 py-2 rounded-xl mt-2 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                  <span className="text-foreground">{homeGoals}</span>
-                  <span className="text-muted-foreground/60 mx-2">x</span>
-                  <span className="text-foreground">{awayGoals}</span>
-                </div>
-                <div className="flex items-center justify-center gap-3 sm:gap-5 text-[11px] sm:text-sm text-muted-foreground pt-1 flex-wrap">
-                  <span>📊 Posse: <strong className="text-foreground">{possession[0]}%–{possession[1]}%</strong></span>
-                  <span>⚡ Chutes: <strong className="text-foreground">{stats.shots[0]}–{stats.shots[1]}</strong></span>
-                  <span>🎯 No gol: <strong className="text-foreground">{stats.shotsOnTarget[0]}–{stats.shotsOnTarget[1]}</strong></span>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Teams + Score */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="flex-1 text-right space-y-0.5 min-w-0">
-                    <p className="text-sm sm:text-xl font-black truncate">{homeTeam}</p>
-                    <div className="flex items-center gap-1 justify-end flex-wrap">
-                      {goalEvents.filter(e => e.team === 'home').map((g, i) => (
-                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className={`text-3xl sm:text-6xl font-black font-mono px-2 sm:px-8 py-1.5 sm:py-3 rounded-xl min-w-[80px] sm:min-w-[150px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                    <span className="text-primary">{homeGoals}</span>
-                    <span className="text-muted-foreground/50 text-2xl sm:text-4xl mx-1">:</span>
-                    <span className="text-primary">{awayGoals}</span>
-                  </div>
-
-                  <div className="flex-1 text-left space-y-0.5 min-w-0">
-                    <p className="text-sm sm:text-xl font-black truncate">{awayTeam}</p>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {goalEvents.filter(e => e.team === 'away').map((g, i) => (
-                        <span key={i} className="text-[9px] sm:text-xs text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Goal flash banner */}
-                {goalFlash && latestEvent?.isGoal && (
-                  <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-2 sm:p-3 text-center animate-fade-in">
-                    <p className="text-base sm:text-lg font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-                    {latestEvent.assistName && (
-                      <p className="text-xs sm:text-sm text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Possession bar */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-bold text-blue-400 w-10 sm:w-12 text-right">{possession[0]}%</span>
-                  <div className="flex-1 flex h-2.5 sm:h-3 rounded-full overflow-hidden bg-muted/10">
-                    <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-                    <div className="bg-red-500 flex-1 rounded-r-full" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-bold text-red-400 w-10 sm:w-12">{possession[1]}%</span>
-                </div>
-              </>
-            )}
-
-            {!isFinished && <Progress value={(progress || 0) * 100} className="h-1.5 sm:h-2" />}
-          </CardContent>
-        </Card>
-
-        {/* Match Moment Indicator */}
-        {!isFinished && matchState.currentMoment && (
-          <div className="flex items-center justify-center">
-            <Badge variant="outline" className="text-xs sm:text-sm px-3 py-1 gap-1.5">
-              {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
-            </Badge>
-          </div>
-        )}
-
-        {/* Assistant Coach Quick Tip (inline) */}
-        {!isFinished && hasAssistant && latestTip && (
-          <div className="bg-amber-500/8 border border-amber-500/25 rounded-xl p-2.5 animate-fade-in">
-            <div className="flex items-start gap-2">
-              <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Assistente • {latestTip.minute}'</p>
-                <p className="text-xs sm:text-sm text-foreground mt-0.5">{latestTip.description}</p>
-              </div>
-              {matchState.assistantTips.length > 1 && (
-                <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400 shrink-0">
-                  +{matchState.assistantTips.length - 1}
+        <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-3 space-y-2 sm:space-y-3 lg:space-y-0">
+          {/* ═══ MAIN COLUMN ═══ */}
+          <div className="space-y-2 sm:space-y-3 min-w-0">
+            {/* Professional Scoreboard — compact */}
+            <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+              <div className="bg-primary/10 px-2.5 sm:px-3 py-1.5 flex items-center justify-between">
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
+                <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs sm:text-sm font-mono h-6 sm:h-7 px-2.5 sm:px-3">
+                  {currentMinute}'
                 </Badge>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Halftime sub queue indicator */}
-        {isHalftime && subQueue.length > 0 && (
-          <div className="bg-primary/10 border border-primary/30 rounded-xl px-3 py-2 text-center animate-pulse">
-            <p className="text-xs sm:text-sm text-primary font-bold">
-              🔄 {subQueue.length} substituição(ões) na fila — execute pelo painel "Time"
-            </p>
-          </div>
-        )}
-
-        {/* 2D Canvas — highlights */}
-        {!isFinished && activeHighlight && (
-          <Card className="p-2 sm:p-3 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
-            <div className="text-center mb-1">
-              <Badge variant="outline" className="text-xs sm:text-sm font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
-            </div>
-            <HighlightMiniCanvas
-              type={getHighlightType(activeHighlight.type)}
-              team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
-              playerName={activeHighlight?.playerName}
-              currentMinute={currentMinute}
-              onComplete={() => {
-                highlightTimeoutRef.current = setTimeout(() => {
-                  setActiveHighlight(null);
-                  highlightTimeoutRef.current = null;
-                }, 1500);
-              }}
-            />
-            <p className="text-xs sm:text-sm text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
-          </Card>
-        )}
-
-        {/* Live commentary */}
-        {latestEvent && !goalFlash && (
-          <Card className="p-2 sm:p-4 border-border/30">
-            <div className="flex items-start gap-2">
-              <Badge variant="outline" className="text-xs sm:text-sm font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-              <p className={`text-sm sm:text-lg font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
-                {getEventIcon(latestEvent.type)} {latestEvent.description}
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {/* Quick Stats Row */}
-        {!isFinished && (
-          <div className="grid grid-cols-4 gap-1 sm:gap-2">
-            {[
-              ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
-              ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
-              ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
-              ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
-            ].map(([icon, label, h, a]) => (
-              <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1 sm:p-2.5">
-                <p className="text-[9px] sm:text-xs text-muted-foreground">{icon} {label}</p>
-                <p className="text-xs sm:text-lg font-black font-mono">{h as number} - {a as number}</p>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Match content */}
-        {!isFinished ? (
-          /* Chat-style narration feed */
-          <Card className="p-2 sm:p-3 border-border/20">
-            <div ref={eventsRef} className="max-h-[200px] sm:max-h-[340px] overflow-y-auto divide-y divide-border/10">
-              {visibleEvents.length === 0 && (
-                <p className="text-sm sm:text-base text-muted-foreground text-center py-8">⏳ Aguardando início...</p>
-              )}
-              {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
-              ))}
-            </div>
-          </Card>
-        ) : (
-          <FinishedSection
-            stats={stats}
-            homeTeam={homeTeam}
-            awayTeam={awayTeam}
-            finalHomeGoals={homeGoals}
-            finalAwayGoals={awayGoals}
-            visibleEvents={visibleEvents}
-            matchDbId={matchDbId}
-            onExit={onExit}
-            homePlayers={homePlayers}
-          />
-        )}
+              <CardContent className="p-2 sm:p-3 space-y-2">
+                {isHalftime ? (
+                  /* Halftime focus banner — compact */
+                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-xl p-3 sm:p-4 text-center space-y-1.5 animate-fade-in">
+                    <p className="text-2xl sm:text-3xl">⏸️</p>
+                    <p className="text-base sm:text-xl font-black text-primary tracking-wide">INTERVALO</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Descanso · Use o tempo para ajustes</p>
+                    <div className={`inline-block text-xl sm:text-2xl font-black font-mono px-3 sm:px-4 py-1.5 rounded-lg mt-1 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                      <span className="text-foreground">{homeGoals}</span>
+                      <span className="text-muted-foreground/60 mx-2">x</span>
+                      <span className="text-foreground">{awayGoals}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Teams + Score — compact */}
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="flex-1 text-right space-y-0.5 min-w-0">
+                        <p className="text-xs sm:text-base font-black truncate">{homeTeam}</p>
+                        <div className="flex items-center gap-1 justify-end flex-wrap">
+                          {goalEvents.filter(e => e.team === 'home').slice(0, 3).map((g, i) => (
+                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                          ))}
+                        </div>
+                      </div>
 
-        {/* ═══ INLINE SECTIONS (clean neutral borders) ═══ */}
-        {!isFinished && (
-          <>
-            {/* 📊 Estatísticas Section */}
-            <div ref={statsSectionRef} className="scroll-mt-32">
-              <Card className="border-border/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-yellow-400" /> Estatísticas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-                </CardContent>
-              </Card>
-            </div>
+                      <div className={`text-2xl sm:text-4xl font-black font-mono px-2 sm:px-5 py-1 sm:py-1.5 rounded-lg min-w-[70px] sm:min-w-[110px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
+                        <span className="text-primary">{homeGoals}</span>
+                        <span className="text-muted-foreground/50 text-lg sm:text-2xl mx-0.5">:</span>
+                        <span className="text-primary">{awayGoals}</span>
+                      </div>
 
-            {/* 👥 Escalações Section */}
-            <div ref={lineupSectionRef} className="scroll-mt-32">
-              <Card className="border-border/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-400" /> Escalações
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* ⚙️ Estilo de Jogo / Táticas Section */}
-            <div ref={tacticsSectionRef} className="scroll-mt-32">
-              <Card className="border-border/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <Settings2 className="h-5 w-5 text-emerald-400" /> Estilo de Jogo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 🔄 Substituições Section */}
-            <div className="scroll-mt-32">
-              <Card className="border-border/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <ArrowUpDown className="h-5 w-5 text-orange-400" /> Substituições
-                    <Badge variant="outline" className="ml-auto text-xs">{maxSubs - subsUsed}/{maxSubs} restantes</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {subBlocked && subBlockedReason && (
-                    <div className="bg-muted/30 border border-border/30 rounded-xl px-4 py-3 flex items-start gap-2 mb-4">
-                      <span className="text-xl">⛔</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">Trocas Bloqueadas</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{subBlockedReason}</p>
+                      <div className="flex-1 text-left space-y-0.5 min-w-0">
+                        <p className="text-xs sm:text-base font-black truncate">{awayTeam}</p>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {goalEvents.filter(e => e.team === 'away').slice(0, 3).map((g, i) => (
+                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  )}
-                  <ManagerSubstitutionView
-                    homePlayers={homePlayers}
-                    subsUsed={subsUsed}
-                    maxSubs={maxSubs}
-                    windowsUsed={windowsUsed}
-                    maxWindows={maxWindows}
-                    selectedSubOut={selectedSubOut}
-                    onSelectSubOut={setSelectedSubOut}
-                    onConfirmSub={handleQueueSubstitution}
-                    isHalftime={isHalftime}
-                    isFinished={isFinished}
-                    substitutedPlayerIds={substitutedPlayerIds}
-                    subQueue={subQueue}
-                    blocked={subBlocked}
-                    blockedReason={subBlockedReason}
-                  />
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* 🎙️ Auxiliar Técnico Section */}
-            {hasAssistant && (
-              <div ref={assistantSectionRef} className="scroll-mt-32">
-                <Card className="border-border/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5 text-amber-400" /> Auxiliar Técnico
-                      <Badge variant="outline" className="ml-auto text-xs">{matchState.assistantTips.length} alertas</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {[...matchState.assistantTips].reverse().map((tip, i) => (
-                        <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-3 py-2.5">
-                          <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm">{tip.description}</p>
-                            {tip.priority === 'high' && (
-                              <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                    {/* Goal flash banner — compact */}
+                    {goalFlash && latestEvent?.isGoal && (
+                      <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-1.5 sm:p-2 text-center animate-fade-in">
+                        <p className="text-sm sm:text-base font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
+                        {latestEvent.assistName && (
+                          <p className="text-[10px] sm:text-xs text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Possession bar — thinner */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] sm:text-xs font-bold text-blue-400 w-8 sm:w-10 text-right">{possession[0]}%</span>
+                      <div className="flex-1 flex h-2 rounded-full overflow-hidden bg-muted/10">
+                        <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
+                        <div className="bg-red-500 flex-1 rounded-r-full" />
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold text-red-400 w-8 sm:w-10">{possession[1]}%</span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </>
+                )}
+
+                {!isFinished && <Progress value={(progress || 0) * 100} className="h-1 sm:h-1.5" />}
+              </CardContent>
+            </Card>
+
+            {/* Match Moment + Assistant Tip — only show inline on mobile (sidebar covers desktop) */}
+            {!isFinished && matchState.currentMoment && (
+              <div className="lg:hidden flex items-center justify-center">
+                <Badge variant="outline" className="text-[10px] sm:text-xs px-2.5 py-0.5 gap-1.5">
+                  {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
+                </Badge>
               </div>
             )}
-          </>
+
+            {!isFinished && hasAssistant && latestTip && (
+              <div className="lg:hidden bg-amber-500/8 border border-amber-500/25 rounded-lg p-2 animate-fade-in">
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                    <MessageSquare className="h-3 w-3 text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] text-amber-400 font-bold uppercase tracking-wider">Assistente • {latestTip.minute}'</p>
+                    <p className="text-[11px] sm:text-xs text-foreground mt-0.5">{latestTip.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Halftime sub queue indicator */}
+            {isHalftime && subQueue.length > 0 && (
+              <div className="bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5 text-center animate-pulse">
+                <p className="text-[11px] sm:text-xs text-primary font-bold">
+                  🔄 {subQueue.length} substituição(ões) na fila
+                </p>
+              </div>
+            )}
+
+            {/* 2D Canvas — highlights (smaller) */}
+            {!isFinished && activeHighlight && (
+              <Card className="p-1.5 sm:p-2 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
+                <div className="text-center mb-1">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
+                </div>
+                <div className="max-h-32 sm:max-h-40 overflow-hidden">
+                  <HighlightMiniCanvas
+                    type={getHighlightType(activeHighlight.type)}
+                    team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
+                    playerName={activeHighlight?.playerName}
+                    currentMinute={currentMinute}
+                    onComplete={() => {
+                      highlightTimeoutRef.current = setTimeout(() => {
+                        setActiveHighlight(null);
+                        highlightTimeoutRef.current = null;
+                      }, 1500);
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] sm:text-xs text-center text-muted-foreground mt-1 line-clamp-2">{activeHighlight.description}</p>
+              </Card>
+            )}
+
+            {/* Live commentary — compact */}
+            {latestEvent && !goalFlash && (
+              <Card className="py-2 px-3 border-border/30">
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
+                  <p className={`text-xs sm:text-sm font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
+                    {getEventIcon(latestEvent.type)} {latestEvent.description}
+                  </p>
+                </div>
+              </Card>
+            )}
+
+            {/* Quick Stats Row — only mobile (sidebar shows on desktop) */}
+            {!isFinished && (
+              <div className="lg:hidden grid grid-cols-4 gap-1">
+                {[
+                  ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
+                  ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
+                  ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
+                  ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
+                ].map(([icon, label, h, a]) => (
+                  <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5">
+                    <p className="text-[9px] text-muted-foreground">{icon} {label}</p>
+                    <p className="text-xs font-black font-mono">{h as number} - {a as number}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Match content */}
+            {!isFinished ? (
+              /* Chat-style narration feed — compact */
+              <Card className="p-1.5 sm:p-2 border-border/20">
+                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto divide-y divide-border/10">
+                  {visibleEvents.length === 0 && (
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
+                  )}
+                  {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
+                    <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  ))}
+                </div>
+              </Card>
+            ) : (
+              <FinishedSection
+                stats={stats}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                finalHomeGoals={homeGoals}
+                finalAwayGoals={awayGoals}
+                visibleEvents={visibleEvents}
+                matchDbId={matchDbId}
+                onExit={onExit}
+                homePlayers={homePlayers}
+              />
+            )}
+          </div>
+
+          {/* ═══ DESKTOP SIDEBAR ═══ */}
+          {!isFinished && (
+            <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+              <MatchSidebar
+                stats={stats}
+                matchState={matchState}
+                subsUsed={subsUsed}
+                maxSubs={maxSubs}
+                windowsUsed={windowsUsed}
+                maxWindows={maxWindows}
+                isFinished={isFinished}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ═══ COLLAPSIBLE SECTIONS (Stats / Lineup / Tactics / Subs) ═══ */}
+        {!isFinished && (
+          <div className="space-y-2">
+            {/* 📊 Estatísticas */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-border/20" ref={statsSectionRef}>
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-yellow-400" /> Estatísticas
+                    </CardTitle>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="px-3 pb-3 pt-0">
+                    <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* 👥 Escalações */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-border/20" ref={lineupSectionRef}>
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-400" /> Escalações
+                    </CardTitle>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="px-3 pb-3 pt-0">
+                    <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* ⚙️ Estilo de Jogo */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-border/20" ref={tacticsSectionRef}>
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-emerald-400" /> Estilo de Jogo
+                    </CardTitle>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="px-3 pb-3 pt-0">
+                    <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* 🔄 Substituições */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-border/20">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <ArrowUpDown className="h-4 w-4 text-orange-400" /> Substituições
+                      <Badge variant="outline" className="ml-2 text-[10px]">{maxSubs - subsUsed}/{maxSubs}</Badge>
+                    </CardTitle>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="px-3 pb-3 pt-0">
+                    {subBlocked && subBlockedReason && (
+                      <div className="bg-muted/30 border border-border/30 rounded-lg px-3 py-2 flex items-start gap-2 mb-3">
+                        <span className="text-base">⛔</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-foreground">Trocas Bloqueadas</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{subBlockedReason}</p>
+                        </div>
+                      </div>
+                    )}
+                    <ManagerSubstitutionView
+                      homePlayers={homePlayers}
+                      subsUsed={subsUsed}
+                      maxSubs={maxSubs}
+                      windowsUsed={windowsUsed}
+                      maxWindows={maxWindows}
+                      selectedSubOut={selectedSubOut}
+                      onSelectSubOut={setSelectedSubOut}
+                      onConfirmSub={handleQueueSubstitution}
+                      isHalftime={isHalftime}
+                      isFinished={isFinished}
+                      substitutedPlayerIds={substitutedPlayerIds}
+                      subQueue={subQueue}
+                      blocked={subBlocked}
+                      blockedReason={subBlockedReason}
+                    />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* 🎙️ Auxiliar Técnico */}
+            {hasAssistant && (
+              <Collapsible defaultOpen={false}>
+                <Card className="border-border/20" ref={assistantSectionRef}>
+                  <CollapsibleTrigger className="w-full">
+                    <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-amber-400" /> Auxiliar Técnico
+                        <Badge variant="outline" className="ml-2 text-[10px]">{matchState.assistantTips.length}</Badge>
+                      </CardTitle>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="px-3 pb-3 pt-0">
+                      <div className="space-y-1.5 max-h-[260px] overflow-y-auto">
+                        {[...matchState.assistantTips].reverse().map((tip, i) => (
+                          <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-lg px-2.5 py-2">
+                            <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs sm:text-sm">{tip.description}</p>
+                              {tip.priority === 'high' && (
+                                <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            )}
+          </div>
         )}
       </div>
     </div>
