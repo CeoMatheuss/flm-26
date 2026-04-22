@@ -24,61 +24,79 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
+    let cancelled = false;
     const load = async () => {
       const { data: myTeams } = await supabase
         .from('custom_tournament_teams')
         .select('id, tournament_id, club_name, bot_strength, user_id')
         .eq('user_id', userId);
 
-      if (!myTeams || myTeams.length === 0) { setLoading(false); return; }
+      if (!myTeams || myTeams.length === 0) { if (!cancelled) setLoading(false); return; }
 
       const teamIds = myTeams.map(t => t.id);
       const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
 
-      const { data: scheduledMatches } = await supabase
+      // Look at scheduled OR finished — we want the next pending OR last auto-simulated one
+      const { data: matches } = await supabase
         .from('custom_tournament_matches')
         .select('*')
-        .eq('status', 'scheduled')
+        .in('status', ['scheduled', 'finished'])
         .in('tournament_id', tournamentIds)
         .order('scheduled_at', { ascending: true })
-        .limit(50);
+        .limit(80);
 
-      if (scheduledMatches) {
-        const myMatch = scheduledMatches.find(m => teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id));
-        if (myMatch) {
-          const { data: matchTeams } = await supabase
-            .from('custom_tournament_teams')
-            .select('id, club_name, bot_strength, user_id')
-            .in('id', [myMatch.home_team_id, myMatch.away_team_id]);
+      if (!matches) { if (!cancelled) setLoading(false); return; }
 
-          const { data: tournament } = await supabase
-            .from('custom_tournaments')
-            .select('name')
-            .eq('id', myMatch.tournament_id)
-            .single();
+      // Prefer next scheduled; fallback to most recent finished
+      const myScheduled = matches
+        .filter(m => m.status === 'scheduled' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)));
+      const myFinished = matches
+        .filter(m => m.status === 'finished' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)))
+        .sort((a, b) => new Date(b.played_at || b.scheduled_at || 0).getTime() - new Date(a.played_at || a.scheduled_at || 0).getTime());
 
-          const homeT = matchTeams?.find(t => t.id === myMatch.home_team_id);
-          const awayT = matchTeams?.find(t => t.id === myMatch.away_team_id);
-          const isPlayerHome = homeT?.user_id === userId;
-          const opponent = isPlayerHome ? awayT : homeT;
+      const myMatch = myScheduled[0] || myFinished[0];
+      if (!myMatch) { if (!cancelled) setLoading(false); return; }
 
-          setNextMatch({
-            home: homeT?.club_name || '???',
-            away: awayT?.club_name || '???',
-            date: myMatch.scheduled_at || '',
-            tournament: tournament?.name || 'Campeonato',
-            matchId: myMatch.id,
-            homeTeamId: myMatch.home_team_id,
-            awayTeamId: myMatch.away_team_id,
-            opponentStrength: opponent?.bot_strength || 60,
-            isHome: isPlayerHome,
-            tournamentName: tournament?.name || 'Campeonato',
-          });
-        }
-      }
+      const { data: matchTeams } = await supabase
+        .from('custom_tournament_teams')
+        .select('id, club_name, bot_strength, user_id')
+        .in('id', [myMatch.home_team_id, myMatch.away_team_id]);
+
+      const { data: tournament } = await supabase
+        .from('custom_tournaments')
+        .select('name')
+        .eq('id', myMatch.tournament_id)
+        .single();
+
+      const homeT = matchTeams?.find(t => t.id === myMatch.home_team_id);
+      const awayT = matchTeams?.find(t => t.id === myMatch.away_team_id);
+      const isPlayerHome = homeT?.user_id === userId;
+      const opponent = isPlayerHome ? awayT : homeT;
+
+      if (cancelled) return;
+      setNextMatch({
+        home: homeT?.club_name || '???',
+        away: awayT?.club_name || '???',
+        date: myMatch.scheduled_at || '',
+        tournament: tournament?.name || 'Campeonato',
+        matchId: myMatch.id,
+        homeTeamId: myMatch.home_team_id,
+        awayTeamId: myMatch.away_team_id,
+        opponentStrength: opponent?.bot_strength || 60,
+        isHome: isPlayerHome,
+        tournamentName: tournament?.name || 'Campeonato',
+        status: myMatch.status,
+        homeGoals: myMatch.home_goals ?? null,
+        awayGoals: myMatch.away_goals ?? null,
+        playedAt: myMatch.played_at || null,
+      } as any);
       setLoading(false);
     };
     load();
+
+    // Poll every 10s when expired-but-still-scheduled, to catch the cron simulation
+    const interval = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [userId]);
 
   // Live countdown timer
