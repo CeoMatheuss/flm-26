@@ -956,7 +956,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
                   <EventFeed
-                    events={[...visibleEvents].reverse().slice(0, 40)}
+                    events={[...visibleEvents, ...injectedSubEvents].sort((a, b) => a.minute - b.minute).reverse().slice(0, 40)}
                     homeTeam={homeTeam} awayTeam={awayTeam}
                     homeShield={homeShield} awayShield={awayShield}
                   />
