@@ -343,7 +343,7 @@ export function MatchesTab({
                           <Button
                             size="sm"
                             variant="default"
-                            onClick={() => goToTournamentMatch(tm)}
+                            onClick={() => openTournamentMatch(tm)}
                             className="h-7 px-3 text-xs gap-1 shrink-0 bg-success hover:bg-success/90"
                           >
                             <LogIn className="h-3 w-3" /> Entrar
