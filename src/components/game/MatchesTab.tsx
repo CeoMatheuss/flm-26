@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
+import { MatchLobbyScreen } from './MatchLobbyScreen';
 
 interface Props {
   matches: Match[];
@@ -67,6 +68,7 @@ export function MatchesTab({
   const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
   const [tournamentTeams, setTournamentTeams] = useState<any[]>([]);
   const [tournamentNames, setTournamentNames] = useState<Record<string, string>>({});
+  const [lobbyMatch, setLobbyMatch] = useState<any | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -175,6 +177,15 @@ export function MatchesTab({
     });
   };
 
+  // Open lobby first only when opponent is human; bots → straight to match
+  const openTournamentMatch = (tm: any) => {
+    if (tm.opponentIsBot) {
+      goToTournamentMatch(tm);
+      return;
+    }
+    setLobbyMatch(tm);
+  };
+
   const getTimeUntilMatch = (scheduledAt: string): { text: string; isNow: boolean; isExpired: boolean } => {
     const scheduledTime = new Date(scheduledAt).getTime();
     const now = Date.now();
@@ -193,6 +204,23 @@ export function MatchesTab({
     if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, isNow: false, isExpired: false };
     return { text: `${hours}h ${mins}min`, isNow: false, isExpired: false };
   };
+
+  // Lobby overlay (5-min sync window) for human-vs-human tournament/league matches
+  if (lobbyMatch) {
+    const oppName = lobbyMatch.isHome ? lobbyMatch.awayName : lobbyMatch.homeName;
+    return (
+      <MatchLobbyScreen
+        matchType="league"
+        matchId={lobbyMatch.id}
+        userId={userId}
+        myClub={clubName}
+        oppClub={oppName}
+        onReady={() => { const m = lobbyMatch; setLobbyMatch(null); goToTournamentMatch(m); }}
+        onAutoSimulated={() => setLobbyMatch(null)}
+        onCancel={() => setLobbyMatch(null)}
+      />
+    );
+  }
 
   return (
     <Tabs defaultValue="bot" className="space-y-3">
@@ -332,7 +360,7 @@ export function MatchesTab({
                           <Button
                             size="sm"
                             variant="default"
-                            onClick={() => goToTournamentMatch(tm)}
+                            onClick={() => openTournamentMatch(tm)}
                             className="h-7 px-3 text-xs gap-1 shrink-0 bg-success hover:bg-success/90"
                           >
                             <LogIn className="h-3 w-3" /> Entrar
