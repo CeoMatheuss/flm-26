@@ -1189,55 +1189,30 @@ function MatchMiniWidgets({
 
   return (
     <div className="grid grid-cols-2 gap-1.5">
-      {/* Adversário */}
-      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-1">
-          {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <span className="text-xs">🤖</span>}
-          <span className="text-[10px] font-bold truncate flex-1">{awayTeam}</span>
-          <Badge variant="outline" className="text-[8px] h-3.5 px-1">OVR {awayStrength}</Badge>
+      {/* Adversário — compacto */}
+      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
+        <div className="flex items-center gap-1 mb-0.5">
+          {awayShield ? <ShieldCrest size={12} {...awayShield} /> : <span className="text-[10px]">🤖</span>}
+          <span className="text-[9px] font-bold truncate flex-1">{awayTeam}</span>
+          <Badge variant="outline" className="text-[8px] h-3 px-1">{awayStrength}</Badge>
         </div>
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">ATK</span>
-            <Bar value={atk} color="bg-red-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{atk}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">MID</span>
-            <Bar value={mid} color="bg-yellow-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{mid}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">DEF</span>
-            <Bar value={def} color="bg-blue-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{def}</span>
-          </div>
+        <div className="flex items-center gap-1 text-[8px]">
+          <span className="flex-1 text-center"><span className="text-red-400">A</span> {atk}</span>
+          <span className="flex-1 text-center"><span className="text-yellow-400">M</span> {mid}</span>
+          <span className="flex-1 text-center"><span className="text-blue-400">D</span> {def}</span>
         </div>
       </Card>
 
-      {/* Pulso da Partida */}
-      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-1">
-          <span className="text-xs">📊</span>
-          <span className="text-[10px] font-bold flex-1">Pulso da Partida</span>
+      {/* Pulso da Partida — compacto */}
+      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
+        <div className="flex items-center gap-1 mb-0.5">
+          <span className="text-[10px]">📊</span>
+          <span className="text-[9px] font-bold flex-1 truncate capitalize">{currentMoment.replace('_', ' ')}</span>
         </div>
-        <div className="space-y-0.5 text-[9px]">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Momento</span>
-            <span className="font-bold capitalize truncate ml-1">{currentMoment.replace('_', ' ')}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Posse</span>
-            <span className="font-mono font-bold">{stats.possession[0]}% / {stats.possession[1]}%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">xG</span>
-            <span className="font-mono font-bold">{xgHome} - {xgAway}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Tiros</span>
-            <span className="font-mono font-bold">{stats.shots[0]}-{stats.shots[1]}</span>
-          </div>
+        <div className="flex items-center gap-1 text-[8px]">
+          <span className="flex-1 text-center font-mono">{stats.possession[0]}/{stats.possession[1]}%</span>
+          <span className="flex-1 text-center font-mono">xG {xgHome}-{xgAway}</span>
+          <span className="flex-1 text-center font-mono">⚡{stats.shots[0]}-{stats.shots[1]}</span>
         </div>
       </Card>
     </div>
@@ -1368,11 +1343,11 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   maxWindows: number;
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
-  onConfirmSub: (outId: string, inId: string) => void;
+  onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   isHalftime: boolean;
   isFinished: boolean;
   substitutedPlayerIds: Set<string>;
-  subQueue: { outId: string; inId: string }[];
+  subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   blocked?: boolean;
   blockedReason?: string;
 }) {
@@ -1429,10 +1404,10 @@ function ImprovedSubsView({
   subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason,
 }: {
   starters: Player[]; bench: Player[];
-  subQueue: { outId: string; inId: string }[];
+  subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
-  onConfirmSub: (outId: string, inId: string) => void;
+  onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
