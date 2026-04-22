@@ -946,3 +946,53 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     </div>
   );
 }
+
+// ─── Compact Tactics Summary Widget (shown at bottom of squad) ───
+const styleLabels: Record<string, string> = {
+  'ofensivo': 'Ofensivo', 'equilibrado': 'Equilibrado', 'defensivo': 'Defensivo',
+  'contra-ataque': 'Contra-ataque', 'posse': 'Posse de bola',
+};
+const pressLabels: Record<string, string> = {
+  'ultra-alto': 'Ultra-alta', 'alto': 'Alta', 'medio': 'Média', 'baixo': 'Baixa',
+};
+const tempoLabels: Record<string, string> = {
+  'muito-rapido': 'Muito rápido', 'rapido': 'Rápido', 'normal': 'Normal', 'lento': 'Lento',
+};
+const lineLabels: Record<string, string> = {
+  'alta': 'Alta', 'media': 'Média', 'baixa': 'Baixa',
+};
+const markLabels: Record<string, string> = {
+  'individual': 'Individual', 'zona': 'Zona', 'misto': 'Mista',
+};
+
+function TacticsSummaryWidget({ tactics, players, avgOvr }: { tactics?: TacticsConfig; players: Player[]; avgOvr: number }) {
+  if (!tactics) return null;
+  const findName = (id?: string) => {
+    if (!id) return '—';
+    const p = players.find(pl => pl.id === id);
+    return p ? `${p.name} (${p.position})` : '—';
+  };
+  return (
+    <div className="rounded-xl border border-border/30 bg-gradient-to-br from-card to-primary/5 p-2.5 space-y-1.5">
+      <div className="flex items-center gap-1.5 pb-1 border-b border-border/20">
+        <Target className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[11px] font-bold text-foreground">Resumo Tático</span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <div className="flex justify-between"><span className="text-muted-foreground">Formação:</span><span className="font-bold text-primary">{tactics.formation}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">OVR Time:</span><span className="font-bold text-emerald-400">{avgOvr}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Estilo:</span><span className="font-medium text-foreground">{styleLabels[tactics.playStyle] || tactics.playStyle}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Pressão:</span><span className="font-medium text-foreground">{pressLabels[tactics.pressing] || tactics.pressing}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Ritmo:</span><span className="font-medium text-foreground">{tempoLabels[tactics.tempo] || tactics.tempo}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Linha def.:</span><span className="font-medium text-foreground">{lineLabels[tactics.defenseLine] || tactics.defenseLine}</span></div>
+        <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Marcação:</span><span className="font-medium text-foreground">{markLabels[tactics.marking] || tactics.marking}</span></div>
+      </div>
+      <div className="pt-1 border-t border-border/20 grid grid-cols-1 gap-0.5 text-[10px]">
+        <div className="flex justify-between"><span className="text-muted-foreground">🎖️ Capitão:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.captainId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">⚽ Pênalti:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.penaltyTakerId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">🎯 Falta:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.freeKickTakerId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">🚩 Escanteio:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.cornerTakerId)}</span></div>
+      </div>
+    </div>
+  );
+}
