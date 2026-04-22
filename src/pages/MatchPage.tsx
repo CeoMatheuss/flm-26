@@ -1128,7 +1128,101 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
             )}
           </div>
         )}
+
+        {/* ═══ PERMANENT MINI-WIDGETS (Adversário + Pulso) ═══ */}
+        {!isFinished && (
+          <MatchMiniWidgets
+            awayTeam={awayTeam}
+            awayStrength={awayStrength}
+            stats={stats}
+            currentMoment={matchState.currentMoment}
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            homeShield={homeShield}
+            awayShield={awayShield}
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ── PERMANENT MINI-WIDGETS ──────────────────────────────── */
+
+function MatchMiniWidgets({
+  awayTeam, awayStrength, stats, currentMoment, homeGoals, awayGoals, homeShield, awayShield,
+}: {
+  awayTeam: string; awayStrength: number; stats: MatchStats;
+  currentMoment: string; homeGoals: number; awayGoals: number;
+  homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps;
+}) {
+  // Estimate opponent attribute breakdown from awayStrength
+  const atk = Math.max(30, Math.min(99, awayStrength + 3));
+  const mid = Math.max(30, Math.min(99, awayStrength));
+  const def = Math.max(30, Math.min(99, awayStrength - 3));
+
+  const xgHome = (stats.shotsOnTarget[0] * 0.35 + stats.shots[0] * 0.08).toFixed(1);
+  const xgAway = (stats.shotsOnTarget[1] * 0.35 + stats.shots[1] * 0.08).toFixed(1);
+
+  const Bar = ({ value, color }: { value: number; color: string }) => (
+    <div className="h-1 flex-1 rounded-full bg-muted/20 overflow-hidden">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, value)}%` }} />
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-2 gap-1.5">
+      {/* Adversário */}
+      <Card className="border-border/30 p-1.5 sm:p-2">
+        <div className="flex items-center gap-1 mb-1">
+          {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <span className="text-xs">🤖</span>}
+          <span className="text-[10px] font-bold truncate flex-1">{awayTeam}</span>
+          <Badge variant="outline" className="text-[8px] h-3.5 px-1">OVR {awayStrength}</Badge>
+        </div>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] text-muted-foreground w-7">ATK</span>
+            <Bar value={atk} color="bg-red-400" />
+            <span className="text-[8px] font-mono w-5 text-right">{atk}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] text-muted-foreground w-7">MID</span>
+            <Bar value={mid} color="bg-yellow-400" />
+            <span className="text-[8px] font-mono w-5 text-right">{mid}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] text-muted-foreground w-7">DEF</span>
+            <Bar value={def} color="bg-blue-400" />
+            <span className="text-[8px] font-mono w-5 text-right">{def}</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Pulso da Partida */}
+      <Card className="border-border/30 p-1.5 sm:p-2">
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-xs">📊</span>
+          <span className="text-[10px] font-bold flex-1">Pulso da Partida</span>
+        </div>
+        <div className="space-y-0.5 text-[9px]">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Momento</span>
+            <span className="font-bold capitalize truncate ml-1">{currentMoment.replace('_', ' ')}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Posse</span>
+            <span className="font-mono font-bold">{stats.possession[0]}% / {stats.possession[1]}%</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">xG</span>
+            <span className="font-mono font-bold">{xgHome} - {xgAway}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Tiros</span>
+            <span className="font-mono font-bold">{stats.shots[0]}-{stats.shots[1]}</span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
