@@ -101,6 +101,18 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
       {/* Season Start Widget — shows countdown / current season info */}
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
+      {/* Live match lock banner */}
+      {isInLiveMatch && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-3 flex items-center gap-2">
+            <Lock className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-[11px] sm:text-xs text-destructive">
+              <strong>Táticas bloqueadas durante a partida ao vivo.</strong> Use "⚡ Aplicar Tática" dentro do jogo para mudanças rápidas.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tactical Overview Bar */}
       <Card className="border-primary/20">
         <CardContent className="p-3 sm:p-4">
