@@ -3,7 +3,64 @@ export type Formation =
   | '4-1-4-1' | '4-4-1-1' | '3-4-3' | '5-4-1' | '4-5-1'
   | '4-3-2-1' | '4-2-4-0' | '3-4-1-2' | '4-1-2-1-2';
 
-export type PlayStyle = 'ofensivo' | 'equilibrado' | 'defensivo' | 'contra-ataque' | 'posse';
+export type PlayStyle =
+  | 'ofensivo' | 'equilibrado' | 'defensivo' | 'contra-ataque' | 'posse'
+  | 'tiki-taka' | 'gegenpressing' | 'parking-bus' | 'long-ball';
+
+export interface PlayStyleEffect {
+  label: string;
+  icon: string;
+  philosophy: string;
+  bullets: string[];
+}
+
+export const playStyleEffects: Record<PlayStyle, PlayStyleEffect> = {
+  'ofensivo': {
+    label: 'Ofensivo', icon: '⚔️',
+    philosophy: 'Atacar a todo momento, buscando o gol.',
+    bullets: ['✅ +20% chances de gol', '⚠️ -15% defesa', '🔥 Stamina cai +10%'],
+  },
+  'equilibrado': {
+    label: 'Equilibrado', icon: '⚖️',
+    philosophy: 'Postura neutra entre ataque e defesa.',
+    bullets: ['✅ Sem fraquezas', '➖ Sem bônus extras', '🔋 Desgaste padrão'],
+  },
+  'defensivo': {
+    label: 'Defensivo', icon: '🛡️',
+    philosophy: 'Priorizar a solidez defensiva.',
+    bullets: ['✅ +20% defesa', '⚠️ -15% ataque', '🔋 Economiza stamina'],
+  },
+  'contra-ataque': {
+    label: 'Contra-Ataque', icon: '⚡',
+    philosophy: 'Defender forte e atacar em transições rápidas.',
+    bullets: ['✅ +8 velocidade nas transições', '✅ +10% defesa', '🔋 Pouco desgaste'],
+  },
+  'posse': {
+    label: 'Posse de Bola', icon: '🎯',
+    philosophy: 'Manter a bola e cansar o adversário.',
+    bullets: ['✅ +5 passe', '✅ Mais posse', '⚠️ -10% chances diretas'],
+  },
+  'tiki-taka': {
+    label: 'Tiki-Taka', icon: '🇪🇸',
+    philosophy: 'Posse curta e paciente, troca incessante de passes.',
+    bullets: ['✅ +10 passe, +5 visão', '✅ +15% pressão de recuperação', '⚠️ Requer alta stamina'],
+  },
+  'gegenpressing': {
+    label: 'Gegenpressing', icon: '🇩🇪',
+    philosophy: 'Recuperar a bola imediatamente após perdê-la.',
+    bullets: ['✅ +15% chances + agressividade', '🔥 Stamina cai +20%', '⚠️ Defesa exposta nas costas'],
+  },
+  'parking-bus': {
+    label: 'Parking Bus', icon: '🚌',
+    philosophy: 'Ultra-defensivo: 11 atrás da linha da bola.',
+    bullets: ['✅ +35% defesa, +10 marcação', '⚠️ -25% ataque', '🔋 Pouquíssimo desgaste'],
+  },
+  'long-ball': {
+    label: 'Bola Longa', icon: '🚀',
+    philosophy: 'Saída direta com lançamentos para o ataque.',
+    bullets: ['✅ +10% ataque, +8 chutes longos', '✅ +5 físico', '⚠️ Pouco controle do meio'],
+  },
+};
 export type Pressing = 'ultra-alto' | 'alto' | 'medio' | 'baixo';
 export type Tempo = 'muito-rapido' | 'rapido' | 'normal' | 'lento';
 export type Marking = 'individual' | 'zona' | 'misto';
