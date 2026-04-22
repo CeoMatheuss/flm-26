@@ -1332,41 +1332,34 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
 
 /* ── CHAT-STYLE EVENT ROW ──────────────────────────────────── */
 
-function ChatEventRow({ ev, homeTeam, awayTeam }: { ev: SimEvent; homeTeam: string; awayTeam: string }) {
+function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: SimEvent; homeTeam: string; awayTeam: string; homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps }) {
   const teamName = ev.team === 'home' ? homeTeam : ev.team === 'away' ? awayTeam : null;
-  const initial = teamName ? teamName.trim().charAt(0).toUpperCase() : null;
+  const shield = ev.team === 'home' ? homeShield : ev.team === 'away' ? awayShield : null;
   const isGoal = ev.isGoal;
 
   return (
-    <div className="flex items-start gap-2.5 sm:gap-3 px-1.5 sm:px-2 py-2.5 sm:py-3">
-      {/* Team badge (subtle) */}
-      {initial ? (
-        <div
-          className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-bold border ${
-            ev.team === 'home'
-              ? 'bg-primary/10 text-primary border-primary/20'
-              : 'bg-muted/30 text-foreground/80 border-border/40'
-          }`}
-          title={teamName ?? undefined}
-        >
-          {initial}
+    <div className="flex items-start gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2">
+      {/* Team shield (or neutral icon for kickoff/halftime/final) */}
+      {shield ? (
+        <div className="shrink-0 mt-0.5">
+          <ShieldCrest size={20} {...shield} />
         </div>
       ) : (
-        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
+        <div className="shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-sm bg-muted/20 border border-border/30">
           {getEventIcon(ev.type)}
         </div>
       )}
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground/80">{ev.minute}'</span>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="text-[10px] font-mono text-muted-foreground/80">{ev.minute}'</span>
           {teamName && (
-            <span className="text-[10px] sm:text-xs text-muted-foreground/60 truncate">{teamName}</span>
+            <span className="text-[10px] text-muted-foreground/60 truncate">{teamName}</span>
           )}
           {isGoal && <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Gol</span>}
         </div>
-        <p className={`text-xs sm:text-sm leading-relaxed ${getEventColor(ev.type)}`}>
-          {teamName && <span className="mr-1.5">{getEventIcon(ev.type)}</span>}
+        <p className={`text-[11px] sm:text-xs leading-snug ${getEventColor(ev.type)}`}>
+          {teamName && <span className="mr-1">{getEventIcon(ev.type)}</span>}
           {ev.description}
         </p>
       </div>
