@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects } from '@/types/tactics';
+import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES } from '@/types/tactics';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Shield, Zap, Target, Users, Star, Info, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
@@ -172,21 +173,23 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
           <Card>
             <CardContent className="space-y-3 pt-3 px-3 sm:px-4 pb-3">
               <div>
-                <SectionLabel icon={Target} label="Mentalidade / Estilo" />
-                <div className="grid grid-cols-3 gap-1">
-                  {(['defensivo', 'equilibrado', 'ofensivo', 'contra-ataque', 'posse', 'tiki-taka', 'gegenpressing', 'parking-bus', 'long-ball'] as PlayStyle[]).map(s => {
+                <SectionLabel icon={Target} label="Mentalidade / Estilo Principal" />
+                <div className="grid grid-cols-3 gap-1.5">
+                  {MAIN_PLAY_STYLES.map(s => {
                     const eff = playStyleEffects[s];
                     const isActive = tactics.playStyle === s;
                     return (
                       <button
                         key={s}
                         onClick={() => setField('playStyle', s)}
-                        className={`text-[10px] py-1.5 px-1 rounded-md font-medium transition-all flex items-center justify-center gap-1 min-w-0 ${
-                          isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                        className={`text-[10px] py-2 px-1 rounded-md font-medium transition-all flex flex-col items-center justify-center gap-0.5 min-w-0 border ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md border-primary scale-[1.02]'
+                            : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border-border/40'
                         }`}
                       >
-                        <span>{eff.icon}</span>
-                        <span className="truncate">{eff.label}</span>
+                        <span className="text-base">{eff.icon}</span>
+                        <span className="truncate w-full text-center leading-tight">{eff.label}</span>
                       </button>
                     );
                   })}
@@ -195,7 +198,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                 {(() => {
                   const eff = playStyleEffects[tactics.playStyle];
                   return (
-                    <div className="mt-2 bg-muted/20 border border-border/40 rounded-md p-2 space-y-1">
+                    <div className="mt-2 bg-primary/5 border border-primary/20 rounded-md p-2.5 space-y-1">
                       <p className="text-[11px] font-bold flex items-center gap-1.5">
                         <span className="text-base">{eff.icon}</span>{eff.label}
                       </p>
@@ -208,6 +211,38 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     </div>
                   );
                 })()}
+
+                {/* Advanced styles accordion */}
+                <Accordion type="single" collapsible className="mt-2">
+                  <AccordionItem value="advanced" className="border border-border/40 rounded-md">
+                    <AccordionTrigger className="text-[10px] px-2.5 py-2 hover:no-underline">
+                      <span className="flex items-center gap-1.5">
+                        <Star className="w-3 h-3 text-primary" />
+                        Estilos Avançados ({ADVANCED_PLAY_STYLES.length})
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-2 pb-2">
+                      <div className="grid grid-cols-3 gap-1">
+                        {ADVANCED_PLAY_STYLES.map(s => {
+                          const eff = playStyleEffects[s];
+                          const isActive = tactics.playStyle === s;
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => setField('playStyle', s)}
+                              className={`text-[9px] py-1.5 px-1 rounded-md font-medium transition-all flex items-center justify-center gap-1 min-w-0 ${
+                                isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
+                              }`}
+                            >
+                              <span>{eff.icon}</span>
+                              <span className="truncate">{eff.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
               <div>
                 <SectionLabel icon={Zap} label="Pressão" />

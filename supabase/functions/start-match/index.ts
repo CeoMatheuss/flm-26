@@ -335,7 +335,63 @@ const STYLE_MODS: Record<string, StyleMod> = {
   'gegenpressing':  { atk: 1.15, def: 0.90, pressureExtra: 0.30, staminaDrain: 1.20, attrBoost: { aggression: 8, workRate: 5 } },
   'parking-bus':    { atk: 0.75, def: 1.35, pressureExtra: -0.25, staminaDrain: 0.90, attrBoost: { defending: 10, marking: 8 } },
   'long-ball':      { atk: 1.10, def: 0.95, pressureExtra: -0.05, staminaDrain: 0.95, attrBoost: { physical: 5, longShots: 8 } },
+  // NOVOS estilos pedidos
+  'retranca-total': { atk: 0.65, def: 1.45, pressureExtra: -0.30, staminaDrain: 0.85, attrBoost: { defending: 12, marking: 10, positioning: 6 } },
+  'pressao-alta':   { atk: 1.15, def: 0.90, pressureExtra: 0.30, staminaDrain: 1.20, attrBoost: { aggression: 8, workRate: 5 } },
 };
+
+// ── MATCHUP MATRIX ──────────────────────────────────────────
+// Ajusta atk/def do mandante baseado no estilo do adversário.
+// Resultado é simétrico (aplicado também ao away invertendo home/away).
+type Matchup = { homeAtk: number; homeDef: number };
+const MATCHUP_BONUS: Record<string, Record<string, Matchup>> = {
+  'ofensivo': {
+    'contra-ataque':  { homeAtk: 1.05, homeDef: 0.85 }, // jogo aberto, ambos marcam
+    'retranca-total': { homeAtk: 0.85, homeDef: 1.05 }, // muro segura
+    'parking-bus':    { homeAtk: 0.80, homeDef: 1.05 },
+    'defensivo':      { homeAtk: 0.95, homeDef: 1.00 },
+    'pressao-alta':   { homeAtk: 1.05, homeDef: 0.90 }, // troca de socos
+  },
+  'contra-ataque': {
+    'ofensivo':       { homeAtk: 1.10, homeDef: 0.95 }, // contra-ataque pune
+    'posse':          { homeAtk: 1.05, homeDef: 1.00 },
+    'tiki-taka':      { homeAtk: 1.05, homeDef: 1.00 },
+    'pressao-alta':   { homeAtk: 1.05, homeDef: 0.95 },
+  },
+  'retranca-total': {
+    'ofensivo':       { homeAtk: 0.85, homeDef: 1.20 }, // segura ataque
+    'pressao-alta':   { homeAtk: 0.80, homeDef: 1.10 },
+    'tiki-taka':      { homeAtk: 0.85, homeDef: 1.15 },
+    'long-ball':      { homeAtk: 0.90, homeDef: 0.95 }, // bola longa fura retranca
+  },
+  'pressao-alta': {
+    'posse':          { homeAtk: 1.15, homeDef: 0.95 }, // press funciona contra posse
+    'tiki-taka':      { homeAtk: 1.10, homeDef: 0.95 },
+    'contra-ataque':  { homeAtk: 0.95, homeDef: 0.90 }, // contra-ataque explora
+    'long-ball':      { homeAtk: 0.90, homeDef: 0.95 },
+  },
+  'defensivo': {
+    'contra-ataque':  { homeAtk: 0.85, homeDef: 1.10 }, // jogo travado
+    'ofensivo':       { homeAtk: 0.90, homeDef: 1.10 },
+  },
+  'posse': {
+    'pressao-alta':   { homeAtk: 0.85, homeDef: 1.00 }, // sofre com pressão
+    'gegenpressing':  { homeAtk: 0.85, homeDef: 1.00 },
+    'retranca-total': { homeAtk: 0.95, homeDef: 1.00 },
+  },
+  'tiki-taka': {
+    'pressao-alta':   { homeAtk: 0.85, homeDef: 0.95 },
+    'retranca-total': { homeAtk: 0.85, homeDef: 1.00 },
+  },
+  'long-ball': {
+    'retranca-total': { homeAtk: 1.10, homeDef: 1.00 }, // chuvinha funciona
+    'pressao-alta':   { homeAtk: 1.05, homeDef: 0.95 },
+  },
+};
+
+function getMatchup(myStyle: string, oppStyle: string): Matchup {
+  return MATCHUP_BONUS[myStyle]?.[oppStyle] || { homeAtk: 1.0, homeDef: 1.0 };
+}
 
 function getStyleMod(style: string): StyleMod {
   return STYLE_MODS[style] || STYLE_MODS['equilibrado'];
@@ -504,14 +560,23 @@ function simulateFullMatch(
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
-  // Home expected goals: home offense vs away defense (style mod)
+
+  // ── MATCHUP MULTIPLIERS ──────────────────────────────────────
+  // Cada lado é avaliado de acordo com como seu estilo se sai contra o do outro.
+  const homeMatchup = getMatchup(playStyle, awayPlayStyle);
+  const awayMatchup = getMatchup(awayPlayStyle, playStyle);
+  console.log(`[Matchup] Home(${playStyle}) vs Away(${awayPlayStyle}) | homeAtk×${homeMatchup.homeAtk} homeDef×${homeMatchup.homeDef} | awayAtk×${awayMatchup.homeAtk} awayDef×${awayMatchup.homeDef}`);
+
+  // Home expected goals: home offense vs away defense (style mod + matchup)
   const homeExpected = clamp(
-    (1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) / Math.max(0.7, awayDefensiveMod * 0.85 + 0.15),
+    ((1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) * homeMatchup.homeAtk) /
+    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef + 0.15),
     0.2, 3.0
   );
-  // Away expected goals: away offense vs home defense (style mod)
+  // Away expected goals: away offense vs home defense (style mod + matchup)
   const awayExpected = clamp(
-    (1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) / Math.max(0.7, defensiveMod * 0.85 + 0.15),
+    ((1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
+    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef + 0.15),
     0.2, 3.0
   );
   

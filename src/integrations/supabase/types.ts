@@ -722,9 +722,13 @@ export type Database = {
       }
       friendly_invites: {
         Row: {
+          auto_sim_at: string | null
+          away_joined: boolean
           created_at: string
+          home_joined: boolean
           home_team_id: string
           id: string
+          lobby_opened_at: string | null
           match_date: string
           match_result: Json | null
           receiver_club_name: string
@@ -740,9 +744,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_sim_at?: string | null
+          away_joined?: boolean
           created_at?: string
+          home_joined?: boolean
           home_team_id: string
           id?: string
+          lobby_opened_at?: string | null
           match_date: string
           match_result?: Json | null
           receiver_club_name?: string
@@ -758,9 +766,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_sim_at?: string | null
+          away_joined?: boolean
           created_at?: string
+          home_joined?: boolean
           home_team_id?: string
           id?: string
+          lobby_opened_at?: string | null
           match_date?: string
           match_result?: Json | null
           receiver_club_name?: string
@@ -1065,39 +1077,51 @@ export type Database = {
       }
       league_matches: {
         Row: {
+          auto_sim_at: string | null
           away_goals: number | null
+          away_joined: boolean
           away_user_id: string
           created_at: string
           home_goals: number | null
+          home_joined: boolean
           home_user_id: string
           id: string
           league_id: string
+          lobby_opened_at: string | null
           match_data: Json | null
           played_at: string | null
           round: number
           status: string
         }
         Insert: {
+          auto_sim_at?: string | null
           away_goals?: number | null
+          away_joined?: boolean
           away_user_id: string
           created_at?: string
           home_goals?: number | null
+          home_joined?: boolean
           home_user_id: string
           id?: string
           league_id: string
+          lobby_opened_at?: string | null
           match_data?: Json | null
           played_at?: string | null
           round?: number
           status?: string
         }
         Update: {
+          auto_sim_at?: string | null
           away_goals?: number | null
+          away_joined?: boolean
           away_user_id?: string
           created_at?: string
           home_goals?: number | null
+          home_joined?: boolean
           home_user_id?: string
           id?: string
           league_id?: string
+          lobby_opened_at?: string | null
           match_data?: Json | null
           played_at?: string | null
           round?: number

@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { TacticsConfig } from '@/types/tactics';
+import { MatchLobbyScreen } from './MatchLobbyScreen';
 
 type TieBreaker = 'none' | 'extra_time' | 'penalties' | 'both';
 
@@ -74,6 +75,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [sending, setSending] = useState(false);
   const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
   const [creatingSlot, setCreatingSlot] = useState(false);
+  // Lobby state
+  const [lobbyInvite, setLobbyInvite] = useState<FriendlyInvite | null>(null);
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
@@ -301,6 +304,43 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     const homeCapacity = invite.home_team_id === invite.sender_id ? invite.sender_stadium_capacity : invite.receiver_stadium_capacity;
     return { myClub, oppClub, isHome, homeClub, homeStadium, homeCapacity };
   };
+
+  // Lobby overlay — short-circuit render
+  if (lobbyInvite) {
+    const { oppClub, isHome, homeStadium, homeCapacity } = getInviteTeams(lobbyInvite);
+    const oppCapacity = lobbyInvite.home_team_id === lobbyInvite.sender_id ? lobbyInvite.sender_stadium_capacity : lobbyInvite.receiver_stadium_capacity;
+    const startMatch = () => {
+      navigate('/match', {
+        state: {
+          homeTeam: isHome ? clubName : oppClub,
+          awayTeam: isHome ? oppClub : clubName,
+          homePlayers: players,
+          homeStrength: teamStrength || 60,
+          awayStrength: teamStrength || 60,
+          matchId: `friendly-${lobbyInvite.id}`,
+          tactics: tactics || { formation: '4-4-2' },
+          stadiumName: homeStadium,
+          stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
+          isHome,
+          competition: 'Amistoso Online',
+          fans: fans || 500,
+          tieBreaker: lobbyInvite.tie_breaker || 'none',
+        },
+      });
+    };
+    return (
+      <MatchLobbyScreen
+        matchType="friendly"
+        matchId={lobbyInvite.id}
+        userId={userId}
+        myClub={clubName}
+        oppClub={oppClub}
+        onReady={startMatch}
+        onAutoSimulated={() => { toast.info('🤖 Partida será simulada automaticamente em breve'); setLobbyInvite(null); }}
+        onCancel={() => setLobbyInvite(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -558,24 +598,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                       toast.error('Carregando elenco... aguarde um instante e tente novamente.');
                       return;
                     }
-                    const oppCapacity = invite.home_team_id === invite.sender_id ? invite.sender_stadium_capacity : invite.receiver_stadium_capacity;
-                    navigate('/match', {
-                      state: {
-                        homeTeam: isHome ? clubName : oppClub,
-                        awayTeam: isHome ? oppClub : clubName,
-                        homePlayers: players,
-                        homeStrength: teamStrength || 60,
-                        awayStrength: teamStrength || 60,
-                        matchId: `friendly-${invite.id}`,
-                        tactics: tactics || { formation: '4-4-2' },
-                        stadiumName: homeStadium,
-                        stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
-                        isHome,
-                        competition: 'Amistoso Online',
-                        fans: fans || 500,
-                        tieBreaker: invite.tie_breaker || 'none',
-                      },
-                    });
+                    // Open lobby first — both players sync up before navigating to /match
+                    setLobbyInvite(invite);
                   };
 
                   const tb = (invite.tie_breaker || 'none') as TieBreaker;
