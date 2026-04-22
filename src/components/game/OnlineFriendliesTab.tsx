@@ -407,6 +407,23 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             </Select>
           </div>
 
+          {/* Tie breaker (extra time / penalties) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold text-muted-foreground uppercase">⚽ Em caso de empate</label>
+            <Select value={tieBreaker} onValueChange={(v: TieBreaker) => setTieBreaker(v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(TIE_BREAKER_LABELS) as TieBreaker[]).map(k => (
+                  <SelectItem key={k} value={k} className="text-xs">
+                    {TIE_BREAKER_LABELS[k].emoji} {TIE_BREAKER_LABELS[k].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Stadium preview */}
           {homeChoice === 'me' && (
             <div className="p-2 rounded-lg bg-muted/20 border border-border/50 text-xs space-y-0.5">
