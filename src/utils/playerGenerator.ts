@@ -261,7 +261,20 @@ export function isPlayerGem(player: Player): boolean {
   return getPotentialBonusPercent(player) > 0;
 }
 
-/** Valor total = fixo × (1 + soma de bônus%) */
+/**
+ * Curva exponencial de elite: aplica multiplicador para jogadores com OVR ≥ 80,
+ * tornando craques significativamente mais caros no mercado.
+ * OVR 80–84 = 1.5x | 85–89 = 2.0x | 90–94 = 3.0x | 95+ = 5.0x
+ */
+export function getEliteOvrMultiplier(overall: number): number {
+  if (overall >= 95) return 5.0;
+  if (overall >= 90) return 3.0;
+  if (overall >= 85) return 2.0;
+  if (overall >= 80) return 1.5;
+  return 1.0;
+}
+
+/** Valor total = fixo × (1 + soma de bônus%) × multiplicador de elite (OVR 80+) */
 export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosition?: number, totalTeams?: number): number {
   const baseValue = getPlayerBaseValue(player);
   const variablePercent = getPlayerVariableBonus(winStreak, leaguePosition, totalTeams);
@@ -269,7 +282,8 @@ export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosi
   const formPercent = getFormBonusPercent(player);
   const personalityPercent = getPersonalityBonusPercent(player);
   const totalPercent = variablePercent + potentialPercent + formPercent + personalityPercent;
-  return Math.floor(baseValue * (1 + totalPercent / 100));
+  const eliteMult = getEliteOvrMultiplier(player.overall);
+  return Math.floor(baseValue * (1 + totalPercent / 100) * eliteMult);
 }
 
 /** Tendência do valor de mercado (↑/↓/→) */
