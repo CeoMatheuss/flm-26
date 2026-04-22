@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { TacticsConfig } from '@/types/tactics';
+import { MatchLobbyScreen } from './MatchLobbyScreen';
 
 type TieBreaker = 'none' | 'extra_time' | 'penalties' | 'both';
 
