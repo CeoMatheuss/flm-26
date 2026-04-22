@@ -35,7 +35,7 @@ interface Props {
 }
 
 export function AuctionTab({ userId, clubName, players, budget, isPremium, onSellPlayer: _onSellPlayer }: Props) {
-  const { guard, isInLiveMatch } = useLiveMatchGuard();
+  const { guard } = useLiveMatchGuard();
   const onSellPlayer = _onSellPlayer ? guard(_onSellPlayer) : undefined;
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(false);
