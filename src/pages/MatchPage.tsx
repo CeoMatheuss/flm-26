@@ -697,7 +697,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const goalEvents = visibleEvents.filter(e => e.isGoal);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] max-w-6xl mx-auto">
       {/* Substitution TV Banner */}
       {activeBanner && <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />}
 
