@@ -44,6 +44,58 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   );
 }
 
+// Descrições contextuais para cada opção tática
+const tacticInfo: Record<string, Record<string, { title: string; desc: string; pros: string; cons: string }>> = {
+  pressing: {
+    'baixo': { title: '🛡️ Pressão Baixa', desc: 'Time recua e espera o adversário no campo defensivo.', pros: '+ Economiza fôlego, fecha espaços', cons: '- Cede posse, ataque lento' },
+    'medio': { title: '⚖️ Pressão Média', desc: 'Marca a partir do meio-campo, postura equilibrada.', pros: '+ Equilíbrio entre defesa e ataque', cons: '- Sem vantagem clara' },
+    'alto': { title: '🔥 Pressão Alta', desc: 'Marca o adversário próximo da área deles.', pros: '+ Recupera bola perto do gol', cons: '- Desgaste físico maior' },
+    'ultra-alto': { title: '⚡ Pressão Ultra', desc: 'Asfixia total: 11 jogadores pressionando sempre.', pros: '+ Domínio territorial absoluto', cons: '- Stamina cai rápido, defesa exposta' },
+  },
+  tempo: {
+    'lento': { title: '🐢 Ritmo Lento', desc: 'Posse paciente, troca de passes calma.', pros: '+ Cansa o adversário, controla o jogo', cons: '- Poucas chances diretas' },
+    'normal': { title: '🚶 Ritmo Normal', desc: 'Velocidade equilibrada nas jogadas.', pros: '+ Versatilidade tática', cons: '- Sem surpresa' },
+    'rapido': { title: '🏃 Ritmo Rápido', desc: 'Transições verticais e jogadas objetivas.', pros: '+ Pega defesa desorganizada', cons: '- Mais erros de passe' },
+    'muito-rapido': { title: '💨 Ritmo Intenso', desc: 'Velocidade máxima, tudo em transição.', pros: '+ Cria muitas chances rápidas', cons: '- Stamina cai 2x mais rápido' },
+  },
+  marking: {
+    'zona': { title: '📐 Por Zona', desc: 'Cada jogador defende uma região do campo.', pros: '+ Mantém forma compacta', cons: '- Pode deixar atacante livre na zona' },
+    'misto': { title: '🔀 Misto', desc: 'Combina marcação por zona e individual.', pros: '+ Adaptável a vários estilos', cons: '- Exige inteligência tática alta' },
+    'individual': { title: '👤 Individual', desc: 'Cada zagueiro marca um atacante específico.', pros: '+ Anula craques adversários', cons: '- Vulnerável a movimentação rápida' },
+  },
+  passingStyle: {
+    'curto': { title: '🎯 Passe Curto', desc: 'Toques rápidos e precisos no meio-campo.', pros: '+ Mantém posse, pouca perda', cons: '- Avança lentamente' },
+    'misto': { title: '⚖️ Passe Misto', desc: 'Alterna entre passes curtos e longos.', pros: '+ Versatilidade ofensiva', cons: '- Sem identidade clara' },
+    'longo': { title: '🎯 Passe Longo', desc: 'Lançamentos para inverter o jogo.', pros: '+ Surpreende com mudança de jogo', cons: '- Menos precisão' },
+    'direto': { title: '🚀 Passe Direto', desc: 'Bola longa direto para o ataque.', pros: '+ Chega rápido ao gol', cons: '- Perde muita posse' },
+  },
+  defenseLine: {
+    'baixa': { title: '⬇️ Linha Baixa', desc: 'Defensores próximos da própria área.', pros: '+ Pouco espaço atrás dos zagueiros', cons: '- Time fica esticado, meio cede' },
+    'media': { title: '➖ Linha Média', desc: 'Linha defensiva equilibrada no meio-campo.', pros: '+ Compactação geral', cons: '- Sem extremos' },
+    'alta': { title: '⬆️ Linha Alta', desc: 'Defensores adiantados, encurtando o campo.', pros: '+ Pressiona adversário, recupera alto', cons: '- Vulnerável a contra-ataque' },
+  },
+  width: {
+    'estreita': { title: '◀▶ Estreita', desc: 'Jogadores concentrados pelo centro.', pros: '+ Domínio do meio, jogadas curtas', cons: '- Laterais ficam expostos' },
+    'normal': { title: '◀ ▶ Normal', desc: 'Largura equilibrada do campo.', pros: '+ Cobertura completa', cons: '- Sem vantagem específica' },
+    'larga': { title: '◀  ▶ Larga', desc: 'Abre o campo, usa as pontas.', pros: '+ Cruzamentos e jogadas pelos lados', cons: '- Meio fica desfalcado' },
+  },
+};
+
+function TacticInfoCard({ category, value }: { category: string; value: string }) {
+  const info = tacticInfo[category]?.[value];
+  if (!info) return null;
+  return (
+    <div className="mt-1.5 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-md p-2 space-y-1">
+      <p className="text-[10px] sm:text-[11px] font-bold text-primary">{info.title}</p>
+      <p className="text-[9px] sm:text-[10px] text-foreground/80 italic leading-tight">{info.desc}</p>
+      <div className="flex flex-col gap-0.5 pt-0.5">
+        <p className="text-[9px] text-success leading-tight">{info.pros}</p>
+        <p className="text-[9px] text-warning leading-tight">{info.cons}</p>
+      </div>
+    </div>
+  );
+}
+
 function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 flex items-center gap-1 font-semibold uppercase tracking-wider">
@@ -278,6 +330,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={p} value={p} current={tactics.pressing} label={p === 'ultra-alto' ? 'ultra' : p} onClick={v => setField('pressing', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="pressing" value={tactics.pressing} />
               </div>
               <div>
                 <SectionLabel icon={Zap} label="Ritmo" />
@@ -286,6 +339,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={t} value={t} current={tactics.tempo} label={t === 'rapido' ? 'rápido' : t === 'muito-rapido' ? 'intenso' : t} onClick={v => setField('tempo', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="tempo" value={tactics.tempo} />
               </div>
               <div>
                 <SectionLabel icon={Shield} label="Marcação" />
@@ -294,6 +348,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={m} value={m} current={tactics.marking} onClick={v => setField('marking', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="marking" value={tactics.marking} />
               </div>
               <div>
                 <SectionLabel icon={Target} label="Passe" />
@@ -302,6 +357,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={p} value={p} current={tactics.passingStyle} onClick={v => setField('passingStyle', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="passingStyle" value={tactics.passingStyle} />
               </div>
               <div>
                 <SectionLabel icon={Shield} label="Linha Defensiva" />
@@ -310,6 +366,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={d} value={d} current={tactics.defenseLine} label={d === 'media' ? 'média' : d} onClick={v => setField('defenseLine', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="defenseLine" value={tactics.defenseLine} />
               </div>
               <div>
                 <SectionLabel icon={Users} label="Largura" />
@@ -318,6 +375,7 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                     <TacticButton key={w} value={w} current={tactics.width} onClick={v => setField('width', v)} />
                   ))}
                 </div>
+                <TacticInfoCard category="width" value={tactics.width} />
               </div>
             </CardContent>
           </Card>
