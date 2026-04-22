@@ -523,6 +523,7 @@ export type Database = {
           season: number
           start_date: string | null
           status: string
+          tie_breaker: string
           total_rounds: number
           updated_at: string
         }
@@ -546,6 +547,7 @@ export type Database = {
           season?: number
           start_date?: string | null
           status?: string
+          tie_breaker?: string
           total_rounds?: number
           updated_at?: string
         }
@@ -569,6 +571,7 @@ export type Database = {
           season?: number
           start_date?: string | null
           status?: string
+          tie_breaker?: string
           total_rounds?: number
           updated_at?: string
         }
@@ -733,6 +736,7 @@ export type Database = {
           sender_stadium: string
           sender_stadium_capacity: number
           status: string
+          tie_breaker: string
           updated_at: string
         }
         Insert: {
@@ -750,6 +754,7 @@ export type Database = {
           sender_stadium?: string
           sender_stadium_capacity?: number
           status?: string
+          tie_breaker?: string
           updated_at?: string
         }
         Update: {
@@ -767,6 +772,7 @@ export type Database = {
           sender_stadium?: string
           sender_stadium_capacity?: number
           status?: string
+          tie_breaker?: string
           updated_at?: string
         }
         Relationships: []
