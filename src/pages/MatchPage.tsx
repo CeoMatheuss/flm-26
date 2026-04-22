@@ -766,7 +766,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
           {/* ═══ MAIN COLUMN ═══ */}
           <div className="space-y-2 sm:space-y-3 min-w-0">
             {/* Professional Scoreboard — compact */}
-            <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 shadow-xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+            <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 animate-goal-glow' : 'shadow-lg'}`}>
               <div className="bg-primary/10 px-2.5 sm:px-3 py-1.5 flex items-center justify-between">
                 <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
                 <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs sm:text-sm font-mono h-6 sm:h-7 px-2.5 sm:px-3">
@@ -876,12 +876,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
             {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
-              <Card className="p-1.5 sm:p-2 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
+              <Card className="p-1.5 sm:p-2 border-yellow-400/40 bg-yellow-400/5 transition-all duration-300 animate-highlight-in shadow-lg shadow-yellow-400/10">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <ShieldCrest size={18} {...(activeHighlight.team === 'away' ? awayShield : homeShield)} />
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
                 </div>
-                <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
+                <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden rounded-md">
                   <HighlightMiniCanvas
                     type={getHighlightType(activeHighlight.type)}
                     team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
@@ -941,8 +941,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
             {/* Match content */}
             {!isFinished ? (
               /* Chat-style narration feed — compact */
-              <Card className="p-1.5 sm:p-2 border-border/20">
-                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto">
+              <Card className="p-1.5 sm:p-2 border-border/20 bg-gradient-to-br from-card to-card/60">
+                <div ref={eventsRef} className="match-feed-scroll max-h-[280px] sm:max-h-[320px] overflow-y-auto">
                   {visibleEvents.length === 0 && (
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
@@ -1173,7 +1173,7 @@ function MatchMiniWidgets({
   return (
     <div className="grid grid-cols-2 gap-1.5">
       {/* Adversário */}
-      <Card className="border-border/30 p-1.5 sm:p-2">
+      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
         <div className="flex items-center gap-1 mb-1">
           {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <span className="text-xs">🤖</span>}
           <span className="text-[10px] font-bold truncate flex-1">{awayTeam}</span>
