@@ -36,6 +36,26 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     // ═══════════════════════════════════════════════════════════════
+    // LIVE MATCH GUARD: bloqueia ações sensíveis durante partida ao vivo
+    // ═══════════════════════════════════════════════════════════════
+    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'reject', 'buy', 'cancel-listing']);
+    if (SENSITIVE_ACTIONS.has(action)) {
+      const { data: liveMatch } = await adminClient
+        .from('live_matches')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'live')
+        .lt('current_minute', 90)
+        .maybeSingle();
+      if (liveMatch) {
+        return new Response(
+          JSON.stringify({ error: '🔒 Ação indisponível durante a partida. Aguarde o fim do jogo.' }),
+          { status: 423, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // ACTION: LIST PLAYER FOR SALE
     // ═══════════════════════════════════════════════════════════════
     if (action === 'list') {
