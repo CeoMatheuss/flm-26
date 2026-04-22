@@ -50,6 +50,7 @@ export default function ReplayPage() {
   const handleExit = () => navigate('/', { replace: true });
 
   const { phase, currentMinute, progress, homeTeam, awayTeam, homeGoals, awayGoals, visibleEvents, latestEvent, stats } = state;
+  const { homeShield, awayShield } = useMatchShields(homeTeam, awayTeam);
   const isFinished = phase === 'finished';
   const isHalftime = phase === 'halftime';
 
@@ -135,17 +136,20 @@ export default function ReplayPage() {
       {!isFinished && (
         <Card className={`p-2 transition-all duration-300 ${activeHighlight ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-border/10 bg-muted/5'}`}>
           {activeHighlight && (
-            <div className="text-center mb-1">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <ShieldCrest size={18} {...(activeHighlight.team === 'away' ? awayShield : homeShield)} />
               <Badge variant="outline" className="text-[9px] font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
             </div>
           )}
-          <HighlightMiniCanvas
-            type={activeHighlight ? getHighlightType(activeHighlight.type) : 'idle'}
-            team={activeHighlight ? (activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team) : 'home'}
-            playerName={activeHighlight?.playerName}
-            currentMinute={currentMinute}
-            onComplete={activeHighlight ? () => setTimeout(() => setActiveHighlight(null), 1500) : undefined}
-          />
+          <div className="w-full max-w-[480px] mx-auto">
+            <HighlightMiniCanvas
+              type={activeHighlight ? getHighlightType(activeHighlight.type) : 'idle'}
+              team={activeHighlight ? (activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team) : 'home'}
+              playerName={activeHighlight?.playerName}
+              currentMinute={currentMinute}
+              onComplete={activeHighlight ? () => setTimeout(() => setActiveHighlight(null), 1500) : undefined}
+            />
+          </div>
           {activeHighlight && (
             <p className="text-[10px] text-center text-muted-foreground mt-1">{activeHighlight.description}</p>
           )}
