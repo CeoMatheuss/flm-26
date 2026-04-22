@@ -305,6 +305,43 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     return { myClub, oppClub, isHome, homeClub, homeStadium, homeCapacity };
   };
 
+  // Lobby overlay — short-circuit render
+  if (lobbyInvite) {
+    const { oppClub, isHome, homeStadium, homeCapacity } = getInviteTeams(lobbyInvite);
+    const oppCapacity = lobbyInvite.home_team_id === lobbyInvite.sender_id ? lobbyInvite.sender_stadium_capacity : lobbyInvite.receiver_stadium_capacity;
+    const startMatch = () => {
+      navigate('/match', {
+        state: {
+          homeTeam: isHome ? clubName : oppClub,
+          awayTeam: isHome ? oppClub : clubName,
+          homePlayers: players,
+          homeStrength: teamStrength || 60,
+          awayStrength: teamStrength || 60,
+          matchId: `friendly-${lobbyInvite.id}`,
+          tactics: tactics || { formation: '4-4-2' },
+          stadiumName: homeStadium,
+          stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
+          isHome,
+          competition: 'Amistoso Online',
+          fans: fans || 500,
+          tieBreaker: lobbyInvite.tie_breaker || 'none',
+        },
+      });
+    };
+    return (
+      <MatchLobbyScreen
+        matchType="friendly"
+        matchId={lobbyInvite.id}
+        userId={userId}
+        myClub={clubName}
+        oppClub={oppClub}
+        onReady={startMatch}
+        onAutoSimulated={() => { toast.info('🤖 Partida será simulada automaticamente em breve'); setLobbyInvite(null); }}
+        onCancel={() => setLobbyInvite(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Create Invite */}
