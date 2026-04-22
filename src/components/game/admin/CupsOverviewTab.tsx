@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Trophy, Globe, Flag, Building, Sparkles } from 'lucide-react';
 import { countryFlags, countryNames } from '@/types/league';
+import { InternationalCupsSection } from './InternationalCupsSection';
 
 interface CupRow {
   id: string;
   name: string;
   cup_type: string;
+  tier: string | null;
   country: string | null;
   continent: string | null;
   status: string | null;
@@ -22,6 +24,8 @@ interface CupRow {
 
 interface CupTeamRow {
   cup_id: string;
+  user_id: string | null;
+  club_name: string;
   is_bot: boolean;
 }
 
@@ -59,7 +63,7 @@ export function CupsOverviewTab() {
     setLoading(true);
     const [cRes, tRes, tournRes, ttRes] = await Promise.all([
       supabase.from('cup_competitions').select('*').order('season_year', { ascending: false }),
-      supabase.from('cup_teams').select('cup_id, is_bot'),
+      supabase.from('cup_teams').select('cup_id, user_id, club_name, is_bot'),
       supabase.from('custom_tournaments').select('id, name, status, format, max_teams, current_round, total_rounds, country').order('created_at', { ascending: false }),
       supabase.from('custom_tournament_teams').select('tournament_id, is_bot'),
     ]);
@@ -75,6 +79,11 @@ export function CupsOverviewTab() {
   const teamCount = (cupId: string) => teams.filter(t => t.cup_id === cupId).length;
   const botCount = (cupId: string) => teams.filter(t => t.cup_id === cupId && t.is_bot).length;
   const tTeamCount = (id: string) => tournamentTeams.filter(t => t.tournament_id === id).length;
+  const countriesPerCup = (cupId: string) => {
+    // distinct first letters of club_name as a rough proxy when we have no country join — keep simple count
+    const cupTeamsArr = teams.filter(t => t.cup_id === cupId);
+    return new Set(cupTeamsArr.map(t => t.user_id || t.club_name)).size;
+  };
 
   const grouped = {
     continental: cups.filter(c => c.cup_type === 'continental'),
@@ -93,6 +102,13 @@ export function CupsOverviewTab() {
         </Button>
       </div>
 
+      {/* Featured: Continental international cups */}
+      <InternationalCupsSection
+        cups={cups as any}
+        teamCount={teamCount}
+        countriesPerCup={countriesPerCup}
+      />
+
       {(['continental', 'national', 'regional'] as const).map(type => (
         <Card key={type}>
           <CardHeader className="pb-2">
@@ -109,11 +125,15 @@ export function CupsOverviewTab() {
                   {grouped[type].map(c => {
                     const count = teamCount(c.id);
                     const bots = botCount(c.id);
+                    const tierBadge = c.tier === 'principal' ? '🥇' : c.tier === 'secundaria' ? '🥈' : null;
                     return (
                       <div key={c.id} className="p-2 rounded border border-border/50 bg-muted/10">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold truncate">{c.name}</p>
+                            <p className="text-xs font-semibold truncate">
+                              {tierBadge && <span className="mr-1">{tierBadge}</span>}
+                              {c.name}
+                            </p>
                             <p className="text-[9px] text-muted-foreground">
                               {c.country && `${countryFlags[c.country] || '🏳️'} ${countryNames[c.country] || c.country} • `}
                               {c.continent && `${c.continent} • `}

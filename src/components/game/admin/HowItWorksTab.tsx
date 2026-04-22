@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, ArrowUp, ArrowDown, Star, Bot, Calendar, Sparkles } from 'lucide-react';
+import { Trophy, Users, ArrowUp, ArrowDown, Star, Bot, Calendar, Sparkles, Globe2, Medal } from 'lucide-react';
 
 export function HowItWorksTab() {
   return (
@@ -132,6 +132,63 @@ export function HowItWorksTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* International cups */}
+      <Card className="border-primary/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Globe2 className="h-4 w-4 text-primary" /> Competições Internacionais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Cada continente possui <strong>2 copas</strong> ao final da temporada, com classificação automática
+            baseada na posição na liga + campeão da copa nacional.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/5">
+              <p className="text-[11px] font-bold flex items-center gap-1 text-yellow-400">
+                <Trophy className="h-3 w-3" /> 🥇 Principal (32 clubes)
+              </p>
+              <ul className="text-[10px] text-muted-foreground mt-1 space-y-0.5 ml-3">
+                <li>• 1º–4º da Divisão 1 Nacional</li>
+                <li>• Campeão da Copa Nacional</li>
+                <li>• Se campeão já está no top 4 → vaga vai para o 5º</li>
+                <li>• 8 grupos de 4 + mata-mata</li>
+              </ul>
+              <p className="text-[9px] text-muted-foreground mt-1.5 italic">
+                Ex: Champions League, Libertadores, CONCACAF Champions.
+              </p>
+            </div>
+
+            <div className="p-2 rounded-lg border border-slate-400/40 bg-slate-400/5">
+              <p className="text-[11px] font-bold flex items-center gap-1 text-slate-300">
+                <Medal className="h-3 w-3" /> 🥈 Secundária (32 clubes)
+              </p>
+              <ul className="text-[10px] text-muted-foreground mt-1 space-y-0.5 ml-3">
+                <li>• 5º–8º da Divisão 1 Nacional</li>
+                <li>• Eliminados da fase de grupos da Principal</li>
+                <li>• Mesmo formato</li>
+              </ul>
+              <p className="text-[9px] text-muted-foreground mt-1.5 italic">
+                Ex: Europa League, Sul-Americana, CAF Confederation.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-2 rounded-lg bg-muted/20 border border-border/40">
+            <p className="text-[10px] font-semibold mb-1">📊 Distribuição final (sem bug)</p>
+            <div className="text-[9px] text-muted-foreground grid grid-cols-2 gap-x-2 gap-y-0.5">
+              <span>1º → Principal</span><span>5º → Secundária</span>
+              <span>2º → Principal</span><span>6º → Secundária</span>
+              <span>3º → Principal</span><span>7º → Secundária</span>
+              <span>4º → Principal</span><span>8º → Secundária</span>
+              <span className="col-span-2 mt-1">🏆 Campeão Copa Nacional → Principal (ou próximo se duplicar)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ASCII pyramid */}
       <Card>

@@ -331,3 +331,88 @@ export function runValidations(
 
   return results;
 }
+
+export interface CupRowMin {
+  id: string;
+  name: string;
+  cup_type: string;
+  tier?: string | null;
+  continent?: string | null;
+  season_year?: number | null;
+  status?: string | null;
+}
+
+export interface CupTeamMin {
+  cup_id: string;
+  user_id: string | null;
+  club_name: string;
+}
+
+/**
+ * Validates international (continental) cups: each continent must have
+ * one principal + one secundaria for the current year, and no club may
+ * appear in more than one international cup at once.
+ */
+export function validateInternationalCups(
+  cups: CupRowMin[],
+  cupTeams: CupTeamMin[],
+  expectedContinents: string[],
+  currentYear: number
+): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const intl = cups.filter(c => c.cup_type === 'continental' && c.season_year === currentYear);
+
+  // Check 1: each continent has principal + secundaria
+  const missing: Array<{ id: string; label: string; info?: string }> = [];
+  for (const cont of expectedContinents) {
+    const has = intl.filter(c => c.continent === cont);
+    const principal = has.find(c => c.tier === 'principal');
+    const secundaria = has.find(c => c.tier === 'secundaria');
+    if (!principal || !secundaria) {
+      missing.push({
+        id: cont,
+        label: cont,
+        info: `Faltando: ${!principal ? 'Principal' : ''}${!principal && !secundaria ? ' + ' : ''}${!secundaria ? 'Secundária' : ''}`,
+      });
+    }
+  }
+  results.push({
+    check: 'Cada continente tem 2 copas internacionais ativas',
+    status: missing.length === 0 ? 'pass' : 'fail',
+    message: missing.length === 0
+      ? `Todos os ${expectedContinents.length} continentes possuem suas copas Principal + Secundária.`
+      : `${missing.length} continente(s) sem copas internacionais ativas.`,
+    details: missing,
+  });
+
+  // Check 2: no club duplicated across international cups
+  const intlCupIds = new Set(intl.map(c => c.id));
+  const intlTeams = cupTeams.filter(t => intlCupIds.has(t.cup_id));
+  const seen = new Map<string, string[]>(); // key -> cupIds
+  for (const t of intlTeams) {
+    const key = t.user_id ? `u:${t.user_id}` : `c:${t.club_name}`;
+    if (!seen.has(key)) seen.set(key, []);
+    seen.get(key)!.push(t.cup_id);
+  }
+  const dups: Array<{ id: string; label: string; info?: string }> = [];
+  for (const [key, cids] of seen) {
+    if (cids.length > 1) {
+      const team = intlTeams.find(t => (t.user_id ? `u:${t.user_id}` : `c:${t.club_name}`) === key);
+      dups.push({
+        id: key,
+        label: team?.club_name || key,
+        info: `Em ${cids.length} copas internacionais simultaneamente`,
+      });
+    }
+  }
+  results.push({
+    check: 'Nenhum clube duplicado em copas internacionais',
+    status: dups.length === 0 ? 'pass' : 'fail',
+    message: dups.length === 0
+      ? 'Nenhum clube aparece em mais de uma copa internacional.'
+      : `${dups.length} clube(s) duplicado(s) entre copas internacionais.`,
+    details: dups,
+  });
+
+  return results;
+}
