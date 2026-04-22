@@ -155,6 +155,46 @@ export function SeasonControlTab({ adminUserId }: Props) {
         </CardContent>
       </Card>
 
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bot className="h-4 w-4 text-primary" /> Auto-Simulação de Partidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Partidas com janela de 5 min expirada são simuladas automaticamente pelo cron a cada minuto. Use o botão para forçar agora.
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Liga</p>
+              <p className="text-sm font-bold">{pendingCounts.league}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Copa</p>
+              <p className="text-sm font-bold">{pendingCounts.cup}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Torneio</p>
+              <p className="text-sm font-bold">{pendingCounts.custom}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Amistoso</p>
+              <p className="text-sm font-bold">{pendingCounts.friendly}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={runAutoSim}
+            disabled={!!actionLoading}
+            className="h-8 text-xs gap-1 w-full"
+            variant="outline"
+          >
+            <Bot className="h-3 w-3" /> {actionLoading === 'auto-sim' ? 'Simulando…' : '⚡ Simular partidas pendentes agora'}
+          </Button>
+        </CardContent>
+      </Card>
+
       {Object.entries(byCountry).map(([country, list]) => {
         const inProgress = list.filter(l => l.season_status === 'in_progress').length;
         const finished = list.filter(l => l.season_status === 'finished').length;
