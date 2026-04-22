@@ -1253,6 +1253,7 @@ export type Database = {
           is_home: boolean
           match_id: string
           player_ratings: Json
+          roster_locked_at: string | null
           stadium_capacity: number
           stadium_name: string
           started_at: string
@@ -1279,6 +1280,7 @@ export type Database = {
           is_home?: boolean
           match_id: string
           player_ratings?: Json
+          roster_locked_at?: string | null
           stadium_capacity?: number
           stadium_name?: string
           started_at?: string
@@ -1305,6 +1307,7 @@ export type Database = {
           is_home?: boolean
           match_id?: string
           player_ratings?: Json
+          roster_locked_at?: string | null
           stadium_capacity?: number
           stadium_name?: string
           started_at?: string
@@ -1892,6 +1895,7 @@ export type Database = {
           last_training_processed_at: string | null
           tutorial_completed: boolean
           user_id: string
+          viewed_awards_season: number | null
         }
         Insert: {
           created_at?: string
@@ -1900,6 +1904,7 @@ export type Database = {
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id: string
+          viewed_awards_season?: number | null
         }
         Update: {
           created_at?: string
@@ -1908,6 +1913,7 @@ export type Database = {
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id?: string
+          viewed_awards_season?: number | null
         }
         Relationships: []
       }
@@ -1957,6 +1963,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      season_awards: {
+        Row: {
+          ai_image_url: string | null
+          ai_narrative: string | null
+          award_type: string
+          club_logo: string | null
+          club_name: string | null
+          created_at: string | null
+          id: string
+          player_name: string | null
+          player_overall: number | null
+          player_position: string | null
+          scope: string
+          scope_id: string | null
+          score: number | null
+          season: number
+          stats: Json | null
+          team_of_season: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_image_url?: string | null
+          ai_narrative?: string | null
+          award_type: string
+          club_logo?: string | null
+          club_name?: string | null
+          created_at?: string | null
+          id?: string
+          player_name?: string | null
+          player_overall?: number | null
+          player_position?: string | null
+          scope: string
+          scope_id?: string | null
+          score?: number | null
+          season: number
+          stats?: Json | null
+          team_of_season?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_image_url?: string | null
+          ai_narrative?: string | null
+          award_type?: string
+          club_logo?: string | null
+          club_name?: string | null
+          created_at?: string | null
+          id?: string
+          player_name?: string | null
+          player_overall?: number | null
+          player_position?: string | null
+          scope?: string
+          scope_id?: string | null
+          score?: number | null
+          season?: number
+          stats?: Json | null
+          team_of_season?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       season_calendar: {
         Row: {
