@@ -560,14 +560,23 @@ function simulateFullMatch(
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
-  // Home expected goals: home offense vs away defense (style mod)
+
+  // ── MATCHUP MULTIPLIERS ──────────────────────────────────────
+  // Cada lado é avaliado de acordo com como seu estilo se sai contra o do outro.
+  const homeMatchup = getMatchup(playStyle, awayPlayStyle);
+  const awayMatchup = getMatchup(awayPlayStyle, playStyle);
+  console.log(`[Matchup] Home(${playStyle}) vs Away(${awayPlayStyle}) | homeAtk×${homeMatchup.homeAtk} homeDef×${homeMatchup.homeDef} | awayAtk×${awayMatchup.homeAtk} awayDef×${awayMatchup.homeDef}`);
+
+  // Home expected goals: home offense vs away defense (style mod + matchup)
   const homeExpected = clamp(
-    (1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) / Math.max(0.7, awayDefensiveMod * 0.85 + 0.15),
+    ((1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) * homeMatchup.homeAtk) /
+    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef + 0.15),
     0.2, 3.0
   );
-  // Away expected goals: away offense vs home defense (style mod)
+  // Away expected goals: away offense vs home defense (style mod + matchup)
   const awayExpected = clamp(
-    (1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) / Math.max(0.7, defensiveMod * 0.85 + 0.15),
+    ((1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
+    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef + 0.15),
     0.2, 3.0
   );
   
