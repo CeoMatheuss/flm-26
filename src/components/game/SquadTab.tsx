@@ -931,6 +931,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         </TabsContent>
       </Tabs>
 
+      {/* Tactics summary widget */}
+      <TacticsSummaryWidget tactics={tactics} players={players} avgOvr={avgOvr} />
+
       {/* Rescind modal */}
       {onRescindPlayer && (
         <RescindModal
