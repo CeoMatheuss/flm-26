@@ -39,7 +39,7 @@ export function SeasonControlTab({ adminUserId }: Props) {
   }
 
   const logAdmin = async (action: string, details: Record<string, unknown>) => {
-    await supabase.from('admin_logs').insert([{ user_id: adminUserId, action, details }]);
+    await supabase.from('admin_logs').insert([{ user_id: adminUserId, action, details: details as any }]);
   };
 
   const runPlanSeason = async () => {
