@@ -13,6 +13,7 @@ import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
 import type { TacticsConfig, Formation } from '@/types/tactics';
 import { formationPositions } from '@/types/tactics';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Props {
   players: Player[];
