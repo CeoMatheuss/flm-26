@@ -103,8 +103,6 @@ interface MatchData {
 
 const TICK_MS = 300;
 
-const TICK_MS = 300;
-
 // ── Deterministic seed-based RNG (mulberry32) for offline simulation ────────
 function hashString(str: string): number {
   let h = 2166136261 >>> 0;
