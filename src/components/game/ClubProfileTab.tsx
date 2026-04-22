@@ -11,9 +11,10 @@ import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
-  club: { name: string; stadiumName?: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; shieldShape?: string; shieldIcon?: string; shieldConfig?: any; detailColor?: string; logoUrl?: string; fans: number; reputation: number; country?: string };
+  club: { name: string; stadiumName?: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; shieldShape?: string; shieldIcon?: string; shieldConfig?: any; detailColor?: string; logoUrl?: string; fans: number; reputation: number; country?: string; budget?: number };
   season: number;
   profile: ClubProfile;
   onSave: (profile: ClubProfile) => void;
@@ -111,6 +112,13 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
             <div className="min-w-0 flex-1">
               <h2 className="text-lg font-black">{club.name}</h2>
               {profile.motto && <p className="text-[10px] text-muted-foreground italic mt-0.5">"{profile.motto}"</p>}
+              {/* Saldo Total — único valor financeiro exibido aqui (detalhes em Finanças) */}
+              {typeof club.budget === 'number' && (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                  <span className="text-[10px] text-emerald-400 font-semibold">💰 Saldo</span>
+                  <span className="text-xs font-black text-emerald-300">{formatMoney(club.budget)}</span>
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <Badge variant="outline" className="text-[8px]">👥 {club.fans.toLocaleString()} torcedores</Badge>
                 <Badge variant="outline" className="text-[8px]">⭐ {club.reputation} reputação</Badge>

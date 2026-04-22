@@ -76,24 +76,26 @@ export function useMatchState(initialState: any, userId?: string) {
       if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
       deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
 
-      const goalDiff = homeGoals - awayGoals;
-      const isRout = isHome ? goalDiff >= 3 : goalDiff <= -3;
-      const isBigLoss = isHome ? goalDiff <= -3 : goalDiff >= 3;
-      const streak = prev.matches.filter(m => m.played).slice(-4);
-      const recentWins = streak.filter(m => m.result && m.result.home > m.result.away).length;
-      const recentLosses = streak.filter(m => m.result && m.result.home < m.result.away).length;
-      const streakBonus = recentWins >= 4 ? 1200 : recentWins >= 3 ? 500 : recentWins >= 2 ? 200 : 0;
-      const streakPenalty = recentLosses >= 4 ? -800 : recentLosses >= 3 ? -300 : 0;
-      const stadiumFanBonus = deps.infrastructure.stadium.level * 80;
-      const ticketPenalty = prev.ticketPrice > 100 ? -Math.floor((prev.ticketPrice - 100) * 3) :
-                            prev.ticketPrice > 60 ? -Math.floor((prev.ticketPrice - 60) * 1.5) : 0;
-      let fanChange = 0;
-      if (isWin) fanChange = 200 + (isRout ? 500 : 0);
-      else if (isDraw) fanChange = 50;
-      else fanChange = 20 + (isBigLoss ? -50 : 0);
-      fanChange += streakBonus + streakPenalty + stadiumFanBonus + ticketPenalty;
-      fanChange = Math.round(fanChange * 0.3);
-      fanChange = Math.max(-200, Math.min(fanChange, 300));
+      // ── Fan growth V3: faixas estritas e moderadas ──
+      // Vitória: 50–100 | Empate: 20–50 | Derrota: 0–20
+      // Pequenas variações por estádio (+5/nv) e reputação (±10).
+      const stadiumFanBonus = Math.min(20, deps.infrastructure.stadium.level * 5);
+      const repBonus = prev.reputation >= 70 ? 10 : prev.reputation <= 30 ? -10 : 0;
+
+      let fanChange: number;
+      if (isWin) {
+        fanChange = 50 + Math.floor(Math.random() * 51); // 50-100
+      } else if (isDraw) {
+        fanChange = 20 + Math.floor(Math.random() * 31); // 20-50
+      } else {
+        fanChange = Math.floor(Math.random() * 21);      // 0-20
+      }
+      fanChange += stadiumFanBonus + repBonus;
+      // Cap final: nunca menos que -50, nunca mais que +100
+      fanChange = Math.max(-50, Math.min(fanChange, 100));
+
+      const isRout = isHome ? (homeGoals - awayGoals) >= 3 : (awayGoals - homeGoals) >= 3;
+      const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
       const fanSign = fanChange >= 0 ? '+' : '';
