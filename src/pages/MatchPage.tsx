@@ -593,22 +593,36 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     lastGoalCount.current = total;
   }, [homeGoals, awayGoals]);
 
-  // Active highlight
+  // Active highlight (with cooldown + corner probability filter)
   const [activeHighlight, setActiveHighlight] = useState<SimEvent | null>(null);
   const lastHighlightId = useRef('');
+  const lastHighlightShownAt = useRef<number>(0);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!latestEvent) return;
     const eventId = `${latestEvent.minute}-${latestEvent.type}-${latestEvent.team}`;
-    if (isHighlightEvent(latestEvent.type) && eventId !== lastHighlightId.current) {
-      lastHighlightId.current = eventId;
-      if (highlightTimeoutRef.current) {
-        clearTimeout(highlightTimeoutRef.current);
-        highlightTimeoutRef.current = null;
-      }
-      setActiveHighlight(latestEvent);
+    if (!isHighlightEvent(latestEvent.type) || eventId === lastHighlightId.current) return;
+
+    const isPenalty = ['penalty_goal', 'penalty_miss'].includes(latestEvent.type);
+    const isCorner = latestEvent.type === 'corner_danger';
+    const now = Date.now();
+    const sinceLast = now - lastHighlightShownAt.current;
+
+    // Cooldown 6s, except for penalties
+    if (!isPenalty && sinceLast < 6000) return;
+    // Corners only show 40% of the time
+    if (isCorner && Math.random() > 0.4) return;
+    // Already running? Skip (penalties override)
+    if (activeHighlight && !isPenalty) return;
+
+    lastHighlightId.current = eventId;
+    lastHighlightShownAt.current = now;
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
     }
-  }, [latestEvent]);
+    setActiveHighlight(latestEvent);
+  }, [latestEvent, activeHighlight]);
 
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
@@ -880,7 +894,17 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     }}
                   />
                 </div>
-                <p className="text-[10px] sm:text-xs text-center text-muted-foreground mt-1 line-clamp-2">{activeHighlight.description}</p>
+                <p className="text-[11px] sm:text-sm text-center text-foreground/90 mt-1.5 font-medium leading-snug px-1">{activeHighlight.description}</p>
+                {/* Mini-feed under 2D — context for last 2 events */}
+                {visibleEvents.length > 1 && (
+                  <div className="mt-1.5 pt-1.5 border-t border-yellow-400/20 space-y-0.5 opacity-70">
+                    {[...visibleEvents].slice(-3, -1).reverse().map((ev, i) => (
+                      <p key={i} className="text-[10px] text-center text-muted-foreground line-clamp-1 px-1">
+                        <span className="font-mono mr-1">{ev.minute}'</span>{ev.description}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </Card>
             )}
 
@@ -917,13 +941,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {!isFinished ? (
               /* Chat-style narration feed — compact */
               <Card className="p-1.5 sm:p-2 border-border/20">
-                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto divide-y divide-border/10">
+                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto">
                   {visibleEvents.length === 0 && (
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
-                  {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                    <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
-                  ))}
+                  <EventFeed
+                    events={[...visibleEvents].reverse().slice(0, 40)}
+                    homeTeam={homeTeam} awayTeam={awayTeam}
+                    homeShield={homeShield} awayShield={awayShield}
+                  />
                 </div>
               </Card>
             ) : (
@@ -1378,35 +1404,84 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   );
 }
 
-/* ── CHAT-STYLE EVENT ROW ──────────────────────────────────── */
+/* ── CHAT-STYLE EVENT FEED with minute separators ────────── */
+
+function MinuteSeparator({ minute }: { minute: number }) {
+  return (
+    <div className="flex items-center gap-2 py-1.5 px-1 bg-muted/5">
+      <div className="h-px flex-1 bg-border/30" />
+      <span className="text-[10px] font-mono font-bold text-muted-foreground/70 px-2 py-0.5 rounded-full bg-card/60 border border-border/30">
+        {minute}'
+      </span>
+      <div className="h-px flex-1 bg-border/30" />
+    </div>
+  );
+}
+
+/**
+ * EventFeed renders events with a per-minute separator above the first event of each minute group.
+ * `events` should already be in display order (newest first or oldest first — separator added when minute changes).
+ */
+function EventFeed({ events, homeTeam, awayTeam, homeShield, awayShield }: {
+  events: SimEvent[]; homeTeam: string; awayTeam: string;
+  homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps;
+}) {
+  const items: React.ReactNode[] = [];
+  let prevMinute: number | null = null;
+  events.forEach((ev, i) => {
+    if (ev.minute !== prevMinute) {
+      items.push(<MinuteSeparator key={`sep-${ev.minute}-${i}`} minute={ev.minute} />);
+      prevMinute = ev.minute;
+    }
+    items.push(
+      <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
+    );
+  });
+  return <>{items}</>;
+}
 
 function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: SimEvent; homeTeam: string; awayTeam: string; homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps }) {
   const teamName = ev.team === 'home' ? homeTeam : ev.team === 'away' ? awayTeam : null;
   const shield = ev.team === 'home' ? homeShield : ev.team === 'away' ? awayShield : null;
   const isGoal = ev.isGoal;
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll new goals into view
+  useEffect(() => {
+    if (isGoal && rowRef.current) {
+      rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isGoal]);
 
   return (
-    <div className={`flex items-start gap-2.5 px-2 sm:px-3 py-2 sm:py-2.5 transition-all ${isGoal ? 'bg-emerald-500/10 border-l-2 border-emerald-400 animate-fade-in' : ''}`}>
+    <div
+      ref={rowRef}
+      className={`flex items-start gap-2.5 px-2 sm:px-3 py-2.5 sm:py-3 transition-all border-b border-border/10 ${
+        isGoal
+          ? 'bg-emerald-500/15 border-l-4 border-l-emerald-400 animate-goal-flash'
+          : ''
+      }`}
+    >
       {/* Team shield (or neutral icon for kickoff/halftime/final) */}
       {shield ? (
-        <div className={`shrink-0 mt-0.5 ${isGoal ? 'animate-scale-in' : ''}`}>
-          <ShieldCrest size={isGoal ? 28 : 24} {...shield} />
+        <div className={`shrink-0 mt-0.5 ${isGoal ? 'animate-bounce' : ''}`} style={isGoal ? { animationDuration: '1s', animationIterationCount: 1 } : undefined}>
+          <ShieldCrest size={isGoal ? 32 : 28} {...shield} />
         </div>
       ) : (
-        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
+        <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
           {getEventIcon(ev.type)}
         </div>
       )}
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-[11px] font-mono text-muted-foreground/80">{ev.minute}'</span>
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-[11px] font-mono font-bold text-muted-foreground">{ev.minute}'</span>
           {teamName && (
-            <span className="text-[11px] text-muted-foreground/70 truncate">{teamName}</span>
+            <span className="text-[11px] text-muted-foreground/80 truncate font-medium">{teamName}</span>
           )}
-          {isGoal && <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">⚽ GOL</span>}
+          {isGoal && <span className="text-[12px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">⚽ GOL</span>}
         </div>
-        <p className={`text-[13px] sm:text-sm leading-snug font-medium ${getEventColor(ev.type)}`}>
+        <p className={`leading-relaxed font-medium ${isGoal ? 'text-base sm:text-lg font-bold' : 'text-sm sm:text-base'} ${getEventColor(ev.type)}`}>
           {teamName && <span className="mr-1">{getEventIcon(ev.type)}</span>}
           {ev.description}
         </p>
@@ -1643,10 +1718,12 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           <div>
             <p className="text-sm sm:text-base font-semibold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/10">
-              {[...visibleEvents].reverse().map((ev, i) => (
-                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
-              ))}
+            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg">
+              <EventFeed
+                events={[...visibleEvents].reverse()}
+                homeTeam={homeTeam} awayTeam={awayTeam}
+                homeShield={homeShield} awayShield={awayShield}
+              />
             </div>
           </div>
         </CardContent>
