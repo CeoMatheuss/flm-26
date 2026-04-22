@@ -168,6 +168,14 @@ export interface Club {
   logoUrl?: string;
   country?: string;
   staff?: StaffMember[];
+  /** V3 — olheiros gerados automaticamente, prontos para contratação */
+  availableScouts?: Scout[];
+  /** V3 — timestamp ISO da última geração automática de olheiro */
+  lastScoutGeneratedAt?: string;
+  /** V3 — mercado dinâmico de staff (assistentes/médicos/preparadores) */
+  staffMarket?: StaffMember[];
+  /** V3 — timestamp ISO do último refresh do mercado de staff */
+  lastStaffMarketRefreshAt?: string;
   /** V2 — full advanced shield configuration (optional, overrides legacy fields) */
   shieldConfig?: {
     shape: string;
