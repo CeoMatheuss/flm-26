@@ -1464,21 +1464,18 @@ function ImprovedSubsView({
     return getPositionGroup(p.position) === posFilter;
   });
 
+  const [scheduleMinute, setScheduleMinute] = useState<string>('');
+
   return (
     <div className="space-y-2">
-      {/* Compact indicator: subs + windows on one row */}
+      {/* Compact indicator: subs only (windows removed) */}
       <div className="flex items-center gap-2 flex-wrap text-[10px]">
         <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
           <span>⚡</span>
           <span className="font-mono font-bold">{subsUsed}/{maxSubs}</span>
           <span className="text-muted-foreground">subs</span>
         </span>
-        <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
-          <span>🪟</span>
-          <span className="font-mono font-bold">{windowsUsed}/{maxWindows}</span>
-          <span className="text-muted-foreground">janelas</span>
-        </span>
-        {isHalftime && <Badge variant="secondary" className="text-[9px] h-4 px-1">Intervalo</Badge>}
+        {isHalftime && <Badge variant="secondary" className="text-[9px] h-4 px-1">Intervalo · entra no 2T</Badge>}
         {subQueue.length > 0 && (
           <Badge variant="outline" className="text-[9px] h-4 px-1 border-orange-400/50 text-orange-400 animate-pulse">
             ⏳ {subQueue.length} na fila
@@ -1566,7 +1563,24 @@ function ImprovedSubsView({
             ))}
           </div>
 
-          <div className="space-y-1 max-h-[230px] overflow-y-auto pr-1">
+          {/* Programar minuto */}
+          {selectedPlayer && !isHalftime && (
+            <div className="flex items-center gap-1 bg-amber-500/5 border border-amber-500/20 rounded px-1.5 py-1">
+              <span className="text-[9px] text-amber-400 font-bold">⏱️ Min:</span>
+              <input
+                type="number"
+                min={1}
+                max={89}
+                placeholder="já"
+                value={scheduleMinute}
+                onChange={(e) => setScheduleMinute(e.target.value)}
+                className="w-12 h-5 bg-card/80 border border-border/30 rounded text-[10px] text-center font-mono"
+              />
+              <span className="text-[8px] text-muted-foreground flex-1">vazio = próximo lance</span>
+            </div>
+          )}
+
+          <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
             {!selectedPlayer && (
               <p className="text-[10px] text-muted-foreground text-center py-3">
                 ← Selecione um titular primeiro
@@ -1582,7 +1596,11 @@ function ImprovedSubsView({
               return (
                 <button
                   key={p.id}
-                  onClick={() => onConfirmSub(selectedSubOut!, p.id)}
+                  onClick={() => {
+                    const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
+                    onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
+                    setScheduleMinute('');
+                  }}
                   className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
                     isSuggested ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-400/40'
                     : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
@@ -1613,8 +1631,8 @@ function ImprovedSubsView({
 
       {selectedPlayer && (
         <p className="text-[9px] text-muted-foreground text-center">
-          📡 Clique em um reserva para confirmar a substituição
-          {isHalftime && ' (intervalo — execução imediata)'}
+          📡 Clique no reserva para confirmar
+          {isHalftime ? ' — entra no 2º tempo' : scheduleMinute ? ` — programada para ${scheduleMinute}'` : ' — aplicada no próximo lance'}
         </p>
       )}
     </div>
