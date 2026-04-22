@@ -512,6 +512,7 @@ interface SubBannerData {
   playerIn: string;
   teamName: string;
   isHalftime: boolean;
+  shield?: ShieldRenderProps;
 }
 
 function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () => void }) {
@@ -531,18 +532,13 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
         <div className="px-2.5 py-2 sm:px-4 sm:py-3 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <span className="text-base sm:text-xl">🔁</span>
+              {data.shield ? <ShieldCrest size={20} {...data.shield} /> : <span className="text-base sm:text-xl">🔁</span>}
               <span className="text-[10px] sm:text-sm font-black uppercase tracking-wider text-primary truncate">Substituição</span>
+              <span className="text-[10px] sm:text-xs font-bold text-foreground truncate hidden sm:inline">{data.teamName}</span>
             </div>
-            {!data.isHalftime && (
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                <Badge variant="outline" className="text-[10px] sm:text-sm font-mono px-1.5 sm:px-2.5">{data.minute}'</Badge>
-                <div className="hidden sm:flex items-center gap-1">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{data.teamName}</span>
-                </div>
-              </div>
-            )}
+            <Badge variant="outline" className="text-[10px] sm:text-sm font-mono px-1.5 sm:px-2.5 shrink-0">
+              {data.isHalftime ? 'INT' : `${data.minute}'`}
+            </Badge>
           </div>
           <div className="flex items-stretch gap-1.5 sm:gap-3">
             <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2.5">
