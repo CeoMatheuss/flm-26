@@ -952,142 +952,104 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           )}
         </div>
 
-        {/* ═══ COLLAPSIBLE SECTIONS (Stats / Lineup / Tactics / Subs) ═══ */}
+        {/* ═══ ALWAYS-OPEN COMPACT WIDGETS (Stats / Lineup / Tactics / Subs) ═══ */}
         {!isFinished && (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {/* 📊 Estatísticas */}
-            <Collapsible defaultOpen={false}>
-              <Card className="border-border/20" ref={statsSectionRef}>
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-yellow-400" /> Estatísticas
-                    </CardTitle>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="px-3 pb-3 pt-0">
-                    <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card className="border-border/20" ref={statsSectionRef}>
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5 text-yellow-400" /> Estatísticas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3 pt-0">
+                <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+              </CardContent>
+            </Card>
 
             {/* 👥 Escalações */}
-            <Collapsible defaultOpen={false}>
-              <Card className="border-border/20" ref={lineupSectionRef}>
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Users className="h-4 w-4 text-blue-400" /> Escalações
-                    </CardTitle>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="px-3 pb-3 pt-0">
-                    <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card className="border-border/20" ref={lineupSectionRef}>
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-blue-400" /> Escalações
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3 pt-0">
+                <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+              </CardContent>
+            </Card>
 
             {/* ⚙️ Estilo de Jogo */}
-            <Collapsible defaultOpen={false}>
-              <Card className="border-border/20" ref={tacticsSectionRef}>
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Settings2 className="h-4 w-4 text-emerald-400" /> Estilo de Jogo
-                    </CardTitle>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="px-3 pb-3 pt-0">
-                    <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card className="border-border/20" ref={tacticsSectionRef}>
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <Settings2 className="h-3.5 w-3.5 text-emerald-400" /> Estilo de Jogo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3 pt-0">
+                <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+              </CardContent>
+            </Card>
 
             {/* 🔄 Substituições */}
-            <Collapsible defaultOpen={false}>
-              <Card className="border-border/20">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <ArrowUpDown className="h-4 w-4 text-orange-400" /> Substituições
-                      <Badge variant="outline" className="ml-2 text-[10px]">{maxSubs - subsUsed}/{maxSubs}</Badge>
-                    </CardTitle>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="px-3 pb-3 pt-0">
-                    {subBlocked && subBlockedReason && (
-                      <div className="bg-muted/30 border border-border/30 rounded-lg px-3 py-2 flex items-start gap-2 mb-3">
-                        <span className="text-base">⛔</span>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-foreground">Trocas Bloqueadas</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{subBlockedReason}</p>
-                        </div>
-                      </div>
-                    )}
-                    <ManagerSubstitutionView
-                      homePlayers={homePlayers}
-                      subsUsed={subsUsed}
-                      maxSubs={maxSubs}
-                      windowsUsed={windowsUsed}
-                      maxWindows={maxWindows}
-                      selectedSubOut={selectedSubOut}
-                      onSelectSubOut={setSelectedSubOut}
-                      onConfirmSub={handleQueueSubstitution}
-                      isHalftime={isHalftime}
-                      isFinished={isFinished}
-                      substitutedPlayerIds={substitutedPlayerIds}
-                      subQueue={subQueue}
-                      blocked={subBlocked}
-                      blockedReason={subBlockedReason}
-                    />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card className="border-border/20">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-orange-400" /> Substituições
+                  <Badge variant="outline" className="ml-auto text-[10px]">{maxSubs - subsUsed}/{maxSubs}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3 pt-0">
+                {subBlocked && subBlockedReason && (
+                  <div className="bg-muted/30 border border-border/30 rounded-lg px-2 py-1.5 flex items-start gap-2 mb-2">
+                    <span className="text-sm">⛔</span>
+                    <p className="text-[11px] text-muted-foreground flex-1">{subBlockedReason}</p>
+                  </div>
+                )}
+                <ManagerSubstitutionView
+                  homePlayers={homePlayers}
+                  subsUsed={subsUsed}
+                  maxSubs={maxSubs}
+                  windowsUsed={windowsUsed}
+                  maxWindows={maxWindows}
+                  selectedSubOut={selectedSubOut}
+                  onSelectSubOut={setSelectedSubOut}
+                  onConfirmSub={handleQueueSubstitution}
+                  isHalftime={isHalftime}
+                  isFinished={isFinished}
+                  substitutedPlayerIds={substitutedPlayerIds}
+                  subQueue={subQueue}
+                  blocked={subBlocked}
+                  blockedReason={subBlockedReason}
+                />
+              </CardContent>
+            </Card>
 
             {/* 🎙️ Auxiliar Técnico */}
             {hasAssistant && (
-              <Collapsible defaultOpen={false}>
-                <Card className="border-border/20" ref={assistantSectionRef}>
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-amber-400" /> Auxiliar Técnico
-                        <Badge variant="outline" className="ml-2 text-[10px]">{matchState.assistantTips.length}</Badge>
-                      </CardTitle>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent className="px-3 pb-3 pt-0">
-                      <div className="space-y-1.5 max-h-[260px] overflow-y-auto">
-                        {[...matchState.assistantTips].reverse().map((tip, i) => (
-                          <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-lg px-2.5 py-2">
-                            <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm">{tip.description}</p>
-                              {tip.priority === 'high' && (
-                                <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+              <Card className="border-border/20 lg:col-span-2" ref={assistantSectionRef}>
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-amber-400" /> Auxiliar Técnico
+                    <Badge variant="outline" className="ml-auto text-[10px]">{matchState.assistantTips.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="space-y-1 max-h-[180px] overflow-y-auto">
+                    {[...matchState.assistantTips].reverse().map((tip, i) => (
+                      <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-lg px-2 py-1.5">
+                        <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] leading-snug">{tip.description}</p>
+                          {tip.priority === 'high' && (
+                            <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
+                          )}
+                        </div>
                       </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
