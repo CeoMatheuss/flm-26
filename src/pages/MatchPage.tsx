@@ -917,7 +917,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
                   {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                    <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} />
+                    <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
                   ))}
                 </div>
               </Card>
