@@ -489,7 +489,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     { icon: BarChart3, label: 'Saves', value: stats.totalSaves, color: 'text-emerald-400' },
   ] : [];
 
-  // ── Category → tab map ────────────────────────────────────────────
+  // ── Category → tab map (visible triggers) ─────────────────────
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
     leagues:    ['system'],
     cups:       ['system', 'tournaments'],
@@ -498,14 +498,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
     simulation: ['system'],
   };
-
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
-  const [activeTab, setActiveTab] = useState<string>(tabsForCategory[0]);
-  useEffect(() => {
-    const list = CATEGORY_TABS[activeCategory] || ['users'];
-    if (!list.includes(activeTab)) setActiveTab(list[0]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
 
   const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
     team:           { label: 'Equipe',       icon: Users },
