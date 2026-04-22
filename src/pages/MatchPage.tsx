@@ -621,6 +621,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const hasAssistant = matchState.assistantTips.length > 0;
   const latestTip = hasAssistant ? matchState.assistantTips[matchState.assistantTips.length - 1] : null;
 
+  // Expanded widget state
+  const [expandedWidget, setExpandedWidget] = useState<string | null>('stats');
+
   // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
   const [windowsUsed, setWindowsUsed] = useState(0);
@@ -956,97 +959,138 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
           )}
         </div>
 
-        {/* ═══ ALWAYS-OPEN COMPACT WIDGETS (Stats / Lineup / Tactics / Subs) ═══ */}
+        {/* ═══ COMPACT WIDGETS WITH EXPANDABLE MENU ═══ */}
         {!isFinished && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            {/* 📊 Estatísticas */}
-            <Card className="border-border/20" ref={statsSectionRef}>
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <BarChart3 className="h-3.5 w-3.5 text-yellow-400" /> Estatísticas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
-                <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
-              </CardContent>
-            </Card>
+          <div className="space-y-1.5">
+            {/* Menu Toggle Bar */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+              <span className="text-[10px] text-muted-foreground shrink-0">Widgets:</span>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'stats' ? null : 'stats')}
+                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+              >
+                <BarChart3 className="h-3 w-3 inline mr-1" />Stats
+              </button>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'lineup' ? null : 'lineup')}
+                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'lineup' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+              >
+                <Users className="h-3 w-3 inline mr-1" />Escalação
+              </button>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'tactics' ? null : 'tactics')}
+                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'tactics' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+              >
+                <Settings2 className="h-3 w-3 inline mr-1" />Tática
+              </button>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'subs' ? null : 'subs')}
+                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'subs' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+              >
+                <ArrowUpDown className="h-3 w-3 inline mr-1" />Subs {maxSubs-subsUsed}/{maxSubs}
+              </button>
+              {hasAssistant && (
+                <button 
+                  onClick={() => setExpandedWidget(expandedWidget === 'assistant' ? null : 'assistant')}
+                  className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'assistant' ? 'bg-amber-500 text-white' : 'bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'}`}
+                >
+                  <MessageSquare className="h-3 w-3 inline mr-1" />Técnico
+                </button>
+              )}
+            </div>
 
-            {/* 👥 Escalações */}
-            <Card className="border-border/20" ref={lineupSectionRef}>
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5 text-blue-400" /> Escalações
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
-                <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
-              </CardContent>
-            </Card>
-
-            {/* ⚙️ Estilo de Jogo */}
-            <Card className="border-border/20" ref={tacticsSectionRef}>
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <Settings2 className="h-3.5 w-3.5 text-emerald-400" /> Estilo de Jogo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
-                <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
-              </CardContent>
-            </Card>
-
-            {/* 🔄 Substituições */}
-            <Card className="border-border/20">
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-orange-400" /> Substituições
-                  <Badge variant="outline" className="ml-auto text-[10px]">{maxSubs - subsUsed}/{maxSubs}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
-                {subBlocked && subBlockedReason && (
-                  <div className="bg-muted/30 border border-border/30 rounded-lg px-2 py-1.5 flex items-start gap-2 mb-2">
-                    <span className="text-sm">⛔</span>
-                    <p className="text-[11px] text-muted-foreground flex-1">{subBlockedReason}</p>
-                  </div>
-                )}
-                <ManagerSubstitutionView
-                  homePlayers={homePlayers}
-                  subsUsed={subsUsed}
-                  maxSubs={maxSubs}
-                  windowsUsed={windowsUsed}
-                  maxWindows={maxWindows}
-                  selectedSubOut={selectedSubOut}
-                  onSelectSubOut={setSelectedSubOut}
-                  onConfirmSub={handleQueueSubstitution}
-                  isHalftime={isHalftime}
-                  isFinished={isFinished}
-                  substitutedPlayerIds={substitutedPlayerIds}
-                  subQueue={subQueue}
-                  blocked={subBlocked}
-                  blockedReason={subBlockedReason}
-                />
-              </CardContent>
-            </Card>
-
-            {/* 🎙️ Auxiliar Técnico */}
-            {hasAssistant && (
-              <Card className="border-border/20 lg:col-span-2" ref={assistantSectionRef}>
-                <CardHeader className="py-2 px-3">
-                  <CardTitle className="text-xs flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5 text-amber-400" /> Auxiliar Técnico
-                    <Badge variant="outline" className="ml-auto text-[10px]">{matchState.assistantTips.length}</Badge>
+            {/* Expanded Widget */}
+            {expandedWidget === 'stats' && (
+              <Card className="border-border/20" ref={statsSectionRef}>
+                <CardHeader className="py-1.5 px-2">
+                  <CardTitle className="text-[11px] flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3 text-yellow-400" /> Estatísticas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0">
-                  <div className="space-y-1 max-h-[180px] overflow-y-auto">
-                    {[...matchState.assistantTips].reverse().map((tip, i) => (
-                      <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-lg px-2 py-1.5">
-                        <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{tip.minute}'</Badge>
+                <CardContent className="px-2 pb-2 pt-0">
+                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                </CardContent>
+              </Card>
+            )}
+
+            {expandedWidget === 'lineup' && (
+              <Card className="border-border/20" ref={lineupSectionRef}>
+                <CardHeader className="py-1.5 px-2">
+                  <CardTitle className="text-[11px] flex items-center gap-1">
+                    <Users className="h-3 w-3 text-blue-400" /> Escalação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-2 pb-2 pt-0">
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                </CardContent>
+              </Card>
+            )}
+
+            {expandedWidget === 'tactics' && (
+              <Card className="border-border/20" ref={tacticsSectionRef}>
+                <CardHeader className="py-1.5 px-2">
+                  <CardTitle className="text-[11px] flex items-center gap-1">
+                    <Settings2 className="h-3 w-3 text-emerald-400" /> Estilo de Jogo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-2 pb-2 pt-0">
+                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                </CardContent>
+              </Card>
+            )}
+
+            {expandedWidget === 'subs' && (
+              <Card className="border-border/20">
+                <CardHeader className="py-1.5 px-2">
+                  <CardTitle className="text-[11px] flex items-center gap-1">
+                    <ArrowUpDown className="h-3 w-3 text-orange-400" /> Substituições
+                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{maxSubs-subsUsed}/{maxSubs}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-2 pb-2 pt-0">
+                  {subBlocked && subBlockedReason && (
+                    <div className="bg-muted/30 border border-border/30 rounded px-2 py-1 flex items-start gap-1.5 mb-1.5">
+                      <span className="text-xs">⛔</span>
+                      <p className="text-[10px] text-muted-foreground flex-1">{subBlockedReason}</p>
+                    </div>
+                  )}
+                  <ManagerSubstitutionView
+                    homePlayers={homePlayers}
+                    subsUsed={subsUsed}
+                    maxSubs={maxSubs}
+                    windowsUsed={windowsUsed}
+                    maxWindows={maxWindows}
+                    selectedSubOut={selectedSubOut}
+                    onSelectSubOut={setSelectedSubOut}
+                    onConfirmSub={handleQueueSubstitution}
+                    isHalftime={isHalftime}
+                    isFinished={isFinished}
+                    substitutedPlayerIds={substitutedPlayerIds}
+                    subQueue={subQueue}
+                    blocked={subBlocked}
+                    blockedReason={subBlockedReason}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {expandedWidget === 'assistant' && hasAssistant && (
+              <Card className="border-border/20" ref={assistantSectionRef}>
+                <CardHeader className="py-1.5 px-2">
+                  <CardTitle className="text-[11px] flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3 text-amber-400" /> Auxiliar Técnico
+                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{matchState.assistantTips.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-2 pb-2 pt-0">
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                    {[...matchState.assistantTips].reverse().slice(0, 5).map((tip, i) => (
+                      <div key={i} className="flex items-start gap-1.5 bg-card/60 border border-border/20 rounded px-1.5 py-1">
+                        <Badge variant="outline" className="text-[8px] font-mono shrink-0 h-4">{tip.minute}'</Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] leading-snug">{tip.description}</p>
+                          <p className="text-[10px] leading-tight">{tip.description}</p>
                           {tip.priority === 'high' && (
-                            <Badge variant="destructive" className="text-[9px] mt-1 h-4">Urgente</Badge>
+                            <Badge variant="destructive" className="text-[8px] mt-0.5 h-3 px-1">Urgente</Badge>
                           )}
                         </div>
                       </div>
