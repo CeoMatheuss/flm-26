@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-international-cups]
 verify_jwt = false
+
+[functions.auto-simulate-expired-matches]
+verify_jwt = false

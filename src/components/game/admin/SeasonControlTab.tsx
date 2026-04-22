@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, RefreshCw, FastForward, Sprout, Zap, AlertTriangle } from 'lucide-react';
+import { Calendar, RefreshCw, FastForward, Sprout, Zap, AlertTriangle, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { countryFlags, countryNames } from '@/types/league';
 import { LeagueRow, statusColors, statusLabels } from './leagueHelpers';
@@ -16,16 +16,25 @@ export function SeasonControlTab({ adminUserId }: Props) {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ action: string; country: string } | null>(null);
+  const [pendingCounts, setPendingCounts] = useState<{ league: number; cup: number; custom: number; friendly: number }>({ league: 0, cup: 0, custom: 0, friendly: 0 });
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('multiplayer_leagues')
-      .select('*')
-      .eq('auto_created', true)
-      .eq('league_type', 'main')
-      .order('country');
-    if (data) setLeagues(data as LeagueRow[]);
+    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const [leaguesRes, lm, cm, ctm, fi] = await Promise.all([
+      supabase.from('multiplayer_leagues').select('*').eq('auto_created', true).eq('league_type', 'main').order('country'),
+      supabase.from('league_matches').select('id', { count: 'exact', head: true }).eq('status', 'scheduled').lt('created_at', cutoff),
+      supabase.from('cup_matches').select('id', { count: 'exact', head: true }).eq('status', 'scheduled').lt('scheduled_at', cutoff),
+      supabase.from('custom_tournament_matches').select('id', { count: 'exact', head: true }).eq('status', 'scheduled').lt('scheduled_at', cutoff),
+      supabase.from('friendly_invites').select('id', { count: 'exact', head: true }).eq('status', 'accepted').is('match_result', null).lt('match_date', cutoff),
+    ]);
+    if (leaguesRes.data) setLeagues(leaguesRes.data as LeagueRow[]);
+    setPendingCounts({
+      league: lm.count || 0,
+      cup: cm.count || 0,
+      custom: ctm.count || 0,
+      friendly: fi.count || 0,
+    });
     setLoading(false);
   };
 
@@ -95,6 +104,29 @@ export function SeasonControlTab({ adminUserId }: Props) {
     setConfirm(null);
   };
 
+  const runAutoSim = async () => {
+    setActionLoading('auto-sim');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auto-simulate-expired-matches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(`🤖 ${result.total} partida(s) simulada(s) automaticamente`);
+        await logAdmin('manual_auto_sim_trigger', { result });
+        load();
+      } else {
+        toast.error(result.error || 'Erro');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
+  };
+
   return (
     <div className="space-y-3">
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
@@ -119,6 +151,46 @@ export function SeasonControlTab({ adminUserId }: Props) {
             className="h-8 text-xs bg-primary hover:bg-primary/90 gap-1"
           >
             <Zap className="h-3 w-3" /> {actionLoading === 'plan-season' ? 'Executando…' : 'Rodar plan-season agora'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bot className="h-4 w-4 text-primary" /> Auto-Simulação de Partidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Partidas com janela de 5 min expirada são simuladas automaticamente pelo cron a cada minuto. Use o botão para forçar agora.
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Liga</p>
+              <p className="text-sm font-bold">{pendingCounts.league}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Copa</p>
+              <p className="text-sm font-bold">{pendingCounts.cup}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Torneio</p>
+              <p className="text-sm font-bold">{pendingCounts.custom}</p>
+            </div>
+            <div className="p-1.5 rounded bg-muted/20 text-center">
+              <p className="text-[8px] text-muted-foreground">Amistoso</p>
+              <p className="text-sm font-bold">{pendingCounts.friendly}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={runAutoSim}
+            disabled={!!actionLoading}
+            className="h-8 text-xs gap-1 w-full"
+            variant="outline"
+          >
+            <Bot className="h-3 w-3" /> {actionLoading === 'auto-sim' ? 'Simulando…' : '⚡ Simular partidas pendentes agora'}
           </Button>
         </CardContent>
       </Card>
