@@ -593,22 +593,36 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
     lastGoalCount.current = total;
   }, [homeGoals, awayGoals]);
 
-  // Active highlight
+  // Active highlight (with cooldown + corner probability filter)
   const [activeHighlight, setActiveHighlight] = useState<SimEvent | null>(null);
   const lastHighlightId = useRef('');
+  const lastHighlightShownAt = useRef<number>(0);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!latestEvent) return;
     const eventId = `${latestEvent.minute}-${latestEvent.type}-${latestEvent.team}`;
-    if (isHighlightEvent(latestEvent.type) && eventId !== lastHighlightId.current) {
-      lastHighlightId.current = eventId;
-      if (highlightTimeoutRef.current) {
-        clearTimeout(highlightTimeoutRef.current);
-        highlightTimeoutRef.current = null;
-      }
-      setActiveHighlight(latestEvent);
+    if (!isHighlightEvent(latestEvent.type) || eventId === lastHighlightId.current) return;
+
+    const isPenalty = ['penalty_goal', 'penalty_miss'].includes(latestEvent.type);
+    const isCorner = latestEvent.type === 'corner_danger';
+    const now = Date.now();
+    const sinceLast = now - lastHighlightShownAt.current;
+
+    // Cooldown 6s, except for penalties
+    if (!isPenalty && sinceLast < 6000) return;
+    // Corners only show 40% of the time
+    if (isCorner && Math.random() > 0.4) return;
+    // Already running? Skip (penalties override)
+    if (activeHighlight && !isPenalty) return;
+
+    lastHighlightId.current = eventId;
+    lastHighlightShownAt.current = now;
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
     }
-  }, [latestEvent]);
+    setActiveHighlight(latestEvent);
+  }, [latestEvent, activeHighlight]);
 
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
