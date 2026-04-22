@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { TacticsConfig } from '@/types/tactics';
 
+type TieBreaker = 'none' | 'extra_time' | 'penalties' | 'both';
+
 interface FriendlyInvite {
   id: string;
   sender_id: string;
@@ -29,8 +31,16 @@ interface FriendlyInvite {
   match_date: string;
   status: string;
   match_result: { home_goals: number; away_goals: number } | null;
+  tie_breaker?: TieBreaker;
   created_at: string;
 }
+
+const TIE_BREAKER_LABELS: Record<TieBreaker, { label: string; emoji: string; short: string }> = {
+  none: { label: 'Tempo normal (sem desempate)', emoji: '⏱️', short: 'Sem desempate' },
+  extra_time: { label: 'Prorrogação se empatar (30 min extra)', emoji: '⏰', short: 'Prorrogação' },
+  penalties: { label: 'Pênaltis direto se empatar', emoji: '🎯', short: 'Pênaltis' },
+  both: { label: 'Prorrogação + Pênaltis (mata-mata oficial)', emoji: '🏆', short: 'Prorrogação + Pênaltis' },
+};
 
 interface OnlineUser {
   user_id: string;
@@ -60,6 +70,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [matchDate, setMatchDate] = useState('');
   const [matchTime, setMatchTime] = useState('');
   const [homeChoice, setHomeChoice] = useState<'me' | 'them'>('me');
+  const [tieBreaker, setTieBreaker] = useState<TieBreaker>('none');
   const [sending, setSending] = useState(false);
   const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
   const [creatingSlot, setCreatingSlot] = useState(false);
@@ -233,7 +244,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       receiver_stadium_capacity: oppCapacity,
       home_team_id: homeTeamId,
       match_date: dateTime.toISOString(),
-    }]);
+      tie_breaker: tieBreaker,
+    }] as any);
 
     if (error) {
       toast.error('Erro ao enviar convite');
@@ -395,6 +407,23 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             </Select>
           </div>
 
+          {/* Tie breaker (extra time / penalties) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold text-muted-foreground uppercase">⚽ Em caso de empate</label>
+            <Select value={tieBreaker} onValueChange={(v: TieBreaker) => setTieBreaker(v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(TIE_BREAKER_LABELS) as TieBreaker[]).map(k => (
+                  <SelectItem key={k} value={k} className="text-xs">
+                    {TIE_BREAKER_LABELS[k].emoji} {TIE_BREAKER_LABELS[k].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Stadium preview */}
           {homeChoice === 'me' && (
             <div className="p-2 rounded-lg bg-muted/20 border border-border/50 text-xs space-y-0.5">
@@ -544,9 +573,12 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                         isHome,
                         competition: 'Amistoso Online',
                         fans: fans || 500,
+                        tieBreaker: invite.tie_breaker || 'none',
                       },
                     });
                   };
+
+                  const tb = (invite.tie_breaker || 'none') as TieBreaker;
 
                   return (
                     <div key={invite.id} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
@@ -567,6 +599,11 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                           ✅ Confirmado
                         </Badge>
                       </div>
+                      {tb !== 'none' && (
+                        <Badge variant="outline" className="text-[9px] gap-1">
+                          {TIE_BREAKER_LABELS[tb].emoji} {TIE_BREAKER_LABELS[tb].short}
+                        </Badge>
+                      )}
                       {canPlay ? (
                         <Button size="sm" onClick={handlePlay} className="w-full h-8 text-xs gap-1.5 font-bold bg-emerald-600 hover:bg-emerald-700">
                           <Play className="h-3.5 w-3.5" /> ⚽ JOGAR AGORA (lance por lance)

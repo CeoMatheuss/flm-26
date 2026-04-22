@@ -41,6 +41,7 @@ interface MatchPageState {
   tournamentMatchId?: string;
   fans?: number;
   awayFans?: number;
+  tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -106,6 +107,7 @@ export default function MatchPage() {
       tournamentMatchId: locState.tournamentMatchId,
       fans: locState.fans || 500,
       awayFans: locState.awayFans || 500,
+      tieBreaker: locState.tieBreaker || 'none',
     });
     setInitDone(true);
   }, [locState, startMatch]);
@@ -1340,27 +1342,27 @@ function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: 
   const isGoal = ev.isGoal;
 
   return (
-    <div className="flex items-start gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2">
+    <div className={`flex items-start gap-2.5 px-2 sm:px-3 py-2 sm:py-2.5 transition-all ${isGoal ? 'bg-emerald-500/10 border-l-2 border-emerald-400 animate-fade-in' : ''}`}>
       {/* Team shield (or neutral icon for kickoff/halftime/final) */}
       {shield ? (
-        <div className="shrink-0 mt-0.5">
-          <ShieldCrest size={20} {...shield} />
+        <div className={`shrink-0 mt-0.5 ${isGoal ? 'animate-scale-in' : ''}`}>
+          <ShieldCrest size={isGoal ? 28 : 24} {...shield} />
         </div>
       ) : (
-        <div className="shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-sm bg-muted/20 border border-border/30">
+        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-base bg-muted/20 border border-border/30">
           {getEventIcon(ev.type)}
         </div>
       )}
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-[10px] font-mono text-muted-foreground/80">{ev.minute}'</span>
+          <span className="text-[11px] font-mono text-muted-foreground/80">{ev.minute}'</span>
           {teamName && (
-            <span className="text-[10px] text-muted-foreground/60 truncate">{teamName}</span>
+            <span className="text-[11px] text-muted-foreground/70 truncate">{teamName}</span>
           )}
-          {isGoal && <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Gol</span>}
+          {isGoal && <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">⚽ GOL</span>}
         </div>
-        <p className={`text-[11px] sm:text-xs leading-snug ${getEventColor(ev.type)}`}>
+        <p className={`text-[13px] sm:text-sm leading-snug font-medium ${getEventColor(ev.type)}`}>
           {teamName && <span className="mr-1">{getEventIcon(ev.type)}</span>}
           {ev.description}
         </p>

@@ -436,6 +436,7 @@ export function useMatchSimulation() {
     isHome: boolean; competition?: string; tournamentMatchId?: string;
     fans?: number;
     awayFans?: number;
+    tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
   }): Promise<{ success: boolean; error?: string }> => {
     setState(s => ({ ...s, phase: 'loading' }));
     requestNotificationPermission();
