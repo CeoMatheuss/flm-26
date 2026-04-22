@@ -37,6 +37,7 @@ const categoryColors: Record<string, string> = {
   BASTIDORES: 'bg-red-500/80',
   PREMIAÇÃO: 'bg-amber-600/80',
   INSATISFAÇÃO: 'bg-red-700/80',
+  AWARDS: 'bg-amber-500/80',
 };
 
 interface SavedEntry {
@@ -137,7 +138,19 @@ export function NewspaperFullPage({ onBack }: Props) {
           >
             Todas
           </button>
-          {allCategories.slice(0, 8).map(cat => (
+          {/* Premiações shortcut — pinned so users always see it */}
+          {(allCategories.includes('AWARDS') || allCategories.includes('PREMIAÇÃO')) && (
+            <button
+              onClick={() => {
+                const target = allCategories.includes('AWARDS') ? 'AWARDS' : 'PREMIAÇÃO';
+                setCategoryFilter(categoryFilter === target ? null : target);
+              }}
+              className={`text-[9px] px-2 py-1 rounded-full border transition-colors flex items-center gap-1 ${categoryFilter === 'AWARDS' || categoryFilter === 'PREMIAÇÃO' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'border-amber-500/30 text-amber-400/70 hover:bg-amber-500/10'}`}
+            >
+              🏆 Premiações
+            </button>
+          )}
+          {allCategories.filter(c => c !== 'AWARDS' && c !== 'PREMIAÇÃO').slice(0, 8).map(cat => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
