@@ -383,6 +383,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               localStorage.setItem(lockKey, '1');
               toast.success(`⚡ Olheiro Lendário ${elite.name} contratado GRÁTIS (Premium)!`);
             } : undefined}
+            onUpgradePremium={!isPremium ? () => setActiveTab('premium') : undefined}
           />
         )}
       </TabsContent>
