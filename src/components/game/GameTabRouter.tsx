@@ -11,6 +11,7 @@ import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
+import { InfraHubTab } from '@/components/game/InfraHubTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
@@ -296,7 +297,24 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="sponsors">
         {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
       </TabsContent>
-      <TabsContent value="infra"><InfrastructureTab infrastructure={game.infrastructure} budget={game.club.budget} players={game.club.players} onUpgrade={game.upgradeFacility} /></TabsContent>
+      <TabsContent value="infra">
+        <InfraHubTab
+          infrastructure={game.infrastructure}
+          budget={game.club.budget}
+          isPremium={isPremium}
+          players={game.club.players}
+          youthProspects={game.youthProspects}
+          monthlyInvestment={game.youthInvestment}
+          hasScouts={(game.club.scouts?.length ?? 0) > 0}
+          currentSeason={game.season?.currentSeason ?? 1}
+          onPromote={game.promoteYouth}
+          onSell={game.sellYouth}
+          onEnrollCopinha={game.enrollCopinha}
+          onSetInvestment={game.setYouthInvestment}
+          onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')}
+          onUpgradeFacility={game.upgradeFacility}
+        />
+      </TabsContent>
       <TabsContent value="stadium">
         <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} />
       </TabsContent>

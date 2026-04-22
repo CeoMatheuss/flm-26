@@ -181,15 +181,18 @@ export function generateFreeAgents(count: number): Player[] {
   });
 }
 
-/** Valor fixo baseado em atributos e idade */
+/** Valor fixo baseado em atributos e idade — V3 (preços top reescalonados) */
 export function getPlayerBaseValue(player: Player): number {
-  // Valor fixo baseado em OVR (atributos)
+  // Curva de OVR encarecendo a elite
   let baseValue: number;
-  if (player.overall >= 85) baseValue = player.overall * 80000;
-  else if (player.overall >= 75) baseValue = player.overall * 40000;
-  else if (player.overall >= 65) baseValue = player.overall * 20000;
-  else if (player.overall >= 55) baseValue = player.overall * 10000;
-  else baseValue = player.overall * 5000;
+  if (player.overall >= 90)      baseValue = player.overall * 250_000;
+  else if (player.overall >= 85) baseValue = player.overall * 150_000;
+  else if (player.overall >= 80) baseValue = player.overall * 80_000;
+  else if (player.overall >= 75) baseValue = player.overall * 50_000;
+  else if (player.overall >= 70) baseValue = player.overall * 30_000;
+  else if (player.overall >= 65) baseValue = player.overall * 20_000;
+  else if (player.overall >= 55) baseValue = player.overall * 10_000;
+  else                            baseValue = player.overall * 5_000;
 
   // Curva de idade: pico 23-27, jovem premium, velho desconto
   let ageFactor: number;

@@ -94,16 +94,19 @@ export const defaultInfrastructure: Infrastructure = {
   physiotherapy: { level: 1, maxLevel: 20 },
 };
 
-// ─── Physiotherapy V2 (Nv 1-20) ───────────────────────────────────────────
+// ─── Physiotherapy V3 (Nv 1-20) — Custos rebalanceados ──────────────────
+// IMPORTANTE: chave N = custo para SUBIR PARA o nível N (de N-1 → N).
+// Ex.: physiotherapyCosts[2] = 300k = custo de Nv 1 → Nv 2.
 export const physiotherapyCosts: Record<number, number> = {
-  1: 300_000, 2: 500_000, 3: 800_000, 4: 1_200_000, 5: 1_800_000,
-  6: 2_500_000, 7: 3_500_000, 8: 4_800_000, 9: 6_000_000,
-  10: 8_000_000, 11: 10_000_000, 12: 13_000_000, 13: 16_000_000, 14: 20_000_000,
-  15: 25_000_000, 16: 32_000_000, 17: 40_000_000, 18: 50_000_000, 19: 65_000_000,
+  2: 300_000,    3: 500_000,    4: 800_000,    5: 1_200_000,  6: 1_800_000,
+  7: 2_500_000,  8: 3_500_000,  9: 4_800_000,  10: 6_000_000,
+  11: 8_000_000, 12: 10_000_000, 13: 13_000_000, 14: 16_000_000, 15: 20_000_000,
+  16: 25_000_000, 17: 32_000_000, 18: 40_000_000, 19: 50_000_000, 20: 65_000_000,
 };
 
 export function getPhysioUpgradeCost(currentLevel: number): number {
-  return physiotherapyCosts[currentLevel] ?? 999_999_999;
+  // Custo para subir do nível atual para o próximo
+  return physiotherapyCosts[currentLevel + 1] ?? 999_999_999;
 }
 
 /** Bônus do fisio por nível (V2). */

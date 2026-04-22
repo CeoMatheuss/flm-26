@@ -12,8 +12,12 @@ interface Props {
   scoutReports: ScoutReport[];
   matchesSinceLastScout: number;
   budget: number;
+  availableScouts?: Scout[];
+  lastScoutGeneratedAt?: string;
   onHireScout: (skill: number) => void;
   onFireScout: (scoutId: string) => void;
+  onAcceptAvailableScout?: (scoutId: string) => void;
+  onBuyPremiumScout?: () => void;
 }
 
 const scoutOptions = [
@@ -48,16 +52,28 @@ const attrLabels: Record<string, string> = {
   aggression: '⚔️ Agr',
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout: _onHireScout, onFireScout: _onFireScout }: Props) {
+export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout }: Props) {
   const { guard } = useLiveMatchGuard();
   const onHireScout = guard(_onHireScout);
   const onFireScout = guard(_onFireScout);
+  const onAcceptAvailableScout = guard(_onAcceptAvailableScout || (() => {}));
+  const onBuyPremiumScout = guard(_onBuyPremiumScout || (() => {}));
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [showHire, setShowHire] = useState(false);
 
   const bestScoutSkill = scouts.length > 0 ? Math.max(...scouts.map(s => s.skill)) : 0;
   const totalScoutSalary = scouts.reduce((s, sc) => s + sc.salary, 0);
   const reportsPerCycle = scouts.length;
+
+  // Próximo olheiro auto em (7d - tempo decorrido)
+  const nextScoutMs = (() => {
+    if (!lastScoutGeneratedAt) return 0;
+    const elapsed = Date.now() - new Date(lastScoutGeneratedAt).getTime();
+    return Math.max(0, 7 * 24 * 60 * 60 * 1000 - elapsed);
+  })();
+  const nextScoutLabel = nextScoutMs > 0
+    ? `${Math.floor(nextScoutMs / (24 * 60 * 60 * 1000))}d ${Math.floor((nextScoutMs / (60 * 60 * 1000)) % 24)}h`
+    : 'Disponível agora!';
 
   return (
     <div className="space-y-4">
@@ -79,6 +95,44 @@ export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget,
             </div>
           </div>
           {scouts.length > 0 && <Progress value={(matchesSinceLastScout / 5) * 100} className="h-1.5 mt-2" />}
+        </CardContent>
+      </Card>
+
+      {/* V3: Olheiros Disponíveis (auto-gerados a cada 7 dias) + Premium */}
+      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-background">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-amber-400">🎁 Olheiros Disponíveis</p>
+              <p className="text-[10px] text-muted-foreground">Próximo automático em: <strong>{nextScoutLabel}</strong></p>
+            </div>
+            {_onBuyPremiumScout && (
+              <Button size="sm" onClick={onBuyPremiumScout} className="h-7 text-[10px] gap-1 bg-amber-500 hover:bg-amber-600 text-black">
+                ⚡ Nv Máx — 10 🪙
+              </Button>
+            )}
+          </div>
+          {availableScouts.length > 0 ? (
+            <div className="space-y-1.5">
+              {availableScouts.map(s => (
+                <div key={s.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/40">
+                  <div className="flex items-center gap-0.5 shrink-0 w-14">
+                    {Array.from({ length: Math.min(5, s.skill) }).map((_, i) => (
+                      <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                    {s.skill > 5 && <span className="text-[8px] text-yellow-400 font-bold">+{s.skill - 5}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold truncate">{s.name}</p>
+                    <p className="text-[9px] text-muted-foreground">Hab {s.skill}/10 • R${(s.salary / 1000).toFixed(0)}k/mês</p>
+                  </div>
+                  <Button size="sm" onClick={() => onAcceptAvailableScout(s.id)} className="h-6 text-[10px] px-2">Aceitar</Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground text-center py-2">Aguardando geração automática...</p>
+          )}
         </CardContent>
       </Card>
 
