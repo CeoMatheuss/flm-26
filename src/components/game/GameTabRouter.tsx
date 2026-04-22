@@ -11,7 +11,7 @@ import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
-import { InfraHubTab } from '@/components/game/InfraHubTab';
+import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
