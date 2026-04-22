@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertTriangle, RefreshCw, FlaskConical, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Star } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, RefreshCw, FlaskConical, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Star, Globe2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { countryFlags, countryNames } from '@/types/league';
 import {
   LeagueRow, MemberRow, ValidationResult,
   runValidations, simulateSeasonEnd, PromotionMove,
+  validateInternationalCups, CupRowMin, CupTeamMin,
 } from './leagueHelpers';
+import { ALL_CONTINENTS } from '@/data/internationalCompetitions';
 
 interface Props { adminUserId: string }
 
@@ -21,34 +23,58 @@ export function SimulationValidationTab({ adminUserId }: Props) {
   const [leagues, setLeagues] = useState<LeagueRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [countryStatus, setCountryStatus] = useState<Array<{ country: string; total_players: number; max_capacity: number; is_locked: boolean }>>([]);
+  const [cups, setCups] = useState<CupRowMin[]>([]);
+  const [cupTeams, setCupTeams] = useState<CupTeamMin[]>([]);
   const [loading, setLoading] = useState(false);
   const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({});
   const [simCountry, setSimCountry] = useState<string>('');
   const [simResult, setSimResult] = useState<ReturnType<typeof simulateSeasonEnd> | null>(null);
   const [applying, setApplying] = useState(false);
+  const [generatingIntl, setGeneratingIntl] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [lRes, mRes, cRes] = await Promise.all([
+    const [lRes, mRes, cRes, cupRes, ctRes] = await Promise.all([
       supabase.from('multiplayer_leagues').select('*'),
       supabase.from('league_members').select('*'),
       supabase.from('country_status').select('country, total_players, max_capacity, is_locked'),
+      supabase.from('cup_competitions').select('id, name, cup_type, tier, continent, season_year, status'),
+      supabase.from('cup_teams').select('cup_id, user_id, club_name'),
     ]);
     if (lRes.data) setLeagues(lRes.data as LeagueRow[]);
     if (mRes.data) setMembers(mRes.data as MemberRow[]);
     if (cRes.data) setCountryStatus(cRes.data as any);
+    if (cupRes.data) setCups(cupRes.data as any);
+    if (ctRes.data) setCupTeams(ctRes.data as any);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
   const validations = useMemo<ValidationResult[]>(
-    () => runValidations(leagues, members, countryStatus),
-    [leagues, members, countryStatus]
+    () => [
+      ...runValidations(leagues, members, countryStatus),
+      ...validateInternationalCups(cups, cupTeams, ALL_CONTINENTS, new Date().getFullYear()),
+    ],
+    [leagues, members, countryStatus, cups, cupTeams]
   );
 
   const failures = validations.filter(v => v.status === 'fail').length;
   const warnings = validations.filter(v => v.status === 'warn').length;
+
+  const generateIntlCups = async () => {
+    if (!confirm('Gerar copas internacionais agora? Será criada 1 Principal + 1 Secundária por continente, com 32 vagas cada.')) return;
+    setGeneratingIntl(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-international-cups');
+      if (error) throw error;
+      toast.success(`✅ ${data?.created?.length || 0} copa(s) criada(s)!`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao gerar copas');
+    }
+    setGeneratingIntl(false);
+  };
 
   const allCountries = useMemo(() => [...new Set(leagues.map(l => l.country))].sort(), [leagues]);
 
