@@ -528,11 +528,14 @@ function simulateFullMatch(
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
+    const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
+    const p4 = pool.filter(p => ![p1, p2, p3].includes(p.name)).length > 0 ? pick(pool.filter(p => ![p1, p2, p3].includes(p.name))).name : p3;
     const buildups = [
-      `${p1} recebe no meio-campo, gira e toca para ${p2} que avança pela meia-esquerda`,
-      `Troca de passes rápida: ${p1} para ${p2}, tabela pelo centro, a bola volta limpa`,
-      `${p1} desarma no meio e aciona ${p2} no contra-ataque fulminante`,
-      `Combinação entre ${p1} e ${p2}: parede no meio, ${p2} avança livre`,
+      `${p1} sai jogando da defesa do ${tName}… aciona ${p2} no meio-campo… ${p2} gira sob marcação e lança ${p3} pela ponta… ${p3} acelera, dribla a marcação e cruza rasteiro para ${p4} concluir`,
+      `${p1} recebe na intermediária… troca curta com ${p2}… ${p2} devolve de primeira… ${p1} avança com bola dominada e enfia para ${p3} entre os zagueiros… ${p3} bate firme`,
+      `${p1} desarma no meio-campo… inicia transição rápida… toque para ${p2}… ${p2} carrega e lança em profundidade para ${p3}… ${p3} domina no peito e finaliza`,
+      `${p1} pressiona alto e recupera a bola… aciona ${p2} no corredor central… tabela com ${p3}… ${p3} devolve, ${p2} avança livre e bate cruzado`,
+      `${p1} arma a jogada do ${tName} pela direita… troca passe com ${p2}… ${p2} inverte longo para ${p3} aberto na esquerda… ${p3} corta para o meio e cruza rasteiro… ${p4} aparece de surpresa`,
     ];
     return pick(buildups);
   }
