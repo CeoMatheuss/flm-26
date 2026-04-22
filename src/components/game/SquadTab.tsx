@@ -118,7 +118,14 @@ function getPlayerGroup(idx: number): Group {
   return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers, tactics }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract: _onRenewContract, onListForSale: _onListForSale, onLoanOut: _onLoanOut, onAuction: _onAuction, onChangeNumber: _onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer: _onRescindPlayer, onReorderPlayers, tactics }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onRenewContract = guard(_onRenewContract);
+  const onListForSale = guard(_onListForSale);
+  const onLoanOut = guard(_onLoanOut);
+  const onAuction = guard(_onAuction);
+  const onChangeNumber = guard(_onChangeNumber);
+  const onRescindPlayer = _onRescindPlayer ? guard(_onRescindPlayer) : undefined;
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
