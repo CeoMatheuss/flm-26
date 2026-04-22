@@ -104,6 +104,29 @@ export function SeasonControlTab({ adminUserId }: Props) {
     setConfirm(null);
   };
 
+  const runAutoSim = async () => {
+    setActionLoading('auto-sim');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auto-simulate-expired-matches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(`🤖 ${result.total} partida(s) simulada(s) automaticamente`);
+        await logAdmin('manual_auto_sim_trigger', { result });
+        load();
+      } else {
+        toast.error(result.error || 'Erro');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
+  };
+
   return (
     <div className="space-y-3">
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
