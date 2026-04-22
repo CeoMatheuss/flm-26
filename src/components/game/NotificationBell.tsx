@@ -52,7 +52,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string;
   }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
-  const [localReadIds, setLocalReadIds] = useState<Set<string>>(new Set());
+  const [persistedReadKeys, setPersistedReadKeys] = useState<Set<string>>(new Set());
 
   const loadInvites = useCallback(async () => {
     const { data } = await supabase
@@ -76,9 +76,18 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     if (data) setDbNotifications(data);
   }, [userId]);
 
+  const loadPersistedReadState = useCallback(async () => {
+    const { data } = await supabase
+      .from('notification_read_state')
+      .select('notification_key')
+      .eq('user_id', userId);
+    if (data) setPersistedReadKeys(new Set(data.map(r => r.notification_key)));
+  }, [userId]);
+
   useEffect(() => {
     loadInvites();
     loadDbNotifications();
+    loadPersistedReadState();
     const ch1 = supabase.channel('bell-invites')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
       .subscribe();
@@ -86,7 +95,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_notifications' }, () => loadDbNotifications())
       .subscribe();
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, [loadInvites, loadDbNotifications]);
+  }, [loadInvites, loadDbNotifications, loadPersistedReadState]);
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setRespondingId(inviteId);
@@ -172,9 +181,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     });
   }
 
-  // Read state: DB read_at + local set
+  // Read state combines DB read_at, persistedReadKeys (from notification_read_state)
   const isRead = (n: Notification) => {
-    if (localReadIds.has(n.id)) return true;
+    if (persistedReadKeys.has(n.id)) return true;
     if (n.id.startsWith('db-')) {
       const dbId = n.id.replace('db-', '');
       const dbN = dbNotifications.find(d => d.id === dbId);
@@ -187,29 +196,32 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !isRead(n)).length;
 
   const markAsRead = async (id: string) => {
-    setLocalReadIds(prev => new Set(prev).add(id));
+    setPersistedReadKeys(prev => new Set(prev).add(id));
     if (id.startsWith('db-')) {
       const dbId = id.replace('db-', '');
       await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
     }
+    // Persist to DB so it survives logout
+    await supabase.from('notification_read_state').upsert(
+      { user_id: userId, notification_key: id, read_at: new Date().toISOString() },
+      { onConflict: 'user_id,notification_key' }
+    );
   };
 
   const markAllAsRead = async () => {
     const allIds = notifications.map(n => n.id);
-    setLocalReadIds(new Set(allIds));
+    setPersistedReadKeys(new Set([...persistedReadKeys, ...allIds]));
     const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
     if (dbIds.length > 0) {
       await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
     }
-  };
-
-  const clearRead = async () => {
-    const readDbIds = dbNotifications.filter(d => d.read_at).map(d => d.id);
-    if (readDbIds.length > 0) {
-      // We don't delete, just hide by updating read to a special marker isn't needed — just reload
-      // For now clearing means marking all as read
+    // Persist all keys to DB
+    if (allIds.length > 0) {
+      await supabase.from('notification_read_state').upsert(
+        allIds.map(key => ({ user_id: userId, notification_key: key, read_at: new Date().toISOString() })),
+        { onConflict: 'user_id,notification_key' }
+      );
     }
-    setLocalReadIds(new Set(notifications.map(n => n.id)));
   };
 
   return (

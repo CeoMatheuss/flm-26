@@ -447,10 +447,22 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   return (
     <Card className={`border-2 ${borderClass}`}>
       {isPremium &&
-      <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 flex items-center justify-center gap-2">
-          <Crown className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-          <span className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-widest">Premium</span>
-          <span className="text-[8px] sm:text-[9px] text-yellow-400/70">({premiumDaysLeft} dias restantes)</span>
+      <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 space-y-1">
+          <div className="flex items-center justify-center gap-2">
+            <Crown className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+            <span className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-widest">Premium</span>
+            <span className="text-[8px] sm:text-[9px] text-yellow-400/70">
+              {premiumDaysLeft > 0 ? `${premiumDaysLeft} dia${premiumDaysLeft === 1 ? '' : 's'} restante${premiumDaysLeft === 1 ? '' : 's'}` : 'Expirando hoje'}
+            </span>
+          </div>
+          <div className="h-1 w-full bg-yellow-950/40 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                premiumDaysLeft <= 3 ? 'bg-red-500' : premiumDaysLeft <= 7 ? 'bg-amber-500' : 'bg-yellow-400'
+              }`}
+              style={{ width: `${Math.max(0, Math.min(100, (premiumDaysLeft / 30) * 100))}%` }}
+            />
+          </div>
         </div>
       }
       <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
