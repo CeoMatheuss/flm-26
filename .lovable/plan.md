@@ -1,204 +1,161 @@
 
 
-# Plano: Painel Admin de Ligas & Países (FLM Control Center)
+# Plano: Sistema de Competições Internacionais + Classificação Automática
 
 ## Visão geral
 
-Criar uma nova **mega-aba "🌍 Sistema"** dentro do `AdminTab`, com 5 sub-abas, dando ao admin visão total da pirâmide de ligas, copas, status de temporada, e ferramentas de simulação/validação para evitar bugs estruturais.
+Implementar um sistema completo de **competições internacionais por continente** (Champions equivalente + Europa League equivalente) com **classificação automática** baseada na posição da liga + campeão da copa nacional, integrado ao ciclo de temporada existente.
 
-A aba `active_leagues` atual (`ActiveLeaguesPanel`) será **substituída** por esta nova aba mais completa.
+---
 
-## Estrutura da nova aba "🌍 Sistema"
+## 1. Modelo de dados (sem schema novo — reusa `cup_competitions`)
+
+A tabela `cup_competitions` já tem `cup_type='continental'` e campo `continent`. Vamos usar:
+
+- **Principal**: `cup_type='continental'`, `tier='principal'` (novo campo no JSONB? não — usar o `name` ou um campo `format` diferenciado).  
+  Para evitar migração de schema, usar **convenção em `name`**: prefixo `[PRINCIPAL]` e `[SECUNDARIA]` OU adicionar coluna `tier text` via migração leve.
+
+**Decisão**: adicionar 1 coluna `tier text` em `cup_competitions` (`'principal' | 'secundaria'`) — é uma única ALTER TABLE.
+
+Mapeamento por continente:
+
+| Continente | Principal | Secundária |
+|---|---|---|
+| Europa | UEFA Champions League | UEFA Europa League |
+| América do Sul | Copa Libertadores | Copa Sul-Americana |
+| América do Norte | CONCACAF Champions Cup | CONCACAF Liga |
+| África | CAF Champions League | CAF Confederation Cup |
+| Ásia | AFC Champions League | AFC Cup |
+| Oceania | OFC Champions League | OFC President Cup |
+
+Tudo em uma tabela auxiliar **client-side** `src/data/internationalCompetitions.ts`.
+
+---
+
+## 2. Lógica de classificação (regra anti-bug)
+
+Função RPC nova: **`qualify_international_teams(_continent text, _season_year int)`**
+
+Para cada **país** do continente:
+1. Buscar a **Divisão 1** (`tier='nacional'`, `division=1`)
+2. Pegar top 8 da tabela final (`league_members` ordenados por pts/SG/GF)
+3. Pegar **campeão da copa nacional** (`cup_competitions.cup_type='national'`, `country=país`, status `finished`)
+
+Distribuição (algoritmo):
+- **Slots Principal**: 1º, 2º, 3º, 4º + Campeão Copa Nacional
+- Se campeão da copa **já está no top 4** → vaga passa para o **5º**
+- **Slots Secundária**: 5º, 6º, 7º, 8º (ou 6º-9º se 5º foi promovido)
+
+Anti-duplicação:
+- Conjunto `Set<club_id>` para cada copa
+- Antes de inserir em `cup_teams`, validar se já existe
+- Se faltar time (raro), preencher com bot do país
+
+Total por continente:
+- Principal = 32 vagas (distribuídas proporcionalmente entre países por reputação/quantidade de ligas)
+- Secundária = 32 vagas
+
+---
+
+## 3. Edge Function `generate-international-cups`
+
+Trigger: chamado pelo `plan-season` no fim de cada temporada (após `process_season_transition`).
+
+Fluxo:
+1. Validar admin OU chamada interna do cron
+2. Para cada continente ativo:
+   - Criar 2 entradas em `cup_competitions` (`tier='principal'` e `'secundaria'`)
+   - Chamar `qualify_international_teams` por país
+   - Distribuir vagas até atingir 32 por copa
+   - Sortear 8 grupos de 4 (formato `groups_then_knockout`)
+   - Inserir em `cup_teams` + `cup_matches` (rodada de grupos)
+3. Logar em `admin_logs` com action `international_cups_generated`
+
+---
+
+## 4. Atualização do `SystemPanel` (Sub-aba 5: Simulação)
+
+Adicionar na aba **🧪 Simulação & Validação**:
+- **Validador novo**: ✅/❌ "Cada continente tem suas 2 copas internacionais ativas"
+- **Validador novo**: ✅/❌ "Nenhum clube duplicado em competições internacionais"
+- **Botão**: "🌍 Gerar Copas Internacionais agora" (chama Edge Function manualmente para teste)
+
+Adicionar na aba **🏆 Copas**:
+- Seção destacada **"🌎 Copas Continentais"** mostrando Principal vs Secundária
+- Para cada copa: número de vagas preenchidas vs 32, países representados
+
+---
+
+## 5. Documentação na sub-aba "📐 Como Funciona"
+
+Adicionar nova seção visual:
 
 ```
-🌍 Sistema
-├── 📐 Como Funciona       (documentação visual da pirâmide e regras)
-├── 🗺️ Países & Pirâmide   (listagem hierárquica)
-├── 🏆 Copas               (todas as copas nacionais/regionais/continentais)
-├── 📅 Temporada           (status, datas, controles)
-└── 🧪 Simulação & Validação (testar fim de temporada + alertas anti-bug)
+🌍 COMPETIÇÕES INTERNACIONAIS
+├── 🥇 Principal (32 clubes, 8 grupos de 4)
+│   ├── 1º-4º da Divisão 1
+│   └── Campeão Copa Nacional
+└── 🥈 Secundária (32 clubes)
+    ├── 5º-8º da Divisão 1
+    └── Eliminados da fase de grupos da Principal
 ```
 
----
-
-### Sub-aba 1: 📐 Como Funciona
-
-Página **estática/explicativa** (sem queries) com cards visuais mostrando:
-
-- **Pirâmide de tiers**: `Várzea → Pré-Regional → Regional → Nacional`
-- Quantos jogadores cada tier exige (20 / 80 / 260)
-- Regra dos **20 clubes por liga** (preenchido com bots quando faltar)
-- Regras de subida/descida (3↑/3↓ entre divisões adjacentes)
-- **Regra especial Várzea**: 1º sobe direto para Pré-Regional; 2º–4º "sobem internamente" (próxima Várzea com mais reputação)
-- Como entra um novo player (`auto_assign_league` joga em Várzea com vaga)
-- Quando bots são substituídos por humanos
-- Cron `plan-season` rodando todo último dia do mês
-
-ASCII + ícones + cores. Texto em pt-BR.
+Com texto explicando a regra da vaga deslocada (campeão da copa já no top 4).
 
 ---
 
-### Sub-aba 2: 🗺️ Países & Pirâmide
+## 6. Integração com `plan-season` (cron mensal)
 
-Lista por **continente → país → ligas** (collapsible).
-
-**Para cada país** (header):
-- 🏳️ Bandeira + nome
-- Total de jogadores reais
-- Total de ligas
-- Status de capacidade (badge verde/amarelo/vermelho vs `country_status.max_capacity`)
-
-**Para cada liga** (linha clicável → expande):
-- Nome (ex: "Brasil Nacional Div 1")
-- Tier + nível + divisão (badges coloridos por tier)
-- Tipo: `Elite` (nacional), `Regional`, `Sub-Regional` (pre_regional), `Várzea`
-- `X/20 clubes` (vermelho se ≠ 20)
-- Status temporada (registration / waiting / in_progress / finished)
-- Rodada atual / total
-- **Botão "Ver Clubes"** → expande lista dos 20 clubes:
-  - Nome + escudo
-  - Badge **🧑 Player** (verde) ou **🤖 BOT** (cinza)
-  - Posição na tabela (pts / J / V-E-D / SG)
-  - Reputação
-
-**Filtros no topo**: país (select), tier (select), busca por nome.
-
-**Dados**: query única em `multiplayer_leagues` + `league_members` agrupada por país/tier.
+Modificar `supabase/functions/plan-season/index.ts`:
+- Após processar transições por país
+- Chamar `generate-international-cups` para cada continente
+- Garantir idempotência: não criar copa se já existir uma com `season_year` atual e `status != 'finished'`
 
 ---
 
-### Sub-aba 3: 🏆 Copas
-
-Lista por **escopo → copa**:
-
-- 🌎 **Copas Continentais** (cup_type=continental)
-- 🇧🇷 **Copas Nacionais** (cup_type=national, country)
-- 🏘️ **Copas Regionais** (cup_type=regional)
-
-Para cada copa:
-- Nome + tipo + país/continente
-- Status, rodada atual / total, season_year
-- `X/Y times` (de `cup_teams`)
-- Botão expandir → lista de times (player vs bot) e próximos jogos
-
-Inclui também `custom_tournaments` em uma seção "🎮 Torneios Customizados".
-
----
-
-### Sub-aba 4: 📅 Temporada
-
-**Painel de status global** por país:
-
-| País | Status | Início | Fim | Rodada | Próxima ação |
-|---|---|---|---|---|---|
-| 🇧🇷 Brasil | Em andamento | 01/05 | 31/05 | 12/19 | Aguardar fim do mês |
-
-**Controles** (botões com confirmação):
-- 🔄 **Rodar `plan-season` agora** (manual trigger da Edge Function — útil para testes)
-- ⏭️ **Forçar fim de temporada do país X** (chama `process_season_transition`)
-- 🌱 **Redistribuir iniciantes do país X** (chama `redistribute_beginners`)
-
-Cada ação é logada em `admin_logs`.
-
----
-
-### Sub-aba 5: 🧪 Simulação & Validação
-
-**A. Validador automático** (executa ao abrir):
-Roda checks no banco e mostra cards verde/vermelho:
-
-- ✅/❌ Toda liga tem exatamente 20 clubes (lista as quebradas)
-- ✅/❌ Nenhuma divisão pulada (sequência tier_level contínua por país)
-- ✅/❌ Não há jogador em 2 ligas no mesmo país
-- ✅/❌ Bots preenchem vagas onde faltam humanos
-- ✅/❌ Países lotados estão com `is_locked=true`
-- ✅/❌ Copas têm número de times = potência de 2 (knockout) ou múltiplo correto
-
-Cada falha tem **botão "Ver detalhes"** mostrando IDs/nomes afetados.
-
-**B. Simulador de promoção/rebaixamento** (dry-run, sem escrever no banco):
-
-- Seleciona país
-- Botão **"Simular fim de temporada"**
-- Mostra preview tabular:
-  - 🔼 **Promovidos** (top 3 de cada divisão)
-  - 🔽 **Rebaixados** (últimos 3)
-  - ⭐ **Subida especial Várzea** (1º → Pré-Regional, 2º-4º → próxima Várzea)
-  - Movimentação entre divisões (Div 2 → Div 1, etc)
-- Tudo calculado client-side a partir do snapshot atual de `league_members`.
-- Botão "✅ Aplicar de verdade" só executa se admin confirmar (roda `process_season_transition`).
-
-**C. Alertas anti-bug** (banner topo da aba se algo estiver errado):
-- 🚨 vermelho: liga com ≠20 clubes / divisão quebrada
-- ⚠️ amarelo: bots > 50% em alguma liga / país sem cron rodado em > 35 dias
-
----
-
-## Detalhes técnicos
-
-### Arquivos novos
+## Arquivos novos
 
 | Arquivo | Conteúdo |
 |---|---|
-| `src/components/game/admin/SystemPanel.tsx` | Container com 5 sub-tabs internas |
-| `src/components/game/admin/HowItWorksTab.tsx` | Página estática explicativa |
-| `src/components/game/admin/CountriesPyramidTab.tsx` | Pirâmide hierárquica + clubes |
-| `src/components/game/admin/CupsOverviewTab.tsx` | Lista de copas |
-| `src/components/game/admin/SeasonControlTab.tsx` | Status + botões de controle |
-| `src/components/game/admin/SimulationValidationTab.tsx` | Validador + simulador dry-run |
-| `src/components/game/admin/leagueHelpers.ts` | Funções utilitárias (cálculo de promoções, validações) |
-| `supabase/functions/admin-system-checks/index.ts` | Edge Function (admin-only) que retorna validações pesadas em uma chamada (counts por liga, jogadores duplicados, etc) |
+| `supabase/functions/generate-international-cups/index.ts` | Edge Function que cria copas continentais e distribui vagas |
+| `src/data/internationalCompetitions.ts` | Mapeamento continente → nomes oficiais (UCL, Libertadores etc) |
+| `src/components/game/admin/InternationalCupsSection.tsx` | Card no `CupsOverviewTab` mostrando copas continentais com destaque |
 
-### Arquivos modificados
+## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/AdminTab.tsx` | Substituir tab `active_leagues` por nova `system`; renderizar `<SystemPanel/>` |
-| `supabase/config.toml` | Registrar nova edge function `admin-system-checks` |
+| `supabase/functions/plan-season/index.ts` | Invocar geração de copas internacionais após transição |
+| `src/components/game/admin/CupsOverviewTab.tsx` | Renderizar `InternationalCupsSection` no topo |
+| `src/components/game/admin/SimulationValidationTab.tsx` | Adicionar 2 novos validadores + botão manual de geração |
+| `src/components/game/admin/HowItWorksTab.tsx` | Nova seção visual sobre copas internacionais |
+| `src/components/game/admin/leagueHelpers.ts` | Função `validateInternationalCups()` (sem duplicatas, 32 times etc) |
 
-### Edge Function `admin-system-checks`
+## Migrações de schema
 
-- Valida JWT + checa `has_role('admin')`
-- Retorna em uma única resposta:
-  - `leagues`: array com `{id, name, country, tier, member_count, bot_count}`
-  - `cups`: array com `{id, name, team_count, expected_teams}`
-  - `validations`: array de `{check, status, details[]}`
-  - `cron_health`: última execução do `plan-season` (estimada por `created_at` mais recente em `multiplayer_leagues`)
-- Permissões: `verify_jwt = true` (default)
-
-### Queries cliente (read-only)
-
-Todas usam o `supabase` client com RLS — admin já tem acesso via `has_role`. Sem migrações de schema necessárias (usa tabelas existentes: `multiplayer_leagues`, `league_members`, `cup_competitions`, `cup_teams`, `country_status`, `custom_tournaments`).
-
-### Simulador dry-run
-
-Implementado client-side em `leagueHelpers.ts`:
-
-```ts
-function simulateSeasonEnd(country, leagues, members) {
-  // ordena membros por pts/SG/GP dentro de cada liga
-  // marca top 3 como "promoted" e bottom 3 como "relegated"
-  // aplica regra especial: tier=varzea → 1º promovido para pre_regional div max
-  // retorna { promotions: [...], relegations: [...], specialMoves: [...] }
-}
+Apenas **1 ALTER TABLE**:
+```sql
+ALTER TABLE cup_competitions ADD COLUMN IF NOT EXISTS tier text DEFAULT 'national';
+-- valores válidos: 'principal', 'secundaria', 'national', 'regional'
+CREATE INDEX IF NOT EXISTS idx_cup_competitions_tier ON cup_competitions(tier);
 ```
 
-Sem chamadas ao banco — é só preview.
+## Migrações de função (RPC)
 
-### Aplicação de fim de temporada real
+1 função nova `qualify_international_teams(_continent, _season_year)` (SECURITY DEFINER) — retorna JSONB com `{principal: [{club_id, country, source}], secundaria: [...]}`.
 
-Reusa as RPCs existentes:
-- `process_season_transition(_country)` — já existe
-- `redistribute_beginners(_country)` — já existe
-- Trigger via `supabase.rpc(...)`, logado em `admin_logs` com action `force_season_end`.
+## Regras anti-bug aplicadas
+
+- ✅ Sempre 32 clubes por copa internacional (preenchido com bots se faltar)
+- ✅ Anti-duplicação via `Set` no servidor + constraint UNIQUE composta `(cup_id, user_id, club_name)` em `cup_teams`
+- ✅ Vaga da copa nacional **redireciona** para o próximo se duplicar
+- ✅ Idempotência no cron — só cria se não existir copa ativa do `season_year`
+- ✅ Validador automático no painel admin que detecta inconsistências
 
 ## Compatibilidade
 
-- Sem migrations de schema
-- `ActiveLeaguesPanel.tsx` removido do AdminTab mas arquivo mantido (caso reutilizado)
-- Não afeta usuários comuns — toda a aba está atrás do gate `isAdmin && adminUnlocked`
-
-## Sobre o R$10 / personalização do clube
-
-Sua pergunta inicial: **sim, exatamente assim** — o sistema de paywall já implementado funciona da seguinte forma: ao pagar R$10 (e o admin marcar `customizationUnlocked=true`), o usuário pode trocar **escudo, nome do clube e nome do estádio** quantas vezes quiser pelo Perfil do Clube. Sem desbloqueio, esses campos ficam travados com 🔒. A liberação é feita por você no painel Admin > Customização.
+- Tabela `cup_competitions` já existe — apenas adicionamos 1 coluna
+- `cup_teams` e `cup_matches` reusados sem mudança
+- Todo código existente continua funcionando (`tier` default = `'national'`)
+- Não afeta saves antigos
 
