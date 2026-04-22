@@ -41,6 +41,64 @@ export function useClubState(initialState: any, userId?: string) {
     loadActiveListings();
   }, [userId]);
 
+  // ── V3: Auto-gerador de olheiros (1 a cada 7 dias) e refresh do staff (15 dias) ──
+  useEffect(() => {
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+    const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    setClub(prev => {
+      let changed = false;
+      let next = { ...prev };
+
+      // Scout auto-gen
+      const lastScoutTs = prev.lastScoutGeneratedAt ? new Date(prev.lastScoutGeneratedAt).getTime() : 0;
+      if (!lastScoutTs || now - lastScoutTs >= SEVEN_DAYS) {
+        const skill = Math.max(1, Math.min(8, Math.floor(Math.random() * 8) + 1));
+        const names = ['Carlos', 'Pedro', 'João', 'Rafael', 'Bruno', 'Eduardo', 'Henrique', 'Marcos', 'Felipe', 'Gustavo'];
+        const surnames = ['Silva', 'Souza', 'Costa', 'Lima', 'Pereira', 'Oliveira', 'Santos', 'Ferreira'];
+        const newScout: Scout = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: `${names[Math.floor(Math.random() * names.length)]} ${surnames[Math.floor(Math.random() * surnames.length)]}`,
+          skill,
+          salary: skill * 12000,
+          contract: 2,
+        };
+        next.availableScouts = [...(prev.availableScouts || []), newScout].slice(-5); // máximo 5 disponíveis
+        next.lastScoutGeneratedAt = new Date(now).toISOString();
+        changed = true;
+      }
+
+      // Staff market refresh
+      const lastStaffTs = prev.lastStaffMarketRefreshAt ? new Date(prev.lastStaffMarketRefreshAt).getTime() : 0;
+      if (!lastStaffTs || now - lastStaffTs >= FIFTEEN_DAYS || !(prev.staffMarket && prev.staffMarket.length)) {
+        const generateStaff = (role: 'assistente' | 'medico' | 'preparador_fisico', count: number) => {
+          return Array.from({ length: count }, () => {
+            const skill = Math.floor(Math.random() * 7) + 3; // 3-9
+            const names = ['Carlos Mendes', 'Ricardo Souza', 'Fernando Lima', 'André Santos', 'Paulo Costa', 'Marcos Silva', 'João Ferreira', 'Pedro Almeida', 'Luis Gomes', 'Felipe Rocha'];
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: names[Math.floor(Math.random() * names.length)],
+              role,
+              skill,
+              salary: skill * 18000,
+              contract: 2,
+            };
+          });
+        };
+        next.staffMarket = [
+          ...generateStaff('assistente', 5),
+          ...generateStaff('medico', 2),
+          ...generateStaff('preparador_fisico', 2),
+        ];
+        next.lastStaffMarketRefreshAt = new Date(now).toISOString();
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, []);
+
   const trainPlayer = useCallback((_playerId: string) => {
     toast.info('Selecione o foco de treino na aba Treinos!');
   }, []);
