@@ -573,6 +573,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const isFinished = phase === 'finished';
   const isHalftime = phase === 'halftime';
 
+  // Resolve team shields for narration rows
+  const { homeShield, awayShield } = useMatchShields(homeTeam, awayTeam);
+
   // In-match tactics
   const [liveTactics, setLiveTactics] = useState<TacticsConfig>(tactics || { formation: '4-4-2' } as TacticsConfig);
 
