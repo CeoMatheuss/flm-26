@@ -18,6 +18,8 @@ interface Props {
   onFireScout: (scoutId: string) => void;
   onAcceptAvailableScout?: (scoutId: string) => void;
   onBuyPremiumScout?: () => void;
+  /** Quando o usuário não é Premium, callback para abrir aba Premium (R$ 10/mês). */
+  onUpgradePremium?: () => void;
 }
 
 const scoutOptions = [
