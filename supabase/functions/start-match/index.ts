@@ -504,12 +504,14 @@ function simulateFullMatch(
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
   
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
+  // Home expected goals: home offense vs away defense (style mod)
   const homeExpected = clamp(
-    1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6,
-    0.3, 3.0  // Capped at 3.0 for balance
+    (1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) / Math.max(0.7, awayDefensiveMod * 0.85 + 0.15),
+    0.2, 3.0
   );
+  // Away expected goals: away offense vs home defense (style mod)
   const awayExpected = clamp(
-    1.1 - (strengthDiff / 100) * 1.2 * defensiveMod + (awayAttackVsDefense - 1) * 0.6,
+    (1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) / Math.max(0.7, defensiveMod * 0.85 + 0.15),
     0.2, 3.0
   );
   
@@ -1147,7 +1149,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff, tieBreaker } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff, tieBreaker, awayPlayers, awayTactics } = body;
     const validTieBreaker: 'none' | 'extra_time' | 'penalties' | 'both' =
       ['none', 'extra_time', 'penalties', 'both'].includes(tieBreaker) ? tieBreaker : 'none';
 
