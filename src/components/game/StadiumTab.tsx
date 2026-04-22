@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Landmark, ArrowUp, Users, Ticket, DollarSign, TrendingUp } from 'lucide-react';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -23,7 +24,11 @@ function getStadiumMatchRevenue(level: number, fans: number, ticketPrice: number
   return attendance * ticketPrice;
 }
 
-export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPrice, reputation, onUpgrade, onSetTicketPrice, onRenameStadium }: Props) {
+export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPrice, reputation, onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice, onRenameStadium: _onRenameStadium }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onUpgrade = guard(_onUpgrade);
+  const onSetTicketPrice = guard(_onSetTicketPrice);
+  const onRenameStadium = guard(_onRenameStadium);
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 15 };
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;

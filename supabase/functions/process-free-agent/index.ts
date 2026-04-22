@@ -133,6 +133,36 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     // ═══════════════════════════════════════════
+    // LIVE MATCH GUARD (user-scoped actions)
+    // ═══════════════════════════════════════════
+    const USER_ACTIONS = new Set(['make-offer', 'accept-counter', 'complete-signing', 'rescind-player']);
+    if (USER_ACTIONS.has(action)) {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const userClient = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: authHeader } },
+          });
+          const token = authHeader.replace('Bearer ', '');
+          const { data: claimsData } = await userClient.auth.getClaims(token);
+          const reqUserId = claimsData?.claims?.sub as string | undefined;
+          if (reqUserId) {
+            const { data: liveMatch } = await adminClient
+              .from('live_matches')
+              .select('id')
+              .eq('user_id', reqUserId)
+              .eq('status', 'live')
+              .lt('current_minute', 90)
+              .maybeSingle();
+            if (liveMatch) {
+              return json({ error: '🔒 Ação indisponível durante a partida. Aguarde o fim do jogo.' }, 423);
+            }
+          }
+        } catch { /* fall-through */ }
+      }
+    }
+
+    // ═══════════════════════════════════════════
     // PUBLIC: SEED POOL (cron-safe; idempotent)
     // ═══════════════════════════════════════════
     if (action === 'seed-pool') {

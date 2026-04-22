@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HeartPulse, ArrowUp, HelpCircle } from 'lucide-react';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -14,7 +15,9 @@ interface Props {
   onUpgrade: (facility: 'trainingCenter' | 'physiotherapy') => void;
 }
 
-export function InfrastructureTab({ infrastructure, budget, players = [], onUpgrade }: Props) {
+export function InfrastructureTab({ infrastructure, budget, players = [], onUpgrade: _onUpgrade }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onUpgrade = guard(_onUpgrade);
   const [helpOpen, setHelpOpen] = useState(false);
 
   const facility = infrastructure?.physiotherapy ?? { level: 1, maxLevel: 20 };

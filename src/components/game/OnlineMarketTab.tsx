@@ -19,6 +19,7 @@ import { Player } from '@/types/game';
 import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface TransferListing {
   id: string;
@@ -100,7 +101,13 @@ interface Props {
   onMarketTabChange?: (tab: string) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold, onPlayerBought, loanedPlayers = [], onLoanOut, onLoanIn, onListedPlayer, onAuction, activeMarketTab: activeMarketTabProp, onMarketTabChange }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold: _onPlayerSold, onPlayerBought: _onPlayerBought, loanedPlayers = [], onLoanOut: _onLoanOut, onLoanIn: _onLoanIn, onListedPlayer, onAuction: _onAuction, activeMarketTab: activeMarketTabProp, onMarketTabChange }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onPlayerSold = guard(_onPlayerSold);
+  const onPlayerBought = guard(_onPlayerBought);
+  const onLoanOut = _onLoanOut ? guard(_onLoanOut) : undefined;
+  const onLoanIn = _onLoanIn ? guard(_onLoanIn) : undefined;
+  const onAuction = _onAuction ? guard(_onAuction) : undefined;
   // Derive budgets if not provided (backwards-compat with old saves)
   const tBudget = transferBudget ?? Math.floor(budget * 0.4);
   const sBudget = salaryBudget ?? Math.floor(budget * 0.4);

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Gavel, Crown, Clock, TrendingUp, AlertTriangle, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Auction {
   id: string;
@@ -33,7 +34,9 @@ interface Props {
   onSellPlayer?: (playerId: string) => void;
 }
 
-export function AuctionTab({ userId, clubName, players, budget, isPremium, onSellPlayer }: Props) {
+export function AuctionTab({ userId, clubName, players, budget, isPremium, onSellPlayer: _onSellPlayer }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onSellPlayer = _onSellPlayer ? guard(_onSellPlayer) : undefined;
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(false);
 
