@@ -515,10 +515,14 @@ interface SubBannerData {
 }
 
 function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () => void }) {
+  // Use ref para manter onDone estável e garantir que o timer rode 1x e feche em 5s
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
   useEffect(() => {
-    const t = setTimeout(onDone, 5000);
+    const t = setTimeout(() => onDoneRef.current(), 5000);
     return () => clearTimeout(t);
-  }, [onDone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="animate-fade-in fixed top-2 left-2 right-2 sm:top-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:w-[90vw] sm:max-w-md">
@@ -649,7 +653,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string }[]>([]);
   const [lastSubMinute, setLastSubMinute] = useState(-1);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
-  const maxSubs = 5;
+  const maxSubs = 3;
   const maxWindows = 3;
 
   // ── Inline section refs (for scroll-to-section navigation) ──
