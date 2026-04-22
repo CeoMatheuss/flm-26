@@ -315,6 +315,32 @@ function generateReport(
   };
 }
 
+// ── PLAY STYLE MODIFIERS ─────────────────────────────────────
+interface StyleMod {
+  atk: number;       // multiplier on offensive expected
+  def: number;       // multiplier on defensive solidity (HIGHER def = LESS goals conceded)
+  pressureExtra: number; // adds to pressing baseline
+  staminaDrain: number;  // multiplies stamina drain
+  // attribute bonuses applied per-player on home side
+  attrBoost?: Partial<Record<string, number>>;
+}
+
+const STYLE_MODS: Record<string, StyleMod> = {
+  'ofensivo':       { atk: 1.20, def: 0.85, pressureExtra: 0.10, staminaDrain: 1.10, attrBoost: { shooting: 5 } },
+  'equilibrado':    { atk: 1.00, def: 1.00, pressureExtra: 0.00, staminaDrain: 1.00 },
+  'defensivo':      { atk: 0.85, def: 1.20, pressureExtra: -0.10, staminaDrain: 0.95, attrBoost: { marking: 5 } },
+  'contra-ataque':  { atk: 1.05, def: 1.10, pressureExtra: -0.10, staminaDrain: 0.95, attrBoost: { speed: 8 } },
+  'posse':          { atk: 0.90, def: 1.05, pressureExtra: 0.00, staminaDrain: 0.95, attrBoost: { passing: 5 } },
+  'tiki-taka':      { atk: 0.95, def: 1.10, pressureExtra: 0.15, staminaDrain: 1.05, attrBoost: { passing: 10, vision: 5 } },
+  'gegenpressing':  { atk: 1.15, def: 0.90, pressureExtra: 0.30, staminaDrain: 1.20, attrBoost: { aggression: 8, workRate: 5 } },
+  'parking-bus':    { atk: 0.75, def: 1.35, pressureExtra: -0.25, staminaDrain: 0.90, attrBoost: { defending: 10, marking: 8 } },
+  'long-ball':      { atk: 1.10, def: 0.95, pressureExtra: -0.05, staminaDrain: 0.95, attrBoost: { physical: 5, longShots: 8 } },
+};
+
+function getStyleMod(style: string): StyleMod {
+  return STYLE_MODS[style] || STYLE_MODS['equilibrado'];
+}
+
 // ── MAIN SIMULATION ──────────────────────────────────────────
 
 function simulateFullMatch(
@@ -323,7 +349,9 @@ function simulateFullMatch(
   stadiumName: string, isHome: boolean, competition: string,
   stadiumCapacity: number = 5000, homeFans: number = 500,
   staffData?: any, awayFans: number = 500,
-  tieBreakerMode: 'none' | 'extra_time' | 'penalties' | 'both' = 'none'
+  tieBreakerMode: 'none' | 'extra_time' | 'penalties' | 'both' = 'none',
+  awayPlayersInput?: any[],
+  awayTacticsInput?: any
 ) {
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
@@ -351,17 +379,36 @@ function simulateFullMatch(
   }));
 
   const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
-  const away: SimPlayer[] = Array.from({ length: 11 }, (_, i) => {
-    const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
-    const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
-    const attrs = genAwayAttrs(ovr, pos);
-    return {
-      id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
-      team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
-      isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
-      ...attrs,
-    };
-  });
+  // Use REAL away players when provided (multiplayer/tournaments)
+  const useRealAway = Array.isArray(awayPlayersInput) && awayPlayersInput.length >= 11;
+  const away: SimPlayer[] = useRealAway
+    ? awayPlayersInput!.slice(0, 11).map((p: any, i: number) => ({
+        id: p.id || `a${i}`, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
+        position: p.position || 'MEI', team: 'away' as const, ovr: p.overall || 60,
+        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+        stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+        speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
+        passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
+        physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
+        heading: p.attributes?.heading || 50, marking: p.attributes?.marking || 50,
+        vision: p.attributes?.vision || 50, crossing: p.attributes?.crossing || 50,
+        longShots: p.attributes?.longShots || 50, workRate: p.attributes?.workRate || 50,
+        composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
+        goalkeeping: p.attributes?.goalkeeping || (p.position === 'GOL' ? 60 : 0),
+        setPieces: p.attributes?.setPieces || 50, positioning: p.attributes?.positioning || 50,
+        personality: p.personality || 'introvertido',
+      }))
+    : Array.from({ length: 11 }, (_, i) => {
+        const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
+        const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
+        const attrs = genAwayAttrs(ovr, pos);
+        return {
+          id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
+          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
+          isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
+          ...attrs,
+        };
+      });
 
   const allPlayers = [...home, ...away];
 
@@ -385,20 +432,51 @@ function simulateFullMatch(
   const playStyle = tactics?.playStyle || 'equilibrado';
   const tempo = tactics?.tempo || 'normal';
 
+  // Away tactics (from input or defaults)
+  const awayPressing = awayTacticsInput?.pressing || 'medio';
+  const awayPlayStyle = awayTacticsInput?.playStyle || 'equilibrado';
+  const awayTempo = awayTacticsInput?.tempo || 'normal';
+
+  // Apply attribute boosts from style to home and away
+  const homeStyleMod = getStyleMod(playStyle);
+  const awayStyleMod = getStyleMod(awayPlayStyle);
+  if (homeStyleMod.attrBoost) {
+    for (const p of home) {
+      for (const [attr, bonus] of Object.entries(homeStyleMod.attrBoost)) {
+        (p as any)[attr] = Math.min(99, ((p as any)[attr] || 50) + (bonus as number));
+      }
+    }
+  }
+  if (awayStyleMod.attrBoost) {
+    for (const p of away) {
+      for (const [attr, bonus] of Object.entries(awayStyleMod.attrBoost)) {
+        (p as any)[attr] = Math.min(99, ((p as any)[attr] || 50) + (bonus as number));
+      }
+    }
+  }
+
   const homeAdv = isHome ? 1.10 : 0.95;
   const avgMorale = home.reduce((s, p) => s + p.morale, 0) / Math.max(1, home.length);
   const moraleMod = 0.85 + (avgMorale / 100) * 0.3;
   const avgStamina = home.reduce((s, p) => s + p.stamina, 0) / 11;
   const fatigueMod = 0.8 + (avgStamina / 100) * 0.2;
   
-  // Tactical impact on simulation
-  const pressingMod = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
-  const offensiveMod = playStyle === 'ofensivo' ? 1.20 : playStyle === 'contra-ataque' ? 1.05 : playStyle === 'equilibrado' ? 1.0 : playStyle === 'posse' ? 0.9 : 0.75;
-  const defensiveMod = playStyle === 'defensivo' ? 0.85 : playStyle === 'equilibrado' ? 1.0 : playStyle === 'ofensivo' ? 1.10 : 1.0;
+  // Tactical impact on simulation (HOME) — uses style table
+  const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
+  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra, 0.5, 2.0);
+  const offensiveMod = homeStyleMod.atk;
+  const defensiveMod = homeStyleMod.def;
   const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
-  
-  // Stamina drain modifiers for pressing/tempo
-  const staminaDrainPressing = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
+
+  // Away tactical mods
+  const awayPressingBase = awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8;
+  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra, 0.5, 2.0);
+  const awayOffensiveMod = awayStyleMod.atk;
+  const awayDefensiveMod = awayStyleMod.def;
+  const awayTempoMod = awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9;
+
+  // Stamina drain modifiers for pressing/tempo (multiplied by style drain)
+  const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain;
   const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
 
   // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
