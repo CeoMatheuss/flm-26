@@ -932,6 +932,8 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                 matchDbId={matchDbId}
                 onExit={onExit}
                 homePlayers={homePlayers}
+                homeShield={homeShield}
+                awayShield={awayShield}
               />
             )}
           </div>
@@ -1485,11 +1487,13 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
 
 /* ── FINISHED SECTION ──────────────────────────────────────── */
 
-function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayGoals, visibleEvents, matchDbId, onExit, homePlayers }: {
+function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayGoals, visibleEvents, matchDbId, onExit, homePlayers, homeShield, awayShield }: {
   stats: MatchStats; homeTeam: string; awayTeam: string;
   finalHomeGoals: number; finalAwayGoals: number;
   visibleEvents: SimEvent[]; matchDbId: string | null; onExit: () => void;
   homePlayers?: Player[];
+  homeShield?: ShieldRenderProps;
+  awayShield?: ShieldRenderProps;
 }) {
   const [showReplay, setShowReplay] = useState(false);
   const [replayIndex, setReplayIndex] = useState(0);
