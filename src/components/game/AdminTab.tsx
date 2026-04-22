@@ -105,6 +105,21 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBanPassword, setGameBanPassword] = useState('');
   const [gameBans, setGameBans] = useState<Array<{ id: string; user_id: string; reason: string; duration_months: number; banned_at: string; expires_at: string }>>([]);
   const [gameBanLoading, setGameBanLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('users');
+
+  // Reset active tab when category changes
+  useEffect(() => {
+    const map: Record<AdminCategory, string[]> = {
+      leagues:    ['system'],
+      cups:       ['system', 'tournaments'],
+      clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
+      players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
+      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
+      simulation: ['system'],
+    };
+    const list = map[activeCategory] || ['users'];
+    setActiveTab(prev => list.includes(prev) ? prev : list[0]);
+  }, [activeCategory, isFounder]);
 
   useEffect(() => {
     const check = async () => {
