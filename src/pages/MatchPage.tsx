@@ -642,15 +642,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
   // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
-  const [windowsUsed, setWindowsUsed] = useState(0);
   const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
   const [substitutedPlayerIds, setSubstitutedPlayerIds] = useState<Set<string>>(new Set());
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
-  const [subQueue, setSubQueue] = useState<{ outId: string; inId: string }[]>([]);
-  const [lastSubMinute, setLastSubMinute] = useState(-1);
+  const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
-  const maxSubs = 3;
-  const maxWindows = 3;
+  const maxSubs = 5;
+  // Janelas removidas — substituições são rápidas e ilimitadas em janela.
+  const windowsUsed = 0;
+  const maxWindows = 99;
 
   // ── Inline section refs (for scroll-to-section navigation) ──
   const tacticsSectionRef = useRef<HTMLDivElement>(null);
@@ -661,61 +661,69 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  // Process queued substitutions
+  // Process queued substitutions — rápido: aplica imediatamente após qualquer evento
+  // Substituição agendada para minuto X aguarda o minuto chegar.
+  // No intervalo, queue espera; assim que voltar (currentMinute >= 46) é processada.
   useEffect(() => {
     if (subQueue.length === 0 || !homePlayers) return;
-    const isDeadBall = latestEvent && ['foul', 'midfield_foul', 'dangerous_foul', 'corner_danger', 'halftime', 'kickoff'].includes(latestEvent.type);
-    if (isHalftime || isDeadBall) {
-      const sub = subQueue[0];
-      const playerOut = homePlayers.find(p => p.id === sub.outId);
-      const playerIn = homePlayers.find(p => p.id === sub.inId);
-      if (playerOut && playerIn) {
-        if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed < maxWindows) {
-          setWindowsUsed(w => w + 1);
-        } else if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed >= maxWindows) {
-          setSubQueue(q => q.slice(1));
-          return;
-        }
-        setLastSubMinute(currentMinute);
-        setSubsUsed(prev => prev + 1);
-        setSubstitutedPlayerIds(prev => new Set(prev).add(sub.outId));
-        setActiveBanner({ minute: currentMinute, playerOut: playerOut.name, playerIn: playerIn.name, teamName: homeTeam, isHalftime });
-        // Inject substitution event into narration feed
-        setInjectedSubEvents(prev => [...prev, {
-          minute: isHalftime ? 45 : currentMinute,
-          type: 'substitution',
-          team: 'home',
-          description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
-        } as SimEvent]);
-      }
-      setSubQueue(q => q.slice(1));
+    const next = subQueue[0];
+
+    // Sub agendada: aguarda o minuto programado
+    if (next.scheduledMinute && currentMinute < next.scheduledMinute && !isHalftime) return;
+
+    // Se está no intervalo, marca como halftime sub (entra no 2T)
+    // Caso contrário, aplica RÁPIDO assim que houver qualquer novo evento (próximo lance)
+    if (!latestEvent && !isHalftime) return;
+
+    const playerOut = homePlayers.find(p => p.id === next.outId);
+    const playerIn = homePlayers.find(p => p.id === next.inId);
+    if (playerOut && playerIn) {
+      setSubsUsed(prev => prev + 1);
+      setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
+      setActiveBanner({
+        minute: currentMinute,
+        playerOut: playerOut.name,
+        playerIn: playerIn.name,
+        teamName: homeTeam,
+        isHalftime,
+        shield: homeShield,
+      });
+      setInjectedSubEvents(prev => [...prev, {
+        minute: isHalftime ? 45 : currentMinute,
+        type: 'substitution',
+        team: 'home',
+        description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
+      } as SimEvent]);
     }
-  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, lastSubMinute, windowsUsed]);
+    setSubQueue(q => q.slice(1));
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield]);
 
   // Validation helper for substitutions — used by widget click + queue
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
     if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
-    if (currentMinute >= 45 && currentMinute < 60)
-      return { ok: false, reason: "🚫 Substituições bloqueadas no intervalo (45'-60'). Aguarde o reinício do 2º tempo." };
     if (currentMinute > 90)
       return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
     if (subsUsed >= maxSubs)
       return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
-    if (windowsUsed >= maxWindows && !isHalftime)
-      return { ok: false, reason: `⚠️ Você já usou as ${maxWindows} janelas de substituição permitidas no jogo corrido.` };
     return { ok: true };
-  }, [currentMinute, isFinished, isHalftime, subsUsed, windowsUsed]);
+  }, [currentMinute, isFinished, subsUsed]);
 
-  const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string) => {
+  const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string, scheduledMinute?: number) => {
     const check = validateSubAllowed();
     if (!check.ok) {
       toast.error(check.reason || 'Substituição não permitida');
       return;
     }
-    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId }]);
+    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
     setSelectedSubOut(null);
-    toast.success('✅ Substituição enviada à fila — será aplicada na próxima bola parada.');
-  }, [validateSubAllowed]);
+    if (scheduledMinute) {
+      toast.success(`⏱️ Substituição programada para o minuto ${scheduledMinute}'`);
+    } else if (isHalftime) {
+      toast.success('✅ Substituição confirmada — jogador entra no 2º tempo');
+    } else {
+      toast.success('✅ Substituição enviada — aplicada no próximo lance');
+    }
+  }, [validateSubAllowed, isHalftime]);
 
   const subBlocked = !validateSubAllowed().ok;
   const subBlockedReason = validateSubAllowed().reason;
