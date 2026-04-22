@@ -12,8 +12,12 @@ interface Props {
   scoutReports: ScoutReport[];
   matchesSinceLastScout: number;
   budget: number;
+  availableScouts?: Scout[];
+  lastScoutGeneratedAt?: string;
   onHireScout: (skill: number) => void;
   onFireScout: (scoutId: string) => void;
+  onAcceptAvailableScout?: (scoutId: string) => void;
+  onBuyPremiumScout?: () => void;
 }
 
 const scoutOptions = [
@@ -48,16 +52,28 @@ const attrLabels: Record<string, string> = {
   aggression: '⚔️ Agr',
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout: _onHireScout, onFireScout: _onFireScout }: Props) {
+export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout }: Props) {
   const { guard } = useLiveMatchGuard();
   const onHireScout = guard(_onHireScout);
   const onFireScout = guard(_onFireScout);
+  const onAcceptAvailableScout = guard(_onAcceptAvailableScout || (() => {}));
+  const onBuyPremiumScout = guard(_onBuyPremiumScout || (() => {}));
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [showHire, setShowHire] = useState(false);
 
   const bestScoutSkill = scouts.length > 0 ? Math.max(...scouts.map(s => s.skill)) : 0;
   const totalScoutSalary = scouts.reduce((s, sc) => s + sc.salary, 0);
   const reportsPerCycle = scouts.length;
+
+  // Próximo olheiro auto em (7d - tempo decorrido)
+  const nextScoutMs = (() => {
+    if (!lastScoutGeneratedAt) return 0;
+    const elapsed = Date.now() - new Date(lastScoutGeneratedAt).getTime();
+    return Math.max(0, 7 * 24 * 60 * 60 * 1000 - elapsed);
+  })();
+  const nextScoutLabel = nextScoutMs > 0
+    ? `${Math.floor(nextScoutMs / (24 * 60 * 60 * 1000))}d ${Math.floor((nextScoutMs / (60 * 60 * 1000)) % 24)}h`
+    : 'Disponível agora!';
 
   return (
     <div className="space-y-4">
