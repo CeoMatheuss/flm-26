@@ -297,23 +297,35 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="sponsors">
         {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
       </TabsContent>
+      <TabsContent value="physio">
+        {isTabBlocked('physio') ? <BlockedMessage /> : (
+          <InfrastructureTab
+            infrastructure={game.infrastructure}
+            budget={game.club.budget}
+            players={game.club.players}
+            onUpgrade={game.upgradeFacility}
+          />
+        )}
+      </TabsContent>
       <TabsContent value="infra">
-        <InfraHubTab
-          infrastructure={game.infrastructure}
-          budget={game.club.budget}
-          isPremium={isPremium}
-          players={game.club.players}
-          youthProspects={game.youthProspects}
-          monthlyInvestment={game.youthInvestment}
-          hasScouts={(game.club.scouts?.length ?? 0) > 0}
-          currentSeason={game.season?.currentSeason ?? 1}
-          onPromote={game.promoteYouth}
-          onSell={game.sellYouth}
-          onEnrollCopinha={game.enrollCopinha}
-          onSetInvestment={game.setYouthInvestment}
-          onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')}
-          onUpgradeFacility={game.upgradeFacility}
-        />
+        {/* Backward-compat: deep-links antigos para "infra" caem na Fisioterapia */}
+        {isTabBlocked('physio') ? <BlockedMessage /> : (
+          <InfrastructureTab
+            infrastructure={game.infrastructure}
+            budget={game.club.budget}
+            players={game.club.players}
+            onUpgrade={game.upgradeFacility}
+          />
+        )}
+      </TabsContent>
+      <TabsContent value="ct">
+        {isTabBlocked('ct') ? <BlockedMessage /> : (
+          <TrainingCenterTab
+            infrastructure={game.infrastructure}
+            budget={game.club.budget}
+            onUpgradeFacility={game.upgradeFacility}
+          />
+        )}
       </TabsContent>
       <TabsContent value="stadium">
         <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} />
