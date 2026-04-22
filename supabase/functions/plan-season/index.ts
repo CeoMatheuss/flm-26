@@ -610,6 +610,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── PHASE 5: International Cups (Champions/Libertadores + Europa/Sul-Americana) ──
+    try {
+      const intlRes = await fetch(`${supabaseUrl}/functions/v1/generate-international-cups`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-cron': 'true',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+      });
+      const intlJson = await intlRes.json();
+      console.log('[plan-season] international cups:', intlJson);
+    } catch (e) {
+      console.error('[plan-season] international cups error:', e);
+    }
+
     return new Response(JSON.stringify({
       success: true,
       seasonMonth,
