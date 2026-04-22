@@ -108,7 +108,7 @@ export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget,
             </div>
             {_onBuyPremiumScout && (
               <Button size="sm" onClick={onBuyPremiumScout} className="h-7 text-[10px] gap-1 bg-amber-500 hover:bg-amber-600 text-black">
-                ⚡ Nv Máx — 10 🪙
+                🌟 Olheiro Lendário (Premium)
               </Button>
             )}
           </div>

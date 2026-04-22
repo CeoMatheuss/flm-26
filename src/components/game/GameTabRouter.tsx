@@ -361,27 +361,27 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               });
             }}
             onBuyPremiumScout={isPremium ? () => {
-              const PREMIUM_COST = 5_000_000;
-              game.setClub((prev: any) => {
-                if ((prev.budget || 0) < PREMIUM_COST) {
-                  toast.error(`Saldo insuficiente — custo R$${(PREMIUM_COST / 1_000_000).toFixed(1)}M`);
-                  return prev;
-                }
-                const eliteNames = ['Alexandre Reis', 'Roberto Maximus', 'Vitor Sá', 'Henrique Aurélio', 'Diego Falcão'];
-                const elite = {
-                  id: Math.random().toString(36).substr(2, 9),
-                  name: eliteNames[Math.floor(Math.random() * eliteNames.length)],
-                  skill: 10,
-                  salary: 500_000,
-                  contract: 3,
-                };
-                toast.success(`⚡ Olheiro Lendário ${elite.name} contratado!`);
-                return {
-                  ...prev,
-                  budget: prev.budget - PREMIUM_COST,
-                  scouts: [...(prev.scouts || []), elite],
-                };
-              });
+              // Premium R$10/mês: 1 Olheiro Lendário (Nv 10) GRÁTIS por mês
+              const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
+              const lockKey = `premium_legendary_scout_${userId}_${monthKey}`;
+              if (localStorage.getItem(lockKey)) {
+                toast.info('🌟 Você já resgatou seu Olheiro Lendário deste mês. Volte no próximo mês!');
+                return;
+              }
+              const eliteNames = ['Alexandre Reis', 'Roberto Maximus', 'Vitor Sá', 'Henrique Aurélio', 'Diego Falcão'];
+              const elite = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: eliteNames[Math.floor(Math.random() * eliteNames.length)],
+                skill: 10,
+                salary: 500_000,
+                contract: 3,
+              };
+              game.setClub((prev: any) => ({
+                ...prev,
+                scouts: [...(prev.scouts || []), elite],
+              }));
+              localStorage.setItem(lockKey, '1');
+              toast.success(`⚡ Olheiro Lendário ${elite.name} contratado GRÁTIS (Premium)!`);
             } : undefined}
           />
         )}
