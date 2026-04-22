@@ -854,13 +854,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
               </div>
             )}
 
-            {/* 2D Canvas — highlights (smaller) */}
+            {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
               <Card className="p-1.5 sm:p-2 border-yellow-400/30 bg-yellow-400/5 transition-all duration-300">
-                <div className="text-center mb-1">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <ShieldCrest size={18} {...(activeHighlight.team === 'away' ? awayShield : homeShield)} />
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">{activeHighlight.minute}' — {getHighlightLabel(activeHighlight.type)}</Badge>
                 </div>
-                <div className="max-h-32 sm:max-h-40 overflow-hidden">
+                <div className="w-full max-w-[480px] mx-auto">
                   <HighlightMiniCanvas
                     type={getHighlightType(activeHighlight.type)}
                     team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
