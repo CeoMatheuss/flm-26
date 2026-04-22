@@ -1,102 +1,88 @@
 
 
-# Plano: Widgets Abertos + Escudos nos Lances + Canvas 2D Corrigido
+# Plano: Canvas 2D Sem Corte + Auto-escalação no Elenco + Widget Tático Resumo
 
-## Objetivo
+## Problema 1 — Canvas 2D sendo cortado
 
-Refinar a `MatchPage` com base no feedback:
-1. **Widgets sempre abertos** (não em accordeão), mas em tamanho compacto
-2. **Escudo do time** ao lado de cada lance da narração
-3. **Corrigir o canvas 2D do campo** (está bugado em tamanho)
-
-## 1. Widgets sempre abertos (sem Collapsible)
-
-Hoje as seções **Estatísticas, Escalações, Táticas, Substituições** estão em `<Collapsible>` fechados. Vou:
-
-- **Remover Collapsibles** dessas 4 seções
-- Manter como **Cards compactos sempre visíveis** (mesmo padding pequeno: `p-2 sm:p-3`)
-- Reduzir fontes internas (títulos `text-xs`, conteúdo `text-[11px]`)
-- Em desktop: organizar em **grid 2 colunas** abaixo do feed (`lg:grid-cols-2 gap-2`) para aproveitar espaço horizontal
-- Em mobile: continuam empilhados verticalmente
-
-## 2. Escudos do time em cada lance da narração
-
-Hoje cada linha do feed mostra: `[12'] ⚽ Gol de Pedrinho!`
-
-Vou adicionar escudo **antes do ícone**:
-```
-[12'] [🛡️] ⚽ Gol de Pedrinho!
-```
-
-### Como obter o escudo de cada lance
-Cada `SimEvent` tem `team: 'home' | 'away' | 'neutral'`. Vou:
-- Receber `homeShieldProps` e `awayShieldProps` (via `shieldPropsFromClub()`) na `MatchPage` e `ReplayPage`
-- Passar para o componente que renderiza linhas do feed
-- Renderizar `<ShieldCrest size={20} {...props} />` na linha quando `team !== 'neutral'`
-- Para `neutral` (kickoff, halftime, final_whistle): sem escudo
-
-### Onde buscar dados dos escudos
-- **Time da casa (player)**: já temos via `useGame()` → club atual com `shieldConfig`
-- **Time visitante**: vem do match (`match.away_club_data` ou similar). Se não tiver shield_config, fallback pra cores básicas via `shieldPropsFromClub()` que já trata isso
-- Aplicar mesma lógica em `ReplayPage` (mas como replay já tem `homeTeamName`/`awayTeamName`, buscar shields via query rápida no `league_squads` ou `game_saves` por nome do clube)
-
-### Tamanho do escudo no feed
-- `size={18}` em mobile, `size={20}` em desktop
-- Espaçamento `gap-1.5` entre escudo e ícone
-- Não quebra layout porque shield é SVG inline pequeno
-
-### Tamanho do escudo nos cards de "lance atual" e highlight
-- Card de lance atual: `<ShieldCrest size={24} />` ao lado do minuto
-- Banner do highlight ativo: `<ShieldCrest size={28} />` antes do label "GOL!"
-
-## 3. Corrigir canvas 2D do campo
-
-No último ajuste reduzi o canvas para `h-32 sm:h-40` mas isso quebrou o aspect ratio do `HighlightMiniCanvas` que espera proporção específica de campo de futebol.
+O `<HighlightMiniCanvas>` desenha em **480×280** (aspect 12:7 ≈ 1.71), mas o container em `MatchPage` usa `aspect-[16/9]` (1.78). O CSS `width:100%; height:100%` do canvas estica o desenho e **corta o campo**.
 
 ### Correção
-- Remover `h-32 sm:h-40` forçado
-- Restaurar **aspect-ratio nativo** do componente: `aspect-[16/9]` (campo paisagem)
-- Width 100% do container, altura calculada automaticamente
-- Container do canvas: `w-full max-w-[480px] mx-auto aspect-[16/9]` para limitar tamanho em desktop e centralizar
-- Em sidebar (desktop), o canvas continua na coluna principal — não vai pra sidebar
+- **Trocar o aspect do container** de `aspect-[16/9]` → `aspect-[12/7]` para casar com o canvas nativo
+- Aplicar a mesma correção em `ReplayPage.tsx`
+- O canvas continua respondendo a `width:100%; height:100%`, sem distorção
 
-### Verificar `HighlightMiniCanvas.tsx`
-- Confirmar que ele respeita o tamanho do container pai (parece que sim, usa `<canvas>` com `w-full h-full`)
-- Se necessário, ajustar `useEffect` de resize para usar `getBoundingClientRect()` em vez de hardcoded width
+(Alternativa considerada: fazer canvas redimensionável via ResizeObserver — mais complexo e desnecessário, já que o aspect do desenho é fixo.)
 
-## 4. Aplicar mesmas mudanças em `ReplayPage.tsx`
+### Quanto à narração desaparecer durante highlight
+Hoje, quando `activeHighlight` está ativo, o card de narração ao lado some (já tem `latestEvent && !goalFlash` mas o highlight não esconde explícitamente). Vou:
+- **Esconder o card de "Lance ao vivo"** enquanto o highlight 2D está rodando (`!activeHighlight && latestEvent && !goalFlash`)
+- Quando o highlight termina e `setActiveHighlight(null)` dispara, o card de narração **volta atualizado** com o último lance
 
-Para consistência:
-- Canvas do replay: mesmo aspect-ratio fix
-- Lances do feed: escudos pequenos
-- Tabs Estatísticas/Narração mantêm-se (replay não tem Escalação/Táticas/Subs porque é só visualização)
+## Problema 2 — Aba Elenco precisa de "Montar Time Automático"
+
+### Botão "⚡ Montar Time Automaticamente" no topo da `SquadTab`
+Adicionar um botão acima das sub-abas (Titulares/Reservas/Fora) que:
+1. Lê a **formação atual** (de `tactics.formation` salvo no club state — se não houver, usa `4-4-2`)
+2. Pega as **posições requeridas** da formação (mesma `getFormationPositions()` já usada em `MatchPage.tsx`)
+3. Para cada slot, escolhe o **melhor jogador disponível** com score:
+   - +1000 se posição idêntica
+   - +500 se mesmo grupo posicional (def/mid/atk)
+   - +OVR×10
+   - +stamina
+   - −1000 se lesionado
+4. Reordena `players` via `onReorderPlayers()`: 11 titulares → 12 reservas → resto
+5. Toast: "✅ Time montado: 4-4-2 • OVR médio 78"
+
+### Onde pegar a tática atual no SquadTab
+- Hoje `SquadTab` não recebe `tactics` como prop. Vou:
+  - Buscar `tactics` no `useGame()` (ou via prop nova `tactics` passada pelo `GameTabRouter`)
+  - Adicionar prop opcional `tactics?: TacticsConfig` em `SquadTabProps`
+  - No `GameTabRouter` passar `tactics={game.tactics}` (já existe no state)
+
+## Problema 3 — Widget pequeno de "Resumo Tático" no fim do Elenco
+
+Após a lista de jogadores (no fim de cada sub-aba ou abaixo de tudo), adicionar um **mini-card compacto** (`p-2`, `border-border/20`) mostrando:
+
+```
+┌──────────────────────────────────┐
+│ 🎯 Resumo Tático                 │
+│ ────────────────────────────────  │
+│ Formação: 4-4-2  • OVR Time: 78  │
+│ Estilo: Equilibrado              │
+│ Pressão: Média  • Ritmo: Normal  │
+│ Linha def.: Média • Marcação: Zona│
+│                                  │
+│ Capitão: Pedrinho (MEI)          │
+│ Pênalti: Carlos • Falta: Pedrinho│
+│ Escanteio: Junior                │
+└──────────────────────────────────┘
+```
+
+- Componente local `TacticsSummaryWidget` no fim do `SquadTab.tsx`
+- Usa `tactics` (mesma prop) + `players` para resolver nomes do capitão/cobradores
+- Só renderiza se `tactics` definido
+- Estilo enxuto: `text-[11px]`, ícones 3.5w, sem padding excessivo
 
 ## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/MatchPage.tsx` | Remover Collapsibles; reorganizar 4 widgets em grid 2-col desktop; passar shields para feed; corrigir aspect ratio canvas |
-| `src/pages/ReplayPage.tsx` | Mesma correção de canvas; adicionar escudos no feed; buscar shields dos times |
-| `src/components/game/HighlightMiniCanvas.tsx` | Garantir que respeita 100% do container (resize observer se necessário) |
-
-## Componente novo (interno)
-
-`MatchEventRow` (extraído como helper local nas duas páginas):
-- Props: `event`, `homeShield`, `awayShield`
-- Renderiza: `[minuto] [escudo] [ícone] [texto]`
-- Usado tanto no card de "lance atual" quanto nas linhas do feed
+| `src/pages/MatchPage.tsx` | Container do canvas: `aspect-[16/9]` → `aspect-[12/7]`; esconder card de "Lance ao vivo" quando `activeHighlight` está ativo |
+| `src/pages/ReplayPage.tsx` | Mesma correção de `aspect-[12/7]` no container do canvas |
+| `src/components/game/SquadTab.tsx` | Adicionar botão "⚡ Montar Time Automaticamente"; novo componente `TacticsSummaryWidget` no fim; aceitar prop `tactics?: TacticsConfig` |
+| `src/components/game/GameTabRouter.tsx` | Passar `tactics={game.tactics}` para `<SquadTab>` |
 
 ## Compatibilidade
 
 - Sem mudança de schema
-- Sem regressão em mobile (continua coluna única, widgets compactos)
-- Se um clube não tem `shieldConfig`, `shieldPropsFromClub()` já tem fallback pra `'#2563EB'` solid
-- Eventos `neutral` (kickoff, halftime, final_whistle) não mostram escudo — só ícone
+- Se `onReorderPlayers` não estiver definido, botão fica desabilitado com tooltip "Não disponível"
+- Se `tactics` não vier (multiplayer/clube novo), widget tático não renderiza (silencioso)
+- Aspect-ratio `12:7` é o desenho nativo, então campo aparece **inteiro** sem distorção em qualquer largura
 
 ## Anti-bug
 
-- ✅ Canvas com aspect-ratio fixo não distorce mais
-- ✅ Widgets abertos = info sempre visível, mas compacta
-- ✅ Escudos com fallback garantido (sem render quebrado se faltar dado)
-- ✅ Feed continua com altura limitada (`max-h-[280px]`) para não dominar tela
+- ✅ Canvas nunca mais cortado — aspect ratio do CSS = aspect ratio do desenho
+- ✅ Narração não desaparece permanentemente — só some durante o highlight, volta quando o lance termina
+- ✅ "Montar Time" respeita a formação atual e prioriza posição correta + OVR + condição
+- ✅ Widget tático compacto não polui a tela (apenas info resumida, ~6 linhas)
 
