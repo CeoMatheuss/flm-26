@@ -941,13 +941,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
             {!isFinished ? (
               /* Chat-style narration feed — compact */
               <Card className="p-1.5 sm:p-2 border-border/20">
-                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto divide-y divide-border/10">
+                <div ref={eventsRef} className="max-h-[280px] sm:max-h-[320px] overflow-y-auto">
                   {visibleEvents.length === 0 && (
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
-                  {[...visibleEvents].reverse().slice(0, 40).map((ev, i) => (
-                    <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
-                  ))}
+                  <EventFeed
+                    events={[...visibleEvents].reverse().slice(0, 40)}
+                    homeTeam={homeTeam} awayTeam={awayTeam}
+                    homeShield={homeShield} awayShield={awayShield}
+                  />
                 </div>
               </Card>
             ) : (
