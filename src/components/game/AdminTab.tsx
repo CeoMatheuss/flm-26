@@ -1302,6 +1302,9 @@ export function AdminTab({ userId, isFounder }: Props) {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Scout Generator (global market) */}
+            <AdminScoutsAndStaffGenerators userId={userId} />
           </TabsContent>
         )}
 
