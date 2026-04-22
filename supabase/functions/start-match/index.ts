@@ -1019,15 +1019,19 @@ function simulateFullMatch(
   const manOfTheMatch = homePlayers_sorted.length > 0 ? homePlayers_sorted[0].name : undefined;
 
   const reportResult = generateReport(
-    homeTeam, awayTeam, finalHomeGoals, finalAwayGoals,
+    homeTeam, awayTeam, aggregateHomeGoals, aggregateAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     isHome, competition, homeStrength, awayStrength, tactics,
     stadiumCapacity, [...home, ...away], [...home, ...away]
   );
 
-  console.log(`[Sim] Final: ${finalHomeGoals}x${finalAwayGoals} | Events: ${finalEvents.length}`);
+  console.log(`[Sim] Final: ${aggregateHomeGoals}x${aggregateAwayGoals} (Pen: ${shootoutHomeGoals}x${shootoutAwayGoals}) | Events: ${finalEvents.length}`);
   return {
-    events: finalEvents, homeGoals: finalHomeGoals, awayGoals: finalAwayGoals,
+    events: finalEvents,
+    homeGoals: aggregateHomeGoals,
+    awayGoals: aggregateAwayGoals,
+    penaltyHomeGoals: shootoutHomeGoals,
+    penaltyAwayGoals: shootoutAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     reportData: reportResult.report,
     result: reportResult.result,
@@ -1097,7 +1101,7 @@ Deno.serve(async (req) => {
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
       competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
-      staff, awayFans || 500
+      staff, awayFans || 500, validTieBreaker
     );
 
     const durationSeconds = 720; // 12 minutes real time
