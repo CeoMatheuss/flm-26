@@ -11,6 +11,8 @@ import { ArrowLeft, BarChart3, FastForward, LogOut } from 'lucide-react';
 import { useMatchReplay } from '@/match/useMatchReplay';
 import { SimEvent, MatchStats } from '@/match';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
+import { ShieldCrest } from '@/components/game/ShieldCrest';
+import { useMatchShields } from '@/hooks/useMatchShields';
 
 interface ReplayPageState {
   matchData: {
