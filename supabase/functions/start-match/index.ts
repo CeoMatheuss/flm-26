@@ -1160,6 +1160,9 @@ Deno.serve(async (req) => {
     if (typeof homeTeam !== 'string' || homeTeam.length > 100 || typeof awayTeam !== 'string' || awayTeam.length > 100) {
       return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    if (!Array.isArray(homePlayers) || homePlayers.length === 0) {
+      return new Response(JSON.stringify({ error: 'No home players provided. Selecione ao menos 1 jogador titular.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const validatedHomeStrength = clamp(Number(homeStrength) || 60, 20, 99);
     const validatedAwayStrength = clamp(Number(awayStrength) || 60, 20, 99);
@@ -1188,6 +1191,20 @@ Deno.serve(async (req) => {
       Array.isArray(awayPlayers) ? awayPlayers : undefined,
       awayTactics || undefined
     );
+
+    // Fallback: ensure minimum events so UI never hangs
+    if (!Array.isArray(result.events) || result.events.length === 0) {
+      console.warn('[Sim] Empty events generated — applying fallback');
+      const fallbackHomeGoals = poissonSample(Math.max(0.3, validatedHomeStrength / 60));
+      const fallbackAwayGoals = poissonSample(Math.max(0.3, validatedAwayStrength / 60));
+      result.events = [
+        { minute: 0, type: 'kickoff', team: 'neutral', description: '⚽ Início da partida!' },
+        { minute: 45, type: 'halftime', team: 'neutral', description: '🟡 Fim do 1º tempo' },
+        { minute: 90, type: 'final_whistle', team: 'neutral', description: '🏁 Fim de jogo!' },
+      ] as any;
+      result.homeGoals = fallbackHomeGoals;
+      result.awayGoals = fallbackAwayGoals;
+    }
 
     const durationSeconds = 720; // 12 minutes real time
 
