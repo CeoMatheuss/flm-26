@@ -176,24 +176,41 @@ export default function ReplayPage() {
         </TabsList>
         <TabsContent value="events">
           <Card className="p-1.5">
-            <div ref={eventsRef} className="max-h-[260px] sm:max-h-[300px] overflow-y-auto space-y-0.5">
+            <div ref={eventsRef} className="max-h-[260px] sm:max-h-[300px] overflow-y-auto">
               {visibleEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
               )}
-              {[...visibleEvents].reverse().slice(0, 50).map((ev, i) => {
-                const shield = ev.team === 'home' ? homeShield : ev.team === 'away' ? awayShield : null;
-                return (
-                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-1.5 text-xs px-2 py-1 rounded transition-colors ${getEventBg(ev)}`}>
-                    <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                    {shield ? (
-                      <div className="shrink-0 mt-0.5"><ShieldCrest size={16} {...shield} /></div>
-                    ) : (
-                      <span className="text-[10px] shrink-0">{getEventIcon(ev.type)}</span>
-                    )}
-                    <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
-                  </div>
-                );
-              })}
+              {(() => {
+                const items: React.ReactNode[] = [];
+                const list = [...visibleEvents].reverse().slice(0, 50);
+                let prevMin: number | null = null;
+                list.forEach((ev, i) => {
+                  if (ev.minute !== prevMin) {
+                    items.push(
+                      <div key={`sep-${ev.minute}-${i}`} className="flex items-center gap-2 py-1.5 px-1 bg-muted/5">
+                        <div className="h-px flex-1 bg-border/30" />
+                        <span className="text-[10px] font-mono font-bold text-muted-foreground/70 px-2 py-0.5 rounded-full bg-card/60 border border-border/30">{ev.minute}'</span>
+                        <div className="h-px flex-1 bg-border/30" />
+                      </div>
+                    );
+                    prevMin = ev.minute;
+                  }
+                  const shield = ev.team === 'home' ? homeShield : ev.team === 'away' ? awayShield : null;
+                  const isGoal = ev.isGoal;
+                  items.push(
+                    <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 px-2 py-2 border-b border-border/10 transition-all ${isGoal ? 'bg-emerald-500/15 border-l-4 border-l-emerald-400 animate-goal-flash' : ''}`}>
+                      <Badge variant="outline" className="text-[9px] w-7 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                      {shield ? (
+                        <div className="shrink-0 mt-0.5"><ShieldCrest size={isGoal ? 24 : 20} {...shield} /></div>
+                      ) : (
+                        <span className="text-[12px] shrink-0 mt-0.5">{getEventIcon(ev.type)}</span>
+                      )}
+                      <span className={`leading-relaxed ${isGoal ? 'text-sm sm:text-base font-bold' : 'text-[13px] sm:text-sm'} ${getEventColor(ev.type)}`}>{ev.description}</span>
+                    </div>
+                  );
+                });
+                return items;
+              })()}
             </div>
           </Card>
         </TabsContent>
