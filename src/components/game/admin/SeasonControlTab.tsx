@@ -104,28 +104,8 @@ export function SeasonControlTab({ adminUserId }: Props) {
     setConfirm(null);
   };
 
-  const runAutoSim = async () => {
-    setActionLoading('auto-sim');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Sessão expirada');
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auto-simulate-expired-matches`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      });
-      const result = await res.json();
-      if (res.ok) {
-        toast.success(`🤖 ${result.total} partida(s) simulada(s) automaticamente`);
-        await logAdmin('manual_auto_sim_trigger', { result });
-        load();
-      } else {
-        toast.error(result.error || 'Erro');
-      }
-    } catch (e: any) {
-      toast.error(e.message || 'Erro');
-    }
-    setActionLoading(null);
-  };
+  // Auto-simulation now runs 100% client-side via useAutoSimulator hook.
+  // No server/cron/admin trigger needed.
 
   return (
     <div className="space-y-3">
@@ -158,12 +138,12 @@ export function SeasonControlTab({ adminUserId }: Props) {
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" /> Auto-Simulação de Partidas
+            <Bot className="h-4 w-4 text-primary" /> Auto-Simulação de Partidas (client-side)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-[10px] text-muted-foreground">
-            Partidas com janela de 5 min expirada são simuladas automaticamente pelo cron a cada minuto. Use o botão para forçar agora.
+            Sistema 100% automático no cliente: qualquer jogador online varre a fila a cada 30s e simula partidas paradas há mais de 5 min sem ninguém entrar. Não depende de cron, admin nem servidor.
           </p>
           <div className="grid grid-cols-4 gap-1.5">
             <div className="p-1.5 rounded bg-muted/20 text-center">
@@ -183,15 +163,6 @@ export function SeasonControlTab({ adminUserId }: Props) {
               <p className="text-sm font-bold">{pendingCounts.friendly}</p>
             </div>
           </div>
-          <Button
-            size="sm"
-            onClick={runAutoSim}
-            disabled={!!actionLoading}
-            className="h-8 text-xs gap-1 w-full"
-            variant="outline"
-          >
-            <Bot className="h-3 w-3" /> {actionLoading === 'auto-sim' ? 'Simulando…' : '⚡ Simular partidas pendentes agora'}
-          </Button>
         </CardContent>
       </Card>
 
