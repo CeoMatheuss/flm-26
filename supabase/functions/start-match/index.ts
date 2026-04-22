@@ -1184,7 +1184,9 @@ Deno.serve(async (req) => {
       validatedHomeStrength, validatedAwayStrength,
       tactics || {}, stadiumName || 'Estádio', isHome !== false,
       competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
-      staff, awayFans || 500, validTieBreaker
+      staff, awayFans || 500, validTieBreaker,
+      Array.isArray(awayPlayers) ? awayPlayers : undefined,
+      awayTactics || undefined
     );
 
     const durationSeconds = 720; // 12 minutes real time
