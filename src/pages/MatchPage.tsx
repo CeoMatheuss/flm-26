@@ -512,6 +512,7 @@ interface SubBannerData {
   playerIn: string;
   teamName: string;
   isHalftime: boolean;
+  shield?: ShieldRenderProps;
 }
 
 function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () => void }) {
@@ -531,18 +532,13 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
         <div className="px-2.5 py-2 sm:px-4 sm:py-3 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <span className="text-base sm:text-xl">🔁</span>
+              {data.shield ? <ShieldCrest size={20} {...data.shield} /> : <span className="text-base sm:text-xl">🔁</span>}
               <span className="text-[10px] sm:text-sm font-black uppercase tracking-wider text-primary truncate">Substituição</span>
+              <span className="text-[10px] sm:text-xs font-bold text-foreground truncate hidden sm:inline">{data.teamName}</span>
             </div>
-            {!data.isHalftime && (
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                <Badge variant="outline" className="text-[10px] sm:text-sm font-mono px-1.5 sm:px-2.5">{data.minute}'</Badge>
-                <div className="hidden sm:flex items-center gap-1">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{data.teamName}</span>
-                </div>
-              </div>
-            )}
+            <Badge variant="outline" className="text-[10px] sm:text-sm font-mono px-1.5 sm:px-2.5 shrink-0">
+              {data.isHalftime ? 'INT' : `${data.minute}'`}
+            </Badge>
           </div>
           <div className="flex items-stretch gap-1.5 sm:gap-3">
             <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2.5">
@@ -646,15 +642,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
   // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
-  const [windowsUsed, setWindowsUsed] = useState(0);
   const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
   const [substitutedPlayerIds, setSubstitutedPlayerIds] = useState<Set<string>>(new Set());
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
-  const [subQueue, setSubQueue] = useState<{ outId: string; inId: string }[]>([]);
-  const [lastSubMinute, setLastSubMinute] = useState(-1);
+  const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
-  const maxSubs = 3;
-  const maxWindows = 3;
+  const maxSubs = 5;
+  // Janelas removidas — substituições são rápidas e ilimitadas em janela.
+  const windowsUsed = 0;
+  const maxWindows = 99;
 
   // ── Inline section refs (for scroll-to-section navigation) ──
   const tacticsSectionRef = useRef<HTMLDivElement>(null);
@@ -665,61 +661,69 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  // Process queued substitutions
+  // Process queued substitutions — rápido: aplica imediatamente após qualquer evento
+  // Substituição agendada para minuto X aguarda o minuto chegar.
+  // No intervalo, queue espera; assim que voltar (currentMinute >= 46) é processada.
   useEffect(() => {
     if (subQueue.length === 0 || !homePlayers) return;
-    const isDeadBall = latestEvent && ['foul', 'midfield_foul', 'dangerous_foul', 'corner_danger', 'halftime', 'kickoff'].includes(latestEvent.type);
-    if (isHalftime || isDeadBall) {
-      const sub = subQueue[0];
-      const playerOut = homePlayers.find(p => p.id === sub.outId);
-      const playerIn = homePlayers.find(p => p.id === sub.inId);
-      if (playerOut && playerIn) {
-        if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed < maxWindows) {
-          setWindowsUsed(w => w + 1);
-        } else if (!isHalftime && currentMinute !== lastSubMinute && windowsUsed >= maxWindows) {
-          setSubQueue(q => q.slice(1));
-          return;
-        }
-        setLastSubMinute(currentMinute);
-        setSubsUsed(prev => prev + 1);
-        setSubstitutedPlayerIds(prev => new Set(prev).add(sub.outId));
-        setActiveBanner({ minute: currentMinute, playerOut: playerOut.name, playerIn: playerIn.name, teamName: homeTeam, isHalftime });
-        // Inject substitution event into narration feed
-        setInjectedSubEvents(prev => [...prev, {
-          minute: isHalftime ? 45 : currentMinute,
-          type: 'substitution',
-          team: 'home',
-          description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
-        } as SimEvent]);
-      }
-      setSubQueue(q => q.slice(1));
+    const next = subQueue[0];
+
+    // Sub agendada: aguarda o minuto programado
+    if (next.scheduledMinute && currentMinute < next.scheduledMinute && !isHalftime) return;
+
+    // Se está no intervalo, marca como halftime sub (entra no 2T)
+    // Caso contrário, aplica RÁPIDO assim que houver qualquer novo evento (próximo lance)
+    if (!latestEvent && !isHalftime) return;
+
+    const playerOut = homePlayers.find(p => p.id === next.outId);
+    const playerIn = homePlayers.find(p => p.id === next.inId);
+    if (playerOut && playerIn) {
+      setSubsUsed(prev => prev + 1);
+      setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
+      setActiveBanner({
+        minute: currentMinute,
+        playerOut: playerOut.name,
+        playerIn: playerIn.name,
+        teamName: homeTeam,
+        isHalftime,
+        shield: homeShield,
+      });
+      setInjectedSubEvents(prev => [...prev, {
+        minute: isHalftime ? 45 : currentMinute,
+        type: 'substitution',
+        team: 'home',
+        description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
+      } as SimEvent]);
     }
-  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, lastSubMinute, windowsUsed]);
+    setSubQueue(q => q.slice(1));
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield]);
 
   // Validation helper for substitutions — used by widget click + queue
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
     if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
-    if (currentMinute >= 45 && currentMinute < 60)
-      return { ok: false, reason: "🚫 Substituições bloqueadas no intervalo (45'-60'). Aguarde o reinício do 2º tempo." };
     if (currentMinute > 90)
       return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
     if (subsUsed >= maxSubs)
       return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
-    if (windowsUsed >= maxWindows && !isHalftime)
-      return { ok: false, reason: `⚠️ Você já usou as ${maxWindows} janelas de substituição permitidas no jogo corrido.` };
     return { ok: true };
-  }, [currentMinute, isFinished, isHalftime, subsUsed, windowsUsed]);
+  }, [currentMinute, isFinished, subsUsed]);
 
-  const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string) => {
+  const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string, scheduledMinute?: number) => {
     const check = validateSubAllowed();
     if (!check.ok) {
       toast.error(check.reason || 'Substituição não permitida');
       return;
     }
-    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId }]);
+    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
     setSelectedSubOut(null);
-    toast.success('✅ Substituição enviada à fila — será aplicada na próxima bola parada.');
-  }, [validateSubAllowed]);
+    if (scheduledMinute) {
+      toast.success(`⏱️ Substituição programada para o minuto ${scheduledMinute}'`);
+    } else if (isHalftime) {
+      toast.success('✅ Substituição confirmada — jogador entra no 2º tempo');
+    } else {
+      toast.success('✅ Substituição enviada — aplicada no próximo lance');
+    }
+  }, [validateSubAllowed, isHalftime]);
 
   const subBlocked = !validateSubAllowed().ok;
   const subBlockedReason = validateSubAllowed().reason;
@@ -1185,55 +1189,30 @@ function MatchMiniWidgets({
 
   return (
     <div className="grid grid-cols-2 gap-1.5">
-      {/* Adversário */}
-      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-1">
-          {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <span className="text-xs">🤖</span>}
-          <span className="text-[10px] font-bold truncate flex-1">{awayTeam}</span>
-          <Badge variant="outline" className="text-[8px] h-3.5 px-1">OVR {awayStrength}</Badge>
+      {/* Adversário — compacto */}
+      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
+        <div className="flex items-center gap-1 mb-0.5">
+          {awayShield ? <ShieldCrest size={12} {...awayShield} /> : <span className="text-[10px]">🤖</span>}
+          <span className="text-[9px] font-bold truncate flex-1">{awayTeam}</span>
+          <Badge variant="outline" className="text-[8px] h-3 px-1">{awayStrength}</Badge>
         </div>
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">ATK</span>
-            <Bar value={atk} color="bg-red-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{atk}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">MID</span>
-            <Bar value={mid} color="bg-yellow-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{mid}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] text-muted-foreground w-7">DEF</span>
-            <Bar value={def} color="bg-blue-400" />
-            <span className="text-[8px] font-mono w-5 text-right">{def}</span>
-          </div>
+        <div className="flex items-center gap-1 text-[8px]">
+          <span className="flex-1 text-center"><span className="text-red-400">A</span> {atk}</span>
+          <span className="flex-1 text-center"><span className="text-yellow-400">M</span> {mid}</span>
+          <span className="flex-1 text-center"><span className="text-blue-400">D</span> {def}</span>
         </div>
       </Card>
 
-      {/* Pulso da Partida */}
-      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-1">
-          <span className="text-xs">📊</span>
-          <span className="text-[10px] font-bold flex-1">Pulso da Partida</span>
+      {/* Pulso da Partida — compacto */}
+      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
+        <div className="flex items-center gap-1 mb-0.5">
+          <span className="text-[10px]">📊</span>
+          <span className="text-[9px] font-bold flex-1 truncate capitalize">{currentMoment.replace('_', ' ')}</span>
         </div>
-        <div className="space-y-0.5 text-[9px]">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Momento</span>
-            <span className="font-bold capitalize truncate ml-1">{currentMoment.replace('_', ' ')}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Posse</span>
-            <span className="font-mono font-bold">{stats.possession[0]}% / {stats.possession[1]}%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">xG</span>
-            <span className="font-mono font-bold">{xgHome} - {xgAway}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Tiros</span>
-            <span className="font-mono font-bold">{stats.shots[0]}-{stats.shots[1]}</span>
-          </div>
+        <div className="flex items-center gap-1 text-[8px]">
+          <span className="flex-1 text-center font-mono">{stats.possession[0]}/{stats.possession[1]}%</span>
+          <span className="flex-1 text-center font-mono">xG {xgHome}-{xgAway}</span>
+          <span className="flex-1 text-center font-mono">⚡{stats.shots[0]}-{stats.shots[1]}</span>
         </div>
       </Card>
     </div>
@@ -1364,11 +1343,11 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   maxWindows: number;
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
-  onConfirmSub: (outId: string, inId: string) => void;
+  onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   isHalftime: boolean;
   isFinished: boolean;
   substitutedPlayerIds: Set<string>;
-  subQueue: { outId: string; inId: string }[];
+  subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   blocked?: boolean;
   blockedReason?: string;
 }) {
@@ -1425,10 +1404,10 @@ function ImprovedSubsView({
   subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason,
 }: {
   starters: Player[]; bench: Player[];
-  subQueue: { outId: string; inId: string }[];
+  subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
-  onConfirmSub: (outId: string, inId: string) => void;
+  onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
@@ -1460,21 +1439,18 @@ function ImprovedSubsView({
     return getPositionGroup(p.position) === posFilter;
   });
 
+  const [scheduleMinute, setScheduleMinute] = useState<string>('');
+
   return (
     <div className="space-y-2">
-      {/* Compact indicator: subs + windows on one row */}
+      {/* Compact indicator: subs only (windows removed) */}
       <div className="flex items-center gap-2 flex-wrap text-[10px]">
         <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
           <span>⚡</span>
           <span className="font-mono font-bold">{subsUsed}/{maxSubs}</span>
           <span className="text-muted-foreground">subs</span>
         </span>
-        <span className="flex items-center gap-1 bg-card/60 border border-border/30 rounded px-1.5 py-0.5">
-          <span>🪟</span>
-          <span className="font-mono font-bold">{windowsUsed}/{maxWindows}</span>
-          <span className="text-muted-foreground">janelas</span>
-        </span>
-        {isHalftime && <Badge variant="secondary" className="text-[9px] h-4 px-1">Intervalo</Badge>}
+        {isHalftime && <Badge variant="secondary" className="text-[9px] h-4 px-1">Intervalo · entra no 2T</Badge>}
         {subQueue.length > 0 && (
           <Badge variant="outline" className="text-[9px] h-4 px-1 border-orange-400/50 text-orange-400 animate-pulse">
             ⏳ {subQueue.length} na fila
@@ -1562,7 +1538,24 @@ function ImprovedSubsView({
             ))}
           </div>
 
-          <div className="space-y-1 max-h-[230px] overflow-y-auto pr-1">
+          {/* Programar minuto */}
+          {selectedPlayer && !isHalftime && (
+            <div className="flex items-center gap-1 bg-amber-500/5 border border-amber-500/20 rounded px-1.5 py-1">
+              <span className="text-[9px] text-amber-400 font-bold">⏱️ Min:</span>
+              <input
+                type="number"
+                min={1}
+                max={89}
+                placeholder="já"
+                value={scheduleMinute}
+                onChange={(e) => setScheduleMinute(e.target.value)}
+                className="w-12 h-5 bg-card/80 border border-border/30 rounded text-[10px] text-center font-mono"
+              />
+              <span className="text-[8px] text-muted-foreground flex-1">vazio = próximo lance</span>
+            </div>
+          )}
+
+          <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
             {!selectedPlayer && (
               <p className="text-[10px] text-muted-foreground text-center py-3">
                 ← Selecione um titular primeiro
@@ -1578,7 +1571,11 @@ function ImprovedSubsView({
               return (
                 <button
                   key={p.id}
-                  onClick={() => onConfirmSub(selectedSubOut!, p.id)}
+                  onClick={() => {
+                    const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
+                    onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
+                    setScheduleMinute('');
+                  }}
                   className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
                     isSuggested ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-400/40'
                     : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
@@ -1609,8 +1606,8 @@ function ImprovedSubsView({
 
       {selectedPlayer && (
         <p className="text-[9px] text-muted-foreground text-center">
-          📡 Clique em um reserva para confirmar a substituição
-          {isHalftime && ' (intervalo — execução imediata)'}
+          📡 Clique no reserva para confirmar
+          {isHalftime ? ' — entra no 2º tempo' : scheduleMinute ? ` — programada para ${scheduleMinute}'` : ' — aplicada no próximo lance'}
         </p>
       )}
     </div>

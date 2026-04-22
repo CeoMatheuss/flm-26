@@ -17,6 +17,7 @@ import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { FansTab } from '@/components/game/FansTab';
+import { MembersTab } from '@/components/game/MembersTab';
 import { TrainingWrapper } from '@/components/game/TrainingWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
@@ -289,6 +290,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
+      </TabsContent>
+      <TabsContent value="members">
+        <MembersTab totalFans={game.club.fans || 500} reputation={game.club.reputation || 50} />
       </TabsContent>
       <TabsContent value="training">
         {isTabBlocked('training') ? <BlockedMessage /> : <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} trainingIntensity={game.trainingIntensity} onSetTrainingIntensity={game.setPlayerTrainingIntensity} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} budget={game.club.budget} onUpgradeCT={() => game.upgradeFacility('trainingCenter')} />}
