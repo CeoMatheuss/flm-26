@@ -17,6 +17,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     home: string; away: string; date: string; tournament: string;
     matchId: string; homeTeamId: string; awayTeamId: string;
     opponentStrength: number; isHome: boolean; tournamentName: string;
+    status?: string; homeGoals?: number | null; awayGoals?: number | null; playedAt?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
