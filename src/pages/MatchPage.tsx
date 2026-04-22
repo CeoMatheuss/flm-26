@@ -1718,10 +1718,12 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           <div>
             <p className="text-sm sm:text-base font-semibold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/10">
-              {[...visibleEvents].reverse().map((ev, i) => (
-                <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
-              ))}
+            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg">
+              <EventFeed
+                events={[...visibleEvents].reverse()}
+                homeTeam={homeTeam} awayTeam={awayTeam}
+                homeShield={homeShield} awayShield={awayShield}
+              />
             </div>
           </div>
         </CardContent>
