@@ -1,178 +1,119 @@
 
 
-# Plano: Bloqueios Durante Partida + Sistema de Premiações de Fim de Temporada com IA
+# Plano: Otimização Geral — Fisio, Torcida, Perfil, Infra, Olheiros, Staff, Admin e Mercado
 
-## Parte 1 — Bloqueios durante partida ao vivo
+## 1. Fisioterapia — Custos rebalanceados (Nv 1→20)
 
-### 1.1 Detecção global de partida ativa
-Criar hook `useActiveMatch` em `src/hooks/useActiveMatch.ts`:
-- Lê `live_matches` do usuário com `status = 'live'` (e `current_minute < 90`)
-- Realtime listener (postgres_changes) reage a início/fim
-- Retorna `{ isInLiveMatch: boolean, matchId: string | null, minute: number }`
+Atualizar `src/types/infrastructure.ts`:
+- Reescrever `physiotherapyCosts` com a tabela exata pedida:
+  ```
+  2:300k, 3:500k, 4:800k, 5:1.2M, 6:1.8M, 7:2.5M, 8:3.5M, 9:4.8M, 10:6M
+  11:8M, 12:10M, 13:13M, 14:16M, 15:20M
+  16:25M, 17:32M, 18:40M, 19:50M, 20:65M
+  ```
+- Manter `getDailyStaminaRecovery()` já correto (30 + nível, máx 50).
+- O `InfrastructureTab` já mostra recuperação e cap; só validar texto "+30 base / max 50".
 
-### 1.2 Snapshot anti-exploit
-Quando partida começa (`start-match` edge function): já persiste `home_players` em `live_matches` (snapshot real do elenco no minuto 0). Reforçar:
-- Edge function `start-match` adiciona campo `roster_locked_at = now()` 
-- Migration: nova coluna `roster_locked_at TIMESTAMPTZ` em `live_matches`
+## 2. Torcida — Ganho moderado por partida
 
-### 1.3 Bloqueio em ações sensíveis
-Componente novo `LiveMatchGuard` (HOC/wrapper) — exibe mensagem "🔒 Ação indisponível durante a partida" e bloqueia clique.
+Em `src/hooks/useMatchState.ts`:
+- Substituir a lógica atual (que pode dar +200 a +300) por faixa final fixa **50 a 100** torcedores em vitória, **20 a 50** em empate, **0 a 20** em derrota.
+- Remover bônus exagerados de streak/estádio que estouram o teto. Manter pequena variação por reputação (±10) e estádio (+5/nível).
+- Cap final: `clamp(fanChange, -50, 100)`.
 
-Pontos onde aplicar (envolvendo botões/handlers):
-- `SquadTab.tsx` — botões: Rescindir, Listar venda, Emprestar, Trocar número, Renovar, Reordenar
-- `OnlineMarketTab.tsx` — botões: Comprar, Listar, Fazer oferta, Empréstimo
-- `AuctionTab.tsx` — botão Dar lance + criar leilão
-- `PacotinhosTab.tsx` — botão Comprar pacote
-- `InfrastructureTab.tsx` — botão Melhorar (qualquer facility)
-- `StadiumTab.tsx` — botão Expandir + alterar preço ingresso
-- `YouthAcademyTab.tsx` — botão Promover, Vender, Investimento
-- `ScoutsTab.tsx` — Contratar/demitir olheiro
-- `StaffTab.tsx` — Contratar/demitir staff
-- `TacticsTab.tsx` — botão "Salvar" (persistir alteração permanente). Mudança rápida via "⚡ Aplicar Tática" do MatchPage CONTINUA permitida (única exceção)
+## 3. Simulação de partida — Auto-play baseado em tempo (sem depender do servidor)
 
-### 1.4 Toast padrão
-Mensagem fixa via `sonner`:
-```ts
-toast.error("🔒 Ação indisponível durante a partida", { 
-  description: "Aguarde o fim do jogo para fazer alterações no elenco/finanças" 
-});
-```
+Em `src/match/useMatchSimulation.ts` + `src/pages/MatchPage.tsx`:
+- Reforçar fallback client-side: se `live_matches` não responder em 8s, ou se a partida for amistoso vs BOT, simular **integralmente no cliente** usando timestamp:
+  - `currentMinute = floor((Date.now() - startedAt) / (duration_seconds * 1000 / 90))`
+  - Eventos gerados deterministicamente por seed (matchId) → idêntico em qualquer dispositivo.
+- Servidor permanece como "source of truth" só para PvP; amistoso/treino simulam offline.
+- Persistir resultado quando partida termina (apenas se online); se offline, salva no `localStorage` e faz re-sync.
 
-### 1.5 Indicador visual
-Banner fixo no topo do `GameNavBar.tsx` quando `isInLiveMatch`:
-- Badge vermelho pulsante "🔴 PARTIDA AO VIVO — Modo Estratégia"
-- Botão "Voltar à partida" → navega `/match`
+## 4. Perfil do Clube — Apenas Saldo Total
 
-### 1.6 Validação server-side (defesa em profundidade)
-Edge functions `process-transfer`, `admin-grant-customization`, `process-free-agent` verificam se `live_matches` ativa do user existe → bloqueiam com erro 423 "Locked".
+Em `src/components/game/ClubProfileTab.tsx`:
+- Remover badges/números de "verba de transferência", "verba salarial", "reserva" caso apareçam (verificar BudgetBreakdown referenciado).
+- Card superior exibe somente: `💰 Saldo: R$ X` (formato compacto via `formatMoney`).
+- Manter torcedores, reputação, temporada, país.
+- BudgetBreakdown continua acessível só na aba `Finanças`.
 
----
+## 5. Infraestrutura — Mover Base e Treinamento
 
-## Parte 2 — Sistema de Premiações de Fim de Temporada
+Em `src/components/game/GameMenu.tsx` e `GameTabRouter.tsx`:
+- Criar **aba unificada "Infraestrutura"** que apresenta sub-tabs:
+  - 🏥 Fisioterapia (atual)
+  - 🎓 Categorias de Base (atual `YouthAcademyTab`)
+  - 🏋️ Centro de Treinamento (atual `TrainingTab` — só a parte de upgrade do CT, não confundir com a aba de execução de treino diário, que continua como "Treinos")
+- Remover entradas duplicadas "Categorias de Base" e "Treinos" do menu lateral; manter apenas o atalho **"Treinos"** (sessão diária) e **"Infraestrutura"** (upgrades).
+- Decisão: **Centro de Treinamento upgrade vai para Infra**; **execução diária de treino fica em "Treinos"**.
 
-### 2.1 Schema novo
-Migration: tabela `season_awards`:
-```sql
-CREATE TABLE season_awards (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  season integer NOT NULL,
-  scope text NOT NULL, -- 'global' | 'league'
-  scope_id uuid,       -- league_id quando scope='league'
-  award_type text NOT NULL, -- 'ballon_dor' | 'top_scorer' | 'top_assists' | 'best_gk' | 'best_team' | 'team_of_season'
-  player_name text,
-  player_position text,
-  player_overall integer,
-  user_id uuid,        -- dono do jogador
-  club_name text,
-  club_logo text,
-  stats jsonb DEFAULT '{}',
-  score numeric DEFAULT 0,
-  ai_image_url text,
-  ai_narrative text,
-  created_at timestamptz DEFAULT now()
-);
-ALTER TABLE season_awards ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone authenticated can view awards" ON season_awards FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admins manage awards" ON season_awards FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'));
-```
+## 6. Olheiros — Geração automática + Premium instantâneo
 
-### 2.2 Edge function `process-season-awards`
-Nova função `supabase/functions/process-season-awards/index.ts`:
+Novo módulo `src/hooks/useScoutGenerator.ts`:
+- A cada **7 dias reais** (compara `lastScoutGeneratedAt` salvo em `clubState`), gera 1 olheiro disponível com `skill` aleatório (1–8) e o adiciona em `availableScouts[]` (novo array no club state).
+- `ScoutsTab.tsx` ganha sub-seção "🎁 Olheiros Disponíveis" com card "Próximo em Xd Yh".
+- Botão **"⚡ Olheiro Nível Máximo (10) — 10 moedas"** chama `usePremium`/Pacotinhos para debitar coins e criar instantaneamente um scout skill 10.
+- Manter contratação manual atual como opção paga em R$.
 
-**Fluxo**:
-1. Recebe `{ season: number, league_id?: string }`. Sem `league_id` = processa TUDO (global + todas ligas)
-2. Agrega stats dos jogadores via `match_history` (extraindo `goal_scorers`, `events`, `player_ratings` da temporada)
-3. Calcula score por jogador:
-   ```ts
-   score = goals*4 + assists*3 + cleanSheets*2 + (avgRating-6)*5 + titles*10
-   minGames = 10 // filtrar
-   ```
-4. Para cada categoria, escolhe vencedor (tiebreaker: rating médio → jogos → idade)
-5. Para cada award: chama Lovable AI Gateway:
-   - `google/gemini-3.1-flash-image-preview` → imagem 1024x1024 (jogador erguendo troféu, estilo cartaz)
-   - `google/gemini-2.5-flash` → narrativa pt-BR estilo jornalista esportivo (3 parágrafos)
-6. Sobe imagem ao bucket `club-logos` (reaproveitado) → URL público
-7. INSERT em `season_awards`
-8. INSERT em `journal_updates` com manchete + imagem
-9. INSERT em `user_notifications` para vencedores: "🏆 Você ganhou Bola de Ouro temporada X!"
+## 7. Equipe Técnica — Geração automática de 5 assistentes livres
 
-**Categorias geradas**:
-- **Globais (1 cada)**: Bola de Ouro, Artilheiro Mundial, Rei das Assistências, Luva de Ouro (melhor GK), Melhor Time do Mundo
-- **Por liga (1 cada)**: Melhor Jogador, Artilheiro, Assistências, Melhor GK, Campeão
-- **Time da Temporada por liga**: 11 jogadores (1 GK, 4 DEF, 3 MEI, 3 ATA) com maior score por posição → formação 4-3-3
+Em `src/components/game/StaffTab.tsx`:
+- Substituir array fixo `STAFF_MARKET` por mercado dinâmico:
+  - Hook `useStaffMarket()` mantém **5 assistentes**, **2 médicos** e **2 preparadores** sempre disponíveis com níveis aleatórios (3–9), salários proporcionais.
+  - Refresh automático a cada **15 dias reais** ou via botão "🔄 Atualizar Mercado" (cooldown 24h).
+- Persiste em `clubState.staffMarket[]` via auto-save.
+- Mantém limite de 1 staff por papel (`hasRole`).
 
-### 2.3 Trigger automático
-Edge function `plan-season` (existente, roda via pg_cron no fim do mês) chama `process-season-awards` antes de avançar season. Adicionar bloco no final do handler.
+## 8. Painel Admin — Novas funções de geração
 
-### 2.4 UI — Tela de Premiação
-Novo componente `src/components/game/SeasonAwardsModal.tsx`:
-- Modal full-screen com fundo dourado animado
-- Carrossel de cards (1 award por slide, navegação por setas)
-- Cada card: imagem IA (16:9), título do prêmio, jogador + escudo, stats principais, narrativa IA
-- Slide especial "Time da Temporada": campo 2D com 11 jogadores posicionados (reusar `FormationView`)
-- Footer: botão "Compartilhar no Jornal" (já vai automático) + "Fechar"
-- Trigger: ao abrir o jogo, se houver `season_awards` da última season ainda não vista → mostra modal. Persiste `viewed_awards_season` em `profiles`
+Em `AdminTab.tsx`, categoria **Players** (sub-tab nova "Geradores"):
+- Botão **"🔍 Gerar Olheiros"** — input: quantidade + skill. Insere em todos os clubes alvo (ou um user específico) via Edge Function nova `admin-generate-staff` ou direto em `game_saves.club_data.availableScouts`.
+- Botão **"👨‍💼 Gerar Equipe Técnica"** — gera 5 assistentes/2 médicos/2 preparadores no mercado global.
+- Botão **"♻️ Resetar Mercado de Staff (todos)"** — limpa e regenera.
+- Reaproveitar layout do gerador de jogadores existente (cards lado a lado).
 
-### 2.5 Aba dedicada
-Nova aba "🏆 Premiações" dentro de `TrophiesTab.tsx`:
-- Tabs internos: "Esta Temporada" / "Histórico"
-- Lista todos awards com filtros (Global / Minha Liga)
-- Click no card → reabre `SeasonAwardsModal` naquele award
+## 9. Mercado — Aumentar preço dos jogadores top
 
-### 2.6 Newspaper integration
-`process-season-awards` insere automaticamente em `journal_updates` com:
-- `category: 'awards'`
-- `title: "🏆 [Nome] conquista Bola de Ouro da Temporada X!"`
-- `content: <narrativa IA>`
-- `image_url: <url IA>`
-Filtro novo "🏆 Premiações" no `NewspaperFullPage.tsx`.
+Em `src/utils/playerGenerator.ts` → `getPlayerBaseValue`:
+- Reescalonar curva de OVR para encarecer elite:
+  ```
+  OVR ≥ 90 → ovr * 250.000  (era 80k)
+  OVR ≥ 85 → ovr * 150.000  (era 80k)
+  OVR ≥ 80 → ovr * 80.000
+  OVR ≥ 75 → ovr * 50.000   (era 40k)
+  OVR ≥ 70 → ovr * 30.000
+  OVR ≥ 65 → ovr * 20.000
+  OVR ≥ 55 → ovr * 10.000
+  resto    → ovr * 5.000
+  ```
+- Manter `ageFactor` atual.
+- Resultado típico: jogador OVR 90 / 24a passa de ~9M para ~30M; OVR 85 sobe de ~6.5M para ~14M.
+- Ajustar `pacotinhos` se houver cálculo derivado.
 
-### 2.7 Notificação push
-Para vencedores, INSERT em `user_notifications` com `notification_type: 'award'` → toca som + browser notification (sistema existente).
+## 10. Validação
 
----
-
-## 3. Arquivos modificados
-
-| Arquivo | Mudança |
+| Item | Como validar |
 |---|---|
-| `src/hooks/useActiveMatch.ts` | **NOVO** — detecta partida ativa via realtime |
-| `src/components/game/LiveMatchGuard.tsx` | **NOVO** — wrapper que bloqueia ações sensíveis com toast |
-| `src/components/game/GameNavBar.tsx` | +banner "🔴 PARTIDA AO VIVO" quando ativa |
-| `src/components/game/SquadTab.tsx` | Envolver handlers de venda/empréstimo/rescindir |
-| `src/components/game/OnlineMarketTab.tsx` | Bloquear botões de compra/listagem |
-| `src/components/game/AuctionTab.tsx`, `PacotinhosTab.tsx`, `InfrastructureTab.tsx`, `StadiumTab.tsx`, `YouthAcademyTab.tsx`, `ScoutsTab.tsx`, `StaffTab.tsx` | Aplicar `LiveMatchGuard` |
-| `src/components/game/TacticsTab.tsx` | Bloquear botão "Salvar" permanente; permitir só via MatchPage |
-| Edge `process-transfer`, `process-free-agent` | Validação server-side: 423 se live match |
-| Migration | +`roster_locked_at` em `live_matches`; +tabela `season_awards`; +`viewed_awards_season` em `profiles` |
-| `supabase/functions/process-season-awards/index.ts` | **NOVA** — agrega stats, gera awards, IA imagens+narrativas, popula tabelas |
-| `supabase/functions/plan-season/index.ts` | Chama `process-season-awards` antes de fechar season |
-| `src/components/game/SeasonAwardsModal.tsx` | **NOVO** — modal carrossel full-screen |
-| `src/components/game/TrophiesTab.tsx` | +Tab "Premiações" com histórico |
-| `src/components/game/NewspaperFullPage.tsx` | +filtro "🏆 Premiações" |
-| `src/pages/Index.tsx` | Trigger SeasonAwardsModal se houver awards não vistos |
-| `supabase/config.toml` | +`[functions.process-season-awards] verify_jwt = false` |
+| Custo Fisio | Abrir aba Fisioterapia, conferir botão "Melhorar para Nv 2 — R$ 300k", "10 — R$ 6M", "20 — R$ 65M" |
+| Torcida | Disputar 5 amistosos: ganhos sempre dentro de 50–100 |
+| Sim offline | Desligar Wi-Fi mid-match → simulação continua até o 90' |
+| Perfil Clube | Apenas 1 número financeiro visível |
+| Infra unificada | Menu mostra 1 entrada "Infraestrutura" com 3 sub-tabs |
+| Olheiros auto | Após 7d (ou ajuste de relógio), ver olheiro novo disponível |
+| Olheiros premium | Comprar com 10 coins → skill 10 imediato |
+| Staff dinâmico | Demitir assistente → ver novo no mercado, refresh automático |
+| Admin gerar | Botões funcionam, jogadores recebem itens |
+| Preço top | OVR 90 jovem custa ~30–40M no mercado |
 
-## 4. Validação
+## 11. Anti-bug
 
-- ✅ Tentar comprar jogador durante live match → toast "🔒 Ação indisponível"
-- ✅ Tentar iniciar obra → bloqueado
-- ✅ Trocar tática rápida no MatchPage → continua funcionando (única exceção)
-- ✅ Banner vermelho aparece em todas as abas durante partida
-- ✅ Final de temporada → todos vencedores recebem notificação + abrem modal automaticamente no próximo login
-- ✅ Imagens IA salvas em bucket público com URL persistente
-- ✅ Time da Temporada respeita posições (1 GK, 4 DEF, 3 MEI, 3 ATA)
-- ✅ Tiebreaker funciona: empate em gols → desempate por rating médio
-
-## 5. Anti-bug
-
-- ✅ `useActiveMatch` re-checa a cada 30s além de realtime (fallback se WS cair)
-- ✅ Snapshot `home_players` já existe em `live_matches` — fonte da verdade durante simulação
-- ✅ Validação server-side em edge functions evita bypass via DevTools
-- ✅ `process-season-awards` é idempotente: `UNIQUE(season, scope, scope_id, award_type)` evita duplicação
-- ✅ Filtro `minGames = 10` evita awards para jogadores com 1 jogo
-- ✅ Geração IA com `Promise.allSettled` — se imagem falha, award ainda é criado (só sem foto)
-- ✅ Modal de awards usa flag em `profiles` — não mostra duas vezes
-- ✅ Bucket `club-logos` reusado (já público) para imagens — sem custo de novo bucket
-- ✅ TacticsTab: distinção clara entre "Salvar permanente" (bloqueado) vs "Aplicar agora" no MatchPage (livre)
+- ✅ `physiotherapyCosts` indexado por nível-alvo (key 2 = custo de 1→2, etc.) — coerente com `getUpgradeCost(currentLevel)` que já usa `[currentLevel + 1]`.
+- ✅ Geração de olheiros usa timestamp persistido — evita duplicar se user abrir várias abas (debounce + check `Date.now() - lastGen >= 7d`).
+- ✅ Staff market regenerado preserva contratos ativos (filtrar por `hasRole`).
+- ✅ Aumento de preço aplica só a NOVOS jogadores gerados (`generateMarketPlayers`); jogadores já no elenco mantêm valor calculado on-the-fly via `getPlayerValue` (refletirá novo preço, intencional).
+- ✅ Simulação offline grava resultado em `localStorage` com chave `pending_match_result_{matchId}` → `useGame` faz flush para Supabase quando voltar online.
+- ✅ Cap de torcida não afeta sistema existente de reputação (só `fanChange`).
+- ✅ Aba "Infraestrutura" unificada não quebra deep-links de tutorial (mapear redirect `youth` e `training` → `infra` se necessário).
+- ✅ Migração: nenhuma alteração de schema necessária — tudo cabe no `club_data` JSONB existente.
 
