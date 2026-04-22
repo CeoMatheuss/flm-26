@@ -150,12 +150,12 @@ export default function ReplayPage() {
         </Card>
       )}
 
-      {/* Latest event commentary */}
+      {/* Latest event commentary — compact */}
       {latestEvent && (
-        <Card className="p-2.5">
+        <Card className="py-1.5 px-2.5">
           <div className="flex items-start gap-2">
             <Badge variant="outline" className="text-[9px] font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
-            <p className={`text-sm font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
+            <p className={`text-xs font-semibold leading-snug ${getEventColor(latestEvent.type)}`}>
               {getEventIcon(latestEvent.type)} {latestEvent.description}
             </p>
           </div>
@@ -170,7 +170,7 @@ export default function ReplayPage() {
         </TabsList>
         <TabsContent value="events">
           <Card className="p-1.5">
-            <div ref={eventsRef} className="max-h-[300px] overflow-y-auto space-y-0.5">
+            <div ref={eventsRef} className="max-h-[260px] sm:max-h-[300px] overflow-y-auto space-y-0.5">
               {visibleEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
               )}
@@ -178,7 +178,7 @@ export default function ReplayPage() {
                 <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${getEventBg(ev)}`}>
                   <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
                   <span className="text-[10px] shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
+                  <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
                 </div>
               ))}
             </div>
