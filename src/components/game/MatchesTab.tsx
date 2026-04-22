@@ -205,6 +205,23 @@ export function MatchesTab({
     return { text: `${hours}h ${mins}min`, isNow: false, isExpired: false };
   };
 
+  // Lobby overlay (5-min sync window) for human-vs-human tournament/league matches
+  if (lobbyMatch) {
+    const oppName = lobbyMatch.isHome ? lobbyMatch.awayName : lobbyMatch.homeName;
+    return (
+      <MatchLobbyScreen
+        matchType="league"
+        matchId={lobbyMatch.id}
+        userId={userId}
+        myClub={clubName}
+        oppClub={oppName}
+        onReady={() => { const m = lobbyMatch; setLobbyMatch(null); goToTournamentMatch(m); }}
+        onAutoSimulated={() => setLobbyMatch(null)}
+        onCancel={() => setLobbyMatch(null)}
+      />
+    );
+  }
+
   return (
     <Tabs defaultValue="bot" className="space-y-3">
       <TabsList className="w-full">
