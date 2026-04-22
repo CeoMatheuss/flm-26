@@ -437,6 +437,8 @@ export function useMatchSimulation() {
     fans?: number;
     awayFans?: number;
     tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
+    awayPlayers?: any[];
+    awayTactics?: any;
   }): Promise<{ success: boolean; error?: string }> => {
     setState(s => ({ ...s, phase: 'loading' }));
     requestNotificationPermission();

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width } from '@/types/tactics';
+import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects } from '@/types/tactics';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,12 +172,42 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
           <Card>
             <CardContent className="space-y-3 pt-3 px-3 sm:px-4 pb-3">
               <div>
-                <SectionLabel icon={Target} label="Mentalidade" />
-                <div className="flex gap-1">
-                  {(['defensivo', 'contra-ataque', 'equilibrado', 'posse', 'ofensivo'] as PlayStyle[]).map(s => (
-                    <TacticButton key={s} value={s} current={tactics.playStyle} onClick={v => setField('playStyle', v)} />
-                  ))}
+                <SectionLabel icon={Target} label="Mentalidade / Estilo" />
+                <div className="grid grid-cols-3 gap-1">
+                  {(['defensivo', 'equilibrado', 'ofensivo', 'contra-ataque', 'posse', 'tiki-taka', 'gegenpressing', 'parking-bus', 'long-ball'] as PlayStyle[]).map(s => {
+                    const eff = playStyleEffects[s];
+                    const isActive = tactics.playStyle === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => setField('playStyle', s)}
+                        className={`text-[10px] py-1.5 px-1 rounded-md font-medium transition-all flex items-center justify-center gap-1 min-w-0 ${
+                          isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                        }`}
+                      >
+                        <span>{eff.icon}</span>
+                        <span className="truncate">{eff.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+                {/* Descriptive card */}
+                {(() => {
+                  const eff = playStyleEffects[tactics.playStyle];
+                  return (
+                    <div className="mt-2 bg-muted/20 border border-border/40 rounded-md p-2 space-y-1">
+                      <p className="text-[11px] font-bold flex items-center gap-1.5">
+                        <span className="text-base">{eff.icon}</span>{eff.label}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground italic leading-tight">{eff.philosophy}</p>
+                      <div className="space-y-0.5">
+                        {eff.bullets.map((b, i) => (
+                          <p key={i} className="text-[10px] text-foreground/80">{b}</p>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <SectionLabel icon={Zap} label="Pressão" />
