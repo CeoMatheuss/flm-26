@@ -846,10 +846,156 @@ function simulateFullMatch(
     minute: 90, type: 'added_time', team: 'neutral', animType: 'halftime',
     description: `⏱️ +${addedTime2} minutos de acréscimo no 2º tempo!`,
   });
-  finalEvents.push({
-    minute: 90 + addedTime2, type: 'final_whistle', team: 'neutral', animType: 'final',
-    description: `🏁 APITO FINAL! ${homeTeam} ${finalHomeGoals} x ${finalAwayGoals} ${awayTeam}!`,
-  });
+
+  // ── TIE BREAKER (extra time / penalty shootout) ──
+  let extraHomeGoals = 0;
+  let extraAwayGoals = 0;
+  let shootoutHomeGoals = 0;
+  let shootoutAwayGoals = 0;
+
+  const isDraw = (finalHomeGoals + extraHomeGoals) === (finalAwayGoals + extraAwayGoals);
+  const wantsExtraTime = tieBreakerMode === 'extra_time' || tieBreakerMode === 'both';
+  const wantsPenalties = tieBreakerMode === 'penalties' || tieBreakerMode === 'both';
+
+  if (isDraw && (wantsExtraTime || wantsPenalties)) {
+    let regulationEndMin = 90 + addedTime2;
+
+    if (wantsExtraTime) {
+      finalEvents.push({
+        minute: regulationEndMin, type: 'extra_time_start', team: 'neutral', animType: 'kickoff',
+        description: `⏱️ ${finalHomeGoals + extraHomeGoals} x ${finalAwayGoals + extraAwayGoals} no tempo regulamentar! Vamos para a PRORROGAÇÃO de 30 minutos!`,
+      });
+
+      // Simulate 30 mins of extra time — 2-3 chances per side, lower goal probability
+      const balance = (homeStrength * homeAdv) / ((homeStrength * homeAdv) + awayStrength);
+      const etChances = 2 + Math.floor(rng() * 2);
+      for (let i = 0; i < etChances; i++) {
+        const min = regulationEndMin + 1 + Math.floor((i / etChances) * 28);
+        const isHomeChance = rng() < balance;
+        const team = isHomeChance ? 'home' : 'away';
+        const teamPool = (isHomeChance ? home : away).filter(p => p.position !== 'GOL');
+        const scorer = teamPool.length > 0 ? pick(teamPool) : null;
+        const scoreProb = 0.28; // ~28% chance per shot
+        if (rng() < scoreProb && scorer) {
+          if (isHomeChance) extraHomeGoals++; else extraAwayGoals++;
+          finalEvents.push({
+            minute: min, type: 'extra_time_goal', team, animType: 'goal',
+            playerName: scorer.name, isGoal: true,
+            description: `⚽ GOOOOL DA PRORROGAÇÃO! ${scorer.name} (${isHomeChance ? homeTeam : awayTeam})!`,
+          });
+        } else {
+          finalEvents.push({
+            minute: min, type: 'extra_time_chance', team, animType: 'shot',
+            playerName: scorer?.name,
+            description: `⚡ Chance perigosa de ${scorer?.name || 'jogador'} na prorrogação — ${isHomeChance ? homeTeam : awayTeam}!`,
+          });
+        }
+      }
+      regulationEndMin += 30;
+      finalEvents.push({
+        minute: regulationEndMin, type: 'extra_time_end', team: 'neutral', animType: 'halftime',
+        description: `⏸️ Fim da prorrogação: ${finalHomeGoals + extraHomeGoals} x ${finalAwayGoals + extraAwayGoals}.`,
+      });
+    }
+
+    const stillDraw = (finalHomeGoals + extraHomeGoals) === (finalAwayGoals + extraAwayGoals);
+    if (stillDraw && wantsPenalties) {
+      finalEvents.push({
+        minute: regulationEndMin, type: 'penalty_shootout_start', team: 'neutral', animType: 'kickoff',
+        description: `🎯 DISPUTA DE PÊNALTIS! Quem terá o sangue frio?`,
+      });
+
+      const homeTakers = [...home].filter(p => p.position !== 'GOL').sort((a, b) => (b.shooting + (b.composure || 60)) - (a.shooting + (a.composure || 60))).slice(0, 5);
+      const awayTakers = [...away].filter(p => p.position !== 'GOL').sort((a, b) => (b.shooting + (b.composure || 60)) - (a.shooting + (a.composure || 60))).slice(0, 5);
+      const homeKeeper = home.find(p => p.position === 'GOL');
+      const awayKeeper = away.find(p => p.position === 'GOL');
+
+      let kickMinute = regulationEndMin;
+      for (let round = 0; round < 5; round++) {
+        // Home kicks
+        const hT = homeTakers[round];
+        if (hT) {
+          kickMinute += 1;
+          const baseProb = 0.78;
+          const skillBoost = (hT.shooting + (hT.composure || 60) + (hT.setPieces || 60)) / 300 * 0.15;
+          const gkSave = (awayKeeper?.goalkeeping || 60) / 100 * 0.10;
+          const scored = rng() < (baseProb + skillBoost - gkSave);
+          if (scored) shootoutHomeGoals++;
+          finalEvents.push({
+            minute: kickMinute, type: 'penalty_shootout', team: 'home', animType: 'penalty',
+            playerName: hT.name, isGoal: scored,
+            description: scored
+              ? `✅ ${hT.name} converte! ${homeTeam} ${shootoutHomeGoals} x ${shootoutAwayGoals} ${awayTeam} (${round + 1}ª série)`
+              : `❌ ${awayKeeper?.name || 'Goleiro'} pega! ${hT.name} desperdiça (${round + 1}ª série)`,
+          });
+        }
+        // Away kicks
+        const aT = awayTakers[round];
+        if (aT) {
+          kickMinute += 1;
+          const baseProb = 0.78;
+          const skillBoost = (aT.shooting + (aT.composure || 60) + (aT.setPieces || 60)) / 300 * 0.15;
+          const gkSave = (homeKeeper?.goalkeeping || 60) / 100 * 0.10;
+          const scored = rng() < (baseProb + skillBoost - gkSave);
+          if (scored) shootoutAwayGoals++;
+          finalEvents.push({
+            minute: kickMinute, type: 'penalty_shootout', team: 'away', animType: 'penalty',
+            playerName: aT.name, isGoal: scored,
+            description: scored
+              ? `✅ ${aT.name} converte! ${homeTeam} ${shootoutHomeGoals} x ${shootoutAwayGoals} ${awayTeam} (${round + 1}ª série)`
+              : `❌ ${homeKeeper?.name || 'Goleiro'} pega! ${aT.name} desperdiça (${round + 1}ª série)`,
+          });
+        }
+        // Sudden death after 5 rounds if tied
+        if (round === 4 && shootoutHomeGoals === shootoutAwayGoals) {
+          // Sudden death: 5 more attempts max
+          for (let sd = 0; sd < 5; sd++) {
+            const hSudden = homeTakers[(5 + sd) % homeTakers.length];
+            const aSudden = awayTakers[(5 + sd) % awayTakers.length];
+            kickMinute += 1;
+            const hScored = rng() < 0.75;
+            if (hScored) shootoutHomeGoals++;
+            finalEvents.push({
+              minute: kickMinute, type: 'penalty_shootout', team: 'home', animType: 'penalty',
+              playerName: hSudden?.name, isGoal: hScored,
+              description: `${hScored ? '✅' : '❌'} Morte súbita: ${hSudden?.name || 'Jogador'} - ${shootoutHomeGoals} x ${shootoutAwayGoals}`,
+            });
+            kickMinute += 1;
+            const aScored = rng() < 0.75;
+            if (aScored) shootoutAwayGoals++;
+            finalEvents.push({
+              minute: kickMinute, type: 'penalty_shootout', team: 'away', animType: 'penalty',
+              playerName: aSudden?.name, isGoal: aScored,
+              description: `${aScored ? '✅' : '❌'} Morte súbita: ${aSudden?.name || 'Jogador'} - ${shootoutHomeGoals} x ${shootoutAwayGoals}`,
+            });
+            if (shootoutHomeGoals !== shootoutAwayGoals) break;
+          }
+          // If still tied after sudden death — coin flip
+          if (shootoutHomeGoals === shootoutAwayGoals) {
+            if (rng() < 0.5) shootoutHomeGoals++; else shootoutAwayGoals++;
+          }
+        }
+      }
+      regulationEndMin = kickMinute;
+    }
+
+    finalEvents.push({
+      minute: regulationEndMin + 1, type: 'final_whistle', team: 'neutral', animType: 'final',
+      description: `🏁 FIM! ${homeTeam} ${finalHomeGoals + extraHomeGoals} x ${finalAwayGoals + extraAwayGoals} ${awayTeam}` +
+        (shootoutHomeGoals + shootoutAwayGoals > 0
+          ? ` (${shootoutHomeGoals} x ${shootoutAwayGoals} pênaltis — ${shootoutHomeGoals > shootoutAwayGoals ? homeTeam : awayTeam} avança!)`
+          : `!`),
+    });
+  } else {
+    finalEvents.push({
+      minute: 90 + addedTime2, type: 'final_whistle', team: 'neutral', animType: 'final',
+      description: `🏁 APITO FINAL! ${homeTeam} ${finalHomeGoals} x ${finalAwayGoals} ${awayTeam}!`,
+    });
+  }
+
+  // Update final tally with extra time goals (penalties stay separate for display)
+  const aggregateHomeGoals = finalHomeGoals + extraHomeGoals;
+  const aggregateAwayGoals = finalAwayGoals + extraAwayGoals;
 
   // Possession stats
   const effectiveHome = homeStrength * homeAdv * moraleMod;
@@ -915,7 +1061,9 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff, tieBreaker } = body;
+    const validTieBreaker: 'none' | 'extra_time' | 'penalties' | 'both' =
+      ['none', 'extra_time', 'penalties', 'both'].includes(tieBreaker) ? tieBreaker : 'none';
 
 
     if (!homeTeam || !awayTeam || !matchId) {
