@@ -5,12 +5,14 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap } from 'lucide-react';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, Eye, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Wand2, Target } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
+import type { TacticsConfig, Formation } from '@/types/tactics';
+import { formationPositions } from '@/types/tactics';
 
 interface Props {
   players: Player[];
@@ -28,6 +30,7 @@ interface Props {
   transferBudget?: number;
   onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
   onReorderPlayers?: (newOrder: Player[]) => void;
+  tactics?: TacticsConfig;
 }
 
 const posColors: Record<string, string> = {
@@ -114,7 +117,7 @@ function getPlayerGroup(idx: number): Group {
   return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract, onListForSale, onLoanOut, onAuction, onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer, onReorderPlayers, tactics }: Props) {
   const [offerSalary, setOfferSalary] = useState<Record<string, number>>({});
   const [offerDuration, setOfferDuration] = useState<Record<string, number>>({});
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
@@ -236,7 +239,64 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     setSquadSubTab(pendingSwap.from);
   };
 
-  // ─── Full-page player profile ───
+  // ─── Auto-Lineup: build best XI based on tactics formation ───
+  const autoLineup = () => {
+    if (!onReorderPlayers) {
+      toast.error('Não disponível neste modo');
+      return;
+    }
+    const formation: Formation = (tactics?.formation as Formation) || '4-4-2';
+    const slots = formationPositions[formation] || formationPositions['4-4-2'];
+    // Build flat slot list (e.g. [GOL, ZAG, ZAG, LAT, LAT, ...])
+    const slotList: string[] = [];
+    Object.entries(slots).forEach(([pos, count]) => {
+      for (let i = 0; i < count; i++) slotList.push(pos);
+    });
+    // Pad to 11 (in case formation has 10) — fill with MEI
+    while (slotList.length < 11) slotList.push('MEI');
+
+    // Position groups for partial-match scoring
+    const groupOf = (p: string): 'def' | 'mid' | 'atk' | 'gk' => {
+      if (p === 'GOL') return 'gk';
+      if (p === 'ZAG' || p === 'LAT') return 'def';
+      if (p === 'VOL' || p === 'MEI') return 'mid';
+      return 'atk';
+    };
+
+    const scorePlayer = (player: Player, slotPos: string) => {
+      let score = (player.overall || 50) * 10 + (player.stamina || 50);
+      if (player.position === slotPos) score += 1000;
+      else if (groupOf(player.position) === groupOf(slotPos)) score += 500;
+      if (player.injury) score -= 1000;
+      return score;
+    };
+
+    const available = [...players];
+    const starters: Player[] = [];
+
+    for (const slot of slotList) {
+      let bestIdx = -1;
+      let bestScore = -Infinity;
+      available.forEach((p, idx) => {
+        const s = scorePlayer(p, slot);
+        if (s > bestScore) { bestScore = s; bestIdx = idx; }
+      });
+      if (bestIdx >= 0) {
+        starters.push(available[bestIdx]);
+        available.splice(bestIdx, 1);
+      }
+    }
+
+    // Reserves: sort remaining by OVR, take 7
+    available.sort((a, b) => (b.overall || 0) - (a.overall || 0));
+    const reserves = available.slice(0, 7);
+    const rest = available.slice(7);
+
+    const newOrder = [...starters, ...reserves, ...rest];
+    onReorderPlayers(newOrder);
+    const avgOvrStart = Math.round(starters.reduce((s, p) => s + (p.overall || 0), 0) / Math.max(1, starters.length));
+    toast.success(`✅ Time montado: ${formation} • OVR médio ${avgOvrStart}`);
+  };
   if (viewingPlayer) {
     const player = viewingPlayer;
     const avgRating = player.seasonRatings && player.seasonRatings.length > 0
@@ -682,6 +742,20 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </div>
           </div>
 
+          {/* Auto-Lineup button */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full h-9 gap-1.5 text-[11px] rounded-xl border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50"
+            onClick={autoLineup}
+            disabled={!onReorderPlayers || players.length < 11}
+            title={!onReorderPlayers ? 'Não disponível' : tactics?.formation ? `Monta o XI ideal para ${tactics.formation}` : 'Monta o XI ideal (4-4-2)'}
+          >
+            <Wand2 className="h-3.5 w-3.5 text-primary" />
+            <span className="font-bold">Montar Time Automaticamente</span>
+            {tactics?.formation && <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1 border-primary/40 text-primary">{tactics.formation}</Badge>}
+          </Button>
+
           {pendingSwap && (
             <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
               <div className="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
@@ -857,6 +931,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
         </TabsContent>
       </Tabs>
 
+      {/* Tactics summary widget */}
+      <TacticsSummaryWidget tactics={tactics} players={players} avgOvr={avgOvr} />
+
       {/* Rescind modal */}
       {onRescindPlayer && (
         <RescindModal
@@ -866,6 +943,56 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); }}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Compact Tactics Summary Widget (shown at bottom of squad) ───
+const styleLabels: Record<string, string> = {
+  'ofensivo': 'Ofensivo', 'equilibrado': 'Equilibrado', 'defensivo': 'Defensivo',
+  'contra-ataque': 'Contra-ataque', 'posse': 'Posse de bola',
+};
+const pressLabels: Record<string, string> = {
+  'ultra-alto': 'Ultra-alta', 'alto': 'Alta', 'medio': 'Média', 'baixo': 'Baixa',
+};
+const tempoLabels: Record<string, string> = {
+  'muito-rapido': 'Muito rápido', 'rapido': 'Rápido', 'normal': 'Normal', 'lento': 'Lento',
+};
+const lineLabels: Record<string, string> = {
+  'alta': 'Alta', 'media': 'Média', 'baixa': 'Baixa',
+};
+const markLabels: Record<string, string> = {
+  'individual': 'Individual', 'zona': 'Zona', 'misto': 'Mista',
+};
+
+function TacticsSummaryWidget({ tactics, players, avgOvr }: { tactics?: TacticsConfig; players: Player[]; avgOvr: number }) {
+  if (!tactics) return null;
+  const findName = (id?: string) => {
+    if (!id) return '—';
+    const p = players.find(pl => pl.id === id);
+    return p ? `${p.name} (${p.position})` : '—';
+  };
+  return (
+    <div className="rounded-xl border border-border/30 bg-gradient-to-br from-card to-primary/5 p-2.5 space-y-1.5">
+      <div className="flex items-center gap-1.5 pb-1 border-b border-border/20">
+        <Target className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[11px] font-bold text-foreground">Resumo Tático</span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <div className="flex justify-between"><span className="text-muted-foreground">Formação:</span><span className="font-bold text-primary">{tactics.formation}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">OVR Time:</span><span className="font-bold text-emerald-400">{avgOvr}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Estilo:</span><span className="font-medium text-foreground">{styleLabels[tactics.playStyle] || tactics.playStyle}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Pressão:</span><span className="font-medium text-foreground">{pressLabels[tactics.pressing] || tactics.pressing}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Ritmo:</span><span className="font-medium text-foreground">{tempoLabels[tactics.tempo] || tactics.tempo}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Linha def.:</span><span className="font-medium text-foreground">{lineLabels[tactics.defenseLine] || tactics.defenseLine}</span></div>
+        <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Marcação:</span><span className="font-medium text-foreground">{markLabels[tactics.marking] || tactics.marking}</span></div>
+      </div>
+      <div className="pt-1 border-t border-border/20 grid grid-cols-1 gap-0.5 text-[10px]">
+        <div className="flex justify-between"><span className="text-muted-foreground">🎖️ Capitão:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.captainId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">⚽ Pênalti:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.penaltyTakerId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">🎯 Falta:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.freeKickTakerId)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">🚩 Escanteio:</span><span className="font-medium text-foreground truncate ml-2">{findName(tactics.cornerTakerId)}</span></div>
+      </div>
     </div>
   );
 }
