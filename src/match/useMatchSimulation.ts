@@ -322,24 +322,59 @@ export function useMatchSimulation() {
       assistantTips,
     });
 
-    // Persist when finished + notify
-    if (isComplete && !persistedRef.current) {
+    // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
+    const shouldForceFinish = elapsed >= data.durationMs + 30_000 && phase !== 'finished';
+
+    // Persist when finished + notify (idempotent: retry on error)
+    if ((isComplete || shouldForceFinish) && !persistedRef.current) {
       persistedRef.current = true;
       sendPushNotification(
         '🏁 Fim de Jogo!',
         `${data.homeTeam} ${data.finalHomeGoals} x ${data.finalAwayGoals} ${data.awayTeam}`
       );
       stopTick();
-      supabase
-        .from('live_matches')
-        .update({ status: 'finished', current_minute: data.maxMinute })
-        .eq('id', data.matchDbId)
-        .then(({ error }) => {
-          if (error) console.error('[Match] Persist error:', error.message);
-          else console.log('[Match] Result persisted');
-        });
+
+      const persist = (attempt: number) => {
+        supabase
+          .from('live_matches')
+          .update({ status: 'finished', current_minute: data.maxMinute })
+          .eq('id', data.matchDbId)
+          .then(({ error }) => {
+            if (error) {
+              console.error('[Match] Persist error (attempt ' + attempt + '):', error.message);
+              if (attempt < 3) setTimeout(() => persist(attempt + 1), 5000);
+            } else {
+              console.log('[Match] Result persisted');
+            }
+          });
+      };
+      persist(1);
+
+      // If forced, also reflect finished phase locally with final score
+      if (shouldForceFinish) {
+        console.warn('[Match] Watchdog forced finish at elapsed=' + elapsed + 'ms');
+        setState(s => ({
+          ...s,
+          phase: 'finished',
+          homeGoals: data.finalHomeGoals,
+          awayGoals: data.finalAwayGoals,
+          currentMinute: data.maxMinute,
+          progress: 1,
+        }));
+      }
     }
   }, []);
+
+  // Re-tick immediately when tab becomes visible (catches up missed events from throttling)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (!document.hidden && dataRef.current && !persistedRef.current) {
+        tick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [tick]);
 
   const startTick = useCallback(() => {
     if (intervalRef.current) return;
@@ -374,7 +409,16 @@ export function useMatchSimulation() {
       return false;
     }
 
-    const events = (data.events as any as SimEvent[]) || [];
+    let events = (data.events as any as SimEvent[]) || [];
+    // Fallback: if events array is empty, build minimum events so UI never hangs
+    if (events.length === 0) {
+      console.warn('[Match] Empty events from server, generating fallback');
+      events = [
+        { minute: 0, type: 'kickoff', team: 'neutral', description: '⚽ Início da partida!' },
+        { minute: 45, type: 'halftime', team: 'neutral', description: '🟡 Fim do 1º tempo' },
+        { minute: 90, type: 'final_whistle', team: 'neutral', description: '🏁 Fim de jogo!' },
+      ];
+    }
     const maxMinute = events.length > 0 ? Math.max(...events.map(e => e.minute)) : 90;
     const startTime = new Date(data.started_at).getTime();
     
