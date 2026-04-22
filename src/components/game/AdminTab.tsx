@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
-import { ActiveLeaguesPanel } from './ActiveLeaguesPanel';
+import { SystemPanel } from './admin/SystemPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -528,7 +528,7 @@ export function AdminTab({ userId, isFounder }: Props) {
               {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2 shrink-0"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
               <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2 shrink-0"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
               <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2 shrink-0"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
-              <TabsTrigger value="active_leagues" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> Ligas</TabsTrigger>
+              <TabsTrigger value="system" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> 🌍 Sistema</TabsTrigger>
               <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
               <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
               <TabsTrigger value="announcements" className="text-[10px] gap-0.5 px-2 shrink-0"><Image className="h-3 w-3" /> Anúncios IA</TabsTrigger>
@@ -1283,9 +1283,9 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminTournamentTab userId={userId} />
         </TabsContent>
 
-        {/* Active Leagues Tab */}
-        <TabsContent value="active_leagues" className="space-y-3 mt-3">
-          <ActiveLeaguesPanel />
+        {/* System Tab (FLM Control Center) */}
+        <TabsContent value="system" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} />
         </TabsContent>
 
         {/* Moderation Tab */}
