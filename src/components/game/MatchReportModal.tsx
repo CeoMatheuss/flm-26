@@ -32,6 +32,11 @@ export function MatchReportModal({ report, interview, onInterviewChoice, onClose
       {/* Score */}
       <Card className={`border-2 ${isWin ? 'border-emerald-500/30 bg-emerald-500/5' : isDraw ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
         <CardContent className="p-4 text-center">
+          {report.autoSimulated && (
+            <Badge variant="outline" className="mb-2 text-[9px] gap-1 border-primary/40 text-primary">
+              🤖 Simulação Automática
+            </Badge>
+          )}
           <div className="flex items-center justify-center gap-6">
             <div className="text-right">
               <p className="text-sm font-bold">{report.homeTeam}</p>

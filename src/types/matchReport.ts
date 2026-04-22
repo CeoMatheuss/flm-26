@@ -24,6 +24,7 @@ export interface MatchReport {
   manOfTheMatch?: string;
   playerRatings: Record<string, number>; // playerId -> rating 1-10
   goalScorers: { name: string; minute: number; team: 'home' | 'away' }[];
+  autoSimulated?: boolean;
 }
 
 export interface InterviewChoice {
