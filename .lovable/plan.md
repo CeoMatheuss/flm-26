@@ -1,106 +1,102 @@
 
 
-# Plano: Auto-simulação Silenciosa + Layout Compacto da Partida
+# Plano: Widgets Abertos + Escudos nos Lances + Canvas 2D Corrigido
 
-## Parte 1 — Auto-simulação aparece como resultado normal
+## Objetivo
 
-Hoje, quando a janela de 5 min expira, o widget mostra:
-- Badge "⚙️ Simulada automaticamente"
-- Texto "⏰ Janela de 5 min expirou — partida simulada pelo servidor"
-- Bloco cinza desabilitado
+Refinar a `MatchPage` com base no feedback:
+1. **Widgets sempre abertos** (não em accordeão), mas em tamanho compacto
+2. **Escudo do time** ao lado de cada lance da narração
+3. **Corrigir o canvas 2D do campo** (está bugado em tamanho)
 
-**O que muda**: removo TUDO isso. Quando a partida foi auto-simulada pelo cron, o widget mostra **exatamente como uma partida normal finalizada** — placar final, badge "Final", botão "VER RELATÓRIO". Sem nenhuma indicação de "automática" na frente do usuário.
+## 1. Widgets sempre abertos (sem Collapsible)
 
-### Arquivo: `MatchDashboardCard.tsx` (`NextTournamentMatch`)
-- **Remover**: estado `isExpired`, badge "Simulada automaticamente", bloco "Janela de 5 min expirou"
-- **Novo comportamento quando expirado**: refazer query para buscar a partida como `status='finished'` (a edge function `auto-simulate-expired-matches` já marcou) e renderizar o **mesmo bloco de "última partida finalizada"** com placar e botão "VER RELATÓRIO"
-- Polling a cada 10s enquanto janela está expirada-mas-ainda-scheduled, para pegar o momento que o cron simula
+Hoje as seções **Estatísticas, Escalações, Táticas, Substituições** estão em `<Collapsible>` fechados. Vou:
 
-### Arquivo: `MatchReportModal.tsx`
-- **Remover** badge "🤖 Simulação Automática" (campo `auto_simulated` continua no DB para auditoria, mas invisível ao usuário)
+- **Remover Collapsibles** dessas 4 seções
+- Manter como **Cards compactos sempre visíveis** (mesmo padding pequeno: `p-2 sm:p-3`)
+- Reduzir fontes internas (títulos `text-xs`, conteúdo `text-[11px]`)
+- Em desktop: organizar em **grid 2 colunas** abaixo do feed (`lg:grid-cols-2 gap-2`) para aproveitar espaço horizontal
+- Em mobile: continuam empilhados verticalmente
 
-## Parte 2 — Layout compacto da página de partida
+## 2. Escudos do time em cada lance da narração
 
-Hoje a `MatchPage` empilha tudo verticalmente em coluna única, ocupando muito espaço:
-- Placar grande
-- Posse de bola
-- Momento do jogo
-- Dica do assistente
-- Canvas 2D (highlight)
-- Narração ao vivo (card grande)
-- 4 stats em grid horizontal
-- Feed de narração (chat)
-- Estatísticas, Escalações, Táticas, Substituições (cada um em Card grande sequencial)
+Hoje cada linha do feed mostra: `[12'] ⚽ Gol de Pedrinho!`
 
-**Novo layout (desktop ≥1024px)**: grid 2 colunas
+Vou adicionar escudo **antes do ícone**:
 ```
-┌──────────────────────────────────┬─────────────────┐
-│  Placar + Cronômetro (compacto)  │   SIDEBAR       │
-│  Canvas 2D highlight             │ ─────────────── │
-│  Narração lance atual            │ 📊 Stats rápidas│
-│                                  │ (4 cards menores│
-│                                  │  empilhados)    │
-│  Feed de narração (chat)         │                 │
-│  [altura reduzida 280px]         │ ⚡ Momento jogo │
-│                                  │ 💬 Dica assist. │
-│                                  │ 🔄 Subs status  │
-└──────────────────────────────────┴─────────────────┘
-↓ Abaixo: Acordeões compactos (Estatísticas, Escalação, Táticas, Subs)
+[12'] [🛡️] ⚽ Gol de Pedrinho!
 ```
 
-**Mobile (<1024px)**: mantém coluna única atual mas com widgets reduzidos.
+### Como obter o escudo de cada lance
+Cada `SimEvent` tem `team: 'home' | 'away' | 'neutral'`. Vou:
+- Receber `homeShieldProps` e `awayShieldProps` (via `shieldPropsFromClub()`) na `MatchPage` e `ReplayPage`
+- Passar para o componente que renderiza linhas do feed
+- Renderizar `<ShieldCrest size={20} {...props} />` na linha quando `team !== 'neutral'`
+- Para `neutral` (kickoff, halftime, final_whistle): sem escudo
 
-### Mudanças concretas em `MatchPage.tsx` (componente `MatchViewer`)
+### Onde buscar dados dos escudos
+- **Time da casa (player)**: já temos via `useGame()` → club atual com `shieldConfig`
+- **Time visitante**: vem do match (`match.away_club_data` ou similar). Se não tiver shield_config, fallback pra cores básicas via `shieldPropsFromClub()` que já trata isso
+- Aplicar mesma lógica em `ReplayPage` (mas como replay já tem `homeTeamName`/`awayTeamName`, buscar shields via query rápida no `league_squads` ou `game_saves` por nome do clube)
 
-| Elemento | Mudança |
-|---|---|
-| Card de placar | Padding reduzido `p-2 sm:p-3` (era `p-3 sm:p-6`); fontes menores: placar `text-3xl sm:text-4xl` (era `text-5xl`) |
-| Posse de bola | Barra mais fina (`h-2`), labels `text-xs` |
-| Momento do jogo | Vai pra **sidebar direita**, mostra só ícone+label compacto |
-| Dica do assistente | Vai pra **sidebar direita**, card menor com avatar 5x5, sem padding extra |
-| Canvas 2D highlight | Mantém posição mas altura reduzida (canvas `h-32 sm:h-40` em vez de `h-48`) |
-| Narração lance atual | Card mais fino: `py-2 px-3`, fonte `text-sm` (era `text-lg`) |
-| Quick Stats Row | **Move pra sidebar** em desktop, vira grid 2x2 vertical compacto. Em mobile, fica abaixo do canvas com `text-xs` e `p-1.5` |
-| Feed de narração (chat) | Altura `max-h-[280px] sm:max-h-[320px]` (em vez de até 340px). Linhas mais densas: padding `py-1.5` |
-| Acordeões (Stats/Escalação/Táticas/Subs) | Convertidos de Cards grandes sempre-abertos para `<Collapsible>` fechados por padrão, headers compactos `py-2` |
-| Container principal | Em desktop: `max-w-6xl` com grid `lg:grid-cols-[1fr_280px] gap-4`. Mobile inalterado (`max-w-2xl`) |
+### Tamanho do escudo no feed
+- `size={18}` em mobile, `size={20}` em desktop
+- Espaçamento `gap-1.5` entre escudo e ícone
+- Não quebra layout porque shield é SVG inline pequeno
 
-### Componente novo: `MatchSidebar.tsx`
-Pequeno componente que agrupa na coluna direita (só aparece em `lg:` e acima):
-- 📊 4 mini-stats verticais (chutes, no gol, escan., faltas)
-- ⚡ Badge do momento atual
-- 💬 Última dica do assistente (compacta)
-- 🔄 Status de substituições (`X/5 usadas`)
+### Tamanho do escudo nos cards de "lance atual" e highlight
+- Card de lance atual: `<ShieldCrest size={24} />` ao lado do minuto
+- Banner do highlight ativo: `<ShieldCrest size={28} />` antes do label "GOL!"
 
-### Componente afetado: `ChatEventRow` (linhas do feed)
-- Reduzir padding vertical de `py-2` → `py-1.5`
-- Fonte `text-xs` no minuto, `text-sm` no texto (era `text-base`)
-- Badge minute `text-[10px]`
+## 3. Corrigir canvas 2D do campo
 
-### `ReplayPage.tsx`
-- Aplicar mesma redução de tamanhos no card de comentário e altura do feed de narração para manter consistência com replays.
+No último ajuste reduzi o canvas para `h-32 sm:h-40` mas isso quebrou o aspect ratio do `HighlightMiniCanvas` que espera proporção específica de campo de futebol.
+
+### Correção
+- Remover `h-32 sm:h-40` forçado
+- Restaurar **aspect-ratio nativo** do componente: `aspect-[16/9]` (campo paisagem)
+- Width 100% do container, altura calculada automaticamente
+- Container do canvas: `w-full max-w-[480px] mx-auto aspect-[16/9]` para limitar tamanho em desktop e centralizar
+- Em sidebar (desktop), o canvas continua na coluna principal — não vai pra sidebar
+
+### Verificar `HighlightMiniCanvas.tsx`
+- Confirmar que ele respeita o tamanho do container pai (parece que sim, usa `<canvas>` com `w-full h-full`)
+- Se necessário, ajustar `useEffect` de resize para usar `getBoundingClientRect()` em vez de hardcoded width
+
+## 4. Aplicar mesmas mudanças em `ReplayPage.tsx`
+
+Para consistência:
+- Canvas do replay: mesmo aspect-ratio fix
+- Lances do feed: escudos pequenos
+- Tabs Estatísticas/Narração mantêm-se (replay não tem Escalação/Táticas/Subs porque é só visualização)
 
 ## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/game/MatchDashboardCard.tsx` | Remover UI de "auto-simulada"; tratar partida expirada como finalizada normal; polling a cada 10s |
-| `src/components/game/MatchReportModal.tsx` | Remover badge "🤖 Simulação Automática" |
-| `src/pages/MatchPage.tsx` | Reduzir tamanhos de widgets, adicionar grid 2 colunas em desktop, converter sections em Collapsibles |
-| `src/components/game/MatchSidebar.tsx` (NOVO) | Sidebar compacta para desktop com stats/momento/dica/subs |
-| `src/pages/ReplayPage.tsx` | Compactar narração e comentário para consistência |
+| `src/pages/MatchPage.tsx` | Remover Collapsibles; reorganizar 4 widgets em grid 2-col desktop; passar shields para feed; corrigir aspect ratio canvas |
+| `src/pages/ReplayPage.tsx` | Mesma correção de canvas; adicionar escudos no feed; buscar shields dos times |
+| `src/components/game/HighlightMiniCanvas.tsx` | Garantir que respeita 100% do container (resize observer se necessário) |
+
+## Componente novo (interno)
+
+`MatchEventRow` (extraído como helper local nas duas páginas):
+- Props: `event`, `homeShield`, `awayShield`
+- Renderiza: `[minuto] [escudo] [ícone] [texto]`
+- Usado tanto no card de "lance atual" quanto nas linhas do feed
 
 ## Compatibilidade
 
-- Sem mudança de schema (campo `auto_simulated` continua no `match_data`, apenas oculto da UI)
-- Mobile mantém layout vertical atual (responsivo)
-- Polling de 10s no widget é leve (só pra partidas expiradas pendentes — caso raro)
-- Acordeões fechados por padrão em desktop, abertos por padrão em mobile (sem perda de funcionalidade)
+- Sem mudança de schema
+- Sem regressão em mobile (continua coluna única, widgets compactos)
+- Se um clube não tem `shieldConfig`, `shieldPropsFromClub()` já tem fallback pra `'#2563EB'` solid
+- Eventos `neutral` (kickoff, halftime, final_whistle) não mostram escudo — só ícone
 
 ## Anti-bug
 
-- ✅ Se o cron ainda não simulou (race), polling continua até pegar `status='finished'`
-- ✅ Sem regressão visual em mobile
-- ✅ Substituições, táticas, escalações continuam totalmente acessíveis (acordeões expansíveis)
-- ✅ Edge function `auto-simulate-expired-matches` já existente continua funcionando — só a UI muda
+- ✅ Canvas com aspect-ratio fixo não distorce mais
+- ✅ Widgets abertos = info sempre visível, mas compacta
+- ✅ Escudos com fallback garantido (sem render quebrado se faltar dado)
+- ✅ Feed continua com altura limitada (`max-h-[280px]`) para não dominar tela
 
