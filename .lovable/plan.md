@@ -1,128 +1,163 @@
 
 
-# Plano: Simulação Confiável + Obras Premium Inteligentes + Visual Refinado da Partida
+# Plano: Táticas em Tempo Real + Lobby Online 5min + Painel Admin Reorganizado
 
-## 1. Diagnóstico do "trava no minuto 5"
+## 1. Táticas em tempo real (impacto vivo na simulação)
 
-**Causa raiz**: A simulação completa (90 min + eventos + estatísticas) já é gerada de forma síncrona no servidor (`start-match`) e gravada em `live_matches` (status `'live'`). O cliente apenas **revela eventos progressivamente** ao longo de 12 minutos reais (`durationMs = 720s`).
+### 1.1 Adicionar estilos pedidos
+Hoje existem 9 estilos. Faltam 2 do pedido com nomes próprios:
+- `'retranca-total'` → versão extrema do `defensivo` (atk 0.65 / def 1.45)
+- `'pressao-alta'` → renomear interno para alinhar com pedido (alias do `gegenpressing`, mas com label "Pressão Alta")
 
-O minuto 5 corresponde ao **fim da janela de "manual start" / metade do tempo real (≈ 6 min)**. Casos onde "trava":
-- `live_matches.status` fica `'live'` mas o `setInterval` para de tickar (aba em background, throttling)
-- `data.startTime` fica desalinhado do servidor (clock skew muito alto)
-- Após 12 min, o cliente nunca atualiza `status='finished'` se o usuário fechou a aba antes do persistir
-- Não há "watchdog" para forçar finalização se algum tick falhar
+Os 6 estilos do pedido mapeiam para:
+| Pedido | Engine |
+|---|---|
+| Retranca Total | `retranca-total` (novo) |
+| Equilibrado | `equilibrado` |
+| Ataque Total | `ofensivo` (label muda para "Ataque Total") |
+| Contra-Ataque | `contra-ataque` |
+| Pressão Alta | `pressao-alta` (alias gegenpressing) |
+| Defesa Total | `defensivo` (label "Defesa Total") |
 
-## 2. Sistema de estados robusto com auto-finalização (cliente)
+Os outros 5 estilos avançados (tiki-taka, parking-bus, etc) ficam como **"Avançadas"** num accordion separado.
 
-### `useMatchSimulation.ts`
-- **Watchdog**: a cada tick, se `elapsed >= durationMs + 30s` E `phase !== 'finished'`, **forçar finalização**: usar `data.finalHomeGoals/finalAwayGoals` (já estão no `dataRef`) e marcar `phase = 'finished'`.
-- **Re-sync ao voltar pra aba** (`document.visibilitychange`): re-rodar `tick()` imediatamente para "pular" eventos perdidos durante throttling.
-- **Persistência idempotente**: persistir `status='finished'` mesmo se já foi tentado uma vez (novo retry após 5s se erro).
-- **Garantia de placar**: se `data.allEvents.length === 0` (caso raro), gerar placar default `0x0` válido em vez de travar em loading.
-
-### Edge function `start-match`
-- Já gera 90 min completos. Adicionar **fallback**: se `simulateFullMatch` retornar `events.length === 0`, criar pelo menos 3 eventos (kickoff, halftime, final_whistle) + placar com base em `homeStrength/awayStrength` (Poisson simples).
-- **Pré-validação**: se `homePlayers.length === 0`, retornar 400 claro em vez de tentar simular com pool vazio.
-
-### Auto-cleanup de partidas órfãs (já existe `auto-simulate-expired-matches`)
-- Verificar se está rodando via `pg_cron`. Se não estiver, agendar para rodar a cada 5 min: marca como `'finished'` qualquer `live_matches` com `started_at + duration_seconds + 5min < now()`.
-
-## 3. Obras + Premium inteligente
-
-### Hook `useInfraState.ts`
-Adicionar novo `useEffect` que observa **mudança de `isPremium`**:
-
+### 1.2 Interações entre táticas (matchups)
+No `start-match/index.ts`, adicionar matriz `MATCHUP_BONUS` que ajusta `homeExpected`/`awayExpected` baseado no par de estilos:
 ```ts
-useEffect(() => {
-  if (!isPremium) return;
-  const completesAt = infrastructure.youthAcademy.upgradeCompletesAt;
-  if (!completesAt) return;
-  // Premium ativado durante obra: concluir imediatamente
-  setInfrastructure(prev => ({
-    ...prev,
-    youthAcademy: { 
-      ...prev.youthAcademy, 
-      level: prev.youthAcademy.level + 1, 
-      upgradeCompletesAt: undefined 
-    },
-  }));
-  toast.success('⭐ Obra concluída instantaneamente pelo Premium!');
-  if (userId) {
-    // Inserir em user_notifications (sino) + newspaper
-    supabase.from('user_notifications').insert([{
-      user_id: userId,
-      title: '🏗️ Obra Concluída — Premium',
-      message: 'Sua obra na Academia foi concluída automaticamente devido ao seu Premium ativo.',
-      category: 'EVOLUÇÃO',
-    }]);
-    supabase.from('newspaper_entries').insert([{
-      user_id: userId,
-      text: `⭐ Premium ativado: obra na Academia concluída instantaneamente — Nv.${infrastructure.youthAcademy.level + 1}`,
-      category: 'EVOLUÇÃO', is_event: true,
-    }]);
-  }
-}, [isPremium]);
+const MATCHUP: Record<string, Record<string, { homeAtk: number; homeDef: number }>> = {
+  'ofensivo':       { 'contra-ataque': { homeAtk: 1.05, homeDef: 0.85 } },     // jogo aberto
+  'retranca-total': { 'ofensivo':     { homeAtk: 0.80, homeDef: 1.20 } },      // poucos gols
+  'defensivo':      { 'contra-ataque': { homeAtk: 0.85, homeDef: 1.10 } },     // jogo travado
+  'pressao-alta':   { 'posse':       { homeAtk: 1.15, homeDef: 0.95 } },       // press funciona
+  // ... 6x6 matriz simétrica
+};
+```
+Aplicado depois dos `STYLE_MODS` antes do cálculo de Poisson. Resultado: trocar Ataque Total contra Contra-Ataque produz mais finalizações; Retranca vs Ataque produz menos gols.
+
+### 1.3 Mudança em tempo real durante a partida
+Hoje a simulação inteira é gerada **uma única vez** no servidor antes do tick começar. Para que mudar tática durante o jogo tenha efeito:
+
+**Solução híbrida**: persistir mudança em `live_matches.tactics` (já existe coluna). Adicionar nova edge function `re-simulate-from-minute`:
+- Recebe `live_match_id` + `from_minute` + `new_tactics`
+- Lê o estado atual (placar até X', stats acumuladas, players com stamina/morale do último evento)
+- Re-simula minutos `from+1 .. 90` com novos modificadores
+- Substitui o array `events` mantendo eventos de `minute <= from_minute`
+- Atualiza `live_matches` com novo array; o tick do cliente continua revelando
+
+No cliente (`MatchPage.tsx`): no botão "Aplicar Tática" durante partida ao vivo, chamar a função, aguardar 1-2s, recarregar `dataRef` do hook. Toast: "🔄 Time se ajusta — efeito a partir do minuto X'".
+
+**Limitação documentada**: mudanças válidas no máximo 1x a cada 15 min de jogo (cooldown), evita spam.
+
+### 1.4 UI da troca rápida em jogo
+Card flutuante novo "⚡ Tática Rápida" no `MatchPage.tsx`:
+- 6 botões grandes (1 por estilo principal) em grid 3x2
+- Indicador do estilo atual com glow
+- Cooldown visível (badge "🔒 Disponível em 8 min")
+- Texto curto do efeito previsto vs adversário ("vs Ataque Total: jogo aberto, mais gols")
+
+## 2. Sistema online — Lobby de 5 minutos com fallback IA
+
+### 2.1 Diagnóstico atual
+- Amistosos online (`friendly_invites`): match começa quando ambos clicam "JOGAR PARTIDA" na janela existente.
+- Partidas de liga (`league_matches`): cada usuário simula localmente o seu lado.
+- Não há "lobby compartilhado" onde ambos esperam — cada um simula isolado.
+
+### 2.2 Nova máquina de estados de partida online
+Adicionar coluna em `friendly_invites` e `league_matches`:
+- `lobby_opened_at TIMESTAMP` — quando o primeiro jogador entrou
+- `home_joined BOOL DEFAULT false` / `away_joined BOOL DEFAULT false`
+- `auto_sim_at TIMESTAMP` — `lobby_opened_at + 5 min`
+
+Estados:
+1. **Pré-jogo** — janela de início aberta (já existe)
+2. **Lobby** — primeiro jogador clicou "Entrar"; timer de 5min começa
+3. **Ao vivo (sincronizado)** — ambos entraram, partida tempo real para os dois
+4. **Ao vivo (1 lado IA)** — só 1 entrou após 5min; segundo time vira IA (usa squad real do ausente)
+5. **Auto-simulada** — ninguém entrou em 5min; resultado gerado server-side via `auto-simulate-expired-matches` (já existe)
+6. **Finalizada** — placar + eventos persistidos
+
+### 2.3 Implementação
+**Edge function nova `match-lobby-join`**:
+- Recebe `match_type` (friendly/league) + `match_id` + `user_id`
+- Atomicamente: marca `home_joined`/`away_joined`, set `lobby_opened_at` se primeiro
+- Retorna estado: `'waiting_other'` | `'both_ready'` | `'start_with_ai'` (se já passou 5min)
+
+**Edge function `auto-simulate-expired-matches`** (existente): adicionar verificação para `friendly_invites` e `league_matches` com `auto_sim_at < now()` E nenhum entrou. Já roda via `pg_cron`.
+
+**Cliente — novo `MatchLobbyScreen`**:
+- Mostra "⏳ Aguardando adversário... 4:23"
+- Status do oponente: "🟢 Online" (via `user_presence`) / "🔴 Offline"
+- Após 5min: 2 botões "▶ Jogar contra IA do oponente" ou "🤖 Deixar simular"
+- Realtime listener no row da partida → quando oponente entra, navega ambos para `/match`
+
+**Resultado**: nenhuma partida trava; sempre há fim em ≤ 12 min reais (5min lobby + 7min sim curta) ou simulação instantânea pelo cron.
+
+## 3. Reorganização do Painel Admin (mobile-first)
+
+### 3.1 Hoje: 13 abas planas em scroll horizontal — confuso, não cabe no mobile.
+
+### 3.2 Nova estrutura: 6 categorias com sub-abas
+Sidebar (desktop) / Drawer (mobile) com:
+
+```
+🌍 Ligas       → SystemPanel atual (Países & Pirâmide, Temporada)
+🏆 Copas       → SystemPanel (Copas, Torneios admin)
+👥 Clubes      → Usuários + Premium + Bans + GameBan
+👤 Players     → Gerar (founder), Anti-abuso
+⚙️ Sistema     → Atualizações, Anúncios IA, Msg Direta, Moderação Chat, Equipe (founder)
+📊 Simulação   → SimulationValidationTab + estatísticas
 ```
 
-### Regras
-- **Sem premium ao iniciar obra**: timer de 24h funciona normalmente (já existe).
-- **Premium ativado durante obra**: detecção automática + conclusão imediata + notificação no sino.
-- **Progresso nunca perdido**: o `level` só é incrementado quando a obra realmente termina (timer OU premium), nunca antes.
-- **UI atualizada**: o `setInfrastructure` triggers re-render → `YouthAcademyTab` reflete imediatamente.
+### 3.3 Layout responsivo
+- **Desktop ≥1024px**: Sidebar fixa (224px) à esquerda + conteúdo à direita
+- **Tablet 640-1024px**: Top tabs com ícones grandes + label
+- **Mobile <640px**: Drawer lateral via hamburger no header da página + bottom-bar com 6 ícones
 
-### Notificação no sino
-Verificar tabela `user_notifications` (caso não exista uma com esse nome, usar `newspaper_entries` com flag `is_notification` ou checar `notification-system-v2` em memory). Vou usar a estrutura já estabelecida do sistema de notificações v2.
+Componente novo `AdminLayout` envolve `AdminTab.tsx`:
+- Usa `Sidebar` do shadcn em desktop (`collapsible="icon"`)
+- Usa `Drawer` em mobile
+- Cada categoria carrega suas sub-abas em `Tabs` interno
 
-## 4. Visual refinado da partida (rolagem colorida + design)
+### 3.4 Hierarquia visual limpa
+- Cards com padding consistente (`p-4`)
+- Stats cards no topo de cada aba (não duplicar números)
+- Filtros e ações sempre no header da aba (não espalhados)
+- Remover ícones em duplicidade
 
-### Feed de narração (`EventFeed` / `MinuteSeparator`)
-- **Background sutil colorido por time** em cada `ChatEventRow`:
-  - `team === 'home'` → `bg-gradient-to-r from-primary/[0.04] to-transparent border-l-2 border-primary/30`
-  - `team === 'away'` → `bg-gradient-to-l from-red-500/[0.04] to-transparent border-r-2 border-red-500/30`
-  - `team === 'neutral'` → fundo neutro
-- **Scrollbar customizada** combinando com tema da partida:
-  ```css
-  .match-feed-scroll::-webkit-scrollbar { width: 6px; }
-  .match-feed-scroll::-webkit-scrollbar-thumb { 
-    background: linear-gradient(to bottom, hsl(var(--primary) / 0.3), hsl(var(--primary) / 0.1)); 
-    border-radius: 3px;
-  }
-  .match-feed-scroll::-webkit-scrollbar-track { background: hsl(var(--muted) / 0.05); }
-  ```
-- **Separador de minuto** ganha gradient: `bg-gradient-to-r from-transparent via-primary/[0.06] to-transparent` em vez de `bg-muted/5`.
+## 4. Validação
 
-### Card principal (placar ao vivo)
-- Adicionar **glow sutil pulsante** na borda quando há gol nos últimos 8s: `box-shadow: 0 0 20px hsl(var(--primary) / 0.3)` com animação.
-- **Backdrop blur** no scoreboard durante highlights 2D para dar profundidade.
-
-### Mini-widgets permanentes
-- Adicionar gradient sutil de fundo: `bg-gradient-to-br from-card to-card/50`.
-- Ícone do adversário ganha aro colorido pulsante quando o "Pulso" indica pressão dele.
-
-### Highlight 2D
-- Adicionar **fade-in suave** (300ms) na entrada e fade-out na saída, sem corte abrupto.
-- Sombra dourada animada no card durante highlight ativo.
+- ✅ Trocar tática durante a partida muda eventos do minuto seguinte em diante
+- ✅ Matriz de matchup torna confronto Retranca vs Ataque previsivelmente baixo (≤ 1.5 gols esperados)
+- ✅ Lobby de 5min sempre converge: ambos online → tempo real / 1 online → IA / 0 online → cron simula
+- ✅ Painel admin ≤ 6 cliques para qualquer ação; 100% navegável em viewport 375px
+- ✅ Cron `auto-simulate-expired-matches` roda a cada 5min (verificar agendamento)
+- ✅ Cooldown 15min em troca de tática evita abuso
 
 ## 5. Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/match/useMatchSimulation.ts` | Watchdog `elapsed > durationMs+30s` força finished; listener `visibilitychange` re-tick imediato; retry de persist após 5s; fallback `0x0` se eventos vazios |
-| `supabase/functions/start-match/index.ts` | Validação `homePlayers.length > 0` (400 claro); fallback de 3 eventos mínimos se sim retornar vazio |
-| `src/hooks/useInfraState.ts` | Novo `useEffect([isPremium])` que conclui obra pendente automaticamente + insere notificação no sino + entrada no jornal |
-| `src/pages/MatchPage.tsx` | `ChatEventRow`: bg gradient por time + border lateral colorida; `MinuteSeparator` com gradient; scrollbar customizada via classe; glow pulsante no scoreboard em gols recentes; fade-in/out no highlight 2D |
-| `src/index.css` | Classe `.match-feed-scroll` com webkit scrollbar customizada (cor primary com gradient) |
-| `supabase/migrations/...sql` | Garantir cron `auto-simulate-expired-matches` rodando a cada 5min (se não estiver) |
+| `src/types/tactics.ts` | +`'retranca-total'`, +`'pressao-alta'` em `PlayStyle`; entradas em `playStyleEffects` com filosofia/bullets |
+| `src/components/game/TacticsTab.tsx` | Reorganizar grid em "Principais (6)" + accordion "Avançadas (5)" |
+| `supabase/functions/start-match/index.ts` | +`MATCHUP` matriz; +entradas no `STYLE_MODS` para 2 novos estilos; usa matchup para ajustar `homeExpected`/`awayExpected` |
+| `supabase/functions/re-simulate-from-minute/index.ts` | **NOVA** — re-simula minutos restantes com novas táticas |
+| `supabase/functions/match-lobby-join/index.ts` | **NOVA** — registra entrada no lobby, retorna estado |
+| `src/pages/MatchPage.tsx` | Card flutuante "⚡ Tática Rápida" com 6 botões + cooldown; chama `re-simulate-from-minute` ao trocar |
+| `src/components/game/MatchLobbyScreen.tsx` | **NOVO** — tela de espera 5min com countdown e fallback |
+| `src/components/game/OnlineFriendliesTab.tsx` | Botão "JOGAR" agora abre `MatchLobbyScreen` antes de `/match` |
+| `src/components/game/MatchesTab.tsx` | Idem para partidas de liga |
+| `src/components/game/AdminLayout.tsx` | **NOVO** — Sidebar/Drawer responsivo com 6 categorias |
+| `src/components/game/AdminTab.tsx` | Refatorar para usar `AdminLayout`; agrupar 13 abas atuais em 6 categorias |
+| Migration SQL | +colunas `lobby_opened_at`, `home_joined`, `away_joined`, `auto_sim_at` em `friendly_invites` e `league_matches`; cron `auto-simulate-expired-matches` a cada 2min |
 
-## Anti-bug
+## 6. Anti-bug
 
-- ✅ Watchdog garante que partida nunca trava — após 12min30s força finished com placar válido
-- ✅ Fallback de eventos vazios garante placar coerente sempre (mínimo 3 eventos: kickoff, halftime, final)
-- ✅ `isPremium` muda → obra pendente conclui em 1 ciclo de render, sem race condition
-- ✅ Progresso da obra nunca é perdido: `upgradeCompletesAt` só é limpo quando level realmente sobe
-- ✅ Bg colorido do feed mantém legibilidade (opacidade ≤ 6%)
-- ✅ Scrollbar customizada usa tokens semânticos (`hsl(var(--primary))`) para respeitar tema
-- ✅ Fade-in do 2D usa CSS (`transition`), não bloqueia interação
-- ✅ Notificação Premium só dispara 1x (controlada pelo `useEffect` reagindo à mudança de `isPremium`, não loop)
-- ✅ Retroativamente compatível: usuários sem `upgradeCompletesAt` não disparam o effect
+- ✅ `re-simulate-from-minute` valida minuto < 90 e cooldown server-side (não confia no cliente)
+- ✅ Lobby join é idempotente (UPDATE ... WHERE NOT joined) — duplo clique não quebra
+- ✅ Realtime listener no lobby usa filtro por `match_id` para evitar leak entre partidas
+- ✅ Auto-simulação respeita squad real (já implementado em `awayPlayers`) → resultado é justo
+- ✅ AdminLayout preserva estado atual de aba ao trocar viewport (drawer ↔ sidebar)
+- ✅ Matchup matrix é simétrica e tem fallback `{ homeAtk: 1.0, homeDef: 1.0 }` para combos não definidos
+- ✅ Estilos antigos (tiki-taka etc) continuam funcionando — só ficam em "Avançadas"
+- ✅ Cooldown de troca tática armazenado em `live_matches.tactics.lastChangedAt` (não nova tabela)
 
