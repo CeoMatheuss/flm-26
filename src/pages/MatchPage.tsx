@@ -1199,7 +1199,7 @@ function MatchMiniWidgets({
       </Card>
 
       {/* Pulso da Partida */}
-      <Card className="border-border/30 p-1.5 sm:p-2">
+      <Card className="border-border/30 p-1.5 sm:p-2 bg-gradient-to-br from-card to-card/50">
         <div className="flex items-center gap-1 mb-1">
           <span className="text-xs">📊</span>
           <span className="text-[10px] font-bold flex-1">Pulso da Partida</span>
@@ -1878,7 +1878,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
           <div>
             <p className="text-sm sm:text-base font-semibold mb-2">📝 Narração Completa</p>
-            <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg">
+            <div className="match-feed-scroll max-h-[260px] sm:max-h-[320px] overflow-y-auto border border-border/20 rounded-lg bg-gradient-to-br from-card to-card/60">
               <EventFeed
                 events={[...visibleEvents].reverse()}
                 homeTeam={homeTeam} awayTeam={awayTeam}
