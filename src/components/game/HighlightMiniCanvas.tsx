@@ -1274,6 +1274,7 @@ export function isHighlightEvent(type: string): boolean {
     'great_save', 'woodwork', 'corner_danger',
     'long_shot_miss', 'header_miss', 'dangerous_foul',
     'counter_attack_goal', 'crossing_goal', 'free_kick_goal',
+    'counter_attack', 'buildup_play', 'free_kick_near',
   ].includes(type);
 }
 
@@ -1282,6 +1283,9 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'counter_attack_goal') return 'counter_attack';
   if (eventType === 'crossing_goal') return 'crossing';
   if (eventType === 'free_kick_goal') return 'free_kick';
+  if (eventType === 'counter_attack') return 'counter_attack';
+  if (eventType === 'buildup_play') return 'chance';
+  if (eventType === 'free_kick_near') return 'free_kick';
   if (['foot_goal', 'header_goal'].includes(eventType)) return 'goal';
   if (['penalty_goal', 'penalty_miss'].includes(eventType)) return 'penalty';
   if (eventType === 'woodwork') return 'woodwork';
