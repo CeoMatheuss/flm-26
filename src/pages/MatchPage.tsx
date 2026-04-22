@@ -894,7 +894,17 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                     }}
                   />
                 </div>
-                <p className="text-[10px] sm:text-xs text-center text-muted-foreground mt-1 line-clamp-2">{activeHighlight.description}</p>
+                <p className="text-[11px] sm:text-sm text-center text-foreground/90 mt-1.5 font-medium leading-snug px-1">{activeHighlight.description}</p>
+                {/* Mini-feed under 2D — context for last 2 events */}
+                {visibleEvents.length > 1 && (
+                  <div className="mt-1.5 pt-1.5 border-t border-yellow-400/20 space-y-0.5 opacity-70">
+                    {[...visibleEvents].slice(-3, -1).reverse().map((ev, i) => (
+                      <p key={i} className="text-[10px] text-center text-muted-foreground line-clamp-1 px-1">
+                        <span className="font-mono mr-1">{ev.minute}'</span>{ev.description}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </Card>
             )}
 
