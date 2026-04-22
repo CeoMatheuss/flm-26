@@ -580,14 +580,81 @@ export function useMatchSimulation() {
     requestNotificationPermission();
     notifiedEventsRef.current.clear();
 
+    // Reusable offline runner — used for amistosos vs BOT or as last-resort fallback
+    const runOfflineMatch = (reason: string): { success: boolean; error?: string } => {
+      console.warn('[Match] Running OFFLINE simulation. Reason:', reason);
+      const isFriendly = (params.competition || 'Amistoso').toLowerCase().includes('amistoso');
+      // Only auto-fallback for friendlies / BOT matches; PvP must remain server-driven
+      if (!isFriendly) {
+        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
+        return { success: false, error: 'server-required' };
+      }
+      const offline = buildOfflineMatch({
+        matchId: params.matchId,
+        homeTeam: params.homeTeam,
+        awayTeam: params.awayTeam,
+        homeStrength: params.homeStrength,
+        awayStrength: params.awayStrength,
+        stadiumName: params.stadiumName,
+        isHome: params.isHome,
+        competition: params.competition || 'Amistoso',
+      });
+      const durationMs = 12 * 60 * 1000; // 12 minutes default
+      const startTime = Date.now();
+      const matchDbId = `offline-${params.matchId}`;
+      dataRef.current = {
+        allEvents: offline.events,
+        startTime,
+        durationMs,
+        maxMinute: 90,
+        finalHomeGoals: offline.homeGoals,
+        finalAwayGoals: offline.awayGoals,
+        stats: offline.stats,
+        homeTeam: params.homeTeam,
+        awayTeam: params.awayTeam,
+        stadiumName: params.stadiumName,
+        matchDbId,
+        competition: params.competition || 'Amistoso',
+        isHome: params.isHome,
+      };
+      // Persistir resultado pendente em localStorage para flush posterior
+      try {
+        localStorage.setItem(
+          `pending_match_result_${params.matchId}`,
+          JSON.stringify({
+            matchId: params.matchId,
+            homeTeam: params.homeTeam,
+            awayTeam: params.awayTeam,
+            homeGoals: offline.homeGoals,
+            awayGoals: offline.awayGoals,
+            stats: offline.stats,
+            competition: params.competition || 'Amistoso',
+            createdAt: new Date().toISOString(),
+          }),
+        );
+      } catch { /* ignore quota */ }
+      persistedRef.current = true; // não tente persistir um id offline
+      startTick();
+      return { success: true };
+    };
+
+    // Server timeout guard — 8s
+    const callWithTimeout = async () => {
+      return await Promise.race([
+        supabase.functions.invoke('start-match', { body: params }),
+        new Promise<{ error: any; data: any }>(resolve =>
+          setTimeout(() => resolve({ error: { message: 'timeout' }, data: null }), 8000),
+        ),
+      ]);
+    };
+
     try {
-      const resp = await supabase.functions.invoke('start-match', { body: params });
+      const resp = await callWithTimeout();
 
       if (resp.error) {
         // Try to extract matchDbId from error context (FunctionsHttpError)
         let matchDbId: string | null = null;
         try {
-          // supabase-js v2: error.context is the raw Response
           const ctx = (resp.error as any).context;
           if (ctx instanceof Response) {
             const body = await ctx.json();
@@ -595,7 +662,6 @@ export function useMatchSimulation() {
           }
         } catch { /* ignore parse errors */ }
 
-        // Fallback: check resp.data
         if (!matchDbId && resp.data?.matchDbId) {
           matchDbId = resp.data.matchDbId;
         }
@@ -622,25 +688,22 @@ export function useMatchSimulation() {
           const durationMs = (stale.duration_seconds || 720) * 1000;
 
           if (elapsed > durationMs + 60000) {
-            // Match is past its duration + 1min grace — it's stale, delete it
             console.log('[Match] Cleaning stale match:', stale.id);
             await supabase.from('live_matches').delete().eq('id', stale.id);
-            // Retry the start
             const retry = await supabase.functions.invoke('start-match', { body: params });
             if (!retry.error && retry.data?.success) {
               await loadMatch(retry.data.matchDbId);
               return { success: true };
             }
           } else {
-            // Match is still within time — load it
             console.log('[Match] Loading active match:', stale.id);
             await loadMatch(stale.id);
             return { success: true };
           }
         }
 
-        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
-        return { success: false, error: 'Erro ao iniciar partida.' };
+        // Last-resort: offline fallback (only for friendlies)
+        return runOfflineMatch('server error: ' + (resp.error.message || 'unknown'));
       }
 
       const result = resp.data;
@@ -649,18 +712,16 @@ export function useMatchSimulation() {
           await loadMatch(result.matchDbId);
           return { success: true };
         }
-        setState(s => ({ ...s, phase: 'error', errorMsg: result?.error || 'Erro.' }));
-        return { success: false, error: result?.error || 'Erro.' };
+        return runOfflineMatch('result.success false');
       }
 
       await loadMatch(result.matchDbId);
       return { success: true };
     } catch (err) {
       console.error('[Match] Unexpected error:', err);
-      setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro inesperado. Tente novamente.' }));
-      return { success: false, error: 'Erro inesperado.' };
+      return runOfflineMatch('exception: ' + ((err as any)?.message || 'unknown'));
     }
-  }, [loadMatch]);
+  }, [loadMatch, startTick]);
 
   // Find active match
   const findActiveMatch = useCallback(async (): Promise<boolean> => {
