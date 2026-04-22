@@ -64,6 +64,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   const infraState = useInfraState(initialState, userId, isPremium);
   const matchState = useMatchState(initialState, userId);
 
+  // 🌟 Premium: ativa bônus de +30% dev points no TrainingManager
+  useEffect(() => {
+    getTrainingManager().setPremiumBoost(!!isPremium);
+  }, [isPremium]);
+
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
     matchId, homeGoals, awayGoals, isHome = true,
