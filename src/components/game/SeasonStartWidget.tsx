@@ -134,9 +134,6 @@ export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
               <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
                 <Trophy className="h-3 w-3" /> Campeonatos
               </Badge>
-              <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
-                <Zap className="h-3 w-3" /> 4 Divisões
-              </Badge>
               {enrolledCount > 0 && (
                 <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1">
                   <Users className="h-3 w-3" /> {enrolledCount} inscritos
