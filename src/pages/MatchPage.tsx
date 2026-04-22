@@ -648,6 +648,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string }[]>([]);
   const [lastSubMinute, setLastSubMinute] = useState(-1);
+  const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
   const maxSubs = 5;
   const maxWindows = 3;
 
@@ -679,6 +680,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
         setSubsUsed(prev => prev + 1);
         setSubstitutedPlayerIds(prev => new Set(prev).add(sub.outId));
         setActiveBanner({ minute: currentMinute, playerOut: playerOut.name, playerIn: playerIn.name, teamName: homeTeam, isHalftime });
+        // Inject substitution event into narration feed
+        setInjectedSubEvents(prev => [...prev, {
+          minute: isHalftime ? 45 : currentMinute,
+          type: 'substitution',
+          team: 'home',
+          description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
+        } as SimEvent]);
       }
       setSubQueue(q => q.slice(1));
     }
