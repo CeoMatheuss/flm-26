@@ -176,7 +176,7 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} awayStrength={locState?.awayStrength} />;
 }
 
 /* ── PRE-MATCH SCREEN ─────────────────────────────────────── */
@@ -563,9 +563,10 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
+function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 60 }: {
   matchState: MatchState; onExit: () => void;
   homePlayers?: Player[]; tactics?: TacticsConfig;
+  awayStrength?: number;
 }) {
   const {
     phase, currentMinute, progress, homeTeam, awayTeam,
