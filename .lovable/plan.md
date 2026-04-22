@@ -1,88 +1,126 @@
 
 
-# Plano: Canvas 2D Sem Corte + Auto-escalação no Elenco + Widget Tático Resumo
+# Plano: Separadores por Minuto + Narração Maior + Lances Coletivos com 2D Sincronizado
 
-## Problema 1 — Canvas 2D sendo cortado
+## 1. Separador entre cada minuto na narração
 
-O `<HighlightMiniCanvas>` desenha em **480×280** (aspect 12:7 ≈ 1.71), mas o container em `MatchPage` usa `aspect-[16/9]` (1.78). O CSS `width:100%; height:100%` do canvas estica o desenho e **corta o campo**.
+Hoje, `ChatEventRow` usa apenas `divide-y divide-border/10` no container. Vários eventos do mesmo minuto ficam visualmente colados.
 
-### Correção
-- **Trocar o aspect do container** de `aspect-[16/9]` → `aspect-[12/7]` para casar com o canvas nativo
-- Aplicar a mesma correção em `ReplayPage.tsx`
-- O canvas continua respondendo a `width:100%; height:100%`, sem distorção
-
-(Alternativa considerada: fazer canvas redimensionável via ResizeObserver — mais complexo e desnecessário, já que o aspect do desenho é fixo.)
-
-### Quanto à narração desaparecer durante highlight
-Hoje, quando `activeHighlight` está ativo, o card de narração ao lado some (já tem `latestEvent && !goalFlash` mas o highlight não esconde explícitamente). Vou:
-- **Esconder o card de "Lance ao vivo"** enquanto o highlight 2D está rodando (`!activeHighlight && latestEvent && !goalFlash`)
-- Quando o highlight termina e `setActiveHighlight(null)` dispara, o card de narração **volta atualizado** com o último lance
-
-## Problema 2 — Aba Elenco precisa de "Montar Time Automático"
-
-### Botão "⚡ Montar Time Automaticamente" no topo da `SquadTab`
-Adicionar um botão acima das sub-abas (Titulares/Reservas/Fora) que:
-1. Lê a **formação atual** (de `tactics.formation` salvo no club state — se não houver, usa `4-4-2`)
-2. Pega as **posições requeridas** da formação (mesma `getFormationPositions()` já usada em `MatchPage.tsx`)
-3. Para cada slot, escolhe o **melhor jogador disponível** com score:
-   - +1000 se posição idêntica
-   - +500 se mesmo grupo posicional (def/mid/atk)
-   - +OVR×10
-   - +stamina
-   - −1000 se lesionado
-4. Reordena `players` via `onReorderPlayers()`: 11 titulares → 12 reservas → resto
-5. Toast: "✅ Time montado: 4-4-2 • OVR médio 78"
-
-### Onde pegar a tática atual no SquadTab
-- Hoje `SquadTab` não recebe `tactics` como prop. Vou:
-  - Buscar `tactics` no `useGame()` (ou via prop nova `tactics` passada pelo `GameTabRouter`)
-  - Adicionar prop opcional `tactics?: TacticsConfig` em `SquadTabProps`
-  - No `GameTabRouter` passar `tactics={game.tactics}` (já existe no state)
-
-## Problema 3 — Widget pequeno de "Resumo Tático" no fim do Elenco
-
-Após a lista de jogadores (no fim de cada sub-aba ou abaixo de tudo), adicionar um **mini-card compacto** (`p-2`, `border-border/20`) mostrando:
+### Mudança
+- Agrupar eventos por minuto e renderizar **um cabeçalho de minuto** acima de cada bloco:
 
 ```
-┌──────────────────────────────────┐
-│ 🎯 Resumo Tático                 │
-│ ────────────────────────────────  │
-│ Formação: 4-4-2  • OVR Time: 78  │
-│ Estilo: Equilibrado              │
-│ Pressão: Média  • Ritmo: Normal  │
-│ Linha def.: Média • Marcação: Zona│
-│                                  │
-│ Capitão: Pedrinho (MEI)          │
-│ Pênalti: Carlos • Falta: Pedrinho│
-│ Escanteio: Junior                │
-└──────────────────────────────────┘
+─── 12' ─────────────────────────
+   🛡️ Pedrinho recebe no meio…
+   ⚽ GOL DO FLM!!!
+─── 14' ─────────────────────────
+   🛡️ Carlos pressiona…
 ```
 
-- Componente local `TacticsSummaryWidget` no fim do `SquadTab.tsx`
-- Usa `tactics` (mesma prop) + `players` para resolver nomes do capitão/cobradores
-- Só renderiza se `tactics` definido
-- Estilo enxuto: `text-[11px]`, ícones 3.5w, sem padding excessivo
+- Cabeçalho compacto: linha horizontal + badge `12'` no centro (estilo "chip")
+- Estilo: `text-[10px] font-mono text-muted-foreground/60` em background `bg-muted/5`, padding `py-0.5 px-2`
+- Aplicado em **MatchPage** (feed ao vivo, FinishedSection) e **ReplayPage**
+
+## 2. Narração de cada lance maior
+
+Hoje cada linha tem `text-[13px] sm:text-sm`. Vou:
+
+- Aumentar a descrição para `text-sm sm:text-base leading-relaxed` (~15-16px)
+- Padding vertical da linha: `py-2.5 sm:py-3` (de `py-2 sm:py-2.5`)
+- Escudo do lance: `size={28}` mobile / `size={32}` desktop (era 24/28)
+- Badge de minuto no cabeçalho do lance interno permanece compacta
+- Texto do gol: `text-base sm:text-lg font-bold` para destacar ainda mais
+
+## 3. Animação de chat ao surgir gol
+
+Hoje gols já têm `animate-fade-in` + `bg-emerald-500/10`. Vou intensificar:
+
+- Adicionar **flash inicial** de 1s: `bg-emerald-500/30 → bg-emerald-500/10` (animação custom)
+- Pulso da borda esquerda: `border-l-4 border-emerald-400 animate-pulse` (era `border-l-2`)
+- Escudo do marcador: `animate-bounce` por 1s ao aparecer
+- Texto "⚽ GOL" no header: já tem `animate-pulse`, manter
+- Auto-scroll suave do feed para colocar o gol no topo da viewport (`scrollIntoView({ behavior: 'smooth', block: 'center' })`)
+
+Implementação: novo componente filho `<GoalRow>` com `useEffect` que dispara `ref.current?.scrollIntoView()` na mount.
+
+## 4. Lances coletivos com posse prolongada e 2D sincronizado
+
+### Backend — `supabase/functions/start-match/index.ts`
+
+Hoje cada **gol** já tem buildup textual de 1 frase. O **2D já tem 6 passes** em counter_attack/crossing/build-up genérico (480 frames ≈ 8s).
+
+Vou estender para mais tipos de lance produzirem narração construída + 2D quando relevante:
+
+#### a) Marcar mais eventos como "highlight" (longa duração)
+Adicionar à lista `isHighlightEvent()`:
+- `counter_attack` (chance) — já tem 2D `counter_attack` definido
+- `buildup_play` (possession) — usa 2D `chance` com 6 passes
+- `corner_danger` — já é highlight (mostra 2D corner)
+
+E **garantir** que a narração desses tipos é multi-fase (3-4 frases descrevendo construção):
+
+```
+"⚽ ${tName} sai jogando da defesa. ${zag} toca para ${vol} no meio. 
+${vol} pressionado, devolve para ${zag} que abre na lateral. 
+${lat} acelera pela ponta, troca passe com ${mei}, e cruza! 
+${defName} corta no último segundo!"
+```
+
+#### b) Ampliar buildup nas descrições de gol
+Substituir 1-frase por **narração de 4-5 ações em sequência** (já existem `buildupDesc`, expandir para 4 etapas). Mesma frase no chat aparece com quebras visuais (separadas por `…`) — mantém compatibilidade com replay/banco.
+
+#### c) Cadência (frequência) dos highlights 2D no cliente
+Hoje o cliente dispara o 2D a cada `latestEvent` com `isHighlightEvent`. Para evitar excesso e dar **fluidez** com a narração:
+- Adicionar **cooldown** entre highlights consecutivos: mínimo de **6 segundos reais** entre 2D (já que cada highlight dura ~7s)
+- Se um highlight já está rodando (`activeHighlight !== null`), o próximo é **descartado** (já é o caso pelo `lastHighlightId`, mas reforçar o cooldown)
+- **Pênaltis** sempre passam (override do cooldown — são obrigatórios mostrar)
+- **Escanteios**: filtro probabilístico de **40%** (mostra parte deles, não todos) — `Math.random() < 0.4` no client antes de setar `activeHighlight`
+
+#### d) Sincronização narração ↔ 2D
+Hoje, quando o 2D abre, a narração esconde (`!activeHighlight && latestEvent`). Vou:
+- Manter assim, MAS: **abaixo do 2D**, mostrar um **mini-feed flutuante** com as 2-3 últimas frases (em fonte pequena, opacidade 70%) para o usuário não perder contexto
+- Quando o 2D termina (`onComplete` + 1.5s delay), o card de "lance ao vivo" já reaparece atualizado — fluxo já existe
 
 ## Arquivos modificados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/MatchPage.tsx` | Container do canvas: `aspect-[16/9]` → `aspect-[12/7]`; esconder card de "Lance ao vivo" quando `activeHighlight` está ativo |
-| `src/pages/ReplayPage.tsx` | Mesma correção de `aspect-[12/7]` no container do canvas |
-| `src/components/game/SquadTab.tsx` | Adicionar botão "⚡ Montar Time Automaticamente"; novo componente `TacticsSummaryWidget` no fim; aceitar prop `tactics?: TacticsConfig` |
-| `src/components/game/GameTabRouter.tsx` | Passar `tactics={game.tactics}` para `<SquadTab>` |
+| `src/pages/MatchPage.tsx` | Refatorar feed: agrupar eventos por minuto com separador; aumentar fontes do `ChatEventRow`; adicionar animação reforçada de gol + scroll automático; adicionar cooldown de 6s + filtro 40% para corner em `setActiveHighlight`; mini-feed sob o 2D durante highlight |
+| `src/pages/ReplayPage.tsx` | Mesmo agrupamento por minuto + fontes maiores no feed |
+| `src/components/game/HighlightMiniCanvas.tsx` | Adicionar `'counter_attack'` e `'buildup_play'` à `isHighlightEvent()`; mapear ambos para `'chance'` ou `'counter_attack'` em `getHighlightType()` |
+| `supabase/functions/start-match/index.ts` | Expandir `buildupDesc()` para 4 etapas em sequência; expandir descs de `counter_attack`, `buildup_play`, `corner_danger` para 3-4 frases |
+| `tailwind.config.ts` | Adicionar keyframe `goal-flash` (bg emerald 30% → 10% em 1.2s) |
 
-## Compatibilidade
+## Visual final do feed
 
-- Sem mudança de schema
-- Se `onReorderPlayers` não estiver definido, botão fica desabilitado com tooltip "Não disponível"
-- Se `tactics` não vier (multiplayer/clube novo), widget tático não renderiza (silencioso)
-- Aspect-ratio `12:7` é o desenho nativo, então campo aparece **inteiro** sem distorção em qualquer largura
+```
+┌─────────────────────────────────────────┐
+│ ─── 12' ─────────────────────────────── │
+│                                         │
+│  🛡️[28px] FLM 26                        │
+│       Pedrinho recebe no meio-campo,    │
+│       gira e toca para Carlos que avan- │
+│       ça pela meia-esquerda.            │
+│                                         │
+│  🛡️[32px] FLM 26 ⚽ GOL                  │
+│       …Carlos cruza rasteiro, Junior    │
+│       finaliza de primeira no canto!    │
+│       GOOOOL DO FLM!!! [1×0]            │
+│       (linha pulsando em verde)         │
+│                                         │
+│ ─── 14' ─────────────────────────────── │
+│  🛡️[28px] BOT FC                        │
+│       Reposição rápida do goleiro…      │
+└─────────────────────────────────────────┘
+```
 
 ## Anti-bug
 
-- ✅ Canvas nunca mais cortado — aspect ratio do CSS = aspect ratio do desenho
-- ✅ Narração não desaparece permanentemente — só some durante o highlight, volta quando o lance termina
-- ✅ "Montar Time" respeita a formação atual e prioriza posição correta + OVR + condição
-- ✅ Widget tático compacto não polui a tela (apenas info resumida, ~6 linhas)
+- ✅ Agrupamento por minuto preserva ordem cronológica (eventos já vêm sorted)
+- ✅ Cooldown de 6s evita 2 highlights se sobrepondo
+- ✅ Filtro 40% em corners reduz spam mas mantém variedade
+- ✅ Pênaltis sempre passam (regra explícita)
+- ✅ Narração expandida não quebra o `description` no banco — só mais texto
+- ✅ ScrollIntoView usa `block: 'center'` para não saltar agressivo
+- ✅ Animação de gol não bloqueia interação (apenas visual)
 
