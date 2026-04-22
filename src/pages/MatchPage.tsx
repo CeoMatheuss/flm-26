@@ -621,6 +621,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
   const hasAssistant = matchState.assistantTips.length > 0;
   const latestTip = hasAssistant ? matchState.assistantTips[matchState.assistantTips.length - 1] : null;
 
+  // Expanded widget state
+  const [expandedWidget, setExpandedWidget] = useState<string | null>('stats');
+
   // ── Substitution system state ──
   const [subsUsed, setSubsUsed] = useState(0);
   const [windowsUsed, setWindowsUsed] = useState(0);
@@ -1005,7 +1008,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <CompactStatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
                 </CardContent>
               </Card>
             )}
@@ -1018,7 +1021,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <CompactLineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
                 </CardContent>
               </Card>
             )}
@@ -1031,7 +1034,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <CompactTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
                 </CardContent>
               </Card>
             )}
@@ -1051,7 +1054,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics }: {
                       <p className="text-[10px] text-muted-foreground flex-1">{subBlockedReason}</p>
                     </div>
                   )}
-                  <CompactManagerSubstitutionView
+                  <ManagerSubstitutionView
                     homePlayers={homePlayers}
                     subsUsed={subsUsed}
                     maxSubs={maxSubs}
