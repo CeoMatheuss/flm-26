@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { TacticsConfig } from '@/types/tactics';
 
+type TieBreaker = 'none' | 'extra_time' | 'penalties' | 'both';
+
 interface FriendlyInvite {
   id: string;
   sender_id: string;
@@ -29,8 +31,16 @@ interface FriendlyInvite {
   match_date: string;
   status: string;
   match_result: { home_goals: number; away_goals: number } | null;
+  tie_breaker?: TieBreaker;
   created_at: string;
 }
+
+const TIE_BREAKER_LABELS: Record<TieBreaker, { label: string; emoji: string; short: string }> = {
+  none: { label: 'Tempo normal (sem desempate)', emoji: '⏱️', short: 'Sem desempate' },
+  extra_time: { label: 'Prorrogação se empatar (30 min extra)', emoji: '⏰', short: 'Prorrogação' },
+  penalties: { label: 'Pênaltis direto se empatar', emoji: '🎯', short: 'Pênaltis' },
+  both: { label: 'Prorrogação + Pênaltis (mata-mata oficial)', emoji: '🏆', short: 'Prorrogação + Pênaltis' },
+};
 
 interface OnlineUser {
   user_id: string;
@@ -60,6 +70,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [matchDate, setMatchDate] = useState('');
   const [matchTime, setMatchTime] = useState('');
   const [homeChoice, setHomeChoice] = useState<'me' | 'them'>('me');
+  const [tieBreaker, setTieBreaker] = useState<TieBreaker>('none');
   const [sending, setSending] = useState(false);
   const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
   const [creatingSlot, setCreatingSlot] = useState(false);
