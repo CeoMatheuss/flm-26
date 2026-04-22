@@ -1327,6 +1327,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminDirectMessagePanel allUsers={allUsers} />
         </TabsContent>
       </Tabs>
+      </AdminLayout>
     </div>
   );
 }
