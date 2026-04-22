@@ -1,161 +1,137 @@
 
 
-# Plano: Sistema de Competições Internacionais + Classificação Automática
+# Plano: Auto-simulação de Partida após Janela de 5 Minutos
 
-## Visão geral
+## Objetivo
 
-Implementar um sistema completo de **competições internacionais por continente** (Champions equivalente + Europa League equivalente) com **classificação automática** baseada na posição da liga + campeão da copa nacional, integrado ao ciclo de temporada existente.
+Se o jogador **não iniciar manualmente** a partida dentro da janela de 5 minutos (após o horário agendado), o sistema **simula automaticamente** o resultado no servidor, gera o relatório completo, atualiza tabelas/estatísticas e notifica o usuário — **sem precisar abrir o app**.
 
----
+## Contexto atual
 
-## 1. Modelo de dados (sem schema novo — reusa `cup_competitions`)
+Hoje:
+- Partidas têm uma janela de 5 min (`mem://features/match-start-interaction`) para o player apertar "⚽ JOGAR PARTIDA"
+- Se ninguém entra, a partida fica pendente até o usuário voltar
+- Existe `start-match` Edge Function para iniciar manualmente
+- `process-tournament-matches` já simula partidas BOTxBOT em torneios
 
-A tabela `cup_competitions` já tem `cup_type='continental'` e campo `continent`. Vamos usar:
+Falta: **um trigger automático** que detecte janelas expiradas e force a simulação no servidor.
 
-- **Principal**: `cup_type='continental'`, `tier='principal'` (novo campo no JSONB? não — usar o `name` ou um campo `format` diferenciado).  
-  Para evitar migração de schema, usar **convenção em `name`**: prefixo `[PRINCIPAL]` e `[SECUNDARIA]` OU adicionar coluna `tier text` via migração leve.
+## Solução
 
-**Decisão**: adicionar 1 coluna `tier text` em `cup_competitions` (`'principal' | 'secundaria'`) — é uma única ALTER TABLE.
+### 1. Nova Edge Function `auto-simulate-expired-matches`
 
-Mapeamento por continente:
+Roda periodicamente (cron a cada 1 minuto). Para cada tipo de partida pendente:
 
-| Continente | Principal | Secundária |
-|---|---|---|
-| Europa | UEFA Champions League | UEFA Europa League |
-| América do Sul | Copa Libertadores | Copa Sul-Americana |
-| América do Norte | CONCACAF Champions Cup | CONCACAF Liga |
-| África | CAF Champions League | CAF Confederation Cup |
-| Ásia | AFC Champions League | AFC Cup |
-| Oceania | OFC Champions League | OFC President Cup |
+**Liga (`league_matches`):**
+- Busca matches com `status='scheduled'` e `scheduled_at < now() - interval '5 minutes'`
+- Para cada uma: chama lógica de simulação Poisson (mesma do `start-match`)
+- Atualiza `home_goals`, `away_goals`, `match_data` (com eventos gerados), `status='finished'`, `played_at=now()`
+- Atualiza `league_members` (pts/V/E/D/SG) dos dois lados
 
-Tudo em uma tabela auxiliar **client-side** `src/data/internationalCompetitions.ts`.
+**Copa (`cup_matches`):**
+- Mesma lógica para `cup_matches` com `scheduled_at < now() - 5min` e `status='scheduled'`
+- Avança rodada se necessário (reusa lógica de `process-tournament-matches`)
 
----
+**Torneio customizado (`custom_tournament_matches`):**
+- Idem
 
-## 2. Lógica de classificação (regra anti-bug)
+**Amistosos abertos / convites (`friendly_invites`):**
+- Se `match_date < now() - 5min` e `status='accepted'` mas sem `match_result`: simula e marca como expirado-simulado
 
-Função RPC nova: **`qualify_international_teams(_continent text, _season_year int)`**
+### 2. Lógica de simulação (compartilhada)
 
-Para cada **país** do continente:
-1. Buscar a **Divisão 1** (`tier='nacional'`, `division=1`)
-2. Pegar top 8 da tabela final (`league_members` ordenados por pts/SG/GF)
-3. Pegar **campeão da copa nacional** (`cup_competitions.cup_type='national'`, `country=país`, status `finished`)
+Para cada match pendente:
+1. Buscar **força real** dos 2 times:
+   - Se player → pega elenco salvo em `league_squads` ou `game_saves` → calcula OVR médio dos 11 titulares
+   - Se BOT → usa `bot_strength` da tabela
+2. Aplicar fator casa (+5 OVR para mandante)
+3. Calcular Poisson: `λ_home = base * (home_str / (home_str + away_str)) * 1.1`
+4. Sortear gols (`Poisson(λ)`)
+5. Gerar **eventos sintéticos** (gols com minutos aleatórios, posse, chutes etc.) → `match_data.events`
+6. Determinar `man_of_the_match`, `goal_scorers`, `player_ratings` para o lado humano
+7. Persistir tudo em uma transação
 
-Distribuição (algoritmo):
-- **Slots Principal**: 1º, 2º, 3º, 4º + Campeão Copa Nacional
-- Se campeão da copa **já está no top 4** → vaga passa para o **5º**
-- **Slots Secundária**: 5º, 6º, 7º, 8º (ou 6º-9º se 5º foi promovido)
+### 3. Notificação automática
 
-Anti-duplicação:
-- Conjunto `Set<club_id>` para cada copa
-- Antes de inserir em `cup_teams`, validar se já existe
-- Se faltar time (raro), preencher com bot do país
+Após simular cada partida com player:
+- Insert em `user_notifications` (mesmo padrão do `post-match-feedback-system`):
+  - Tipo: `match_auto_simulated`
+  - Título: `"Sua partida foi simulada automaticamente"`
+  - Conteúdo: `"Você não entrou em campo. Resultado: X TIME 2x1 ADVERSÁRIO"`
+- Sino badge atualiza em tempo real (já existe via realtime)
 
-Total por continente:
-- Principal = 32 vagas (distribuídas proporcionalmente entre países por reputação/quantidade de ligas)
-- Secundária = 32 vagas
+### 4. Cron / agendamento
 
----
-
-## 3. Edge Function `generate-international-cups`
-
-Trigger: chamado pelo `plan-season` no fim de cada temporada (após `process_season_transition`).
-
-Fluxo:
-1. Validar admin OU chamada interna do cron
-2. Para cada continente ativo:
-   - Criar 2 entradas em `cup_competitions` (`tier='principal'` e `'secundaria'`)
-   - Chamar `qualify_international_teams` por país
-   - Distribuir vagas até atingir 32 por copa
-   - Sortear 8 grupos de 4 (formato `groups_then_knockout`)
-   - Inserir em `cup_teams` + `cup_matches` (rodada de grupos)
-3. Logar em `admin_logs` com action `international_cups_generated`
-
----
-
-## 4. Atualização do `SystemPanel` (Sub-aba 5: Simulação)
-
-Adicionar na aba **🧪 Simulação & Validação**:
-- **Validador novo**: ✅/❌ "Cada continente tem suas 2 copas internacionais ativas"
-- **Validador novo**: ✅/❌ "Nenhum clube duplicado em competições internacionais"
-- **Botão**: "🌍 Gerar Copas Internacionais agora" (chama Edge Function manualmente para teste)
-
-Adicionar na aba **🏆 Copas**:
-- Seção destacada **"🌎 Copas Continentais"** mostrando Principal vs Secundária
-- Para cada copa: número de vagas preenchidas vs 32, países representados
-
----
-
-## 5. Documentação na sub-aba "📐 Como Funciona"
-
-Adicionar nova seção visual:
-
-```
-🌍 COMPETIÇÕES INTERNACIONAIS
-├── 🥇 Principal (32 clubes, 8 grupos de 4)
-│   ├── 1º-4º da Divisão 1
-│   └── Campeão Copa Nacional
-└── 🥈 Secundária (32 clubes)
-    ├── 5º-8º da Divisão 1
-    └── Eliminados da fase de grupos da Principal
+Em `supabase/migrations/`, adicionar:
+```sql
+SELECT cron.schedule(
+  'auto-simulate-expired-matches',
+  '* * * * *',  -- a cada 1 minuto
+  $$
+  SELECT net.http_post(
+    url := 'https://devjicsgksuxnnlkcliq.supabase.co/functions/v1/auto-simulate-expired-matches',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <service_role>')
+  );
+  $$
+);
 ```
 
-Com texto explicando a regra da vaga deslocada (campeão da copa já no top 4).
+Alternativa mais segura: usar `pg_cron` com chamada interna via `extensions.http`.
 
----
+### 5. Idempotência e proteção
 
-## 6. Integração com `plan-season` (cron mensal)
+- Rodar `SELECT ... FOR UPDATE SKIP LOCKED` nas matches para evitar dupla simulação caso 2 cron jobs rodem em paralelo
+- Edge function valida `verify_jwt = false` mas exige header secreto `x-cron-secret` (novo segredo) — só o cron tem
+- Limita a 50 matches por execução para não travar
 
-Modificar `supabase/functions/plan-season/index.ts`:
-- Após processar transições por país
-- Chamar `generate-international-cups` para cada continente
-- Garantir idempotência: não criar copa se já existir uma com `season_year` atual e `status != 'finished'`
+### 6. UI: indicador de "auto-simulada"
 
----
+No `MatchReportModal` e no Histórico, adicionar badge **"🤖 Simulação Automática"** quando a partida foi processada pelo cron (campo `match_data.auto_simulated = true`).
 
-## Arquivos novos
+No widget "Próxima Partida" do Dashboard, se passou da janela:
+- Trocar botão **"⚽ JOGAR PARTIDA"** por **"⏳ Simulando automaticamente..."** (cinza, desabilitado, com spinner)
 
+### 7. Painel Admin — controle manual
+
+No `SeasonControlTab` (já existe), adicionar botão:
+- **"⚡ Simular partidas pendentes agora"** → chama a edge function manualmente para teste
+- Mostra contagem de partidas pendentes por categoria (liga / copa / torneio)
+
+Logado em `admin_logs` (`action: 'manual_auto_sim_trigger'`).
+
+## Arquivos
+
+### Novos
 | Arquivo | Conteúdo |
 |---|---|
-| `supabase/functions/generate-international-cups/index.ts` | Edge Function que cria copas continentais e distribui vagas |
-| `src/data/internationalCompetitions.ts` | Mapeamento continente → nomes oficiais (UCL, Libertadores etc) |
-| `src/components/game/admin/InternationalCupsSection.tsx` | Card no `CupsOverviewTab` mostrando copas continentais com destaque |
+| `supabase/functions/auto-simulate-expired-matches/index.ts` | Cron-driven: simula todas as matches expiradas (>5min sem início) |
+| `supabase/migrations/<ts>_auto_simulate_cron.sql` | Schedule pg_cron + secret `CRON_SECRET` |
 
-## Arquivos modificados
-
+### Modificados
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/plan-season/index.ts` | Invocar geração de copas internacionais após transição |
-| `src/components/game/admin/CupsOverviewTab.tsx` | Renderizar `InternationalCupsSection` no topo |
-| `src/components/game/admin/SimulationValidationTab.tsx` | Adicionar 2 novos validadores + botão manual de geração |
-| `src/components/game/admin/HowItWorksTab.tsx` | Nova seção visual sobre copas internacionais |
-| `src/components/game/admin/leagueHelpers.ts` | Função `validateInternationalCups()` (sem duplicatas, 32 times etc) |
+| `supabase/config.toml` | Registrar nova função com `verify_jwt=false` |
+| `src/components/game/MatchDashboardCard.tsx` | Detectar janela expirada → mostrar "Simulando automaticamente..." |
+| `src/components/game/MatchReportModal.tsx` | Badge "🤖 Simulação Automática" se `match_data.auto_simulated` |
+| `src/components/game/admin/SeasonControlTab.tsx` | Botão manual + contador de pendências |
 
-## Migrações de schema
+## Segurança
 
-Apenas **1 ALTER TABLE**:
-```sql
-ALTER TABLE cup_competitions ADD COLUMN IF NOT EXISTS tier text DEFAULT 'national';
--- valores válidos: 'principal', 'secundaria', 'national', 'regional'
-CREATE INDEX IF NOT EXISTS idx_cup_competitions_tier ON cup_competitions(tier);
-```
-
-## Migrações de função (RPC)
-
-1 função nova `qualify_international_teams(_continent, _season_year)` (SECURITY DEFINER) — retorna JSONB com `{principal: [{club_id, country, source}], secundaria: [...]}`.
-
-## Regras anti-bug aplicadas
-
-- ✅ Sempre 32 clubes por copa internacional (preenchido com bots se faltar)
-- ✅ Anti-duplicação via `Set` no servidor + constraint UNIQUE composta `(cup_id, user_id, club_name)` em `cup_teams`
-- ✅ Vaga da copa nacional **redireciona** para o próximo se duplicar
-- ✅ Idempotência no cron — só cria se não existir copa ativa do `season_year`
-- ✅ Validador automático no painel admin que detecta inconsistências
+- Função usa `SUPABASE_SERVICE_ROLE_KEY` para bypass de RLS
+- Header `x-cron-secret` obrigatório (novo segredo `CRON_SECRET` que vou pedir após aprovação)
+- Idempotência via `FOR UPDATE SKIP LOCKED` + `WHERE status='scheduled'`
 
 ## Compatibilidade
 
-- Tabela `cup_competitions` já existe — apenas adicionamos 1 coluna
-- `cup_teams` e `cup_matches` reusados sem mudança
-- Todo código existente continua funcionando (`tier` default = `'national'`)
-- Não afeta saves antigos
+- Sem mudança de schema (apenas adiciona `auto_simulated: true` no JSONB `match_data`)
+- Não afeta partidas iniciadas manualmente
+- Players continuam podendo entrar nos 5 min — se não entrarem, sistema assume controle
+
+## Regras anti-bug
+
+- ✅ Janela de 5 min respeitada (não simula antes)
+- ✅ Não duplica simulação (`SKIP LOCKED` + filtro `status='scheduled'`)
+- ✅ Se player iniciar em paralelo, edge function manual ganha (timestamp earlier)
+- ✅ Todas as 4 fontes de match cobertas (liga, copa, torneio custom, amistoso)
+- ✅ Estatísticas e ranking atualizados igual a uma partida normal
 
