@@ -68,6 +68,7 @@ export function MatchesTab({
   const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
   const [tournamentTeams, setTournamentTeams] = useState<any[]>([]);
   const [tournamentNames, setTournamentNames] = useState<Record<string, string>>({});
+  const [lobbyMatch, setLobbyMatch] = useState<any | null>(null);
 
   useEffect(() => {
     if (!userId) return;
