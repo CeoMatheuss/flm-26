@@ -41,6 +41,7 @@ interface MatchPageState {
   tournamentMatchId?: string;
   fans?: number;
   awayFans?: number;
+  tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -106,6 +107,7 @@ export default function MatchPage() {
       tournamentMatchId: locState.tournamentMatchId,
       fans: locState.fans || 500,
       awayFans: locState.awayFans || 500,
+      tieBreaker: locState.tieBreaker || 'none',
     });
     setInitDone(true);
   }, [locState, startMatch]);
