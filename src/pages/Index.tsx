@@ -154,6 +154,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const game = useGame(initialState, userId, isPremium);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
   usePresence(userId);
+  usePendingMatchFlush(userId);
 
   // Check maintenance mode + tutorial status
   useEffect(() => {
