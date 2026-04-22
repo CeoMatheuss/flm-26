@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight } from 'lucide-react';
+import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight, HeartPulse } from 'lucide-react';
 
 interface GameMenuProps {
   showAdmin: boolean;
@@ -34,7 +34,9 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🏗️ Infraestrutura</p>
         <DropdownMenuItem onClick={() => onTabChange('stadium')} className="menu-item"><Landmark className="h-3.5 w-3.5 text-primary/70" /> Estádio <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('infra')} className="menu-item"><Building2 className="h-3.5 w-3.5 text-primary/70" /> Infraestrutura (Fisio + Base + CT) <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('physio')} className="menu-item"><HeartPulse className="h-3.5 w-3.5 text-pink-400" /> Fisioterapia <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('youth')} className="menu-item"><GraduationCap className="h-3.5 w-3.5 text-emerald-400" /> Categorias de Base <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('ct')} className="menu-item"><Dumbbell className="h-3.5 w-3.5 text-amber-400" /> Centro de Treinamento <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('ctrooms')} className="menu-item"><Home className="h-3.5 w-3.5 text-primary/70" /> Salas do CT <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
