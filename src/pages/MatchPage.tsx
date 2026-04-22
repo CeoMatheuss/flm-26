@@ -1230,6 +1230,46 @@ function MatchMiniWidgets({
 /* ── LIVE TACTICS VIEW ──────────────────────────────────────── */
 
 function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpdate: (t: TacticsConfig) => void }) {
+  const [applying, setApplying] = useState(false);
+
+  const applyLive = async () => {
+    try {
+      setApplying(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sessão expirada'); return; }
+      // Find current live match for this user
+      const { data: live } = await supabase
+        .from('live_matches')
+        .select('id, current_minute, status')
+        .eq('user_id', session.user.id)
+        .eq('status', 'live')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!live) { toast.error('Nenhuma partida ao vivo encontrada'); return; }
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/re-simulate-from-minute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          live_match_id: live.id,
+          from_minute: live.current_minute || 0,
+          new_tactics: tactics,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Erro ao aplicar tática');
+        return;
+      }
+      toast.success(`🔄 Tática aplicada — efeito a partir do minuto ${data.from_minute}'`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro de conexão');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-base font-black text-primary flex items-center gap-1.5">
@@ -1251,10 +1291,12 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         <Select value={tactics.playStyle || 'equilibrado'} onValueChange={(v) => onUpdate({ ...tactics, playStyle: v as any })}>
           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="defensivo">Defensivo</SelectItem>
+            <SelectItem value="retranca-total">🛡️ Retranca Total</SelectItem>
+            <SelectItem value="defensivo">Defesa Total</SelectItem>
             <SelectItem value="equilibrado">Equilibrado</SelectItem>
-            <SelectItem value="ofensivo">Ofensivo</SelectItem>
+            <SelectItem value="ofensivo">⚔️ Ataque Total</SelectItem>
             <SelectItem value="contra-ataque">Contra-Ataque</SelectItem>
+            <SelectItem value="pressao-alta">🔥 Pressão Alta</SelectItem>
             <SelectItem value="posse">Posse de Bola</SelectItem>
           </SelectContent>
         </Select>
@@ -1286,9 +1328,13 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         </Select>
       </div>
 
+      <Button onClick={applyLive} disabled={applying} className="w-full h-10 gap-2 bg-gradient-to-r from-primary to-primary/80">
+        {applying ? '⏳ Aplicando...' : '⚡ Aplicar Tática AGORA'}
+      </Button>
+
       <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
         <p className="text-xs text-muted-foreground">
-          ⚡ Mudanças táticas terão efeito imediato na dinâmica da partida
+          ⚡ Mudanças geram nova simulação dos minutos restantes • Cooldown 15min
         </p>
       </div>
     </div>
