@@ -27,6 +27,8 @@ export const defaultStaff: StaffConfig = {
 
 export class PlayerDevelopmentEngine {
   private _logs: DevelopmentLog[] = [];
+  /** Bônus Premium global: +30% nos dev points por sessão. Definido por TrainingManager. */
+  public premiumBoost: boolean = false;
 
   /**
    * Calcula o gain semanal de progresso (em pontos %).
@@ -53,8 +55,9 @@ export class PlayerDevelopmentEngine {
     const moraleFactor = 0.7 + (player.morale / 100) * 0.6; // 0.7 a 1.3
     const coachBoost = 1 + (staff.headCoach - 1) * 0.04;
     const youthBoost = player.age < 23 ? 1 + (staff.youthDeveloper - 1) * 0.05 : 1;
+    const premiumMult = this.premiumBoost ? 1.3 : 1.0; // 🌟 Premium: +30% dev points
 
-    const gain = baseEff * intensityMult * ageFactor * personalityFactor * moraleFactor * coachBoost * youthBoost;
+    const gain = baseEff * intensityMult * ageFactor * personalityFactor * moraleFactor * coachBoost * youthBoost * premiumMult;
     const matchBonus = minutesPlayedThisWeek * 0.5; // +0.5%/min jogado
     return Math.max(0, gain + matchBonus);
   }

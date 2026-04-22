@@ -32,6 +32,11 @@ export class TrainingManager {
   private injuryRisk = new InjuryRiskSystem();
   private eventGen = new TrainingEventGenerator();
 
+  /** Ativa/desativa o bônus Premium (+30% dev points). Idempotente. */
+  setPremiumBoost(enabled: boolean): void {
+    this.devEngine.premiumBoost = enabled;
+  }
+
   /**
    * Processa uma semana de treinos para todo o elenco.
    * Retorna os jogadores atualizados e o resultado detalhado.

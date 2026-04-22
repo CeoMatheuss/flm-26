@@ -18,6 +18,8 @@ interface Props {
   onFireScout: (scoutId: string) => void;
   onAcceptAvailableScout?: (scoutId: string) => void;
   onBuyPremiumScout?: () => void;
+  /** Quando o usuário não é Premium, callback para abrir aba Premium (R$ 10/mês). */
+  onUpgradePremium?: () => void;
 }
 
 const scoutOptions = [
@@ -52,7 +54,7 @@ const attrLabels: Record<string, string> = {
   aggression: '⚔️ Agr',
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout }: Props) {
+export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout, onUpgradePremium }: Props) {
   const { guard } = useLiveMatchGuard();
   const onHireScout = guard(_onHireScout);
   const onFireScout = guard(_onFireScout);
@@ -106,11 +108,15 @@ export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget,
               <p className="text-xs font-bold text-amber-400">🎁 Olheiros Disponíveis</p>
               <p className="text-[10px] text-muted-foreground">Próximo automático em: <strong>{nextScoutLabel}</strong></p>
             </div>
-            {_onBuyPremiumScout && (
+            {_onBuyPremiumScout ? (
               <Button size="sm" onClick={onBuyPremiumScout} className="h-7 text-[10px] gap-1 bg-amber-500 hover:bg-amber-600 text-black">
-                ⚡ Nv Máx — 10 🪙
+                🌟 Olheiro Lendário (Premium)
               </Button>
-            )}
+            ) : onUpgradePremium ? (
+              <Button size="sm" variant="outline" onClick={onUpgradePremium} className="h-7 text-[10px] gap-1 border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
+                🔒 Olheiro Lendário — Premium R$10
+              </Button>
+            ) : null}
           </div>
           {availableScouts.length > 0 ? (
             <div className="space-y-1.5">

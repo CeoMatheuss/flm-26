@@ -35,8 +35,8 @@ export function StaffTab({
   const onFireStaff = guard(_onFireStaff);
   const [showMarket, setShowMarket] = useState(false);
 
-  const hasRole = (role: string) => staff.some(s => s.role === role);
-  const availableStaff = staffMarket.filter(s => !hasRole(s.role));
+  // Mercado mostra todos os 5+ assistentes/médicos/preparadores disponíveis (sem esconder por role já contratado)
+  const availableStaff = staffMarket;
 
   // Próximo refresh disponível
   const cooldownMs = 24 * 60 * 60 * 1000;
