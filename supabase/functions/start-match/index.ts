@@ -1296,6 +1296,7 @@ Deno.serve(async (req) => {
         player_ratings: result.playerRatings as any,
         tactics: (tactics || {}) as any,
         status: 'live',
+        roster_locked_at: new Date().toISOString(),
       })
       .select('id')
       .single();
