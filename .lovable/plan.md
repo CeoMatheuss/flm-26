@@ -1,137 +1,106 @@
 
 
-# Plano: Auto-simulação de Partida após Janela de 5 Minutos
+# Plano: Auto-simulação Silenciosa + Layout Compacto da Partida
 
-## Objetivo
+## Parte 1 — Auto-simulação aparece como resultado normal
 
-Se o jogador **não iniciar manualmente** a partida dentro da janela de 5 minutos (após o horário agendado), o sistema **simula automaticamente** o resultado no servidor, gera o relatório completo, atualiza tabelas/estatísticas e notifica o usuário — **sem precisar abrir o app**.
+Hoje, quando a janela de 5 min expira, o widget mostra:
+- Badge "⚙️ Simulada automaticamente"
+- Texto "⏰ Janela de 5 min expirou — partida simulada pelo servidor"
+- Bloco cinza desabilitado
 
-## Contexto atual
+**O que muda**: removo TUDO isso. Quando a partida foi auto-simulada pelo cron, o widget mostra **exatamente como uma partida normal finalizada** — placar final, badge "Final", botão "VER RELATÓRIO". Sem nenhuma indicação de "automática" na frente do usuário.
 
-Hoje:
-- Partidas têm uma janela de 5 min (`mem://features/match-start-interaction`) para o player apertar "⚽ JOGAR PARTIDA"
-- Se ninguém entra, a partida fica pendente até o usuário voltar
-- Existe `start-match` Edge Function para iniciar manualmente
-- `process-tournament-matches` já simula partidas BOTxBOT em torneios
+### Arquivo: `MatchDashboardCard.tsx` (`NextTournamentMatch`)
+- **Remover**: estado `isExpired`, badge "Simulada automaticamente", bloco "Janela de 5 min expirou"
+- **Novo comportamento quando expirado**: refazer query para buscar a partida como `status='finished'` (a edge function `auto-simulate-expired-matches` já marcou) e renderizar o **mesmo bloco de "última partida finalizada"** com placar e botão "VER RELATÓRIO"
+- Polling a cada 10s enquanto janela está expirada-mas-ainda-scheduled, para pegar o momento que o cron simula
 
-Falta: **um trigger automático** que detecte janelas expiradas e force a simulação no servidor.
+### Arquivo: `MatchReportModal.tsx`
+- **Remover** badge "🤖 Simulação Automática" (campo `auto_simulated` continua no DB para auditoria, mas invisível ao usuário)
 
-## Solução
+## Parte 2 — Layout compacto da página de partida
 
-### 1. Nova Edge Function `auto-simulate-expired-matches`
+Hoje a `MatchPage` empilha tudo verticalmente em coluna única, ocupando muito espaço:
+- Placar grande
+- Posse de bola
+- Momento do jogo
+- Dica do assistente
+- Canvas 2D (highlight)
+- Narração ao vivo (card grande)
+- 4 stats em grid horizontal
+- Feed de narração (chat)
+- Estatísticas, Escalações, Táticas, Substituições (cada um em Card grande sequencial)
 
-Roda periodicamente (cron a cada 1 minuto). Para cada tipo de partida pendente:
-
-**Liga (`league_matches`):**
-- Busca matches com `status='scheduled'` e `scheduled_at < now() - interval '5 minutes'`
-- Para cada uma: chama lógica de simulação Poisson (mesma do `start-match`)
-- Atualiza `home_goals`, `away_goals`, `match_data` (com eventos gerados), `status='finished'`, `played_at=now()`
-- Atualiza `league_members` (pts/V/E/D/SG) dos dois lados
-
-**Copa (`cup_matches`):**
-- Mesma lógica para `cup_matches` com `scheduled_at < now() - 5min` e `status='scheduled'`
-- Avança rodada se necessário (reusa lógica de `process-tournament-matches`)
-
-**Torneio customizado (`custom_tournament_matches`):**
-- Idem
-
-**Amistosos abertos / convites (`friendly_invites`):**
-- Se `match_date < now() - 5min` e `status='accepted'` mas sem `match_result`: simula e marca como expirado-simulado
-
-### 2. Lógica de simulação (compartilhada)
-
-Para cada match pendente:
-1. Buscar **força real** dos 2 times:
-   - Se player → pega elenco salvo em `league_squads` ou `game_saves` → calcula OVR médio dos 11 titulares
-   - Se BOT → usa `bot_strength` da tabela
-2. Aplicar fator casa (+5 OVR para mandante)
-3. Calcular Poisson: `λ_home = base * (home_str / (home_str + away_str)) * 1.1`
-4. Sortear gols (`Poisson(λ)`)
-5. Gerar **eventos sintéticos** (gols com minutos aleatórios, posse, chutes etc.) → `match_data.events`
-6. Determinar `man_of_the_match`, `goal_scorers`, `player_ratings` para o lado humano
-7. Persistir tudo em uma transação
-
-### 3. Notificação automática
-
-Após simular cada partida com player:
-- Insert em `user_notifications` (mesmo padrão do `post-match-feedback-system`):
-  - Tipo: `match_auto_simulated`
-  - Título: `"Sua partida foi simulada automaticamente"`
-  - Conteúdo: `"Você não entrou em campo. Resultado: X TIME 2x1 ADVERSÁRIO"`
-- Sino badge atualiza em tempo real (já existe via realtime)
-
-### 4. Cron / agendamento
-
-Em `supabase/migrations/`, adicionar:
-```sql
-SELECT cron.schedule(
-  'auto-simulate-expired-matches',
-  '* * * * *',  -- a cada 1 minuto
-  $$
-  SELECT net.http_post(
-    url := 'https://devjicsgksuxnnlkcliq.supabase.co/functions/v1/auto-simulate-expired-matches',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <service_role>')
-  );
-  $$
-);
+**Novo layout (desktop ≥1024px)**: grid 2 colunas
+```
+┌──────────────────────────────────┬─────────────────┐
+│  Placar + Cronômetro (compacto)  │   SIDEBAR       │
+│  Canvas 2D highlight             │ ─────────────── │
+│  Narração lance atual            │ 📊 Stats rápidas│
+│                                  │ (4 cards menores│
+│                                  │  empilhados)    │
+│  Feed de narração (chat)         │                 │
+│  [altura reduzida 280px]         │ ⚡ Momento jogo │
+│                                  │ 💬 Dica assist. │
+│                                  │ 🔄 Subs status  │
+└──────────────────────────────────┴─────────────────┘
+↓ Abaixo: Acordeões compactos (Estatísticas, Escalação, Táticas, Subs)
 ```
 
-Alternativa mais segura: usar `pg_cron` com chamada interna via `extensions.http`.
+**Mobile (<1024px)**: mantém coluna única atual mas com widgets reduzidos.
 
-### 5. Idempotência e proteção
+### Mudanças concretas em `MatchPage.tsx` (componente `MatchViewer`)
 
-- Rodar `SELECT ... FOR UPDATE SKIP LOCKED` nas matches para evitar dupla simulação caso 2 cron jobs rodem em paralelo
-- Edge function valida `verify_jwt = false` mas exige header secreto `x-cron-secret` (novo segredo) — só o cron tem
-- Limita a 50 matches por execução para não travar
-
-### 6. UI: indicador de "auto-simulada"
-
-No `MatchReportModal` e no Histórico, adicionar badge **"🤖 Simulação Automática"** quando a partida foi processada pelo cron (campo `match_data.auto_simulated = true`).
-
-No widget "Próxima Partida" do Dashboard, se passou da janela:
-- Trocar botão **"⚽ JOGAR PARTIDA"** por **"⏳ Simulando automaticamente..."** (cinza, desabilitado, com spinner)
-
-### 7. Painel Admin — controle manual
-
-No `SeasonControlTab` (já existe), adicionar botão:
-- **"⚡ Simular partidas pendentes agora"** → chama a edge function manualmente para teste
-- Mostra contagem de partidas pendentes por categoria (liga / copa / torneio)
-
-Logado em `admin_logs` (`action: 'manual_auto_sim_trigger'`).
-
-## Arquivos
-
-### Novos
-| Arquivo | Conteúdo |
+| Elemento | Mudança |
 |---|---|
-| `supabase/functions/auto-simulate-expired-matches/index.ts` | Cron-driven: simula todas as matches expiradas (>5min sem início) |
-| `supabase/migrations/<ts>_auto_simulate_cron.sql` | Schedule pg_cron + secret `CRON_SECRET` |
+| Card de placar | Padding reduzido `p-2 sm:p-3` (era `p-3 sm:p-6`); fontes menores: placar `text-3xl sm:text-4xl` (era `text-5xl`) |
+| Posse de bola | Barra mais fina (`h-2`), labels `text-xs` |
+| Momento do jogo | Vai pra **sidebar direita**, mostra só ícone+label compacto |
+| Dica do assistente | Vai pra **sidebar direita**, card menor com avatar 5x5, sem padding extra |
+| Canvas 2D highlight | Mantém posição mas altura reduzida (canvas `h-32 sm:h-40` em vez de `h-48`) |
+| Narração lance atual | Card mais fino: `py-2 px-3`, fonte `text-sm` (era `text-lg`) |
+| Quick Stats Row | **Move pra sidebar** em desktop, vira grid 2x2 vertical compacto. Em mobile, fica abaixo do canvas com `text-xs` e `p-1.5` |
+| Feed de narração (chat) | Altura `max-h-[280px] sm:max-h-[320px]` (em vez de até 340px). Linhas mais densas: padding `py-1.5` |
+| Acordeões (Stats/Escalação/Táticas/Subs) | Convertidos de Cards grandes sempre-abertos para `<Collapsible>` fechados por padrão, headers compactos `py-2` |
+| Container principal | Em desktop: `max-w-6xl` com grid `lg:grid-cols-[1fr_280px] gap-4`. Mobile inalterado (`max-w-2xl`) |
 
-### Modificados
+### Componente novo: `MatchSidebar.tsx`
+Pequeno componente que agrupa na coluna direita (só aparece em `lg:` e acima):
+- 📊 4 mini-stats verticais (chutes, no gol, escan., faltas)
+- ⚡ Badge do momento atual
+- 💬 Última dica do assistente (compacta)
+- 🔄 Status de substituições (`X/5 usadas`)
+
+### Componente afetado: `ChatEventRow` (linhas do feed)
+- Reduzir padding vertical de `py-2` → `py-1.5`
+- Fonte `text-xs` no minuto, `text-sm` no texto (era `text-base`)
+- Badge minute `text-[10px]`
+
+### `ReplayPage.tsx`
+- Aplicar mesma redução de tamanhos no card de comentário e altura do feed de narração para manter consistência com replays.
+
+## Arquivos modificados
+
 | Arquivo | Mudança |
 |---|---|
-| `supabase/config.toml` | Registrar nova função com `verify_jwt=false` |
-| `src/components/game/MatchDashboardCard.tsx` | Detectar janela expirada → mostrar "Simulando automaticamente..." |
-| `src/components/game/MatchReportModal.tsx` | Badge "🤖 Simulação Automática" se `match_data.auto_simulated` |
-| `src/components/game/admin/SeasonControlTab.tsx` | Botão manual + contador de pendências |
-
-## Segurança
-
-- Função usa `SUPABASE_SERVICE_ROLE_KEY` para bypass de RLS
-- Header `x-cron-secret` obrigatório (novo segredo `CRON_SECRET` que vou pedir após aprovação)
-- Idempotência via `FOR UPDATE SKIP LOCKED` + `WHERE status='scheduled'`
+| `src/components/game/MatchDashboardCard.tsx` | Remover UI de "auto-simulada"; tratar partida expirada como finalizada normal; polling a cada 10s |
+| `src/components/game/MatchReportModal.tsx` | Remover badge "🤖 Simulação Automática" |
+| `src/pages/MatchPage.tsx` | Reduzir tamanhos de widgets, adicionar grid 2 colunas em desktop, converter sections em Collapsibles |
+| `src/components/game/MatchSidebar.tsx` (NOVO) | Sidebar compacta para desktop com stats/momento/dica/subs |
+| `src/pages/ReplayPage.tsx` | Compactar narração e comentário para consistência |
 
 ## Compatibilidade
 
-- Sem mudança de schema (apenas adiciona `auto_simulated: true` no JSONB `match_data`)
-- Não afeta partidas iniciadas manualmente
-- Players continuam podendo entrar nos 5 min — se não entrarem, sistema assume controle
+- Sem mudança de schema (campo `auto_simulated` continua no `match_data`, apenas oculto da UI)
+- Mobile mantém layout vertical atual (responsivo)
+- Polling de 10s no widget é leve (só pra partidas expiradas pendentes — caso raro)
+- Acordeões fechados por padrão em desktop, abertos por padrão em mobile (sem perda de funcionalidade)
 
-## Regras anti-bug
+## Anti-bug
 
-- ✅ Janela de 5 min respeitada (não simula antes)
-- ✅ Não duplica simulação (`SKIP LOCKED` + filtro `status='scheduled'`)
-- ✅ Se player iniciar em paralelo, edge function manual ganha (timestamp earlier)
-- ✅ Todas as 4 fontes de match cobertas (liga, copa, torneio custom, amistoso)
-- ✅ Estatísticas e ranking atualizados igual a uma partida normal
+- ✅ Se o cron ainda não simulou (race), polling continua até pegar `status='finished'`
+- ✅ Sem regressão visual em mobile
+- ✅ Substituições, táticas, escalações continuam totalmente acessíveis (acordeões expansíveis)
+- ✅ Edge function `auto-simulate-expired-matches` já existente continua funcionando — só a UI muda
 
