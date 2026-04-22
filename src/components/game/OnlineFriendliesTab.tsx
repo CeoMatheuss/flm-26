@@ -244,7 +244,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       receiver_stadium_capacity: oppCapacity,
       home_team_id: homeTeamId,
       match_date: dateTime.toISOString(),
-    }]);
+      tie_breaker: tieBreaker,
+    }] as any);
 
     if (error) {
       toast.error('Erro ao enviar convite');
