@@ -103,6 +103,98 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+// ── Deterministic seed-based RNG (mulberry32) for offline simulation ────────
+function hashString(str: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Build a complete deterministic match locally — used when server is unreachable. */
+function buildOfflineMatch(params: {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeStrength: number;
+  awayStrength: number;
+  stadiumName: string;
+  isHome: boolean;
+  competition: string;
+}): { events: SimEvent[]; homeGoals: number; awayGoals: number; stats: MatchStats } {
+  const rand = mulberry32(hashString(params.matchId));
+  const totalStr = params.homeStrength + params.awayStrength;
+  const homeProb = totalStr > 0 ? params.homeStrength / totalStr : 0.5;
+  // Expected goals via Poisson-ish approximation
+  const homeXG = 0.6 + homeProb * 2.0;
+  const awayXG = 0.6 + (1 - homeProb) * 2.0;
+  const drawGoals = (xg: number) => {
+    let g = 0;
+    for (let i = 0; i < 6; i++) if (rand() < xg / 6) g++;
+    return g;
+  };
+  const homeGoals = drawGoals(homeXG);
+  const awayGoals = drawGoals(awayXG);
+
+  const events: SimEvent[] = [
+    { minute: 0, type: 'kickoff', team: 'neutral', description: '⚽ Início da partida!' },
+  ];
+  const totalGoals = homeGoals + awayGoals;
+  const goalMinutes: { min: number; team: 'home' | 'away' }[] = [];
+  for (let i = 0; i < homeGoals; i++) goalMinutes.push({ min: Math.floor(rand() * 88) + 1, team: 'home' });
+  for (let i = 0; i < awayGoals; i++) goalMinutes.push({ min: Math.floor(rand() * 88) + 1, team: 'away' });
+  goalMinutes.sort((a, b) => a.min - b.min);
+  for (const g of goalMinutes) {
+    events.push({
+      minute: g.min,
+      type: 'goal_open_play',
+      team: g.team,
+      isGoal: true,
+      description: `⚽ GOL! ${g.team === 'home' ? params.homeTeam : params.awayTeam}`,
+    });
+  }
+  // Filler events for stats
+  const fillerCount = 18 + Math.floor(rand() * 10);
+  for (let i = 0; i < fillerCount; i++) {
+    const minute = Math.floor(rand() * 90);
+    const team: 'home' | 'away' = rand() < homeProb ? 'home' : 'away';
+    const types = ['possession', 'long_pass', 'tackle', 'foul', 'corner_danger', 'long_shot_miss'];
+    const type = types[Math.floor(rand() * types.length)];
+    events.push({ minute, type, team, description: type });
+  }
+  events.push({ minute: 45, type: 'halftime', team: 'neutral', description: '🟡 Fim do 1º tempo' });
+  events.push({ minute: 90, type: 'final_whistle', team: 'neutral', description: '🏁 Fim de jogo!' });
+  events.sort((a, b) => a.minute - b.minute);
+
+  const stats: MatchStats = {
+    possession: [Math.round(homeProb * 100), Math.round((1 - homeProb) * 100)],
+    shots: [homeGoals + Math.floor(rand() * 8) + 3, awayGoals + Math.floor(rand() * 8) + 3],
+    shotsOnTarget: [homeGoals + Math.floor(rand() * 3), awayGoals + Math.floor(rand() * 3)],
+    corners: [Math.floor(rand() * 8) + 2, Math.floor(rand() * 8) + 2],
+    fouls: [Math.floor(rand() * 12) + 5, Math.floor(rand() * 12) + 5],
+    yellowCards: [Math.floor(rand() * 4), Math.floor(rand() * 4)],
+    redCards: [rand() < 0.05 ? 1 : 0, rand() < 0.05 ? 1 : 0],
+    passes: [Math.floor(rand() * 200) + 250, Math.floor(rand() * 200) + 250],
+    tackles: [Math.floor(rand() * 15) + 5, Math.floor(rand() * 15) + 5],
+    saves: [Math.floor(rand() * 5) + 1, Math.floor(rand() * 5) + 1],
+    offsides: [Math.floor(rand() * 4), Math.floor(rand() * 4)],
+  };
+
+  return { events, homeGoals, awayGoals, stats };
+}
+
 // ── Push Notifications ──────────────────────────────────────
 function requestNotificationPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
@@ -488,14 +580,81 @@ export function useMatchSimulation() {
     requestNotificationPermission();
     notifiedEventsRef.current.clear();
 
+    // Reusable offline runner — used for amistosos vs BOT or as last-resort fallback
+    const runOfflineMatch = (reason: string): { success: boolean; error?: string } => {
+      console.warn('[Match] Running OFFLINE simulation. Reason:', reason);
+      const isFriendly = (params.competition || 'Amistoso').toLowerCase().includes('amistoso');
+      // Only auto-fallback for friendlies / BOT matches; PvP must remain server-driven
+      if (!isFriendly) {
+        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
+        return { success: false, error: 'server-required' };
+      }
+      const offline = buildOfflineMatch({
+        matchId: params.matchId,
+        homeTeam: params.homeTeam,
+        awayTeam: params.awayTeam,
+        homeStrength: params.homeStrength,
+        awayStrength: params.awayStrength,
+        stadiumName: params.stadiumName,
+        isHome: params.isHome,
+        competition: params.competition || 'Amistoso',
+      });
+      const durationMs = 12 * 60 * 1000; // 12 minutes default
+      const startTime = Date.now();
+      const matchDbId = `offline-${params.matchId}`;
+      dataRef.current = {
+        allEvents: offline.events,
+        startTime,
+        durationMs,
+        maxMinute: 90,
+        finalHomeGoals: offline.homeGoals,
+        finalAwayGoals: offline.awayGoals,
+        stats: offline.stats,
+        homeTeam: params.homeTeam,
+        awayTeam: params.awayTeam,
+        stadiumName: params.stadiumName,
+        matchDbId,
+        competition: params.competition || 'Amistoso',
+        isHome: params.isHome,
+      };
+      // Persistir resultado pendente em localStorage para flush posterior
+      try {
+        localStorage.setItem(
+          `pending_match_result_${params.matchId}`,
+          JSON.stringify({
+            matchId: params.matchId,
+            homeTeam: params.homeTeam,
+            awayTeam: params.awayTeam,
+            homeGoals: offline.homeGoals,
+            awayGoals: offline.awayGoals,
+            stats: offline.stats,
+            competition: params.competition || 'Amistoso',
+            createdAt: new Date().toISOString(),
+          }),
+        );
+      } catch { /* ignore quota */ }
+      persistedRef.current = true; // não tente persistir um id offline
+      startTick();
+      return { success: true };
+    };
+
+    // Server timeout guard — 8s
+    const callWithTimeout = async () => {
+      return await Promise.race([
+        supabase.functions.invoke('start-match', { body: params }),
+        new Promise<{ error: any; data: any }>(resolve =>
+          setTimeout(() => resolve({ error: { message: 'timeout' }, data: null }), 8000),
+        ),
+      ]);
+    };
+
     try {
-      const resp = await supabase.functions.invoke('start-match', { body: params });
+      const resp = await callWithTimeout();
 
       if (resp.error) {
         // Try to extract matchDbId from error context (FunctionsHttpError)
         let matchDbId: string | null = null;
         try {
-          // supabase-js v2: error.context is the raw Response
           const ctx = (resp.error as any).context;
           if (ctx instanceof Response) {
             const body = await ctx.json();
@@ -503,7 +662,6 @@ export function useMatchSimulation() {
           }
         } catch { /* ignore parse errors */ }
 
-        // Fallback: check resp.data
         if (!matchDbId && resp.data?.matchDbId) {
           matchDbId = resp.data.matchDbId;
         }
@@ -530,25 +688,22 @@ export function useMatchSimulation() {
           const durationMs = (stale.duration_seconds || 720) * 1000;
 
           if (elapsed > durationMs + 60000) {
-            // Match is past its duration + 1min grace — it's stale, delete it
             console.log('[Match] Cleaning stale match:', stale.id);
             await supabase.from('live_matches').delete().eq('id', stale.id);
-            // Retry the start
             const retry = await supabase.functions.invoke('start-match', { body: params });
             if (!retry.error && retry.data?.success) {
               await loadMatch(retry.data.matchDbId);
               return { success: true };
             }
           } else {
-            // Match is still within time — load it
             console.log('[Match] Loading active match:', stale.id);
             await loadMatch(stale.id);
             return { success: true };
           }
         }
 
-        setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
-        return { success: false, error: 'Erro ao iniciar partida.' };
+        // Last-resort: offline fallback (only for friendlies)
+        return runOfflineMatch('server error: ' + (resp.error.message || 'unknown'));
       }
 
       const result = resp.data;
@@ -557,18 +712,16 @@ export function useMatchSimulation() {
           await loadMatch(result.matchDbId);
           return { success: true };
         }
-        setState(s => ({ ...s, phase: 'error', errorMsg: result?.error || 'Erro.' }));
-        return { success: false, error: result?.error || 'Erro.' };
+        return runOfflineMatch('result.success false');
       }
 
       await loadMatch(result.matchDbId);
       return { success: true };
     } catch (err) {
       console.error('[Match] Unexpected error:', err);
-      setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro inesperado. Tente novamente.' }));
-      return { success: false, error: 'Erro inesperado.' };
+      return runOfflineMatch('exception: ' + ((err as any)?.message || 'unknown'));
     }
-  }, [loadMatch]);
+  }, [loadMatch, startTick]);
 
   // Find active match
   const findActiveMatch = useCallback(async (): Promise<boolean> => {

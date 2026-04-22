@@ -319,7 +319,60 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} />
       </TabsContent>
       <TabsContent value="scouts">
-        {isTabBlocked('scouts') ? <BlockedMessage /> : <ScoutsTab scouts={game.club.scouts || []} scoutReports={game.club.scoutReports || []} matchesSinceLastScout={game.club.matchesSinceLastScout || 0} budget={game.club.budget} onHireScout={game.hireScout} onFireScout={game.fireScout} />}
+        {isTabBlocked('scouts') ? <BlockedMessage /> : (
+          <ScoutsTab
+            scouts={game.club.scouts || []}
+            scoutReports={game.club.scoutReports || []}
+            matchesSinceLastScout={game.club.matchesSinceLastScout || 0}
+            budget={game.club.budget}
+            availableScouts={game.club.availableScouts || []}
+            lastScoutGeneratedAt={game.club.lastScoutGeneratedAt}
+            onHireScout={game.hireScout}
+            onFireScout={game.fireScout}
+            onAcceptAvailableScout={(scoutId: string) => {
+              game.setClub((prev: any) => {
+                const pool = prev.availableScouts || [];
+                const picked = pool.find((s: any) => s.id === scoutId);
+                if (!picked) return prev;
+                const signingFee = picked.salary * 3;
+                if ((prev.budget || 0) < signingFee) {
+                  toast.error(`Verba insuficiente — taxa de R$${(signingFee / 1000).toFixed(0)}k`);
+                  return prev;
+                }
+                toast.success(`${picked.name} contratado! Hab: ${picked.skill}/10`);
+                return {
+                  ...prev,
+                  budget: prev.budget - signingFee,
+                  scouts: [...(prev.scouts || []), picked],
+                  availableScouts: pool.filter((s: any) => s.id !== scoutId),
+                };
+              });
+            }}
+            onBuyPremiumScout={isPremium ? () => {
+              const PREMIUM_COST = 5_000_000;
+              game.setClub((prev: any) => {
+                if ((prev.budget || 0) < PREMIUM_COST) {
+                  toast.error(`Saldo insuficiente — custo R$${(PREMIUM_COST / 1_000_000).toFixed(1)}M`);
+                  return prev;
+                }
+                const eliteNames = ['Alexandre Reis', 'Roberto Maximus', 'Vitor Sá', 'Henrique Aurélio', 'Diego Falcão'];
+                const elite = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  name: eliteNames[Math.floor(Math.random() * eliteNames.length)],
+                  skill: 10,
+                  salary: 500_000,
+                  contract: 3,
+                };
+                toast.success(`⚡ Olheiro Lendário ${elite.name} contratado!`);
+                return {
+                  ...prev,
+                  budget: prev.budget - PREMIUM_COST,
+                  scouts: [...(prev.scouts || []), elite],
+                };
+              });
+            } : undefined}
+          />
+        )}
       </TabsContent>
       <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
@@ -341,12 +394,48 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <StaffTab
           staff={game.club.staff || []}
           budget={game.club.budget}
+          staffMarket={game.club.staffMarket || []}
+          lastStaffMarketRefreshAt={game.club.lastStaffMarketRefreshAt}
           onHireStaff={(member) => {
             const newStaff = { ...member, id: crypto.randomUUID() };
-            game.setClub((prev: any) => ({ ...prev, staff: [...(prev.staff || []), newStaff], budget: prev.budget - newStaff.salary }));
+            game.setClub((prev: any) => ({
+              ...prev,
+              staff: [...(prev.staff || []), newStaff],
+              budget: prev.budget - newStaff.salary,
+              // remove from market if it was a market entry (matched by id)
+              staffMarket: (prev.staffMarket || []).filter((s: any) => s.id !== (member as any).id),
+            }));
           }}
           onFireStaff={(id) => {
             game.setClub((prev: any) => ({ ...prev, staff: (prev.staff || []).filter((s: any) => s.id !== id) }));
+          }}
+          onRefreshMarket={() => {
+            const last = game.club.lastStaffMarketRefreshAt ? new Date(game.club.lastStaffMarketRefreshAt).getTime() : 0;
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            if (last && Date.now() - last < cooldownMs) {
+              const hoursLeft = Math.ceil((cooldownMs - (Date.now() - last)) / (60 * 60 * 1000));
+              toast.error(`Aguarde ${hoursLeft}h para atualizar o mercado novamente.`);
+              return;
+            }
+            const names = ['Carlos Mendes', 'Ricardo Souza', 'Fernando Lima', 'André Santos', 'Paulo Costa', 'Marcos Silva', 'João Ferreira', 'Pedro Almeida', 'Luis Gomes', 'Felipe Rocha', 'Tiago Barros', 'Bruno Vitalino'];
+            const make = (role: 'assistente' | 'medico' | 'preparador_fisico', count: number) =>
+              Array.from({ length: count }, () => {
+                const skill = Math.floor(Math.random() * 7) + 3;
+                return {
+                  id: Math.random().toString(36).substr(2, 9),
+                  name: names[Math.floor(Math.random() * names.length)],
+                  role,
+                  skill,
+                  salary: skill * 18000,
+                  contract: 2,
+                };
+              });
+            game.setClub((prev: any) => ({
+              ...prev,
+              staffMarket: [...make('assistente', 5), ...make('medico', 2), ...make('preparador_fisico', 2)],
+              lastStaffMarketRefreshAt: new Date().toISOString(),
+            }));
+            toast.success('🔄 Mercado de staff renovado!');
           }}
         />
       </TabsContent>

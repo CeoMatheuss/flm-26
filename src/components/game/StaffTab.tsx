@@ -1,21 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { StaffMember } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Trash2, Star } from 'lucide-react';
+import { Users, UserPlus, Trash2, Star, RefreshCw } from 'lucide-react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
-
-const STAFF_MARKET: Omit<StaffMember, 'id'>[] = [
-  { name: 'Carlos Mendes', role: 'assistente', skill: 3, salary: 50000, contract: 2 },
-  { name: 'Ricardo Souza', role: 'assistente', skill: 5, salary: 100000, contract: 2 },
-  { name: 'Fernando Lima', role: 'assistente', skill: 7, salary: 150000, contract: 2 },
-  { name: 'André Santos', role: 'assistente', skill: 9, salary: 200000, contract: 2 },
-  { name: 'Dr. Paulo Costa', role: 'medico', skill: 5, salary: 80000, contract: 2 },
-  { name: 'Dr. Marcos Silva', role: 'medico', skill: 8, salary: 140000, contract: 2 },
-  { name: 'João Ferreira', role: 'preparador_fisico', skill: 5, salary: 70000, contract: 2 },
-  { name: 'Pedro Almeida', role: 'preparador_fisico', skill: 8, salary: 130000, contract: 2 },
-];
 
 const roleLabels: Record<string, { label: string; emoji: string; desc: string }> = {
   assistente: { label: 'Assistente Técnico', emoji: '📋', desc: 'Fornece dicas em tempo real durante as partidas' },
@@ -26,19 +14,38 @@ const roleLabels: Record<string, { label: string; emoji: string; desc: string }>
 interface StaffTabProps {
   staff: StaffMember[];
   budget: number;
-  onHireStaff: (member: Omit<StaffMember, 'id'>) => void;
+  staffMarket?: StaffMember[];
+  lastStaffMarketRefreshAt?: string;
+  onHireStaff: (member: Omit<StaffMember, 'id'> & { id?: string }) => void;
   onFireStaff: (id: string) => void;
+  onRefreshMarket?: () => void;
 }
 
-export function StaffTab({ staff, budget, onHireStaff: _onHireStaff, onFireStaff: _onFireStaff }: StaffTabProps) {
+export function StaffTab({
+  staff,
+  budget,
+  staffMarket = [],
+  lastStaffMarketRefreshAt,
+  onHireStaff: _onHireStaff,
+  onFireStaff: _onFireStaff,
+  onRefreshMarket,
+}: StaffTabProps) {
   const { guard } = useLiveMatchGuard();
   const onHireStaff = guard(_onHireStaff);
   const onFireStaff = guard(_onFireStaff);
   const [showMarket, setShowMarket] = useState(false);
 
   const hasRole = (role: string) => staff.some(s => s.role === role);
+  const availableStaff = staffMarket.filter(s => !hasRole(s.role));
 
-  const availableStaff = STAFF_MARKET.filter(s => !hasRole(s.role));
+  // Próximo refresh disponível
+  const cooldownMs = 24 * 60 * 60 * 1000;
+  const lastTs = lastStaffMarketRefreshAt ? new Date(lastStaffMarketRefreshAt).getTime() : 0;
+  const elapsed = lastTs ? Date.now() - lastTs : cooldownMs;
+  const canRefresh = !lastTs || elapsed >= cooldownMs;
+  const refreshLabel = canRefresh
+    ? 'Disponível'
+    : `${Math.ceil((cooldownMs - elapsed) / (60 * 60 * 1000))}h`;
 
   return (
     <div className="space-y-4">
@@ -92,19 +99,39 @@ export function StaffTab({ staff, budget, onHireStaff: _onHireStaff, onFireStaff
       {showMarket && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-primary" /> Mercado de Staff
-            </CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" /> Mercado de Staff
+              </CardTitle>
+              {onRefreshMarket && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[10px] gap-1"
+                  disabled={!canRefresh}
+                  onClick={onRefreshMarket}
+                >
+                  <RefreshCw className="h-3 w-3" /> {canRefresh ? 'Atualizar' : refreshLabel}
+                </Button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Renovação automática a cada 15 dias • Manual: 1x ao dia
+            </p>
           </CardHeader>
           <CardContent className="space-y-2">
             {availableStaff.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Todas as posições já estão preenchidas!</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {staffMarket.length === 0
+                  ? 'Mercado vazio — aguardando geração automática.'
+                  : 'Todas as posições disponíveis já estão preenchidas!'}
+              </p>
             ) : (
-              availableStaff.map((candidate, i) => {
+              availableStaff.map((candidate) => {
                 const roleInfo = roleLabels[candidate.role] || { label: candidate.role, emoji: '👤', desc: '' };
                 const canAfford = budget >= candidate.salary * 3;
                 return (
-                  <div key={i} className="flex items-center gap-3 bg-muted/10 border border-border/15 rounded-xl px-3 py-3">
+                  <div key={candidate.id} className="flex items-center gap-3 bg-muted/10 border border-border/15 rounded-xl px-3 py-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
                       {roleInfo.emoji}
                     </div>

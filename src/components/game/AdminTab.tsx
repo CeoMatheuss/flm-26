@@ -1302,6 +1302,9 @@ export function AdminTab({ userId, isFounder }: Props) {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Scout Generator (global market) */}
+            <AdminScoutsAndStaffGenerators userId={userId} />
           </TabsContent>
         )}
 
@@ -1767,6 +1770,138 @@ function ModerationPanel({ onDeleteMessage }: { onDeleteMessage: (id: string) =>
             </div>
           </ScrollArea>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Scouts & Staff Generators (admin patches game_saves directly) ─────────────
+function AdminScoutsAndStaffGenerators({ userId: _userId }: { userId: string }) {
+  const [targetUserId, setTargetUserId] = useState('');
+  const [scoutCount, setScoutCount] = useState('1');
+  const [scoutSkill, setScoutSkill] = useState('5');
+  const [busy, setBusy] = useState(false);
+
+  const patchClubData = async (
+    target: string,
+    mutate: (cd: any) => any,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const trimmed = target.trim();
+    if (!trimmed) return { ok: false, error: 'Informe o user_id alvo' };
+    const { data, error } = await supabase
+      .from('game_saves')
+      .select('id, club_data')
+      .eq('user_id', trimmed)
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    if (!data) return { ok: false, error: 'Save não encontrado para este user_id' };
+    const next = mutate(data.club_data || {});
+    const { error: upErr } = await supabase
+      .from('game_saves')
+      .update({ club_data: next })
+      .eq('id', data.id);
+    if (upErr) return { ok: false, error: upErr.message };
+    return { ok: true };
+  };
+
+  const generateScoutsForTarget = async () => {
+    setBusy(true);
+    const count = Math.max(1, Math.min(20, Number(scoutCount) || 1));
+    const skill = Math.max(1, Math.min(10, Number(scoutSkill) || 5));
+    const names = ['Carlos', 'Pedro', 'João', 'Rafael', 'Bruno', 'Eduardo', 'Henrique', 'Marcos', 'Felipe', 'Gustavo'];
+    const surnames = ['Silva', 'Souza', 'Costa', 'Lima', 'Pereira', 'Oliveira', 'Santos', 'Ferreira'];
+    const newScouts = Array.from({ length: count }, () => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: `${names[Math.floor(Math.random() * names.length)]} ${surnames[Math.floor(Math.random() * surnames.length)]}`,
+      skill,
+      salary: skill * 12000,
+      contract: 2,
+    }));
+    const res = await patchClubData(targetUserId, (cd) => {
+      const club = cd.club || cd;
+      const updated = {
+        ...club,
+        availableScouts: [...(club.availableScouts || []), ...newScouts].slice(-20),
+        lastScoutGeneratedAt: new Date().toISOString(),
+      };
+      return cd.club ? { ...cd, club: updated } : updated;
+    });
+    if (res.ok) toast.success(`✅ ${count} olheiro(s) skill ${skill} adicionado(s)!`);
+    else toast.error(`Erro: ${res.error}`);
+    setBusy(false);
+  };
+
+  const generateStaffForTarget = async () => {
+    setBusy(true);
+    const names = ['Carlos Mendes', 'Ricardo Souza', 'Fernando Lima', 'André Santos', 'Paulo Costa', 'Marcos Silva', 'João Ferreira', 'Pedro Almeida', 'Luis Gomes', 'Felipe Rocha'];
+    const make = (role: 'assistente' | 'medico' | 'preparador_fisico', count: number) =>
+      Array.from({ length: count }, () => {
+        const skill = Math.floor(Math.random() * 7) + 3;
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          name: names[Math.floor(Math.random() * names.length)],
+          role,
+          skill,
+          salary: skill * 18000,
+          contract: 2,
+        };
+      });
+    const market = [...make('assistente', 5), ...make('medico', 2), ...make('preparador_fisico', 2)];
+    const res = await patchClubData(targetUserId, (cd) => {
+      const club = cd.club || cd;
+      const updated = {
+        ...club,
+        staffMarket: market,
+        lastStaffMarketRefreshAt: new Date().toISOString(),
+      };
+      return cd.club ? { ...cd, club: updated } : updated;
+    });
+    if (res.ok) toast.success(`✅ Mercado de staff gerado (5 assistentes, 2 médicos, 2 preparadores)!`);
+    else toast.error(`Erro: ${res.error}`);
+    setBusy(false);
+  };
+
+  return (
+    <Card className="border-emerald-500/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Users className="h-4 w-4 text-emerald-400" />
+          Geradores de Olheiros & Staff
+        </CardTitle>
+        <p className="text-[10px] text-muted-foreground">Cole o user_id alvo e gere itens diretamente no save dele.</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Input
+          placeholder="user_id (UUID) do clube alvo"
+          value={targetUserId}
+          onChange={(e) => setTargetUserId(e.target.value)}
+          className="text-xs h-8 font-mono"
+        />
+
+        <div className="space-y-2 p-2 rounded-md border border-border/40 bg-muted/10">
+          <p className="text-[11px] font-semibold flex items-center gap-1">🔍 Gerar Olheiros</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[9px] text-muted-foreground">Quantidade (1-20)</label>
+              <Input type="number" min="1" max="20" value={scoutCount} onChange={(e) => setScoutCount(e.target.value)} className="text-xs h-8" />
+            </div>
+            <div>
+              <label className="text-[9px] text-muted-foreground">Skill (1-10)</label>
+              <Input type="number" min="1" max="10" value={scoutSkill} onChange={(e) => setScoutSkill(e.target.value)} className="text-xs h-8" />
+            </div>
+          </div>
+          <Button size="sm" disabled={busy} onClick={generateScoutsForTarget} className="w-full h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+            🔍 Gerar Olheiros
+          </Button>
+        </div>
+
+        <div className="space-y-2 p-2 rounded-md border border-border/40 bg-muted/10">
+          <p className="text-[11px] font-semibold flex items-center gap-1">👨‍💼 Gerar Equipe Técnica</p>
+          <p className="text-[10px] text-muted-foreground">Cria 5 assistentes, 2 médicos e 2 preparadores no mercado.</p>
+          <Button size="sm" disabled={busy} onClick={generateStaffForTarget} className="w-full h-8 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white">
+            👨‍💼 Gerar Staff
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
