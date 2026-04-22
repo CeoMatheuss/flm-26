@@ -14,6 +14,7 @@ import {
   DollarSign, Eye, Trophy, Hammer, Crown,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Props {
   prospects: YouthProspect[];
@@ -42,8 +43,14 @@ const getLevelTier = (level: number) => {
 export function YouthAcademyTab({
   prospects, academyLevel, academyUpgradeCompletesAt, isPremium = false,
   monthlyInvestment, budget, hasScouts, currentSeason,
-  onPromote, onSell, onEnrollCopinha, onSetInvestment, onUpgradeAcademy,
+  onPromote: _onPromote, onSell: _onSell, onEnrollCopinha: _onEnrollCopinha, onSetInvestment: _onSetInvestment, onUpgradeAcademy: _onUpgradeAcademy,
 }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onPromote = guard(_onPromote);
+  const onSell = guard(_onSell);
+  const onEnrollCopinha = guard(_onEnrollCopinha);
+  const onSetInvestment = guard(_onSetInvestment);
+  const onUpgradeAcademy = _onUpgradeAcademy ? guard(_onUpgradeAcademy) : undefined;
   const upgradeCost = getAcademyUpgradeCost(academyLevel);
   const canUpgrade = budget >= upgradeCost && academyLevel < 30;
   const tier = getLevelTier(academyLevel);

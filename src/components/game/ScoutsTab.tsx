@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Search, UserPlus, Trash2, Star } from 'lucide-react';
 import { useState } from 'react';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface Props {
   scouts: Scout[];
@@ -47,7 +48,10 @@ const attrLabels: Record<string, string> = {
   aggression: '⚔️ Agr',
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout, onFireScout }: Props) {
+export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, onHireScout: _onHireScout, onFireScout: _onFireScout }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onHireScout = guard(_onHireScout);
+  const onFireScout = guard(_onFireScout);
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [showHire, setShowHire] = useState(false);
 

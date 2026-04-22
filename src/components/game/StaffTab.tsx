@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, Trash2, Star } from 'lucide-react';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 const STAFF_MARKET: Omit<StaffMember, 'id'>[] = [
   { name: 'Carlos Mendes', role: 'assistente', skill: 3, salary: 50000, contract: 2 },
@@ -29,7 +30,10 @@ interface StaffTabProps {
   onFireStaff: (id: string) => void;
 }
 
-export function StaffTab({ staff, budget, onHireStaff, onFireStaff }: StaffTabProps) {
+export function StaffTab({ staff, budget, onHireStaff: _onHireStaff, onFireStaff: _onFireStaff }: StaffTabProps) {
+  const { guard } = useLiveMatchGuard();
+  const onHireStaff = guard(_onHireStaff);
+  const onFireStaff = guard(_onFireStaff);
   const [showMarket, setShowMarket] = useState(false);
 
   const hasRole = (role: string) => staff.some(s => s.role === role);

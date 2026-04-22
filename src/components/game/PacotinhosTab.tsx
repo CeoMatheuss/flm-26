@@ -9,6 +9,7 @@ import { generateFreeAgents } from '@/utils/playerGenerator';
 import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle } from 'lucide-react';
 import stickerPackImg from '@/assets/sticker-pack.png';
 import { supabase } from '@/integrations/supabase/client';
+import { useLiveMatchGuard } from './LiveMatchGuard';
 
 interface PackOption {
   id: string;
@@ -103,7 +104,9 @@ interface Props {
 
 type RevealPhase = 'closed' | 'opening' | 'player-reveal' | 'done';
 
-export function PacotinhosTab({ budget, onBuyPack, userId }: Props) {
+export function PacotinhosTab({ budget, onBuyPack: _onBuyPack, userId }: Props) {
+  const { guard } = useLiveMatchGuard();
+  const onBuyPack = guard(_onBuyPack);
   const [showResult, setShowResult] = useState(false);
   const [revealPhase, setRevealPhase] = useState<RevealPhase>('closed');
   const [generatedPlayers, setGeneratedPlayers] = useState<Player[]>([]);
