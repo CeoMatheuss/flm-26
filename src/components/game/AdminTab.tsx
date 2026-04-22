@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
 import { SystemPanel } from './admin/SystemPanel';
+import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<AdminCategory>('clubs');
   const [adminPassword, setAdminPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -103,6 +105,21 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBanPassword, setGameBanPassword] = useState('');
   const [gameBans, setGameBans] = useState<Array<{ id: string; user_id: string; reason: string; duration_months: number; banned_at: string; expires_at: string }>>([]);
   const [gameBanLoading, setGameBanLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('users');
+
+  // Reset active tab when category changes
+  useEffect(() => {
+    const map: Record<AdminCategory, string[]> = {
+      leagues:    ['system'],
+      cups:       ['system', 'tournaments'],
+      clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
+      players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
+      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
+      simulation: ['system'],
+    };
+    const list = map[activeCategory] || ['users'];
+    setActiveTab(prev => list.includes(prev) ? prev : list[0]);
+  }, [activeCategory, isFounder]);
 
   useEffect(() => {
     const check = async () => {
@@ -472,33 +489,51 @@ export function AdminTab({ userId, isFounder }: Props) {
     { icon: BarChart3, label: 'Saves', value: stats.totalSaves, color: 'text-emerald-400' },
   ] : [];
 
+  // ── Category → tab map (visible triggers) ─────────────────────
+  const CATEGORY_TABS: Record<AdminCategory, string[]> = {
+    leagues:    ['system'],
+    cups:       ['system', 'tournaments'],
+    clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
+    players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
+    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg'],
+    simulation: ['system'],
+  };
+  const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
+
+  const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
+    team:           { label: 'Equipe',       icon: Users },
+    users:          { label: 'Usuários',     icon: Users },
+    premium:        { label: 'Premium',      icon: Crown },
+    bans:           { label: 'Bans Chat',    icon: Ban },
+    gameban:        { label: 'Ban Game',     icon: Lock },
+    generator:      { label: 'Gerar',        icon: Wand2 },
+    abuse:          { label: 'Anti-Abuso',   icon: AlertTriangle },
+    tournaments:    { label: 'Torneios',     icon: Trophy },
+    system:         { label: 'Sistema',      icon: Globe },
+    moderation:     { label: 'Chat',         icon: MessageCircle },
+    updates_mgmt:   { label: 'Atualizações', icon: Megaphone },
+    announcements:  { label: 'Anúncios IA',  icon: Image },
+    direct_msg:     { label: 'Msg Direta',   icon: Megaphone },
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <Card className="border-red-500/30 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-yellow-500/5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              {isFounder ? (
-                <><Star className="h-5 w-5 text-yellow-400 fill-yellow-400" /> Painel do Fundador</>
-              ) : (
-                <><Shield className="h-5 w-5 text-red-400" /> Painel do Administrador</>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`text-[9px] ${isFounder ? 'text-yellow-400 border-yellow-500/30' : 'text-blue-400 border-blue-500/30'}`}>
+    <div className="space-y-3">
+      {/* Header (compact) */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+        <CardHeader className="py-2.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              {isFounder
+                ? <><Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> Painel do Fundador</>
+                : <><Shield className="h-4 w-4 text-primary" /> Painel do Admin</>}
+              <Badge variant="outline" className={`text-[9px] ${isFounder ? 'text-yellow-400 border-yellow-500/30' : 'text-primary border-primary/30'}`}>
                 {isFounder ? '⭐ Fundador' : '🛡️ Admin'}
               </Badge>
-              <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
-                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-              </Button>
-            </div>
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
+              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+            </Button>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {isFounder
-              ? 'Controle total do jogo. Gerencie admins, pagamentos, banimentos e moderação.'
-              : 'Gerencie pagamentos, banimentos e moderação do chat.'}
-          </p>
         </CardHeader>
       </Card>
 
@@ -508,37 +543,29 @@ export function AdminTab({ userId, isFounder }: Props) {
           {statItems.map(s => (
             <Card key={s.label} className="p-2 text-center">
               <s.icon className={`h-4 w-4 mx-auto mb-1 ${s.color}`} />
-              <p className="text-lg font-bold">{s.value}</p>
+              <p className="text-base font-bold">{s.value}</p>
               <p className="text-[9px] text-muted-foreground">{s.label}</p>
             </Card>
           ))}
         </div>
       )}
 
-      {/* Admin Tabs */}
-      <Tabs defaultValue={isFounder ? 'team' : 'users'} className="w-full">
-        <div className="relative group">
-          <ScrollArea className="w-full">
-            <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto scrollbar-none pb-1">
-              {isFounder && <TabsTrigger value="team" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Equipe</TabsTrigger>}
-              <TabsTrigger value="users" className="text-[10px] gap-0.5 px-2 shrink-0"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
-              <TabsTrigger value="premium" className="text-[10px] gap-0.5 px-2 shrink-0"><Crown className="h-3 w-3" /> Premium</TabsTrigger>
-              <TabsTrigger value="bans" className="text-[10px] gap-0.5 px-2 shrink-0"><Ban className="h-3 w-3" /> Bans</TabsTrigger>
-              <TabsTrigger value="gameban" className="text-[10px] gap-0.5 px-2 shrink-0"><Lock className="h-3 w-3" /> Ban Game</TabsTrigger>
-              {isFounder && <TabsTrigger value="generator" className="text-[10px] gap-0.5 px-2 shrink-0"><Wand2 className="h-3 w-3" /> Gerar</TabsTrigger>}
-              <TabsTrigger value="abuse" className="text-[10px] gap-0.5 px-2 shrink-0"><AlertTriangle className="h-3 w-3" /> Abuso</TabsTrigger>
-              <TabsTrigger value="tournaments" className="text-[10px] gap-0.5 px-2 shrink-0"><Trophy className="h-3 w-3" /> Torneios</TabsTrigger>
-              <TabsTrigger value="system" className="text-[10px] gap-0.5 px-2 shrink-0"><Globe className="h-3 w-3" /> 🌍 Sistema</TabsTrigger>
-              <TabsTrigger value="moderation" className="text-[10px] gap-0.5 px-2 shrink-0"><MessageCircle className="h-3 w-3" /> Chat</TabsTrigger>
-              <TabsTrigger value="updates_mgmt" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Atualizações</TabsTrigger>
-              <TabsTrigger value="announcements" className="text-[10px] gap-0.5 px-2 shrink-0"><Image className="h-3 w-3" /> Anúncios IA</TabsTrigger>
-              <TabsTrigger value="direct_msg" className="text-[10px] gap-0.5 px-2 shrink-0"><Megaphone className="h-3 w-3" /> Msg Direta</TabsTrigger>
-            </TabsList>
-          </ScrollArea>
-          {/* Scroll hint indicator */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
-          <p className="text-[8px] text-muted-foreground/50 text-center mt-1">← Deslize para ver mais abas →</p>
-        </div>
+      <AdminLayout active={activeCategory} onChange={setActiveCategory}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex w-auto min-w-full gap-0.5 pb-1">
+            {tabsForCategory.map(tabKey => {
+              const meta = TAB_META[tabKey];
+              if (!meta) return null;
+              const Icon = meta.icon;
+              return (
+                <TabsTrigger key={tabKey} value={tabKey} className="text-[10px] gap-1 px-2.5 shrink-0">
+                  <Icon className="h-3 w-3" /> {meta.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </ScrollArea>
 
         {/* Team/Hierarchy Tab - Founder Only */}
         {isFounder && (
@@ -1308,6 +1335,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminDirectMessagePanel allUsers={allUsers} />
         </TabsContent>
       </Tabs>
+      </AdminLayout>
     </div>
   );
 }
