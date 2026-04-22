@@ -153,6 +153,30 @@ export function SimulationValidationTab({ adminUserId }: Props) {
         </Alert>
       )}
 
+      {/* International Cups generator */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Globe2 className="h-4 w-4 text-primary" /> Copas Internacionais
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Gera Champions/Libertadores (Principal) + Europa/Sul-Americana (Secundária) por continente.
+            Top 4 da Div 1 + Campeão da Copa Nacional vão para Principal; 5º–8º para Secundária.
+          </p>
+          <Button
+            size="sm"
+            onClick={generateIntlCups}
+            disabled={generatingIntl}
+            className="w-full h-8 text-xs gap-1"
+          >
+            <Globe2 className={`h-3 w-3 ${generatingIntl ? 'animate-spin' : ''}`} />
+            🌍 Gerar Copas Internacionais agora
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Validations */}
       <Card>
         <CardHeader className="pb-2">
