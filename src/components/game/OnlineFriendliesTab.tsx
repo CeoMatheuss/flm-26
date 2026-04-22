@@ -75,6 +75,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [sending, setSending] = useState(false);
   const [openSlots, setOpenSlots] = useState<Array<{ id: string; user_id: string; club_name: string; stadium_name: string; stadium_capacity: number; created_at: string; status: string }>>([]);
   const [creatingSlot, setCreatingSlot] = useState(false);
+  // Lobby state
+  const [lobbyInvite, setLobbyInvite] = useState<FriendlyInvite | null>(null);
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
@@ -559,24 +561,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                       toast.error('Carregando elenco... aguarde um instante e tente novamente.');
                       return;
                     }
-                    const oppCapacity = invite.home_team_id === invite.sender_id ? invite.sender_stadium_capacity : invite.receiver_stadium_capacity;
-                    navigate('/match', {
-                      state: {
-                        homeTeam: isHome ? clubName : oppClub,
-                        awayTeam: isHome ? oppClub : clubName,
-                        homePlayers: players,
-                        homeStrength: teamStrength || 60,
-                        awayStrength: teamStrength || 60,
-                        matchId: `friendly-${invite.id}`,
-                        tactics: tactics || { formation: '4-4-2' },
-                        stadiumName: homeStadium,
-                        stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
-                        isHome,
-                        competition: 'Amistoso Online',
-                        fans: fans || 500,
-                        tieBreaker: invite.tie_breaker || 'none',
-                      },
-                    });
+                    // Open lobby first — both players sync up before navigating to /match
+                    setLobbyInvite(invite);
                   };
 
                   const tb = (invite.tie_breaker || 'none') as TieBreaker;
