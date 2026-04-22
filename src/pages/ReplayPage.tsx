@@ -180,13 +180,20 @@ export default function ReplayPage() {
               {visibleEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
               )}
-              {[...visibleEvents].reverse().slice(0, 50).map((ev, i) => (
-                <div key={`${ev.minute}-${i}`} className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded transition-colors ${getEventBg(ev)}`}>
-                  <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
-                  <span className="text-[10px] shrink-0">{getEventIcon(ev.type)}</span>
-                  <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
-                </div>
-              ))}
+              {[...visibleEvents].reverse().slice(0, 50).map((ev, i) => {
+                const shield = ev.team === 'home' ? homeShield : ev.team === 'away' ? awayShield : null;
+                return (
+                  <div key={`${ev.minute}-${i}`} className={`flex items-start gap-1.5 text-xs px-2 py-1 rounded transition-colors ${getEventBg(ev)}`}>
+                    <Badge variant="outline" className="text-[8px] w-7 justify-center shrink-0 font-mono mt-0.5">{ev.minute}'</Badge>
+                    {shield ? (
+                      <div className="shrink-0 mt-0.5"><ShieldCrest size={16} {...shield} /></div>
+                    ) : (
+                      <span className="text-[10px] shrink-0">{getEventIcon(ev.type)}</span>
+                    )}
+                    <span className={`text-[11px] ${getEventColor(ev.type)} leading-snug`}>{ev.description}</span>
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </TabsContent>
