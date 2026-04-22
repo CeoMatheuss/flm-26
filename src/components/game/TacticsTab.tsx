@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, ChevronRight } from 'lucide-react';
+import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
+import { useActiveMatch } from '@/hooks/useActiveMatch';
+import { toast } from 'sonner';
 
 interface Props {
   tactics: TacticsConfig;
@@ -52,20 +54,33 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
 
 export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const { isInLiveMatch } = useActiveMatch();
 
   const activePlayers = players.filter(p => !p.injury);
   const injuredCount = players.length - activePlayers.length;
 
+  // Block permanent tactical changes during a live match.
+  // Quick changes via "⚡ Aplicar Tática" inside MatchPage remain allowed (separate handler).
+  const guardedUpdate = (next: TacticsConfig) => {
+    if (isInLiveMatch) {
+      toast.error('🔒 Ação indisponível durante a partida', {
+        description: 'Use o botão "⚡ Aplicar Tática" dentro da partida para mudanças rápidas.',
+      });
+      return;
+    }
+    onUpdate(next);
+  };
+
   const setField = <K extends keyof TacticsConfig>(key: K, value: TacticsConfig[K]) => {
-    onUpdate({ ...tactics, [key]: value });
+    guardedUpdate({ ...tactics, [key]: value });
   };
 
   const applyPreset = (preset: typeof tacticsPresets[0]) => {
-    onUpdate({ ...tactics, ...preset.config });
+    guardedUpdate({ ...tactics, ...preset.config });
   };
 
   const setSpecialRole = (role: 'captainId' | 'freeKickTakerId' | 'penaltyTakerId' | 'cornerTakerId', playerId: string) => {
-    onUpdate({ ...tactics, [role]: playerId });
+    guardedUpdate({ ...tactics, [role]: playerId });
     setSelectedPlayer(null);
   };
 
