@@ -25,8 +25,10 @@ import stadiumHero from '@/assets/stadium-management-hero.jpg';
 import { StadiumOpsPanel } from './StadiumOpsPanel';
 import { StadiumFinanceReport } from './StadiumFinanceReport';
 import { StadiumExtrasPanel } from './StadiumExtrasPanel';
+import { StadiumPhase6Panel } from './StadiumPhase6Panel';
 import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
 import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
+import { computeUpgradeEffects, getMembershipAttendanceFloor, type MembershipTier, type ModularUpgradeId } from '@/match/stadiumPhase6';
 
 interface Props {
   infrastructure: Infrastructure;
