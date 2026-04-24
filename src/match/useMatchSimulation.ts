@@ -823,16 +823,56 @@ export function useMatchSimulation() {
     return false;
   }, [loadMatch]);
 
-  // Cleanup
+  // Cleanup explícito (chamado pelo MatchPage ao sair voluntariamente)
   const destroy = useCallback(() => {
     stopTick();
     dataRef.current = null;
   }, [stopTick]);
 
-  // Cleanup on unmount
+  // Cleanup no unmount: NÃO desinscrevemos se a partida ainda está rodando.
+  // Em vez disso, deixamos um "background runner" no loop global que cuida
+  // apenas da persistência final (sem tocar no setState desmontado).
   useEffect(() => {
     return () => {
+      const data = dataRef.current;
+      if (!data || persistedRef.current) {
+        // partida já terminou ou nunca começou — pode parar
+        stopTick();
+        return;
+      }
+      // Substitui a inscrição atual por uma versão "headless" que só finaliza
       stopTick();
+      const headless = () => {
+        const d = dataRef.current;
+        if (!d || persistedRef.current) {
+          unsub();
+          return;
+        }
+        const elapsed = Date.now() - d.startTime;
+        if (elapsed >= d.durationMs) {
+          persistedRef.current = true;
+          sendPushNotification(
+            '🏁 Fim de Jogo!',
+            `${d.homeTeam} ${d.finalHomeGoals} x ${d.finalAwayGoals} ${d.awayTeam}`,
+          );
+          // Persiste resultado final (mesmo sem UI montada)
+          if (d.matchDbId && !d.matchDbId.startsWith('offline-')) {
+            const persist = (attempt: number) => {
+              supabase
+                .from('live_matches')
+                .update({ status: 'finished', current_minute: d.maxMinute })
+                .eq('id', d.matchDbId)
+                .then(({ error }) => {
+                  if (error && attempt < 3) setTimeout(() => persist(attempt + 1), 5000);
+                  else if (!error) console.log('[Match] Headless persist OK');
+                });
+            };
+            persist(1);
+          }
+          unsub();
+        }
+      };
+      const unsub = subscribeToLoop(headless);
     };
   }, [stopTick]);
 
