@@ -24,6 +24,7 @@ import { useLiveMatchGuard } from './LiveMatchGuard';
 import stadiumHero from '@/assets/stadium-management-hero.jpg';
 import { StadiumOpsPanel } from './StadiumOpsPanel';
 import { StadiumFinanceReport } from './StadiumFinanceReport';
+import { StadiumExtrasPanel } from './StadiumExtrasPanel';
 import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
 import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
 
@@ -52,6 +53,8 @@ interface Props {
   onStartStadiumRepair: (damageId: string) => void;
   onBuyStadiumInsurance: (tier: NonNullable<StadiumInsurance['tier']>) => void;
   onCancelStadiumInsurance: () => void;
+  onAcceptStadiumSponsor: (offerId: string) => void;
+  onRejectStadiumSponsor: (offerId: string) => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
@@ -68,6 +71,7 @@ export function StadiumTab({
   onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
   onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
   onBuyStadiumInsurance, onCancelStadiumInsurance,
+  onAcceptStadiumSponsor, onRejectStadiumSponsor,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
@@ -179,6 +183,15 @@ export function StadiumTab({
         financeLog={ops.financeLog}
         weeklyMaintenance={modules.weeklyMaintenance}
         monthlyVipContracts={monthlyVipContracts}
+      />
+
+      {/* Fase 5 — Sponsors do estádio + Conquistas */}
+      <StadiumExtrasPanel
+        sponsorOffers={ops.sponsorOffers}
+        sponsorContracts={ops.sponsorContracts}
+        achievements={ops.achievements}
+        onAcceptSponsor={onAcceptStadiumSponsor}
+        onRejectSponsor={onRejectStadiumSponsor}
       />
 
       {/* Receita detalhada */}

@@ -178,6 +178,12 @@ export interface StadiumOpsState {
   lastWeatherRollAt?: string;
   /** Fase 4 — log financeiro consolidado (últimos 60 dias) */
   financeLog?: Array<import('./stadiumWeather').StadiumFinanceEntry>;
+  /** Fase 5 — sponsors específicos do estádio */
+  sponsorOffers?: Array<import('./stadiumExtras').StadiumSponsorOffer>;
+  sponsorContracts?: Array<import('./stadiumExtras').StadiumSponsorContract>;
+  lastSponsorGenAt?: string;
+  /** Fase 5 — conquistas */
+  achievements?: import('./stadiumExtras').StadiumAchievementState;
 }
 
 // ─── Insurance plans ──────────────────────────────────────────────────────
@@ -380,6 +386,9 @@ export function emptyStadiumOps(): StadiumOpsState {
     insurance: { tier: null, monthlyCost: 0, coverage: 0 },
     recentLog: [],
     financeLog: [],
+    sponsorOffers: [],
+    sponsorContracts: [],
+    achievements: { unlocked: [], progress: {} },
   };
 }
 

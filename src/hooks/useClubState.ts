@@ -14,7 +14,12 @@ import {
   getInsuranceMonthlyCost, INSURANCE_PLANS, EVENT_CATALOG, DAMAGE_PROFILES,
   type StadiumEventProposal, type StadiumOpsState, type StadiumDamage, type StadiumInsurance,
 } from '@/match/stadiumEvents';
-import { rollDailyWeather, type StadiumFinanceEntry } from '@/match/stadiumWeather';
+import { rollDailyWeather, summarizeFinance, type StadiumFinanceEntry } from '@/match/stadiumWeather';
+import {
+  generateStadiumSponsorOffers, acceptSponsorOffer,
+  detectNewAchievements, getAchievement,
+  type StadiumSponsorOffer,
+} from '@/match/stadiumExtras';
 
 
 export interface LoanedPlayer {
@@ -237,6 +242,74 @@ export function useClubState(initialState: any, userId?: string) {
             }
           }
           changed = true;
+        }
+
+        // 7) Fase 5 — gerar ofertas de sponsors do estádio (a cada 3 dias)
+        const THREE_DAYS = 3 * 24 * 3600_000;
+        nextOps.sponsorOffers = (nextOps.sponsorOffers ?? []).filter(o => new Date(o.expiresAt).getTime() > now);
+        nextOps.sponsorContracts = nextOps.sponsorContracts ?? [];
+        const lastSponsTs = nextOps.lastSponsorGenAt ? new Date(nextOps.lastSponsorGenAt).getTime() : 0;
+        if ((!lastSponsTs || now - lastSponsTs >= THREE_DAYS) && (nextOps.sponsorOffers?.length ?? 0) < 3) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const newOffers = generateStadiumSponsorOffers({
+            modules, reputation: prev.reputation ?? 50,
+            existingContracts: nextOps.sponsorContracts,
+            existingOffersCount: nextOps.sponsorOffers?.length ?? 0,
+          });
+          if (newOffers.length > 0) {
+            nextOps.sponsorOffers = [...(nextOps.sponsorOffers ?? []), ...newOffers];
+            nextOps.lastSponsorGenAt = new Date(now).toISOString();
+            for (const o of newOffers) {
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: `📩 Oferta: ${o.brand} (${o.slot}) — R$ ${(o.monthlyPay/1000).toFixed(0)}k/mês`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+            }
+            changed = true;
+          }
+        }
+
+        // 8) Fase 5 — payout mensal de sponsors ativos (com bônus se sem dano)
+        const activeDamagesCount = nextOps.damages.filter(d => !d.repairing).length;
+        for (let i = 0; i < (nextOps.sponsorContracts?.length ?? 0); i++) {
+          const c = nextOps.sponsorContracts![i];
+          if (new Date(c.endsAt).getTime() <= now) continue;
+          if (new Date(c.nextPayoutAt).getTime() <= now) {
+            const bonus = activeDamagesCount === 0 ? c.bonusIfHealthy : 0;
+            const total = c.monthlyPay + bonus;
+            next.budget = (next.budget ?? 0) + total;
+            pushFin({ at: new Date().toISOString(), category: 'evento', label: `Patrocínio ${c.brand}`, amount: total });
+            nextOps.sponsorContracts![i] = { ...c, nextPayoutAt: new Date(now + 30 * 24 * 3600_000).toISOString() };
+            const bonusMsg = bonus > 0 ? ` (+R$${(bonus/1000).toFixed(0)}k bônus estádio íntegro)` : '';
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💼 ${c.brand} pagou R$ ${(c.monthlyPay/1000).toFixed(0)}k${bonusMsg}`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            changed = true;
+          }
+        }
+        const beforeContracts = nextOps.sponsorContracts.length;
+        nextOps.sponsorContracts = nextOps.sponsorContracts.filter(c => new Date(c.endsAt).getTime() > now);
+        if (nextOps.sponsorContracts.length !== beforeContracts) {
+          nextOps.recentLog = [{ at: new Date().toISOString(), message: '📅 Contrato(s) de patrocínio expiraram.', type: 'warning' as const }, ...nextOps.recentLog].slice(0, 12);
+          changed = true;
+        }
+
+        // 9) Fase 5 — verificar conquistas
+        const ach = nextOps.achievements ?? { unlocked: [], progress: {} };
+        const modulesNow = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+        const finSummary = summarizeFinance(nextOps.financeLog ?? [], 30);
+        const newly = detectNewAchievements(ach, {
+          ops: nextOps, modules: modulesNow, financeNet30d: finSummary.net,
+        });
+        if (newly.length > 0) {
+          for (const id of newly) {
+            const a = getAchievement(id);
+            next.budget = (next.budget ?? 0) + a.reward;
+            next.fans = Math.max(100, (next.fans ?? 1000) + (a.fanReward ?? 0));
+            next.reputation = Math.min(100, Math.max(1, (next.reputation ?? 50) + (a.reputationReward ?? 0)));
+            pushFin({ at: new Date().toISOString(), category: 'evento', label: `Conquista: ${a.label}`, amount: a.reward });
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🏆 Conquista desbloqueada: ${a.emoji} ${a.label} (+R$${(a.reward/1000).toFixed(0)}k)`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            toast.success(`🏆 ${a.emoji} ${a.label} desbloqueada! +R$${(a.reward/1000).toFixed(0)}k`);
+          }
+          nextOps.achievements = { ...ach, unlocked: [...ach.unlocked, ...newly] };
+          changed = true;
+        } else {
+          nextOps.achievements = ach;
         }
 
         if (!changed) return prev;
@@ -634,6 +707,40 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
+  // ── Fase 5 — sponsors do estádio ───────────────────────────────────────
+  const acceptStadiumSponsor = useCallback((offerId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const offer = (ops.sponsorOffers ?? []).find(o => o.id === offerId);
+      if (!offer) { toast.error('Oferta não encontrada'); return prev; }
+      const contract = acceptSponsorOffer(offer);
+      toast.success(`💼 Patrocínio aceito: ${offer.brand} (R$${(offer.monthlyPay/1000).toFixed(0)}k/mês)`);
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          sponsorOffers: (ops.sponsorOffers ?? []).filter(o => o.id !== offerId),
+          sponsorContracts: [...(ops.sponsorContracts ?? []), contract],
+          recentLog: [{ at: new Date().toISOString(), message: `💼 ${offer.brand} (${offer.slot}) firmou contrato`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  const rejectStadiumSponsor = useCallback((offerId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          sponsorOffers: (ops.sponsorOffers ?? []).filter(o => o.id !== offerId),
+        },
+      };
+    });
+    toast.info('Oferta de patrocínio recusada');
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -645,6 +752,7 @@ export function useClubState(initialState: any, userId?: string) {
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     rescindPlayer,
     acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
+    acceptStadiumSponsor, rejectStadiumSponsor,
   };
 
 }

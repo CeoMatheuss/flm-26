@@ -38,6 +38,8 @@ export function useMatchState(initialState: any, userId?: string) {
     infrastructure: any;
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
+    /** Fase 5 — operações do estádio (para multa por dano) */
+    stadiumOps?: import('@/match/stadiumEvents').StadiumOpsState;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
@@ -84,10 +86,29 @@ export function useMatchState(initialState: any, userId?: string) {
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
 
+      // ── Fase 5 — Multa por estádio danificado em jogos oficiais (somente em casa) ──
+      let stadiumPenaltyFine = 0;
+      let stadiumPenaltyRep = 0;
+      let stadiumPenaltyMsg = '';
+      if (isHome && !isFriendly && deps.stadiumOps) {
+        // Importa de forma síncrona via require dinâmico evita ciclo
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { computeMatchPenalty } = require('@/match/stadiumExtras') as typeof import('@/match/stadiumExtras');
+        const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
+        if (pen) {
+          stadiumPenaltyFine = pen.fine;
+          stadiumPenaltyRep = pen.reputationLoss;
+          stadiumPenaltyMsg = pen.reason;
+        }
+      }
+
       if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
       deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
       if (leaguePrize > 0) {
         deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match.opponent}`);
+      }
+      if (stadiumPenaltyFine > 0) {
+        deps.addFinance('despesa', 'Multa Estádio', stadiumPenaltyFine, stadiumPenaltyMsg);
       }
 
       // ── Fan growth V3: faixas estritas e moderadas ──
@@ -114,9 +135,13 @@ export function useMatchState(initialState: any, userId?: string) {
 
       const fanSign = fanChange >= 0 ? '+' : '';
       const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k cota liga` : '';
-      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
-      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
-      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
+      const penMsg = stadiumPenaltyFine > 0 ? ` | -R$${(stadiumPenaltyFine/1000).toFixed(0)}k multa estádio` : '';
+      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      if (stadiumPenaltyFine > 0) {
+        toast.warning(`⚠️ ${stadiumPenaltyMsg}`);
+      }
 
       deps.setSeason((s: any) => ({ ...s, currentWeek: s.currentWeek + 1 }));
 
@@ -129,9 +154,9 @@ export function useMatchState(initialState: any, userId?: string) {
           stamina: Math.min(100, Math.max(20, p.stamina - Math.floor(Math.random() * 10 + 5))),
           gamesPlayed: p.gamesPlayed + 1,
         })),
-        budget: prev.budget + prize + sponsorWeekly + leaguePrize,
+        budget: prev.budget + prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine,
         fans: Math.max(100, prev.fans + fanChange),
-        reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
+        reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {
           wins: prev.stats.wins + (isWin ? 1 : 0),
           draws: prev.stats.draws + (isDraw ? 1 : 0),
