@@ -44,14 +44,17 @@ export interface WeatherRoll {
 export function rollDailyWeather(
   modules: StadiumModules,
   insurance: StadiumInsurance,
+  /** Fase 6 — multiplicador da chance de dano (cobertura/drenagem reduzem). */
+  weatherDamageMult: number = 1,
 ): WeatherRoll {
   // 8% chance por tick diário
   if (Math.random() > 0.08) return { triggered: false };
 
   const weather = WEATHER_CATALOG[Math.floor(Math.random() * WEATHER_CATALOG.length)];
 
-  // Rola dano
-  if (Math.random() > weather.damageChance) {
+  // Rola dano (modulado por upgrades modulares)
+  const effectiveChance = Math.max(0, Math.min(1, weather.damageChance * weatherDamageMult));
+  if (Math.random() > effectiveChance) {
     return {
       triggered: true, weather,
       message: `${weather.emoji} ${weather.label} passou pela região, mas o estádio resistiu sem danos.`,

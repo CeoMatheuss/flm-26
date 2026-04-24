@@ -325,6 +325,8 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     cancelStadiumInsurance: clubState.cancelStadiumInsurance,
     acceptStadiumSponsor: clubState.acceptStadiumSponsor,
     rejectStadiumSponsor: clubState.rejectStadiumSponsor,
+    toggleMembershipTier: clubState.toggleMembershipTier,
+    buyModularUpgrade: clubState.buyModularUpgrade,
     hireScout,
     fireScout: clubState.fireScout,
     renewContract,

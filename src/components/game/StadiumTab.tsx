@@ -25,8 +25,10 @@ import stadiumHero from '@/assets/stadium-management-hero.jpg';
 import { StadiumOpsPanel } from './StadiumOpsPanel';
 import { StadiumFinanceReport } from './StadiumFinanceReport';
 import { StadiumExtrasPanel } from './StadiumExtrasPanel';
+import { StadiumPhase6Panel } from './StadiumPhase6Panel';
 import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
 import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
+import { computeUpgradeEffects, getMembershipAttendanceFloor, type MembershipTier, type ModularUpgradeId } from '@/match/stadiumPhase6';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -55,6 +57,8 @@ interface Props {
   onCancelStadiumInsurance: () => void;
   onAcceptStadiumSponsor: (offerId: string) => void;
   onRejectStadiumSponsor: (offerId: string) => void;
+  onToggleMembershipTier: (tier: MembershipTier) => void;
+  onBuyModularUpgrade: (id: ModularUpgradeId) => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
@@ -72,6 +76,7 @@ export function StadiumTab({
   onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
   onBuyStadiumInsurance, onCancelStadiumInsurance,
   onAcceptStadiumSponsor, onRejectStadiumSponsor,
+  onToggleMembershipTier, onBuyModularUpgrade,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
@@ -83,6 +88,7 @@ export function StadiumTab({
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
   const ops = stadiumOps ?? emptyStadiumOps();
+  const upgEffects = useMemo(() => computeUpgradeEffects(ops.phase6?.upgrades), [ops.phase6?.upgrades]);
 
   const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
 
@@ -90,11 +96,19 @@ export function StadiumTab({
     () => buildStadiumModules(stadium.level, vipBoxesBuilt),
     [stadium.level, vipBoxesBuilt],
   );
+  const membershipFloor = useMemo(
+    () => getMembershipAttendanceFloor(ops.phase6?.membership, modules.seatingCapacity),
+    [ops.phase6?.membership, modules.seatingCapacity],
+  );
   const revenue = useMemo(
     () => computeMatchRevenue(modules, {
       fans, reputation, ticketPrice, winStreak, loseStreak, importance: previewImportance,
+    }, {
+      bonusCommercialPerFan: upgEffects.bonusCommercialPerFan,
+      occupancyBonus: upgEffects.occupancyBonus,
+      membershipFloor,
     }),
-    [modules, fans, reputation, ticketPrice, winStreak, loseStreak, previewImportance],
+    [modules, fans, reputation, ticketPrice, winStreak, loseStreak, previewImportance, upgEffects, membershipFloor],
   );
   const monthlyVipContracts = useMemo(() => getMonthlyVipContractIncome(modules), [modules]);
   const priceVerdict = useMemo(() => evaluateTicketPrice(ticketPrice, reputation), [ticketPrice, reputation]);
@@ -192,6 +206,17 @@ export function StadiumTab({
         achievements={ops.achievements}
         onAcceptSponsor={onAcceptStadiumSponsor}
         onRejectSponsor={onRejectStadiumSponsor}
+      />
+
+      {/* Fase 6 — Sócio-torcedor + Modernizações */}
+      <StadiumPhase6Panel
+        phase6={ops.phase6}
+        budget={budget}
+        fans={fans}
+        reputation={reputation}
+        stadiumLevel={stadium.level}
+        onToggleMembership={onToggleMembershipTier}
+        onBuyUpgrade={onBuyModularUpgrade}
       />
 
       {/* Receita detalhada */}

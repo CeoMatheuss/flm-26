@@ -20,6 +20,11 @@ import {
   detectNewAchievements, getAchievement,
   type StadiumSponsorOffer,
 } from '@/match/stadiumExtras';
+import {
+  MEMBERSHIP_CATALOG, getMembershipConfig, recomputeMembers, billMembership,
+  computeUpgradeEffects, MODULAR_UPGRADES, getUpgradeConfig, emptyPhase6State,
+  type MembershipTier, type ModularUpgradeId, type StadiumPhase6State,
+} from '@/match/stadiumPhase6';
 
 
 export interface LoanedPlayer {
@@ -146,10 +151,13 @@ export function useClubState(initialState: any, userId?: string) {
         // 2) resolver eventos cuja data passou
         const due = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() <= now);
         if (due.length > 0) {
+          const upgEffEvents = computeUpgradeEffects(nextOps.phase6?.upgrades);
           for (const e of due) {
-            const proposal = ops.proposals.find(p => p.id === e.proposalId)
+            const baseProposal = ops.proposals.find(p => p.id === e.proposalId)
               ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
-            const res = resolveEvent(proposal as StadiumEventProposal);
+            // Aplica redução de chance de dano por upgrades modulares (gramado híbrido, etc.)
+            const proposal: StadiumEventProposal = { ...baseProposal, damageChance: Math.max(0, Math.min(1, baseProposal.damageChance * upgEffEvents.eventDamageMult)) };
+            const res = resolveEvent(proposal);
             next.budget = (next.budget ?? 0) + e.revenue;
             const evLabel = EVENT_CATALOG.find(c => c.category === e.category)?.label ?? e.category;
             pushFin({ at: new Date().toISOString(), category: 'evento', label: evLabel, amount: e.revenue });
@@ -221,7 +229,8 @@ export function useClubState(initialState: any, userId?: string) {
         const lastWeatherTs = nextOps.lastWeatherRollAt ? new Date(nextOps.lastWeatherRollAt).getTime() : 0;
         if (!lastWeatherTs || now - lastWeatherTs >= ONE_DAY) {
           const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
-          const roll = rollDailyWeather(modules, nextOps.insurance);
+          const upgEffWeather = computeUpgradeEffects(nextOps.phase6?.upgrades);
+          const roll = rollDailyWeather(modules, nextOps.insurance, upgEffWeather.weatherDamageMult);
           nextOps.lastWeatherRollAt = new Date(now).toISOString();
           if (roll.triggered && roll.message) {
             if (roll.damage) {
@@ -310,6 +319,39 @@ export function useClubState(initialState: any, userId?: string) {
           changed = true;
         } else {
           nextOps.achievements = ach;
+        }
+
+        // 10) Fase 6 — cobrança/recálculo mensal de sócios + manutenção upgrades
+        const phase6 = nextOps.phase6 ?? emptyPhase6State();
+        const lastBill = nextOps.lastMembershipBilledAt ? new Date(nextOps.lastMembershipBilledAt).getTime() : 0;
+        const THIRTY_DAYS = 30 * 24 * 3600_000;
+        if (!lastBill || now - lastBill >= THIRTY_DAYS) {
+          // Recalcula nº de sócios baseado na torcida atual
+          const newMembers = recomputeMembers(phase6.membership.activeTiers, prev.fans ?? 1000, prev.reputation ?? 50);
+          const updatedMembership = { ...phase6.membership, membersByTier: newMembers, lastBilledAt: new Date(now).toISOString() };
+          const billing = billMembership(updatedMembership);
+          if (billing.totalRevenue > 0) {
+            next.budget = (next.budget ?? 0) + billing.totalRevenue;
+            pushFin({ at: new Date().toISOString(), category: 'evento', label: `Sócio-Torcedor (${billing.totalMembers.toLocaleString()} sócios)`, amount: billing.totalRevenue });
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🎟️ Mensalidade dos sócios: +R$ ${(billing.totalRevenue/1000).toFixed(0)}k (${billing.totalMembers} sócios)`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+          }
+          // Manutenção dos upgrades modulares
+          const upgEff = computeUpgradeEffects(phase6.upgrades);
+          if (upgEff.totalMonthlyCost > 0) {
+            if ((next.budget ?? 0) >= upgEff.totalMonthlyCost) {
+              next.budget = (next.budget ?? 0) - upgEff.totalMonthlyCost;
+              pushFin({ at: new Date().toISOString(), category: 'reparo', label: 'Manutenção upgrades modulares', amount: -upgEff.totalMonthlyCost });
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: `🔧 Manutenção upgrades: -R$ ${(upgEff.totalMonthlyCost/1000).toFixed(0)}k`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+            } else {
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: '⚠️ Saldo insuficiente para manutenção dos upgrades!', type: 'warning' as const }, ...nextOps.recentLog].slice(0, 12);
+              toast.error('⚠️ Saldo insuficiente para manutenção dos upgrades modulares!');
+            }
+          }
+          nextOps.phase6 = { ...phase6, membership: updatedMembership };
+          nextOps.lastMembershipBilledAt = new Date(now).toISOString();
+          changed = true;
+        } else {
+          nextOps.phase6 = phase6;
         }
 
         if (!changed) return prev;
@@ -741,6 +783,76 @@ export function useClubState(initialState: any, userId?: string) {
     toast.info('Oferta de patrocínio recusada');
   }, []);
 
+
+  // ── Fase 6 — Sócio-Torcedor ─────────────────────────────────────────────
+  const toggleMembershipTier = useCallback((tier: MembershipTier) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const phase6 = ops.phase6 ?? emptyPhase6State();
+      const cfg = getMembershipConfig(tier);
+      const stadiumLevel = (prev as any).infrastructure?.stadium?.level ?? 1;
+      if (stadiumLevel < cfg.minStadiumLevel) {
+        toast.error(`Programa ${cfg.label} requer estádio Nv ${cfg.minStadiumLevel}.`);
+        return prev;
+      }
+      const isActive = phase6.membership.activeTiers.includes(tier);
+      const newTiers = isActive
+        ? phase6.membership.activeTiers.filter(t => t !== tier)
+        : [...phase6.membership.activeTiers, tier];
+      const newMembers = recomputeMembers(newTiers, prev.fans ?? 1000, prev.reputation ?? 50);
+      toast.success(isActive ? `${cfg.label} encerrado.` : `${cfg.label} aberto! ${(newMembers[tier] ?? 0).toLocaleString()} sócios estimados.`);
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          phase6: {
+            ...phase6,
+            membership: { ...phase6.membership, activeTiers: newTiers, membersByTier: newMembers },
+          },
+          recentLog: [{ at: new Date().toISOString(), message: isActive ? `🎟️ ${cfg.label} encerrado` : `🎟️ ${cfg.label} aberto à torcida`, type: 'info' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  // ── Fase 6 — Upgrades modulares ─────────────────────────────────────────
+  const buyModularUpgrade = useCallback((id: ModularUpgradeId) => {
+    setClub(prev => {
+      const cfg = getUpgradeConfig(id);
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const phase6 = ops.phase6 ?? emptyPhase6State();
+      const stadiumLevel = (prev as any).infrastructure?.stadium?.level ?? 1;
+      if (phase6.upgrades.owned.includes(id)) {
+        toast.error(`${cfg.label} já adquirido.`);
+        return prev;
+      }
+      if (stadiumLevel < cfg.minStadiumLevel) {
+        toast.error(`${cfg.label} requer estádio Nv ${cfg.minStadiumLevel}.`);
+        return prev;
+      }
+      if ((prev.budget ?? 0) < cfg.cost) {
+        toast.error(`Orçamento insuficiente! Custo: R$ ${(cfg.cost/1_000_000).toFixed(2)}M`);
+        return prev;
+      }
+      toast.success(`${cfg.emoji} ${cfg.label} instalado!`, { description: cfg.effect });
+      return {
+        ...prev,
+        budget: (prev.budget ?? 0) - cfg.cost,
+        stadiumOps: {
+          ...ops,
+          phase6: {
+            ...phase6,
+            upgrades: {
+              owned: [...phase6.upgrades.owned, id],
+              purchasedAt: { ...phase6.upgrades.purchasedAt, [id]: new Date().toISOString() },
+            },
+          },
+          recentLog: [{ at: new Date().toISOString(), message: `${cfg.emoji} ${cfg.label} instalado (-R$${(cfg.cost/1000).toFixed(0)}k)`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -753,6 +865,7 @@ export function useClubState(initialState: any, userId?: string) {
     rescindPlayer,
     acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
     acceptStadiumSponsor, rejectStadiumSponsor,
+    toggleMembershipTier, buyModularUpgrade,
   };
 
 }
