@@ -20,6 +20,11 @@ import {
   detectNewAchievements, getAchievement,
   type StadiumSponsorOffer,
 } from '@/match/stadiumExtras';
+import {
+  MEMBERSHIP_CATALOG, getMembershipConfig, recomputeMembers, billMembership,
+  computeUpgradeEffects, MODULAR_UPGRADES, getUpgradeConfig, emptyPhase6State,
+  type MembershipTier, type ModularUpgradeId, type StadiumPhase6State,
+} from '@/match/stadiumPhase6';
 
 
 export interface LoanedPlayer {
