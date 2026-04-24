@@ -604,6 +604,7 @@ export function useClubState(initialState: any, userId?: string) {
       const plan = INSURANCE_PLANS.find(p => p.tier === tier)!;
       const ops = prev.stadiumOps ?? emptyStadiumOps();
       toast.success(`🛡️ Seguro ${plan.label} contratado!`);
+      const finEntry: StadiumFinanceEntry = { at: new Date().toISOString(), category: 'seguro', label: `Contratação ${plan.label}`, amount: -cost };
       return {
         ...prev,
         budget: (prev.budget ?? 0) - cost,
@@ -611,6 +612,7 @@ export function useClubState(initialState: any, userId?: string) {
           ...ops,
           insurance: { tier, monthlyCost: cost, coverage: plan.coverage, renewsAt: new Date(Date.now() + 30 * 24 * 3600_000).toISOString() },
           recentLog: [{ at: new Date().toISOString(), message: `🛡️ Contratou seguro ${plan.label} (-R$ ${(cost/1000).toFixed(0)}k/mês)`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+          financeLog: [finEntry, ...(ops.financeLog ?? [])].slice(0, 200),
         },
       };
     });
