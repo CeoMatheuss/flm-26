@@ -53,6 +53,8 @@ interface Props {
   onStartStadiumRepair: (damageId: string) => void;
   onBuyStadiumInsurance: (tier: NonNullable<StadiumInsurance['tier']>) => void;
   onCancelStadiumInsurance: () => void;
+  onAcceptStadiumSponsor: (offerId: string) => void;
+  onRejectStadiumSponsor: (offerId: string) => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
