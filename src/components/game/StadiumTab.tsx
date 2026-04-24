@@ -71,6 +71,7 @@ export function StadiumTab({
   onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
   onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
   onBuyStadiumInsurance, onCancelStadiumInsurance,
+  onAcceptStadiumSponsor, onRejectStadiumSponsor,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
