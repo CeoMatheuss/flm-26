@@ -1788,7 +1788,7 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
 
 /* ── LINEUP VIEW ───────────────────────────────────────────── */
 
-function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string }) {
+function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string; liveStaminaMap?: Record<string, number> }) {
   if (!homePlayers || homePlayers.length === 0) {
     return (
       <div className="text-center py-6">
