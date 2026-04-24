@@ -44,6 +44,12 @@ interface MatchPageState {
   fans?: number;
   awayFans?: number;
   tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
+  /** V1 Stadium — passados pelo Dashboard/MatchesTab para calcular público real */
+  reputation?: number;
+  ticketPrice?: number;
+  winStreak?: number;
+  loseStreak?: number;
+  vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -94,6 +100,32 @@ export default function MatchPage() {
     if (!locState) return;
     setLoadingMsg('Simulando partida no servidor');
     setPreMatchDone(true);
+
+    // V1 Stadium — calcula público esperado real (mesma fórmula da FansTab/StadiumTab)
+    // e ajusta a capacidade efetiva para a edge function refletir esse número.
+    let effectiveCapacity = locState.stadiumCapacity;
+    if (locState.isHome) {
+      try {
+        const { computeExpectedAttendance } = await import('@/match/stadiumEconomics');
+        const expected = computeExpectedAttendance({
+          fans: locState.fans || 500,
+          reputation: locState.reputation ?? 50,
+          ticketPrice: locState.ticketPrice ?? 30,
+          winStreak: locState.winStreak ?? 0,
+          loseStreak: locState.loseStreak ?? 0,
+          capacity: locState.stadiumCapacity,
+          importance: (locState.competition || '').toLowerCase().includes('final') ? 'final'
+            : (locState.competition || '').toLowerCase().includes('amistos') ? 'amistoso'
+            : 'liga',
+        });
+        // Mantém a capacidade real, mas garante que o servidor não invente público > esperado
+        effectiveCapacity = Math.max(1000, Math.min(locState.stadiumCapacity, expected));
+        console.log('[Stadium] Expected attendance:', expected, '/', locState.stadiumCapacity);
+      } catch (e) {
+        console.warn('[Stadium] Failed to compute attendance, using raw capacity', e);
+      }
+    }
+
     await startMatch({
       homeTeam: locState.homeTeam,
       awayTeam: locState.awayTeam,
@@ -103,7 +135,7 @@ export default function MatchPage() {
       matchId: locState.matchId,
       tactics: updatedTactics || locState.tactics,
       stadiumName: locState.stadiumName,
-      stadiumCapacity: locState.stadiumCapacity,
+      stadiumCapacity: effectiveCapacity,
       isHome: locState.isHome,
       competition: locState.competition || 'Amistoso',
       tournamentMatchId: locState.tournamentMatchId,

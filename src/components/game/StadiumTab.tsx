@@ -2,9 +2,13 @@ import { Infrastructure, getStadiumUpgradeCost } from '@/types/infrastructure';
 import {
   buildStadiumModules,
   computeMatchRevenue,
+  computeExpectedAttendance,
   getMonthlyVipContractIncome,
+  evaluateTicketPrice,
+  getVipTierConfig,
   VIP_CATALOG,
   type MatchImportance,
+  type VipTier,
 } from '@/match/stadiumEconomics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Landmark, ArrowUp, Users, Ticket, DollarSign, TrendingUp,
-  Crown, ShoppingBag, Car, Wrench, Sparkles, Lock,
+  Crown, ShoppingBag, Car, Wrench, Sparkles, Lock, Hammer,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
@@ -26,9 +30,16 @@ interface Props {
   stadiumName: string;
   ticketPrice: number;
   reputation: number;
+  /** Sequência de vitórias atuais (mesma fonte da FansTab) */
+  winStreak: number;
+  /** Sequência de derrotas atuais */
+  loseStreak: number;
+  /** Camarotes já construídos por tier */
+  vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
   onUpgrade: (facility: 'stadium') => void;
   onSetTicketPrice: (price: number) => void;
   onRenameStadium: (name: string) => void;
+  onBuildVipBox: (tier: VipTier, cost: number, cap: number) => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
@@ -40,12 +51,15 @@ const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
 
 export function StadiumTab({
   infrastructure, budget, fans, stadiumName, ticketPrice, reputation,
-  onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice, onRenameStadium: _onRenameStadium,
+  winStreak, loseStreak, vipBoxesBuilt,
+  onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice,
+  onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
   const onSetTicketPrice = guard(_onSetTicketPrice);
   const onRenameStadium = guard(_onRenameStadium);
+  const onBuildVipBox = guard(_onBuildVipBox);
 
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 15 };
   const cost = getStadiumUpgradeCost(stadium.level);
@@ -53,14 +67,32 @@ export function StadiumTab({
 
   const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
 
-  const modules = useMemo(() => buildStadiumModules(stadium.level), [stadium.level]);
+  const modules = useMemo(
+    () => buildStadiumModules(stadium.level, vipBoxesBuilt),
+    [stadium.level, vipBoxesBuilt],
+  );
   const revenue = useMemo(
     () => computeMatchRevenue(modules, {
-      fans, reputation, ticketPrice, formScore: 0, importance: previewImportance,
+      fans, reputation, ticketPrice, winStreak, loseStreak, importance: previewImportance,
     }),
-    [modules, fans, reputation, ticketPrice, previewImportance],
+    [modules, fans, reputation, ticketPrice, winStreak, loseStreak, previewImportance],
   );
   const monthlyVipContracts = useMemo(() => getMonthlyVipContractIncome(modules), [modules]);
+  const priceVerdict = useMemo(() => evaluateTicketPrice(ticketPrice, reputation), [ticketPrice, reputation]);
+
+  // Cenários de público para o avaliador
+  const moodScenarios = useMemo(() => {
+    const base = (ws: number, ls: number) => computeExpectedAttendance({
+      fans, reputation, ticketPrice, winStreak: ws, loseStreak: ls,
+      capacity: modules.seatingCapacity, importance: previewImportance,
+    });
+    return [
+      { mood: 'Crise', emoji: '😡', color: 'text-red-400', count: base(0, 5) },
+      { mood: 'Estável', emoji: '😊', color: 'text-foreground', count: base(0, 0) },
+      { mood: 'Empolgada', emoji: '🔥', color: 'text-emerald-300', count: base(3, 0) },
+      { mood: 'Eufórica', emoji: '🏆', color: 'text-emerald-400', count: base(5, 0) },
+    ];
+  }, [fans, reputation, ticketPrice, modules.seatingCapacity, previewImportance]);
 
   const occupancyPct = Math.round(revenue.occupancy * 100);
 
@@ -87,7 +119,7 @@ export function StadiumTab({
               </Badge>
               <h2 className="text-2xl font-extrabold tracking-tight">{stadiumName}</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                Nível {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
+                Nv {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
               </p>
             </div>
             <div className="text-right">
@@ -99,7 +131,6 @@ export function StadiumTab({
             </div>
           </div>
 
-          {/* KPIs */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <KpiCard icon={Users} label="Capacidade" value={modules.seatingCapacity.toLocaleString()} />
             <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
@@ -112,12 +143,12 @@ export function StadiumTab({
       {/* Receita detalhada */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center justify-between">
+          <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
             <span className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-emerald-400" />
               Receita por Partida
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {(['amistoso', 'liga', 'classico', 'final'] as MatchImportance[]).map(i => (
                 <Button
                   key={i}
@@ -133,10 +164,14 @@ export function StadiumTab({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <RevenueRow icon={Ticket} label="Ingressos" value={revenue.ticketRevenue} hint={`${revenue.attendance.toLocaleString()} × R$${ticketPrice}`} color="text-primary" />
-          <RevenueRow icon={Crown} label="Camarotes VIP" value={revenue.vipRevenue} hint={`${modules.vipBoxes.reduce((s,b)=>s+b.count,0)} unidades`} color="text-amber-400" />
-          <RevenueRow icon={ShoppingBag} label="Área Comercial" value={revenue.commercialRevenue} hint={`R$${modules.commercialPerFan}/torcedor`} color="text-fuchsia-400" />
-          <RevenueRow icon={Car} label="Estacionamento" value={revenue.parkingRevenue} hint={`${revenue.parkingUsed}/${modules.parkingSpots} vagas`} color="text-sky-400" />
+          <RevenueRow icon={Ticket} label="Ingressos" value={revenue.ticketRevenue}
+            hint={`${revenue.attendance.toLocaleString()} × R$${ticketPrice}`} color="text-primary" />
+          <RevenueRow icon={Crown} label="Camarotes VIP" value={revenue.vipRevenue}
+            hint={`${modules.vipBoxes.reduce((s,b)=>s+b.built,0)} unidades construídas`} color="text-amber-400" />
+          <RevenueRow icon={ShoppingBag} label="Área Comercial" value={revenue.commercialRevenue}
+            hint={`R$${modules.commercialPerFan}/torcedor presente`} color="text-fuchsia-400" />
+          <RevenueRow icon={Car} label="Estacionamento" value={revenue.parkingRevenue}
+            hint={`${revenue.parkingUsed}/${modules.parkingSpots} vagas`} color="text-sky-400" />
           <div className="border-t border-border pt-2 flex items-center justify-between">
             <span className="font-bold text-sm">Total da Partida</span>
             <span className="font-extrabold text-lg text-emerald-400">R$ {revenue.total.toLocaleString()}</span>
@@ -150,18 +185,35 @@ export function StadiumTab({
         </CardContent>
       </Card>
 
-      {/* Preço do ingresso */}
-      <Card>
+      {/* Preço do ingresso + Avaliador */}
+      <Card className={`border-2 ${
+        priceVerdict.level === 'great' || priceVerdict.level === 'good' ? 'border-emerald-500/30' :
+        priceVerdict.level === 'fair' ? 'border-amber-500/30' :
+        'border-red-500/30'
+      }`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Ticket className="h-4 w-4 text-primary" /> Preço do Ingresso
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Preço alto = mais receita por torcedor, mas <span className="text-amber-300 font-semibold">menos público</span>.
-            Cada 10% acima de R$40 reduz ~5% da demanda.
-          </p>
+          {/* Avaliador */}
+          <div className={`rounded-lg p-3 border ${
+            priceVerdict.level === 'great' || priceVerdict.level === 'good' ? 'bg-emerald-500/10 border-emerald-500/30' :
+            priceVerdict.level === 'fair' ? 'bg-amber-500/10 border-amber-500/30' :
+            'bg-red-500/10 border-red-500/30'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-2xl">{priceVerdict.emoji}</span>
+              <div>
+                <p className={`text-sm font-extrabold ${priceVerdict.color}`}>
+                  Preço {priceVerdict.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{priceVerdict.description}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-muted-foreground">R$</span>
             <Input
@@ -173,7 +225,7 @@ export function StadiumTab({
               className="w-24"
             />
             <div className="flex gap-1.5 flex-wrap">
-              {[20, 40, 60, 80, 100].map(p => (
+              {[10, 25, 40, 60, 100, 150].map(p => (
                 <Button
                   key={p}
                   size="sm"
@@ -186,10 +238,29 @@ export function StadiumTab({
               ))}
             </div>
           </div>
+
+          {/* Cenários de público por humor */}
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground mb-1.5 font-bold">
+              Público estimado por humor da torcida
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              {moodScenarios.map(s => (
+                <div key={s.mood} className="bg-muted/30 rounded-md p-2 text-center">
+                  <p className="text-base">{s.emoji}</p>
+                  <p className={`text-sm font-bold ${s.color}`}>{s.count.toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground uppercase">{s.mood}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              Sua sequência atual: {winStreak >= 2 ? `🔥 ${winStreak} vitórias` : loseStreak >= 2 ? `🔻 ${loseStreak} derrotas` : '➖ Estável'}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Camarotes VIP */}
+      {/* Camarotes VIP - construção */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -199,36 +270,54 @@ export function StadiumTab({
         <CardContent className="space-y-2">
           {VIP_CATALOG.map(cfg => {
             const owned = modules.vipBoxes.find(b => b.tier === cfg.tier);
-            const unlocked = stadium.level >= cfg.unlockLevel;
+            if (!owned) return null;
+            const unlocked = owned.unlocked;
+            const built = owned.built;
+            const cap = owned.cap;
+            const atCap = built >= cap;
+            const canAfford = budget >= cfg.buildCost;
+
             return (
               <div
                 key={cfg.tier}
-                className={`flex items-center justify-between gap-3 p-2.5 rounded-lg border ${
+                className={`p-2.5 rounded-lg border ${
                   unlocked ? 'bg-muted/30 border-border' : 'bg-muted/10 border-dashed border-muted opacity-60'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-2xl">{cfg.emoji}</span>
-                  <div>
-                    <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label}</p>
-                    {unlocked ? (
-                      <p className="text-[10px] text-muted-foreground">
-                        {owned?.count} unidades • R$ {cfg.priceMatch.toLocaleString()}/jogo
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Lock className="h-3 w-3" /> Desbloqueia no Nv {cfg.unlockLevel}
-                      </p>
-                    )}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-2xl">{cfg.emoji}</span>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label}</p>
+                      {unlocked ? (
+                        <p className="text-[10px] text-muted-foreground">
+                          R$ {cfg.priceMatch.toLocaleString()}/jogo • R$ {(cfg.monthlyContract / 1000).toFixed(0)}k/mês
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Lock className="h-3 w-3" /> Desbloqueia no Nv {cfg.unlockLevel}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-extrabold">{built}/{cap}</p>
+                    <p className="text-[9px] text-muted-foreground uppercase">construídos</p>
                   </div>
                 </div>
                 {unlocked && (
-                  <div className="text-right">
-                    <p className="text-[9px] uppercase text-muted-foreground">Contrato/mês</p>
-                    <p className="text-xs font-bold text-amber-300">
-                      R$ {(cfg.monthlyContract / 1000).toFixed(0)}k
-                    </p>
-                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full mt-2 h-8 gap-1.5"
+                    variant={atCap ? 'outline' : 'default'}
+                    disabled={atCap || !canAfford}
+                    onClick={() => onBuildVipBox(cfg.tier, cfg.buildCost, cap)}
+                  >
+                    <Hammer className="h-3.5 w-3.5" />
+                    {atCap
+                      ? `Limite do Nv ${stadium.level} atingido`
+                      : `Construir 1× ${cfg.label} — R$ ${(cfg.buildCost / 1000).toFixed(0)}k`}
+                  </Button>
                 )}
               </div>
             );

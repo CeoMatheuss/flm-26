@@ -316,6 +316,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     renameStadium: clubState.renameStadium,
     updateShield: clubState.updateShield,
     setTicketPrice: clubState.setTicketPrice,
+    buildVipBox: clubState.buildVipBox,
     hireScout,
     fireScout: clubState.fireScout,
     renewContract,

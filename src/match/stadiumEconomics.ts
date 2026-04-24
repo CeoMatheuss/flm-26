@@ -5,8 +5,8 @@
  * derivados do nível do estádio (1-15) e calcula receita dinâmica por partida
  * com base em demanda (forma + reputação + importância + preço do ingresso).
  *
- * Pure functions, zero efeitos colaterais — fáceis de testar e plugar
- * em qualquer simulação ou tela.
+ * IMPORTANTE: usa a MESMA fórmula de público da `FansTab` para garantir
+ * uma única fonte de verdade. Camarotes precisam ser CONSTRUÍDOS após desbloqueio.
  */
 
 import { getStadiumCapacity } from '@/types/infrastructure';
@@ -14,151 +14,218 @@ import { getStadiumCapacity } from '@/types/infrastructure';
 // ─── Tipos ────────────────────────────────────────────────────────────────
 export type VipTier = 'bronze' | 'prata' | 'ouro' | 'master';
 
-export interface VipBoxConfig {
+export interface VipBoxTier {
   tier: VipTier;
   unlockLevel: number;       // nível mínimo do estádio para destravar
-  count: number;             // quantos camarotes existem nesse tier
-  priceMatch: number;        // valor por jogo
-  monthlyContract: number;   // renda fixa de empresas (mensal)
+  buildCost: number;         // custo para construir 1 unidade
+  maxAtFullStadium: number;  // limite máximo (no Nv 15)
+  priceMatch: number;        // valor por jogo (1 unidade ocupada)
+  monthlyContract: number;   // renda fixa de empresas (mensal por unidade)
   emoji: string;
   label: string;
   color: string;             // tailwind text color
 }
 
+export interface VipBoxOwnership {
+  tier: VipTier;
+  built: number;
+  cap: number;               // máximo no nível atual
+  unlocked: boolean;
+}
+
 export interface StadiumModules {
-  /** Capacidade total da arquibancada (segue o nível do estádio). */
   seatingCapacity: number;
-  /** Lista de camarotes desbloqueados, com qtd e valores. */
-  vipBoxes: VipBoxConfig[];
-  /** Vagas de estacionamento. */
+  vipBoxes: VipBoxOwnership[];
   parkingSpots: number;
-  /** Receita por torcedor da área comercial (R$). */
   commercialPerFan: number;
-  /** Nível geral do estádio (espelha infraestrutura). */
   level: number;
-  /** Manutenção semanal (R$). */
   weeklyMaintenance: number;
 }
 
 export type MatchImportance = 'amistoso' | 'liga' | 'classico' | 'final';
 
 export interface DemandInputs {
-  fans: number;              // base de torcedores do clube
-  reputation: number;        // 0-100
-  ticketPrice: number;       // preço atual do ingresso
-  /** Forma recente (-5 .. +5) — derivada dos últimos 5 jogos (V vence +1, D -1, E 0). */
-  formScore?: number;
+  fans: number;
+  reputation: number;
+  ticketPrice: number;
+  winStreak?: number;
+  loseStreak?: number;
   importance?: MatchImportance;
-  isHomeAdvantageActive?: boolean; // se false (estádio cedido p/ evento), reduz público
+  isHomeAdvantageActive?: boolean;
 }
 
 export interface MatchRevenueBreakdown {
   attendance: number;
   capacity: number;
-  occupancy: number;            // 0..1
+  occupancy: number;
   ticketRevenue: number;
   vipRevenue: number;
   commercialRevenue: number;
   parkingRevenue: number;
   total: number;
-  /** Quantas vagas de estacionamento foram usadas. */
   parkingUsed: number;
 }
 
 // ─── Camarotes: catálogo base ─────────────────────────────────────────────
-//
-// Desbloqueio progressivo: Bronze (Nv 3), Prata (Nv 6), Ouro (Nv 9), Master (Nv 12).
-// Quantidade escala com o nível do estádio para manter exclusividade.
-export const VIP_CATALOG: Omit<VipBoxConfig, 'count'>[] = [
+export const VIP_CATALOG: VipBoxTier[] = [
   {
-    tier: 'bronze', unlockLevel: 3, priceMatch: 1_500, monthlyContract: 8_000,
+    tier: 'bronze', unlockLevel: 3, buildCost: 250_000, maxAtFullStadium: 32,
+    priceMatch: 1_500, monthlyContract: 8_000,
     emoji: '🥉', label: 'Bronze', color: 'text-amber-700',
   },
   {
-    tier: 'prata', unlockLevel: 6, priceMatch: 4_000, monthlyContract: 22_000,
+    tier: 'prata', unlockLevel: 6, buildCost: 800_000, maxAtFullStadium: 17,
+    priceMatch: 4_000, monthlyContract: 22_000,
     emoji: '🥈', label: 'Prata', color: 'text-slate-300',
   },
   {
-    tier: 'ouro', unlockLevel: 9, priceMatch: 9_000, monthlyContract: 55_000,
+    tier: 'ouro', unlockLevel: 9, buildCost: 2_500_000, maxAtFullStadium: 8,
+    priceMatch: 9_000, monthlyContract: 55_000,
     emoji: '🥇', label: 'Ouro', color: 'text-amber-400',
   },
   {
-    tier: 'master', unlockLevel: 12, priceMatch: 22_000, monthlyContract: 140_000,
+    tier: 'master', unlockLevel: 12, buildCost: 8_000_000, maxAtFullStadium: 2,
+    priceMatch: 22_000, monthlyContract: 140_000,
     emoji: '👑', label: 'Master', color: 'text-fuchsia-400',
   },
 ];
 
-/** Quantidade de camarotes por tier conforme o nível atual do estádio. */
-export function getVipCount(tier: VipTier, stadiumLevel: number): number {
+/** Limite atual de cada tier conforme o nível do estádio. */
+export function getVipCapAtLevel(tier: VipTier, stadiumLevel: number): number {
   const cfg = VIP_CATALOG.find(v => v.tier === tier);
   if (!cfg || stadiumLevel < cfg.unlockLevel) return 0;
-  // Quanto maior o nível, mais boxes — mas sempre poucos (exclusividade)
-  const levelsAbove = stadiumLevel - cfg.unlockLevel;
-  switch (tier) {
-    case 'bronze': return 8 + levelsAbove * 2;   // 8 → 32
-    case 'prata':  return 4 + Math.floor(levelsAbove * 1.5); // 4 → 17
-    case 'ouro':   return 2 + Math.floor(levelsAbove); // 2 → 8
-    case 'master': return 1 + Math.floor(levelsAbove / 2); // 1 → 2
-  }
+  const span = 15 - cfg.unlockLevel;
+  if (span <= 0) return cfg.maxAtFullStadium;
+  const progress = (stadiumLevel - cfg.unlockLevel) / span; // 0..1
+  // Começa em 1 unidade e cresce até o teto
+  return Math.max(1, Math.round(1 + (cfg.maxAtFullStadium - 1) * progress));
 }
 
-/** Constrói os módulos do estádio a partir do nível atual. */
-export function buildStadiumModules(level: number): StadiumModules {
+export function getVipTierConfig(tier: VipTier): VipBoxTier {
+  return VIP_CATALOG.find(v => v.tier === tier)!;
+}
+
+/** Constrói os módulos do estádio a partir do nível e dos VIPs já construídos. */
+export function buildStadiumModules(
+  level: number,
+  vipBoxesBuilt?: Partial<Record<VipTier, number>>,
+): StadiumModules {
   const seatingCapacity = getStadiumCapacity(level);
-  const vipBoxes: VipBoxConfig[] = VIP_CATALOG
-    .filter(v => level >= v.unlockLevel)
-    .map(v => ({ ...v, count: getVipCount(v.tier, level) }));
+  const built = vipBoxesBuilt ?? {};
 
-  // Comercial: cresce com o nível (R$ 4 → R$ 18 por torcedor)
-  const commercialPerFan = 4 + level * 1;
+  const vipBoxes: VipBoxOwnership[] = VIP_CATALOG.map(cfg => {
+    const cap = getVipCapAtLevel(cfg.tier, level);
+    const builtCount = Math.min(built[cfg.tier] ?? 0, cap);
+    return {
+      tier: cfg.tier,
+      built: builtCount,
+      cap,
+      unlocked: level >= cfg.unlockLevel,
+    };
+  });
 
-  // Estacionamento: ~5% da capacidade (vaga por carro)
+  const commercialPerFan = 4 + level * 1;       // R$ 5 → R$ 19
   const parkingSpots = Math.round(seatingCapacity * 0.05);
-
-  // Manutenção semanal: cresce ~quadrático com o nível
   const weeklyMaintenance = Math.round(15_000 + level * level * 1_200);
 
   return { seatingCapacity, vipBoxes, parkingSpots, commercialPerFan, level, weeklyMaintenance };
 }
 
-// ─── Demanda dinâmica ─────────────────────────────────────────────────────
+// ─── Demanda — usa a MESMA fórmula da FansTab ─────────────────────────────
 /**
- * Calcula a taxa de ocupação esperada (0..1).
- * Combina forma, reputação, importância da partida e elasticidade do preço.
+ * Multiplicador de público baseado em sequência de vitórias/derrotas.
+ * Espelha exatamente o que o jogador vê em "Torcida → Previsão de Público".
  */
-export function computeOccupancy(inputs: DemandInputs): number {
+export function streakMultiplier(winStreak: number, loseStreak: number): number {
+  if (winStreak >= 4) return 1.5;
+  if (winStreak >= 3) return 1.3;
+  if (winStreak >= 2) return 1.15;
+  if (loseStreak >= 6) return 0.5;
+  if (loseStreak >= 5) return 0.6;
+  if (loseStreak >= 4) return 0.75;
+  if (loseStreak >= 3) return 0.85;
+  return 1;
+}
+
+/** Multiplicador de público por preço do ingresso (mesmo da FansTab). */
+export function priceMultiplier(ticketPrice: number): number {
+  if (ticketPrice > 100) return 0.7;
+  if (ticketPrice > 60) return 0.85;
+  if (ticketPrice < 15) return 1.2;
+  return 1;
+}
+
+/** Avaliador semafórico do preço do ingresso. */
+export interface PriceVerdict {
+  level: 'great' | 'good' | 'fair' | 'high' | 'bad';
+  label: string;
+  description: string;
+  color: string; // tailwind class
+  emoji: string;
+}
+
+export function evaluateTicketPrice(ticketPrice: number, reputation: number): PriceVerdict {
+  // Preço "ideal" cresce um pouco com a reputação (clube grande cobra mais)
+  const sweetSpot = 25 + (reputation / 100) * 35; // ~25 a 60
+  const ratio = ticketPrice / sweetSpot;
+
+  if (ratio < 0.5) return {
+    level: 'great', emoji: '🤑', color: 'text-emerald-400',
+    label: 'Promocional',
+    description: 'Estádio LOTADO garantido, mas você cobra pouco por ingresso. Volume compensa.',
+  };
+  if (ratio <= 0.85) return {
+    level: 'good', emoji: '✅', color: 'text-emerald-300',
+    label: 'Atrativo',
+    description: 'Bom equilíbrio: público alto e receita por ingresso decente.',
+  };
+  if (ratio <= 1.2) return {
+    level: 'fair', emoji: '🎯', color: 'text-amber-300',
+    label: 'Justo',
+    description: 'Preço alinhado com o tamanho do clube. Receita ótima, público estável.',
+  };
+  if (ratio <= 1.8) return {
+    level: 'high', emoji: '⚠️', color: 'text-orange-400',
+    label: 'Caro',
+    description: 'Você está espantando torcedores. Receita por jogo cai com o público vazio.',
+  };
+  return {
+    level: 'bad', emoji: '🚫', color: 'text-red-400',
+    label: 'Abusivo',
+    description: 'Estádio vai ficar vazio. Reduza o preço ou venda só p/ camarotes.',
+  };
+}
+
+/**
+ * Calcula público esperado.
+ * IMPORTANTE: replica a fórmula EXATA da FansTab para consistência.
+ */
+export function computeExpectedAttendance(
+  inputs: Required<Pick<DemandInputs, 'fans' | 'reputation' | 'ticketPrice'>> & {
+    winStreak?: number; loseStreak?: number;
+    capacity: number;
+    importance?: MatchImportance;
+    isHomeAdvantageActive?: boolean;
+  },
+): number {
   const {
-    reputation, ticketPrice,
-    formScore = 0,
+    fans, reputation, ticketPrice, capacity,
+    winStreak = 0, loseStreak = 0,
     importance = 'liga',
     isHomeAdvantageActive = true,
   } = inputs;
 
-  // Base por reputação: 30% (rep 0) → 90% (rep 100)
-  let base = 0.30 + (Math.max(0, Math.min(100, reputation)) / 100) * 0.60;
-
-  // Forma: cada ponto vale ~3% (faixa -15% .. +15%)
-  base += Math.max(-5, Math.min(5, formScore)) * 0.03;
-
-  // Importância
+  const baseAttendance = Math.min(fans * 0.15, capacity);
+  const sm = streakMultiplier(winStreak, loseStreak);
+  const pm = priceMultiplier(ticketPrice);
+  const reputationBonus = reputation / 100;
   const impMult: Record<MatchImportance, number> = {
-    amistoso: 0.75,
-    liga: 1.00,
-    classico: 1.20,
-    final: 1.30,
+    amistoso: 0.80, liga: 1.0, classico: 1.20, final: 1.30,
   };
-  base *= impMult[importance];
+  const homeMult = isHomeAdvantageActive ? 1.0 : 0.70;
 
-  // Elasticidade do preço (referência: R$ 40)
-  // Cada 10% acima/abaixo do preço-ref muda demanda em ~5%
-  const PRICE_REF = 40;
-  const priceDelta = (ticketPrice - PRICE_REF) / PRICE_REF; // -1 .. +∞
-  base *= 1 - Math.max(-0.5, Math.min(2, priceDelta)) * 0.5;
-
-  // Estádio cedido (sem fator casa) reduz público em ~30%
-  if (!isHomeAdvantageActive) base *= 0.70;
-
-  return Math.max(0.05, Math.min(1, base));
+  const raw = baseAttendance * sm * pm * (0.7 + reputationBonus * 0.5) * impMult[importance] * homeMult;
+  return Math.min(capacity, Math.max(0, Math.floor(raw)));
 }
 
 // ─── Receita por partida ──────────────────────────────────────────────────
@@ -166,47 +233,53 @@ export function computeMatchRevenue(
   modules: StadiumModules,
   demand: DemandInputs,
 ): MatchRevenueBreakdown {
-  const occupancy = computeOccupancy(demand);
-  const capacity = modules.seatingCapacity;
+  const attendance = computeExpectedAttendance({
+    fans: demand.fans,
+    reputation: demand.reputation,
+    ticketPrice: demand.ticketPrice,
+    winStreak: demand.winStreak ?? 0,
+    loseStreak: demand.loseStreak ?? 0,
+    capacity: modules.seatingCapacity,
+    importance: demand.importance,
+    isHomeAdvantageActive: demand.isHomeAdvantageActive,
+  });
 
-  // Público pagante: limitado pela capacidade E pela base de torcedores * 12% num jogo
-  // (apenas uma fração da base total comparece em qualquer jogo).
-  const fanPool = Math.floor(demand.fans * 0.12);
-  const attendance = Math.min(capacity, Math.floor(capacity * occupancy), Math.max(fanPool, Math.floor(capacity * 0.05)));
+  const capacity = modules.seatingCapacity;
+  const occupancy = capacity > 0 ? attendance / capacity : 0;
 
   const ticketRevenue = attendance * Math.max(5, demand.ticketPrice);
 
   // VIP: ocupação dos camarotes segue uma versão suavizada da demanda (sempre alta)
   const vipOccupancy = Math.max(0.5, 0.6 + occupancy * 0.4);
-  const vipRevenue = modules.vipBoxes.reduce(
-    (sum, box) => sum + Math.round(box.count * vipOccupancy) * box.priceMatch,
-    0,
-  );
+  const vipRevenue = modules.vipBoxes.reduce((sum, box) => {
+    if (box.built === 0) return sum;
+    const cfg = getVipTierConfig(box.tier);
+    return sum + Math.round(box.built * vipOccupancy) * cfg.priceMatch;
+  }, 0);
 
-  // Comercial: por torcedor presente
   const commercialRevenue = attendance * modules.commercialPerFan;
 
-  // Estacionamento: ~70% das vagas vendidas em jogos cheios; cresce com ocupação
-  const parkingUsed = Math.min(modules.parkingSpots, Math.round(modules.parkingSpots * (0.4 + occupancy * 0.5)));
-  const parkingPrice = 25 + modules.level * 2; // R$ 27 → R$ 55
+  const parkingUsed = Math.min(
+    modules.parkingSpots,
+    Math.round(modules.parkingSpots * (0.4 + occupancy * 0.5)),
+  );
+  const parkingPrice = 25 + modules.level * 2;
   const parkingRevenue = parkingUsed * parkingPrice;
 
   const total = ticketRevenue + vipRevenue + commercialRevenue + parkingRevenue;
 
   return {
-    attendance,
-    capacity,
-    occupancy,
-    ticketRevenue,
-    vipRevenue,
-    commercialRevenue,
-    parkingRevenue,
-    parkingUsed,
-    total,
+    attendance, capacity, occupancy,
+    ticketRevenue, vipRevenue, commercialRevenue, parkingRevenue,
+    parkingUsed, total,
   };
 }
 
 /** Renda fixa mensal dos contratos VIP (empresas). */
 export function getMonthlyVipContractIncome(modules: StadiumModules): number {
-  return modules.vipBoxes.reduce((sum, box) => sum + box.count * box.monthlyContract, 0);
+  return modules.vipBoxes.reduce((sum, box) => {
+    if (box.built === 0) return sum;
+    const cfg = getVipTierConfig(box.tier);
+    return sum + box.built * cfg.monthlyContract;
+  }, 0);
 }

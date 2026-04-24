@@ -176,6 +176,8 @@ export interface Club {
   staffMarket?: StaffMember[];
   /** V3 — timestamp ISO do último refresh do mercado de staff */
   lastStaffMarketRefreshAt?: string;
+  /** V1 Stadium — camarotes VIP construídos por tier (Bronze/Prata/Ouro/Master). */
+  vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
   /** V2 — full advanced shield configuration (optional, overrides legacy fields) */
   shieldConfig?: {
     shape: string;

@@ -257,6 +257,28 @@ export function useClubState(initialState: any, userId?: string) {
     setClub(prev => ({ ...prev, ticketPrice: Math.max(5, Math.min(200, price)) }));
   }, []);
 
+  const buildVipBox = useCallback((tier: 'bronze' | 'prata' | 'ouro' | 'master', cost: number, cap: number) => {
+    setClub(prev => {
+      const current = prev.vipBoxesBuilt?.[tier] ?? 0;
+      if (current >= cap) {
+        toast.error(`👑 Limite de camarotes ${tier} atingido para o nível atual do estádio!`);
+        return prev;
+      }
+      if (prev.budget < cost) {
+        toast.error(`💸 Orçamento insuficiente! Custo: R$ ${(cost / 1000).toFixed(0)}k`);
+        return prev;
+      }
+      toast.success(`👑 Camarote ${tier.toUpperCase()} construído!`, {
+        description: `+R$ ${(cost / 1000).toFixed(0)}k investidos. Renda mensal de empresas aumentada.`,
+      });
+      return {
+        ...prev,
+        budget: prev.budget - cost,
+        vipBoxesBuilt: { ...prev.vipBoxesBuilt, [tier]: current + 1 },
+      };
+    });
+  }, []);
+
   const scoutOptionData = [
     { skill: 1, name: 'Amador Local', salary: 5000 },
     { skill: 2, name: 'Observador Iniciante', salary: 12000 },
@@ -365,7 +387,7 @@ export function useClubState(initialState: any, userId?: string) {
     transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
     trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
-    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice,
+    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     rescindPlayer,
   };
