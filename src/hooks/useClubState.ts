@@ -387,7 +387,7 @@ export function useClubState(initialState: any, userId?: string) {
     transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
     trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
-    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice,
+    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     rescindPlayer,
   };
