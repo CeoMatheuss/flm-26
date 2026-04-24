@@ -886,5 +886,6 @@ export function useClubState(initialState: any, userId?: string) {
     acceptStadiumSponsor, rejectStadiumSponsor,
     toggleMembershipTier, buyModularUpgrade,
     applyFanChange,
+  };
 
 }
