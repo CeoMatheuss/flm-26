@@ -784,8 +784,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     }
   }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds]);
 
-  const subBlocked = !validateSubAllowed().ok;
-  const subBlockedReason = validateSubAllowed().reason;
+  const subValidation = validateSubAllowed();
+  const subBlocked = !subValidation.ok;
+  const subBlockedReason = subValidation.reason;
 
   const phaseLabel = () => {
     if (isFinished) return '🏁 FIM DE JOGO';
