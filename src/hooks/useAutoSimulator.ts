@@ -357,6 +357,7 @@ export function useAutoSimulator(userId: string | undefined) {
     // Realtime: simulate the moment a row is inserted/updated.
     let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
     let friendlyChannel: ReturnType<typeof supabase.channel> | null = null;
+    let tournamentChannel: ReturnType<typeof supabase.channel> | null = null;
     if (!subscribedRef.current) {
       subscribedRef.current = true;
       leagueChannel = supabase
@@ -369,6 +370,11 @@ export function useAutoSimulator(userId: string | undefined) {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
         .subscribe();
+      tournamentChannel = supabase
+        .channel('autosim-tournament-matches')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'custom_tournament_matches' }, () => { void runScan(); })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'custom_tournament_matches' }, () => { void runScan(); })
+        .subscribe();
     }
 
     return () => {
@@ -376,6 +382,7 @@ export function useAutoSimulator(userId: string | undefined) {
       window.removeEventListener('online', onOnline);
       if (leagueChannel) supabase.removeChannel(leagueChannel);
       if (friendlyChannel) supabase.removeChannel(friendlyChannel);
+      if (tournamentChannel) supabase.removeChannel(tournamentChannel);
       subscribedRef.current = false;
     };
   }, [userId]);
