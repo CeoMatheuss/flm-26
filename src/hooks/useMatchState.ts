@@ -86,10 +86,29 @@ export function useMatchState(initialState: any, userId?: string) {
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
 
+      // ── Fase 5 — Multa por estádio danificado em jogos oficiais (somente em casa) ──
+      let stadiumPenaltyFine = 0;
+      let stadiumPenaltyRep = 0;
+      let stadiumPenaltyMsg = '';
+      if (isHome && !isFriendly && deps.stadiumOps) {
+        // Importa de forma síncrona via require dinâmico evita ciclo
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { computeMatchPenalty } = require('@/match/stadiumExtras') as typeof import('@/match/stadiumExtras');
+        const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
+        if (pen) {
+          stadiumPenaltyFine = pen.fine;
+          stadiumPenaltyRep = pen.reputationLoss;
+          stadiumPenaltyMsg = pen.reason;
+        }
+      }
+
       if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
       deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
       if (leaguePrize > 0) {
         deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match.opponent}`);
+      }
+      if (stadiumPenaltyFine > 0) {
+        deps.addFinance('despesa', 'Multa Estádio', stadiumPenaltyFine, stadiumPenaltyMsg);
       }
 
       // ── Fan growth V3: faixas estritas e moderadas ──
