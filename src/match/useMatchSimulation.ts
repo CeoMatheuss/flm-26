@@ -548,23 +548,24 @@ export function useMatchSimulation() {
   }, [tick]);
 
   const startTick = useCallback(() => {
-    if (intervalRef.current) return;
-    console.log('[Match] Starting tick loop');
-    // Safe wrapper: a single thrown error must NOT kill the interval — the watchdog needs to keep running.
+    if (unsubscribeRef.current) return;
+    console.log('[Match] Subscribing to global match loop');
+    // Safe wrapper: errors no tick NÃO podem quebrar a inscrição — o watchdog continua.
     const safeTick = () => {
       try { tick(); } catch (err) {
         console.error('[Match] tick() threw, ignoring to keep loop alive:', err);
       }
     };
-    // Immediate first tick
+    // Inscreve no loop global (singleton — sobrevive a re-mounts)
+    unsubscribeRef.current = subscribeToLoop(safeTick);
+    // Tick imediato para sincronizar UI
     safeTick();
-    intervalRef.current = window.setInterval(safeTick, TICK_MS);
   }, [tick]);
 
   const stopTick = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
   }, []);
 
