@@ -578,6 +578,7 @@ export function useClubState(initialState: any, userId?: string) {
       }
       toast.success(`🛠️ Reparo iniciado: ${dmg.sourceLabel} (${dmg.repairDays} dia(s))`);
       const completesAt = new Date(Date.now() + dmg.repairDays * 24 * 3600_000).toISOString();
+      const finEntry: StadiumFinanceEntry = { at: new Date().toISOString(), category: 'reparo', label: dmg.sourceLabel, amount: -dmg.repairCost };
       return {
         ...prev,
         budget: (prev.budget ?? 0) - dmg.repairCost,
@@ -585,6 +586,7 @@ export function useClubState(initialState: any, userId?: string) {
           ...ops,
           damages: ops.damages.map(d => d.id === damageId ? { ...d, repairing: true, repairCompletesAt: completesAt } : d),
           recentLog: [{ at: new Date().toISOString(), message: `🛠️ Reparo iniciado: ${dmg.sourceLabel} (-R$ ${(dmg.repairCost/1000).toFixed(0)}k)`, type: 'info' as const }, ...ops.recentLog].slice(0, 12),
+          financeLog: [finEntry, ...(ops.financeLog ?? [])].slice(0, 200),
         },
       };
     });
