@@ -22,6 +22,9 @@ import {
 import { useState, useMemo } from 'react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import stadiumHero from '@/assets/stadium-management-hero.jpg';
+import { StadiumOpsPanel } from './StadiumOpsPanel';
+import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
+import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -36,10 +39,16 @@ interface Props {
   loseStreak: number;
   /** Camarotes já construídos por tier */
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  stadiumOps?: StadiumOpsState;
   onUpgrade: (facility: 'stadium') => void;
   onSetTicketPrice: (price: number) => void;
   onRenameStadium: (name: string) => void;
   onBuildVipBox: (tier: VipTier, cost: number, cap: number) => void;
+  onAcceptStadiumEvent: (proposalId: string) => void;
+  onRejectStadiumEvent: (proposalId: string) => void;
+  onStartStadiumRepair: (damageId: string) => void;
+  onBuyStadiumInsurance: (tier: NonNullable<StadiumInsurance['tier']>) => void;
+  onCancelStadiumInsurance: () => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
