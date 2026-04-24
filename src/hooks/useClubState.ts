@@ -226,7 +226,8 @@ export function useClubState(initialState: any, userId?: string) {
         const lastWeatherTs = nextOps.lastWeatherRollAt ? new Date(nextOps.lastWeatherRollAt).getTime() : 0;
         if (!lastWeatherTs || now - lastWeatherTs >= ONE_DAY) {
           const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
-          const roll = rollDailyWeather(modules, nextOps.insurance);
+          const upgEffWeather = computeUpgradeEffects(nextOps.phase6?.upgrades);
+          const roll = rollDailyWeather(modules, nextOps.insurance, upgEffWeather.weatherDamageMult);
           nextOps.lastWeatherRollAt = new Date(now).toISOString();
           if (roll.triggered && roll.message) {
             if (roll.damage) {
