@@ -126,6 +126,10 @@ export function useClubState(initialState: any, userId?: string) {
           damages: [...ops.damages],
           acceptedEvents: [...ops.acceptedEvents],
           recentLog: [...ops.recentLog],
+          financeLog: [...(ops.financeLog ?? [])],
+        };
+        const pushFin = (entry: StadiumFinanceEntry) => {
+          nextOps.financeLog = [entry, ...(nextOps.financeLog ?? [])].slice(0, 200);
         };
         let changed = false;
 
