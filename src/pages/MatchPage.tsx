@@ -1095,7 +1095,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} />
                 </CardContent>
               </Card>
             )}
