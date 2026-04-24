@@ -25,6 +25,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { useAutoSimulator } from '@/hooks/useAutoSimulator';
+import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
