@@ -95,9 +95,19 @@ export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
   }, [userId]);
 
   if (seasonNumber > 1) return null;
+  if (!isVisible) return null;
 
   return (
     <Card className="border-cyan-500/30 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(190 80% 50% / 0.06), hsl(var(--primary) / 0.03))' }}>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={dismiss}
+        aria-label="Fechar widget"
+        className="absolute top-1.5 right-1.5 h-6 w-6 z-10 text-muted-foreground hover:text-foreground"
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl shrink-0" style={{ background: 'linear-gradient(135deg, hsl(190 80% 50% / 0.25), hsl(var(--primary) / 0.15))' }}>
