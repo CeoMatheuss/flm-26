@@ -174,6 +174,13 @@ export function StadiumTab({
         onCancelInsurance={onCancelStadiumInsurance}
       />
 
+      {/* Fase 4 — Relatório financeiro consolidado do estádio */}
+      <StadiumFinanceReport
+        financeLog={ops.financeLog}
+        weeklyMaintenance={modules.weeklyMaintenance}
+        monthlyVipContracts={monthlyVipContracts}
+      />
+
       {/* Receita detalhada */}
       <Card>
         <CardHeader className="pb-2">
