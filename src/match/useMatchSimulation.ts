@@ -103,6 +103,84 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+// ── Module-scoped simulation runner (survives component unmounts) ──────────
+// Mantém um único loop ativo por aba, independente da MatchPage estar montada.
+// Inscritos recebem callbacks de tick. Garantimos múltiplos mecanismos:
+//  - setInterval principal
+//  - setTimeout recursivo de backup (caso o navegador trote/cancele intervals)
+//  - watchdog que reinicia se nenhum tick foi disparado por > 2s
+type Subscriber = () => void;
+const subscribers = new Set<Subscriber>();
+let intervalHandle: number | null = null;
+let backupTimeoutHandle: number | null = null;
+let watchdogHandle: number | null = null;
+let lastTickAt = 0;
+
+function runAllSubscribers() {
+  lastTickAt = Date.now();
+  for (const fn of Array.from(subscribers)) {
+    try { fn(); } catch (e) { console.error('[MatchLoop] subscriber threw:', e); }
+  }
+}
+
+function ensureGlobalLoopRunning() {
+  if (intervalHandle == null) {
+    intervalHandle = window.setInterval(runAllSubscribers, TICK_MS);
+  }
+  if (backupTimeoutHandle == null) {
+    const recursiveBackup = () => {
+      // Backup independente: dispara a cada ~500ms; se o setInterval estiver throttled
+      // (aba inativa), este timeout recursivo continua chamando os subscribers.
+      backupTimeoutHandle = window.setTimeout(() => {
+        if (subscribers.size === 0) {
+          backupTimeoutHandle = null;
+          return;
+        }
+        // só dispara se o último tick foi há mais de 400ms (evita dobrar)
+        if (Date.now() - lastTickAt > 400) runAllSubscribers();
+        recursiveBackup();
+      }, 500);
+    };
+    recursiveBackup();
+  }
+  if (watchdogHandle == null) {
+    watchdogHandle = window.setInterval(() => {
+      if (subscribers.size === 0) return;
+      // Se ficou >2s sem tick, considera o loop morto e reinicia tudo
+      if (Date.now() - lastTickAt > 2000) {
+        console.warn('[MatchLoop] Watchdog: no tick in >2s, restarting loop');
+        if (intervalHandle != null) { clearInterval(intervalHandle); intervalHandle = null; }
+        if (backupTimeoutHandle != null) { clearTimeout(backupTimeoutHandle); backupTimeoutHandle = null; }
+        ensureGlobalLoopRunning();
+      }
+    }, 1500);
+  }
+}
+
+function stopGlobalLoopIfIdle() {
+  if (subscribers.size > 0) return;
+  if (intervalHandle != null) { clearInterval(intervalHandle); intervalHandle = null; }
+  if (backupTimeoutHandle != null) { clearTimeout(backupTimeoutHandle); backupTimeoutHandle = null; }
+  if (watchdogHandle != null) { clearInterval(watchdogHandle); watchdogHandle = null; }
+}
+
+function subscribeToLoop(fn: Subscriber): () => void {
+  subscribers.add(fn);
+  lastTickAt = Date.now();
+  ensureGlobalLoopRunning();
+  return () => {
+    subscribers.delete(fn);
+    stopGlobalLoopIfIdle();
+  };
+}
+
+// Garante reativação imediata quando a aba volta ao foco
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && subscribers.size > 0) runAllSubscribers();
+  });
+}
+
 // ── Deterministic seed-based RNG (mulberry32) for offline simulation ────────
 function hashString(str: string): number {
   let h = 2166136261 >>> 0;
