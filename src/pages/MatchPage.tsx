@@ -1825,8 +1825,11 @@ function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePl
                 <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
-                  <div className="h-1.5 w-full rounded-full bg-muted/15 overflow-hidden mt-1">
-                    <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="h-1.5 flex-1 rounded-full bg-muted/15 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground tabular-nums w-8 text-right">{stamina}%</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-primary/10 border border-primary/20 text-primary text-sm font-bold font-mono">
