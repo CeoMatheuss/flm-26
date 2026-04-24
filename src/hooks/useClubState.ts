@@ -6,6 +6,15 @@ import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
 import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
 import { toast } from 'sonner';
+import {
+  buildStadiumModules,
+} from '@/match/stadiumEconomics';
+import {
+  generateEventProposals, resolveEvent, emptyStadiumOps,
+  getInsuranceMonthlyCost, INSURANCE_PLANS, EVENT_CATALOG, DAMAGE_PROFILES,
+  type StadiumEventProposal, type StadiumOpsState, type StadiumDamage, type StadiumInsurance,
+} from '@/match/stadiumEvents';
+
 
 export interface LoanedPlayer {
   player: Player;
