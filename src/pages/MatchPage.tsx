@@ -761,6 +761,18 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       toast.error(check.reason || 'Substituição não permitida');
       return;
     }
+    if (subQueue.some(s => s.outId === playerOutId)) {
+      toast.error('Esse titular já está na fila de saída');
+      return;
+    }
+    if (subQueue.some(s => s.inId === playerInId)) {
+      toast.error('Esse reserva já está na fila de entrada');
+      return;
+    }
+    if (substitutedPlayerIds.has(playerOutId)) {
+      toast.error('Esse jogador já foi substituído');
+      return;
+    }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
     setSelectedSubOut(null);
     if (scheduledMinute) {
@@ -770,7 +782,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     } else {
       toast.success('✅ Substituição enviada — aplicada no próximo lance');
     }
-  }, [validateSubAllowed, isHalftime]);
+  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds]);
 
   const subBlocked = !validateSubAllowed().ok;
   const subBlockedReason = validateSubAllowed().reason;
