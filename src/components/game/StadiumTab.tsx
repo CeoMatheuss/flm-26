@@ -60,9 +60,11 @@ const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
 
 export function StadiumTab({
   infrastructure, budget, fans, stadiumName, ticketPrice, reputation,
-  winStreak, loseStreak, vipBoxesBuilt,
+  winStreak, loseStreak, vipBoxesBuilt, stadiumOps,
   onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice,
   onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
+  onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
+  onBuyStadiumInsurance, onCancelStadiumInsurance,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
@@ -73,6 +75,7 @@ export function StadiumTab({
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 15 };
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
+  const ops = stadiumOps ?? emptyStadiumOps();
 
   const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
 
