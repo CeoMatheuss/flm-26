@@ -76,6 +76,7 @@ export function StadiumTab({
   onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
   onBuyStadiumInsurance, onCancelStadiumInsurance,
   onAcceptStadiumSponsor, onRejectStadiumSponsor,
+  onToggleMembershipTier, onBuyModularUpgrade,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
@@ -87,6 +88,7 @@ export function StadiumTab({
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
   const ops = stadiumOps ?? emptyStadiumOps();
+  const upgEffects = useMemo(() => computeUpgradeEffects(ops.phase6?.upgrades), [ops.phase6?.upgrades]);
 
   const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
 
