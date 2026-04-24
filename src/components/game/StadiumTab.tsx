@@ -208,6 +208,17 @@ export function StadiumTab({
         onRejectSponsor={onRejectStadiumSponsor}
       />
 
+      {/* Fase 6 — Sócio-torcedor + Modernizações */}
+      <StadiumPhase6Panel
+        phase6={ops.phase6}
+        budget={budget}
+        fans={fans}
+        reputation={reputation}
+        stadiumLevel={stadium.level}
+        onToggleMembership={onToggleMembershipTier}
+        onBuyUpgrade={onBuyModularUpgrade}
+      />
+
       {/* Receita detalhada */}
       <Card>
         <CardHeader className="pb-2">
