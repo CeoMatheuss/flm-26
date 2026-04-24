@@ -273,7 +273,10 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       .update({ status: accept ? 'accepted' : 'rejected' })
       .eq('id', inviteId);
     if (error) toast.error('Erro ao responder');
-    else toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+    else {
+      toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+      if (accept) triggerAutoSim(); // simula imediatamente
+    }
     loadInvites();
     setLoading(false);
   };
