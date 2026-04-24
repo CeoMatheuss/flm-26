@@ -317,6 +317,39 @@ export function useClubState(initialState: any, userId?: string) {
           nextOps.achievements = ach;
         }
 
+        // 10) Fase 6 — cobrança/recálculo mensal de sócios + manutenção upgrades
+        const phase6 = nextOps.phase6 ?? emptyPhase6State();
+        const lastBill = nextOps.lastMembershipBilledAt ? new Date(nextOps.lastMembershipBilledAt).getTime() : 0;
+        const THIRTY_DAYS = 30 * 24 * 3600_000;
+        if (!lastBill || now - lastBill >= THIRTY_DAYS) {
+          // Recalcula nº de sócios baseado na torcida atual
+          const newMembers = recomputeMembers(phase6.membership.activeTiers, prev.fans ?? 1000, prev.reputation ?? 50);
+          const updatedMembership = { ...phase6.membership, membersByTier: newMembers, lastBilledAt: new Date(now).toISOString() };
+          const billing = billMembership(updatedMembership);
+          if (billing.totalRevenue > 0) {
+            next.budget = (next.budget ?? 0) + billing.totalRevenue;
+            pushFin({ at: new Date().toISOString(), category: 'evento', label: `Sócio-Torcedor (${billing.totalMembers.toLocaleString()} sócios)`, amount: billing.totalRevenue });
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🎟️ Mensalidade dos sócios: +R$ ${(billing.totalRevenue/1000).toFixed(0)}k (${billing.totalMembers} sócios)`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+          }
+          // Manutenção dos upgrades modulares
+          const upgEff = computeUpgradeEffects(phase6.upgrades);
+          if (upgEff.totalMonthlyCost > 0) {
+            if ((next.budget ?? 0) >= upgEff.totalMonthlyCost) {
+              next.budget = (next.budget ?? 0) - upgEff.totalMonthlyCost;
+              pushFin({ at: new Date().toISOString(), category: 'reparo', label: 'Manutenção upgrades modulares', amount: -upgEff.totalMonthlyCost });
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: `🔧 Manutenção upgrades: -R$ ${(upgEff.totalMonthlyCost/1000).toFixed(0)}k`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+            } else {
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: '⚠️ Saldo insuficiente para manutenção dos upgrades!', type: 'warning' as const }, ...nextOps.recentLog].slice(0, 12);
+              toast.error('⚠️ Saldo insuficiente para manutenção dos upgrades modulares!');
+            }
+          }
+          nextOps.phase6 = { ...phase6, membership: updatedMembership };
+          nextOps.lastMembershipBilledAt = new Date(now).toISOString();
+          changed = true;
+        } else {
+          nextOps.phase6 = phase6;
+        }
+
         if (!changed) return prev;
         next.stadiumOps = nextOps;
         return next;
