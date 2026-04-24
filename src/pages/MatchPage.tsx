@@ -50,6 +50,7 @@ interface MatchPageState {
   winStreak?: number;
   loseStreak?: number;
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  stadiumOps?: import('@/match/stadiumEvents').StadiumOpsState;
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
@@ -101,26 +102,42 @@ export default function MatchPage() {
     setLoadingMsg('Simulando partida no servidor');
     setPreMatchDone(true);
 
-    // V1 Stadium — calcula público esperado real (mesma fórmula da FansTab/StadiumTab)
-    // e ajusta a capacidade efetiva para a edge function refletir esse número.
+    // V1+V2 Stadium — calcula público esperado real e aplica danos do estádio.
     let effectiveCapacity = locState.stadiumCapacity;
     if (locState.isHome) {
       try {
         const { computeExpectedAttendance } = await import('@/match/stadiumEconomics');
+        const { getEffectiveCapacity, isStadiumBlockedForBigMatch } = await import('@/match/stadiumEvents');
+
+        const importance: 'amistoso' | 'liga' | 'classico' | 'final' =
+          (locState.competition || '').toLowerCase().includes('final') ? 'final'
+          : (locState.competition || '').toLowerCase().includes('clás') ? 'classico'
+          : (locState.competition || '').toLowerCase().includes('amistos') ? 'amistoso'
+          : 'liga';
+
+        // V2 — danos reduzem capacidade base
+        const damages = locState.stadiumOps?.damages ?? [];
+        const physicalCapacity = getEffectiveCapacity(locState.stadiumCapacity, damages);
+
+        // Bloqueio em finais/clássicos por dano severo
+        if (importance === 'final' || importance === 'classico') {
+          const block = isStadiumBlockedForBigMatch(damages);
+          if (block.blocked) {
+            toast.error(`🚫 Estádio impróprio para esta partida: ${block.reason}`);
+          }
+        }
+
         const expected = computeExpectedAttendance({
           fans: locState.fans || 500,
           reputation: locState.reputation ?? 50,
           ticketPrice: locState.ticketPrice ?? 30,
           winStreak: locState.winStreak ?? 0,
           loseStreak: locState.loseStreak ?? 0,
-          capacity: locState.stadiumCapacity,
-          importance: (locState.competition || '').toLowerCase().includes('final') ? 'final'
-            : (locState.competition || '').toLowerCase().includes('amistos') ? 'amistoso'
-            : 'liga',
+          capacity: physicalCapacity,
+          importance,
         });
-        // Mantém a capacidade real, mas garante que o servidor não invente público > esperado
-        effectiveCapacity = Math.max(1000, Math.min(locState.stadiumCapacity, expected));
-        console.log('[Stadium] Expected attendance:', expected, '/', locState.stadiumCapacity);
+        effectiveCapacity = Math.max(1000, Math.min(physicalCapacity, expected));
+        console.log('[Stadium] Expected:', expected, '/ physical:', physicalCapacity, '/ raw:', locState.stadiumCapacity);
       } catch (e) {
         console.warn('[Stadium] Failed to compute attendance, using raw capacity', e);
       }

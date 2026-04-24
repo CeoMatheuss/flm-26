@@ -22,6 +22,9 @@ import {
 import { useState, useMemo } from 'react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import stadiumHero from '@/assets/stadium-management-hero.jpg';
+import { StadiumOpsPanel } from './StadiumOpsPanel';
+import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
+import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -36,10 +39,16 @@ interface Props {
   loseStreak: number;
   /** Camarotes já construídos por tier */
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  stadiumOps?: StadiumOpsState;
   onUpgrade: (facility: 'stadium') => void;
   onSetTicketPrice: (price: number) => void;
   onRenameStadium: (name: string) => void;
   onBuildVipBox: (tier: VipTier, cost: number, cap: number) => void;
+  onAcceptStadiumEvent: (proposalId: string) => void;
+  onRejectStadiumEvent: (proposalId: string) => void;
+  onStartStadiumRepair: (damageId: string) => void;
+  onBuyStadiumInsurance: (tier: NonNullable<StadiumInsurance['tier']>) => void;
+  onCancelStadiumInsurance: () => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
@@ -51,9 +60,11 @@ const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
 
 export function StadiumTab({
   infrastructure, budget, fans, stadiumName, ticketPrice, reputation,
-  winStreak, loseStreak, vipBoxesBuilt,
+  winStreak, loseStreak, vipBoxesBuilt, stadiumOps,
   onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice,
   onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
+  onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
+  onBuyStadiumInsurance, onCancelStadiumInsurance,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
@@ -64,6 +75,7 @@ export function StadiumTab({
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 15 };
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
+  const ops = stadiumOps ?? emptyStadiumOps();
 
   const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
 
@@ -132,13 +144,31 @@ export function StadiumTab({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <KpiCard icon={Users} label="Capacidade" value={modules.seatingCapacity.toLocaleString()} />
+            <KpiCard icon={Users} label="Capacidade" value={getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()} />
             <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
             <KpiCard icon={Users} label="Público" value={revenue.attendance.toLocaleString()} />
             <KpiCard icon={Wrench} label="Manut./sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
           </div>
+          {ops.damages.filter(d => !d.repairing).length > 0 && (
+            <div className="mt-2 rounded-md bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-[11px] text-red-300">
+              ⚠️ Capacidade reduzida por danos não reparados. Veja a aba abaixo.
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* Operações do estádio: inbox de eventos, danos, seguro */}
+      <StadiumOpsPanel
+        ops={ops}
+        budget={budget}
+        stadiumLevel={stadium.level}
+        vipBoxesBuilt={vipBoxesBuilt}
+        onAccept={onAcceptStadiumEvent}
+        onReject={onRejectStadiumEvent}
+        onRepair={onStartStadiumRepair}
+        onBuyInsurance={onBuyStadiumInsurance}
+        onCancelInsurance={onCancelStadiumInsurance}
+      />
 
       {/* Receita detalhada */}
       <Card>

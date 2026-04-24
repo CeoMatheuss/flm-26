@@ -178,6 +178,8 @@ export interface Club {
   lastStaffMarketRefreshAt?: string;
   /** V1 Stadium — camarotes VIP construídos por tier (Bronze/Prata/Ouro/Master). */
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  /** V2 Stadium — operações: propostas de eventos, danos, seguro, log */
+  stadiumOps?: import('@/match/stadiumEvents').StadiumOpsState;
   /** V2 — full advanced shield configuration (optional, overrides legacy fields) */
   shieldConfig?: {
     shape: string;

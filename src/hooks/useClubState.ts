@@ -6,6 +6,15 @@ import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
 import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
 import { toast } from 'sonner';
+import {
+  buildStadiumModules,
+} from '@/match/stadiumEconomics';
+import {
+  generateEventProposals, resolveEvent, emptyStadiumOps,
+  getInsuranceMonthlyCost, INSURANCE_PLANS, EVENT_CATALOG, DAMAGE_PROFILES,
+  type StadiumEventProposal, type StadiumOpsState, type StadiumDamage, type StadiumInsurance,
+} from '@/match/stadiumEvents';
+
 
 export interface LoanedPlayer {
   player: Player;
@@ -99,9 +108,116 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
+  // ── Stadium Ops V2: gerar propostas, expirar antigas, resolver eventos vencidos, cobrar seguro ──
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+
+      setClub(prev => {
+        const stadiumLevel = (prev as any).infrastructure?.stadium?.level
+          ?? (prev.vipBoxesBuilt ? 3 : 1);
+        const ops: StadiumOpsState = prev.stadiumOps ?? emptyStadiumOps();
+        let next = { ...prev };
+        const nextOps: StadiumOpsState = {
+          ...ops,
+          proposals: [...ops.proposals],
+          damages: [...ops.damages],
+          acceptedEvents: [...ops.acceptedEvents],
+          recentLog: [...ops.recentLog],
+        };
+        let changed = false;
+
+        // 1) expirar propostas vencidas
+        const before = nextOps.proposals.length;
+        nextOps.proposals = nextOps.proposals.filter(p => new Date(p.expiresAt).getTime() > now);
+        if (nextOps.proposals.length !== before) changed = true;
+
+        // 2) resolver eventos cuja data passou
+        const due = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() <= now);
+        if (due.length > 0) {
+          for (const e of due) {
+            const proposal = ops.proposals.find(p => p.id === e.proposalId)
+              ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
+            const res = resolveEvent(proposal as StadiumEventProposal);
+            next.budget = (next.budget ?? 0) + e.revenue;
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${EVENT_CATALOG.find(c => c.category === e.category)?.label}"`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            if (res.damageOccurred && res.damage) {
+              const dmg = { ...res.damage };
+              if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
+                const reduction = Math.round(dmg.repairCost * nextOps.insurance.coverage);
+                dmg.repairCost = Math.max(0, dmg.repairCost - reduction);
+                nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛡️ Seguro cobriu R$ ${(reduction / 1000).toFixed(0)}k do reparo`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+              }
+              nextOps.damages.push(dmg);
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: res.message, type: 'danger' as const }, ...nextOps.recentLog].slice(0, 12);
+              toast.error(res.message);
+            } else {
+              toast.success(res.message);
+            }
+          }
+          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() > now);
+          changed = true;
+        }
+
+        // 3) finalizar reparos
+        const finishedRepairs = nextOps.damages.filter(d => d.repairing && d.repairCompletesAt && new Date(d.repairCompletesAt).getTime() <= now);
+        if (finishedRepairs.length > 0) {
+          for (const d of finishedRepairs) {
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛠️ Reparo concluído: ${d.sourceLabel}`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+          }
+          nextOps.damages = nextOps.damages.filter(d => !(d.repairing && d.repairCompletesAt && new Date(d.repairCompletesAt).getTime() <= now));
+          changed = true;
+        }
+
+        // 4) gerar novas propostas a cada 2 dias
+        const lastGenTs = nextOps.lastProposalGenAt ? new Date(nextOps.lastProposalGenAt).getTime() : 0;
+        if ((!lastGenTs || now - lastGenTs >= TWO_DAYS) && nextOps.proposals.length < 4) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const newProps = generateEventProposals({
+            modules, reputation: prev.reputation ?? 50, existingCount: nextOps.proposals.length,
+          });
+          if (newProps.length > 0) {
+            nextOps.proposals = [...nextOps.proposals, ...newProps];
+            nextOps.lastProposalGenAt = new Date(now).toISOString();
+            changed = true;
+          }
+        }
+
+        // 5) cobrar seguro mensal
+        if (nextOps.insurance.tier && nextOps.insurance.renewsAt && new Date(nextOps.insurance.renewsAt).getTime() <= now) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const cost = getInsuranceMonthlyCost(nextOps.insurance.tier, modules);
+          if ((next.budget ?? 0) >= cost) {
+            next.budget = (next.budget ?? 0) - cost;
+            nextOps.insurance = {
+              ...nextOps.insurance, monthlyCost: cost,
+              renewsAt: new Date(now + 30 * 24 * 3600_000).toISOString(),
+            };
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛡️ Seguro renovado: -R$ ${(cost / 1000).toFixed(0)}k`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+          } else {
+            nextOps.insurance = { tier: null, monthlyCost: 0, coverage: 0 };
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: '🛡️ Seguro CANCELADO por falta de saldo!', type: 'warning' as const }, ...nextOps.recentLog].slice(0, 12);
+            toast.error('🛡️ Seguro do estádio cancelado por falta de saldo!');
+          }
+          changed = true;
+        }
+
+        if (!changed) return prev;
+        next.stadiumOps = nextOps;
+        return next;
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const trainPlayer = useCallback((_playerId: string) => {
     toast.info('Selecione o foco de treino na aba Treinos!');
   }, []);
+
 
   const setPlayerTrainingFocus = useCallback((playerId: string, focus: TrainingFocus) => {
     setTrainingFocus(prev => ({ ...prev, [playerId]: focus }));
@@ -380,6 +496,104 @@ export function useClubState(initialState: any, userId?: string) {
     toast.success(`${player.name} liberado para o Mercado Livre. Taxa: R$${(fee / 1000).toFixed(0)}k`);
   }, [club.budget, club.players.length, club.name, transferBudget, userId]);
 
+  // ── Stadium Ops handlers ──────────────────────────────────────────────
+  const acceptStadiumEvent = useCallback((proposalId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const proposal = ops.proposals.find(p => p.id === proposalId);
+      if (!proposal) { toast.error('Proposta não encontrada'); return prev; }
+      const cfg = EVENT_CATALOG.find(c => c.category === proposal.category);
+      toast.success(`✅ Aceito: ${cfg?.label} — R$ ${(proposal.revenue/1000).toFixed(0)}k em ${new Date(proposal.scheduledFor).toLocaleDateString('pt-BR')}`);
+      return {
+        ...prev,
+        fans: Math.max(100, (prev.fans ?? 500) + Math.round((prev.fans ?? 500) * proposal.fanImpact / 1000)),
+        stadiumOps: {
+          ...ops,
+          proposals: ops.proposals.filter(p => p.id !== proposalId),
+          acceptedEvents: [...ops.acceptedEvents, { proposalId, category: proposal.category, scheduledFor: proposal.scheduledFor, revenue: proposal.revenue }],
+          recentLog: [{ at: new Date().toISOString(), message: `📅 ${cfg?.label} agendado para ${new Date(proposal.scheduledFor).toLocaleDateString('pt-BR')}`, type: 'info' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  const rejectStadiumEvent = useCallback((proposalId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          proposals: ops.proposals.filter(p => p.id !== proposalId),
+        },
+      };
+    });
+    toast.info('Proposta recusada');
+  }, []);
+
+  const startStadiumRepair = useCallback((damageId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const dmg = ops.damages.find(d => d.id === damageId);
+      if (!dmg) return prev;
+      if ((prev.budget ?? 0) < dmg.repairCost) {
+        toast.error(`💸 Orçamento insuficiente! Reparo custa R$ ${(dmg.repairCost/1000).toFixed(0)}k`);
+        return prev;
+      }
+      toast.success(`🛠️ Reparo iniciado: ${dmg.sourceLabel} (${dmg.repairDays} dia(s))`);
+      const completesAt = new Date(Date.now() + dmg.repairDays * 24 * 3600_000).toISOString();
+      return {
+        ...prev,
+        budget: (prev.budget ?? 0) - dmg.repairCost,
+        stadiumOps: {
+          ...ops,
+          damages: ops.damages.map(d => d.id === damageId ? { ...d, repairing: true, repairCompletesAt: completesAt } : d),
+          recentLog: [{ at: new Date().toISOString(), message: `🛠️ Reparo iniciado: ${dmg.sourceLabel} (-R$ ${(dmg.repairCost/1000).toFixed(0)}k)`, type: 'info' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  const buyStadiumInsurance = useCallback((tier: NonNullable<StadiumInsurance['tier']>) => {
+    setClub(prev => {
+      const stadiumLevel = (prev as any).infrastructure?.stadium?.level ?? 1;
+      const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+      const cost = getInsuranceMonthlyCost(tier, modules);
+      if ((prev.budget ?? 0) < cost) {
+        toast.error(`💸 Orçamento insuficiente! Mensalidade: R$ ${(cost/1000).toFixed(0)}k`);
+        return prev;
+      }
+      const plan = INSURANCE_PLANS.find(p => p.tier === tier)!;
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      toast.success(`🛡️ Seguro ${plan.label} contratado!`);
+      return {
+        ...prev,
+        budget: (prev.budget ?? 0) - cost,
+        stadiumOps: {
+          ...ops,
+          insurance: { tier, monthlyCost: cost, coverage: plan.coverage, renewsAt: new Date(Date.now() + 30 * 24 * 3600_000).toISOString() },
+          recentLog: [{ at: new Date().toISOString(), message: `🛡️ Contratou seguro ${plan.label} (-R$ ${(cost/1000).toFixed(0)}k/mês)`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  const cancelStadiumInsurance = useCallback(() => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      if (!ops.insurance.tier) return prev;
+      toast.info('🛡️ Seguro cancelado');
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          insurance: { tier: null, monthlyCost: 0, coverage: 0 },
+          recentLog: [{ at: new Date().toISOString(), message: '🛡️ Seguro cancelado', type: 'warning' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -390,5 +604,7 @@ export function useClubState(initialState: any, userId?: string) {
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     rescindPlayer,
+    acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
   };
+
 }
