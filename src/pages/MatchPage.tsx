@@ -50,6 +50,7 @@ interface MatchPageState {
   winStreak?: number;
   loseStreak?: number;
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  stadiumOps?: import('@/match/stadiumEvents').StadiumOpsState;
 }
 
 const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
