@@ -471,9 +471,15 @@ export function useMatchSimulation() {
   const startTick = useCallback(() => {
     if (intervalRef.current) return;
     console.log('[Match] Starting tick loop');
+    // Safe wrapper: a single thrown error must NOT kill the interval — the watchdog needs to keep running.
+    const safeTick = () => {
+      try { tick(); } catch (err) {
+        console.error('[Match] tick() threw, ignoring to keep loop alive:', err);
+      }
+    };
     // Immediate first tick
-    tick();
-    intervalRef.current = window.setInterval(tick, TICK_MS);
+    safeTick();
+    intervalRef.current = window.setInterval(safeTick, TICK_MS);
   }, [tick]);
 
   const stopTick = useCallback(() => {
@@ -518,10 +524,12 @@ export function useMatchSimulation() {
     const now = Date.now();
     const adjustedStart = startTime > now + 5000 ? now : startTime;
 
+    // Defensive: ensure durationMs is always > 0 to avoid NaN progress and stuck matches.
+    const safeDurationMs = Math.max(60_000, (data.duration_seconds || 720) * 1000);
     dataRef.current = {
       allEvents: events,
       startTime: adjustedStart,
-      durationMs: data.duration_seconds * 1000,
+      durationMs: safeDurationMs,
       maxMinute,
       finalHomeGoals: data.home_goals,
       finalAwayGoals: data.away_goals,

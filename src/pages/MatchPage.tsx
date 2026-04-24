@@ -627,6 +627,21 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     setActiveHighlight(latestEvent);
   }, [latestEvent, activeHighlight]);
 
+  // QA fix: ensure no orphan highlight timeout on unmount or when match finishes
+  useEffect(() => {
+    if (isFinished && highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+      setActiveHighlight(null);
+    }
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
+    };
+  }, [isFinished]);
+
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -735,13 +750,27 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
     if (subsUsed >= maxSubs)
       return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
+    if (subsUsed + subQueue.length >= maxSubs)
+      return { ok: false, reason: `🚫 Fila cheia: já há ${subQueue.length} substituições aguardando.` };
     return { ok: true };
-  }, [currentMinute, isFinished, subsUsed]);
+  }, [currentMinute, isFinished, subsUsed, subQueue.length]);
 
   const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string, scheduledMinute?: number) => {
     const check = validateSubAllowed();
     if (!check.ok) {
       toast.error(check.reason || 'Substituição não permitida');
+      return;
+    }
+    if (subQueue.some(s => s.outId === playerOutId)) {
+      toast.error('Esse titular já está na fila de saída');
+      return;
+    }
+    if (subQueue.some(s => s.inId === playerInId)) {
+      toast.error('Esse reserva já está na fila de entrada');
+      return;
+    }
+    if (substitutedPlayerIds.has(playerOutId)) {
+      toast.error('Esse jogador já foi substituído');
       return;
     }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
@@ -753,10 +782,11 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     } else {
       toast.success('✅ Substituição enviada — aplicada no próximo lance');
     }
-  }, [validateSubAllowed, isHalftime]);
+  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds]);
 
-  const subBlocked = !validateSubAllowed().ok;
-  const subBlockedReason = validateSubAllowed().reason;
+  const subValidation = validateSubAllowed();
+  const subBlocked = !subValidation.ok;
+  const subBlockedReason = subValidation.reason;
 
   const phaseLabel = () => {
     if (isFinished) return '🏁 FIM DE JOGO';
@@ -771,7 +801,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] max-w-6xl mx-auto">
       {/* Substitution TV Banner */}
-      {activeBanner && <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />}
+      {activeBanner && (
+        <SubstitutionBanner
+          key={`${activeBanner.minute}-${activeBanner.playerOut}-${activeBanner.playerIn}`}
+          data={activeBanner}
+          onDone={() => setActiveBanner(null)}
+        />
+      )}
 
       {/* ═══ FIXED TOP BAR with action buttons ═══ */}
       <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-2 sm:px-3 py-2 space-y-2">
@@ -935,6 +971,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     playerName={activeHighlight?.playerName}
                     currentMinute={currentMinute}
                     onComplete={() => {
+                      // Clear any previous pending timeout to avoid orphan timers
+                      if (highlightTimeoutRef.current) {
+                        clearTimeout(highlightTimeoutRef.current);
+                      }
                       highlightTimeoutRef.current = setTimeout(() => {
                         setActiveHighlight(null);
                         highlightTimeoutRef.current = null;
