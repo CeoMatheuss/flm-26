@@ -518,10 +518,12 @@ export function useMatchSimulation() {
     const now = Date.now();
     const adjustedStart = startTime > now + 5000 ? now : startTime;
 
+    // Defensive: ensure durationMs is always > 0 to avoid NaN progress and stuck matches.
+    const safeDurationMs = Math.max(60_000, (data.duration_seconds || 720) * 1000);
     dataRef.current = {
       allEvents: events,
       startTime: adjustedStart,
-      durationMs: data.duration_seconds * 1000,
+      durationMs: safeDurationMs,
       maxMinute,
       finalHomeGoals: data.home_goals,
       finalAwayGoals: data.away_goals,
