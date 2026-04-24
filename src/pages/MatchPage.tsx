@@ -627,6 +627,21 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     setActiveHighlight(latestEvent);
   }, [latestEvent, activeHighlight]);
 
+  // QA fix: ensure no orphan highlight timeout on unmount or when match finishes
+  useEffect(() => {
+    if (isFinished && highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+      setActiveHighlight(null);
+    }
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
+    };
+  }, [isFinished]);
+
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
