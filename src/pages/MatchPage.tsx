@@ -1143,6 +1143,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     subQueue={subQueue}
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
+                    liveStaminaMap={liveStaminaMap}
                   />
                 </CardContent>
               </Card>
