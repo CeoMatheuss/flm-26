@@ -110,8 +110,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       const diff = scheduledTime - now;
       const elapsed = now - scheduledTime;
       if (diff <= 0 && elapsed >= WINDOW_MS) {
-        // Past 5-min window — server is simulating; just show "Aguardando..."
-        setTimeLeft('Aguardando resultado...');
+        // Past 5-min window — auto-simulator handles it; show "Simulando..."
+        setTimeLeft('Simulando agora...');
         setIsReady(false);
       } else if (diff <= 0) {
         // Within 5-min window — can play
