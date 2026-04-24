@@ -40,6 +40,8 @@ interface Props {
   /** Camarotes já construídos por tier */
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
   stadiumOps?: StadiumOpsState;
+  /** Fase 3: lista de partidas oficiais futuras (em casa) — para detectar conflito com eventos */
+  upcomingHomeMatches?: Array<{ id: string; date: string; isHome: boolean; competition?: string; opponent?: string }>;
   onUpgrade: (facility: 'stadium') => void;
   onSetTicketPrice: (price: number) => void;
   onRenameStadium: (name: string) => void;
@@ -60,7 +62,7 @@ const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
 
 export function StadiumTab({
   infrastructure, budget, fans, stadiumName, ticketPrice, reputation,
-  winStreak, loseStreak, vipBoxesBuilt, stadiumOps,
+  winStreak, loseStreak, vipBoxesBuilt, stadiumOps, upcomingHomeMatches = [],
   onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice,
   onRenameStadium: _onRenameStadium, onBuildVipBox: _onBuildVipBox,
   onAcceptStadiumEvent, onRejectStadiumEvent, onStartStadiumRepair,
@@ -163,6 +165,7 @@ export function StadiumTab({
         budget={budget}
         stadiumLevel={stadium.level}
         vipBoxesBuilt={vipBoxesBuilt}
+        upcomingHomeMatches={upcomingHomeMatches}
         onAccept={onAcceptStadiumEvent}
         onReject={onRejectStadiumEvent}
         onRepair={onStartStadiumRepair}
