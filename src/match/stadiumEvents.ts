@@ -386,6 +386,9 @@ export function emptyStadiumOps(): StadiumOpsState {
     insurance: { tier: null, monthlyCost: 0, coverage: 0 },
     recentLog: [],
     financeLog: [],
+    sponsorOffers: [],
+    sponsorContracts: [],
+    achievements: { unlocked: [], progress: {} },
   };
 }
 
