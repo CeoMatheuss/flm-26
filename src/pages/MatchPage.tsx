@@ -750,8 +750,10 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       return { ok: false, reason: "🚫 Não é permitido substituir após o 90' minuto." };
     if (subsUsed >= maxSubs)
       return { ok: false, reason: `🚫 Limite de ${maxSubs} substituições já utilizado.` };
+    if (subsUsed + subQueue.length >= maxSubs)
+      return { ok: false, reason: `🚫 Fila cheia: já há ${subQueue.length} substituições aguardando.` };
     return { ok: true };
-  }, [currentMinute, isFinished, subsUsed]);
+  }, [currentMinute, isFinished, subsUsed, subQueue.length]);
 
   const handleQueueSubstitution = useCallback((playerOutId: string, playerInId: string, scheduledMinute?: number) => {
     const check = validateSubAllowed();
