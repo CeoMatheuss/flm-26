@@ -135,9 +135,13 @@ export function useMatchState(initialState: any, userId?: string) {
 
       const fanSign = fanChange >= 0 ? '+' : '';
       const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k cota liga` : '';
-      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
-      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
-      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
+      const penMsg = stadiumPenaltyFine > 0 ? ` | -R$${(stadiumPenaltyFine/1000).toFixed(0)}k multa estádio` : '';
+      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}${penMsg}`);
+      if (stadiumPenaltyFine > 0) {
+        toast.warning(`⚠️ ${stadiumPenaltyMsg}`);
+      }
 
       deps.setSeason((s: any) => ({ ...s, currentWeek: s.currentWeek + 1 }));
 
@@ -150,9 +154,9 @@ export function useMatchState(initialState: any, userId?: string) {
           stamina: Math.min(100, Math.max(20, p.stamina - Math.floor(Math.random() * 10 + 5))),
           gamesPlayed: p.gamesPlayed + 1,
         })),
-        budget: prev.budget + prize + sponsorWeekly + leaguePrize,
+        budget: prev.budget + prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine,
         fans: Math.max(100, prev.fans + fanChange),
-        reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
+        reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {
           wins: prev.stats.wins + (isWin ? 1 : 0),
           draws: prev.stats.draws + (isDraw ? 1 : 0),
