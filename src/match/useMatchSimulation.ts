@@ -103,6 +103,84 @@ interface MatchData {
 
 const TICK_MS = 300;
 
+// ── Module-scoped simulation runner (survives component unmounts) ──────────
+// Mantém um único loop ativo por aba, independente da MatchPage estar montada.
+// Inscritos recebem callbacks de tick. Garantimos múltiplos mecanismos:
+//  - setInterval principal
+//  - setTimeout recursivo de backup (caso o navegador trote/cancele intervals)
+//  - watchdog que reinicia se nenhum tick foi disparado por > 2s
+type Subscriber = () => void;
+const subscribers = new Set<Subscriber>();
+let intervalHandle: number | null = null;
+let backupTimeoutHandle: number | null = null;
+let watchdogHandle: number | null = null;
+let lastTickAt = 0;
+
+function runAllSubscribers() {
+  lastTickAt = Date.now();
+  for (const fn of Array.from(subscribers)) {
+    try { fn(); } catch (e) { console.error('[MatchLoop] subscriber threw:', e); }
+  }
+}
+
+function ensureGlobalLoopRunning() {
+  if (intervalHandle == null) {
+    intervalHandle = window.setInterval(runAllSubscribers, TICK_MS);
+  }
+  if (backupTimeoutHandle == null) {
+    const recursiveBackup = () => {
+      // Backup independente: dispara a cada ~500ms; se o setInterval estiver throttled
+      // (aba inativa), este timeout recursivo continua chamando os subscribers.
+      backupTimeoutHandle = window.setTimeout(() => {
+        if (subscribers.size === 0) {
+          backupTimeoutHandle = null;
+          return;
+        }
+        // só dispara se o último tick foi há mais de 400ms (evita dobrar)
+        if (Date.now() - lastTickAt > 400) runAllSubscribers();
+        recursiveBackup();
+      }, 500);
+    };
+    recursiveBackup();
+  }
+  if (watchdogHandle == null) {
+    watchdogHandle = window.setInterval(() => {
+      if (subscribers.size === 0) return;
+      // Se ficou >2s sem tick, considera o loop morto e reinicia tudo
+      if (Date.now() - lastTickAt > 2000) {
+        console.warn('[MatchLoop] Watchdog: no tick in >2s, restarting loop');
+        if (intervalHandle != null) { clearInterval(intervalHandle); intervalHandle = null; }
+        if (backupTimeoutHandle != null) { clearTimeout(backupTimeoutHandle); backupTimeoutHandle = null; }
+        ensureGlobalLoopRunning();
+      }
+    }, 1500);
+  }
+}
+
+function stopGlobalLoopIfIdle() {
+  if (subscribers.size > 0) return;
+  if (intervalHandle != null) { clearInterval(intervalHandle); intervalHandle = null; }
+  if (backupTimeoutHandle != null) { clearTimeout(backupTimeoutHandle); backupTimeoutHandle = null; }
+  if (watchdogHandle != null) { clearInterval(watchdogHandle); watchdogHandle = null; }
+}
+
+function subscribeToLoop(fn: Subscriber): () => void {
+  subscribers.add(fn);
+  lastTickAt = Date.now();
+  ensureGlobalLoopRunning();
+  return () => {
+    subscribers.delete(fn);
+    stopGlobalLoopIfIdle();
+  };
+}
+
+// Garante reativação imediata quando a aba volta ao foco
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && subscribers.size > 0) runAllSubscribers();
+  });
+}
+
 // ── Deterministic seed-based RNG (mulberry32) for offline simulation ────────
 function hashString(str: string): number {
   let h = 2166136261 >>> 0;
@@ -214,7 +292,8 @@ function sendPushNotification(title: string, body: string, icon = '⚽') {
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
   const dataRef = useRef<MatchData | null>(null);
-  const intervalRef = useRef<number | null>(null);
+  // Agora guarda o unsubscribe do loop global (não mais o handle do setInterval)
+  const unsubscribeRef = useRef<(() => void) | null>(null);
   const persistedRef = useRef(false);
   const notifiedEventsRef = useRef<Set<string>>(new Set());
 
@@ -469,23 +548,24 @@ export function useMatchSimulation() {
   }, [tick]);
 
   const startTick = useCallback(() => {
-    if (intervalRef.current) return;
-    console.log('[Match] Starting tick loop');
-    // Safe wrapper: a single thrown error must NOT kill the interval — the watchdog needs to keep running.
+    if (unsubscribeRef.current) return;
+    console.log('[Match] Subscribing to global match loop');
+    // Safe wrapper: errors no tick NÃO podem quebrar a inscrição — o watchdog continua.
     const safeTick = () => {
       try { tick(); } catch (err) {
         console.error('[Match] tick() threw, ignoring to keep loop alive:', err);
       }
     };
-    // Immediate first tick
+    // Inscreve no loop global (singleton — sobrevive a re-mounts)
+    unsubscribeRef.current = subscribeToLoop(safeTick);
+    // Tick imediato para sincronizar UI
     safeTick();
-    intervalRef.current = window.setInterval(safeTick, TICK_MS);
   }, [tick]);
 
   const stopTick = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
   }, []);
 
@@ -743,16 +823,56 @@ export function useMatchSimulation() {
     return false;
   }, [loadMatch]);
 
-  // Cleanup
+  // Cleanup explícito (chamado pelo MatchPage ao sair voluntariamente)
   const destroy = useCallback(() => {
     stopTick();
     dataRef.current = null;
   }, [stopTick]);
 
-  // Cleanup on unmount
+  // Cleanup no unmount: NÃO desinscrevemos se a partida ainda está rodando.
+  // Em vez disso, deixamos um "background runner" no loop global que cuida
+  // apenas da persistência final (sem tocar no setState desmontado).
   useEffect(() => {
     return () => {
+      const data = dataRef.current;
+      if (!data || persistedRef.current) {
+        // partida já terminou ou nunca começou — pode parar
+        stopTick();
+        return;
+      }
+      // Substitui a inscrição atual por uma versão "headless" que só finaliza
       stopTick();
+      const headless = () => {
+        const d = dataRef.current;
+        if (!d || persistedRef.current) {
+          unsub();
+          return;
+        }
+        const elapsed = Date.now() - d.startTime;
+        if (elapsed >= d.durationMs) {
+          persistedRef.current = true;
+          sendPushNotification(
+            '🏁 Fim de Jogo!',
+            `${d.homeTeam} ${d.finalHomeGoals} x ${d.finalAwayGoals} ${d.awayTeam}`,
+          );
+          // Persiste resultado final (mesmo sem UI montada)
+          if (d.matchDbId && !d.matchDbId.startsWith('offline-')) {
+            const persist = (attempt: number) => {
+              supabase
+                .from('live_matches')
+                .update({ status: 'finished', current_minute: d.maxMinute })
+                .eq('id', d.matchDbId)
+                .then(({ error }) => {
+                  if (error && attempt < 3) setTimeout(() => persist(attempt + 1), 5000);
+                  else if (!error) console.log('[Match] Headless persist OK');
+                });
+            };
+            persist(1);
+          }
+          unsub();
+        }
+      };
+      const unsub = subscribeToLoop(headless);
     };
   }, [stopTick]);
 
