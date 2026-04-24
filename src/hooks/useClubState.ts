@@ -783,6 +783,76 @@ export function useClubState(initialState: any, userId?: string) {
     toast.info('Oferta de patrocínio recusada');
   }, []);
 
+
+  // ── Fase 6 — Sócio-Torcedor ─────────────────────────────────────────────
+  const toggleMembershipTier = useCallback((tier: MembershipTier) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const phase6 = ops.phase6 ?? emptyPhase6State();
+      const cfg = getMembershipConfig(tier);
+      const stadiumLevel = (prev as any).infrastructure?.stadium?.level ?? 1;
+      if (stadiumLevel < cfg.minStadiumLevel) {
+        toast.error(`Programa ${cfg.label} requer estádio Nv ${cfg.minStadiumLevel}.`);
+        return prev;
+      }
+      const isActive = phase6.membership.activeTiers.includes(tier);
+      const newTiers = isActive
+        ? phase6.membership.activeTiers.filter(t => t !== tier)
+        : [...phase6.membership.activeTiers, tier];
+      const newMembers = recomputeMembers(newTiers, prev.fans ?? 1000, prev.reputation ?? 50);
+      toast.success(isActive ? `${cfg.label} encerrado.` : `${cfg.label} aberto! ${(newMembers[tier] ?? 0).toLocaleString()} sócios estimados.`);
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          phase6: {
+            ...phase6,
+            membership: { ...phase6.membership, activeTiers: newTiers, membersByTier: newMembers },
+          },
+          recentLog: [{ at: new Date().toISOString(), message: isActive ? `🎟️ ${cfg.label} encerrado` : `🎟️ ${cfg.label} aberto à torcida`, type: 'info' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  // ── Fase 6 — Upgrades modulares ─────────────────────────────────────────
+  const buyModularUpgrade = useCallback((id: ModularUpgradeId) => {
+    setClub(prev => {
+      const cfg = getUpgradeConfig(id);
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const phase6 = ops.phase6 ?? emptyPhase6State();
+      const stadiumLevel = (prev as any).infrastructure?.stadium?.level ?? 1;
+      if (phase6.upgrades.owned.includes(id)) {
+        toast.error(`${cfg.label} já adquirido.`);
+        return prev;
+      }
+      if (stadiumLevel < cfg.minStadiumLevel) {
+        toast.error(`${cfg.label} requer estádio Nv ${cfg.minStadiumLevel}.`);
+        return prev;
+      }
+      if ((prev.budget ?? 0) < cfg.cost) {
+        toast.error(`Orçamento insuficiente! Custo: R$ ${(cfg.cost/1_000_000).toFixed(2)}M`);
+        return prev;
+      }
+      toast.success(`${cfg.emoji} ${cfg.label} instalado!`, { description: cfg.effect });
+      return {
+        ...prev,
+        budget: (prev.budget ?? 0) - cfg.cost,
+        stadiumOps: {
+          ...ops,
+          phase6: {
+            ...phase6,
+            upgrades: {
+              owned: [...phase6.upgrades.owned, id],
+              purchasedAt: { ...phase6.upgrades.purchasedAt, [id]: new Date().toISOString() },
+            },
+          },
+          recentLog: [{ at: new Date().toISOString(), message: `${cfg.emoji} ${cfg.label} instalado (-R$${(cfg.cost/1000).toFixed(0)}k)`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -795,6 +865,7 @@ export function useClubState(initialState: any, userId?: string) {
     rescindPlayer,
     acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
     acceptStadiumSponsor, rejectStadiumSponsor,
+    toggleMembershipTier, buyModularUpgrade,
   };
 
 }
