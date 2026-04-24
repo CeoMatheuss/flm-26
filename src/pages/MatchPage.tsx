@@ -1505,8 +1505,8 @@ function ImprovedSubsView({
           <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">⬅ Quem SAI</p>
           <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
             {starters.map((p) => {
-              const stamina = p.stamina || 100;
-              const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+              const staminaColor = staminaColorClass(stamina);
               const isQueued = queuedOutIds.has(p.id);
               const isSelected = p.id === selectedSubOut;
               return (
