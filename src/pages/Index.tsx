@@ -415,10 +415,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
       {pendingAwardsSeason !== null && (
-        <SeasonAwardsModal
-          open={pendingAwardsSeason !== null}
-          onClose={() => setPendingAwardsSeason(null)}
+        <PersistentSeasonAwards
           season={pendingAwardsSeason}
+          userId={userId}
+          onClose={() => setPendingAwardsSeason(null)}
         />
       )}
       <PlayerSigningModal
