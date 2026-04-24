@@ -24,6 +24,7 @@ import { useLiveMatchGuard } from './LiveMatchGuard';
 import stadiumHero from '@/assets/stadium-management-hero.jpg';
 import { StadiumOpsPanel } from './StadiumOpsPanel';
 import { StadiumFinanceReport } from './StadiumFinanceReport';
+import { StadiumExtrasPanel } from './StadiumExtrasPanel';
 import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
 import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
 
