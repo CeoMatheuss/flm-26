@@ -815,7 +815,26 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
-  // ── Fase 6 — Upgrades modulares ─────────────────────────────────────────
+  // ── Amistosos: ajuste direto de torcida (recompensa por desempenho) ──────
+  const applyFanChange = useCallback((delta: number, sourceLabel?: string) => {
+    if (!Number.isFinite(delta) || delta === 0) return;
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const next = Math.max(100, (prev.fans ?? 1000) + Math.round(delta));
+      const msg = delta > 0
+        ? `👥 +${Math.round(delta).toLocaleString('pt-BR')} torcedores${sourceLabel ? ` (${sourceLabel})` : ''}`
+        : `👥 ${Math.round(delta).toLocaleString('pt-BR')} torcedores${sourceLabel ? ` (${sourceLabel})` : ''}`;
+      return {
+        ...prev,
+        fans: next,
+        stadiumOps: {
+          ...ops,
+          recentLog: [{ at: new Date().toISOString(), message: msg, type: delta > 0 ? 'success' as const : 'warning' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
   const buyModularUpgrade = useCallback((id: ModularUpgradeId) => {
     setClub(prev => {
       const cfg = getUpgradeConfig(id);
