@@ -334,7 +334,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       <TabsContent value="stadium">
-        <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} winStreak={winStreak} loseStreak={loseStreak} vipBoxesBuilt={game.club.vipBoxesBuilt} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} onBuildVipBox={game.buildVipBox} />
+        <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} winStreak={winStreak} loseStreak={loseStreak} vipBoxesBuilt={game.club.vipBoxesBuilt} stadiumOps={game.club.stadiumOps} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} onBuildVipBox={game.buildVipBox} onAcceptStadiumEvent={game.acceptStadiumEvent} onRejectStadiumEvent={game.rejectStadiumEvent} onStartStadiumRepair={game.startStadiumRepair} onBuyStadiumInsurance={game.buyStadiumInsurance} onCancelStadiumInsurance={game.cancelStadiumInsurance} />
       </TabsContent>
       <TabsContent value="scouts">
         {isTabBlocked('scouts') ? <BlockedMessage /> : (
