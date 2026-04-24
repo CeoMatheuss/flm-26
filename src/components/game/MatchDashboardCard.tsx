@@ -229,7 +229,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
             onClick={handleGoToMatch}
             disabled={!isReady}
           >
-            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Aguardando horário...</>}
+            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Simulando em breve...</>}
           </Button>
           {onGoToFriendly && !isReady && (
             <Button size="sm" variant="ghost" className="gap-2 text-[10px] h-7" onClick={onGoToFriendly}>
