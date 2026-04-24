@@ -471,9 +471,15 @@ export function useMatchSimulation() {
   const startTick = useCallback(() => {
     if (intervalRef.current) return;
     console.log('[Match] Starting tick loop');
+    // Safe wrapper: a single thrown error must NOT kill the interval — the watchdog needs to keep running.
+    const safeTick = () => {
+      try { tick(); } catch (err) {
+        console.error('[Match] tick() threw, ignoring to keep loop alive:', err);
+      }
+    };
     // Immediate first tick
-    tick();
-    intervalRef.current = window.setInterval(tick, TICK_MS);
+    safeTick();
+    intervalRef.current = window.setInterval(safeTick, TICK_MS);
   }, [tick]);
 
   const stopTick = useCallback(() => {
