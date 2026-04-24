@@ -323,7 +323,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
           stadiumCapacity: isHome ? stadiumCapacity : (oppCapacity || 5000),
           isHome,
           competition: 'Amistoso Online',
-          fans: fans || 500,
+          fans: fans || 1000,
           tieBreaker: lobbyInvite.tie_breaker || 'none',
         },
       });

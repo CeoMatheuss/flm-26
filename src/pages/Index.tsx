@@ -72,7 +72,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       ...initialClub,
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
-      fans: 500,
+      fans: 1000,
       players: generateInitialSquad(config.name),
       matches: [],
       primaryColor: config.primaryColor,
@@ -190,7 +190,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   // Handle match/tournament navigation state
   useEffect(() => {
     const st = location.state as {
-      serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number };
+      serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number; competition?: string };
       playTournamentMatch?: { matchId: string; tournamentMatchId: string; opponentName: string; opponentStrength: number; isHome: boolean; competition: string };
     } | null;
 
@@ -217,10 +217,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     }
 
     if (st?.serverMatchResult) {
-      const { matchDbId, homeGoals, awayGoals } = st.serverMatchResult;
+      const { matchDbId, homeGoals, awayGoals, competition } = st.serverMatchResult;
       const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
       if (pendingMatch) {
-        game.applyServerResult({ matchId: pendingMatch.id, homeGoals, awayGoals, isHome: pendingMatch.isHome ?? true });
+        game.applyServerResult({ matchId: pendingMatch.id, homeGoals, awayGoals, isHome: pendingMatch.isHome ?? true, competition });
       }
       supabase.from('live_matches').delete().eq('id', matchDbId).then(() => {});
       navigate('/', { replace: true, state: {} });
@@ -242,7 +242,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           // Only apply if match_id matches exactly a local unplayed match
           const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played);
           if (localMatch) {
-            game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true });
+            game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true, competition: fm.competition || 'Amistoso' });
           }
           
           // Create report + notification NOW (post-game)

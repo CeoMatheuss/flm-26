@@ -154,7 +154,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         trainingCenterLevel: Math.max(0, Math.min(5, Math.floor(member.reputation / 25))),
         physiotherapyLevel: Math.max(0, Math.min(4, Math.floor(member.reputation / 30))),
         youthAcademyLevel: Math.max(0, Math.min(10, Math.floor(member.reputation / 10))),
-        fans: 500,
+        fans: 1000,
       };
       return { squad: players, clubMeta: botMeta };
     }

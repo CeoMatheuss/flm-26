@@ -506,7 +506,7 @@ export function useClubState(initialState: any, userId?: string) {
       toast.success(`✅ Aceito: ${cfg?.label} — R$ ${(proposal.revenue/1000).toFixed(0)}k em ${new Date(proposal.scheduledFor).toLocaleDateString('pt-BR')}`);
       return {
         ...prev,
-        fans: Math.max(100, (prev.fans ?? 500) + Math.round((prev.fans ?? 500) * proposal.fanImpact / 1000)),
+        fans: Math.max(100, (prev.fans ?? 1000) + Math.round((prev.fans ?? 1000) * proposal.fanImpact / 1000)),
         stadiumOps: {
           ...ops,
           proposals: ops.proposals.filter(p => p.id !== proposalId),

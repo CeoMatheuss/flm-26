@@ -71,9 +71,9 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
-    matchId, homeGoals, awayGoals, isHome = true,
-  }: { matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean }) => {
-    matchState.applyServerResult({ matchId, homeGoals, awayGoals, isHome }, {
+    matchId, homeGoals, awayGoals, isHome = true, competition,
+  }: { matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean; competition?: string }) => {
+    matchState.applyServerResult({ matchId, homeGoals, awayGoals, isHome, competition }, {
       setClub: clubState.setClub,
       sponsors: financeState.sponsors,
       infrastructure: infraState.infrastructure,
