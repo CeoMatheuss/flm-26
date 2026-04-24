@@ -1,8 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Trophy, Zap, Clock, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Trophy, Zap, Clock, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 
 interface Props {
   seasonNumber?: number;
@@ -10,6 +12,14 @@ interface Props {
 }
 
 export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
+  // Persistência: dispensa permanente + expira automaticamente em 01/05/2026.
+  const seasonStartTs = new Date(2026, 4, 1, 0, 0, 0).getTime();
+  const { isVisible, dismiss } = useDismissibleWidget(
+    `season_start_${seasonNumber}`,
+    userId,
+    { type: 'season_start', expiresAt: seasonStartTs },
+    seasonNumber === 1,
+  );
   const [timeLeft, setTimeLeft] = useState('');
   const [isStarted, setIsStarted] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
