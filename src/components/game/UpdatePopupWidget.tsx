@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Rocket, CheckCircle, Sparkles, Wrench, X } from 'lucide-react';
+import { dismissWidget, isWidgetDismissed } from '@/hooks/useDismissibleWidget';
 
 interface GameUpdate {
   id: string;
@@ -37,19 +38,28 @@ export function UpdatePopupWidget({ userId }: Props) {
 
       if (!data) return;
       const update = data as unknown as GameUpdate;
+      // Persistência unificada — não reaparece se já foi fechado.
+      const widgetId = `update_popup_${update.id}`;
+      if (isWidgetDismissed(widgetId, userId)) return;
+      // Compat com chave antiga.
       const lastSeen = localStorage.getItem('flm-last-update-seen');
-      if (lastSeen !== update.id) {
-        setLatestUpdate(update);
-        setShowBanner(true);
-      }
+      if (lastSeen === update.id) return;
+      setLatestUpdate(update);
+      setShowBanner(true);
     };
     checkForUpdates();
   }, [userId]);
 
-  const handleDismiss = () => {
+  const persistDismiss = () => {
     if (latestUpdate) {
+      const widgetId = `update_popup_${latestUpdate.id}`;
+      dismissWidget(widgetId, userId);
       localStorage.setItem('flm-last-update-seen', latestUpdate.id);
     }
+  };
+
+  const handleDismiss = () => {
+    persistDismiss();
     setShowBanner(false);
   };
 
@@ -59,9 +69,7 @@ export function UpdatePopupWidget({ userId }: Props) {
   };
 
   const handleCloseDetails = () => {
-    if (latestUpdate) {
-      localStorage.setItem('flm-last-update-seen', latestUpdate.id);
-    }
+    persistDismiss();
     setShowDetails(false);
   };
 

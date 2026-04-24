@@ -1,8 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Trophy, Zap, Clock, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Trophy, Zap, Clock, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 
 interface Props {
   seasonNumber?: number;
@@ -10,6 +12,14 @@ interface Props {
 }
 
 export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
+  // Persistência: dispensa permanente + expira automaticamente em 01/05/2026.
+  const seasonStartTs = new Date(2026, 4, 1, 0, 0, 0).getTime();
+  const { isVisible, dismiss } = useDismissibleWidget(
+    `season_start_${seasonNumber}`,
+    userId,
+    { type: 'season_start', expiresAt: seasonStartTs },
+    seasonNumber === 1,
+  );
   const [timeLeft, setTimeLeft] = useState('');
   const [isStarted, setIsStarted] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
@@ -85,9 +95,19 @@ export function SeasonStartWidget({ seasonNumber = 1, userId }: Props) {
   }, [userId]);
 
   if (seasonNumber > 1) return null;
+  if (!isVisible) return null;
 
   return (
     <Card className="border-cyan-500/30 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(190 80% 50% / 0.06), hsl(var(--primary) / 0.03))' }}>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={dismiss}
+        aria-label="Fechar widget"
+        className="absolute top-1.5 right-1.5 h-6 w-6 z-10 text-muted-foreground hover:text-foreground"
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl shrink-0" style={{ background: 'linear-gradient(135deg, hsl(190 80% 50% / 0.25), hsl(var(--primary) / 0.15))' }}>

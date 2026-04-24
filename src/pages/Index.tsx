@@ -25,6 +25,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { useAutoSimulator } from '@/hooks/useAutoSimulator';
+import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -414,10 +415,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
       {pendingAwardsSeason !== null && (
-        <SeasonAwardsModal
-          open={pendingAwardsSeason !== null}
-          onClose={() => setPendingAwardsSeason(null)}
+        <PersistentSeasonAwards
           season={pendingAwardsSeason}
+          userId={userId}
+          onClose={() => setPendingAwardsSeason(null)}
         />
       )}
       <PlayerSigningModal
@@ -464,6 +465,35 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         </Tabs>
       </main>
     </div>
+  );
+}
+
+/**
+ * Wrapper persistente do modal "Bola de Ouro / Fim de Temporada".
+ * Garante que, uma vez fechado pelo jogador, NUNCA mais reapareça
+ * para aquela temporada (mesmo após F5 ou re-login).
+ */
+function PersistentSeasonAwards({
+  season,
+  userId,
+  onClose,
+}: { season: number; userId?: string; onClose: () => void }) {
+  const { isVisible, dismiss } = useDismissibleWidget(
+    `season_awards_${season}`,
+    userId,
+    { type: 'season_end' },
+  );
+  if (!isVisible) {
+    // Já dispensado/expirado — também limpa o gate no Index para não rechecar.
+    Promise.resolve().then(onClose);
+    return null;
+  }
+  return (
+    <SeasonAwardsModal
+      open
+      season={season}
+      onClose={() => { dismiss(); onClose(); }}
+    />
   );
 }
 
