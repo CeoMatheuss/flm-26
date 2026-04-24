@@ -702,8 +702,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     const playerOut = homePlayers.find(p => p.id === next.outId);
     const playerIn = homePlayers.find(p => p.id === next.inId);
     if (playerOut && playerIn) {
+      const subMinute = isHalftime ? 46 : currentMinute;
       setSubsUsed(prev => prev + 1);
       setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
+      setEnteredAtMap(prev => ({
+        ...prev,
+        [next.inId]: subMinute,
+        [`__out_${next.outId}`]: subMinute,
+      }));
       setActiveBanner({
         minute: currentMinute,
         playerOut: playerOut.name,
