@@ -292,7 +292,8 @@ function sendPushNotification(title: string, body: string, icon = '⚽') {
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
   const dataRef = useRef<MatchData | null>(null);
-  const intervalRef = useRef<number | null>(null);
+  // Agora guarda o unsubscribe do loop global (não mais o handle do setInterval)
+  const unsubscribeRef = useRef<(() => void) | null>(null);
   const persistedRef = useRef(false);
   const notifiedEventsRef = useRef<Set<string>>(new Set());
 
