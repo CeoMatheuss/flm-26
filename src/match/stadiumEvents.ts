@@ -171,9 +171,13 @@ export interface StadiumOpsState {
   acceptedEvents: Array<{ proposalId: string; category: EventCategory; scheduledFor: string; revenue: number }>;
   damages: StadiumDamage[];
   insurance: StadiumInsurance;
-  /** histórico simples (últimos 10) */
+  /** histórico simples (últimos 12) */
   recentLog: Array<{ at: string; message: string; type: 'info' | 'success' | 'warning' | 'danger' }>;
   lastProposalGenAt?: string;
+  /** Fase 4 — última checagem diária de clima */
+  lastWeatherRollAt?: string;
+  /** Fase 4 — log financeiro consolidado (últimos 60 dias) */
+  financeLog?: Array<import('./stadiumWeather').StadiumFinanceEntry>;
 }
 
 // ─── Insurance plans ──────────────────────────────────────────────────────
@@ -375,6 +379,7 @@ export function emptyStadiumOps(): StadiumOpsState {
     damages: [],
     insurance: { tier: null, monthlyCost: 0, coverage: 0 },
     recentLog: [],
+    financeLog: [],
   };
 }
 

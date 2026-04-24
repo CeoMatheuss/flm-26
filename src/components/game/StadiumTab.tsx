@@ -23,6 +23,7 @@ import { useState, useMemo } from 'react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import stadiumHero from '@/assets/stadium-management-hero.jpg';
 import { StadiumOpsPanel } from './StadiumOpsPanel';
+import { StadiumFinanceReport } from './StadiumFinanceReport';
 import type { StadiumOpsState, StadiumInsurance } from '@/match/stadiumEvents';
 import { emptyStadiumOps, getEffectiveCapacity } from '@/match/stadiumEvents';
 
@@ -171,6 +172,13 @@ export function StadiumTab({
         onRepair={onStartStadiumRepair}
         onBuyInsurance={onBuyStadiumInsurance}
         onCancelInsurance={onCancelStadiumInsurance}
+      />
+
+      {/* Fase 4 — Relatório financeiro consolidado do estádio */}
+      <StadiumFinanceReport
+        financeLog={ops.financeLog}
+        weeklyMaintenance={modules.weeklyMaintenance}
+        monthlyVipContracts={monthlyVipContracts}
       />
 
       {/* Receita detalhada */}
