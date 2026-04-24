@@ -1,20 +1,23 @@
 import {
   EVENT_CATALOG, DAMAGE_PROFILES, INSURANCE_PLANS,
-  getInsuranceMonthlyCost,
+  getInsuranceMonthlyCost, detectEventCalendarConflict,
   type StadiumOpsState, type StadiumEventProposal, type StadiumDamage, type StadiumInsurance,
+  type MatchScheduleEntry,
 } from '@/match/stadiumEvents';
 import { buildStadiumModules } from '@/match/stadiumEconomics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Inbox, Calendar, ShieldAlert, ShieldCheck, Hammer, Clock, AlertTriangle, PartyPopper, X, Check } from 'lucide-react';
-import { useMemo } from 'react';
+import { Inbox, Calendar, ShieldAlert, ShieldCheck, Hammer, Clock, AlertTriangle, PartyPopper, X, Check, CalendarClock } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface Props {
   ops: StadiumOpsState;
   budget: number;
   stadiumLevel: number;
   vipBoxesBuilt?: { bronze?: number; prata?: number; ouro?: number; master?: number };
+  /** Fase 3: partidas oficiais em casa para detecção de conflito */
+  upcomingHomeMatches?: MatchScheduleEntry[];
   onAccept: (proposalId: string) => void;
   onReject: (proposalId: string) => void;
   onRepair: (damageId: string) => void;
@@ -32,12 +35,14 @@ function timeUntil(iso: string): string {
 }
 
 export function StadiumOpsPanel({
-  ops, budget, stadiumLevel, vipBoxesBuilt,
+  ops, budget, stadiumLevel, vipBoxesBuilt, upcomingHomeMatches = [],
   onAccept, onReject, onRepair, onBuyInsurance, onCancelInsurance,
 }: Props) {
   const modules = useMemo(() => buildStadiumModules(stadiumLevel, vipBoxesBuilt), [stadiumLevel, vipBoxesBuilt]);
   const activeDamages = ops.damages.filter(d => !d.repairing);
   const repairingDamages = ops.damages.filter(d => d.repairing);
+  /** ids de propostas com conflito que o usuário decidiu sobrescrever */
+  const [overrides, setOverrides] = useState<Set<string>>(new Set());
 
   return (
     <div className="space-y-4">
