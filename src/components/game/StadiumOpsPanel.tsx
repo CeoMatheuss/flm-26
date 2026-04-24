@@ -64,8 +64,11 @@ export function StadiumOpsPanel({
           ) : ops.proposals.map(p => {
             const cfg = EVENT_CATALOG.find(c => c.category === p.category)!;
             const dmg = DAMAGE_PROFILES[p.damageSeverity];
+            const conflict = detectEventCalendarConflict(p.scheduledFor, p.blockDays, upcomingHomeMatches);
+            const overridden = overrides.has(p.id);
+            const acceptDisabled = conflict.hasConflict && !overridden;
             return (
-              <div key={p.id} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+              <div key={p.id} className={`rounded-lg border p-3 space-y-2 ${conflict.hasConflict ? 'border-amber-500/50 bg-amber-500/5' : 'border-border bg-muted/20'}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-2xl">{cfg.emoji}</span>
@@ -102,10 +105,30 @@ export function StadiumOpsPanel({
                     {p.fanImpact > 0 ? '👍' : '⚠️'} Impacto na torcida: {p.fanImpact > 0 ? '+' : ''}{p.fanImpact}
                   </p>
                 )}
+                {conflict.hasConflict && (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 flex items-start gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-[10px] text-amber-200 leading-tight">
+                      {conflict.reason}
+                      {!overridden && <span className="block mt-0.5 text-amber-300/80">Aceite mesmo assim por sua conta e risco.</span>}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 gap-1" onClick={() => onAccept(p.id)}>
-                    <Check className="h-3.5 w-3.5" /> Aceitar
-                  </Button>
+                  {acceptDisabled ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-8 gap-1 border-amber-500/50 text-amber-300 hover:bg-amber-500/10"
+                      onClick={() => setOverrides(prev => new Set(prev).add(p.id))}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" /> Aceitar mesmo assim
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="flex-1 h-8 gap-1" onClick={() => onAccept(p.id)}>
+                      <Check className="h-3.5 w-3.5" /> Aceitar
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="flex-1 h-8 gap-1" onClick={() => onReject(p.id)}>
                     <X className="h-3.5 w-3.5" /> Recusar
                   </Button>
