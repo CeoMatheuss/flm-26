@@ -1434,7 +1434,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
 
 function ImprovedSubsView({
   starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub,
-  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason,
+  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
 }: {
   starters: Player[]; bench: Player[];
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
@@ -1444,6 +1444,7 @@ function ImprovedSubsView({
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
+  liveStaminaMap?: Record<string, number>;
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
