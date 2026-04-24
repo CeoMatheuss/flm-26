@@ -219,6 +219,7 @@ export default function MatchPage() {
             matchDbId: state.matchDbId,
             homeGoals: state.homeGoals,
             awayGoals: state.awayGoals,
+            competition: locState?.competition || 'Amistoso',
           },
         },
       });
