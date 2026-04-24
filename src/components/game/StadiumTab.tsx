@@ -185,6 +185,15 @@ export function StadiumTab({
         monthlyVipContracts={monthlyVipContracts}
       />
 
+      {/* Fase 5 — Sponsors do estádio + Conquistas */}
+      <StadiumExtrasPanel
+        sponsorOffers={ops.sponsorOffers}
+        sponsorContracts={ops.sponsorContracts}
+        achievements={ops.achievements}
+        onAcceptSponsor={onAcceptStadiumSponsor}
+        onRejectSponsor={onRejectStadiumSponsor}
+      />
+
       {/* Receita detalhada */}
       <Card>
         <CardHeader className="pb-2">
