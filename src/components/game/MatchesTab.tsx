@@ -4,13 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Check, Home, Swords, Clock, Calendar, Ban, Plane, Globe, Trophy, LogIn } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn, Shuffle, Scale, Users } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
+import { simulateInstantFriendly, type InstantFriendlyResult } from '@/match/instantFriendly';
+import { toast } from 'sonner';
 
 interface Props {
   matches: Match[];
@@ -25,6 +28,7 @@ interface Props {
   userId: string;
   stadiumCapacity: number;
   fans: number;
+  applyFanChange: (delta: number, sourceLabel?: string) => void;
 }
 
 function formatDate(isoStr: string): string {
@@ -43,26 +47,11 @@ function formatTime(isoStr: string): string {
   } catch { return ''; }
 }
 
-function getTimeUntilReset(lastFriendlyDate: string): string {
-  if (!lastFriendlyDate) return '';
-  const lastMatch = new Date(lastFriendlyDate);
-  const resetTime = new Date(lastMatch.getTime() + 24 * 60 * 60 * 1000);
-  const diff = resetTime.getTime() - Date.now();
-  if (diff <= 0) return '0h 0min';
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours}h ${mins}min`;
-}
-
 export function MatchesTab({
-  matches, clubName, stadiumName, alreadyPlayedToday, lastFriendlyDate,
-  players, teamStrength, tactics, onGenerateFriendly, userId, stadiumCapacity, fans
+  clubName, stadiumName,
+  players, teamStrength, tactics, userId, stadiumCapacity, fans, applyFanChange,
 }: Props) {
   const navigate = useNavigate();
-  const canGenerate = !alreadyPlayedToday;
-  const canPlay = !alreadyPlayedToday;
-  const nextMatch = matches.find(m => !m.played);
-  const timeUntilReset = useMemo(() => alreadyPlayedToday ? getTimeUntilReset(lastFriendlyDate) : '', [alreadyPlayedToday, lastFriendlyDate]);
 
   // Tournament matches for this user
   const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
@@ -70,10 +59,13 @@ export function MatchesTab({
   const [tournamentNames, setTournamentNames] = useState<Record<string, string>>({});
   const [lobbyMatch, setLobbyMatch] = useState<any | null>(null);
 
+  // Instant friendly state
+  const [simulating, setSimulating] = useState<null | 'bot_balanced' | 'bot_random'>(null);
+  const [lastResult, setLastResult] = useState<(InstantFriendlyResult & { mode: 'bot_balanced' | 'bot_random' }) | null>(null);
+
   useEffect(() => {
     if (!userId) return;
     const loadTournamentMatches = async () => {
-      // Find user's tournament teams
       const { data: myTeams } = await supabase
         .from('custom_tournament_teams')
         .select('*')
@@ -89,7 +81,6 @@ export function MatchesTab({
       const teamIds = myTeams.map(t => t.id);
       const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
 
-      // Load tournament names
       const { data: tournaments } = await supabase
         .from('custom_tournaments')
         .select('id, name')
@@ -101,7 +92,6 @@ export function MatchesTab({
         setTournamentNames(names);
       }
 
-      // Find upcoming matches for this user
       const { data: upcomingMatches } = await supabase
         .from('custom_tournament_matches')
         .select('*')
@@ -111,7 +101,6 @@ export function MatchesTab({
         .limit(10);
 
       if (upcomingMatches) {
-        // Load all teams for these matches
         const allTeamIds = new Set<string>();
         upcomingMatches.forEach(m => {
           allTeamIds.add(m.home_team_id);
@@ -137,25 +126,6 @@ export function MatchesTab({
     return () => clearInterval(interval);
   }, [userId]);
 
-  const goToMatch = (match: Match) => {
-    const botStrength = (match as any).opponentStrength || 65;
-    navigate('/match', {
-      state: {
-        homeTeam: match.isHome ? clubName : match.opponent,
-        awayTeam: match.isHome ? match.opponent : clubName,
-        homePlayers: players,
-        homeStrength: teamStrength,
-        awayStrength: botStrength,
-        matchId: match.id,
-        tactics,
-        stadiumName: match.isHome ? stadiumName : (match.stadium || 'Estádio BOT FC'),
-        stadiumCapacity: match.isHome ? stadiumCapacity : (match.stadiumCapacity || 5000),
-        isHome: match.isHome ?? true,
-        fans: fans,
-      },
-    });
-  };
-
   const goToTournamentMatch = (tm: any) => {
     const isHome = tm.isHome;
     navigate('/match', {
@@ -177,7 +147,6 @@ export function MatchesTab({
     });
   };
 
-  // Open lobby first only when opponent is human; bots → straight to match
   const openTournamentMatch = (tm: any) => {
     if (tm.opponentIsBot) {
       goToTournamentMatch(tm);
@@ -205,6 +174,35 @@ export function MatchesTab({
     return { text: `${hours}h ${mins}min`, isNow: false, isExpired: false };
   };
 
+  // ─────────── INSTANT FRIENDLY (vs BOT) ───────────
+  const runInstantBot = async (mode: 'bot_balanced' | 'bot_random') => {
+    if (simulating) return;
+    if (!players || players.length === 0) {
+      toast.error('Carregando elenco... aguarde um instante.');
+      return;
+    }
+    setSimulating(mode);
+    // Pequeno delay artificial só para feedback visual
+    await new Promise(r => setTimeout(r, 500));
+    const isHome = Math.random() < 0.6;
+    const result = simulateInstantFriendly({
+      mode,
+      myClubName: clubName,
+      myPlayers: players,
+      currentFans: fans,
+      isHome,
+    });
+
+    // Aplica torcida imediatamente no save
+    applyFanChange(
+      result.fanChange,
+      mode === 'bot_balanced' ? 'Amistoso BOT (Equilibrado)' : 'Amistoso BOT (Aleatório)'
+    );
+
+    setLastResult({ ...result, mode });
+    setSimulating(null);
+  };
+
   // Lobby overlay (5-min sync window) for human-vs-human tournament/league matches
   if (lobbyMatch) {
     const oppName = lobbyMatch.isHome ? lobbyMatch.awayName : lobbyMatch.homeName;
@@ -223,6 +221,7 @@ export function MatchesTab({
   }
 
   return (
+    <>
     <Tabs defaultValue="bot" className="space-y-3">
       <TabsList className="w-full">
         <TabsTrigger value="bot" className="flex-1 text-xs gap-1.5">
@@ -236,82 +235,66 @@ export function MatchesTab({
         </TabsTrigger>
       </TabsList>
 
-      {/* ── VS BOT ─────────────────────────────────────────────── */}
+      {/* ── VS BOT (instantâneo, 2 modos) ─────────────────────────────── */}
       <TabsContent value="bot">
         <div className="space-y-3">
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Swords className="h-4 w-4 text-primary" /> Amistoso Diário vs BOT FC
+                <Swords className="h-4 w-4 text-primary" /> Amistoso vs BOT — Início Instantâneo
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Status */}
-              <div className={`rounded-lg p-3 text-center ${alreadyPlayedToday ? 'bg-destructive/10 border border-destructive/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  {alreadyPlayedToday ? <Ban className="h-4 w-4 text-destructive" /> : <Check className="h-4 w-4 text-emerald-400" />}
-                  <p className="text-sm font-bold">{alreadyPlayedToday ? 'Já jogou hoje' : 'Amistoso disponível!'}</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {alreadyPlayedToday ? 'Volte amanhã para jogar outro' : 'Você pode jogar 1 amistoso por dia'}
-                </p>
-              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Sem espera. Sem horário. A partida é simulada na hora e a recompensa vem em <span className="font-semibold text-primary">crescimento de torcida</span>.
+              </p>
 
-              {/* Countdown */}
-              {alreadyPlayedToday && (
-                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Clock className="h-4 w-4 text-blue-400 shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-blue-300">Próximo amistoso em:</p>
-                    <p className="text-sm font-bold text-blue-400">{timeUntilReset}</p>
+              {/* Modo Equilibrado */}
+              <Card className="border-emerald-500/30 bg-emerald-500/5">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold">Modo Equilibrado</p>
+                      <p className="text-[10px] text-muted-foreground">BOT calibrado ao seu nível (variação ±2 OVR)</p>
+                    </div>
+                    <Badge variant="outline" className="text-[8px]">+50 / +20 / +5 👥</Badge>
                   </div>
-                </div>
-              )}
+                  <Button
+                    size="sm"
+                    onClick={() => runInstantBot('bot_balanced')}
+                    disabled={simulating !== null}
+                    className="w-full h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Play className="h-3 w-3" /> {simulating === 'bot_balanced' ? 'Simulando...' : 'Jogar Agora'}
+                  </Button>
+                </CardContent>
+              </Card>
 
-              {/* Last match */}
-              {lastFriendlyDate && alreadyPlayedToday && (
-                <div className="flex items-center gap-2 p-2 rounded bg-muted/20 text-xs text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5 shrink-0" />
-                  <span>Último: {formatDate(lastFriendlyDate)} às {formatTime(lastFriendlyDate)}</span>
-                </div>
-              )}
-
-              {/* Play or generate */}
-              {nextMatch ? (
-                <Card className="border-primary/40 bg-primary/5">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border/30">
-                      <Badge variant="secondary" className="text-[9px] gap-1">🤖 Amistoso vs BOT FC</Badge>
-                      <Badge variant="outline" className="text-[9px] gap-1">
-                        {nextMatch.isHome ? <Home className="h-2.5 w-2.5" /> : <Plane className="h-2.5 w-2.5" />}
-                        {nextMatch.isHome ? 'Casa' : 'Fora'}
-                      </Badge>
+              {/* Modo Aleatório */}
+              <Card className="border-purple-500/30 bg-purple-500/5">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Shuffle className="h-4 w-4 text-purple-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold">Modo Aleatório</p>
+                      <p className="text-[10px] text-muted-foreground">BOT entre OVR 40–90 • upset = muito mais torcida</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-medium">vs {nextMatch.opponent}</span>
-                        {(nextMatch as any).opponentStrength && (
-                          <Badge variant="outline" className="ml-2 text-[8px]">OVR ~{(nextMatch as any).opponentStrength}</Badge>
-                        )}
-                      </div>
-                      <Button size="sm" onClick={() => goToMatch(nextMatch)} disabled={!canPlay} className="h-7 px-3 text-xs gap-1">
-                        <Play className="h-3 w-3" /> {canPlay ? 'Jogar' : 'Bloqueado'}
-                      </Button>
-                    </div>
-                    <p className="text-[9px] text-muted-foreground mt-1">
-                      🏟️ {nextMatch.stadium || stadiumName} • {nextMatch.isHome ? 'Mandante' : 'Visitante'}
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Button onClick={onGenerateFriendly} disabled={!canGenerate} className="w-full gap-2">
-                  <Swords className="h-4 w-4" />
-                  {alreadyPlayedToday ? 'Volte amanhã' : 'Jogar Amistoso vs BOT FC'}
-                </Button>
-              )}
+                    <Badge variant="outline" className="text-[8px]">até +400 👥</Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => runInstantBot('bot_random')}
+                    disabled={simulating !== null}
+                    className="w-full h-8 text-xs gap-1.5 bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Play className="h-3 w-3" /> {simulating === 'bot_random' ? 'Simulando...' : 'Jogar Agora'}
+                  </Button>
+                </CardContent>
+              </Card>
 
-              <p className="text-[10px] text-muted-foreground text-center">
-                ⚽ 1 amistoso por dia • 🤖 BOT FC com força variável • 🏟️ mando aleatório
+              <p className="text-[9px] text-muted-foreground text-center">
+                ⚡ Simulação instantânea • 👥 Torcida cresce com vitórias e upsets • ⚠️ Derrotas fáceis penalizam
               </p>
             </CardContent>
           </Card>
@@ -319,7 +302,7 @@ export function MatchesTab({
 
         {/* ── TOURNAMENT MATCHES ──────────────────────────── */}
         {tournamentMatches.length > 0 && (
-          <Card className="border-warning/20 bg-gradient-to-br from-warning/5 to-transparent">
+          <Card className="border-warning/20 bg-gradient-to-br from-warning/5 to-transparent mt-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-warning" /> Jogos de Campeonato
@@ -379,9 +362,6 @@ export function MatchesTab({
         )}
       </TabsContent>
 
-
-
-
       {/* ── ONLINE ─────────────────────────────────────────────── */}
       <TabsContent value="online">
         <OnlineFriendliesTab
@@ -401,5 +381,89 @@ export function MatchesTab({
         <MatchCalendarTab userId={userId} clubName={clubName} />
       </TabsContent>
     </Tabs>
+
+    {/* ── MODAL DE RESULTADO INSTANTÂNEO ─────────────────────── */}
+    <Dialog open={!!lastResult} onOpenChange={(open) => !open && setLastResult(null)}>
+      <DialogContent className="sm:max-w-md">
+        {lastResult && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {lastResult.mode === 'bot_balanced'
+                  ? <><Scale className="h-4 w-4 text-emerald-400" /> Modo Equilibrado</>
+                  : <><Shuffle className="h-4 w-4 text-purple-400" /> Modo Aleatório</>}
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Placar */}
+            <div className="text-center py-4 rounded-lg bg-gradient-to-br from-muted/40 to-transparent border border-border/50">
+              <div className="grid grid-cols-3 items-center gap-2">
+                <div className="text-right">
+                  <p className="text-xs font-semibold truncate">{clubName}</p>
+                  <p className="text-[9px] text-muted-foreground">Você</p>
+                </div>
+                <div className="text-3xl font-mono font-bold tabular-nums">
+                  {lastResult.myGoals} <span className="text-muted-foreground">x</span> {lastResult.oppGoals}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold truncate">{lastResult.oppName}</p>
+                  <p className="text-[9px] text-muted-foreground">BOT</p>
+                </div>
+              </div>
+              <Badge
+                className={`mt-3 ${
+                  lastResult.outcome === 'win' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  : lastResult.outcome === 'draw' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                  : 'bg-destructive/20 text-destructive border-destructive/30'
+                }`}
+              >
+                {lastResult.outcome === 'win' ? '🟢 Vitória' : lastResult.outcome === 'draw' ? '🟡 Empate' : '🔴 Derrota'}
+              </Badge>
+            </div>
+
+            {/* Recompensa em torcida */}
+            <div className={`p-3 rounded-lg border text-center ${
+              lastResult.fanChange > 0
+                ? 'bg-emerald-500/5 border-emerald-500/30'
+                : lastResult.fanChange < 0
+                ? 'bg-destructive/5 border-destructive/30'
+                : 'bg-muted/20 border-border/30'
+            }`}>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Users className="h-4 w-4" />
+                <p className="text-[10px] uppercase font-semibold text-muted-foreground">Torcida</p>
+              </div>
+              <p className={`text-2xl font-bold tabular-nums ${
+                lastResult.fanChange > 0 ? 'text-emerald-400'
+                : lastResult.fanChange < 0 ? 'text-destructive'
+                : 'text-muted-foreground'
+              }`}>
+                {lastResult.fanChange > 0 ? '+' : ''}{lastResult.fanChange.toLocaleString('pt-BR')}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                {lastResult.fanChange > 0 ? 'novos torcedores conquistados' : lastResult.fanChange < 0 ? 'torcedores perdidos' : 'sem variação'}
+              </p>
+            </div>
+
+            {/* Eventos / gols */}
+            {lastResult.events.length > 0 && (
+              <div className="max-h-32 overflow-y-auto space-y-1 pt-1">
+                {lastResult.events.map((ev, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[10px] p-1.5 rounded bg-muted/20">
+                    <Badge variant="outline" className="text-[8px] tabular-nums shrink-0">{ev.minute}'</Badge>
+                    <span className="truncate">{ev.description}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button onClick={() => setLastResult(null)} className="w-full">Fechar</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
