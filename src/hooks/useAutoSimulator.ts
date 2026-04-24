@@ -106,7 +106,7 @@ async function notify(userId: string, opponent: string, mine: number, theirs: nu
       type: 'match_auto_simulated',
       icon: '🤖',
       title: 'Partida simulada automaticamente',
-      message: `Você não entrou em campo. ${result} ${mine}x${theirs} vs ${opponent} (${comp})`,
+      message: `${result} ${mine}x${theirs} vs ${opponent} (${comp})`,
       data: { auto_simulated: true, my_goals: mine, opp_goals: theirs, opponent, competition: comp },
     });
   } catch { /* ignore */ }
