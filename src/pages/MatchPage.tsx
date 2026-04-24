@@ -128,7 +128,7 @@ export default function MatchPage() {
         }
 
         const expected = computeExpectedAttendance({
-          fans: locState.fans || 500,
+          fans: locState.fans || 1000,
           reputation: locState.reputation ?? 50,
           ticketPrice: locState.ticketPrice ?? 30,
           winStreak: locState.winStreak ?? 0,
@@ -156,7 +156,7 @@ export default function MatchPage() {
       isHome: locState.isHome,
       competition: locState.competition || 'Amistoso',
       tournamentMatchId: locState.tournamentMatchId,
-      fans: locState.fans || 500,
+      fans: locState.fans || 1000,
       awayFans: locState.awayFans || 500,
       tieBreaker: locState.tieBreaker || 'none',
     });

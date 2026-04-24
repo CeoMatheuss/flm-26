@@ -72,7 +72,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       ...initialClub,
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
-      fans: 500,
+      fans: 1000,
       players: generateInitialSquad(config.name),
       matches: [],
       primaryColor: config.primaryColor,
