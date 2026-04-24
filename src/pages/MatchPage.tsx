@@ -648,10 +648,33 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // Tracks when each player entered the field (minute). Starters default to 0.
+  const [enteredAtMap, setEnteredAtMap] = useState<Record<string, number>>({});
   const maxSubs = 5;
   // Janelas removidas — substituições são rápidas e ilimitadas em janela.
   const windowsUsed = 0;
   const maxWindows = 99;
+
+  // ── Live stamina map (continuous fatigue during the match) ──
+  const liveStaminaMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!homePlayers) return map;
+    homePlayers.forEach(p => {
+      const enteredAt = enteredAtMap[p.id] ?? 0;
+      // Subbed-off players: freeze at the minute they left
+      const wasSubbed = substitutedPlayerIds.has(p.id);
+      const refMinute = wasSubbed ? (enteredAtMap[`__out_${p.id}`] ?? currentMinute) : currentMinute;
+      map[p.id] = computeLiveStamina({
+        player: p,
+        minute: refMinute,
+        enteredAt,
+        tactics: liveTactics,
+        isHalftime,
+        serverStamina: matchState.playerStamina?.[p.id],
+      });
+    });
+    return map;
+  }, [homePlayers, currentMinute, liveTactics, isHalftime, enteredAtMap, substitutedPlayerIds, matchState.playerStamina]);
 
   // ── Inline section refs (for scroll-to-section navigation) ──
   const tacticsSectionRef = useRef<HTMLDivElement>(null);
