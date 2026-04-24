@@ -146,7 +146,9 @@ export function useClubState(initialState: any, userId?: string) {
               ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
             const res = resolveEvent(proposal as StadiumEventProposal);
             next.budget = (next.budget ?? 0) + e.revenue;
-            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${EVENT_CATALOG.find(c => c.category === e.category)?.label}"`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            const evLabel = EVENT_CATALOG.find(c => c.category === e.category)?.label ?? e.category;
+            pushFin({ at: new Date().toISOString(), category: 'evento', label: evLabel, amount: e.revenue });
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${evLabel}"`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
             if (res.damageOccurred && res.damage) {
               const dmg = { ...res.damage };
               if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
@@ -195,6 +197,7 @@ export function useClubState(initialState: any, userId?: string) {
           const cost = getInsuranceMonthlyCost(nextOps.insurance.tier, modules);
           if ((next.budget ?? 0) >= cost) {
             next.budget = (next.budget ?? 0) - cost;
+            pushFin({ at: new Date().toISOString(), category: 'seguro', label: `Mensalidade ${nextOps.insurance.tier}`, amount: -cost });
             nextOps.insurance = {
               ...nextOps.insurance, monthlyCost: cost,
               renewsAt: new Date(now + 30 * 24 * 3600_000).toISOString(),
@@ -204,6 +207,34 @@ export function useClubState(initialState: any, userId?: string) {
             nextOps.insurance = { tier: null, monthlyCost: 0, coverage: 0 };
             nextOps.recentLog = [{ at: new Date().toISOString(), message: '🛡️ Seguro CANCELADO por falta de saldo!', type: 'warning' as const }, ...nextOps.recentLog].slice(0, 12);
             toast.error('🛡️ Seguro do estádio cancelado por falta de saldo!');
+          }
+          changed = true;
+        }
+
+        // 6) Fase 4 — clima diário
+        const ONE_DAY = 24 * 3600_000;
+        const lastWeatherTs = nextOps.lastWeatherRollAt ? new Date(nextOps.lastWeatherRollAt).getTime() : 0;
+        if (!lastWeatherTs || now - lastWeatherTs >= ONE_DAY) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const roll = rollDailyWeather(modules, nextOps.insurance);
+          nextOps.lastWeatherRollAt = new Date(now).toISOString();
+          if (roll.triggered && roll.message) {
+            if (roll.damage) {
+              const dmg = { ...roll.damage };
+              if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
+                const reduction = Math.round(dmg.repairCost * nextOps.insurance.coverage);
+                dmg.repairCost = Math.max(0, dmg.repairCost - reduction);
+                nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛡️ Seguro cobriu R$ ${(reduction / 1000).toFixed(0)}k do reparo do clima`, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+              }
+              nextOps.damages.push(dmg);
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: roll.message, type: 'danger' as const }, ...nextOps.recentLog].slice(0, 12);
+              toast.error(roll.message);
+            } else if (roll.prevented) {
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: roll.message, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+              toast.success(roll.message);
+            } else {
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: roll.message, type: 'info' as const }, ...nextOps.recentLog].slice(0, 12);
+            }
           }
           changed = true;
         }
