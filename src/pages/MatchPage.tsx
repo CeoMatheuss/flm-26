@@ -801,7 +801,13 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(220,20%,6%)] max-w-6xl mx-auto">
       {/* Substitution TV Banner */}
-      {activeBanner && <SubstitutionBanner data={activeBanner} onDone={() => setActiveBanner(null)} />}
+      {activeBanner && (
+        <SubstitutionBanner
+          key={`${activeBanner.minute}-${activeBanner.playerOut}-${activeBanner.playerIn}`}
+          data={activeBanner}
+          onDone={() => setActiveBanner(null)}
+        />
+      )}
 
       {/* ═══ FIXED TOP BAR with action buttons ═══ */}
       <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-2 sm:px-3 py-2 space-y-2">
