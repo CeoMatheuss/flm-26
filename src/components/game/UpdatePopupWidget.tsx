@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Rocket, CheckCircle, Sparkles, Wrench, X } from 'lucide-react';
+import { dismissWidget, isWidgetDismissed } from '@/hooks/useDismissibleWidget';
 
 interface GameUpdate {
   id: string;
