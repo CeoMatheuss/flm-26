@@ -1599,7 +1599,7 @@ function ImprovedSubsView({
               <p className="text-[10px] text-muted-foreground text-center py-3">Nenhum reserva nesta posição</p>
             )}
             {selectedPlayer && filteredBench.map((p) => {
-              const stamina = p.stamina || 100;
+              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
               const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
               const isSuggested = p.id === suggestedId;
               return (
