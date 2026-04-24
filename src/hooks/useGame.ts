@@ -79,8 +79,9 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
       infrastructure: infraState.infrastructure,
       addFinance: financeState.addFinance,
       setSeason: infraState.setSeason,
+      stadiumOps: clubState.club.stadiumOps,
     });
-  }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason]);
+  }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason, clubState.club.stadiumOps]);
 
   const generateFriendly = useCallback(async () => {
     await matchState.generateFriendly(
