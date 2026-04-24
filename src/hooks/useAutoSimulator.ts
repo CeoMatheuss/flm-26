@@ -1,19 +1,20 @@
 /**
  * useAutoSimulator — 100% client-side time-based auto-simulation.
  *
- * Replaces the old `auto-simulate-expired-matches` Edge Function + pg_cron job.
- * Any logged-in client periodically scans for "abandoned" matches (older than
- * 5 min with neither side joined) and simulates them locally, writing the
- * result straight to Supabase. A localStorage lock prevents duplicate work
- * across tabs.
+ * Any logged-in client periodically scans for matches whose scheduled kickoff
+ * has already passed and simulates them locally, writing the result straight
+ * to Supabase. The simulation runs regardless of whether either player joined
+ * the lobby — once the time arrives, the match is played.
+ *
+ * A localStorage lock prevents duplicate work across tabs.
  */
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const SCAN_INTERVAL_MS = 30_000;   // 30s
-const EXPIRY_MS = 5 * 60_000;      // 5 min
+const SCAN_INTERVAL_MS = 15_000;   // 15s — react quickly when kickoff arrives
+const FALLBACK_DELAY_MS = 5 * 60_000; // fallback if auto_sim_at/match_date is missing
 const LOCK_TTL_MS = 60_000;        // 60s
-const MAX_PER_RUN = 10;            // soft cap per scan to keep load tiny
+const MAX_PER_RUN = 20;            // soft cap per scan
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
