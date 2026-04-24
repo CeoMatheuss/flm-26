@@ -96,11 +96,19 @@ export function StadiumTab({
     () => buildStadiumModules(stadium.level, vipBoxesBuilt),
     [stadium.level, vipBoxesBuilt],
   );
+  const membershipFloor = useMemo(
+    () => getMembershipAttendanceFloor(ops.phase6?.membership, modules.seatingCapacity),
+    [ops.phase6?.membership, modules.seatingCapacity],
+  );
   const revenue = useMemo(
     () => computeMatchRevenue(modules, {
       fans, reputation, ticketPrice, winStreak, loseStreak, importance: previewImportance,
+    }, {
+      bonusCommercialPerFan: upgEffects.bonusCommercialPerFan,
+      occupancyBonus: upgEffects.occupancyBonus,
+      membershipFloor,
     }),
-    [modules, fans, reputation, ticketPrice, winStreak, loseStreak, previewImportance],
+    [modules, fans, reputation, ticketPrice, winStreak, loseStreak, previewImportance, upgEffects, membershipFloor],
   );
   const monthlyVipContracts = useMemo(() => getMonthlyVipContractIncome(modules), [modules]);
   const priceVerdict = useMemo(() => evaluateTicketPrice(ticketPrice, reputation), [ticketPrice, reputation]);
