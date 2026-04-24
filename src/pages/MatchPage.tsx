@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 // Sheet components no longer used — replaced by inline accordion sections
 import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, ArrowUpDown, Check, X, Shield, ChevronRight, ChevronUp, ChevronDown, Zap, Settings2, MessageSquare } from 'lucide-react';
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
+import { computeLiveStamina, staminaColorClass } from '@/match/liveStamina';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
@@ -647,10 +648,33 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // Tracks when each player entered the field (minute). Starters default to 0.
+  const [enteredAtMap, setEnteredAtMap] = useState<Record<string, number>>({});
   const maxSubs = 5;
   // Janelas removidas — substituições são rápidas e ilimitadas em janela.
   const windowsUsed = 0;
   const maxWindows = 99;
+
+  // ── Live stamina map (continuous fatigue during the match) ──
+  const liveStaminaMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!homePlayers) return map;
+    homePlayers.forEach(p => {
+      const enteredAt = enteredAtMap[p.id] ?? 0;
+      // Subbed-off players: freeze at the minute they left
+      const wasSubbed = substitutedPlayerIds.has(p.id);
+      const refMinute = wasSubbed ? (enteredAtMap[`__out_${p.id}`] ?? currentMinute) : currentMinute;
+      map[p.id] = computeLiveStamina({
+        player: p,
+        minute: refMinute,
+        enteredAt,
+        tactics: liveTactics,
+        isHalftime,
+        serverStamina: matchState.playerStamina?.[p.id],
+      });
+    });
+    return map;
+  }, [homePlayers, currentMinute, liveTactics, isHalftime, enteredAtMap, substitutedPlayerIds, matchState.playerStamina]);
 
   // ── Inline section refs (for scroll-to-section navigation) ──
   const tacticsSectionRef = useRef<HTMLDivElement>(null);
@@ -678,8 +702,14 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     const playerOut = homePlayers.find(p => p.id === next.outId);
     const playerIn = homePlayers.find(p => p.id === next.inId);
     if (playerOut && playerIn) {
+      const subMinute = isHalftime ? 46 : currentMinute;
       setSubsUsed(prev => prev + 1);
       setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
+      setEnteredAtMap(prev => ({
+        ...prev,
+        [next.inId]: subMinute,
+        [`__out_${next.outId}`]: subMinute,
+      }));
       setActiveBanner({
         minute: currentMinute,
         playerOut: playerOut.name,
@@ -1065,7 +1095,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} />
+                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} />
                 </CardContent>
               </Card>
             )}
@@ -1113,6 +1143,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     subQueue={subQueue}
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
+                    liveStaminaMap={liveStaminaMap}
                   />
                 </CardContent>
               </Card>
@@ -1335,7 +1366,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason }: {
+function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason, liveStaminaMap }: {
   homePlayers?: Player[];
   subsUsed: number;
   maxSubs: number;
@@ -1350,6 +1381,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   blocked?: boolean;
   blockedReason?: string;
+  liveStaminaMap?: Record<string, number>;
 }) {
   if (!homePlayers || homePlayers.length <= 11) {
     return (
@@ -1396,12 +1428,13 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
     isHalftime={isHalftime}
     blocked={blocked}
     blockedReason={blockedReason}
+    liveStaminaMap={liveStaminaMap}
   />;
 }
 
 function ImprovedSubsView({
   starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub,
-  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason,
+  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
 }: {
   starters: Player[]; bench: Player[];
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
@@ -1411,6 +1444,7 @@ function ImprovedSubsView({
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
+  liveStaminaMap?: Record<string, number>;
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
@@ -1471,8 +1505,8 @@ function ImprovedSubsView({
           <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">⬅ Quem SAI</p>
           <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
             {starters.map((p) => {
-              const stamina = p.stamina || 100;
-              const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+              const staminaColor = staminaColorClass(stamina);
               const isQueued = queuedOutIds.has(p.id);
               const isSelected = p.id === selectedSubOut;
               return (
@@ -1565,7 +1599,7 @@ function ImprovedSubsView({
               <p className="text-[10px] text-muted-foreground text-center py-3">Nenhum reserva nesta posição</p>
             )}
             {selectedPlayer && filteredBench.map((p) => {
-              const stamina = p.stamina || 100;
+              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
               const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
               const isSuggested = p.id === suggestedId;
               return (
@@ -1754,7 +1788,7 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
 
 /* ── LINEUP VIEW ───────────────────────────────────────────── */
 
-function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string }) {
+function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string; liveStaminaMap?: Record<string, number> }) {
   if (!homePlayers || homePlayers.length === 0) {
     return (
       <div className="text-center py-6">
@@ -1783,16 +1817,19 @@ function LineupView({ homePlayers, tactics, homeTeam }: { homePlayers?: Player[]
         </p>
         <div className="space-y-2.5">
           {starters.map((p, i) => {
-            const stamina = p.stamina ?? 100;
-            const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-amber-500' : 'bg-red-500';
+            const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+            const staminaColor = staminaColorClass(stamina);
             return (
               <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
                 <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
                 <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
-                  <div className="h-1.5 w-full rounded-full bg-muted/15 overflow-hidden mt-1">
-                    <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="h-1.5 flex-1 rounded-full bg-muted/15 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground tabular-nums w-8 text-right">{stamina}%</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-primary/10 border border-primary/20 text-primary text-sm font-bold font-mono">
