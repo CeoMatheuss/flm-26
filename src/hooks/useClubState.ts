@@ -108,7 +108,113 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
-  const trainPlayer = useCallback((_playerId: string) => {
+  // ── Stadium Ops V2: gerar propostas, expirar antigas, resolver eventos vencidos, cobrar seguro ──
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+
+      setClub(prev => {
+        const stadiumLevel = (prev as any).infrastructure?.stadium?.level
+          ?? (prev.vipBoxesBuilt ? 3 : 1);
+        const ops: StadiumOpsState = prev.stadiumOps ?? emptyStadiumOps();
+        let next = { ...prev };
+        const nextOps: StadiumOpsState = {
+          ...ops,
+          proposals: [...ops.proposals],
+          damages: [...ops.damages],
+          acceptedEvents: [...ops.acceptedEvents],
+          recentLog: [...ops.recentLog],
+        };
+        let changed = false;
+
+        // 1) expirar propostas vencidas
+        const before = nextOps.proposals.length;
+        nextOps.proposals = nextOps.proposals.filter(p => new Date(p.expiresAt).getTime() > now);
+        if (nextOps.proposals.length !== before) changed = true;
+
+        // 2) resolver eventos cuja data passou
+        const due = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() <= now);
+        if (due.length > 0) {
+          for (const e of due) {
+            const proposal = ops.proposals.find(p => p.id === e.proposalId)
+              ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
+            const res = resolveEvent(proposal as StadiumEventProposal);
+            next.budget = (next.budget ?? 0) + e.revenue;
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${EVENT_CATALOG.find(c => c.category === e.category)?.label}"`, type: 'success' }, ...nextOps.recentLog].slice(0, 12);
+            if (res.damageOccurred && res.damage) {
+              const dmg = { ...res.damage };
+              if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
+                const reduction = Math.round(dmg.repairCost * nextOps.insurance.coverage);
+                dmg.repairCost = Math.max(0, dmg.repairCost - reduction);
+                nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛡️ Seguro cobriu R$ ${(reduction / 1000).toFixed(0)}k do reparo`, type: 'info' }, ...nextOps.recentLog].slice(0, 12);
+              }
+              nextOps.damages.push(dmg);
+              nextOps.recentLog = [{ at: new Date().toISOString(), message: res.message, type: 'danger' }, ...nextOps.recentLog].slice(0, 12);
+              toast.error(res.message);
+            } else {
+              toast.success(res.message);
+            }
+          }
+          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() > now);
+          changed = true;
+        }
+
+        // 3) finalizar reparos
+        const finishedRepairs = nextOps.damages.filter(d => d.repairing && d.repairCompletesAt && new Date(d.repairCompletesAt).getTime() <= now);
+        if (finishedRepairs.length > 0) {
+          for (const d of finishedRepairs) {
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛠️ Reparo concluído: ${d.sourceLabel}`, type: 'success' }, ...nextOps.recentLog].slice(0, 12);
+          }
+          nextOps.damages = nextOps.damages.filter(d => !(d.repairing && d.repairCompletesAt && new Date(d.repairCompletesAt).getTime() <= now));
+          changed = true;
+        }
+
+        // 4) gerar novas propostas a cada 2 dias
+        const lastGenTs = nextOps.lastProposalGenAt ? new Date(nextOps.lastProposalGenAt).getTime() : 0;
+        if ((!lastGenTs || now - lastGenTs >= TWO_DAYS) && nextOps.proposals.length < 4) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const newProps = generateEventProposals({
+            modules, reputation: prev.reputation ?? 50, existingCount: nextOps.proposals.length,
+          });
+          if (newProps.length > 0) {
+            nextOps.proposals = [...nextOps.proposals, ...newProps];
+            nextOps.lastProposalGenAt = new Date(now).toISOString();
+            changed = true;
+          }
+        }
+
+        // 5) cobrar seguro mensal
+        if (nextOps.insurance.tier && nextOps.insurance.renewsAt && new Date(nextOps.insurance.renewsAt).getTime() <= now) {
+          const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
+          const cost = getInsuranceMonthlyCost(nextOps.insurance.tier, modules);
+          if ((next.budget ?? 0) >= cost) {
+            next.budget = (next.budget ?? 0) - cost;
+            nextOps.insurance = {
+              ...nextOps.insurance, monthlyCost: cost,
+              renewsAt: new Date(now + 30 * 24 * 3600_000).toISOString(),
+            };
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: `🛡️ Seguro renovado: -R$ ${(cost / 1000).toFixed(0)}k`, type: 'info' }, ...nextOps.recentLog].slice(0, 12);
+          } else {
+            nextOps.insurance = { tier: null, monthlyCost: 0, coverage: 0 };
+            nextOps.recentLog = [{ at: new Date().toISOString(), message: '🛡️ Seguro CANCELADO por falta de saldo!', type: 'warning' }, ...nextOps.recentLog].slice(0, 12);
+            toast.error('🛡️ Seguro do estádio cancelado por falta de saldo!');
+          }
+          changed = true;
+        }
+
+        if (!changed) return prev;
+        next.stadiumOps = nextOps;
+        return next;
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+
     toast.info('Selecione o foco de treino na aba Treinos!');
   }, []);
 
