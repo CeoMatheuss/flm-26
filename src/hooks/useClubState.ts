@@ -214,9 +214,10 @@ export function useClubState(initialState: any, userId?: string) {
     return () => clearInterval(id);
   }, []);
 
-
+  const trainPlayer = useCallback((_playerId: string) => {
     toast.info('Selecione o foco de treino na aba Treinos!');
   }, []);
+
 
   const setPlayerTrainingFocus = useCallback((playerId: string, focus: TrainingFocus) => {
     setTrainingFocus(prev => ({ ...prev, [playerId]: focus }));
