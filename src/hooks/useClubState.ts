@@ -14,6 +14,7 @@ import {
   getInsuranceMonthlyCost, INSURANCE_PLANS, EVENT_CATALOG, DAMAGE_PROFILES,
   type StadiumEventProposal, type StadiumOpsState, type StadiumDamage, type StadiumInsurance,
 } from '@/match/stadiumEvents';
+import { rollDailyWeather, type StadiumFinanceEntry } from '@/match/stadiumWeather';
 
 
 export interface LoanedPlayer {
