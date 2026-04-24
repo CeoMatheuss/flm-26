@@ -38,6 +38,8 @@ export function useMatchState(initialState: any, userId?: string) {
     infrastructure: any;
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
+    /** Fase 5 — operações do estádio (para multa por dano) */
+    stadiumOps?: import('@/match/stadiumEvents').StadiumOpsState;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
