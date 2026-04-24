@@ -104,7 +104,13 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       .update({ status: accept ? 'accepted' : 'rejected' })
       .eq('id', inviteId);
     if (error) toast.error('Erro ao responder');
-    else toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+    else {
+      toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+      if (accept) {
+        // Dispara simulação automática imediata sem precisar abrir tela.
+        try { (window as any).__triggerAutoSim?.(); } catch { /* ignore */ }
+      }
+    }
     setRespondingId(null);
     loadInvites();
   };

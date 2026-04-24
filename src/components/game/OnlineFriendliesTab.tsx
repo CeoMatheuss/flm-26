@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import type { Player } from '@/types/game';
 import type { TacticsConfig } from '@/types/tactics';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
+import { triggerAutoSim } from '@/hooks/useAutoSimulator';
 
 type TieBreaker = 'none' | 'extra_time' | 'penalties' | 'both';
 
@@ -144,6 +145,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     if (!error) {
       await supabase.from('open_friendly_slots').update({ status: 'matched' }).eq('id', slot.id);
       toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
+      triggerAutoSim(); // simula imediatamente, sem esperar horário
       loadInvites();
       loadOpenSlots();
     } else {
@@ -271,7 +273,10 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       .update({ status: accept ? 'accepted' : 'rejected' })
       .eq('id', inviteId);
     if (error) toast.error('Erro ao responder');
-    else toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+    else {
+      toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
+      if (accept) triggerAutoSim(); // simula imediatamente
+    }
     loadInvites();
     setLoading(false);
   };

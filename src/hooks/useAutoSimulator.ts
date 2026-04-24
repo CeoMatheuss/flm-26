@@ -1,20 +1,28 @@
 /**
- * useAutoSimulator — 100% client-side time-based auto-simulation.
+ * useAutoSimulator — 100% client-side auto-simulation, ZERO time/lobby gating.
  *
- * Any logged-in client periodically scans for matches whose scheduled kickoff
- * has already passed and simulates them locally, writing the result straight
- * to Supabase. The simulation runs regardless of whether either player joined
- * the lobby — once the time arrives, the match is played.
+ * Behavior (per product spec "Toda partida criada deve simular até o fim"):
+ *   • Any `league_matches` row with status='scheduled' is simulated IMMEDIATELY,
+ *     regardless of auto_sim_at, lobby, players-joined or any other flag.
+ *   • Any `friendly_invites` row with status='accepted' and no match_result is
+ *     simulated IMMEDIATELY, regardless of match_date.
  *
- * A localStorage lock prevents duplicate work across tabs.
+ * Trigger sources (any one of them is enough — the others are failsafes):
+ *   1. Initial scan on mount.
+ *   2. Periodic scan every 5s (failsafe).
+ *   3. Realtime subscription on INSERT/UPDATE of both tables.
+ *   4. Public `triggerAutoSim()` helper that callers can fire right after
+ *      creating a match (instant kickoff, no waiting).
+ *   5. `online` event re-scan when connectivity returns.
+ *
+ * A localStorage lock (60s TTL) prevents duplicate simulations across tabs.
  */
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const SCAN_INTERVAL_MS = 15_000;   // 15s — react quickly when kickoff arrives
-const FALLBACK_DELAY_MS = 5 * 60_000; // fallback if auto_sim_at/match_date is missing
+const SCAN_INTERVAL_MS = 5_000;    // 5s failsafe
 const LOCK_TTL_MS = 60_000;        // 60s
-const MAX_PER_RUN = 20;            // soft cap per scan
+const MAX_PER_RUN = 30;            // soft cap per scan
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
@@ -60,7 +68,6 @@ function genEvents(hg: number, ag: number, homeName: string, awayName: string) {
   return events;
 }
 
-// Strength = avg OVR of top 11 healthy players (fallback 60).
 async function getStrength(userId: string | null): Promise<number> {
   if (!userId) return 60;
   const { data } = await supabase
@@ -81,7 +88,6 @@ async function getStrength(userId: string | null): Promise<number> {
   return Math.round(sum / Math.max(1, pool.length));
 }
 
-// ── Lock helpers (localStorage, 60s TTL) ──
 function tryLock(matchId: string): boolean {
   try {
     const key = `autosim_lock_${matchId}`;
@@ -92,7 +98,7 @@ function tryLock(matchId: string): boolean {
     }
     localStorage.setItem(key, String(Date.now() + LOCK_TTL_MS));
     return true;
-  } catch { return true; /* if storage fails, just proceed */ }
+  } catch { return true; }
 }
 function releaseLock(matchId: string) {
   try { localStorage.removeItem(`autosim_lock_${matchId}`); } catch { /* ignore */ }
@@ -139,10 +145,9 @@ async function processLeagueMatch(m: any) {
         match_data: { ...(m.match_data || {}), events, auto_simulated: true, home_name: homeName, away_name: awayName },
       })
       .eq('id', m.id)
-      .eq('status', 'scheduled'); // guard
+      .eq('status', 'scheduled');
     if (error) return false;
 
-    // Update standings (best-effort)
     for (const u of [
       { uid: m.home_user_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
       { uid: m.away_user_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
@@ -208,78 +213,98 @@ async function processFriendly(f: any) {
   }
 }
 
+// ───────────────── module-scope scan (so triggerAutoSim works without hook) ─────────────────
+let scanInFlight = false;
+
+async function runScan() {
+  if (scanInFlight) return;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  scanInFlight = true;
+  try {
+    // Liga: TODA partida agendada — sem filtro de tempo, sem lobby, sem joined.
+    const { data: leagues } = await supabase
+      .from('league_matches')
+      .select('id, league_id, home_user_id, away_user_id, match_data')
+      .eq('status', 'scheduled')
+      .limit(MAX_PER_RUN);
+
+    for (const m of leagues || []) {
+      try { await processLeagueMatch(m); } catch (err) { console.warn('[autosim] league error:', err); }
+    }
+
+    // Amistosos: TODO convite aceito sem resultado — sem esperar match_date.
+    const { data: friendlies } = await supabase
+      .from('friendly_invites')
+      .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result')
+      .eq('status', 'accepted')
+      .is('match_result', null)
+      .limit(MAX_PER_RUN);
+
+    for (const f of friendlies || []) {
+      try { await processFriendly(f); } catch (err) { console.warn('[autosim] friendly error:', err); }
+    }
+  } catch (err) {
+    console.warn('[autosim] scan error:', err);
+  } finally {
+    scanInFlight = false;
+  }
+}
+
+/**
+ * Public helper — call this RIGHT AFTER creating a match (insert into
+ * league_matches/friendly_invites) so the simulation kicks off in the same
+ * tick, with no waiting and no lobby. Safe to call from anywhere.
+ */
+export function triggerAutoSim(): void {
+  // Fire-and-forget; multiple parallel calls are gated by `scanInFlight`.
+  void runScan();
+}
+
+// Expose globally too for legacy callers / debugging.
+if (typeof window !== 'undefined') {
+  (window as any).__triggerAutoSim = triggerAutoSim;
+}
+
 // ───────────────── hook ─────────────────
 export function useAutoSimulator(userId: string | undefined) {
-  const runningRef = useRef(false);
+  const subscribedRef = useRef(false);
 
   useEffect(() => {
     if (!userId) return;
 
-    const scan = async () => {
-      if (runningRef.current) return;
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-      runningRef.current = true;
+    // Initial scan
+    void runScan();
 
-      try {
-        const nowIso = new Date().toISOString();
-        const fallbackCutoffIso = new Date(Date.now() - FALLBACK_DELAY_MS).toISOString();
+    // Failsafe periodic scan (5s).
+    const interval = setInterval(() => { void runScan(); }, SCAN_INTERVAL_MS);
 
-        // 1) League matches: any scheduled match whose kickoff time has passed.
-        //    Uses auto_sim_at when present; otherwise falls back to created_at + 5min.
-        //    NOTE: we deliberately do NOT filter by home_joined/away_joined —
-        //    the match must run whether or not players joined the lobby.
-        const { data: leaguesByAutoSim } = await supabase
-          .from('league_matches')
-          .select('id, league_id, home_user_id, away_user_id, match_data, created_at, auto_sim_at')
-          .eq('status', 'scheduled')
-          .not('auto_sim_at', 'is', null)
-          .lte('auto_sim_at', nowIso)
-          .limit(MAX_PER_RUN);
-
-        const { data: leaguesNoAutoSim } = await supabase
-          .from('league_matches')
-          .select('id, league_id, home_user_id, away_user_id, match_data, created_at, auto_sim_at')
-          .eq('status', 'scheduled')
-          .is('auto_sim_at', null)
-          .lt('created_at', fallbackCutoffIso)
-          .limit(MAX_PER_RUN);
-
-        const leagues = [...(leaguesByAutoSim || []), ...(leaguesNoAutoSim || [])];
-        for (const m of leagues) {
-          try { await processLeagueMatch(m); } catch (err) { console.warn('[autosim] league error:', err); }
-        }
-
-        // 2) Friendlies: accepted, no result yet, scheduled match_date already passed.
-        //    Again, no joined-flag filter — automatic regardless of player presence.
-        const { data: friendlies } = await supabase
-          .from('friendly_invites')
-          .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result, created_at')
-          .eq('status', 'accepted')
-          .is('match_result', null)
-          .lte('match_date', nowIso)
-          .limit(MAX_PER_RUN);
-
-        for (const f of friendlies || []) {
-          try { await processFriendly(f); } catch (err) { console.warn('[autosim] friendly error:', err); }
-        }
-      } catch (err) {
-        console.warn('[autosim] scan error:', err);
-      } finally {
-        runningRef.current = false;
-      }
-    };
-
-    // Initial run + periodic scan
-    scan();
-    const interval = setInterval(scan, SCAN_INTERVAL_MS);
-
-    // Also scan whenever connectivity returns
-    const onOnline = () => scan();
+    // Reconnect → scan
+    const onOnline = () => { void runScan(); };
     window.addEventListener('online', onOnline);
+
+    // Realtime: simulate the moment a row is inserted/updated.
+    let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
+    let friendlyChannel: ReturnType<typeof supabase.channel> | null = null;
+    if (!subscribedRef.current) {
+      subscribedRef.current = true;
+      leagueChannel = supabase
+        .channel('autosim-league-matches')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'league_matches' }, () => { void runScan(); })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'league_matches' }, () => { void runScan(); })
+        .subscribe();
+      friendlyChannel = supabase
+        .channel('autosim-friendly-invites')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
+        .subscribe();
+    }
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('online', onOnline);
+      if (leagueChannel) supabase.removeChannel(leagueChannel);
+      if (friendlyChannel) supabase.removeChannel(friendlyChannel);
+      subscribedRef.current = false;
     };
   }, [userId]);
 }
