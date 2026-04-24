@@ -29,9 +29,9 @@ export function useMatchState(initialState: any, userId?: string) {
   const alreadyPlayedToday = false; // Unlimited friendlies
 
   const applyServerResult = useCallback(({
-    matchId, homeGoals, awayGoals, isHome = true,
+    matchId, homeGoals, awayGoals, isHome = true, competition,
   }: {
-    matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean;
+    matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean; competition?: string;
   }, deps: {
     setClub: React.Dispatch<React.SetStateAction<Club>>;
     sponsors: any[];
@@ -73,8 +73,22 @@ export function useMatchState(initialState: any, userId?: string) {
       const ticketRevenue = Math.floor(prev.fans * prev.ticketPrice * 0.1);
       const prize = (isWin ? 150000 : isDraw ? 75000 : 30000) + stadiumBonus + ticketRevenue;
 
+      // ── Premiação fixa da liga (FLM 26 Fase 3): R$ 20k base por partida oficial ──
+      // Não aplica em amistosos. Bônus +50% por vitória, -25% por derrota, escala leve com nível do estádio.
+      const compLower = (competition || '').toLowerCase();
+      const isFriendly = !competition || compLower.includes('amistos');
+      let leaguePrize = 0;
+      if (!isFriendly) {
+        const stadiumLeagueScale = 1 + (deps.infrastructure.stadium.level - 1) * 0.05; // +5% por nível
+        const resultMult = isWin ? 1.5 : isDraw ? 1.0 : 0.75;
+        leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
+      }
+
       if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
       deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match.opponent}`);
+      if (leaguePrize > 0) {
+        deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match.opponent}`);
+      }
 
       // ── Fan growth V3: faixas estritas e moderadas ──
       // Vitória: 50–100 | Empate: 20–50 | Derrota: 0–20
