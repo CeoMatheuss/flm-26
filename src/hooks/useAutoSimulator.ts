@@ -6,6 +6,8 @@
  *     regardless of auto_sim_at, lobby, players-joined or any other flag.
  *   • Any `friendly_invites` row with status='accepted' and no match_result is
  *     simulated IMMEDIATELY, regardless of match_date.
+ *   • Any `custom_tournament_matches` row with status='scheduled' is simulated
+ *     IMMEDIATELY, regardless of scheduled_at — no "Aguardando horário" ever.
  *
  * Trigger sources (any one of them is enough — the others are failsafes):
  *   1. Initial scan on mount.
