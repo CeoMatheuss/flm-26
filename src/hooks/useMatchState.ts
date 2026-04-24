@@ -113,9 +113,10 @@ export function useMatchState(initialState: any, userId?: string) {
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
       const fanSign = fanChange >= 0 ? '+' : '';
-      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
-      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
-      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}`);
+      const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k cota liga` : '';
+      if (isWin) toast.success(`Vitória! ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
+      else if (isDraw) toast.info(`Empate: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
+      else toast.error(`Derrota: ${homeGoals} x ${awayGoals} | Torcida ${fanSign}${fanChange}${prizeMsg}`);
 
       deps.setSeason((s: any) => ({ ...s, currentWeek: s.currentWeek + 1 }));
 
@@ -128,7 +129,7 @@ export function useMatchState(initialState: any, userId?: string) {
           stamina: Math.min(100, Math.max(20, p.stamina - Math.floor(Math.random() * 10 + 5))),
           gamesPlayed: p.gamesPlayed + 1,
         })),
-        budget: prev.budget + prize + sponsorWeekly,
+        budget: prev.budget + prize + sponsorWeekly + leaguePrize,
         fans: Math.max(100, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange)),
         stats: {
