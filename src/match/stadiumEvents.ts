@@ -379,6 +379,7 @@ export function emptyStadiumOps(): StadiumOpsState {
     damages: [],
     insurance: { tier: null, monthlyCost: 0, coverage: 0 },
     recentLog: [],
+    financeLog: [],
   };
 }
 
