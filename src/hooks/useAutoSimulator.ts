@@ -304,6 +304,17 @@ async function runScan() {
     for (const f of friendlies || []) {
       try { await processFriendly(f); } catch (err) { console.warn('[autosim] friendly error:', err); }
     }
+
+    // Campeonatos (custom tournaments): TODA partida agendada — sem esperar scheduled_at.
+    const { data: tournaments } = await supabase
+      .from('custom_tournament_matches')
+      .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data')
+      .eq('status', 'scheduled')
+      .limit(MAX_PER_RUN);
+
+    for (const m of tournaments || []) {
+      try { await processTournamentMatch(m); } catch (err) { console.warn('[autosim] tournament error:', err); }
+    }
   } catch (err) {
     console.warn('[autosim] scan error:', err);
   } finally {
