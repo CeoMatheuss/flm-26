@@ -707,6 +707,40 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
+  // ── Fase 5 — sponsors do estádio ───────────────────────────────────────
+  const acceptStadiumSponsor = useCallback((offerId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      const offer = (ops.sponsorOffers ?? []).find(o => o.id === offerId);
+      if (!offer) { toast.error('Oferta não encontrada'); return prev; }
+      const contract = acceptSponsorOffer(offer);
+      toast.success(`💼 Patrocínio aceito: ${offer.brand} (R$${(offer.monthlyPay/1000).toFixed(0)}k/mês)`);
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          sponsorOffers: (ops.sponsorOffers ?? []).filter(o => o.id !== offerId),
+          sponsorContracts: [...(ops.sponsorContracts ?? []), contract],
+          recentLog: [{ at: new Date().toISOString(), message: `💼 ${offer.brand} (${offer.slot}) firmou contrato`, type: 'success' as const }, ...ops.recentLog].slice(0, 12),
+        },
+      };
+    });
+  }, []);
+
+  const rejectStadiumSponsor = useCallback((offerId: string) => {
+    setClub(prev => {
+      const ops = prev.stadiumOps ?? emptyStadiumOps();
+      return {
+        ...prev,
+        stadiumOps: {
+          ...ops,
+          sponsorOffers: (ops.sponsorOffers ?? []).filter(o => o.id !== offerId),
+        },
+      };
+    });
+    toast.info('Oferta de patrocínio recusada');
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -718,6 +752,7 @@ export function useClubState(initialState: any, userId?: string) {
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     rescindPlayer,
     acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
+    acceptStadiumSponsor, rejectStadiumSponsor,
   };
 
 }
