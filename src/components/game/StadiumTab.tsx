@@ -144,13 +144,31 @@ export function StadiumTab({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <KpiCard icon={Users} label="Capacidade" value={modules.seatingCapacity.toLocaleString()} />
+            <KpiCard icon={Users} label="Capacidade" value={getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()} />
             <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
             <KpiCard icon={Users} label="Público" value={revenue.attendance.toLocaleString()} />
             <KpiCard icon={Wrench} label="Manut./sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
           </div>
+          {ops.damages.filter(d => !d.repairing).length > 0 && (
+            <div className="mt-2 rounded-md bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-[11px] text-red-300">
+              ⚠️ Capacidade reduzida por danos não reparados. Veja a aba abaixo.
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* Operações do estádio: inbox de eventos, danos, seguro */}
+      <StadiumOpsPanel
+        ops={ops}
+        budget={budget}
+        stadiumLevel={stadium.level}
+        vipBoxesBuilt={vipBoxesBuilt}
+        onAccept={onAcceptStadiumEvent}
+        onReject={onRejectStadiumEvent}
+        onRepair={onStartStadiumRepair}
+        onBuyInsurance={onBuyStadiumInsurance}
+        onCancelInsurance={onCancelStadiumInsurance}
+      />
 
       {/* Receita detalhada */}
       <Card>
