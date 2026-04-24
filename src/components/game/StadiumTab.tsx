@@ -57,6 +57,8 @@ interface Props {
   onCancelStadiumInsurance: () => void;
   onAcceptStadiumSponsor: (offerId: string) => void;
   onRejectStadiumSponsor: (offerId: string) => void;
+  onToggleMembershipTier: (tier: MembershipTier) => void;
+  onBuyModularUpgrade: (id: ModularUpgradeId) => void;
 }
 
 const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
