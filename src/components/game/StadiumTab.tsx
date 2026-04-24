@@ -1,10 +1,23 @@
-import { Infrastructure, getStadiumCapacity, getStadiumUpgradeCost } from '@/types/infrastructure';
+import { Infrastructure, getStadiumUpgradeCost } from '@/types/infrastructure';
+import {
+  buildStadiumModules,
+  computeMatchRevenue,
+  getMonthlyVipContractIncome,
+  VIP_CATALOG,
+  type MatchImportance,
+} from '@/match/stadiumEconomics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Landmark, ArrowUp, Users, Ticket, DollarSign, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Landmark, ArrowUp, Users, Ticket, DollarSign, TrendingUp,
+  Crown, ShoppingBag, Car, Wrench, Sparkles, Lock,
+} from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useLiveMatchGuard } from './LiveMatchGuard';
+import stadiumHero from '@/assets/stadium-management-hero.jpg';
 
 interface Props {
   infrastructure: Infrastructure;
@@ -18,99 +31,139 @@ interface Props {
   onRenameStadium: (name: string) => void;
 }
 
-function getStadiumMatchRevenue(level: number, fans: number, ticketPrice: number): number {
-  const capacity = getStadiumCapacity(level);
-  const attendance = Math.min(capacity, Math.floor(fans * 0.1));
-  return attendance * ticketPrice;
-}
+const IMPORTANCE_LABEL: Record<MatchImportance, string> = {
+  amistoso: 'Amistoso',
+  liga: 'Liga',
+  classico: 'Clássico',
+  final: 'Final',
+};
 
-export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPrice, reputation, onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice, onRenameStadium: _onRenameStadium }: Props) {
+export function StadiumTab({
+  infrastructure, budget, fans, stadiumName, ticketPrice, reputation,
+  onUpgrade: _onUpgrade, onSetTicketPrice: _onSetTicketPrice, onRenameStadium: _onRenameStadium,
+}: Props) {
   const { guard } = useLiveMatchGuard();
   const onUpgrade = guard(_onUpgrade);
   const onSetTicketPrice = guard(_onSetTicketPrice);
   const onRenameStadium = guard(_onRenameStadium);
+
   const stadium = infrastructure?.stadium ?? { level: 1, maxLevel: 15 };
   const cost = getStadiumUpgradeCost(stadium.level);
   const isMaxed = stadium.level >= stadium.maxLevel;
-  const capacity = getStadiumCapacity(stadium.level);
-  const attendance = Math.min(capacity, Math.floor(fans * 0.1));
-  const matchRevenue = getStadiumMatchRevenue(stadium.level, fans, ticketPrice);
-  const occupancy = capacity > 0 ? Math.round((attendance / capacity) * 100) : 0;
+
+  const [previewImportance, setPreviewImportance] = useState<MatchImportance>('liga');
+
+  const modules = useMemo(() => buildStadiumModules(stadium.level), [stadium.level]);
+  const revenue = useMemo(
+    () => computeMatchRevenue(modules, {
+      fans, reputation, ticketPrice, formScore: 0, importance: previewImportance,
+    }),
+    [modules, fans, reputation, ticketPrice, previewImportance],
+  );
+  const monthlyVipContracts = useMemo(() => getMonthlyVipContractIncome(modules), [modules]);
+
+  const occupancyPct = Math.round(revenue.occupancy * 100);
 
   return (
     <div className="space-y-4">
-      {/* Stadium Header */}
-      <Card className="border-primary/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Landmark className="h-5 w-5 text-emerald-400" />
-            {stadiumName}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <Users className="h-4 w-4 mx-auto mb-1 text-primary" />
-              <p className="text-lg font-bold">{capacity.toLocaleString()}</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Capacidade</p>
+      {/* Hero */}
+      <Card className="overflow-hidden border-amber-500/30 relative">
+        <div className="absolute inset-0">
+          <img
+            src={stadiumHero}
+            alt="Estádio premium iluminado à noite"
+            loading="lazy"
+            width={1920}
+            height={1080}
+            className="w-full h-full object-cover opacity-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+        </div>
+        <div className="relative p-4 sm:p-5 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 mb-2">
+                <Sparkles className="h-3 w-3 mr-1" /> Gestão de Estádio
+              </Badge>
+              <h2 className="text-2xl font-extrabold tracking-tight">{stadiumName}</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nível {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
+              </p>
             </div>
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <Users className="h-4 w-4 mx-auto mb-1 text-emerald-400" />
-              <p className="text-lg font-bold">{attendance.toLocaleString()}</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Público Médio</p>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
-              <p className="text-lg font-bold">{occupancy}%</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Ocupação</p>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <DollarSign className="h-4 w-4 mx-auto mb-1 text-emerald-400" />
-              <p className="text-lg font-bold">R${(matchRevenue / 1000).toFixed(0)}k</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Receita/Jogo</p>
+            <div className="text-right">
+              <p className="text-[10px] uppercase text-muted-foreground">Receita estimada</p>
+              <p className="text-2xl font-extrabold text-amber-400">
+                R$ {(revenue.total / 1000).toFixed(0)}k
+              </p>
+              <p className="text-[10px] text-muted-foreground">/ partida ({IMPORTANCE_LABEL[previewImportance]})</p>
             </div>
           </div>
 
-          {/* Level & Upgrade */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">Nível {stadium.level}/{stadium.maxLevel}</span>
-              <Progress value={(stadium.level / stadium.maxLevel) * 100} className="flex-1 h-3" />
-            </div>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: stadium.maxLevel }, (_, i) => (
-                <div
-                  key={i}
-                  className={`h-3 flex-1 rounded-sm ${i < stadium.level ? 'bg-emerald-500' : 'bg-muted'}`}
-                />
-              ))}
-            </div>
-            {!isMaxed ? (
-              <Button onClick={() => onUpgrade('stadium')} disabled={budget < cost} className="w-full gap-2">
-                <ArrowUp className="h-4 w-4" />
-                Expandir para Nível {stadium.level + 1} — R$ {(cost / 1000000).toFixed(2)}M
-              </Button>
-            ) : (
-              <p className="text-sm text-center text-emerald-400 font-semibold py-2">✅ Estádio no Nível Máximo!</p>
-            )}
+          {/* KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <KpiCard icon={Users} label="Capacidade" value={modules.seatingCapacity.toLocaleString()} />
+            <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
+            <KpiCard icon={Users} label="Público" value={revenue.attendance.toLocaleString()} />
+            <KpiCard icon={Wrench} label="Manut./sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
           </div>
-        </CardContent>
+        </div>
       </Card>
 
-      {/* Ticket Price */}
+      {/* Receita detalhada */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-primary" />
-            Preço do Ingresso
+          <CardTitle className="text-base flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-emerald-400" />
+              Receita por Partida
+            </span>
+            <div className="flex gap-1">
+              {(['amistoso', 'liga', 'classico', 'final'] as MatchImportance[]).map(i => (
+                <Button
+                  key={i}
+                  size="sm"
+                  variant={previewImportance === i ? 'default' : 'outline'}
+                  className="h-6 px-2 text-[10px]"
+                  onClick={() => setPreviewImportance(i)}
+                >
+                  {IMPORTANCE_LABEL[i]}
+                </Button>
+              ))}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Ajuste o preço dos ingressos. Preços altos geram mais receita mas podem afastar torcedores se o time não performar bem.
+          <RevenueRow icon={Ticket} label="Ingressos" value={revenue.ticketRevenue} hint={`${revenue.attendance.toLocaleString()} × R$${ticketPrice}`} color="text-primary" />
+          <RevenueRow icon={Crown} label="Camarotes VIP" value={revenue.vipRevenue} hint={`${modules.vipBoxes.reduce((s,b)=>s+b.count,0)} unidades`} color="text-amber-400" />
+          <RevenueRow icon={ShoppingBag} label="Área Comercial" value={revenue.commercialRevenue} hint={`R$${modules.commercialPerFan}/torcedor`} color="text-fuchsia-400" />
+          <RevenueRow icon={Car} label="Estacionamento" value={revenue.parkingRevenue} hint={`${revenue.parkingUsed}/${modules.parkingSpots} vagas`} color="text-sky-400" />
+          <div className="border-t border-border pt-2 flex items-center justify-between">
+            <span className="font-bold text-sm">Total da Partida</span>
+            <span className="font-extrabold text-lg text-emerald-400">R$ {revenue.total.toLocaleString()}</span>
+          </div>
+          {monthlyVipContracts > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 text-xs flex items-center justify-between">
+              <span className="text-amber-200">+ Contratos VIP (mensal fixo)</span>
+              <span className="font-bold text-amber-300">R$ {monthlyVipContracts.toLocaleString()}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Preço do ingresso */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Ticket className="h-4 w-4 text-primary" /> Preço do Ingresso
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Preço alto = mais receita por torcedor, mas <span className="text-amber-300 font-semibold">menos público</span>.
+            Cada 10% acima de R$40 reduz ~5% da demanda.
           </p>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">R$</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground">R$</span>
             <Input
               type="number"
               min={5}
@@ -133,18 +186,88 @@ export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPr
               ))}
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Receita estimada por jogo: <span className="text-primary font-bold">R$ {matchRevenue.toLocaleString()}</span> ({attendance.toLocaleString()} pagantes × R${ticketPrice})
-          </p>
         </CardContent>
       </Card>
 
-      {/* Rename Stadium */}
+      {/* Camarotes VIP */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Landmark className="h-5 w-5 text-muted-foreground" />
-            Renomear Estádio
+          <CardTitle className="text-base flex items-center gap-2">
+            <Crown className="h-4 w-4 text-amber-400" /> Camarotes VIP
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {VIP_CATALOG.map(cfg => {
+            const owned = modules.vipBoxes.find(b => b.tier === cfg.tier);
+            const unlocked = stadium.level >= cfg.unlockLevel;
+            return (
+              <div
+                key={cfg.tier}
+                className={`flex items-center justify-between gap-3 p-2.5 rounded-lg border ${
+                  unlocked ? 'bg-muted/30 border-border' : 'bg-muted/10 border-dashed border-muted opacity-60'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl">{cfg.emoji}</span>
+                  <div>
+                    <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label}</p>
+                    {unlocked ? (
+                      <p className="text-[10px] text-muted-foreground">
+                        {owned?.count} unidades • R$ {cfg.priceMatch.toLocaleString()}/jogo
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Desbloqueia no Nv {cfg.unlockLevel}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {unlocked && (
+                  <div className="text-right">
+                    <p className="text-[9px] uppercase text-muted-foreground">Contrato/mês</p>
+                    <p className="text-xs font-bold text-amber-300">
+                      R$ {(cfg.monthlyContract / 1000).toFixed(0)}k
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Upgrade global */}
+      <Card className="border-emerald-500/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ArrowUp className="h-4 w-4 text-emerald-400" /> Expansão do Estádio
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium whitespace-nowrap">Nv {stadium.level}/{stadium.maxLevel}</span>
+            <Progress value={(stadium.level / stadium.maxLevel) * 100} className="flex-1 h-3" />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Subir de nível aumenta a capacidade, libera camarotes VIP de tier superior, expande o estacionamento
+            e aumenta a receita comercial por torcedor.
+          </p>
+          {!isMaxed ? (
+            <Button onClick={() => onUpgrade('stadium')} disabled={budget < cost} className="w-full gap-2">
+              <ArrowUp className="h-4 w-4" />
+              Expandir para Nv {stadium.level + 1} — R$ {(cost / 1_000_000).toFixed(2)}M
+            </Button>
+          ) : (
+            <p className="text-sm text-center text-emerald-400 font-semibold py-2">✅ Estádio no Nível Máximo!</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Renomear */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Landmark className="h-4 w-4 text-muted-foreground" /> Renomear Estádio
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -164,25 +287,40 @@ export function StadiumTab({ infrastructure, budget, fans, stadiumName, ticketPr
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      {/* Stadium Benefits Info */}
-      <Card className="border-muted/30">
-        <CardContent className="p-4 space-y-2">
-          <p className="text-xs font-bold uppercase text-muted-foreground">📋 Capacidade por Nível</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {[
-              { level: '1-6', benefit: '5k→30k lugares — Expansão: R$ 5M/nível' },
-              { level: '7-13', benefit: '40k→100k lugares — Expansão: R$ 10M/nível' },
-              { level: '14-15', benefit: '110k→120k lugares — Expansão: R$ 20M/nível' },
-            ].map(item => (
-              <div key={item.level} className="flex gap-2 items-start">
-                <span className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">Nv.{item.level}</span>
-                <p className="text-[10px] text-muted-foreground">{item.benefit}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function KpiCard({ icon: Icon, label, value, accent, muted }: {
+  icon: any; label: string; value: string; accent?: boolean; muted?: boolean;
+}) {
+  return (
+    <div className={`rounded-lg p-2.5 text-center backdrop-blur-sm ${
+      accent ? 'bg-amber-500/15 border border-amber-500/30' :
+      muted ? 'bg-background/40 border border-border' :
+      'bg-background/60 border border-border'
+    }`}>
+      <Icon className={`h-3.5 w-3.5 mx-auto mb-1 ${accent ? 'text-amber-400' : muted ? 'text-muted-foreground' : 'text-primary'}`} />
+      <p className="text-base font-bold leading-tight">{value}</p>
+      <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{label}</p>
+    </div>
+  );
+}
+
+function RevenueRow({ icon: Icon, label, value, hint, color }: {
+  icon: any; label: string; value: number; hint: string; color: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <Icon className={`h-4 w-4 shrink-0 ${color}`} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate">{label}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{hint}</p>
+        </div>
+      </div>
+      <span className={`text-sm font-bold ${color}`}>R$ {value.toLocaleString()}</span>
     </div>
   );
 }
