@@ -229,11 +229,21 @@ export function computeExpectedAttendance(
 }
 
 // ─── Receita por partida ──────────────────────────────────────────────────
+export interface MatchRevenueExtras {
+  /** Fase 6 — bônus de comercial/torcedor (telão LED) */
+  bonusCommercialPerFan?: number;
+  /** Fase 6 — bônus em ocupação base (segurança eletrônica, etc.) — 0..1 */
+  occupancyBonus?: number;
+  /** Fase 6 — piso de público garantido por sócios-torcedores */
+  membershipFloor?: number;
+}
+
 export function computeMatchRevenue(
   modules: StadiumModules,
   demand: DemandInputs,
+  extras: MatchRevenueExtras = {},
 ): MatchRevenueBreakdown {
-  const attendance = computeExpectedAttendance({
+  let attendance = computeExpectedAttendance({
     fans: demand.fans,
     reputation: demand.reputation,
     ticketPrice: demand.ticketPrice,
@@ -243,6 +253,15 @@ export function computeMatchRevenue(
     importance: demand.importance,
     isHomeAdvantageActive: demand.isHomeAdvantageActive,
   });
+
+  // Aplica bônus de ocupação (segurança eletrônica)
+  if (extras.occupancyBonus && extras.occupancyBonus > 0) {
+    attendance = Math.min(modules.seatingCapacity, Math.floor(attendance * (1 + extras.occupancyBonus)));
+  }
+  // Sócios-torcedores garantem comparecimento mínimo
+  if (extras.membershipFloor && extras.membershipFloor > 0) {
+    attendance = Math.max(attendance, Math.min(modules.seatingCapacity, extras.membershipFloor));
+  }
 
   const capacity = modules.seatingCapacity;
   const occupancy = capacity > 0 ? attendance / capacity : 0;
@@ -257,7 +276,8 @@ export function computeMatchRevenue(
     return sum + Math.round(box.built * vipOccupancy) * cfg.priceMatch;
   }, 0);
 
-  const commercialRevenue = attendance * modules.commercialPerFan;
+  const commercialPerFan = modules.commercialPerFan + (extras.bonusCommercialPerFan ?? 0);
+  const commercialRevenue = attendance * commercialPerFan;
 
   const parkingUsed = Math.min(
     modules.parkingSpots,
