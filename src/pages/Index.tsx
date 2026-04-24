@@ -468,4 +468,33 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   );
 }
 
+/**
+ * Wrapper persistente do modal "Bola de Ouro / Fim de Temporada".
+ * Garante que, uma vez fechado pelo jogador, NUNCA mais reapareça
+ * para aquela temporada (mesmo após F5 ou re-login).
+ */
+function PersistentSeasonAwards({
+  season,
+  userId,
+  onClose,
+}: { season: number; userId?: string; onClose: () => void }) {
+  const { isVisible, dismiss } = useDismissibleWidget(
+    `season_awards_${season}`,
+    userId,
+    { type: 'season_end' },
+  );
+  if (!isVisible) {
+    // Já dispensado/expirado — também limpa o gate no Index para não rechecar.
+    Promise.resolve().then(onClose);
+    return null;
+  }
+  return (
+    <SeasonAwardsModal
+      open
+      season={season}
+      onClose={() => { dismiss(); onClose(); }}
+    />
+  );
+}
+
 export default Index;
