@@ -221,31 +221,42 @@ export function useAutoSimulator(userId: string | undefined) {
       runningRef.current = true;
 
       try {
-        const cutoffIso = new Date(Date.now() - EXPIRY_MS).toISOString();
+        const nowIso = new Date().toISOString();
+        const fallbackCutoffIso = new Date(Date.now() - FALLBACK_DELAY_MS).toISOString();
 
-        // 1) League matches: scheduled, both sides not joined, created >5m ago
-        const { data: leagues } = await supabase
+        // 1) League matches: any scheduled match whose kickoff time has passed.
+        //    Uses auto_sim_at when present; otherwise falls back to created_at + 5min.
+        //    NOTE: we deliberately do NOT filter by home_joined/away_joined —
+        //    the match must run whether or not players joined the lobby.
+        const { data: leaguesByAutoSim } = await supabase
           .from('league_matches')
-          .select('id, league_id, home_user_id, away_user_id, match_data, home_joined, away_joined, created_at')
+          .select('id, league_id, home_user_id, away_user_id, match_data, created_at, auto_sim_at')
           .eq('status', 'scheduled')
-          .eq('home_joined', false)
-          .eq('away_joined', false)
-          .lt('created_at', cutoffIso)
+          .not('auto_sim_at', 'is', null)
+          .lte('auto_sim_at', nowIso)
           .limit(MAX_PER_RUN);
 
-        for (const m of leagues || []) {
+        const { data: leaguesNoAutoSim } = await supabase
+          .from('league_matches')
+          .select('id, league_id, home_user_id, away_user_id, match_data, created_at, auto_sim_at')
+          .eq('status', 'scheduled')
+          .is('auto_sim_at', null)
+          .lt('created_at', fallbackCutoffIso)
+          .limit(MAX_PER_RUN);
+
+        const leagues = [...(leaguesByAutoSim || []), ...(leaguesNoAutoSim || [])];
+        for (const m of leagues) {
           try { await processLeagueMatch(m); } catch (err) { console.warn('[autosim] league error:', err); }
         }
 
-        // 2) Friendlies: accepted, no result, both sides not joined, match_date >5m ago
+        // 2) Friendlies: accepted, no result yet, scheduled match_date already passed.
+        //    Again, no joined-flag filter — automatic regardless of player presence.
         const { data: friendlies } = await supabase
           .from('friendly_invites')
-          .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, home_joined, away_joined, match_result, created_at')
+          .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result, created_at')
           .eq('status', 'accepted')
-          .eq('home_joined', false)
-          .eq('away_joined', false)
           .is('match_result', null)
-          .lt('match_date', cutoffIso)
+          .lte('match_date', nowIso)
           .limit(MAX_PER_RUN);
 
         for (const f of friendlies || []) {
