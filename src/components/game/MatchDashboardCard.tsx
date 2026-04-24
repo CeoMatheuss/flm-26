@@ -110,8 +110,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       const diff = scheduledTime - now;
       const elapsed = now - scheduledTime;
       if (diff <= 0 && elapsed >= WINDOW_MS) {
-        // Past 5-min window — server is simulating; just show "Aguardando..."
-        setTimeLeft('Aguardando resultado...');
+        // Past 5-min window — auto-simulator handles it; show "Simulando..."
+        setTimeLeft('Simulando agora...');
         setIsReady(false);
       } else if (diff <= 0) {
         // Within 5-min window — can play
@@ -229,7 +229,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
             onClick={handleGoToMatch}
             disabled={!isReady}
           >
-            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Aguardando horário...</>}
+            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> Simulando em breve...</>}
           </Button>
           {onGoToFriendly && !isReady && (
             <Button size="sm" variant="ghost" className="gap-2 text-[10px] h-7" onClick={onGoToFriendly}>

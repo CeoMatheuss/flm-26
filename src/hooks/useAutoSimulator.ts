@@ -6,6 +6,8 @@
  *     regardless of auto_sim_at, lobby, players-joined or any other flag.
  *   • Any `friendly_invites` row with status='accepted' and no match_result is
  *     simulated IMMEDIATELY, regardless of match_date.
+ *   • Any `custom_tournament_matches` row with status='scheduled' is simulated
+ *     IMMEDIATELY, regardless of scheduled_at — no "Aguardando horário" ever.
  *
  * Trigger sources (any one of them is enough — the others are failsafes):
  *   1. Initial scan on mount.
@@ -213,6 +215,65 @@ async function processFriendly(f: any) {
   }
 }
 
+// ───────────────── tournament processing ─────────────────
+async function getTournamentTeamStrength(t: { user_id: string | null; bot_strength: number | null }): Promise<number> {
+  if (t.user_id) return await getStrength(t.user_id);
+  return Math.max(30, Math.min(95, t.bot_strength || 60));
+}
+
+async function processTournamentMatch(m: any) {
+  if (!tryLock(m.id)) return false;
+  try {
+    const { data: teams } = await supabase
+      .from('custom_tournament_teams')
+      .select('id, club_name, user_id, bot_strength, points, wins, draws, losses, goals_for, goals_against, played')
+      .in('id', [m.home_team_id, m.away_team_id]);
+    const home = teams?.find(t => t.id === m.home_team_id);
+    const away = teams?.find(t => t.id === m.away_team_id);
+    if (!home || !away) return false;
+
+    const homeStr = await getTournamentTeamStrength(home);
+    const awayStr = await getTournamentTeamStrength(away);
+    const { home: hg, away: ag } = simulate(homeStr, awayStr);
+    const events = genEvents(hg, ag, home.club_name, away.club_name);
+
+    const { error } = await supabase
+      .from('custom_tournament_matches')
+      .update({
+        home_goals: hg,
+        away_goals: ag,
+        status: 'finished',
+        played_at: new Date().toISOString(),
+        match_data: { ...(m.match_data || {}), events, auto_simulated: true, home_name: home.club_name, away_name: away.club_name },
+      })
+      .eq('id', m.id)
+      .eq('status', 'scheduled');
+    if (error) return false;
+
+    // Update standings (only relevant for league/group stage; harmless for knockouts)
+    for (const u of [
+      { row: home, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
+      { row: away, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
+    ]) {
+      await supabase.from('custom_tournament_teams').update({
+        points: (u.row.points || 0) + (u.win ? 3 : u.draw ? 1 : 0),
+        wins: (u.row.wins || 0) + (u.win ? 1 : 0),
+        draws: (u.row.draws || 0) + (u.draw ? 1 : 0),
+        losses: (u.row.losses || 0) + (u.loss ? 1 : 0),
+        goals_for: (u.row.goals_for || 0) + u.gf,
+        goals_against: (u.row.goals_against || 0) + u.ga,
+        played: (u.row.played || 0) + 1,
+      }).eq('id', u.row.id);
+    }
+
+    if (home.user_id) await notify(home.user_id, away.club_name, hg, ag, 'Campeonato');
+    if (away.user_id) await notify(away.user_id, home.club_name, ag, hg, 'Campeonato');
+    return true;
+  } finally {
+    releaseLock(m.id);
+  }
+}
+
 // ───────────────── module-scope scan (so triggerAutoSim works without hook) ─────────────────
 let scanInFlight = false;
 
@@ -242,6 +303,17 @@ async function runScan() {
 
     for (const f of friendlies || []) {
       try { await processFriendly(f); } catch (err) { console.warn('[autosim] friendly error:', err); }
+    }
+
+    // Campeonatos (custom tournaments): TODA partida agendada — sem esperar scheduled_at.
+    const { data: tournaments } = await supabase
+      .from('custom_tournament_matches')
+      .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data')
+      .eq('status', 'scheduled')
+      .limit(MAX_PER_RUN);
+
+    for (const m of tournaments || []) {
+      try { await processTournamentMatch(m); } catch (err) { console.warn('[autosim] tournament error:', err); }
     }
   } catch (err) {
     console.warn('[autosim] scan error:', err);
@@ -285,6 +357,7 @@ export function useAutoSimulator(userId: string | undefined) {
     // Realtime: simulate the moment a row is inserted/updated.
     let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
     let friendlyChannel: ReturnType<typeof supabase.channel> | null = null;
+    let tournamentChannel: ReturnType<typeof supabase.channel> | null = null;
     if (!subscribedRef.current) {
       subscribedRef.current = true;
       leagueChannel = supabase
@@ -297,6 +370,11 @@ export function useAutoSimulator(userId: string | undefined) {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'friendly_invites' }, () => { void runScan(); })
         .subscribe();
+      tournamentChannel = supabase
+        .channel('autosim-tournament-matches')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'custom_tournament_matches' }, () => { void runScan(); })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'custom_tournament_matches' }, () => { void runScan(); })
+        .subscribe();
     }
 
     return () => {
@@ -304,6 +382,7 @@ export function useAutoSimulator(userId: string | undefined) {
       window.removeEventListener('online', onOnline);
       if (leagueChannel) supabase.removeChannel(leagueChannel);
       if (friendlyChannel) supabase.removeChannel(friendlyChannel);
+      if (tournamentChannel) supabase.removeChannel(tournamentChannel);
       subscribedRef.current = false;
     };
   }, [userId]);
