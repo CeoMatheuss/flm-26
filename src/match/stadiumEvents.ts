@@ -315,6 +315,59 @@ export function isStadiumBlockedForBigMatch(damages: StadiumDamage[]): { blocked
   return { blocked: false };
 }
 
+// ─── Fase 3 — Conflitos com o calendário de partidas ──────────────────────
+export interface MatchScheduleEntry {
+  id: string;
+  date: string;          // ISO
+  isHome: boolean;
+  competition?: string;  // 'Liga', 'Copa', 'Amistoso', 'Final'...
+  opponent?: string;
+}
+
+export interface EventCalendarConflict {
+  hasConflict: boolean;
+  /** partida em casa que choca com janela do evento (incluindo blockDays de pós-evento) */
+  conflictingMatch?: MatchScheduleEntry;
+  /** dias entre o evento e a partida (negativo: partida antes do evento; positivo: partida depois) */
+  daysToMatch?: number;
+  reason?: string;
+}
+
+/**
+ * Verifica se uma proposta de evento conflita com partidas oficiais em casa.
+ * Considera blockDays APÓS o evento (gramado/limpeza) + 1 dia de buffer antes.
+ */
+export function detectEventCalendarConflict(
+  scheduledFor: string,
+  blockDays: number,
+  upcomingHomeMatches: MatchScheduleEntry[],
+): EventCalendarConflict {
+  if (!upcomingHomeMatches || upcomingHomeMatches.length === 0) return { hasConflict: false };
+  const evDay = new Date(scheduledFor).getTime();
+  // Janela bloqueada: [evento - 1d, evento + blockDays + 1d]
+  const winStart = evDay - 24 * 3600_000;
+  const winEnd = evDay + (blockDays + 1) * 24 * 3600_000;
+
+  for (const m of upcomingHomeMatches) {
+    if (!m.isHome) continue;
+    const md = new Date(m.date).getTime();
+    if (md >= winStart && md <= winEnd) {
+      const diffDays = Math.round((md - evDay) / (24 * 3600_000));
+      const compLabel = m.competition || 'Partida';
+      const isBig = /(final|clás|derby|decis)/i.test(compLabel);
+      return {
+        hasConflict: true,
+        conflictingMatch: m,
+        daysToMatch: diffDays,
+        reason: isBig
+          ? `⚠️ ${compLabel} marcada para ${new Date(m.date).toLocaleDateString('pt-BR')} (${diffDays >= 0 ? '+' : ''}${diffDays}d) — risco crítico ao gramado.`
+          : `Conflito com ${compLabel} em ${new Date(m.date).toLocaleDateString('pt-BR')} (${diffDays >= 0 ? '+' : ''}${diffDays}d). Gramado pode estar comprometido.`,
+      };
+    }
+  }
+  return { hasConflict: false };
+}
+
 export function emptyStadiumOps(): StadiumOpsState {
   return {
     proposals: [],
