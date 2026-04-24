@@ -184,6 +184,10 @@ export interface StadiumOpsState {
   lastSponsorGenAt?: string;
   /** Fase 5 — conquistas */
   achievements?: import('./stadiumExtras').StadiumAchievementState;
+  /** Fase 6 — sócio-torcedor + upgrades modulares */
+  phase6?: import('./stadiumPhase6').StadiumPhase6State;
+  /** Fase 6 — última cobrança/recálculo do programa de sócios */
+  lastMembershipBilledAt?: string;
 }
 
 // ─── Insurance plans ──────────────────────────────────────────────────────
@@ -389,6 +393,7 @@ export function emptyStadiumOps(): StadiumOpsState {
     sponsorOffers: [],
     sponsorContracts: [],
     achievements: { unlocked: [], progress: {} },
+    phase6: { membership: { activeTiers: [], membersByTier: {} }, upgrades: { owned: [], purchasedAt: {} } },
   };
 }
 
