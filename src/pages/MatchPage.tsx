@@ -1817,8 +1817,8 @@ function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePl
         </p>
         <div className="space-y-2.5">
           {starters.map((p, i) => {
-            const stamina = p.stamina ?? 100;
-            const staminaColor = stamina >= 70 ? 'bg-emerald-500' : stamina >= 40 ? 'bg-amber-500' : 'bg-red-500';
+            const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+            const staminaColor = staminaColorClass(stamina);
             return (
               <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
                 <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
