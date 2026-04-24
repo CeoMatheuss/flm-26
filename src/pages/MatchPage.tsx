@@ -1428,6 +1428,7 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
     isHalftime={isHalftime}
     blocked={blocked}
     blockedReason={blockedReason}
+    liveStaminaMap={liveStaminaMap}
   />;
 }
 
