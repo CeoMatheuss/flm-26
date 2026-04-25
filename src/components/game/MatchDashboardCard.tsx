@@ -137,6 +137,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
+    const stageStr = String(nextMatch.stage || '').toLowerCase();
+    const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/', {
       replace: true,
       state: {
@@ -147,6 +149,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           opponentStrength: nextMatch.opponentStrength,
           isHome: nextMatch.isHome,
           competition: nextMatch.tournamentName,
+          tieBreaker: isKnockout ? 'both' : 'none',
         },
       },
     });
