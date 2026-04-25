@@ -590,29 +590,30 @@ function simulateFullMatch(
     tackles: [0, 0], saves: [0, 0], offsides: [0, 0],
   };
 
-  // ── POISSON GOALS ──────────────────────────────────────────
+  // ── POISSON GOALS (atributos REFORÇADOS) ───────────────────
+  // Reforço: peso de atributos sobe de 0.6 → 1.1 e do strengthDiff de 1.5 → 2.2.
+  // Isso faz times com finalização/defesa/passe melhores marcarem mais e sofrerem menos.
   const homeAttackVsDefense = (homeAtkAvg + homeMidAvg * 0.5) / Math.max(1, awayDefAvg);
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
-  
+
   const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
 
   // ── MATCHUP MULTIPLIERS ──────────────────────────────────────
-  // Cada lado é avaliado de acordo com como seu estilo se sai contra o do outro.
   const homeMatchup = getMatchup(playStyle, awayPlayStyle);
   const awayMatchup = getMatchup(awayPlayStyle, playStyle);
   console.log(`[Matchup] Home(${playStyle}) vs Away(${awayPlayStyle}) | homeAtk×${homeMatchup.homeAtk} homeDef×${homeMatchup.homeDef} | awayAtk×${awayMatchup.homeAtk} awayDef×${awayMatchup.homeDef}`);
 
-  // Home expected goals: home offense vs away defense (style mod + matchup)
+  // Home expected goals: ataque do mandante vs defesa do visitante (peso de atributos REFORÇADO)
   const homeExpected = clamp(
-    ((1.1 + (strengthDiff / 100) * 1.5 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 0.6) * homeMatchup.homeAtk) /
+    ((1.1 + (strengthDiff / 100) * 2.2 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 1.1) * homeMatchup.homeAtk) /
     Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef + 0.15),
-    0.2, 3.0
+    0.1, 4.0
   );
-  // Away expected goals: away offense vs home defense (style mod + matchup)
+  // Away expected goals: ataque do visitante vs defesa do mandante (peso de atributos REFORÇADO)
   const awayExpected = clamp(
-    ((1.1 - (strengthDiff / 100) * 1.2 + (awayAttackVsDefense - 1) * 0.6 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
+    ((1.1 - (strengthDiff / 100) * 1.8 + (awayAttackVsDefense - 1) * 1.1 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
     Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef + 0.15),
-    0.2, 3.0
+    0.1, 4.0
   );
   
   const totalHomeGoals = poissonSample(homeExpected);
