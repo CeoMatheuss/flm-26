@@ -500,7 +500,11 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   const isAwayTeamClub = awayTeamName === club.name;
 
   return (
-    <Card className={`border-2 ${borderClass}`}>
+    <Card
+      className={`border-2 ${borderClass} relative transition-opacity duration-500 ${
+        status === 'finished' && finishedFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
       {isPremium &&
       <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 space-y-1">
           <div className="flex items-center justify-center gap-2">
