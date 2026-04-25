@@ -841,7 +841,29 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
     } as SimEvent]);
     setSubQueue(q => q.slice(1));
-  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds]);
+
+    // ── Cross-client sync: persiste a substituição no servidor para o oponente ver ──
+    // O INSERT é fire-and-forget — UI local já foi atualizada. Realtime entrega ao oponente.
+    if (matchDbId && !matchDbId.startsWith('offline-')) {
+      const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
+      supabase.from('live_match_substitutions').insert({
+        live_match_id: matchDbId,
+        team_side: mySide,
+        minute: subMinute,
+        is_halftime: isHalftime,
+        player_out_id: String(playerOut.id),
+        player_in_id: String(playerIn.id),
+        player_out_name: playerOut.name,
+        player_in_name: playerIn.name,
+        team_name: homeTeam,
+      }).then(({ error }) => {
+        if (error && error.code !== '23505') {
+          // 23505 = duplicate (já sincronizado por outra aba/dispositivo) — ignorar
+          console.warn('[SUB sync] Failed to publish sub:', error.message);
+        }
+      });
+    }
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds, matchDbId, matchState.isHome]);
 
   // Validation helper for substitutions — used by widget click + queue
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
