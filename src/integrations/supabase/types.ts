@@ -3936,6 +3936,20 @@ export type Database = {
         }[]
       }
       get_user_team_strength: { Args: { _user_id: string }; Returns: number }
+      get_user_upcoming_matches: {
+        Args: { _limit?: number; _user_id: string }
+        Returns: {
+          away_club: string
+          competition_name: string
+          competition_type: string
+          home_club: string
+          is_home: boolean
+          match_id: string
+          priority: number
+          scheduled_at: string
+          stage: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
