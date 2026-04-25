@@ -174,7 +174,11 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
           userId={userId}
           onAuction={async (player) => {
-            const halfValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
+            const baseValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
+            // Floor by OVR (matches validate_auction trigger)
+            const ovr = player.overall;
+            const minByOvr = ovr >= 80 ? 500000 : ovr >= 70 ? 300000 : ovr >= 60 ? 200000 : 100000;
+            const halfValue = Math.max(baseValue, minByOvr);
             const { error } = await supabase.from('player_auctions').insert([{
               seller_id: userId,
               seller_club_name: game.club.name,
