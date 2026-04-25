@@ -182,6 +182,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Active Tournaments */}
       <TournamentDashboardCard onExpand={onOpenTournament} />
 
+      {/* Próximos Jogos Oficiais (Liga, Copa, Continental, Mundial) */}
+      {userId && <GlobalCompetitionsWidget userId={userId} />}
+
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
 
