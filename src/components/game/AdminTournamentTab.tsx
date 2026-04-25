@@ -456,11 +456,22 @@ export function AdminTournamentTab({ userId }: Props) {
   // ── CREATE WITH AUTO-ENROLLMENT ──────────────────────────────
   const createTournament = async () => {
     if (!formName.trim()) return toast.error('Nome é obrigatório');
-    const requestedMaxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
+    const requestedMaxTeams = Math.max(2, Math.min(64, Number(formMaxTeams) || 20));
     const isKnockoutFormat = formFormat === 'knockout' || formFormat === 'group_knockout';
-    const maxTeams = isKnockoutFormat ? Math.min(64, nextPowerOfTwo(requestedMaxTeams)) : requestedMaxTeams;
-    if (isKnockoutFormat && maxTeams !== requestedMaxTeams) {
-      toast.info(`⚙️ Mata-mata ajustado para ${maxTeams} times (potência de 2) para chaveamento correto.`);
+
+    // For pure knockout: derive team count from chosen starting stage.
+    const startStageTeams: Record<string, number> = { final: 2, semi: 4, quartas: 8, oitavas: 16 };
+    let maxTeams = requestedMaxTeams;
+    if (formFormat === 'knockout') {
+      maxTeams = startStageTeams[formKnockoutStartStage] || nextPowerOfTwo(requestedMaxTeams);
+      if (maxTeams !== requestedMaxTeams) {
+        toast.info(`⚙️ Mata-mata: ${maxTeams} times (fase ${formKnockoutStartStage}).`);
+      }
+    } else if (formFormat === 'group_knockout') {
+      maxTeams = Math.min(64, nextPowerOfTwo(requestedMaxTeams));
+      if (maxTeams !== requestedMaxTeams) {
+        toast.info(`⚙️ Grupos+MM ajustado para ${maxTeams} times.`);
+      }
     }
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
