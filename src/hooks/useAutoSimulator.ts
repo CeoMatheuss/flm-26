@@ -301,6 +301,26 @@ async function processTournamentMatch(m: any): Promise<boolean> {
 let scanInFlight = false;
 let cooldownUntil = 0;
 
+// Cross-tab scan lock — prevents two browser tabs from both running a scan
+// at the same instant. TTL is short so a crashed tab cannot block forever.
+const SCAN_LOCK_KEY = 'autosim_scan_lock';
+const SCAN_LOCK_TTL_MS = 8_000;
+
+function tryAcquireScanLock(): boolean {
+  try {
+    const raw = localStorage.getItem(SCAN_LOCK_KEY);
+    if (raw) {
+      const expires = parseInt(raw, 10);
+      if (Number.isFinite(expires) && expires > Date.now()) return false;
+    }
+    localStorage.setItem(SCAN_LOCK_KEY, String(Date.now() + SCAN_LOCK_TTL_MS));
+    return true;
+  } catch { return true; }
+}
+function releaseScanLock() {
+  try { localStorage.removeItem(SCAN_LOCK_KEY); } catch { /* ignore */ }
+}
+
 /**
  * Fetches the NEXT eligible pending match (priority: league → friendly →
  * tournament). Only matches whose scheduled time has passed are returned.
@@ -351,12 +371,14 @@ async function fetchNextEligibleMatch(): Promise<
 
 /**
  * Runs ONE simulation per call. Stops immediately after.
- * Concurrent calls are gated by `scanInFlight` and a post-sim cooldown.
+ * Concurrent calls are gated by `scanInFlight` (in-tab) AND a cross-tab
+ * localStorage lock with TTL.
  */
 async function runScan(): Promise<void> {
   if (scanInFlight) return;
   if (Date.now() < cooldownUntil) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  if (!tryAcquireScanLock()) return;
 
   scanInFlight = true;
   try {
@@ -380,6 +402,7 @@ async function runScan(): Promise<void> {
     console.warn('[autosim] scan error:', err);
   } finally {
     scanInFlight = false;
+    releaseScanLock();
   }
 }
 
