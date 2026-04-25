@@ -223,6 +223,10 @@ export function AdminTournamentTab({ userId }: Props) {
   const [batchBotMaxOvr, setBatchBotMaxOvr] = useState('80');
   const [formMaxTeams, setFormMaxTeams] = useState('20');
 
+  // Knockout customization
+  const [formKnockoutStartStage, setFormKnockoutStartStage] = useState<'oitavas' | 'quartas' | 'semi' | 'final'>('oitavas');
+  const [formTwoLegs, setFormTwoLegs] = useState(false);
+
   // Add single team state
   const [addTeamType, setAddTeamType] = useState<'bot' | 'player'>('bot');
   const [botName, setBotName] = useState('');
@@ -327,12 +331,20 @@ export function AdminTournamentTab({ userId }: Props) {
     return fixtures;
   };
 
-  const generateKnockoutFixtures = (teamIds: string[], startDate: string, matchTime: string, intervalHours: number) => {
-    const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
+  const generateKnockoutFixtures = (
+    teamIds: string[],
+    startDate: string,
+    matchTime: string,
+    intervalHours: number,
+    twoLegs: boolean = false,
+  ) => {
+    const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string; leg?: number }> = [];
     const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
     const stageName = knockoutStageByTeamCount(shuffled.length);
+    const pairCount = Math.floor(shuffled.length / 2);
 
-    for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
+    // Leg 1
+    for (let i = 0; i < pairCount; i++) {
       const date = parseLocalDate(startDate, matchTime);
       date.setTime(date.getTime() + i * intervalHours * 3600000);
       fixtures.push({
@@ -341,7 +353,24 @@ export function AdminTournamentTab({ userId }: Props) {
         round: 1,
         stage: stageName,
         scheduled_at: date.toISOString(),
+        leg: 1,
       });
+    }
+
+    // Leg 2 (return) — swap home/away, scheduled after all leg-1 games
+    if (twoLegs) {
+      for (let i = 0; i < pairCount; i++) {
+        const date = parseLocalDate(startDate, matchTime);
+        date.setTime(date.getTime() + (pairCount + i) * intervalHours * 3600000);
+        fixtures.push({
+          home_team_id: shuffled[i * 2 + 1],
+          away_team_id: shuffled[i * 2],
+          round: 2,
+          stage: `${stageName} (Volta)`,
+          scheduled_at: date.toISOString(),
+          leg: 2,
+        });
+      }
     }
 
     return fixtures;
@@ -427,11 +456,22 @@ export function AdminTournamentTab({ userId }: Props) {
   // ── CREATE WITH AUTO-ENROLLMENT ──────────────────────────────
   const createTournament = async () => {
     if (!formName.trim()) return toast.error('Nome é obrigatório');
-    const requestedMaxTeams = Math.max(4, Math.min(64, Number(formMaxTeams) || 20));
+    const requestedMaxTeams = Math.max(2, Math.min(64, Number(formMaxTeams) || 20));
     const isKnockoutFormat = formFormat === 'knockout' || formFormat === 'group_knockout';
-    const maxTeams = isKnockoutFormat ? Math.min(64, nextPowerOfTwo(requestedMaxTeams)) : requestedMaxTeams;
-    if (isKnockoutFormat && maxTeams !== requestedMaxTeams) {
-      toast.info(`⚙️ Mata-mata ajustado para ${maxTeams} times (potência de 2) para chaveamento correto.`);
+
+    // For pure knockout: derive team count from chosen starting stage.
+    const startStageTeams: Record<string, number> = { final: 2, semi: 4, quartas: 8, oitavas: 16 };
+    let maxTeams = requestedMaxTeams;
+    if (formFormat === 'knockout') {
+      maxTeams = startStageTeams[formKnockoutStartStage] || nextPowerOfTwo(requestedMaxTeams);
+      if (maxTeams !== requestedMaxTeams) {
+        toast.info(`⚙️ Mata-mata: ${maxTeams} times (fase ${formKnockoutStartStage}).`);
+      }
+    } else if (formFormat === 'group_knockout') {
+      maxTeams = Math.min(64, nextPowerOfTwo(requestedMaxTeams));
+      if (maxTeams !== requestedMaxTeams) {
+        toast.info(`⚙️ Grupos+MM ajustado para ${maxTeams} times.`);
+      }
     }
     const minOvr = Math.max(20, Math.min(99, Number(batchBotMinOvr) || 50));
     const maxOvr = Math.max(minOvr, Math.min(99, Number(batchBotMaxOvr) || 80));
@@ -582,7 +622,7 @@ export function AdminTournamentTab({ userId }: Props) {
         setLoading(false);
         return;
       }
-      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
+      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24, formTwoLegs);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
       fixtures = generateGroupFixtures(groups, startDateStr, matchTime, Number(formInterval) || 24);
@@ -1022,6 +1062,34 @@ export function AdminTournamentTab({ userId }: Props) {
                     <SelectItem value="2" className="text-xs">Turno e returno</SelectItem>
                   </SelectContent>
                 </Select>
+              )}
+
+              {/* Knockout-only options: starting stage + two-legs */}
+              {formFormat === 'knockout' && (
+                <div className="grid grid-cols-2 gap-1.5 p-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                  <div>
+                    <label className="text-[8px] text-amber-300/80 font-semibold">⚔️ Fase Inicial</label>
+                    <Select value={formKnockoutStartStage} onValueChange={(v: 'oitavas' | 'quartas' | 'semi' | 'final') => setFormKnockoutStartStage(v)}>
+                      <SelectTrigger className="h-7 text-[9px] mt-0.5"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="oitavas" className="text-xs">Oitavas (16 times)</SelectItem>
+                        <SelectItem value="quartas" className="text-xs">Quartas (8 times)</SelectItem>
+                        <SelectItem value="semi" className="text-xs">Semifinal (4 times)</SelectItem>
+                        <SelectItem value="final" className="text-xs">Final (2 times)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[8px] text-amber-300/80 font-semibold">🔁 Ida e Volta</label>
+                    <Select value={formTwoLegs ? 'yes' : 'no'} onValueChange={v => setFormTwoLegs(v === 'yes')}>
+                      <SelectTrigger className="h-7 text-[9px] mt-0.5"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no" className="text-xs">Jogo único</SelectItem>
+                        <SelectItem value="yes" className="text-xs">Ida e Volta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               )}
 
               <Textarea placeholder="Regras (opcional)" value={formRules} onChange={e => setFormRules(e.target.value)} className="text-[10px] min-h-[30px]" maxLength={500} />

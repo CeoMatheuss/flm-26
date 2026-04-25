@@ -990,6 +990,9 @@ Deno.serve(async (req) => {
             const matchTime = tournament.match_time || '20:00';
             const baseDate = new Date();
 
+            const stageByCount = (n: number) => n === 2 ? 'Final' : n === 4 ? 'Semi' : n === 8 ? 'Quartas' : n === 16 ? 'Oitavas' : `R${n}`;
+            const nextStage = stageByCount(shuffled.length);
+
             for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
               const scheduledDate = new Date(baseDate.getTime() + (i + 1) * intervalHours * 3600000);
               const [hours, minutes] = matchTime.split(':').map(Number);
@@ -1000,7 +1003,7 @@ Deno.serve(async (req) => {
                 home_team_id: shuffled[i * 2],
                 away_team_id: shuffled[i * 2 + 1],
                 round: nextRound,
-                stage: `R${shuffled.length}`,
+                stage: nextStage,
                 scheduled_at: scheduledDate.toISOString(),
                 status: 'scheduled',
               });
