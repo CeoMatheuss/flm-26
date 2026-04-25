@@ -460,6 +460,7 @@ async function runScan(): Promise<void> {
  * MORE than enough time. We forward to runScan via a relaxed selector.
  */
 let watchdogInFlight = false;
+let watchdogTickCount = 0;
 async function runWatchdog(): Promise<void> {
   if (watchdogInFlight) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
@@ -469,7 +470,7 @@ async function runWatchdog(): Promise<void> {
 
     // Probe each table. If anything stuck found, run a scan; the scan's own
     // tolerance check will let it through (stuck > tolerance, by definition).
-    const [leagueRes, friendlyRes, tournamentRes, worldRes] = await Promise.all([
+    const [leagueRes, friendlyRes, tournamentRes, worldRes, cupRes, intlRes] = await Promise.all([
       supabase.from('league_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('auto_sim_at', stuckIso),
@@ -482,20 +483,24 @@ async function runWatchdog(): Promise<void> {
       supabase.from('world_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
+      supabase.from('world_cup_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
+      supabase.from('international_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
     ]);
 
     const legacyStuck =
       (leagueRes.count || 0) + (friendlyRes.count || 0) + (tournamentRes.count || 0);
-    const worldStuck = worldRes.count || 0;
+    const worldStuck = (worldRes.count || 0) + (cupRes.count || 0) + (intlRes.count || 0);
     const stuckCount = legacyStuck + worldStuck;
     if (stuckCount > 0) {
-      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected (world: ${worldStuck}) — forcing scan`);
-      // Bypass cooldown so the watchdog can drain the backlog.
+      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) (world: ${worldStuck}, cup: ${cupRes.count || 0}, intl: ${intlRes.count || 0}) — forcing scan`);
       cooldownUntil = 0;
       void runScan();
 
-      // Se há muitas world matches paradas, dispara modo drain (até 20 por chamada)
-      // para esvaziar o backlog rapidamente sem esperar 1 sim a cada 5s.
+      // Drain mode: muitas world matches → simula em lote
       if (worldStuck >= 5) {
         try {
           const { data } = await supabase.functions.invoke('world-match-simulator', {
@@ -506,6 +511,17 @@ async function runWatchdog(): Promise<void> {
         } catch (err) {
           console.warn('[autosim/watchdog] drain error:', err);
         }
+      }
+    }
+
+    // A cada ~5 ciclos do watchdog (≈5 minutos), aciona o cup-advancer
+    // para gerar próximas rodadas (QF/SF/F) das copas com rodada concluída.
+    watchdogTickCount++;
+    if (watchdogTickCount % 5 === 0) {
+      try {
+        await supabase.functions.invoke('world-cup-advancer', { body: {} });
+      } catch (err) {
+        console.warn('[autosim/watchdog] cup-advancer error:', err);
       }
     }
   } catch (err) {
