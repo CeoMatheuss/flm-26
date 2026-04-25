@@ -865,7 +865,79 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     }
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds, matchDbId, matchState.isHome]);
 
+  // ── REALTIME: substituições do oponente ──
+  // Inscreve-se na tabela `live_match_substitutions` filtrada pelo live_match_id.
+  // Quando uma sub do LADO OPOSTO chega, injeta um evento espelhado na feed
+  // e mostra o banner — o 2D/narração já consomem `injectedSubEvents`.
+  const seenRemoteSubsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!matchDbId || matchDbId.startsWith('offline-')) return;
+    const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
+    const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
+    const oppTeam = mySide === 'home' ? awayTeam : homeTeam;
+    const oppShield = mySide === 'home' ? awayShield : homeShield;
+
+    const ingest = (row: any) => {
+      if (!row || row.live_match_id !== matchDbId) return;
+      if (seenRemoteSubsRef.current.has(row.id)) return;
+      seenRemoteSubsRef.current.add(row.id);
+      // Apenas eventos do lado OPOSTO geram feed/banner.
+      if (row.team_side !== oppSide) return;
+
+      const minute = Number(row.minute) || 0;
+      const isHalf = !!row.is_halftime;
+      setInjectedSubEvents(prev => [...prev, {
+        minute: isHalf ? 45 : minute,
+        type: 'substitution',
+        team: oppSide,
+        description: `🔁 Substituição (${row.team_name || oppTeam}): ⬅️ ${row.player_out_name} sai • ➡️ ${row.player_in_name} entra`,
+      } as SimEvent]);
+      setActiveBanner({
+        minute,
+        playerOut: row.player_out_name,
+        playerIn: row.player_in_name,
+        teamName: row.team_name || oppTeam,
+        isHalftime: isHalf,
+        shield: oppShield,
+      });
+    };
+
+    // 1) Backfill — pega subs já existentes (entrou depois ou recarregou página)
+    supabase
+      .from('live_match_substitutions')
+      .select('*')
+      .eq('live_match_id', matchDbId)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('[SUB sync] Backfill failed:', error.message);
+          return;
+        }
+        (data || []).forEach(ingest);
+      });
+
+    // 2) Realtime — escuta novos INSERTs
+    const channel = supabase
+      .channel(`live-subs-${matchDbId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'live_match_substitutions',
+          filter: `live_match_id=eq.${matchDbId}`,
+        },
+        (payload) => ingest(payload.new),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [matchDbId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
+
   // Validation helper for substitutions — used by widget click + queue
+
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
     if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
     if (currentMinute > 90)
