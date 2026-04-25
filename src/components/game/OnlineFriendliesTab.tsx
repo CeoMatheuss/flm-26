@@ -78,6 +78,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [creatingSlot, setCreatingSlot] = useState(false);
   // Lobby state
   const [lobbyInvite, setLobbyInvite] = useState<FriendlyInvite | null>(null);
+  // Anti-spam: ids de slots em processo de aceite (evita clique duplo)
+  const [acceptingSlotIds, setAcceptingSlotIds] = useState<Set<string>>(new Set());
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
