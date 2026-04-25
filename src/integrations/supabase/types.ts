@@ -2677,7 +2677,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_club_profiles: {
+        Row: {
+          club_logo: string | null
+          club_name: string | null
+          country: string | null
+          fans: number | null
+          members: number | null
+          reputation: number | null
+          stadium: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          club_logo?: never
+          club_name?: never
+          country?: never
+          fans?: never
+          members?: never
+          reputation?: never
+          stadium?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          club_logo?: never
+          club_name?: never
+          country?: never
+          fans?: never
+          members?: never
+          reputation?: never
+          stadium?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_beta_request: {
