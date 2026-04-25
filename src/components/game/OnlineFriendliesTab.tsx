@@ -315,12 +315,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setLoading(true);
-    const { error } = await supabase
+    // Anti-spam: só aceita/recusa se ainda estiver pendente
+    const { data: updated, error } = await supabase
       .from('friendly_invites')
       .update({ status: accept ? 'accepted' : 'rejected' })
-      .eq('id', inviteId);
-    if (error) toast.error('Erro ao responder');
-    else {
+      .eq('id', inviteId)
+      .eq('status', 'pending')
+      .select();
+
+    if (error) {
+      toast.error('Erro ao responder');
+    } else if (!updated || updated.length === 0) {
+      toast.info('⚠️ Este convite já foi respondido.');
+    } else {
       toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
       if (accept) triggerAutoSim(); // simula imediatamente
     }
