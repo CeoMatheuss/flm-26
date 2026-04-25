@@ -18,7 +18,7 @@ import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { FansTab } from '@/components/game/FansTab';
 import { MembersTab } from '@/components/game/MembersTab';
-import { TrainingWrapper } from '@/components/game/TrainingWrapper';
+import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
@@ -31,7 +31,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
-import { UpdatesTab } from '@/components/game/UpdatesTab';
+
 import { StaffTab } from '@/components/game/StaffTab';
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
