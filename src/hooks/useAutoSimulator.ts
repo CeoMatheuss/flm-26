@@ -322,7 +322,9 @@ async function fetchNextEligibleMatch(): Promise<
   | { kind: 'tournament'; row: any }
   | null
 > {
-  const nowIso = new Date().toISOString();
+  // TOLERANCE: only auto-sim matches whose scheduled time passed AT LEAST 5 minutes ago.
+  // Gives the player time to come back online before the system simulates for them.
+  const nowIso = new Date(Date.now() - TOLERANCE_MS).toISOString();
 
   // 1) League — needs auto_sim_at <= now (or null + created long ago as fallback)
   const { data: league } = await supabase
