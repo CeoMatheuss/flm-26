@@ -122,8 +122,17 @@ async function notifyHuman(
 async function fetchNextMatch(supabase: any) {
   const nowIso = new Date(Date.now() - HUMAN_TOLERANCE_MS).toISOString();
 
-  // 1. Mundial (world_cup_tournament_matches) — TODO etapa 6
-  // Por enquanto, nem busca
+  // 1. Mundial de Clubes (world_cup_tournament_matches) — máxima prioridade
+  const { data: wctData } = await supabase
+    .from("world_cup_tournament_matches")
+    .select("id, tournament_id, round, stage, home_team_id, away_team_id, kickoff_at, match_data, world_cup_tournament!inner(edition)")
+    .eq("status", "scheduled")
+    .lte("kickoff_at", nowIso)
+    .order("kickoff_at", { ascending: true })
+    .limit(1);
+  if (wctData && wctData.length > 0) {
+    return { ...wctData[0], _kind: "world_tournament" };
+  }
 
   // 2. Internacional
   const { data: intlData } = await supabase
