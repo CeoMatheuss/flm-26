@@ -280,6 +280,8 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
     compName = "🏆 " + (match.world_cups?.cup_name || "Copa");
   } else if (kind === "international") {
     compName = "🌍 " + (match.international_competitions?.competition_name || "Continental");
+  } else if (kind === "world_tournament") {
+    compName = "🏆🌍 Mundial de Clubes (Ed. " + (match.world_cup_tournament?.edition ?? "?") + ")";
   }
 
   if (home.user_id) {
