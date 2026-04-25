@@ -36,7 +36,7 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
