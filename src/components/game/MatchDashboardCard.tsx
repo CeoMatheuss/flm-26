@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-/* ── Component to show next tournament match when idle ── */
+/* ── Component to show next match (friendly OR tournament) when idle ── */
 function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: { userId?: string; clubName: string; onGoToFriendly?: () => void; onViewClub?: (name: string) => void }) {
   const navigate = useNavigate();
   const [nextMatch, setNextMatch] = useState<{
@@ -19,6 +19,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     opponentStrength: number; isHome: boolean; tournamentName: string;
     stage?: string | null;
     status?: string; homeGoals?: number | null; awayGoals?: number | null; playedAt?: string | null;
+    kind?: 'friendly' | 'tournament';
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
@@ -27,18 +28,58 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
     let cancelled = false;
-    const load = async () => {
+
+    const loadFriendly = async () => {
+      // Próximo amistoso aceito (qualquer um onde o usuário participa)
+      const { data: invites } = await supabase
+        .from('friendly_invites')
+        .select('*')
+        .eq('status', 'accepted')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .order('match_date', { ascending: true })
+        .limit(20);
+      if (!invites || invites.length === 0) return null;
+      // Prefere o mais próximo no futuro; senão pega o último
+      const now = Date.now();
+      const future = invites.filter(i => new Date(i.match_date).getTime() >= now - 5 * 60_000);
+      const inv: any = future[0] || invites[invites.length - 1];
+      const isSender = inv.sender_id === userId;
+      const myClub = isSender ? inv.sender_club_name : inv.receiver_club_name;
+      const oppClub = isSender ? inv.receiver_club_name : inv.sender_club_name;
+      const isHome = inv.home_team_id === userId;
+      const homeName = inv.home_team_id === inv.sender_id ? inv.sender_club_name : inv.receiver_club_name;
+      const awayName = homeName === inv.sender_club_name ? inv.receiver_club_name : inv.sender_club_name;
+      return {
+        home: homeName,
+        away: awayName,
+        date: inv.match_date,
+        tournament: '⚽ Amistoso Online',
+        matchId: `friendly-${inv.id}`,
+        homeTeamId: inv.home_team_id,
+        awayTeamId: isHome ? (isSender ? inv.receiver_id : inv.sender_id) : userId,
+        opponentStrength: 70,
+        isHome,
+        tournamentName: 'Amistoso Online',
+        status: 'scheduled',
+        stage: null,
+        homeGoals: null,
+        awayGoals: null,
+        playedAt: null,
+        kind: 'friendly' as const,
+      };
+    };
+
+    const loadTournament = async () => {
       const { data: myTeams } = await supabase
         .from('custom_tournament_teams')
         .select('id, tournament_id, club_name, bot_strength, user_id')
         .eq('user_id', userId);
 
-      if (!myTeams || myTeams.length === 0) { if (!cancelled) setLoading(false); return; }
+      if (!myTeams || myTeams.length === 0) return null;
 
       const teamIds = myTeams.map(t => t.id);
       const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
 
-      // Look at scheduled OR finished — we want the next pending OR last auto-simulated one
       const { data: matches } = await supabase
         .from('custom_tournament_matches')
         .select('*')
@@ -47,9 +88,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .order('scheduled_at', { ascending: true })
         .limit(80);
 
-      if (!matches) { if (!cancelled) setLoading(false); return; }
+      if (!matches) return null;
 
-      // Prefer next scheduled; fallback to most recent finished
       const myScheduled = matches
         .filter(m => m.status === 'scheduled' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)));
       const myFinished = matches
@@ -57,7 +97,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .sort((a, b) => new Date(b.played_at || b.scheduled_at || 0).getTime() - new Date(a.played_at || a.scheduled_at || 0).getTime());
 
       const myMatch = myScheduled[0] || myFinished[0];
-      if (!myMatch) { if (!cancelled) setLoading(false); return; }
+      if (!myMatch) return null;
 
       const { data: matchTeams } = await supabase
         .from('custom_tournament_teams')
@@ -75,8 +115,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       const isPlayerHome = homeT?.user_id === userId;
       const opponent = isPlayerHome ? awayT : homeT;
 
-      if (cancelled) return;
-      setNextMatch({
+      return {
         home: homeT?.club_name || '???',
         away: awayT?.club_name || '???',
         date: myMatch.scheduled_at || '',
@@ -92,14 +131,42 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         homeGoals: myMatch.home_goals ?? null,
         awayGoals: myMatch.away_goals ?? null,
         playedAt: myMatch.played_at || null,
-      } as any);
+        kind: 'tournament' as const,
+      };
+    };
+
+    const load = async () => {
+      const [friendly, tourney] = await Promise.all([loadFriendly(), loadTournament()]);
+      if (cancelled) return;
+
+      // Escolhe o que está mais próximo no tempo (e ainda não passou muito).
+      // Amistoso só substitui torneio se for futuro/recém-iniciado.
+      let chosen: any = null;
+      if (friendly && tourney) {
+        const fTs = new Date(friendly.date).getTime();
+        const tTs = new Date(tourney.date).getTime();
+        chosen = Math.abs(fTs - Date.now()) < Math.abs(tTs - Date.now()) ? friendly : tourney;
+      } else {
+        chosen = friendly || tourney;
+      }
+
+      setNextMatch(chosen);
       setLoading(false);
     };
+
     load();
 
-    // Poll every 10s when expired-but-still-scheduled, to catch the cron simulation
+    // Realtime: atualiza imediatamente quando um amistoso é aceito/criado
+    const channel = supabase
+      .channel(`dash-next-match-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `sender_id=eq.${userId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `receiver_id=eq.${userId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_tournament_matches' }, () => load())
+      .subscribe();
+
+    // Poll de segurança a cada 10s
     const interval = setInterval(load, 10000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => { cancelled = true; clearInterval(interval); supabase.removeChannel(channel); };
   }, [userId]);
 
   // Live countdown timer (only relevant when match is still scheduled)
@@ -137,6 +204,11 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
+    // Amistoso → manda usuário pra aba de amistosos onde o lobby abre
+    if (nextMatch.kind === 'friendly') {
+      onGoToFriendly?.();
+      return;
+    }
     const stageStr = String(nextMatch.stage || '').toLowerCase();
     const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/', {
