@@ -74,6 +74,7 @@ export function InfrastructureWrapper({
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
   stadiumProps, youthProps,
   initialSubTab = 'training',
+  standalone = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<SubTab>(initialSubTab);
 
