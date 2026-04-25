@@ -469,7 +469,7 @@ async function runWatchdog(): Promise<void> {
 
     // Probe each table. If anything stuck found, run a scan; the scan's own
     // tolerance check will let it through (stuck > tolerance, by definition).
-    const [leagueRes, friendlyRes, tournamentRes] = await Promise.all([
+    const [leagueRes, friendlyRes, tournamentRes, worldRes] = await Promise.all([
       supabase.from('league_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('auto_sim_at', stuckIso),
@@ -479,15 +479,34 @@ async function runWatchdog(): Promise<void> {
       supabase.from('custom_tournament_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('scheduled_at', stuckIso),
+      supabase.from('world_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
     ]);
 
-    const stuckCount =
+    const legacyStuck =
       (leagueRes.count || 0) + (friendlyRes.count || 0) + (tournamentRes.count || 0);
+    const worldStuck = worldRes.count || 0;
+    const stuckCount = legacyStuck + worldStuck;
     if (stuckCount > 0) {
-      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected — forcing scan`);
+      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected (world: ${worldStuck}) — forcing scan`);
       // Bypass cooldown so the watchdog can drain the backlog.
       cooldownUntil = 0;
       void runScan();
+
+      // Se há muitas world matches paradas, dispara modo drain (até 20 por chamada)
+      // para esvaziar o backlog rapidamente sem esperar 1 sim a cada 5s.
+      if (worldStuck >= 5) {
+        try {
+          const { data } = await supabase.functions.invoke('world-match-simulator', {
+            body: { force_until_empty: true, max: 20 },
+          });
+          const drained = Number((data as any)?.processed) || 0;
+          if (drained > 0) console.info(`[autosim/watchdog] drained ${drained} world matches`);
+        } catch (err) {
+          console.warn('[autosim/watchdog] drain error:', err);
+        }
+      }
     }
   } catch (err) {
     console.warn('[autosim/watchdog] error:', err);
