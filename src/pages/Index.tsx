@@ -58,6 +58,10 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
           if (loaded.infrastructure?.stadium && loaded.infrastructure.stadium.maxLevel < 15) {
             loaded.infrastructure.stadium.maxLevel = 15;
           }
+          // Piso mínimo de 1000 torcedores (sem rebaixar quem já cresceu)
+          if (loaded.club && (loaded.club.fans ?? 0) < 1000) {
+            loaded.club.fans = 1000;
+          }
           setLoadedState(loaded);
           setHasSave(true);
           toast.success('Save carregado!');
