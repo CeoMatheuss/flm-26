@@ -236,6 +236,7 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
     league: "world_matches",
     cup: "world_cup_matches",
     international: "international_matches",
+    world_tournament: "world_cup_tournament_matches",
   };
   const table = tableMap[kind];
 
