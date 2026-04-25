@@ -35,6 +35,22 @@ interface ReportData {
   };
 }
 
+interface AggregateInfo {
+  homeTeam: string;
+  awayTeam: string;
+  leg1Home: number;
+  leg1Away: number;
+  leg2Home: number;
+  leg2Away: number;
+  aggHome: number;
+  aggAway: number;
+  advanced: 'home' | 'away';
+  tieBreaker: 'aggregate' | 'extra_time' | 'penalties';
+  shootoutHome?: number;
+  shootoutAway?: number;
+  summary: string;
+}
+
 interface Props {
   matchDbId: string;
   onClose: () => void;
@@ -42,6 +58,7 @@ interface Props {
 
 export function PostGameReportModal({ matchDbId, onClose }: Props) {
   const [report, setReport] = useState<ReportData | null>(null);
+  const [aggregate, setAggregate] = useState<AggregateInfo | null>(null);
   const [result, setResult] = useState<string>('draw');
   const [rankingImpact, setRankingImpact] = useState(0);
   const [homeTeam, setHomeTeam] = useState('');
@@ -52,7 +69,6 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
 
   useEffect(() => {
     const load = async () => {
-      // Try to find report by live_match_id
       const { data: history } = await supabase
         .from('match_history')
         .select('id, home_team, away_team, home_goals, away_goals')
@@ -73,7 +89,9 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
         .maybeSingle();
 
       if (reportRow) {
-        setReport(reportRow.report_data as unknown as ReportData);
+        const rd = reportRow.report_data as any;
+        setReport(rd as ReportData);
+        setAggregate((rd?.aggregate as AggregateInfo) ?? null);
         setResult(reportRow.result);
         setRankingImpact(reportRow.ranking_impact);
       }
@@ -88,6 +106,15 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
   const resultLabel = result === 'win' ? 'VITÓRIA' : result === 'loss' ? 'DERROTA' : 'EMPATE';
   const resultColor = result === 'win' ? 'text-emerald-400' : result === 'loss' ? 'text-red-400' : 'text-yellow-400';
   const resultBg = result === 'win' ? 'bg-emerald-500/10 border-emerald-500/30' : result === 'loss' ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30';
+
+  const tieBreakerLabel = aggregate
+    ? aggregate.tieBreaker === 'penalties' ? `Pênaltis ${aggregate.shootoutHome}x${aggregate.shootoutAway}`
+    : aggregate.tieBreaker === 'extra_time' ? 'Prorrogação'
+    : 'Placar agregado'
+    : '';
+  const advancedName = aggregate
+    ? (aggregate.advanced === 'home' ? aggregate.homeTeam : aggregate.awayTeam)
+    : '';
 
   return (
     <div className="fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-2" onClick={onClose}>
@@ -108,6 +135,41 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
               </div>
               <Badge className={`mt-2 ${resultColor} border-current`} variant="outline">{resultLabel}</Badge>
             </div>
+
+            {/* Aggregate (two-legged knockout only) */}
+            {aggregate && (
+              <Card className="border-amber-500/30 bg-amber-500/5">
+                <CardHeader className="pb-1 pt-3 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5 text-amber-400">
+                    🔁 Confronto Ida e Volta — Placar Agregado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 space-y-2">
+                  <div className="grid grid-cols-3 gap-2 text-[11px]">
+                    <div className="text-center">
+                      <p className="text-muted-foreground">Ida</p>
+                      <p className="font-mono font-bold">{aggregate.leg1Home} x {aggregate.leg1Away}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground">Volta</p>
+                      <p className="font-mono font-bold">{aggregate.leg2Home} x {aggregate.leg2Away}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground">Agregado</p>
+                      <p className="font-mono font-black text-amber-400">{aggregate.aggHome} x {aggregate.aggAway}</p>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-center pt-1 border-t border-amber-500/20">
+                    <p>
+                      <span className="text-muted-foreground">Critério: </span>
+                      <span className="font-semibold">{tieBreakerLabel}</span>
+                    </p>
+                    <p className="mt-1 font-bold text-emerald-400">🏆 {advancedName} avança</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
 
             {/* Ranking Impact */}
             <div className="flex items-center justify-center gap-2">

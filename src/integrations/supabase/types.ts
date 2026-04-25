@@ -366,6 +366,7 @@ export type Database = {
           home_goals: number | null
           home_team_id: string
           id: string
+          leg: number
           match_data: Json | null
           played_at: string | null
           round: number
@@ -381,6 +382,7 @@ export type Database = {
           home_goals?: number | null
           home_team_id: string
           id?: string
+          leg?: number
           match_data?: Json | null
           played_at?: string | null
           round?: number
@@ -396,6 +398,7 @@ export type Database = {
           home_goals?: number | null
           home_team_id?: string
           id?: string
+          leg?: number
           match_data?: Json | null
           played_at?: string | null
           round?: number
@@ -525,6 +528,7 @@ export type Database = {
           status: string
           tie_breaker: string
           total_rounds: number
+          two_legs: boolean
           updated_at: string
         }
         Insert: {
@@ -549,6 +553,7 @@ export type Database = {
           status?: string
           tie_breaker?: string
           total_rounds?: number
+          two_legs?: boolean
           updated_at?: string
         }
         Update: {
@@ -573,6 +578,7 @@ export type Database = {
           status?: string
           tie_breaker?: string
           total_rounds?: number
+          two_legs?: boolean
           updated_at?: string
         }
         Relationships: []
