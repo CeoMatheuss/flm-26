@@ -1313,35 +1313,56 @@ Deno.serve(async (req) => {
 
     const durationSeconds = 720; // 12 minutes real time
 
-    // Insert into live_matches
+    // Insert into live_matches with shared_match_id mirror so both clients converge.
+    const insertPayload = {
+      user_id: userId,
+      match_id: matchId,
+      shared_match_id: String(matchId),
+      home_team: homeTeam,
+      away_team: awayTeam,
+      home_strength: validatedHomeStrength,
+      away_strength: validatedAwayStrength,
+      stadium_name: stadiumName || 'Estádio',
+      stadium_capacity: stadiumCapacity || 5000,
+      is_home: isHome !== false,
+      competition: competition || 'Amistoso',
+      duration_seconds: durationSeconds,
+      events: result.events as any,
+      home_goals: result.homeGoals,
+      away_goals: result.awayGoals,
+      stats: result.stats as any,
+      home_players: (homePlayers || []) as any,
+      player_ratings: result.playerRatings as any,
+      tactics: (tactics || {}) as any,
+      status: 'live',
+      roster_locked_at: new Date().toISOString(),
+    };
+
     const { data: matchRow, error: insertError } = await adminClient
       .from('live_matches')
-      .insert({
-        user_id: userId,
-        match_id: matchId,
-        home_team: homeTeam,
-        away_team: awayTeam,
-        home_strength: validatedHomeStrength,
-        away_strength: validatedAwayStrength,
-        stadium_name: stadiumName || 'Estádio',
-        stadium_capacity: stadiumCapacity || 5000,
-        is_home: isHome !== false,
-        competition: competition || 'Amistoso',
-        duration_seconds: durationSeconds,
-        events: result.events as any,
-        home_goals: result.homeGoals,
-        away_goals: result.awayGoals,
-        stats: result.stats as any,
-        home_players: (homePlayers || []) as any,
-        player_ratings: result.playerRatings as any,
-        tactics: (tactics || {}) as any,
-        status: 'live',
-        roster_locked_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 
     if (insertError) {
+      // Race: another client (the opponent) inserted first. Return that row.
+      const code = (insertError as any).code;
+      const msg = String((insertError as any).message || '');
+      if (code === '23505' || msg.includes('uniq_live_matches_shared_match_id') || msg.toLowerCase().includes('duplicate')) {
+        const { data: winner } = await adminClient
+          .from('live_matches')
+          .select('id')
+          .eq('shared_match_id', String(matchId))
+          .neq('status', 'superseded')
+          .maybeSingle();
+        if (winner) {
+          console.info('[start-match] Race resolved — using winner row', { matchId, matchDbId: winner.id });
+          return new Response(
+            JSON.stringify({ success: true, matchDbId: winner.id, alreadySimulated: true }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+      }
       console.error('[Match] Insert error:', insertError.message);
       return new Response(JSON.stringify({ error: 'Failed to create match' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
