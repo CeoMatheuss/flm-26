@@ -10,8 +10,9 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, UserPlus, LogIn
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck
 } from 'lucide-react';
+import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
