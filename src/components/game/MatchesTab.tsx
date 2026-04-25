@@ -129,6 +129,9 @@ export function MatchesTab({
 
   const goToTournamentMatch = (tm: any) => {
     const isHome = tm.isHome;
+    // Knockout stages enforce extra time + penalties (no draws allowed).
+    const stageStr = String(tm.stage || '').toLowerCase();
+    const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/match', {
       state: {
         homeTeam: isHome ? clubName : tm.homeName,
@@ -144,6 +147,7 @@ export function MatchesTab({
         competition: tournamentNames[tm.tournament_id] || 'Campeonato',
         tournamentMatchId: tm.id,
         fans: fans,
+        tieBreaker: isKnockout ? 'both' : 'none',
       },
     });
   };
