@@ -1289,7 +1289,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     </div>
                   )}
                   <ManagerSubstitutionView
-                    homePlayers={homePlayers}
+                    currentStarters={currentStarters}
+                    currentBench={currentBench}
+                    hasAnyPlayers={!!homePlayers && homePlayers.length > 11}
                     subsUsed={subsUsed}
                     maxSubs={maxSubs}
                     windowsUsed={windowsUsed}
@@ -1299,7 +1301,6 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     onConfirmSub={handleQueueSubstitution}
                     isHalftime={isHalftime}
                     isFinished={isFinished}
-                    substitutedPlayerIds={substitutedPlayerIds}
                     subQueue={subQueue}
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
