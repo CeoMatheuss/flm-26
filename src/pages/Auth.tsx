@@ -387,6 +387,19 @@ export default function AuthPage() {
     );
   }
 
+  // ── BETA ACCESS REQUEST STEP ──
+  if (step === 'beta-request') {
+    return (
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={slides[2].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        <div className="relative z-10 w-full flex justify-center">
+          <BetaAccessRequestForm onBack={() => setStep('welcome')} />
+        </div>
+      </div>
+    );
+  }
+
   // ── WELCOME STEP — Split screen with carousel ──
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
