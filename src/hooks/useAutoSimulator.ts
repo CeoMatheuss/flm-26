@@ -372,6 +372,31 @@ async function fetchNextEligibleMatch(): Promise<
 }
 
 /**
+ * Tenta simular UMA partida do sistema mundial (world_matches) via edge function.
+ * Retorna true se simulou algo. Erros são silenciosos — não devem quebrar o ciclo.
+ */
+async function runWorldScan(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke('world-match-simulator', {
+      body: {},
+    });
+    if (error) {
+      console.warn('[autosim/world] invoke error:', error.message);
+      return false;
+    }
+    const processed = Number((data as any)?.processed) || 0;
+    if (processed > 0) {
+      console.info(`[autosim/world] simulated ${processed} match(es)`);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.warn('[autosim/world] error:', err);
+    return false;
+  }
+}
+
+/**
  * Runs ONE simulation per call. Stops immediately after.
  * Concurrent calls are gated by `scanInFlight` (in-tab) AND a cross-tab
  * localStorage lock with TTL.
@@ -387,15 +412,22 @@ async function runScan(): Promise<void> {
   let kind: string | null = null;
   try {
     const next = await fetchNextEligibleMatch();
-    if (!next) return;
-    kind = next.kind;
-
-    try {
-      if (next.kind === 'league')          success = await processLeagueMatch(next.row);
-      else if (next.kind === 'friendly')   success = await processFriendly(next.row);
-      else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
-    } catch (err) {
-      console.warn(`[autosim] ${next.kind} sim error:`, err);
+    if (next) {
+      kind = next.kind;
+      try {
+        if (next.kind === 'league')          success = await processLeagueMatch(next.row);
+        else if (next.kind === 'friendly')   success = await processFriendly(next.row);
+        else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
+      } catch (err) {
+        console.warn(`[autosim] ${next.kind} sim error:`, err);
+      }
+    } else {
+      // Nenhuma partida legacy elegível → tenta o sistema mundial
+      const worldOk = await runWorldScan();
+      if (worldOk) {
+        kind = 'world';
+        success = true;
+      }
     }
 
     // Enforce cooldown after a successful sim — prevents bursts.
@@ -437,7 +469,7 @@ async function runWatchdog(): Promise<void> {
 
     // Probe each table. If anything stuck found, run a scan; the scan's own
     // tolerance check will let it through (stuck > tolerance, by definition).
-    const [leagueRes, friendlyRes, tournamentRes] = await Promise.all([
+    const [leagueRes, friendlyRes, tournamentRes, worldRes] = await Promise.all([
       supabase.from('league_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('auto_sim_at', stuckIso),
@@ -447,15 +479,34 @@ async function runWatchdog(): Promise<void> {
       supabase.from('custom_tournament_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('scheduled_at', stuckIso),
+      supabase.from('world_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
     ]);
 
-    const stuckCount =
+    const legacyStuck =
       (leagueRes.count || 0) + (friendlyRes.count || 0) + (tournamentRes.count || 0);
+    const worldStuck = worldRes.count || 0;
+    const stuckCount = legacyStuck + worldStuck;
     if (stuckCount > 0) {
-      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected — forcing scan`);
+      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected (world: ${worldStuck}) — forcing scan`);
       // Bypass cooldown so the watchdog can drain the backlog.
       cooldownUntil = 0;
       void runScan();
+
+      // Se há muitas world matches paradas, dispara modo drain (até 20 por chamada)
+      // para esvaziar o backlog rapidamente sem esperar 1 sim a cada 5s.
+      if (worldStuck >= 5) {
+        try {
+          const { data } = await supabase.functions.invoke('world-match-simulator', {
+            body: { force_until_empty: true, max: 20 },
+          });
+          const drained = Number((data as any)?.processed) || 0;
+          if (drained > 0) console.info(`[autosim/watchdog] drained ${drained} world matches`);
+        } catch (err) {
+          console.warn('[autosim/watchdog] drain error:', err);
+        }
+      }
     }
   } catch (err) {
     console.warn('[autosim/watchdog] error:', err);
