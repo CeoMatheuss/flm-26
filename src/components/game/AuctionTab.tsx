@@ -166,7 +166,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
             Leilão de Jogadores
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
-            Dispense jogadores 65+ OVR (até 35 anos) por metade do valor. Apenas clubes Premium podem dar lances. Cada lance deve ser 20% maior que o anterior.
+            Leiloe jogadores 60+ OVR (até 35 anos). Preço inicial calculado por OVR e idade. Apenas clubes Premium podem dar lances, e cada lance deve ser 30% maior que o anterior.
           </p>
         </CardHeader>
         {!isPremium && (
