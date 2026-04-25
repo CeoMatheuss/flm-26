@@ -422,10 +422,10 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                   placeholder="Buscar jogador por nome..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && searchPlayers()}
+                  onKeyDown={e => e.key === 'Enter' && searchPlayers(searchTerm)}
                   className="h-8 text-xs flex-1"
                 />
-                <Button size="sm" variant="outline" className="h-8 px-2" onClick={searchPlayers} disabled={searching}>
+                <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => searchPlayers(searchTerm)} disabled={searching}>
                   <Search className="h-3.5 w-3.5" />
                 </Button>
               </div>
