@@ -60,11 +60,31 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Eligible players: 65+ overall, <= 35 age
-  const eligiblePlayers = players.filter(p => p.overall >= 65 && (p.age || 25) <= 35);
+  // Eligible players: 60+ overall, <= 35 age
+  const eligiblePlayers = players.filter(p => p.overall >= 60 && (p.age || 25) <= 35);
+
+  /**
+   * Preço inicial automático baseado em OVR + idade.
+   * Curva: OVR 60 → ~250k | 70 → ~1M | 80 → ~4M | 85 → ~7M | 90+ → ~12M+
+   * Idade jovem (≤24) +20%; veterano (≥32) -25%.
+   */
+  const computeStartPrice = (player: any): number => {
+    const ovr = Math.max(60, Math.min(99, player.overall || 60));
+    // Crescimento exponencial suave
+    const ovrFactor = Math.pow((ovr - 55) / 10, 2.4);
+    let price = Math.round(150_000 * ovrFactor);
+
+    const age = player.age || 25;
+    if (age <= 24) price = Math.round(price * 1.2);
+    else if (age >= 32) price = Math.round(price * 0.75);
+    else if (age >= 30) price = Math.round(price * 0.9);
+
+    // Piso e teto razoáveis
+    return Math.max(100_000, Math.min(50_000_000, price));
+  };
 
   const handleCreateAuction = async (player: any) => {
-    const halfValue = Math.floor((player.value || 500000) / 2);
+    const startPrice = computeStartPrice(player);
     setLoading(true);
     const { error } = await supabase.from('player_auctions').insert([{
       seller_id: userId,
@@ -73,13 +93,13 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       player_name: player.name,
       player_overall: player.overall,
       player_age: player.age || 25,
-      min_price: halfValue,
-      current_bid: halfValue,
+      min_price: startPrice,
+      current_bid: startPrice,
     }]);
     if (error) {
       toast.error('Erro ao criar leilão: ' + error.message);
     } else {
-      toast.success(`${player.name} colocado em leilão por R$ ${(halfValue / 1000000).toFixed(2)}M!`);
+      toast.success(`${player.name} em leilão por R$ ${(startPrice / 1000000).toFixed(2)}M!`);
       if (onSellPlayer) onSellPlayer(player.id);
       loadAuctions();
     }
@@ -96,14 +116,15 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       return;
     }
 
-    const minBid = Math.ceil(auction.current_bid * 1.2); // 20% higher
+    const minBid = Math.ceil(auction.current_bid * 1.3); // +30% obrigatório
     if (budget < minBid) {
       toast.error(`Orçamento insuficiente! Lance mínimo: R$ ${(minBid / 1000000).toFixed(2)}M`);
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase
+    // Garantia anti-duplicação: só atualiza se current_bid ainda for o esperado
+    const { data: updated, error } = await supabase
       .from('player_auctions')
       .update({
         current_bid: minBid,
@@ -111,12 +132,17 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
         current_bidder_name: clubName,
       })
       .eq('id', auction.id)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .eq('current_bid', auction.current_bid) // optimistic lock
+      .select();
 
     if (error) {
       toast.error('Erro ao dar lance');
+    } else if (!updated || updated.length === 0) {
+      toast.error('Outro lance foi feito antes do seu. Tente novamente!');
+      loadAuctions();
     } else {
-      toast.success(`Lance de R$ ${(minBid / 1000000).toFixed(2)}M registrado! (+20%)`);
+      toast.success(`Lance de R$ ${(minBid / 1000000).toFixed(2)}M registrado! (+30%)`);
       loadAuctions();
     }
     setLoading(false);
