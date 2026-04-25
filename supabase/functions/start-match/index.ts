@@ -1263,17 +1263,28 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Check for existing active match
-    const { data: existing } = await adminClient
+    // 1. CENTRAL SIMULATION: dedupe by shared_match_id.
+    //    If a row already exists for this matchId, both clients must read THAT
+    //    same row — never re-simulate. This is what guarantees Time 1 and Time 2
+    //    see the same placar, eventos e estatísticas.
+    const { data: shared } = await adminClient
       .from('live_matches')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'live')
+      .select('id, status')
+      .eq('shared_match_id', String(matchId))
+      .neq('status', 'superseded')
       .maybeSingle();
 
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'Match already active', matchDbId: existing.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (shared) {
+      console.info('[start-match] Reusing shared simulation', { matchId, matchDbId: shared.id });
+      return new Response(
+        JSON.stringify({ success: true, matchDbId: shared.id, alreadySimulated: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
+
+    // 2. Seed PRNG from matchId BEFORE any rng() call so the simulation is
+    //    deterministic per match. Two parallel callers produce identical output.
+    seedRng(String(matchId));
 
     // Simulate match
     const result = simulateFullMatch(
