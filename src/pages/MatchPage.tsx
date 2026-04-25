@@ -707,18 +707,46 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [expandedWidget, setExpandedWidget] = useState<string | null>('stats');
 
   // ── Substitution system state ──
+  // SINGLE SOURCE OF TRUTH for player on-field state:
+  //   - substitutedPlayerIds: Set of starter IDs that LEFT the field (isSubstituted=true → cannot return)
+  //   - enteredInIds: Set of bench IDs that came IN (isOnField=true → cannot be brought in again)
+  //   - A starter not in substitutedPlayerIds is still on the field (isOnField=true)
+  //   - A bench player not in enteredInIds is still on the bench (isOnField=false)
   const [subsUsed, setSubsUsed] = useState(0);
   const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
   const [substitutedPlayerIds, setSubstitutedPlayerIds] = useState<Set<string>>(new Set());
+  const [enteredInIds, setEnteredInIds] = useState<Set<string>>(new Set());
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // Local version counter — bumps on every substitution to force re-render of all consumers
+  const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
   const [enteredAtMap, setEnteredAtMap] = useState<Record<string, number>>({});
   const maxSubs = 5;
   // Janelas removidas — substituições são rápidas e ilimitadas em janela.
   const windowsUsed = 0;
   const maxWindows = 99;
+
+  // ── DERIVED on-field state (SINGLE SOURCE OF TRUTH for lineup/bench UI) ──
+  // currentStarters: 11 players currently on the field (initial 11, minus subbed-out, plus subbed-in)
+  // currentBench: bench players that have NOT entered the field yet (still available)
+  const { currentStarters, currentBench } = useMemo(() => {
+    if (!homePlayers || homePlayers.length === 0) {
+      return { currentStarters: [] as Player[], currentBench: [] as Player[] };
+    }
+    const initialStarters = homePlayers.slice(0, 11);
+    const initialBench = homePlayers.slice(11);
+    const remainingStarters = initialStarters.filter(p => !substitutedPlayerIds.has(p.id));
+    const subbedInPlayers = initialBench.filter(p => enteredInIds.has(p.id));
+    const remainingBench = initialBench.filter(p => !enteredInIds.has(p.id));
+    return {
+      currentStarters: [...remainingStarters, ...subbedInPlayers],
+      currentBench: remainingBench,
+    };
+    // subStateVersion forces re-derivation on every sub change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homePlayers, substitutedPlayerIds, enteredInIds, subStateVersion]);
 
   // ── Live stamina map (continuous fatigue during the match) ──
   const liveStaminaMap = useMemo(() => {
@@ -766,32 +794,54 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
     const playerOut = homePlayers.find(p => p.id === next.outId);
     const playerIn = homePlayers.find(p => p.id === next.inId);
-    if (playerOut && playerIn) {
-      const subMinute = isHalftime ? 46 : currentMinute;
-      setSubsUsed(prev => prev + 1);
-      setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
-      setEnteredAtMap(prev => ({
-        ...prev,
-        [next.inId]: subMinute,
-        [`__out_${next.outId}`]: subMinute,
-      }));
-      setActiveBanner({
-        minute: currentMinute,
-        playerOut: playerOut.name,
-        playerIn: playerIn.name,
-        teamName: homeTeam,
-        isHalftime,
-        shield: homeShield,
-      });
-      setInjectedSubEvents(prev => [...prev, {
-        minute: isHalftime ? 45 : currentMinute,
-        type: 'substitution',
-        team: 'home',
-        description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
-      } as SimEvent]);
+
+    // GUARDS — single source of truth checks (atomic before mutation)
+    if (!playerOut || !playerIn) {
+      console.warn('[SUB] Player not found, dropping queued sub', next);
+      setSubQueue(q => q.slice(1));
+      return;
     }
+    if (substitutedPlayerIds.has(playerOut.id)) {
+      console.warn('[SUB] playerOut already substituted, dropping', playerOut.id);
+      setSubQueue(q => q.slice(1));
+      return;
+    }
+    if (enteredInIds.has(playerIn.id)) {
+      console.warn('[SUB] playerIn already on field, dropping', playerIn.id);
+      setSubQueue(q => q.slice(1));
+      return;
+    }
+
+    const subMinute = isHalftime ? 46 : currentMinute;
+    setSubsUsed(prev => prev + 1);
+    setSubstitutedPlayerIds(prev => {
+      const n = new Set(prev); n.add(playerOut.id); return n;
+    });
+    setEnteredInIds(prev => {
+      const n = new Set(prev); n.add(playerIn.id); return n;
+    });
+    setEnteredAtMap(prev => ({
+      ...prev,
+      [next.inId]: subMinute,
+      [`__out_${next.outId}`]: subMinute,
+    }));
+    setSubStateVersion(v => v + 1);
+    setActiveBanner({
+      minute: currentMinute,
+      playerOut: playerOut.name,
+      playerIn: playerIn.name,
+      teamName: homeTeam,
+      isHalftime,
+      shield: homeShield,
+    });
+    setInjectedSubEvents(prev => [...prev, {
+      minute: isHalftime ? 45 : currentMinute,
+      type: 'substitution',
+      team: 'home',
+      description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
+    } as SimEvent]);
     setSubQueue(q => q.slice(1));
-  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield]);
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds]);
 
   // Validation helper for substitutions — used by widget click + queue
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
@@ -820,7 +870,27 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       return;
     }
     if (substitutedPlayerIds.has(playerOutId)) {
-      toast.error('Esse jogador já foi substituído');
+      toast.error('🚫 Esse jogador já foi substituído e não pode voltar');
+      return;
+    }
+    if (enteredInIds.has(playerInId)) {
+      toast.error('🚫 Esse jogador já está em campo');
+      return;
+    }
+    if (playerOutId === playerInId) {
+      toast.error('🚫 Não é possível substituir um jogador por ele mesmo');
+      return;
+    }
+    // Confirm playerOut is currently on field (initial starter or subbed-in)
+    const isOnField = currentStarters.some(p => p.id === playerOutId);
+    if (!isOnField) {
+      toast.error('🚫 Esse jogador não está em campo');
+      return;
+    }
+    // Confirm playerIn is on bench
+    const isOnBench = currentBench.some(p => p.id === playerInId);
+    if (!isOnBench) {
+      toast.error('🚫 Esse jogador não está disponível no banco');
       return;
     }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
@@ -832,7 +902,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     } else {
       toast.success('✅ Substituição enviada — aplicada no próximo lance');
     }
-  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds]);
+  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
 
   const subValidation = validateSubAllowed();
   const subBlocked = !subValidation.ok;
@@ -1185,7 +1255,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-2 pt-0">
-                  <LineupView homePlayers={homePlayers} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} />
+                  <LineupView starters={currentStarters} bench={currentBench} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} substitutedPlayerIds={substitutedPlayerIds} enteredInIds={enteredInIds} />
                 </CardContent>
               </Card>
             )}
@@ -1219,7 +1289,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     </div>
                   )}
                   <ManagerSubstitutionView
-                    homePlayers={homePlayers}
+                    currentStarters={currentStarters}
+                    currentBench={currentBench}
+                    hasAnyPlayers={!!homePlayers && homePlayers.length > 11}
                     subsUsed={subsUsed}
                     maxSubs={maxSubs}
                     windowsUsed={windowsUsed}
@@ -1229,7 +1301,6 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     onConfirmSub={handleQueueSubstitution}
                     isHalftime={isHalftime}
                     isFinished={isFinished}
-                    substitutedPlayerIds={substitutedPlayerIds}
                     subQueue={subQueue}
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
@@ -1456,8 +1527,10 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason, liveStaminaMap }: {
-  homePlayers?: Player[];
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+  currentStarters: Player[];
+  currentBench: Player[];
+  hasAnyPlayers: boolean;
   subsUsed: number;
   maxSubs: number;
   windowsUsed: number;
@@ -1467,13 +1540,12 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   isHalftime: boolean;
   isFinished: boolean;
-  substitutedPlayerIds: Set<string>;
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   blocked?: boolean;
   blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
 }) {
-  if (!homePlayers || homePlayers.length <= 11) {
+  if (!hasAnyPlayers) {
     return (
       <div className="text-center py-6">
         <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
@@ -1504,9 +1576,19 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
     );
   }
 
+  if (currentBench.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-base font-bold text-muted-foreground">Banco vazio</p>
+        <p className="text-xs text-muted-foreground mt-1">Todos os reservas já entraram.</p>
+      </div>
+    );
+  }
+
   return <ImprovedSubsView
-    starters={homePlayers.slice(0, 11).filter(p => !substitutedPlayerIds.has(p.id))}
-    bench={homePlayers.slice(11)}
+    starters={currentStarters}
+    bench={currentBench}
     subQueue={subQueue}
     selectedSubOut={selectedSubOut}
     onSelectSubOut={onSelectSubOut}
@@ -1878,8 +1960,24 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
 
 /* ── LINEUP VIEW ───────────────────────────────────────────── */
 
-function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string; liveStaminaMap?: Record<string, number> }) {
-  if (!homePlayers || homePlayers.length === 0) {
+function LineupView({
+  starters,
+  bench,
+  tactics,
+  homeTeam,
+  liveStaminaMap,
+  substitutedPlayerIds,
+  enteredInIds,
+}: {
+  starters: Player[];
+  bench: Player[];
+  tactics?: TacticsConfig;
+  homeTeam: string;
+  liveStaminaMap?: Record<string, number>;
+  substitutedPlayerIds?: Set<string>;
+  enteredInIds?: Set<string>;
+}) {
+  if (!starters || starters.length === 0) {
     return (
       <div className="text-center py-6">
         <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
@@ -1887,9 +1985,6 @@ function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePl
       </div>
     );
   }
-
-  const starters = homePlayers.slice(0, 11);
-  const bench = homePlayers.slice(11);
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -1909,12 +2004,16 @@ function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePl
           {starters.map((p, i) => {
             const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
             const staminaColor = staminaColorClass(stamina);
+            const cameInAsSub = enteredInIds?.has(p.id);
             return (
               <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
                 <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
                 <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
+                  <p className="text-xs sm:text-sm font-semibold truncate flex items-center gap-1">
+                    {p.name}
+                    {cameInAsSub && <span title="Entrou via substituição" className="text-[9px] px-1 py-0 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SUB</span>}
+                  </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <div className="h-1.5 flex-1 rounded-full bg-muted/15 overflow-hidden">
                       <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
