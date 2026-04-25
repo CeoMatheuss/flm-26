@@ -2677,42 +2677,7 @@ export type Database = {
       }
     }
     Views: {
-      public_club_profiles: {
-        Row: {
-          club_logo: string | null
-          club_name: string | null
-          country: string | null
-          fans: number | null
-          members: number | null
-          reputation: number | null
-          stadium: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          club_logo?: never
-          club_name?: never
-          country?: never
-          fans?: never
-          members?: never
-          reputation?: never
-          stadium?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          club_logo?: never
-          club_name?: never
-          country?: never
-          fans?: never
-          members?: never
-          reputation?: never
-          stadium?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       approve_beta_request: {
@@ -2749,6 +2714,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_public_club_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          club_logo: string
+          club_name: string
+          country: string
+          fans: number
+          members: number
+          reputation: number
+          stadium: string
+          updated_at: string
+          user_id: string
+        }[]
       }
       has_role: {
         Args: {
