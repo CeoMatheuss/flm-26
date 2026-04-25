@@ -1,20 +1,24 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Globe, Trophy, Calendar, FlaskConical } from 'lucide-react';
+import { BookOpen, Globe, Trophy, Calendar, FlaskConical, ShieldCheck } from 'lucide-react';
 import { HowItWorksTab } from './HowItWorksTab';
 import { CountriesPyramidTab } from './CountriesPyramidTab';
 import { CupsOverviewTab } from './CupsOverviewTab';
 import { SeasonControlTab } from './SeasonControlTab';
 import { SimulationValidationTab } from './SimulationValidationTab';
+import { BetaAccessPanel } from './BetaAccessPanel';
 
 interface Props { adminUserId: string }
 
 export function SystemPanel({ adminUserId }: Props) {
   return (
     <div className="space-y-2">
-      <Tabs defaultValue="how" className="w-full">
+      <Tabs defaultValue="beta" className="w-full">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto scrollbar-none">
+            <TabsTrigger value="beta" className="text-[10px] gap-1 px-2 shrink-0">
+              <ShieldCheck className="h-3 w-3" /> BETA
+            </TabsTrigger>
             <TabsTrigger value="how" className="text-[10px] gap-1 px-2 shrink-0">
               <BookOpen className="h-3 w-3" /> Como Funciona
             </TabsTrigger>
@@ -33,6 +37,7 @@ export function SystemPanel({ adminUserId }: Props) {
           </TabsList>
         </ScrollArea>
 
+        <TabsContent value="beta" className="mt-3"><BetaAccessPanel /></TabsContent>
         <TabsContent value="how" className="mt-3"><HowItWorksTab /></TabsContent>
         <TabsContent value="pyramid" className="mt-3"><CountriesPyramidTab /></TabsContent>
         <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
