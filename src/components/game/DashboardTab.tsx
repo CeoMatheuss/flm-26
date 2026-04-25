@@ -11,6 +11,7 @@ import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
+import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 
 interface Props {
   club: Club;
@@ -181,6 +182,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       {/* Active Tournaments */}
       <TournamentDashboardCard onExpand={onOpenTournament} />
+
+      {/* Próximos Jogos Oficiais (Liga, Copa, Continental, Mundial) */}
+      {userId && <GlobalCompetitionsWidget userId={userId} />}
 
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
