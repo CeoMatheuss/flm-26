@@ -27,6 +27,10 @@ interface MemberPlan {
 interface Props {
   totalFans: number;
   reputation: number;
+  /** Estatísticas da temporada — alimentam o crescimento/perda dinâmica de sócios. */
+  wins?: number;
+  draws?: number;
+  losses?: number;
 }
 
 const tierConfig: Record<MemberPlan['tier'], { icon: typeof Medal; color: string; gradient: string; ring: string }> = {
@@ -49,13 +53,21 @@ const muralNames = [
   'Rafael O.', 'Camila Z.', 'Bruno P.', 'Larissa H.', 'Diego A.',
 ];
 
-export function MembersTab({ totalFans, reputation }: Props) {
+export function MembersTab({ totalFans, reputation, wins = 0, draws = 0, losses = 0 }: Props) {
   const [plans, setPlans] = useState<MemberPlan[]>(() => {
-    // Estimar inscritos por plano com base nos fãs e reputação
-    const baseRate = Math.min(0.08, 0.02 + reputation / 1000);
+    // Taxa base ainda muito conservadora — sócios são uma parcela difícil de conquistar.
+    // Reputação dá um piso; desempenho recente é o que faz crescer ou cair.
+    const totalGames = wins + draws + losses;
+    const winRate = totalGames > 0 ? wins / totalGames : 0.4;
+    const lossRate = totalGames > 0 ? losses / totalGames : 0.4;
+    // Performance modifier: -40% (muitas derrotas) até +60% (muitas vitórias)
+    const perfMod = 1 + (winRate - 0.5) * 1.2 - lossRate * 0.4;
+    // Conversão base: 1.5% a 5.5% dos fãs viram sócios — bem mais difícil que antes.
+    const baseRate = Math.min(0.055, 0.015 + reputation / 2500) * Math.max(0.5, perfMod);
     return defaultPlans.map((p, i) => ({
       ...p,
-      subscribers: Math.floor(totalFans * baseRate * (i === 0 ? 0.5 : i === 1 ? 0.28 : i === 2 ? 0.15 : 0.07)),
+      // Distribuição natural: muitos bronze, poucos diamante
+      subscribers: Math.max(0, Math.floor(totalFans * baseRate * (i === 0 ? 0.55 : i === 1 ? 0.27 : i === 2 ? 0.13 : 0.05))),
     }));
   });
   const [editingPlan, setEditingPlan] = useState<MemberPlan | null>(null);
@@ -68,8 +80,17 @@ export function MembersTab({ totalFans, reputation }: Props) {
   const engagementLevel = Math.min(50, Math.floor(1 + Math.log10(Math.max(1, monthlyRevenue)) * 4 + totalSubscribers / 100));
   const nextLevelProgress = Math.min(100, ((monthlyRevenue % 10000) / 10000) * 100);
 
-  // Crescimento simulado nos últimos 7 dias
-  const recentGrowth = Math.max(1, Math.floor(totalSubscribers * 0.04));
+  // Crescimento/queda baseado em desempenho (V/D dominam o sentimento da torcida)
+  const totalGames = wins + draws + losses;
+  const recentGrowth = useMemo(() => {
+    if (totalGames === 0) return Math.max(1, Math.floor(totalSubscribers * 0.02));
+    const winRate = wins / totalGames;
+    const lossRate = losses / totalGames;
+    const swing = (winRate - lossRate); // -1..+1
+    // ±5% dos sócios por semana, dependendo do desempenho
+    const delta = Math.round(totalSubscribers * 0.05 * swing);
+    return delta;
+  }, [totalSubscribers, wins, draws, losses, totalGames]);
 
   const savePlan = (updated: MemberPlan) => {
     setPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
@@ -212,7 +233,10 @@ export function MembersTab({ totalFans, reputation }: Props) {
             <p className="text-xl font-black text-emerald-400">{formatMoney(weeklyRevenue)}</p>
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-muted-foreground"><Users className="h-3 w-3 inline" /> {totalSubscribers} sócios</span>
-              <span className="text-emerald-400 font-bold flex items-center gap-0.5"><TrendingUp className="h-3 w-3" /> +{recentGrowth}/sem</span>
+              <span className={`font-bold flex items-center gap-0.5 ${recentGrowth >= 0 ? 'text-emerald-400' : 'text-destructive'}`}>
+                {recentGrowth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
+                {recentGrowth >= 0 ? '+' : ''}{recentGrowth}/sem
+              </span>
             </div>
           </CardContent>
         </Card>

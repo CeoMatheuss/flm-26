@@ -13,6 +13,7 @@ import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
 import { simulateInstantFriendly, type InstantFriendlyResult } from '@/match/instantFriendly';
+import { updateGlobalRanking } from '@/match/rankingUpdater';
 import { toast } from 'sonner';
 
 interface Props {
@@ -198,6 +199,17 @@ export function MatchesTab({
       result.fanChange,
       mode === 'bot_balanced' ? 'Amistoso BOT (Equilibrado)' : 'Amistoso BOT (Aleatório)'
     );
+
+    // Atualiza ranking global (amistoso vs BOT pesa metade)
+    if (userId) {
+      updateGlobalRanking({
+        userId,
+        clubName,
+        outcome: result.outcome,
+        competition: 'friendly',
+        competitionLabel: 'Amistoso',
+      }).catch(() => { /* silencioso */ });
+    }
 
     setLastResult({ ...result, mode });
     setSimulating(null);
