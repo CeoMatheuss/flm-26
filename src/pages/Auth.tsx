@@ -119,7 +119,13 @@ export default function AuthPage() {
       },
     });
     if (error) {
-      toast.error(error.message);
+      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado/i.test(error.message);
+      if (isBetaBlock) {
+        toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
+        setStep('beta-request');
+      } else {
+        toast.error(error.message);
+      }
     } else {
       setPendingEmail(email);
       setStep('verify-email');
