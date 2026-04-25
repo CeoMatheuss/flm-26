@@ -531,7 +531,27 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onUpdateShield={game.updateShield}
         />
       </TabsContent>
-      <TabsContent value="ctrooms"><CTRoomsTab rooms={game.ctRooms} budget={game.club.budget} trainingCenterLevel={game.infrastructure.trainingCenter.level} onUpgradeRoom={game.upgradeCTRoom} /></TabsContent>
+      <TabsContent value="ctrooms">
+        {isTabBlocked('training') ? <BlockedMessage /> : (
+          <TrainingWrapper
+            players={game.club.players}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            trainingIntensity={game.trainingIntensity}
+            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeFacility={game.upgradeFacility}
+            ctRooms={game.ctRooms}
+            onUpgradeCTRoom={game.upgradeCTRoom}
+          />
+        )}
+      </TabsContent>
       <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
       <TabsContent value="support"><SupportTab userId={userId} displayName={displayName} /></TabsContent>
