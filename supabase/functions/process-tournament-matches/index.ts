@@ -878,18 +878,102 @@ Deno.serve(async (req) => {
 
         const result = simulateMatch(enhancedHome, enhancedAway);
 
-        // Apply ET → penalties on knockout stages (skip group/league stages).
+        // Detect two-legged knockout and locate leg-1 result.
         const isKO = isKnockoutStageStr(match.stage);
-        const tb = isKO
-          ? resolveKnockoutTieBreaker(
+        const isLeg2 = isKO && (
+          (match as any).leg === 2 ||
+          (typeof match.stage === 'string' && match.stage.includes('(Volta)'))
+        );
+
+        let leg1Match: any = null;
+        if (isLeg2) {
+          const { data: prior } = await supabase
+            .from('custom_tournament_matches')
+            .select('*')
+            .eq('tournament_id', match.tournament_id)
+            .eq('home_team_id', match.away_team_id)   // legs swap home/away
+            .eq('away_team_id', match.home_team_id)
+            .eq('status', 'played')
+            .lt('scheduled_at', match.scheduled_at)
+            .order('scheduled_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          leg1Match = prior ?? null;
+        }
+
+        // For leg-2: only apply ET/shootout when AGGREGATE is tied. For one-off
+        // knockout (no leg-2) keep the original "this match cannot end in a draw" rule.
+        let tb: ReturnType<typeof resolveKnockoutTieBreaker> | null = null;
+        let finalHome = result.homeGoals;
+        let finalAway = result.awayGoals;
+        let mergedEvents = result.events;
+
+        if (isKO) {
+          if (isLeg2 && leg1Match) {
+            // Aggregate after 90' of leg-2.
+            const aggHomeReg = result.homeGoals + (leg1Match.away_goals ?? 0); // current home was away in leg-1
+            const aggAwayReg = result.awayGoals + (leg1Match.home_goals ?? 0);
+            if (aggHomeReg === aggAwayReg) {
+              tb = resolveKnockoutTieBreaker(
+                aggHomeReg, aggAwayReg,
+                enhancedHome.bot_strength, enhancedAway.bot_strength,
+                enhancedHome.club_name, enhancedAway.club_name,
+              );
+              // ET goals are added to the leg-2 score line.
+              finalHome = result.homeGoals + (tb?.homeGoalsET ?? 0);
+              finalAway = result.awayGoals + (tb?.awayGoalsET ?? 0);
+              mergedEvents = tb ? [...result.events, ...tb.events] : result.events;
+            }
+          } else {
+            // Single-leg knockout — original rule.
+            tb = resolveKnockoutTieBreaker(
               result.homeGoals, result.awayGoals,
               enhancedHome.bot_strength, enhancedAway.bot_strength,
               enhancedHome.club_name, enhancedAway.club_name,
-            )
-          : null;
-        const finalHome = result.homeGoals + (tb?.homeGoalsET ?? 0);
-        const finalAway = result.awayGoals + (tb?.awayGoalsET ?? 0);
-        const mergedEvents = tb ? [...result.events, ...tb.events] : result.events;
+            );
+            finalHome = result.homeGoals + (tb?.homeGoalsET ?? 0);
+            finalAway = result.awayGoals + (tb?.awayGoalsET ?? 0);
+            mergedEvents = tb ? [...result.events, ...tb.events] : result.events;
+          }
+        }
+
+        // Build aggregate summary for leg-2 reports.
+        let aggregateForReport: any = null;
+        if (isLeg2 && leg1Match) {
+          const leg1Home = leg1Match.away_goals ?? 0; // current home played AWAY in leg-1
+          const leg1Away = leg1Match.home_goals ?? 0;
+          const aggHome = leg1Home + finalHome;
+          const aggAway = leg1Away + finalAway;
+          let advanced: 'home' | 'away';
+          let tieBreaker: 'aggregate' | 'extra_time' | 'penalties' = 'aggregate';
+          if (tb && tb.hadShootout) {
+            advanced = tb.winner;
+            tieBreaker = 'penalties';
+          } else if (tb && tb.hadExtraTime) {
+            advanced = tb.winner;
+            tieBreaker = 'extra_time';
+          } else {
+            advanced = aggHome > aggAway ? 'home' : 'away';
+            tieBreaker = 'aggregate';
+          }
+          const advName = advanced === 'home' ? enhancedHome.club_name : enhancedAway.club_name;
+          const critTxt =
+            tieBreaker === 'penalties' ? `nos pênaltis (${tb?.shootoutHome}x${tb?.shootoutAway})` :
+            tieBreaker === 'extra_time' ? 'na prorrogação' :
+            'no placar agregado';
+          aggregateForReport = {
+            homeTeam: enhancedHome.club_name,
+            awayTeam: enhancedAway.club_name,
+            leg1Home, leg1Away,
+            leg2Home: finalHome, leg2Away: finalAway,
+            aggHome, aggAway,
+            advanced,
+            tieBreaker,
+            shootoutHome: tb?.shootoutHome ?? 0,
+            shootoutAway: tb?.shootoutAway ?? 0,
+            summary: `Agregado: ${enhancedHome.club_name} ${aggHome} x ${aggAway} ${enhancedAway.club_name} — ${advName} avança ${critTxt}.`,
+          };
+        }
 
         await supabase.from('custom_tournament_matches').update({
           home_goals: finalHome,
@@ -905,6 +989,7 @@ Deno.serve(async (req) => {
             shootout_home: tb?.shootoutHome ?? 0,
             shootout_away: tb?.shootoutAway ?? 0,
             knockout_winner: tb?.winner ?? null,
+            aggregate: aggregateForReport,
           },
           status: 'played',
           played_at: nowISO,
@@ -948,6 +1033,7 @@ Deno.serve(async (req) => {
             homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
             homeGoals: finalHome, awayGoals: finalAway,
             competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+            aggregate: aggregateForReport,
           });
         }
         if (!enhancedAway.is_bot && enhancedAway.user_id) {
@@ -956,6 +1042,7 @@ Deno.serve(async (req) => {
             homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
             homeGoals: finalHome, awayGoals: finalAway,
             competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+            aggregate: aggregateForReport,
           });
         }
 
