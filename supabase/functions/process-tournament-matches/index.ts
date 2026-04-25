@@ -752,30 +752,48 @@ Deno.serve(async (req) => {
 
         const result = simulateMatch(enhancedHome, enhancedAway);
 
+        // Apply ET → penalties on knockout stages (skip group/league stages).
+        const isKO = isKnockoutStageStr(match.stage);
+        const tb = isKO
+          ? resolveKnockoutTieBreaker(
+              result.homeGoals, result.awayGoals,
+              enhancedHome.bot_strength, enhancedAway.bot_strength,
+              enhancedHome.club_name, enhancedAway.club_name,
+            )
+          : null;
+        const finalHome = result.homeGoals + (tb?.homeGoalsET ?? 0);
+        const finalAway = result.awayGoals + (tb?.awayGoalsET ?? 0);
+        const mergedEvents = tb ? [...result.events, ...tb.events] : result.events;
+
         await supabase.from('custom_tournament_matches').update({
-          home_goals: result.homeGoals,
-          away_goals: result.awayGoals,
+          home_goals: finalHome,
+          away_goals: finalAway,
           match_data: {
-            events: result.events,
+            events: mergedEvents,
             goal_scorers: result.goalScorers,
             player_ratings: result.playerRatings,
             home_players: result.homePlayers,
             stats: result.stats,
+            extra_time: tb?.hadExtraTime ?? false,
+            shootout: tb?.hadShootout ?? false,
+            shootout_home: tb?.shootoutHome ?? 0,
+            shootout_away: tb?.shootoutAway ?? 0,
+            knockout_winner: tb?.winner ?? null,
           },
           status: 'played',
           played_at: nowISO,
         }).eq('id', match.id);
 
-        const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
-        const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
+        const homePoints = finalHome > finalAway ? 3 : finalHome === finalAway ? 1 : 0;
+        const awayPoints = finalAway > finalHome ? 3 : finalHome === finalAway ? 1 : 0;
 
         await supabase.from('custom_tournament_teams').update({
           played: (homeTeam as any).played + 1,
           wins: (homeTeam as any).wins + (homePoints === 3 ? 1 : 0),
           draws: (homeTeam as any).draws + (homePoints === 1 ? 1 : 0),
           losses: (homeTeam as any).losses + (homePoints === 0 ? 1 : 0),
-          goals_for: (homeTeam as any).goals_for + result.homeGoals,
-          goals_against: (homeTeam as any).goals_against + result.awayGoals,
+          goals_for: (homeTeam as any).goals_for + finalHome,
+          goals_against: (homeTeam as any).goals_against + finalAway,
           points: (homeTeam as any).points + homePoints,
         }).eq('id', homeTeam.id);
 
@@ -784,8 +802,8 @@ Deno.serve(async (req) => {
           wins: (awayTeam as any).wins + (awayPoints === 3 ? 1 : 0),
           draws: (awayTeam as any).draws + (awayPoints === 1 ? 1 : 0),
           losses: (awayTeam as any).losses + (awayPoints === 0 ? 1 : 0),
-          goals_for: (awayTeam as any).goals_for + result.awayGoals,
-          goals_against: (awayTeam as any).goals_against + result.homeGoals,
+          goals_for: (awayTeam as any).goals_for + finalAway,
+          goals_against: (awayTeam as any).goals_against + finalHome,
           points: (awayTeam as any).points + awayPoints,
         }).eq('id', awayTeam.id);
 
