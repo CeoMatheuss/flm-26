@@ -11,6 +11,8 @@ import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
+import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';
+import { useVersionGuard } from '@/hooks/useVersionGuard';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
 import { getLeagueTeams } from '@/types/league';
@@ -155,6 +157,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
+
+  // Version guard: bloqueia o jogo durante atualizações de dados
+  const versionGuard = useVersionGuard(userId, initialState ?? null);
+
 
   const { isPremium } = usePremiumStatus(userId);
   const game = useGame(initialState, userId, isPremium);
@@ -416,6 +422,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
+      <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
