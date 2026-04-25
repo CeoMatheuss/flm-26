@@ -119,14 +119,16 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
   const eligiblePlayers = players.filter(p => p.overall >= 60 && (p.age || 25) <= 35);
 
   const computeStartPrice = (player: any): number => {
+    // Preços de leilão mais realistas (50-70% mais baratos que mercado)
     const ovr = Math.max(60, Math.min(99, player.overall || 60));
-    const ovrFactor = Math.pow((ovr - 55) / 10, 2.4);
-    let price = Math.round(150_000 * ovrFactor);
+    // Curva mais suave: 60 OVR ~50K, 70 OVR ~150K, 80 OVR ~500K, 90 OVR ~2M
+    const ovrFactor = Math.pow((ovr - 55) / 10, 2.0);
+    let price = Math.round(60_000 * ovrFactor);
     const age = player.age || 25;
-    if (age <= 24) price = Math.round(price * 1.2);
-    else if (age >= 32) price = Math.round(price * 0.75);
-    else if (age >= 30) price = Math.round(price * 0.9);
-    return Math.max(100_000, Math.min(50_000_000, price));
+    if (age <= 24) price = Math.round(price * 1.15);
+    else if (age >= 32) price = Math.round(price * 0.6);
+    else if (age >= 30) price = Math.round(price * 0.8);
+    return Math.max(50_000, Math.min(20_000_000, price));
   };
 
   const handleCreateAuction = async (player: any) => {
