@@ -1948,8 +1948,24 @@ function StatsView({ stats, homeTeam, awayTeam }: { stats: MatchStats; homeTeam:
 
 /* ── LINEUP VIEW ───────────────────────────────────────────── */
 
-function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePlayers?: Player[]; tactics?: TacticsConfig; homeTeam: string; liveStaminaMap?: Record<string, number> }) {
-  if (!homePlayers || homePlayers.length === 0) {
+function LineupView({
+  starters,
+  bench,
+  tactics,
+  homeTeam,
+  liveStaminaMap,
+  substitutedPlayerIds,
+  enteredInIds,
+}: {
+  starters: Player[];
+  bench: Player[];
+  tactics?: TacticsConfig;
+  homeTeam: string;
+  liveStaminaMap?: Record<string, number>;
+  substitutedPlayerIds?: Set<string>;
+  enteredInIds?: Set<string>;
+}) {
+  if (!starters || starters.length === 0) {
     return (
       <div className="text-center py-6">
         <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
@@ -1957,9 +1973,6 @@ function LineupView({ homePlayers, tactics, homeTeam, liveStaminaMap }: { homePl
       </div>
     );
   }
-
-  const starters = homePlayers.slice(0, 11);
-  const bench = homePlayers.slice(11);
 
   return (
     <div className="space-y-3 sm:space-y-4">
