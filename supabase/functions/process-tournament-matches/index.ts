@@ -315,9 +315,24 @@ async function recordAutoMatchOutcome(
     awayTeam: string;
     homeGoals: number;
     awayGoals: number;
-    competition: string; // 'Liga' | 'Copa' | 'Torneio' | 'Eliminatória' …
+    competition: string; // 'Liga' | 'Copa' | 'Torneio' …
     matchType?: string;  // 'league' | 'cup' | 'tournament'
     matchData?: any;     // { events, goal_scorers, player_ratings, home_players, stats }
+    aggregate?: {
+      homeTeam: string;
+      awayTeam: string;
+      leg1Home: number;
+      leg1Away: number;
+      leg2Home: number;
+      leg2Away: number;
+      aggHome: number;
+      aggAway: number;
+      advanced: 'home' | 'away';
+      tieBreaker: 'aggregate' | 'extra_time' | 'penalties';
+      shootoutHome?: number;
+      shootoutAway?: number;
+      summary: string;
+    };
   },
 ) {
   if (!args.userId) return;
@@ -356,6 +371,7 @@ async function recordAutoMatchOutcome(
         events: args.matchData?.events ?? [],
         stats: args.matchData?.stats ?? {},
         goal_scorers: args.matchData?.goal_scorers ?? [],
+        aggregate: args.aggregate ?? null,
       },
     });
   } catch (err) {
