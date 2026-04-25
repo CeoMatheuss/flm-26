@@ -2737,6 +2737,14 @@ export type Database = {
         }[]
       }
       get_user_club_shield: { Args: { _user_id: string }; Returns: Json }
+      get_user_stadium_info: {
+        Args: { _user_id: string }
+        Returns: {
+          club_name: string
+          stadium_level: number
+          stadium_name: string
+        }[]
+      }
       get_user_team_strength: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
