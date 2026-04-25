@@ -1067,26 +1067,50 @@ Deno.serve(async (req) => {
 
         if (!allMatches) continue;
 
+        const isTwoLegs = !!(tournament as any).two_legs && tournament.format === 'knockout';
         const currentRound = tournament.current_round || 1;
-        const roundMatches = allMatches.filter(m => m.round === currentRound);
-        const allPlayed = roundMatches.every(m => m.status === 'played');
 
-        if (allPlayed && roundMatches.length > 0) {
+        // For two-legged knockouts, advance only when BOTH legs of the round are played.
+        // Leg-1 lives in `currentRound`, leg-2 in `currentRound + 1`.
+        const decisiveRound = isTwoLegs ? currentRound + 1 : currentRound;
+        const roundMatches = allMatches.filter(m => m.round === decisiveRound);
+        const allPlayed = roundMatches.length > 0 && roundMatches.every(m => m.status === 'played');
+
+        if (allPlayed) {
           const winners: string[] = [];
           for (const m of roundMatches) {
-            const koWinner = (m.match_data as any)?.knockout_winner as 'home' | 'away' | null | undefined;
-            if (koWinner === 'home') winners.push(m.home_team_id);
-            else if (koWinner === 'away') winners.push(m.away_team_id);
-            else if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
-            else if ((m.away_goals ?? 0) > (m.home_goals ?? 0)) winners.push(m.away_team_id);
-            else winners.push(rng() > 0.5 ? m.home_team_id : m.away_team_id);
-
-            const loserId = winners[winners.length - 1] === m.home_team_id ? m.away_team_id : m.home_team_id;
+            let winnerId: string;
+            if (isTwoLegs) {
+              // Use aggregate stored on leg-2 match_data (computed during sim).
+              const agg = (m.match_data as any)?.aggregate;
+              if (agg?.advanced === 'home') winnerId = m.home_team_id;
+              else if (agg?.advanced === 'away') winnerId = m.away_team_id;
+              else {
+                // Fallback: recompute from leg-1 row.
+                const leg1 = allMatches.find(x =>
+                  x.round === currentRound &&
+                  x.home_team_id === m.away_team_id &&
+                  x.away_team_id === m.home_team_id,
+                );
+                const aH = (m.home_goals ?? 0) + (leg1?.away_goals ?? 0);
+                const aA = (m.away_goals ?? 0) + (leg1?.home_goals ?? 0);
+                winnerId = aH >= aA ? m.home_team_id : m.away_team_id;
+              }
+            } else {
+              const koWinner = (m.match_data as any)?.knockout_winner as 'home' | 'away' | null | undefined;
+              if (koWinner === 'home') winnerId = m.home_team_id;
+              else if (koWinner === 'away') winnerId = m.away_team_id;
+              else if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winnerId = m.home_team_id;
+              else if ((m.away_goals ?? 0) > (m.home_goals ?? 0)) winnerId = m.away_team_id;
+              else winnerId = rng() > 0.5 ? m.home_team_id : m.away_team_id;
+            }
+            winners.push(winnerId);
+            const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
             await supabase.from('custom_tournament_teams').update({ eliminated: true }).eq('id', loserId);
           }
 
           if (winners.length > 1) {
-            const nextRound = currentRound + 1;
+            const nextRoundLeg1 = decisiveRound + 1;
             const shuffled = [...winners].sort(() => rng() - 0.5);
             const nextMatches: any[] = [];
             const intervalHours = tournament.match_interval_hours || 24;
@@ -1096,19 +1120,45 @@ Deno.serve(async (req) => {
             const stageByCount = (n: number) => n === 2 ? 'Final' : n === 4 ? 'Semi' : n === 8 ? 'Quartas' : n === 16 ? 'Oitavas' : `R${n}`;
             const nextStage = stageByCount(shuffled.length);
 
+            const pairs: Array<[string, string]> = [];
             for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
+              pairs.push([shuffled[i * 2], shuffled[i * 2 + 1]]);
+            }
+
+            // Leg-1
+            pairs.forEach(([h, a], i) => {
               const scheduledDate = new Date(baseDate.getTime() + (i + 1) * intervalHours * 3600000);
               const [hours, minutes] = matchTime.split(':').map(Number);
               scheduledDate.setHours(hours || 20, minutes || 0, 0, 0);
-
               nextMatches.push({
                 tournament_id: tournamentId,
-                home_team_id: shuffled[i * 2],
-                away_team_id: shuffled[i * 2 + 1],
-                round: nextRound,
+                home_team_id: h,
+                away_team_id: a,
+                round: nextRoundLeg1,
                 stage: nextStage,
                 scheduled_at: scheduledDate.toISOString(),
                 status: 'scheduled',
+                leg: 1,
+              });
+            });
+
+            // Leg-2 (only when tournament is two-legged AND we have more than the Final left)
+            // Skip return leg for the Final per tournament tradition? Many comps play final single. Keep two_legs honest: include.
+            if (isTwoLegs) {
+              pairs.forEach(([h, a], i) => {
+                const scheduledDate = new Date(baseDate.getTime() + (pairs.length + i + 1) * intervalHours * 3600000);
+                const [hours, minutes] = matchTime.split(':').map(Number);
+                scheduledDate.setHours(hours || 20, minutes || 0, 0, 0);
+                nextMatches.push({
+                  tournament_id: tournamentId,
+                  home_team_id: a,
+                  away_team_id: h,
+                  round: nextRoundLeg1 + 1,
+                  stage: `${nextStage} (Volta)`,
+                  scheduled_at: scheduledDate.toISOString(),
+                  status: 'scheduled',
+                  leg: 2,
+                });
               });
             }
 
@@ -1117,8 +1167,8 @@ Deno.serve(async (req) => {
             }
 
             await supabase.from('custom_tournaments').update({
-              current_round: nextRound,
-              total_rounds: nextRound,
+              current_round: nextRoundLeg1,
+              total_rounds: isTwoLegs ? nextRoundLeg1 + 1 : nextRoundLeg1,
             }).eq('id', tournamentId);
           } else if (winners.length === 1) {
             await supabase.from('custom_tournaments').update({ status: 'finished' }).eq('id', tournamentId);
