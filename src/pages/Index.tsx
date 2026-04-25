@@ -11,6 +11,8 @@ import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
+import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';
+import { useVersionGuard } from '@/hooks/useVersionGuard';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
 import { getLeagueTeams } from '@/types/league';
