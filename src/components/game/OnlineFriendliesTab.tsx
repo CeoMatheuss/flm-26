@@ -162,18 +162,21 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     loadOpenSlots();
   };
 
-  // Realtime subscription for new invites
+  // Realtime: convites + slots abertos (servidor é fonte única de verdade)
   useEffect(() => {
-    const channel = supabase
-      .channel('friendly-invites')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'friendly_invites',
-      }, () => { loadInvites(); })
+    const invitesChannel = supabase
+      .channel('friendly-invites-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadInvites]);
+    const slotsChannel = supabase
+      .channel('open-friendly-slots-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'open_friendly_slots' }, () => loadOpenSlots())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(invitesChannel);
+      supabase.removeChannel(slotsChannel);
+    };
+  }, [loadInvites, userId]);
 
   const searchPlayers = useCallback(async (rawTerm?: string) => {
     const term = (rawTerm ?? searchTerm).trim();
