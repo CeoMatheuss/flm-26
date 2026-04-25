@@ -1331,6 +1331,7 @@ export type Database = {
       }
       live_matches: {
         Row: {
+          attendance: number | null
           away_goals: number
           away_strength: number
           away_team: string
@@ -1356,9 +1357,11 @@ export type Database = {
           stats: Json
           status: string
           tactics: Json
+          ticket_revenue: number | null
           user_id: string
         }
         Insert: {
+          attendance?: number | null
           away_goals?: number
           away_strength?: number
           away_team: string
@@ -1384,9 +1387,11 @@ export type Database = {
           stats?: Json
           status?: string
           tactics?: Json
+          ticket_revenue?: number | null
           user_id: string
         }
         Update: {
+          attendance?: number | null
           away_goals?: number
           away_strength?: number
           away_team?: string
@@ -1412,6 +1417,7 @@ export type Database = {
           stats?: Json
           status?: string
           tactics?: Json
+          ticket_revenue?: number | null
           user_id?: string
         }
         Relationships: []
@@ -2817,6 +2823,10 @@ export type Database = {
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
+      resolve_home_user_for_match: {
+        Args: { _match_id: string }
+        Returns: string
+      }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
     }
     Enums: {

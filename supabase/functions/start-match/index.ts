@@ -263,7 +263,8 @@ function generateReport(
   stats: any, playerRatings: Record<string, number>, goalScorers: any[],
   manOfTheMatch: string | undefined, isHome: boolean, competition: string,
   homeStrength: number, awayStrength: number, tactics: any, stadiumCapacity: number,
-  homePlayers: SimPlayer[], awayPlayers: SimPlayer[]
+  homePlayers: SimPlayer[], awayPlayers: SimPlayer[],
+  attendanceOverride?: number, ticketRevenueOverride?: number
 ) {
   const isUserHome = isHome;
   const userGoals = isUserHome ? homeGoals : awayGoals;
@@ -317,8 +318,13 @@ function generateReport(
   if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
   if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
 
-  const attendance = Math.floor(stadiumCapacity * (0.5 + rng() * 0.45));
-  const ticketRevenue = attendance * (50 + Math.floor(rng() * 30));
+  // Use público autoritativo da partida quando disponível; nunca random aqui.
+  const attendance = typeof attendanceOverride === 'number'
+    ? attendanceOverride
+    : Math.floor(stadiumCapacity * 0.6);
+  const ticketRevenue = typeof ticketRevenueOverride === 'number'
+    ? ticketRevenueOverride
+    : attendance * 25;
   let moraleChange = 0;
   if (result === 'win') moraleChange = resultType === 'rout_win' ? 15 : 10;
   else if (result === 'loss') moraleChange = resultType === 'rout_loss' ? -15 : -8;
@@ -1199,7 +1205,8 @@ function simulateFullMatch(
     homeTeam, awayTeam, aggregateHomeGoals, aggregateAwayGoals,
     stats, playerRatings, goalScorers, manOfTheMatch,
     isHome, competition, homeStrength, awayStrength, tactics,
-    stadiumCapacity, [...home, ...away], [...home, ...away]
+    stadiumCapacity, [...home, ...away], [...home, ...away],
+    estimatedCrowd, ticketRevenue
   );
 
   console.log(`[Sim] Final: ${aggregateHomeGoals}x${aggregateAwayGoals} (Pen: ${shootoutHomeGoals}x${shootoutAwayGoals}) | Events: ${finalEvents.length}`);
@@ -1213,6 +1220,8 @@ function simulateFullMatch(
     reportData: reportResult.report,
     result: reportResult.result,
     rankingChange: reportResult.rankingChange,
+    attendance: estimatedCrowd,
+    ticketRevenue,
   };
 }
 
@@ -1266,7 +1275,7 @@ Deno.serve(async (req) => {
     // 1. CENTRAL SIMULATION: dedupe by shared_match_id.
     //    If a row already exists for this matchId, both clients must read THAT
     //    same row — never re-simulate. This is what guarantees Time 1 and Time 2
-    //    see the same placar, eventos e estatísticas.
+    //    see the same placar, eventos, estatísticas E PÚBLICO.
     const { data: shared } = await adminClient
       .from('live_matches')
       .select('id, status')
@@ -1286,13 +1295,58 @@ Deno.serve(async (req) => {
     //    deterministic per match. Two parallel callers produce identical output.
     seedRng(String(matchId));
 
-    // Simulate match
+    // 2.5 STADIUM AUTHORITATIVE RESOLUTION
+    // O público/capacidade NUNCA pode vir do cliente sem validação — senão o
+    // mandante e o visitante enviam números diferentes e o primeiro a chegar
+    // vence, causando o bug de "Time A vê 10k, Time B vê 1k".
+    // Aqui resolvemos o mandante real pelo matchId e usamos o stadium info
+    // dele do banco. Para amistosos sem matchId resolvível, caímos no fallback.
+    let resolvedHomeFans = Number(fans) || 500;
+    let resolvedAwayFans = Number(awayFans) || 500;
+    let resolvedStadiumCapacity = Number(stadiumCapacity) || 5000;
+    let resolvedStadiumName = stadiumName || 'Estádio';
+    try {
+      const { data: homeUserId } = await adminClient.rpc('resolve_home_user_for_match', { _match_id: String(matchId) });
+      if (homeUserId) {
+        // Buscar info de estádio do mandante real
+        const { data: stadiumRows } = await adminClient.rpc('get_user_stadium_info', { _user_id: homeUserId });
+        const stadium = Array.isArray(stadiumRows) ? stadiumRows[0] : stadiumRows;
+        if (stadium) {
+          resolvedStadiumName = stadium.stadium_name || resolvedStadiumName;
+          // Capacidade base por nível: 5k base * (1 + nível*0.4), igual ao client (aproximação segura)
+          const lvl = Number(stadium.stadium_level) || 1;
+          resolvedStadiumCapacity = Math.max(5000, Math.floor(5000 * (1 + (lvl - 1) * 0.4)));
+        }
+        // Fans do mandante via game_saves
+        const { data: homeSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', homeUserId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const homeFansFromSave = (homeSave?.club_data as any)?.club?.fans
+          ?? (homeSave?.club_data as any)?.fans;
+        if (typeof homeFansFromSave === 'number' && homeFansFromSave > 0) {
+          resolvedHomeFans = homeFansFromSave;
+        }
+        console.info('[Stadium] Authoritative resolution', {
+          matchId, homeUserId, capacity: resolvedStadiumCapacity, fans: resolvedHomeFans,
+        });
+      } else {
+        console.info('[Stadium] No home user resolved (likely friendly/admin) — using client values', { matchId });
+      }
+    } catch (e) {
+      console.warn('[Stadium] Resolution failed, falling back to client data', e);
+    }
+
+    // Simulate match (com dados de estádio AUTORITATIVOS)
     const result = simulateFullMatch(
       homeTeam, awayTeam, homePlayers || [],
       validatedHomeStrength, validatedAwayStrength,
-      tactics || {}, stadiumName || 'Estádio', isHome !== false,
-      competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
-      staff, awayFans || 500, validTieBreaker,
+      tactics || {}, resolvedStadiumName, isHome !== false,
+      competition || 'Amistoso', resolvedStadiumCapacity, resolvedHomeFans,
+      staff, resolvedAwayFans, validTieBreaker,
       Array.isArray(awayPlayers) ? awayPlayers : undefined,
       awayTactics || undefined
     );
@@ -1322,8 +1376,10 @@ Deno.serve(async (req) => {
       away_team: awayTeam,
       home_strength: validatedHomeStrength,
       away_strength: validatedAwayStrength,
-      stadium_name: stadiumName || 'Estádio',
-      stadium_capacity: stadiumCapacity || 5000,
+      stadium_name: resolvedStadiumName,
+      stadium_capacity: resolvedStadiumCapacity,
+      attendance: result.attendance,
+      ticket_revenue: result.ticketRevenue,
       is_home: isHome !== false,
       competition: competition || 'Amistoso',
       duration_seconds: durationSeconds,
@@ -1377,8 +1433,8 @@ Deno.serve(async (req) => {
       away_goals: result.awayGoals,
       is_home: isHome !== false,
       competition: competition || 'Amistoso',
-      stadium_name: stadiumName || 'Estádio',
-      stadium_capacity: stadiumCapacity || 5000,
+      stadium_name: resolvedStadiumName,
+      stadium_capacity: resolvedStadiumCapacity,
       events: result.events as any,
       stats: result.stats as any,
       player_ratings: result.playerRatings as any,
