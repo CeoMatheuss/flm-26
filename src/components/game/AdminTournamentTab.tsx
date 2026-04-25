@@ -622,7 +622,7 @@ export function AdminTournamentTab({ userId }: Props) {
         setLoading(false);
         return;
       }
-      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24);
+      fixtures = generateKnockoutFixtures(teamList.map(t => t.id), startDateStr, matchTime, Number(formInterval) || 24, formTwoLegs);
     } else if (formFormat === 'group_knockout') {
       const groups = await assignGroups(tournament.id, teamList);
       fixtures = generateGroupFixtures(groups, startDateStr, matchTime, Number(formInterval) || 24);
