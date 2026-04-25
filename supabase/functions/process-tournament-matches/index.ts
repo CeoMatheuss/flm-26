@@ -557,24 +557,37 @@ async function processCupMatches(supabase: any, now: Date) {
 
     const result = simulateMatch(home, away);
 
+    // Cup matches are ALWAYS knockout — apply ET → penalties when tied.
+    const tb = resolveKnockoutTieBreaker(
+      result.homeGoals, result.awayGoals,
+      home.bot_strength, away.bot_strength,
+      home.club_name, away.club_name,
+    );
+    const finalHome = result.homeGoals + tb.homeGoalsET;
+    const finalAway = result.awayGoals + tb.awayGoalsET;
+    const mergedEvents = [...result.events, ...tb.events];
+
     await supabase.from('cup_matches').update({
-      home_goals: result.homeGoals,
-      away_goals: result.awayGoals,
+      home_goals: finalHome,
+      away_goals: finalAway,
       match_data: {
-        events: result.events,
+        events: mergedEvents,
         goal_scorers: result.goalScorers,
         player_ratings: result.playerRatings,
         home_players: result.homePlayers,
         stats: result.stats,
+        extra_time: tb.hadExtraTime,
+        shootout: tb.hadShootout,
+        shootout_home: tb.shootoutHome,
+        shootout_away: tb.shootoutAway,
+        knockout_winner: tb.winner,
       },
       status: 'played',
       played_at: nowISO,
     }).eq('id', match.id);
 
-    // Eliminate loser
-    const winnerId = result.homeGoals > result.awayGoals ? homeTeam.id
-      : result.awayGoals > result.homeGoals ? awayTeam.id
-      : rng() > 0.5 ? homeTeam.id : awayTeam.id;
+    // Eliminate loser — ET/shootout always produces a definitive winner now.
+    const winnerId = tb.winner === 'home' ? homeTeam.id : awayTeam.id;
     const loserId = winnerId === homeTeam.id ? awayTeam.id : homeTeam.id;
 
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
