@@ -80,8 +80,17 @@ export function MembersTab({ totalFans, reputation, wins = 0, draws = 0, losses 
   const engagementLevel = Math.min(50, Math.floor(1 + Math.log10(Math.max(1, monthlyRevenue)) * 4 + totalSubscribers / 100));
   const nextLevelProgress = Math.min(100, ((monthlyRevenue % 10000) / 10000) * 100);
 
-  // Crescimento simulado nos últimos 7 dias
-  const recentGrowth = Math.max(1, Math.floor(totalSubscribers * 0.04));
+  // Crescimento/queda baseado em desempenho (V/D dominam o sentimento da torcida)
+  const totalGames = wins + draws + losses;
+  const recentGrowth = useMemo(() => {
+    if (totalGames === 0) return Math.max(1, Math.floor(totalSubscribers * 0.02));
+    const winRate = wins / totalGames;
+    const lossRate = losses / totalGames;
+    const swing = (winRate - lossRate); // -1..+1
+    // ±5% dos sócios por semana, dependendo do desempenho
+    const delta = Math.round(totalSubscribers * 0.05 * swing);
+    return delta;
+  }, [totalSubscribers, wins, draws, losses, totalGames]);
 
   const savePlan = (updated: MemberPlan) => {
     setPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
