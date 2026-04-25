@@ -3395,6 +3395,10 @@ export type Database = {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
       }
+      bot_strength_for_division: {
+        Args: { _division: number }
+        Returns: number
+      }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
@@ -3421,6 +3425,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      generate_bot_club_name: {
+        Args: { _country: string; _idx: number }
+        Returns: string
       }
       get_club_shields_by_names: {
         Args: { _names: string[] }
@@ -3473,6 +3481,7 @@ export type Database = {
         Returns: boolean
       }
       next_sunday_17: { Args: never; Returns: string }
+      normalize_country: { Args: { _input: string }; Returns: string }
       place_auction_bid: {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
@@ -3485,6 +3494,7 @@ export type Database = {
         Args: { _continent: string; _season_year: number }
         Returns: Json
       }
+      random_bot_logo: { Args: never; Returns: string }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       resolve_home_user_for_match: {
