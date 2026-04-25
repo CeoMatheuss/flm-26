@@ -1064,6 +1064,34 @@ export function AdminTournamentTab({ userId }: Props) {
                 </Select>
               )}
 
+              {/* Knockout-only options: starting stage + two-legs */}
+              {formFormat === 'knockout' && (
+                <div className="grid grid-cols-2 gap-1.5 p-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                  <div>
+                    <label className="text-[8px] text-amber-300/80 font-semibold">⚔️ Fase Inicial</label>
+                    <Select value={formKnockoutStartStage} onValueChange={(v: 'oitavas' | 'quartas' | 'semi' | 'final') => setFormKnockoutStartStage(v)}>
+                      <SelectTrigger className="h-7 text-[9px] mt-0.5"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="oitavas" className="text-xs">Oitavas (16 times)</SelectItem>
+                        <SelectItem value="quartas" className="text-xs">Quartas (8 times)</SelectItem>
+                        <SelectItem value="semi" className="text-xs">Semifinal (4 times)</SelectItem>
+                        <SelectItem value="final" className="text-xs">Final (2 times)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[8px] text-amber-300/80 font-semibold">🔁 Ida e Volta</label>
+                    <Select value={formTwoLegs ? 'yes' : 'no'} onValueChange={v => setFormTwoLegs(v === 'yes')}>
+                      <SelectTrigger className="h-7 text-[9px] mt-0.5"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no" className="text-xs">Jogo único</SelectItem>
+                        <SelectItem value="yes" className="text-xs">Ida e Volta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               <Textarea placeholder="Regras (opcional)" value={formRules} onChange={e => setFormRules(e.target.value)} className="text-[10px] min-h-[30px]" maxLength={500} />
 
               <Button className="w-full h-8 text-xs gap-1" onClick={createTournament} disabled={loading}>
