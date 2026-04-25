@@ -295,7 +295,26 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <MembersTab totalFans={game.club.fans || 1000} reputation={game.club.reputation || 50} wins={game.club.stats?.wins ?? 0} draws={game.club.stats?.draws ?? 0} losses={game.club.stats?.losses ?? 0} />
       </TabsContent>
       <TabsContent value="training">
-        {isTabBlocked('training') ? <BlockedMessage /> : <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} trainingIntensity={game.trainingIntensity} onSetTrainingIntensity={game.setPlayerTrainingIntensity} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} budget={game.club.budget} onUpgradeCT={() => game.upgradeFacility('trainingCenter')} />}
+        {isTabBlocked('training') ? <BlockedMessage /> : (
+          <TrainingWrapper
+            players={game.club.players}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            trainingIntensity={game.trainingIntensity}
+            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+            onUpgradeFacility={game.upgradeFacility}
+            ctRooms={game.ctRooms}
+            onUpgradeCTRoom={game.upgradeCTRoom}
+          />
+        )}
       </TabsContent>
       <TabsContent value="matches">
         {isTabBlocked('matches') ? <BlockedMessage /> : <MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} alreadyPlayedToday={game.alreadyPlayedToday} lastFriendlyDate={game.lastFriendlyDate} players={game.club.players} teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))} tactics={game.tactics} onGenerateFriendly={game.generateFriendly} userId={userId} stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)} fans={game.club.fans || 500} applyFanChange={game.applyFanChange} />}
@@ -303,33 +322,67 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="sponsors">
         {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
       </TabsContent>
+      {/* Backward-compat: deep-links antigos (physio, infra, ct) caem na nova aba unificada */}
       <TabsContent value="physio">
-        {isTabBlocked('physio') ? <BlockedMessage /> : (
-          <InfrastructureTab
-            infrastructure={game.infrastructure}
-            budget={game.club.budget}
+        {isTabBlocked('training') ? <BlockedMessage /> : (
+          <TrainingWrapper
             players={game.club.players}
-            onUpgrade={game.upgradeFacility}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            trainingIntensity={game.trainingIntensity}
+            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeFacility={game.upgradeFacility}
+            ctRooms={game.ctRooms}
+            onUpgradeCTRoom={game.upgradeCTRoom}
           />
         )}
       </TabsContent>
       <TabsContent value="infra">
-        {/* Backward-compat: deep-links antigos para "infra" caem na Fisioterapia */}
-        {isTabBlocked('physio') ? <BlockedMessage /> : (
-          <InfrastructureTab
-            infrastructure={game.infrastructure}
-            budget={game.club.budget}
+        {isTabBlocked('training') ? <BlockedMessage /> : (
+          <TrainingWrapper
             players={game.club.players}
-            onUpgrade={game.upgradeFacility}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            trainingIntensity={game.trainingIntensity}
+            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeFacility={game.upgradeFacility}
+            ctRooms={game.ctRooms}
+            onUpgradeCTRoom={game.upgradeCTRoom}
           />
         )}
       </TabsContent>
       <TabsContent value="ct">
-        {isTabBlocked('ct') ? <BlockedMessage /> : (
-          <TrainingCenterTab
+        {isTabBlocked('training') ? <BlockedMessage /> : (
+          <TrainingWrapper
+            players={game.club.players}
             infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            trainingIntensity={game.trainingIntensity}
+            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
             budget={game.club.budget}
             onUpgradeFacility={game.upgradeFacility}
+            ctRooms={game.ctRooms}
+            onUpgradeCTRoom={game.upgradeCTRoom}
           />
         )}
       </TabsContent>
