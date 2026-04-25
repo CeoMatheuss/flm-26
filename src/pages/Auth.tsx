@@ -443,6 +443,13 @@ export default function AuthPage() {
             </svg>
             Entrar com Google
           </Button>
+
+          <button
+            onClick={() => setStep('beta-request')}
+            className="w-full text-[11px] text-primary hover:underline mt-1 flex items-center justify-center gap-1"
+          >
+            <ShieldCheck className="w-3 h-3" /> Solicitar acesso ao BETA
+          </button>
         </div>
 
         {/* Features Grid */}
