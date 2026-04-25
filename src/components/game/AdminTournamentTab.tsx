@@ -501,7 +501,8 @@ export function AdminTournamentTab({ userId }: Props) {
       }
     }
 
-    // 1. Create tournament
+    // 1. Create tournament — start as draft so we can enroll teams BEFORE
+    //    the server-side knockout validation trigger fires on status change.
     const { data: tournamentData, error } = await supabase.from('custom_tournaments').insert([{
       name: formName.trim(),
       description: formDesc.trim(),
@@ -518,8 +519,9 @@ export function AdminTournamentTab({ userId }: Props) {
       country: scope,
       rules_text: formRules.trim(),
       created_by: userId,
-      status: 'in_progress',
-    }]).select().single();
+      status: 'draft',
+      two_legs: formFormat === 'knockout' ? formTwoLegs : false,
+    } as any]).select().single();
 
     if (error || !tournamentData) {
       toast.error('Erro: ' + (error?.message || 'Falha ao criar'));
