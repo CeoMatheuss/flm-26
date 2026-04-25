@@ -309,7 +309,7 @@ export function useClubState(initialState: any, userId?: string) {
           for (const id of newly) {
             const a = getAchievement(id);
             next.budget = (next.budget ?? 0) + a.reward;
-            next.fans = Math.max(100, (next.fans ?? 1000) + (a.fanReward ?? 0));
+            next.fans = Math.max(1000, (next.fans ?? 1000) + (a.fanReward ?? 0));
             next.reputation = Math.min(100, Math.max(1, (next.reputation ?? 50) + (a.reputationReward ?? 0)));
             pushFin({ at: new Date().toISOString(), category: 'evento', label: `Conquista: ${a.label}`, amount: a.reward });
             nextOps.recentLog = [{ at: new Date().toISOString(), message: `🏆 Conquista desbloqueada: ${a.emoji} ${a.label} (+R$${(a.reward/1000).toFixed(0)}k)`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
@@ -657,7 +657,7 @@ export function useClubState(initialState: any, userId?: string) {
       toast.success(`✅ Aceito: ${cfg?.label} — R$ ${(proposal.revenue/1000).toFixed(0)}k em ${new Date(proposal.scheduledFor).toLocaleDateString('pt-BR')}`);
       return {
         ...prev,
-        fans: Math.max(100, (prev.fans ?? 1000) + Math.round((prev.fans ?? 1000) * proposal.fanImpact / 1000)),
+        fans: Math.max(1000, (prev.fans ?? 1000) + Math.round((prev.fans ?? 1000) * proposal.fanImpact / 1000)),
         stadiumOps: {
           ...ops,
           proposals: ops.proposals.filter(p => p.id !== proposalId),
@@ -820,7 +820,7 @@ export function useClubState(initialState: any, userId?: string) {
     if (!Number.isFinite(delta) || delta === 0) return;
     setClub(prev => {
       const ops = prev.stadiumOps ?? emptyStadiumOps();
-      const next = Math.max(100, (prev.fans ?? 1000) + Math.round(delta));
+      const next = Math.max(1000, (prev.fans ?? 1000) + Math.round(delta));
       const msg = delta > 0
         ? `👥 +${Math.round(delta).toLocaleString('pt-BR')} torcedores${sourceLabel ? ` (${sourceLabel})` : ''}`
         : `👥 ${Math.round(delta).toLocaleString('pt-BR')} torcedores${sourceLabel ? ` (${sourceLabel})` : ''}`;

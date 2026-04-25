@@ -155,7 +155,7 @@ export function useMatchState(initialState: any, userId?: string) {
           gamesPlayed: p.gamesPlayed + 1,
         })),
         budget: prev.budget + prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine,
-        fans: Math.max(100, prev.fans + fanChange),
+        fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {
           wins: prev.stats.wins + (isWin ? 1 : 0),
