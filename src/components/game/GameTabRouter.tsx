@@ -427,7 +427,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
-      <TabsContent value="updates"><UpdatesTab /></TabsContent>
+      
       <TabsContent value="settings"><SettingsTab /></TabsContent>
       {/* clubsettings deep-link redirect: render ClubProfileTab so existing links keep working */}
       <TabsContent value="clubsettings">
@@ -509,27 +509,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onRenameStadium={game.renameStadium}
           onUpdateShield={game.updateShield}
         />
-      </TabsContent>
-      <TabsContent value="ctrooms">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
       </TabsContent>
       <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
