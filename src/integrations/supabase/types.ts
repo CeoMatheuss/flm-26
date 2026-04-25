@@ -1093,6 +1093,160 @@ export type Database = {
         }
         Relationships: []
       }
+      international_competition_clubs: {
+        Row: {
+          competition_id: string
+          eliminated: boolean
+          group_label: string | null
+          group_position: number | null
+          id: string
+          team_id: string
+        }
+        Insert: {
+          competition_id: string
+          eliminated?: boolean
+          group_label?: string | null
+          group_position?: number | null
+          id?: string
+          team_id: string
+        }
+        Update: {
+          competition_id?: string
+          eliminated?: boolean
+          group_label?: string | null
+          group_position?: number | null
+          id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_competition_clubs_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "international_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_competition_clubs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      international_competitions: {
+        Row: {
+          champion_team_id: string | null
+          competition_name: string
+          continent: string
+          created_at: string
+          current_round: number
+          emoji: string | null
+          id: string
+          season: number
+          status: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season: number
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          competition_name: string
+          continent: string
+          created_at?: string
+          current_round?: number
+          emoji?: string | null
+          id?: string
+          season?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season?: number
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          competition_name?: string
+          continent?: string
+          created_at?: string
+          current_round?: number
+          emoji?: string | null
+          id?: string
+          season?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string
+          competition_id: string
+          created_at: string
+          home_goals: number | null
+          home_team_id: string
+          id: string
+          kickoff_at: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          stage: string | null
+          status: Database["public"]["Enums"]["world_match_status"]
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id: string
+          competition_id: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id: string
+          id?: string
+          kickoff_at: string
+          match_data?: Json | null
+          played_at?: string | null
+          round: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string
+          competition_id?: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id?: string
+          id?: string
+          kickoff_at?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_matches_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "international_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_updates: {
         Row: {
           approved: boolean
@@ -2775,6 +2929,458 @@ export type Database = {
         }
         Relationships: []
       }
+      world_cup_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string
+          created_at: string
+          cup_id: string
+          home_goals: number | null
+          home_team_id: string
+          id: string
+          kickoff_at: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          stage: string | null
+          status: Database["public"]["Enums"]["world_match_status"]
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id: string
+          created_at?: string
+          cup_id: string
+          home_goals?: number | null
+          home_team_id: string
+          id?: string
+          kickoff_at: string
+          match_data?: Json | null
+          played_at?: string | null
+          round: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string
+          created_at?: string
+          cup_id?: string
+          home_goals?: number | null
+          home_team_id?: string
+          id?: string
+          kickoff_at?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_matches_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "world_cups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_cup_tournament: {
+        Row: {
+          champion_team_id: string | null
+          created_at: string
+          current_round: number
+          edition: number
+          id: string
+          season: number
+          status: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season: number
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          created_at?: string
+          current_round?: number
+          edition: number
+          id?: string
+          season?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season?: number
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          created_at?: string
+          current_round?: number
+          edition?: number
+          id?: string
+          season?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          unlocks_in_season?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      world_cup_tournament_clubs: {
+        Row: {
+          eliminated: boolean
+          group_label: string | null
+          id: string
+          qualification_source: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Insert: {
+          eliminated?: boolean
+          group_label?: string | null
+          id?: string
+          qualification_source?: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Update: {
+          eliminated?: boolean
+          group_label?: string | null
+          id?: string
+          qualification_source?: string | null
+          team_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_tournament_clubs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_tournament_clubs_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_tournament"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_cup_tournament_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string
+          created_at: string
+          home_goals: number | null
+          home_team_id: string
+          id: string
+          kickoff_at: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          stage: string | null
+          status: Database["public"]["Enums"]["world_match_status"]
+          tournament_id: string
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id: string
+          id?: string
+          kickoff_at: string
+          match_data?: Json | null
+          played_at?: string | null
+          round: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+          tournament_id: string
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id?: string
+          id?: string
+          kickoff_at?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          stage?: string | null
+          status?: Database["public"]["Enums"]["world_match_status"]
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_tournament_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_tournament_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_tournament"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_cups: {
+        Row: {
+          champion_team_id: string | null
+          country: string
+          created_at: string
+          cup_name: string
+          current_round: number
+          flag_emoji: string | null
+          id: string
+          season: number
+          starts_on_matchday: number
+          status: Database["public"]["Enums"]["world_competition_status"]
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          country: string
+          created_at?: string
+          cup_name: string
+          current_round?: number
+          flag_emoji?: string | null
+          id?: string
+          season?: number
+          starts_on_matchday?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          country?: string
+          created_at?: string
+          cup_name?: string
+          current_round?: number
+          flag_emoji?: string | null
+          id?: string
+          season?: number
+          starts_on_matchday?: number
+          status?: Database["public"]["Enums"]["world_competition_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      world_league_teams: {
+        Row: {
+          bot_strength: number | null
+          club_logo: string | null
+          club_name: string
+          created_at: string
+          draws: number
+          goals_against: number
+          goals_for: number
+          id: string
+          is_bot: boolean
+          league_id: string
+          losses: number
+          played: number
+          points: number
+          shield: Json | null
+          updated_at: string
+          user_id: string | null
+          wins: number
+        }
+        Insert: {
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name: string
+          created_at?: string
+          draws?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          is_bot?: boolean
+          league_id: string
+          losses?: number
+          played?: number
+          points?: number
+          shield?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          wins?: number
+        }
+        Update: {
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name?: string
+          created_at?: string
+          draws?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          is_bot?: boolean
+          league_id?: string
+          losses?: number
+          played?: number
+          points?: number
+          shield?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_league_teams_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_leagues: {
+        Row: {
+          country: string
+          created_at: string
+          current_matchday: number
+          division: number
+          flag_emoji: string
+          id: string
+          kickoff_hour: number
+          league_name: string
+          season: number
+          season_ends_at: string | null
+          season_started_at: string | null
+          status: Database["public"]["Enums"]["world_league_status"]
+          total_matchdays: number
+          total_slots: number
+          updated_at: string
+        }
+        Insert: {
+          country: string
+          created_at?: string
+          current_matchday?: number
+          division: number
+          flag_emoji?: string
+          id?: string
+          kickoff_hour: number
+          league_name: string
+          season?: number
+          season_ends_at?: string | null
+          season_started_at?: string | null
+          status?: Database["public"]["Enums"]["world_league_status"]
+          total_matchdays?: number
+          total_slots?: number
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          current_matchday?: number
+          division?: number
+          flag_emoji?: string
+          id?: string
+          kickoff_hour?: number
+          league_name?: string
+          season?: number
+          season_ends_at?: string | null
+          season_started_at?: string | null
+          status?: Database["public"]["Enums"]["world_league_status"]
+          total_matchdays?: number
+          total_slots?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      world_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string
+          created_at: string
+          home_goals: number | null
+          home_team_id: string
+          id: string
+          kickoff_at: string
+          league_id: string
+          match_data: Json | null
+          matchday: number
+          played_at: string | null
+          season: number
+          status: Database["public"]["Enums"]["world_match_status"]
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id: string
+          id?: string
+          kickoff_at: string
+          league_id: string
+          match_data?: Json | null
+          matchday: number
+          played_at?: string | null
+          season: number
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string
+          created_at?: string
+          home_goals?: number | null
+          home_team_id?: string
+          id?: string
+          kickoff_at?: string
+          league_id?: string
+          match_data?: Json | null
+          matchday?: number
+          played_at?: string | null
+          season?: number
+          status?: Database["public"]["Enums"]["world_match_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2889,6 +3495,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      world_competition_status:
+        | "locked"
+        | "pending"
+        | "in_progress"
+        | "finished"
+      world_league_status: "pending" | "in_progress" | "finished"
+      world_match_status: "scheduled" | "live" | "finished" | "postponed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3017,6 +3630,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      world_competition_status: [
+        "locked",
+        "pending",
+        "in_progress",
+        "finished",
+      ],
+      world_league_status: ["pending", "in_progress", "finished"],
+      world_match_status: ["scheduled", "live", "finished", "postponed"],
     },
   },
 } as const
