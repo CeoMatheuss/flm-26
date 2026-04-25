@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
     // 1. Buscar ligas ativas
     let q = supabase
       .from("world_leagues")
-      .select("id, country, division, kickoff_hour, season, current_matchday, status, season_starts_at")
+      .select("id, country, division, kickoff_hour, season, current_matchday, status, season_started_at")
       .eq("status", "in_progress");
     if (onlyLeagueId) q = q.eq("id", onlyLeagueId);
 
