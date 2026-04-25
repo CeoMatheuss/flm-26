@@ -2715,6 +2715,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_club_shields_by_names: {
+        Args: { _names: string[] }
+        Returns: {
+          club_name: string
+          shield: Json
+        }[]
+      }
       get_public_club_profile: {
         Args: { _user_id: string }
         Returns: {
@@ -2729,6 +2736,8 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_club_shield: { Args: { _user_id: string }; Returns: Json }
+      get_user_team_strength: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
