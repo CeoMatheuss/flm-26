@@ -555,6 +555,31 @@ async function processLeagueMatches(supabase: any, now: Date) {
       }).eq('id', awayLm.id);
     }
 
+    // Auto-record match in player history + reports (humans only)
+    const matchData = {
+      events: result.events,
+      goal_scorers: result.goalScorers,
+      player_ratings: result.playerRatings,
+      home_players: result.homePlayers,
+      stats: result.stats,
+    };
+    if (homeIsHuman) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: match.home_user_id, isHome: true,
+        homeTeam: homeTeam.club_name, awayTeam: awayTeam.club_name,
+        homeGoals: result.homeGoals, awayGoals: result.awayGoals,
+        competition: 'Liga', matchType: 'league', matchData,
+      });
+    }
+    if (awayIsHuman) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: match.away_user_id, isHome: false,
+        homeTeam: homeTeam.club_name, awayTeam: awayTeam.club_name,
+        homeGoals: result.homeGoals, awayGoals: result.awayGoals,
+        competition: 'Liga', matchType: 'league', matchData,
+      });
+    }
+
     leagueProcessed++;
   }
 
@@ -651,6 +676,31 @@ async function processCupMatches(supabase: any, now: Date) {
     const loserId = winnerId === homeTeam.id ? awayTeam.id : homeTeam.id;
 
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
+
+    // Auto-record cup match in player history + reports (humans only)
+    const cupMatchData = {
+      events: mergedEvents,
+      goal_scorers: result.goalScorers,
+      player_ratings: result.playerRatings,
+      home_players: result.homePlayers,
+      stats: result.stats,
+    };
+    if (!homeTeam.is_bot && homeTeam.user_id) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: homeTeam.user_id, isHome: true,
+        homeTeam: home.club_name, awayTeam: away.club_name,
+        homeGoals: finalHome, awayGoals: finalAway,
+        competition: 'Copa', matchType: 'cup', matchData: cupMatchData,
+      });
+    }
+    if (!awayTeam.is_bot && awayTeam.user_id) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: awayTeam.user_id, isHome: false,
+        homeTeam: home.club_name, awayTeam: away.club_name,
+        homeGoals: finalHome, awayGoals: finalAway,
+        competition: 'Copa', matchType: 'cup', matchData: cupMatchData,
+      });
+    }
 
     cupProcessed++;
   }
