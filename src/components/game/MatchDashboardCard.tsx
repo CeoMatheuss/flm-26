@@ -204,6 +204,11 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
+    // Amistoso → manda usuário pra aba de amistosos onde o lobby abre
+    if (nextMatch.kind === 'friendly') {
+      onGoToFriendly?.();
+      return;
+    }
     const stageStr = String(nextMatch.stage || '').toLowerCase();
     const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/', {
