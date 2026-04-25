@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,9 +149,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       // Recarrega estado real do servidor
       await loadOpenSlots();
     } else {
-      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
-      triggerAutoSim(); // simula imediatamente
+      toast.success(`✅ Amistoso aceito contra ${slot.club_name}! Entrando no lobby...`);
+      triggerAutoSim(); // simula imediatamente em background como fallback
       await Promise.all([loadInvites(), loadOpenSlots()]);
+      // Abre lobby imediatamente — busca o invite recém-criado pela RPC
+      const inviteId = (data as any)?.invite_id;
+      if (inviteId) {
+        const { data: inv } = await supabase
+          .from('friendly_invites')
+          .select('*')
+          .eq('id', inviteId)
+          .maybeSingle();
+        if (inv) setLobbyInvite(inv as unknown as FriendlyInvite);
+      }
     }
     setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
   };
@@ -163,10 +173,29 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   };
 
   // Realtime: convites + slots abertos (servidor é fonte única de verdade)
+  // Quando um convite enviado pelo usuário muda de 'pending' → 'accepted',
+  // abrimos o lobby automaticamente (sem precisar voltar à tela de amistosos).
+  const autoOpenedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const invitesChannel = supabase
       .channel('friendly-invites-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, (payload: any) => {
+        loadInvites();
+        // Auto-open lobby for the SENDER whose invite was just accepted
+        const newRow = payload?.new as FriendlyInvite | undefined;
+        const oldRow = payload?.old as FriendlyInvite | undefined;
+        if (
+          newRow &&
+          newRow.status === 'accepted' &&
+          (!oldRow || oldRow.status !== 'accepted') &&
+          newRow.sender_id === userId &&
+          !autoOpenedRef.current.has(newRow.id)
+        ) {
+          autoOpenedRef.current.add(newRow.id);
+          toast.success(`🎮 ${newRow.receiver_club_name} aceitou! Entrando no lobby...`);
+          setLobbyInvite(newRow);
+        }
+      })
       .subscribe();
     const slotsChannel = supabase
       .channel('open-friendly-slots-' + userId)
@@ -297,8 +326,13 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     } else if (!updated || updated.length === 0) {
       toast.info('⚠️ Este convite já foi respondido.');
     } else {
-      toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
-      if (accept) triggerAutoSim(); // simula imediatamente
+      toast.success(accept ? '✅ Amistoso aceito! Entrando no lobby...' : '❌ Amistoso recusado');
+      if (accept) {
+        triggerAutoSim(); // simula imediatamente em background como fallback
+        // Abre lobby imediatamente — sem precisar voltar à tela de amistosos
+        const acceptedInvite = updated[0] as unknown as FriendlyInvite;
+        setLobbyInvite(acceptedInvite);
+      }
     }
     loadInvites();
     setLoading(false);

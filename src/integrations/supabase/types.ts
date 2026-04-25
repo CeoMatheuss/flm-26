@@ -1495,6 +1495,7 @@ export type Database = {
           player_in_name: string
           player_out_id: string
           player_out_name: string
+          shared_match_id: string | null
           team_name: string | null
           team_side: string
         }
@@ -1509,6 +1510,7 @@ export type Database = {
           player_in_name: string
           player_out_id: string
           player_out_name: string
+          shared_match_id?: string | null
           team_name?: string | null
           team_side: string
         }
@@ -1523,6 +1525,7 @@ export type Database = {
           player_in_name?: string
           player_out_id?: string
           player_out_name?: string
+          shared_match_id?: string | null
           team_name?: string | null
           team_side?: string
         }

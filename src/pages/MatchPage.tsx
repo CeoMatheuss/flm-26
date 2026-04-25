@@ -719,6 +719,28 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // shared_match_id resolvido a partir do live_matches.id — chave compartilhada
+  // entre os dois clientes (cada um tem seu próprio live_matches.id, mas ambos têm o mesmo shared_match_id).
+  const [sharedMatchId, setSharedMatchId] = useState<string | null>(null);
+
+  // Resolve shared_match_id assim que matchDbId estiver disponível
+  useEffect(() => {
+    if (!matchDbId || matchDbId.startsWith('offline-')) {
+      setSharedMatchId(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('live_matches')
+      .select('shared_match_id, match_id')
+      .eq('id', matchDbId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setSharedMatchId(data.shared_match_id || data.match_id || null);
+      });
+    return () => { cancelled = true; };
+  }, [matchDbId]);
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
@@ -844,10 +866,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
     // ── Cross-client sync: persiste a substituição no servidor para o oponente ver ──
     // O INSERT é fire-and-forget — UI local já foi atualizada. Realtime entrega ao oponente.
+    // IMPORTANTE: cada lado tem seu próprio live_matches.id — usamos shared_match_id como chave compartilhada.
     if (matchDbId && !matchDbId.startsWith('offline-')) {
       const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
       supabase.from('live_match_substitutions').insert({
         live_match_id: matchDbId,
+        shared_match_id: sharedMatchId, // chave compartilhada para sincronização cross-client
         team_side: mySide,
         minute: subMinute,
         is_halftime: isHalftime,
@@ -856,7 +880,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
         player_out_name: playerOut.name,
         player_in_name: playerIn.name,
         team_name: homeTeam,
-      }).then(({ error }) => {
+      } as any).then(({ error }) => {
         if (error && error.code !== '23505') {
           // 23505 = duplicate (já sincronizado por outra aba/dispositivo) — ignorar
           console.warn('[SUB sync] Failed to publish sub:', error.message);
@@ -866,19 +890,19 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds, matchDbId, matchState.isHome]);
 
   // ── REALTIME: substituições do oponente ──
-  // Inscreve-se na tabela `live_match_substitutions` filtrada pelo live_match_id.
-  // Quando uma sub do LADO OPOSTO chega, injeta um evento espelhado na feed
-  // e mostra o banner — o 2D/narração já consomem `injectedSubEvents`.
+  // Filtra por shared_match_id (chave compartilhada entre os dois clientes).
+  // Cada cliente tem seu próprio live_matches.id, então filtrar por live_match_id NÃO funcionaria.
   const seenRemoteSubsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!matchDbId || matchDbId.startsWith('offline-')) return;
+    if (!sharedMatchId) return;
     const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
     const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
     const oppTeam = mySide === 'home' ? awayTeam : homeTeam;
     const oppShield = mySide === 'home' ? awayShield : homeShield;
 
     const ingest = (row: any) => {
-      if (!row || row.live_match_id !== matchDbId) return;
+      if (!row) return;
+      if (row.shared_match_id !== sharedMatchId) return;
       if (seenRemoteSubsRef.current.has(row.id)) return;
       seenRemoteSubsRef.current.add(row.id);
       // Apenas eventos do lado OPOSTO geram feed/banner.
@@ -906,7 +930,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     supabase
       .from('live_match_substitutions')
       .select('*')
-      .eq('live_match_id', matchDbId)
+      .eq('shared_match_id', sharedMatchId)
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {
         if (error) {
@@ -916,16 +940,16 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
         (data || []).forEach(ingest);
       });
 
-    // 2) Realtime — escuta novos INSERTs
+    // 2) Realtime — escuta novos INSERTs filtrando pela chave compartilhada
     const channel = supabase
-      .channel(`live-subs-${matchDbId}`)
+      .channel(`live-subs-${sharedMatchId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'live_match_substitutions',
-          filter: `live_match_id=eq.${matchDbId}`,
+          filter: `shared_match_id=eq.${sharedMatchId}`,
         },
         (payload) => ingest(payload.new),
       )
@@ -934,7 +958,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchDbId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
+  }, [sharedMatchId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
 
   // Validation helper for substitutions — used by widget click + queue
 
