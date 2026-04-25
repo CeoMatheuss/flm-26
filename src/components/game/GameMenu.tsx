@@ -24,8 +24,6 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">⚽ Clube</p>
         <DropdownMenuItem onClick={() => onTabChange('calendar')} className="menu-item"><Calendar className="h-3.5 w-3.5 text-primary/70" /> Calendário <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => onTabChange('training')} className="menu-item"><Dumbbell className="h-3.5 w-3.5 text-primary/70" /> Treinamento & Infraestrutura <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('scouts')} className="menu-item"><Search className="h-3.5 w-3.5 text-primary/70" /> Olheiros <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('uniforms')} className="menu-item"><Shirt className="h-3.5 w-3.5 text-primary/70" /> Uniformes <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('clubprofile')} className="menu-item"><User className="h-3.5 w-3.5 text-primary/70" /> Perfil do Clube <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
@@ -33,8 +31,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🏗️ Infraestrutura</p>
-        <DropdownMenuItem onClick={() => onTabChange('stadium')} className="menu-item"><Landmark className="h-3.5 w-3.5 text-primary/70" /> Estádio <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('youth')} className="menu-item"><GraduationCap className="h-3.5 w-3.5 text-emerald-400" /> Categorias de Base <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('infra')} className="menu-item"><Building2 className="h-3.5 w-3.5 text-primary/70" /> Infraestrutura <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">💰 Finanças</p>
@@ -68,7 +65,6 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => onTabChange('settings')} className="menu-item"><Settings className="h-3.5 w-3.5 text-primary/70" /> Configurações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('support')} className="menu-item"><LifeBuoy className="h-3.5 w-3.5 text-primary/70" /> Suporte <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('terms')} className="menu-item"><FileText className="h-3.5 w-3.5 text-primary/70" /> Termos de Uso <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        {showAdmin && <DropdownMenuItem onClick={() => onTabChange('updates')} className="menu-item"><Sparkles className="h-3.5 w-3.5 text-primary/70" /> Atualizações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
         <DropdownMenuItem onClick={onShowTutorial} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         {showAdmin && <DropdownMenuItem onClick={() => onTabChange('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
       </DropdownMenuContent>
