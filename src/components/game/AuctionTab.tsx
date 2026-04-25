@@ -426,7 +426,12 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                   );
                 })}
               </div>
-              <p className="text-[10px] text-muted-foreground">Seu orçamento: {fmtMoney(budget)}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Seu orçamento: {fmtMoney(budget)} • Lance máx (80%): <span className="font-semibold text-amber-400">{fmtMoney(Math.floor(budget * 0.8))}</span>
+              </p>
+              {bidAmount > Math.floor(budget * 0.8) && (
+                <p className="text-[10px] text-red-400 font-semibold">⚠️ Lance acima de 80% do seu orçamento — não permitido.</p>
+              )}
             </div>
           )}
           <DialogFooter>
