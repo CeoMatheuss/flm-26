@@ -1213,6 +1213,8 @@ function simulateFullMatch(
     reportData: reportResult.report,
     result: reportResult.result,
     rankingChange: reportResult.rankingChange,
+    attendance: estimatedCrowd,
+    ticketRevenue,
   };
 }
 
