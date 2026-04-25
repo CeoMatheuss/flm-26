@@ -322,7 +322,7 @@ Deno.serve(async (req) => {
 
               // Create round 1 matches (16 matches)
               if (insertedTeams && insertedTeams.length >= 32) {
-                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const shuffled = secureShuffle(insertedTeams);
                 const matches = [];
                 const baseDate = new Date(now.getTime() + 7 * 24 * 3600000); // start in 7 days
 
@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
               const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
               if (insertedTeams && insertedTeams.length >= 16) {
-                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const shuffled = secureShuffle(insertedTeams);
                 const matches = [];
                 const baseDate = new Date(now.getTime() + 5 * 24 * 3600000);
 
@@ -512,7 +512,7 @@ Deno.serve(async (req) => {
           const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
           if (insertedTeams && insertedTeams.length >= targetSize) {
-            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const shuffled = secureShuffle(insertedTeams);
             const matches = [];
             const baseDate = new Date(now.getTime() + 10 * 24 * 3600000);
 
@@ -614,7 +614,7 @@ Deno.serve(async (req) => {
           const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
           if (insertedTeams && insertedTeams.length >= 32) {
-            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const shuffled = secureShuffle(insertedTeams);
             const matches = [];
             const baseDate = new Date(now.getTime() + 14 * 24 * 3600000);
 
