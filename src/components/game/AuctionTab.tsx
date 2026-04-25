@@ -57,8 +57,14 @@ function minIncrement(currentBid: number): number {
 }
 
 function fmtMoney(v: number): string {
-  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  // Formato realista: até <1M mostra em K (sem decimais), 1M+ mostra em M (1 casa só se necessário)
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    // 1.0M -> "1M", 1.5M -> "1,5M"
+    const formatted = m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace('.', ',');
+    return `R$ ${formatted}M`;
+  }
+  if (v >= 1_000) return `R$ ${Math.round(v / 1_000)}K`;
   return `R$ ${v}`;
 }
 
