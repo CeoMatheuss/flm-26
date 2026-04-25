@@ -1266,7 +1266,7 @@ Deno.serve(async (req) => {
     // 1. CENTRAL SIMULATION: dedupe by shared_match_id.
     //    If a row already exists for this matchId, both clients must read THAT
     //    same row — never re-simulate. This is what guarantees Time 1 and Time 2
-    //    see the same placar, eventos e estatísticas.
+    //    see the same placar, eventos, estatísticas E PÚBLICO.
     const { data: shared } = await adminClient
       .from('live_matches')
       .select('id, status')
