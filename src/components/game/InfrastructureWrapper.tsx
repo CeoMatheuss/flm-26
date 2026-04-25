@@ -54,6 +54,8 @@ interface Props {
 
   /** Sub-aba inicial (padrão: training) */
   initialSubTab?: SubTab;
+  /** Quando true, esconde o menu interno (cada aba é uma tela independente no menu principal). */
+  standalone?: boolean;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
