@@ -292,7 +292,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
       </TabsContent>
       <TabsContent value="members">
-        <MembersTab totalFans={game.club.fans || 500} reputation={game.club.reputation || 50} />
+        <MembersTab totalFans={game.club.fans || 1000} reputation={game.club.reputation || 50} wins={game.club.stats?.wins ?? 0} draws={game.club.stats?.draws ?? 0} losses={game.club.stats?.losses ?? 0} />
       </TabsContent>
       <TabsContent value="training">
         {isTabBlocked('training') ? <BlockedMessage /> : <TrainingWrapper players={game.club.players} infrastructure={game.infrastructure} trainingFocus={game.trainingFocus} onSetTrainingFocus={game.setPlayerTrainingFocus} trainingIntensity={game.trainingIntensity} onSetTrainingIntensity={game.setPlayerTrainingIntensity} tactics={game.tactics} onPlayersUpdate={game.updatePlayers} currentWeek={game.season.currentWeek} clubName={game.club.name} userId={userId} budget={game.club.budget} onUpgradeCT={() => game.upgradeFacility('trainingCenter')} />}
