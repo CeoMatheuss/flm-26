@@ -6,7 +6,36 @@ const corsHeaders = {
 };
 
 function clamp(v: number, min: number, max: number) { return Math.max(min, Math.min(max, v)); }
-function rng() { return Math.random(); }
+
+// ── Deterministic PRNG (seeded per request from matchId) ────────
+// IMPORTANT: rng() must be deterministic so that any client invoking start-match
+// with the same matchId produces the SAME events, score and stats. Otherwise
+// the two players in the same online match see divergent results.
+function hashString(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function makeMulberry32(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Default to Math.random until a request seeds it. Each Deno.serve handler
+// MUST call seedRng(matchId) before invoking simulateFullMatch.
+let _rng: () => number = () => Math.random();
+function seedRng(matchId: string) {
+  _rng = makeMulberry32(hashString(String(matchId)));
+}
+function rng() { return _rng(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
 // ── TYPES ──────────────────────────────────────────────────────
