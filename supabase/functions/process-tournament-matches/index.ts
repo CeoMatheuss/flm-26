@@ -917,6 +917,32 @@ Deno.serve(async (req) => {
           points: (awayTeam as any).points + awayPoints,
         }).eq('id', awayTeam.id);
 
+        // Auto-record tournament match in player history + reports (humans only)
+        const tMatchData = {
+          events: mergedEvents,
+          goal_scorers: result.goalScorers,
+          player_ratings: result.playerRatings,
+          home_players: result.homePlayers,
+          stats: result.stats,
+        };
+        const tCompetition = isKO ? 'Torneio (Mata-Mata)' : 'Torneio';
+        if (!enhancedHome.is_bot && enhancedHome.user_id) {
+          await recordAutoMatchOutcome(supabase, {
+            userId: enhancedHome.user_id, isHome: true,
+            homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
+            homeGoals: finalHome, awayGoals: finalAway,
+            competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+          });
+        }
+        if (!enhancedAway.is_bot && enhancedAway.user_id) {
+          await recordAutoMatchOutcome(supabase, {
+            userId: enhancedAway.user_id, isHome: false,
+            homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
+            homeGoals: finalHome, awayGoals: finalAway,
+            competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+          });
+        }
+
         tournamentProcessed++;
       }
 
