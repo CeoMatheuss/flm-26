@@ -372,6 +372,31 @@ async function fetchNextEligibleMatch(): Promise<
 }
 
 /**
+ * Tenta simular UMA partida do sistema mundial (world_matches) via edge function.
+ * Retorna true se simulou algo. Erros são silenciosos — não devem quebrar o ciclo.
+ */
+async function runWorldScan(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke('world-match-simulator', {
+      body: {},
+    });
+    if (error) {
+      console.warn('[autosim/world] invoke error:', error.message);
+      return false;
+    }
+    const processed = Number((data as any)?.processed) || 0;
+    if (processed > 0) {
+      console.info(`[autosim/world] simulated ${processed} match(es)`);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.warn('[autosim/world] error:', err);
+    return false;
+  }
+}
+
+/**
  * Runs ONE simulation per call. Stops immediately after.
  * Concurrent calls are gated by `scanInFlight` (in-tab) AND a cross-tab
  * localStorage lock with TTL.
@@ -387,15 +412,22 @@ async function runScan(): Promise<void> {
   let kind: string | null = null;
   try {
     const next = await fetchNextEligibleMatch();
-    if (!next) return;
-    kind = next.kind;
-
-    try {
-      if (next.kind === 'league')          success = await processLeagueMatch(next.row);
-      else if (next.kind === 'friendly')   success = await processFriendly(next.row);
-      else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
-    } catch (err) {
-      console.warn(`[autosim] ${next.kind} sim error:`, err);
+    if (next) {
+      kind = next.kind;
+      try {
+        if (next.kind === 'league')          success = await processLeagueMatch(next.row);
+        else if (next.kind === 'friendly')   success = await processFriendly(next.row);
+        else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
+      } catch (err) {
+        console.warn(`[autosim] ${next.kind} sim error:`, err);
+      }
+    } else {
+      // Nenhuma partida legacy elegível → tenta o sistema mundial
+      const worldOk = await runWorldScan();
+      if (worldOk) {
+        kind = 'world';
+        success = true;
+      }
     }
 
     // Enforce cooldown after a successful sim — prevents bursts.
