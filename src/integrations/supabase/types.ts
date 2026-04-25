@@ -252,6 +252,228 @@ export type Database = {
           },
         ]
       }
+      continental_competitions: {
+        Row: {
+          champion_team_id: string | null
+          continent: string
+          created_at: string
+          current_round: number | null
+          current_stage: string | null
+          end_date: string | null
+          id: string
+          num_groups: number | null
+          runner_up_team_id: string | null
+          season: number
+          season_year: number | null
+          start_date: string | null
+          status: string
+          tier: string
+          total_teams: number | null
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          continent: string
+          created_at?: string
+          current_round?: number | null
+          current_stage?: string | null
+          end_date?: string | null
+          id?: string
+          num_groups?: number | null
+          runner_up_team_id?: string | null
+          season?: number
+          season_year?: number | null
+          start_date?: string | null
+          status?: string
+          tier: string
+          total_teams?: number | null
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          continent?: string
+          created_at?: string
+          current_round?: number | null
+          current_stage?: string | null
+          end_date?: string | null
+          id?: string
+          num_groups?: number | null
+          runner_up_team_id?: string | null
+          season?: number
+          season_year?: number | null
+          start_date?: string | null
+          status?: string
+          tier?: string
+          total_teams?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      continental_matches: {
+        Row: {
+          aggregate_away: number | null
+          aggregate_home: number | null
+          away_goals: number | null
+          away_goals_pen: number | null
+          away_team_id: string | null
+          competition_id: string
+          created_at: string
+          group_label: string | null
+          home_goals: number | null
+          home_goals_pen: number | null
+          home_team_id: string | null
+          id: string
+          leg: number
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          scheduled_at: string
+          stage: string
+          status: string
+        }
+        Insert: {
+          aggregate_away?: number | null
+          aggregate_home?: number | null
+          away_goals?: number | null
+          away_goals_pen?: number | null
+          away_team_id?: string | null
+          competition_id: string
+          created_at?: string
+          group_label?: string | null
+          home_goals?: number | null
+          home_goals_pen?: number | null
+          home_team_id?: string | null
+          id?: string
+          leg?: number
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at: string
+          stage: string
+          status?: string
+        }
+        Update: {
+          aggregate_away?: number | null
+          aggregate_home?: number | null
+          away_goals?: number | null
+          away_goals_pen?: number | null
+          away_team_id?: string | null
+          competition_id?: string
+          created_at?: string
+          group_label?: string | null
+          home_goals?: number | null
+          home_goals_pen?: number | null
+          home_team_id?: string | null
+          id?: string
+          leg?: number
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string
+          stage?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continental_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "continental_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continental_matches_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "continental_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continental_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "continental_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      continental_teams: {
+        Row: {
+          bot_strength: number | null
+          club_logo: string | null
+          club_name: string
+          competition_id: string
+          country: string
+          created_at: string
+          eliminated: boolean
+          eliminated_in_stage: string | null
+          group_draws: number
+          group_goals_against: number
+          group_goals_for: number
+          group_label: string | null
+          group_losses: number
+          group_points: number
+          group_wins: number
+          id: string
+          is_bot: boolean
+          seed: number | null
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name: string
+          competition_id: string
+          country: string
+          created_at?: string
+          eliminated?: boolean
+          eliminated_in_stage?: string | null
+          group_draws?: number
+          group_goals_against?: number
+          group_goals_for?: number
+          group_label?: string | null
+          group_losses?: number
+          group_points?: number
+          group_wins?: number
+          id?: string
+          is_bot?: boolean
+          seed?: number | null
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          bot_strength?: number | null
+          club_logo?: string | null
+          club_name?: string
+          competition_id?: string
+          country?: string
+          created_at?: string
+          eliminated?: boolean
+          eliminated_in_stage?: string | null
+          group_draws?: number
+          group_goals_against?: number
+          group_goals_for?: number
+          group_label?: string | null
+          group_losses?: number
+          group_points?: number
+          group_wins?: number
+          id?: string
+          is_bot?: boolean
+          seed?: number | null
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continental_teams_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "continental_competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       country_status: {
         Row: {
           bonus_budget: number | null
@@ -3442,6 +3664,7 @@ export type Database = {
           shield: Json
         }[]
       }
+      get_continent_for_country: { Args: { _country: string }; Returns: string }
       get_public_club_profile: {
         Args: { _user_id: string }
         Returns: {
@@ -3495,6 +3718,10 @@ export type Database = {
         Args: { _country: string }
         Returns: undefined
       }
+      qualify_continental_humans: {
+        Args: { _continent: string; _season: number; _tier: string }
+        Returns: Json
+      }
       qualify_international_teams: {
         Args: { _continent: string; _season_year: number }
         Returns: Json
@@ -3504,6 +3731,15 @@ export type Database = {
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       resolve_home_user_for_match: {
         Args: { _match_id: string }
+        Returns: string
+      }
+      start_continental_tournament: {
+        Args: {
+          _continent: string
+          _season?: number
+          _start_date?: string
+          _tier: string
+        }
         Returns: string
       }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
