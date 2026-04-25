@@ -606,9 +606,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               <span>{player.age}a</span>
               <span className="text-primary font-medium">R${(player.salary / 1000).toFixed(0)}k/m</span>
               <span className={player.contract <= 1 ? 'text-amber-400 font-bold' : ''}>📄{player.contract}a</span>
-              <span className={`font-bold ${trendColor}`} title={`Valor: ${formatMoney(value)}`}>
-                💰{(value / 1000).toFixed(0)}k {trendIcon}
-              </span>
               <span title="Jogos">🏟️{player.gamesPlayed ?? 0}</span>
               <span title="Gols">⚽{player.goals ?? 0}</span>
               <span title="Assistências">🅰️{player.assists ?? 0}</span>
