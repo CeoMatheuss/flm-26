@@ -1329,6 +1329,59 @@ export type Database = {
           },
         ]
       }
+      live_match_substitutions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_halftime: boolean
+          live_match_id: string
+          minute: number
+          player_in_id: string
+          player_in_name: string
+          player_out_id: string
+          player_out_name: string
+          team_name: string | null
+          team_side: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_halftime?: boolean
+          live_match_id: string
+          minute?: number
+          player_in_id: string
+          player_in_name: string
+          player_out_id: string
+          player_out_name: string
+          team_name?: string | null
+          team_side: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_halftime?: boolean
+          live_match_id?: string
+          minute?: number
+          player_in_id?: string
+          player_in_name?: string
+          player_out_id?: string
+          player_out_name?: string
+          team_name?: string | null
+          team_side?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_match_substitutions_live_match_id_fkey"
+            columns: ["live_match_id"]
+            isOneToOne: false
+            referencedRelation: "live_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_matches: {
         Row: {
           attendance: number | null
@@ -2803,6 +2856,10 @@ export type Database = {
       }
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_live_match_participant: {
+        Args: { _live_match_id: string; _user_id: string }
         Returns: boolean
       }
       is_match_participant: {
