@@ -203,8 +203,17 @@ Deno.serve(async (req) => {
           status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } else {
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
+        // Compute next Sunday 17:00 (America/Sao_Paulo) – simple UTC approximation: SP=UTC-3
+        const now = new Date();
+        const spOffsetMs = -3 * 60 * 60 * 1000;
+        const spNow = new Date(now.getTime() + spOffsetMs);
+        const dow = spNow.getUTCDay(); // 0=Sun
+        const daysUntilSun = (7 - dow) % 7;
+        const sundaySpDate = new Date(Date.UTC(spNow.getUTCFullYear(), spNow.getUTCMonth(), spNow.getUTCDate() + daysUntilSun, 17 + 3, 0, 0));
+        if (sundaySpDate.getTime() <= now.getTime()) {
+          sundaySpDate.setUTCDate(sundaySpDate.getUTCDate() + 7);
+        }
+        const expiresAt = sundaySpDate;
         const { error } = await adminClient.from('player_auctions').insert({
           seller_id: userId,
           seller_club_name: '⚡ ADM',
@@ -213,6 +222,8 @@ Deno.serve(async (req) => {
           player_overall: ovr,
           player_data: playerData,
           min_price: minPrice,
+          current_bid: minPrice,
+          is_system: true,
           expires_at: expiresAt.toISOString(),
         });
         if (error) throw error;
