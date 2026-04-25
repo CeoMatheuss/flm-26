@@ -6,7 +6,36 @@ const corsHeaders = {
 };
 
 function clamp(v: number, min: number, max: number) { return Math.max(min, Math.min(max, v)); }
-function rng() { return Math.random(); }
+
+// ── Deterministic PRNG (seeded per request from matchId) ────────
+// IMPORTANT: rng() must be deterministic so that any client invoking start-match
+// with the same matchId produces the SAME events, score and stats. Otherwise
+// the two players in the same online match see divergent results.
+function hashString(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function makeMulberry32(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Default to Math.random until a request seeds it. Each Deno.serve handler
+// MUST call seedRng(matchId) before invoking simulateFullMatch.
+let _rng: () => number = () => Math.random();
+function seedRng(matchId: string) {
+  _rng = makeMulberry32(hashString(String(matchId)));
+}
+function rng() { return _rng(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
 // ── TYPES ──────────────────────────────────────────────────────
@@ -1234,17 +1263,28 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Check for existing active match
-    const { data: existing } = await adminClient
+    // 1. CENTRAL SIMULATION: dedupe by shared_match_id.
+    //    If a row already exists for this matchId, both clients must read THAT
+    //    same row — never re-simulate. This is what guarantees Time 1 and Time 2
+    //    see the same placar, eventos e estatísticas.
+    const { data: shared } = await adminClient
       .from('live_matches')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'live')
+      .select('id, status')
+      .eq('shared_match_id', String(matchId))
+      .neq('status', 'superseded')
       .maybeSingle();
 
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'Match already active', matchDbId: existing.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (shared) {
+      console.info('[start-match] Reusing shared simulation', { matchId, matchDbId: shared.id });
+      return new Response(
+        JSON.stringify({ success: true, matchDbId: shared.id, alreadySimulated: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
+
+    // 2. Seed PRNG from matchId BEFORE any rng() call so the simulation is
+    //    deterministic per match. Two parallel callers produce identical output.
+    seedRng(String(matchId));
 
     // Simulate match
     const result = simulateFullMatch(
@@ -1273,35 +1313,56 @@ Deno.serve(async (req) => {
 
     const durationSeconds = 720; // 12 minutes real time
 
-    // Insert into live_matches
+    // Insert into live_matches with shared_match_id mirror so both clients converge.
+    const insertPayload = {
+      user_id: userId,
+      match_id: matchId,
+      shared_match_id: String(matchId),
+      home_team: homeTeam,
+      away_team: awayTeam,
+      home_strength: validatedHomeStrength,
+      away_strength: validatedAwayStrength,
+      stadium_name: stadiumName || 'Estádio',
+      stadium_capacity: stadiumCapacity || 5000,
+      is_home: isHome !== false,
+      competition: competition || 'Amistoso',
+      duration_seconds: durationSeconds,
+      events: result.events as any,
+      home_goals: result.homeGoals,
+      away_goals: result.awayGoals,
+      stats: result.stats as any,
+      home_players: (homePlayers || []) as any,
+      player_ratings: result.playerRatings as any,
+      tactics: (tactics || {}) as any,
+      status: 'live',
+      roster_locked_at: new Date().toISOString(),
+    };
+
     const { data: matchRow, error: insertError } = await adminClient
       .from('live_matches')
-      .insert({
-        user_id: userId,
-        match_id: matchId,
-        home_team: homeTeam,
-        away_team: awayTeam,
-        home_strength: validatedHomeStrength,
-        away_strength: validatedAwayStrength,
-        stadium_name: stadiumName || 'Estádio',
-        stadium_capacity: stadiumCapacity || 5000,
-        is_home: isHome !== false,
-        competition: competition || 'Amistoso',
-        duration_seconds: durationSeconds,
-        events: result.events as any,
-        home_goals: result.homeGoals,
-        away_goals: result.awayGoals,
-        stats: result.stats as any,
-        home_players: (homePlayers || []) as any,
-        player_ratings: result.playerRatings as any,
-        tactics: (tactics || {}) as any,
-        status: 'live',
-        roster_locked_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 
     if (insertError) {
+      // Race: another client (the opponent) inserted first. Return that row.
+      const code = (insertError as any).code;
+      const msg = String((insertError as any).message || '');
+      if (code === '23505' || msg.includes('uniq_live_matches_shared_match_id') || msg.toLowerCase().includes('duplicate')) {
+        const { data: winner } = await adminClient
+          .from('live_matches')
+          .select('id')
+          .eq('shared_match_id', String(matchId))
+          .neq('status', 'superseded')
+          .maybeSingle();
+        if (winner) {
+          console.info('[start-match] Race resolved — using winner row', { matchId, matchDbId: winner.id });
+          return new Response(
+            JSON.stringify({ success: true, matchDbId: winner.id, alreadySimulated: true }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+      }
       console.error('[Match] Insert error:', insertError.message);
       return new Response(JSON.stringify({ error: 'Failed to create match' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

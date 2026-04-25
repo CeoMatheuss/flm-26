@@ -1349,6 +1349,7 @@ export type Database = {
           match_id: string
           player_ratings: Json
           roster_locked_at: string | null
+          shared_match_id: string | null
           stadium_capacity: number
           stadium_name: string
           started_at: string
@@ -1376,6 +1377,7 @@ export type Database = {
           match_id: string
           player_ratings?: Json
           roster_locked_at?: string | null
+          shared_match_id?: string | null
           stadium_capacity?: number
           stadium_name?: string
           started_at?: string
@@ -1403,6 +1405,7 @@ export type Database = {
           match_id?: string
           player_ratings?: Json
           roster_locked_at?: string | null
+          shared_match_id?: string | null
           stadium_capacity?: number
           stadium_name?: string
           started_at?: string
@@ -2793,6 +2796,10 @@ export type Database = {
       }
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_match_participant: {
+        Args: { _shared_match_id: string; _user_id: string }
         Returns: boolean
       }
       next_sunday_17: { Args: never; Returns: string }
