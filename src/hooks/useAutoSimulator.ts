@@ -515,6 +515,7 @@ export function useAutoSimulator(userId: string | undefined) {
 
     return () => {
       clearInterval(interval);
+      clearInterval(watchdog);
       window.removeEventListener('online', onOnline);
       if (leagueChannel) supabase.removeChannel(leagueChannel);
       if (friendlyChannel) supabase.removeChannel(friendlyChannel);
