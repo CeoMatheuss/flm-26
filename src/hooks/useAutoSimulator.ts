@@ -1,31 +1,34 @@
 /**
- * useAutoSimulator — 100% client-side auto-simulation, ZERO time/lobby gating.
+ * useAutoSimulator — Controlled, single-match-per-cycle auto-simulation.
  *
- * Behavior (per product spec "Toda partida criada deve simular até o fim"):
- *   • Any `league_matches` row with status='scheduled' is simulated IMMEDIATELY,
- *     regardless of auto_sim_at, lobby, players-joined or any other flag.
- *   • Any `friendly_invites` row with status='accepted' and no match_result is
- *     simulated IMMEDIATELY, regardless of match_date.
- *   • Any `custom_tournament_matches` row with status='scheduled' is simulated
- *     IMMEDIATELY, regardless of scheduled_at — no "Aguardando horário" ever.
+ * NEW CONTRACT (anti-mass-simulation):
+ *   • A scan processes AT MOST ONE match per cycle, then stops.
+ *   • Only matches whose scheduled time has passed are eligible.
+ *   • A 2s delay is enforced between cycles to avoid bursts.
+ *   • Atomic update guard (`.eq('status', 'scheduled')`) prevents double sims.
+ *   • localStorage lock + global in-flight flag prevent concurrent execution
+ *     across tabs and within the same tab.
  *
- * Trigger sources (any one of them is enough — the others are failsafes):
+ * Eligibility filters:
+ *   - league_matches:           status='scheduled' AND auto_sim_at <= now()
+ *   - friendly_invites:         status='accepted'  AND match_result IS NULL
+ *                               AND (auto_sim_at <= now() OR match_date <= now())
+ *   - custom_tournament_matches: status='scheduled' AND scheduled_at <= now()
+ *
+ * Trigger sources:
  *   1. Initial scan on mount.
- *   2. Periodic scan every 5s (failsafe).
- *   3. Realtime subscription on INSERT/UPDATE of both tables.
- *   4. Public `triggerAutoSim()` helper that callers can fire right after
- *      creating a match (instant kickoff, no waiting).
- *   5. `online` event re-scan when connectivity returns.
- *
- * A localStorage lock (60s TTL) prevents duplicate simulations across tabs.
+ *   2. Periodic scan every 5s.
+ *   3. Realtime subscription (INSERT/UPDATE).
+ *   4. Public `triggerAutoSim()` helper.
+ *   5. `online` event re-scan.
  */
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 
-const SCAN_INTERVAL_MS = 5_000;    // 5s failsafe
-const LOCK_TTL_MS = 60_000;        // 60s
-const MAX_PER_RUN = 30;            // soft cap per scan
+const SCAN_INTERVAL_MS = 5_000;       // 5s between scans
+const POST_SIM_DELAY_MS = 2_000;      // 2s cooldown after a successful sim
+const LOCK_TTL_MS = 60_000;           // 60s per-match lock
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
@@ -37,7 +40,7 @@ function poisson(lambda: number): number {
 }
 
 function simulate(homeStr: number, awayStr: number) {
-  const hs = Math.max(30, homeStr) * 1.15; // home advantage
+  const hs = Math.max(30, homeStr) * 1.15;
   const as = Math.max(30, awayStr);
   const total = hs + as;
   const baseGoals = 2.6;
@@ -122,7 +125,7 @@ async function notify(userId: string, opponent: string, mine: number, theirs: nu
 }
 
 // ───────────────── league processing ─────────────────
-async function processLeagueMatch(m: any) {
+async function processLeagueMatch(m: any): Promise<boolean> {
   if (!tryLock(m.id)) return false;
   try {
     const homeStr = await getStrength(m.home_user_id);
@@ -138,18 +141,20 @@ async function processLeagueMatch(m: any) {
     const awayName = members?.find(x => x.user_id === m.away_user_id)?.club_name || 'Visitante';
     const events = genEvents(hg, ag, homeName, awayName);
 
-    const { error } = await supabase
+    // Atomic guard: status must still be 'scheduled' (prevents double-sim)
+    const { error, data: updated } = await supabase
       .from('league_matches')
       .update({
         home_goals: hg,
         away_goals: ag,
         status: 'finished',
         played_at: new Date().toISOString(),
-        match_data: { ...(m.match_data || {}), events, auto_simulated: true, home_name: homeName, away_name: awayName },
+        match_data: { ...(m.match_data || {}), events, auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName },
       })
       .eq('id', m.id)
-      .eq('status', 'scheduled');
-    if (error) return false;
+      .eq('status', 'scheduled')
+      .select('id');
+    if (error || !updated || updated.length === 0) return false;
 
     for (const u of [
       { uid: m.home_user_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
@@ -173,6 +178,7 @@ async function processLeagueMatch(m: any) {
 
     await notify(m.home_user_id, awayName, hg, ag, 'Liga');
     await notify(m.away_user_id, homeName, ag, hg, 'Liga');
+    console.info('[autosim] league match simulated', { id: m.id, score: `${hg}x${ag}` });
     return true;
   } finally {
     releaseLock(m.id);
@@ -180,7 +186,7 @@ async function processLeagueMatch(m: any) {
 }
 
 // ───────────────── friendly processing ─────────────────
-async function processFriendly(f: any) {
+async function processFriendly(f: any): Promise<boolean> {
   if (!tryLock(f.id)) return false;
   try {
     const homeIsSender = f.home_team_id === f.sender_id;
@@ -193,23 +199,25 @@ async function processFriendly(f: any) {
     const { home: hg, away: ag } = simulate(homeStr, awayStr);
     const events = genEvents(hg, ag, homeName, awayName);
 
-    const { error } = await supabase
+    const { error, data: updated } = await supabase
       .from('friendly_invites')
       .update({
         status: 'finished',
         match_result: {
           home_goals: hg, away_goals: ag, events,
-          auto_simulated: true, home_name: homeName, away_name: awayName,
+          auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName,
         },
       })
       .eq('id', f.id)
-      .eq('status', 'accepted');
-    if (error) return false;
+      .eq('status', 'accepted')
+      .select('id');
+    if (error || !updated || updated.length === 0) return false;
 
     const senderGoals = homeIsSender ? hg : ag;
     const receiverGoals = homeIsSender ? ag : hg;
     await notify(f.sender_id, f.receiver_club_name, senderGoals, receiverGoals, 'Amistoso');
     await notify(f.receiver_id, f.sender_club_name, receiverGoals, senderGoals, 'Amistoso');
+    console.info('[autosim] friendly simulated', { id: f.id, score: `${hg}x${ag}` });
     return true;
   } finally {
     releaseLock(f.id);
@@ -222,7 +230,7 @@ async function getTournamentTeamStrength(t: { user_id: string | null; bot_streng
   return Math.max(30, Math.min(95, t.bot_strength || 60));
 }
 
-async function processTournamentMatch(m: any) {
+async function processTournamentMatch(m: any): Promise<boolean> {
   if (!tryLock(m.id)) return false;
   try {
     const { data: teams } = await supabase
@@ -238,7 +246,6 @@ async function processTournamentMatch(m: any) {
     let { home: hg, away: ag } = simulate(homeStr, awayStr);
     let events = genEvents(hg, ag, home.club_name, away.club_name);
 
-    // ── Knockout tie-breaker (extra time → penalties) ──
     let tb: ReturnType<typeof resolveKnockout> | null = null;
     if (isKnockoutStage(m.stage) && hg === ag) {
       tb = resolveKnockout({
@@ -250,7 +257,7 @@ async function processTournamentMatch(m: any) {
       events = [...events, ...tb.events.map(e => ({ ...e, team: e.team as 'home' | 'away' }))] as any;
     }
 
-    const { error } = await supabase
+    const { error, data: updated } = await supabase
       .from('custom_tournament_matches')
       .update({
         home_goals: hg,
@@ -261,6 +268,7 @@ async function processTournamentMatch(m: any) {
           ...(m.match_data || {}),
           events,
           auto_simulated: true,
+          simulated: true,
           home_name: home.club_name,
           away_name: away.club_name,
           extra_time: tb?.hadExtraTime ?? false,
@@ -271,10 +279,10 @@ async function processTournamentMatch(m: any) {
         },
       })
       .eq('id', m.id)
-      .eq('status', 'scheduled');
-    if (error) return false;
+      .eq('status', 'scheduled')
+      .select('id');
+    if (error || !updated || updated.length === 0) return false;
 
-    // Update standings (only relevant for league/group stage; harmless for knockouts)
     for (const u of [
       { row: home, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
       { row: away, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
@@ -292,52 +300,89 @@ async function processTournamentMatch(m: any) {
 
     if (home.user_id) await notify(home.user_id, away.club_name, hg, ag, 'Campeonato');
     if (away.user_id) await notify(away.user_id, home.club_name, ag, hg, 'Campeonato');
+    console.info('[autosim] tournament match simulated', { id: m.id, score: `${hg}x${ag}` });
     return true;
   } finally {
     releaseLock(m.id);
   }
 }
 
-// ───────────────── module-scope scan (so triggerAutoSim works without hook) ─────────────────
+// ───────────────── single-match queue (1 sim per cycle) ─────────────────
 let scanInFlight = false;
+let cooldownUntil = 0;
 
-async function runScan() {
+/**
+ * Fetches the NEXT eligible pending match (priority: league → friendly →
+ * tournament). Only matches whose scheduled time has passed are returned.
+ */
+async function fetchNextEligibleMatch(): Promise<
+  | { kind: 'league'; row: any }
+  | { kind: 'friendly'; row: any }
+  | { kind: 'tournament'; row: any }
+  | null
+> {
+  const nowIso = new Date().toISOString();
+
+  // 1) League — needs auto_sim_at <= now (or null + created long ago as fallback)
+  const { data: league } = await supabase
+    .from('league_matches')
+    .select('id, league_id, home_user_id, away_user_id, match_data, auto_sim_at, created_at')
+    .eq('status', 'scheduled')
+    .lte('auto_sim_at', nowIso)
+    .order('auto_sim_at', { ascending: true, nullsFirst: false })
+    .limit(1);
+  if (league && league.length > 0) return { kind: 'league', row: league[0] };
+
+  // 2) Friendly — accepted with no result and time passed
+  const { data: friendly } = await supabase
+    .from('friendly_invites')
+    .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result, auto_sim_at')
+    .eq('status', 'accepted')
+    .is('match_result', null)
+    .or(`auto_sim_at.lte.${nowIso},match_date.lte.${nowIso}`)
+    .order('match_date', { ascending: true })
+    .limit(1);
+  if (friendly && friendly.length > 0) return { kind: 'friendly', row: friendly[0] };
+
+  // 3) Tournament — scheduled and scheduled_at passed
+  const { data: tournament } = await supabase
+    .from('custom_tournament_matches')
+    .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data, scheduled_at')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .limit(1);
+  if (tournament && tournament.length > 0) return { kind: 'tournament', row: tournament[0] };
+
+  return null;
+}
+
+/**
+ * Runs ONE simulation per call. Stops immediately after.
+ * Concurrent calls are gated by `scanInFlight` and a post-sim cooldown.
+ */
+async function runScan(): Promise<void> {
   if (scanInFlight) return;
+  if (Date.now() < cooldownUntil) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
   scanInFlight = true;
   try {
-    // Liga: TODA partida agendada — sem filtro de tempo, sem lobby, sem joined.
-    const { data: leagues } = await supabase
-      .from('league_matches')
-      .select('id, league_id, home_user_id, away_user_id, match_data')
-      .eq('status', 'scheduled')
-      .limit(MAX_PER_RUN);
+    const next = await fetchNextEligibleMatch();
+    if (!next) return;
 
-    for (const m of leagues || []) {
-      try { await processLeagueMatch(m); } catch (err) { console.warn('[autosim] league error:', err); }
+    let success = false;
+    try {
+      if (next.kind === 'league')          success = await processLeagueMatch(next.row);
+      else if (next.kind === 'friendly')   success = await processFriendly(next.row);
+      else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
+    } catch (err) {
+      console.warn(`[autosim] ${next.kind} sim error:`, err);
     }
 
-    // Amistosos: TODO convite aceito sem resultado — sem esperar match_date.
-    const { data: friendlies } = await supabase
-      .from('friendly_invites')
-      .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result')
-      .eq('status', 'accepted')
-      .is('match_result', null)
-      .limit(MAX_PER_RUN);
-
-    for (const f of friendlies || []) {
-      try { await processFriendly(f); } catch (err) { console.warn('[autosim] friendly error:', err); }
-    }
-
-    // Campeonatos (custom tournaments): TODA partida agendada — sem esperar scheduled_at.
-    const { data: tournaments } = await supabase
-      .from('custom_tournament_matches')
-      .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data')
-      .eq('status', 'scheduled')
-      .limit(MAX_PER_RUN);
-
-    for (const m of tournaments || []) {
-      try { await processTournamentMatch(m); } catch (err) { console.warn('[autosim] tournament error:', err); }
+    // Enforce cooldown after a successful sim — prevents bursts.
+    if (success) {
+      cooldownUntil = Date.now() + POST_SIM_DELAY_MS;
     }
   } catch (err) {
     console.warn('[autosim] scan error:', err);
@@ -347,16 +392,14 @@ async function runScan() {
 }
 
 /**
- * Public helper — call this RIGHT AFTER creating a match (insert into
- * league_matches/friendly_invites) so the simulation kicks off in the same
- * tick, with no waiting and no lobby. Safe to call from anywhere.
+ * Public helper — call this RIGHT AFTER creating a match so the simulation
+ * kicks off in the same tick (still respecting the 1-per-cycle rule).
  */
 export function triggerAutoSim(): void {
-  // Fire-and-forget; multiple parallel calls are gated by `scanInFlight`.
   void runScan();
 }
 
-// Expose globally too for legacy callers / debugging.
+// Expose globally for legacy callers / debugging.
 if (typeof window !== 'undefined') {
   (window as any).__triggerAutoSim = triggerAutoSim;
 }
@@ -368,17 +411,11 @@ export function useAutoSimulator(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    // Initial scan
     void runScan();
-
-    // Failsafe periodic scan (5s).
     const interval = setInterval(() => { void runScan(); }, SCAN_INTERVAL_MS);
-
-    // Reconnect → scan
     const onOnline = () => { void runScan(); };
     window.addEventListener('online', onOnline);
 
-    // Realtime: simulate the moment a row is inserted/updated.
     let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
     let friendlyChannel: ReturnType<typeof supabase.channel> | null = null;
     let tournamentChannel: ReturnType<typeof supabase.channel> | null = null;
