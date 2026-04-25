@@ -300,8 +300,68 @@ function isKnockoutStageStr(stage: string | null | undefined): boolean {
 }
 
 // ══════════════════════════════════════════════
-// LEAGUE PROCESSING — auto-simulate league rounds
+// AUTO-RECORDING — match_history + match_reports + ranking
+// (called for EVERY automated league/cup/tournament match
+//  involving a human player). Idempotent: skips bots and
+//  silently ignores duplicates.
 // ══════════════════════════════════════════════
+
+async function recordAutoMatchOutcome(
+  supabase: any,
+  args: {
+    userId: string | null;
+    isHome: boolean;
+    homeTeam: string;
+    awayTeam: string;
+    homeGoals: number;
+    awayGoals: number;
+    competition: string; // 'Liga' | 'Copa' | 'Torneio' | 'Eliminatória' …
+    matchType?: string;  // 'league' | 'cup' | 'tournament'
+    matchData?: any;     // { events, goal_scorers, player_ratings, home_players, stats }
+  },
+) {
+  if (!args.userId) return;
+  const userGoals = args.isHome ? args.homeGoals : args.awayGoals;
+  const oppGoals  = args.isHome ? args.awayGoals : args.homeGoals;
+  const result    = userGoals > oppGoals ? 'win' : userGoals < oppGoals ? 'loss' : 'draw';
+
+  try {
+    const { data: hist } = await supabase.from('match_history').insert({
+      user_id: args.userId,
+      home_team: args.homeTeam,
+      away_team: args.awayTeam,
+      home_goals: args.homeGoals,
+      away_goals: args.awayGoals,
+      is_home: args.isHome,
+      competition: args.competition,
+      match_type: args.matchType ?? 'league',
+      events: args.matchData?.events ?? [],
+      goal_scorers: args.matchData?.goal_scorers ?? [],
+      player_ratings: args.matchData?.player_ratings ?? {},
+      home_players: args.matchData?.home_players ?? [],
+      stats: args.matchData?.stats ?? {},
+    }).select('id').maybeSingle();
+
+    await supabase.from('match_reports').insert({
+      user_id: args.userId,
+      match_history_id: hist?.id ?? null,
+      home_team: args.homeTeam,
+      away_team: args.awayTeam,
+      home_goals: args.homeGoals,
+      away_goals: args.awayGoals,
+      competition: args.competition,
+      result,
+      ranking_impact: 0,
+      report_data: {
+        events: args.matchData?.events ?? [],
+        stats: args.matchData?.stats ?? {},
+        goal_scorers: args.matchData?.goal_scorers ?? [],
+      },
+    });
+  } catch (err) {
+    console.error('[recordAutoMatchOutcome] failed', err);
+  }
+}
 
 function calculateSquadStrength(squadData: any[]): number {
   if (!Array.isArray(squadData) || squadData.length === 0) return 55;
@@ -495,6 +555,31 @@ async function processLeagueMatches(supabase: any, now: Date) {
       }).eq('id', awayLm.id);
     }
 
+    // Auto-record match in player history + reports (humans only)
+    const matchData = {
+      events: result.events,
+      goal_scorers: result.goalScorers,
+      player_ratings: result.playerRatings,
+      home_players: result.homePlayers,
+      stats: result.stats,
+    };
+    if (homeIsHuman) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: match.home_user_id, isHome: true,
+        homeTeam: homeTeam.club_name, awayTeam: awayTeam.club_name,
+        homeGoals: result.homeGoals, awayGoals: result.awayGoals,
+        competition: 'Liga', matchType: 'league', matchData,
+      });
+    }
+    if (awayIsHuman) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: match.away_user_id, isHome: false,
+        homeTeam: homeTeam.club_name, awayTeam: awayTeam.club_name,
+        homeGoals: result.homeGoals, awayGoals: result.awayGoals,
+        competition: 'Liga', matchType: 'league', matchData,
+      });
+    }
+
     leagueProcessed++;
   }
 
@@ -591,6 +676,31 @@ async function processCupMatches(supabase: any, now: Date) {
     const loserId = winnerId === homeTeam.id ? awayTeam.id : homeTeam.id;
 
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
+
+    // Auto-record cup match in player history + reports (humans only)
+    const cupMatchData = {
+      events: mergedEvents,
+      goal_scorers: result.goalScorers,
+      player_ratings: result.playerRatings,
+      home_players: result.homePlayers,
+      stats: result.stats,
+    };
+    if (!homeTeam.is_bot && homeTeam.user_id) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: homeTeam.user_id, isHome: true,
+        homeTeam: home.club_name, awayTeam: away.club_name,
+        homeGoals: finalHome, awayGoals: finalAway,
+        competition: 'Copa', matchType: 'cup', matchData: cupMatchData,
+      });
+    }
+    if (!awayTeam.is_bot && awayTeam.user_id) {
+      await recordAutoMatchOutcome(supabase, {
+        userId: awayTeam.user_id, isHome: false,
+        homeTeam: home.club_name, awayTeam: away.club_name,
+        homeGoals: finalHome, awayGoals: finalAway,
+        competition: 'Copa', matchType: 'cup', matchData: cupMatchData,
+      });
+    }
 
     cupProcessed++;
   }
@@ -806,6 +916,32 @@ Deno.serve(async (req) => {
           goals_against: (awayTeam as any).goals_against + finalHome,
           points: (awayTeam as any).points + awayPoints,
         }).eq('id', awayTeam.id);
+
+        // Auto-record tournament match in player history + reports (humans only)
+        const tMatchData = {
+          events: mergedEvents,
+          goal_scorers: result.goalScorers,
+          player_ratings: result.playerRatings,
+          home_players: result.homePlayers,
+          stats: result.stats,
+        };
+        const tCompetition = isKO ? 'Torneio (Mata-Mata)' : 'Torneio';
+        if (!enhancedHome.is_bot && enhancedHome.user_id) {
+          await recordAutoMatchOutcome(supabase, {
+            userId: enhancedHome.user_id, isHome: true,
+            homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
+            homeGoals: finalHome, awayGoals: finalAway,
+            competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+          });
+        }
+        if (!enhancedAway.is_bot && enhancedAway.user_id) {
+          await recordAutoMatchOutcome(supabase, {
+            userId: enhancedAway.user_id, isHome: false,
+            homeTeam: enhancedHome.club_name, awayTeam: enhancedAway.club_name,
+            homeGoals: finalHome, awayGoals: finalAway,
+            competition: tCompetition, matchType: 'tournament', matchData: tMatchData,
+          });
+        }
 
         tournamentProcessed++;
       }

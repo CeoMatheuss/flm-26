@@ -10,6 +10,7 @@ import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
+import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 
 interface Props {
   club: Club;
@@ -21,10 +22,12 @@ interface Props {
   onOpenTournament?: (tournamentId: string) => void;
   clubProfile?: ClubProfile;
   season?: number;
+  currentWeek?: number;
+  totalWeeks?: number;
   onViewClub?: (clubName: string) => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, onViewClub }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -150,6 +153,15 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       {/* Season Start Widget */}
       <SeasonStartWidget seasonNumber={season} userId={userId} />
+
+      {/* Ballon d'Or Teaser — aparece nas últimas 4 rodadas da temporada */}
+      <BallonDorTeaserWidget
+        season={season ?? 1}
+        currentWeek={currentWeek ?? 1}
+        totalWeeks={totalWeeks ?? 38}
+        userId={userId}
+      />
+
 
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
