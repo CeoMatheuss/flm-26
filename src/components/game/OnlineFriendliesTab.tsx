@@ -297,8 +297,13 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     } else if (!updated || updated.length === 0) {
       toast.info('⚠️ Este convite já foi respondido.');
     } else {
-      toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
-      if (accept) triggerAutoSim(); // simula imediatamente
+      toast.success(accept ? '✅ Amistoso aceito! Entrando no lobby...' : '❌ Amistoso recusado');
+      if (accept) {
+        triggerAutoSim(); // simula imediatamente em background como fallback
+        // Abre lobby imediatamente — sem precisar voltar à tela de amistosos
+        const acceptedInvite = updated[0] as unknown as FriendlyInvite;
+        setLobbyInvite(acceptedInvite);
+      }
     }
     loadInvites();
     setLoading(false);
