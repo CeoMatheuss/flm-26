@@ -617,7 +617,11 @@ async function processCupMatches(supabase: any, now: Date) {
     if (allPlayed) {
       const winners: string[] = [];
       for (const m of roundMatches) {
-        if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
+        // Prefer explicit knockout_winner (from ET/shootout) when 90' was a draw.
+        const koWinner = m.match_data?.knockout_winner as 'home' | 'away' | null | undefined;
+        if (koWinner === 'home') winners.push(m.home_team_id);
+        else if (koWinner === 'away') winners.push(m.away_team_id);
+        else if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
         else if ((m.away_goals ?? 0) > (m.home_goals ?? 0)) winners.push(m.away_team_id);
         else winners.push(rng() > 0.5 ? m.home_team_id : m.away_team_id);
       }
