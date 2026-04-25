@@ -3430,6 +3430,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
