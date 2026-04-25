@@ -870,7 +870,27 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       return;
     }
     if (substitutedPlayerIds.has(playerOutId)) {
-      toast.error('Esse jogador já foi substituído');
+      toast.error('🚫 Esse jogador já foi substituído e não pode voltar');
+      return;
+    }
+    if (enteredInIds.has(playerInId)) {
+      toast.error('🚫 Esse jogador já está em campo');
+      return;
+    }
+    if (playerOutId === playerInId) {
+      toast.error('🚫 Não é possível substituir um jogador por ele mesmo');
+      return;
+    }
+    // Confirm playerOut is currently on field (initial starter or subbed-in)
+    const isOnField = currentStarters.some(p => p.id === playerOutId);
+    if (!isOnField) {
+      toast.error('🚫 Esse jogador não está em campo');
+      return;
+    }
+    // Confirm playerIn is on bench
+    const isOnBench = currentBench.some(p => p.id === playerInId);
+    if (!isOnBench) {
+      toast.error('🚫 Esse jogador não está disponível no banco');
       return;
     }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
@@ -882,7 +902,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     } else {
       toast.success('✅ Substituição enviada — aplicada no próximo lance');
     }
-  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds]);
+  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
 
   const subValidation = validateSubAllowed();
   const subBlocked = !subValidation.ok;
