@@ -614,13 +614,15 @@ export function AdminTournamentTab({ userId }: Props) {
     const botCount = teamList.filter(t => t.is_bot).length;
 
     // 5. Generate fixtures
-    let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
+    let fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string; leg?: number }> = [];
 
     if (formFormat === 'league') {
       fixtures = generateLeagueFixtures(teamList.map(t => t.id), Number(formTotalRounds) || 1, startDateStr, matchTime, Number(formInterval) || 24);
     } else if (formFormat === 'knockout') {
       if (!isPowerOfTwo(teamList.length)) {
         toast.error(`Mata-mata exige potência de 2 (4, 8, 16, 32, 64). Times atuais: ${teamList.length}`);
+        await supabase.from('custom_tournament_teams').delete().eq('tournament_id', tournament.id);
+        await supabase.from('custom_tournaments').delete().eq('id', tournament.id);
         setLoading(false);
         return;
       }
@@ -630,7 +632,7 @@ export function AdminTournamentTab({ userId }: Props) {
       fixtures = generateGroupFixtures(groups, startDateStr, matchTime, Number(formInterval) || 24);
     }
 
-    // 6. Insert fixtures
+    // 6. Insert fixtures (persist leg for two-legged knockouts)
     if (fixtures.length > 0) {
       for (let i = 0; i < fixtures.length; i += 50) {
         const batch = fixtures.slice(i, i + 50).map(f => ({
@@ -641,13 +643,30 @@ export function AdminTournamentTab({ userId }: Props) {
           stage: f.stage,
           scheduled_at: f.scheduled_at,
           status: 'scheduled',
+          leg: f.leg ?? 1,
         }));
-        await supabase.from('custom_tournament_matches').insert(batch);
+        await supabase.from('custom_tournament_matches').insert(batch as any);
       }
     }
 
     const maxRound = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.round)) : 1;
-    await supabase.from('custom_tournaments').update({ total_rounds: maxRound } as any).eq('id', tournament.id);
+
+    // 7. Activate tournament — fires server-side knockout validation trigger.
+    const { error: activateErr } = await supabase
+      .from('custom_tournaments')
+      .update({ total_rounds: maxRound, status: 'in_progress' } as any)
+      .eq('id', tournament.id);
+
+    if (activateErr) {
+      // Validation rejected — roll back the partially created tournament.
+      await supabase.from('custom_tournament_matches').delete().eq('tournament_id', tournament.id);
+      await supabase.from('custom_tournament_teams').delete().eq('tournament_id', tournament.id);
+      await supabase.from('custom_tournaments').delete().eq('id', tournament.id);
+      const msg = activateErr.message || 'Falha ao ativar campeonato.';
+      toast.error(`❌ ${msg}`);
+      setLoading(false);
+      return;
+    }
 
     // Send notifications to all enrolled real players
     const formatLabelsNotif: Record<string, string> = { league: 'Liga', knockout: 'Mata-mata', group_knockout: 'Grupos' };
