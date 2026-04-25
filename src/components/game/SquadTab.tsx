@@ -631,26 +631,40 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </div>
           </button>
 
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Preço destacado — substitui o ícone de "olho" e fica visível direto no card */}
+            {!pendingSwap && (
+              <div
+                className={`hidden sm:flex flex-col items-end justify-center px-2 py-1 rounded-lg border ${trendColor.replace('text-', 'border-')}/30 bg-card/60`}
+                title={`Valor de mercado: ${formatMoney(value)} ${trend === 'up' ? '(em alta)' : trend === 'down' ? '(em baixa)' : ''}`}
+              >
+                <span className={`text-sm font-black leading-none ${trendColor}`}>
+                  {value >= 1_000_000 ? `R$${(value / 1_000_000).toFixed(1)}M` : `R$${(value / 1000).toFixed(0)}K`}
+                </span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-wider mt-0.5">{trendIcon} valor</span>
+              </div>
+            )}
+            {!pendingSwap && (
+              <span className={`sm:hidden text-[11px] font-black ${trendColor} px-1.5 py-0.5 rounded bg-card/60 border border-border/30`}>
+                {value >= 1_000_000 ? `${(value / 1_000_000).toFixed(1)}M` : `${(value / 1000).toFixed(0)}K`}
+              </span>
+            )}
             {!pendingSwap && (
               <>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(player)} title="Ver perfil">
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
                 {onReorderPlayers && (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 px-1.5 text-[10px] gap-1 text-primary hover:bg-primary/10"
                     title={currentGroup === 'starters' ? 'Tirar do time titular' : 'Subir ao time titular'}
-                    onClick={() => startSwap(player, currentGroup)}
+                    onClick={(e) => { e.stopPropagation(); startSwap(player, currentGroup); }}
                   >
                     <Repeat className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">{currentGroup === 'starters' ? 'Tirar' : 'Subir'}</span>
                   </Button>
                 )}
                 {auctionEligible && (
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={() => onAuction(player)} title="Leilão">
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10" onClick={(e) => { e.stopPropagation(); onAuction(player); }} title="Leilão">
                     <Gavel className="h-3.5 w-3.5" />
                   </Button>
                 )}
