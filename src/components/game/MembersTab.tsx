@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Crown, Users, TrendingUp, Star, DollarSign, Pencil, Sparkles, Heart, Trophy, Gem, Award, Medal } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
+import { calculateTotalMembers, MEMBER_TIER_RATIOS } from '@/lib/membersCalc';
 import { toast } from 'sonner';
 
 interface MemberPlan {
@@ -55,19 +56,11 @@ const muralNames = [
 
 export function MembersTab({ totalFans, reputation, wins = 0, draws = 0, losses = 0 }: Props) {
   const [plans, setPlans] = useState<MemberPlan[]>(() => {
-    // Taxa base ainda muito conservadora — sócios são uma parcela difícil de conquistar.
-    // Reputação dá um piso; desempenho recente é o que faz crescer ou cair.
-    const totalGames = wins + draws + losses;
-    const winRate = totalGames > 0 ? wins / totalGames : 0.4;
-    const lossRate = totalGames > 0 ? losses / totalGames : 0.4;
-    // Performance modifier: -40% (muitas derrotas) até +60% (muitas vitórias)
-    const perfMod = 1 + (winRate - 0.5) * 1.2 - lossRate * 0.4;
-    // Conversão base: 1.5% a 5.5% dos fãs viram sócios — bem mais difícil que antes.
-    const baseRate = Math.min(0.055, 0.015 + reputation / 2500) * Math.max(0.5, perfMod);
+    // Fonte ÚNICA da verdade — mesmo número exibido em FansTab > Sócios.
+    const totalMembers = calculateTotalMembers({ totalFans, reputation, wins, draws, losses });
     return defaultPlans.map((p, i) => ({
       ...p,
-      // Distribuição natural: muitos bronze, poucos diamante
-      subscribers: Math.max(0, Math.floor(totalFans * baseRate * (i === 0 ? 0.55 : i === 1 ? 0.27 : i === 2 ? 0.13 : 0.05))),
+      subscribers: Math.max(0, Math.floor(totalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
     }));
   });
   const [editingPlan, setEditingPlan] = useState<MemberPlan | null>(null);

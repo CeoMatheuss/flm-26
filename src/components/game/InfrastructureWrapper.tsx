@@ -54,6 +54,8 @@ interface Props {
 
   /** Sub-aba inicial (padrão: training) */
   initialSubTab?: SubTab;
+  /** Quando true, esconde o menu interno (cada aba é uma tela independente no menu principal). */
+  standalone?: boolean;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
@@ -72,6 +74,7 @@ export function InfrastructureWrapper({
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
   stadiumProps, youthProps,
   initialSubTab = 'training',
+  standalone = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<SubTab>(initialSubTab);
 
@@ -105,21 +108,25 @@ export function InfrastructureWrapper({
 
   return (
     <div className="space-y-3">
-      {/* Título principal da seção */}
-      <div className="flex items-center gap-2 px-1">
-        <Building2 className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-black uppercase tracking-wide">Infraestrutura</h2>
-      </div>
+      {!standalone && (
+        <>
+          {/* Título principal da seção */}
+          <div className="flex items-center gap-2 px-1">
+            <Building2 className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-black uppercase tracking-wide">Infraestrutura</h2>
+          </div>
 
-      {/* Menu interno horizontal */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-muted/20 rounded-lg border border-border/30">
-        {tabBtn('training', 'Treinos', Dumbbell)}
-        {tabBtn('training2d', '2D', Gamepad2)}
-        {tabBtn('physio', 'Fisioterapia', HeartPulse)}
-        {tabBtn('stadium', 'Estádio', Landmark)}
-        {tabBtn('youth', 'Base', GraduationCap)}
-        {tabBtn('ctrooms', 'Salas CT', Wrench)}
-      </div>
+          {/* Menu interno horizontal */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-muted/20 rounded-lg border border-border/30">
+            {tabBtn('training', 'Treinos', Dumbbell)}
+            {tabBtn('training2d', '2D', Gamepad2)}
+            {tabBtn('physio', 'Fisioterapia', HeartPulse)}
+            {tabBtn('stadium', 'Estádio', Landmark)}
+            {tabBtn('youth', 'Base', GraduationCap)}
+            {tabBtn('ctrooms', 'Salas CT', Wrench)}
+          </div>
+        </>
+      )}
 
       {/* Conteúdo */}
       {activeTab === 'training' && (
