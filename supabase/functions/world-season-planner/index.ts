@@ -160,8 +160,8 @@ Deno.serve(async (req: Request) => {
         // Usamos as primeiras 30 rodadas (todos jogam todos no turno + parte do returno)
         const rounds = allRounds.slice(0, 30);
 
-        const startDate = league.season_starts_at
-          ? new Date(league.season_starts_at).toISOString().slice(0, 10)
+        const startDate = league.season_started_at
+          ? new Date(league.season_started_at).toISOString().slice(0, 10)
           : todayBrt();
 
         const inserts: any[] = [];
