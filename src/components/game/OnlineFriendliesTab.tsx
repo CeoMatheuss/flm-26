@@ -173,10 +173,29 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   };
 
   // Realtime: convites + slots abertos (servidor é fonte única de verdade)
+  // Quando um convite enviado pelo usuário muda de 'pending' → 'accepted',
+  // abrimos o lobby automaticamente (sem precisar voltar à tela de amistosos).
+  const autoOpenedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const invitesChannel = supabase
       .channel('friendly-invites-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, () => loadInvites())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites' }, (payload: any) => {
+        loadInvites();
+        // Auto-open lobby for the SENDER whose invite was just accepted
+        const newRow = payload?.new as FriendlyInvite | undefined;
+        const oldRow = payload?.old as FriendlyInvite | undefined;
+        if (
+          newRow &&
+          newRow.status === 'accepted' &&
+          (!oldRow || oldRow.status !== 'accepted') &&
+          newRow.sender_id === userId &&
+          !autoOpenedRef.current.has(newRow.id)
+        ) {
+          autoOpenedRef.current.add(newRow.id);
+          toast.success(`🎮 ${newRow.receiver_club_name} aceitou! Entrando no lobby...`);
+          setLobbyInvite(newRow);
+        }
+      })
       .subscribe();
     const slotsChannel = supabase
       .channel('open-friendly-slots-' + userId)
