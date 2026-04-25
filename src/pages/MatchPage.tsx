@@ -728,6 +728,26 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const windowsUsed = 0;
   const maxWindows = 99;
 
+  // ── DERIVED on-field state (SINGLE SOURCE OF TRUTH for lineup/bench UI) ──
+  // currentStarters: 11 players currently on the field (initial 11, minus subbed-out, plus subbed-in)
+  // currentBench: bench players that have NOT entered the field yet (still available)
+  const { currentStarters, currentBench } = useMemo(() => {
+    if (!homePlayers || homePlayers.length === 0) {
+      return { currentStarters: [] as Player[], currentBench: [] as Player[] };
+    }
+    const initialStarters = homePlayers.slice(0, 11);
+    const initialBench = homePlayers.slice(11);
+    const remainingStarters = initialStarters.filter(p => !substitutedPlayerIds.has(p.id));
+    const subbedInPlayers = initialBench.filter(p => enteredInIds.has(p.id));
+    const remainingBench = initialBench.filter(p => !enteredInIds.has(p.id));
+    return {
+      currentStarters: [...remainingStarters, ...subbedInPlayers],
+      currentBench: remainingBench,
+    };
+    // subStateVersion forces re-derivation on every sub change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homePlayers, substitutedPlayerIds, enteredInIds, subStateVersion]);
+
   // ── Live stamina map (continuous fatigue during the match) ──
   const liveStaminaMap = useMemo(() => {
     const map: Record<string, number> = {};
