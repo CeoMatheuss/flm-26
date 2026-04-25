@@ -437,13 +437,18 @@ export function useMatchSimulation() {
       }
     }
 
+    // Score derivado dos eventos visíveis. Importante:
+    // 1) `penalty_shootout` tem `isGoal:true` mas é placar separado da disputa
+    //    de pênaltis — NÃO entra no placar regulamentar.
+    // 2) Garantimos que o placar nunca regrida: usamos sempre o máximo entre
+    //    o que os eventos visíveis dizem e o último valor renderizado.
     let homeGoals = 0;
     let awayGoals = 0;
     for (const ev of visibleEvents) {
-      if (ev.isGoal) {
-        if (ev.team === 'home') homeGoals++;
-        else if (ev.team === 'away') awayGoals++;
-      }
+      if (!ev.isGoal) continue;
+      if (ev.type === 'penalty_shootout') continue; // disputa, não placar
+      if (ev.team === 'home') homeGoals++;
+      else if (ev.team === 'away') awayGoals++;
     }
 
     const latestEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
@@ -455,8 +460,10 @@ export function useMatchSimulation() {
     let phase: MatchState['phase'] = 'live';
     if (isComplete) {
       phase = 'finished';
-      homeGoals = data.finalHomeGoals;
-      awayGoals = data.finalAwayGoals;
+      // Use authoritative final score, but only if it's >= what events say —
+      // never permite o placar diminuir no apito final.
+      homeGoals = Math.max(homeGoals, data.finalHomeGoals);
+      awayGoals = Math.max(awayGoals, data.finalAwayGoals);
     } else if (currentMinute >= 45 && currentMinute <= 46) {
       phase = 'halftime';
     }
