@@ -422,6 +422,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   return (
     <div className="min-h-screen bg-background">
+      <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
