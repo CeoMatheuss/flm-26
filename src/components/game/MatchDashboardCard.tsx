@@ -505,6 +505,17 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
         status === 'finished' && finishedFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
+      {status === 'finished' && (
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Fechar widget de resultado"
+          onClick={() => { setFinishedFadingOut(true); setTimeout(() => setFinishedHidden(true), FADE_OUT_MS); }}
+          className="absolute top-1.5 right-1.5 h-7 w-7 z-20 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
       {isPremium &&
       <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 space-y-1">
           <div className="flex items-center justify-center gap-2">
