@@ -1497,6 +1497,42 @@ export type Database = {
           },
         ]
       }
+      migration_logs: {
+        Row: {
+          changes: Json
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          from_version: string
+          id: string
+          status: string
+          to_version: string
+          user_id: string
+        }
+        Insert: {
+          changes?: Json
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          from_version: string
+          id?: string
+          status: string
+          to_version: string
+          user_id: string
+        }
+        Update: {
+          changes?: Json
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          from_version?: string
+          id?: string
+          status?: string
+          to_version?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mission_progress: {
         Row: {
           completed: boolean
@@ -2153,6 +2189,48 @@ export type Database = {
         }
         Relationships: []
       }
+      suspicious_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string
+          details: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          severity: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description: string
+          details?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          severity?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string
+          details?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          severity?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           key: string
@@ -2492,6 +2570,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_versions: {
+        Row: {
+          created_at: string
+          data_version: string
+          failed_attempts: number
+          game_version: string
+          id: string
+          last_backup: Json | null
+          last_backup_at: string | null
+          last_migration_at: string | null
+          migration_status: string
+          observation_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_version?: string
+          failed_attempts?: number
+          game_version?: string
+          id?: string
+          last_backup?: Json | null
+          last_backup_at?: string | null
+          last_migration_at?: string | null
+          migration_status?: string
+          observation_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_version?: string
+          failed_attempts?: number
+          game_version?: string
+          id?: string
+          last_backup?: Json | null
+          last_backup_at?: string | null
+          last_migration_at?: string | null
+          migration_status?: string
+          observation_until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -2504,6 +2627,29 @@ export type Database = {
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
+      }
+      ensure_user_version: {
+        Args: { _current_version: string; _user_id: string }
+        Returns: {
+          created_at: string
+          data_version: string
+          failed_attempts: number
+          game_version: string
+          id: string
+          last_backup: Json | null
+          last_backup_at: string | null
+          last_migration_at: string | null
+          migration_status: string
+          observation_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {
@@ -2525,6 +2671,7 @@ export type Database = {
         Returns: Json
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
+      version_compare: { Args: { v1: string; v2: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
