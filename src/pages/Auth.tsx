@@ -10,8 +10,9 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, UserPlus, LogIn
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck
 } from 'lucide-react';
+import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
@@ -35,7 +36,7 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -118,7 +119,13 @@ export default function AuthPage() {
       },
     });
     if (error) {
-      toast.error(error.message);
+      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado/i.test(error.message);
+      if (isBetaBlock) {
+        toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
+        setStep('beta-request');
+      } else {
+        toast.error(error.message);
+      }
     } else {
       setPendingEmail(email);
       setStep('verify-email');
@@ -380,6 +387,19 @@ export default function AuthPage() {
     );
   }
 
+  // ── BETA ACCESS REQUEST STEP ──
+  if (step === 'beta-request') {
+    return (
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <img src={slides[2].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        <div className="relative z-10 w-full flex justify-center">
+          <BetaAccessRequestForm onBack={() => setStep('welcome')} />
+        </div>
+      </div>
+    );
+  }
+
   // ── WELCOME STEP — Split screen with carousel ──
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -423,6 +443,13 @@ export default function AuthPage() {
             </svg>
             Entrar com Google
           </Button>
+
+          <button
+            onClick={() => setStep('beta-request')}
+            className="w-full text-[11px] text-primary hover:underline mt-1 flex items-center justify-center gap-1"
+          >
+            <ShieldCheck className="w-3 h-3" /> Solicitar acesso ao BETA
+          </button>
         </div>
 
         {/* Features Grid */}

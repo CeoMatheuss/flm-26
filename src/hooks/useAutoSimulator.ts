@@ -29,6 +29,7 @@ import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 const SCAN_INTERVAL_MS = 5_000;       // 5s between scans
 const POST_SIM_DELAY_MS = 2_000;      // 2s cooldown after a successful sim
 const LOCK_TTL_MS = 60_000;           // 60s per-match lock
+const TOLERANCE_MS = 5 * 60_000;      // 5min tolerance: only auto-sim if match_time + 5min has passed
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
@@ -321,7 +322,9 @@ async function fetchNextEligibleMatch(): Promise<
   | { kind: 'tournament'; row: any }
   | null
 > {
-  const nowIso = new Date().toISOString();
+  // TOLERANCE: only auto-sim matches whose scheduled time passed AT LEAST 5 minutes ago.
+  // Gives the player time to come back online before the system simulates for them.
+  const nowIso = new Date(Date.now() - TOLERANCE_MS).toISOString();
 
   // 1) League — needs auto_sim_at <= now (or null + created long ago as fallback)
   const { data: league } = await supabase
