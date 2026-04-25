@@ -18,7 +18,7 @@ import { SponsorsTab } from '@/components/game/SponsorsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { FansTab } from '@/components/game/FansTab';
 import { MembersTab } from '@/components/game/MembersTab';
-import { TrainingWrapper } from '@/components/game/TrainingWrapper';
+import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
 import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
@@ -31,7 +31,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
-import { UpdatesTab } from '@/components/game/UpdatesTab';
+
 import { StaffTab } from '@/components/game/StaffTab';
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
@@ -285,110 +285,89 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} season={game.season?.currentSeason ?? 1} userId={userId} />}</TabsContent>
-      <TabsContent value="youth">
-        {isTabBlocked('youth') ? <BlockedMessage /> : <YouthAcademyTab prospects={game.youthProspects} academyLevel={game.infrastructure.youthAcademy.level} academyUpgradeCompletesAt={game.infrastructure.youthAcademy.upgradeCompletesAt} isPremium={isPremium} monthlyInvestment={game.youthInvestment} budget={game.club.budget} hasScouts={(game.club.scouts?.length ?? 0) > 0} currentSeason={game.season?.currentSeason ?? 1} onPromote={game.promoteYouth} onSell={game.sellYouth} onEnrollCopinha={game.enrollCopinha} onSetInvestment={game.setYouthInvestment} onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')} />}
-      </TabsContent>
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
       </TabsContent>
       <TabsContent value="members">
         <MembersTab totalFans={game.club.fans || 1000} reputation={game.club.reputation || 50} wins={game.club.stats?.wins ?? 0} draws={game.club.stats?.draws ?? 0} losses={game.club.stats?.losses ?? 0} />
       </TabsContent>
-      <TabsContent value="training">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="matches">
-        {isTabBlocked('matches') ? <BlockedMessage /> : <MatchesTab matches={game.club.matches} clubName={game.club.name} stadiumName={game.club.stadiumName} alreadyPlayedToday={game.alreadyPlayedToday} lastFriendlyDate={game.lastFriendlyDate} players={game.club.players} teamStrength={Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length))} tactics={game.tactics} onGenerateFriendly={game.generateFriendly} userId={userId} stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)} fans={game.club.fans || 500} applyFanChange={game.applyFanChange} />}
-      </TabsContent>
-      <TabsContent value="sponsors">
-        {isTabBlocked('sponsors') ? <BlockedMessage /> : <SponsorsTab sponsors={game.sponsors} offers={game.sponsorOffers} reputation={game.club.reputation} onAccept={game.acceptSponsor} onRefreshOffers={game.refreshSponsorOffers} />}
-      </TabsContent>
-      {/* Backward-compat: deep-links antigos (physio, infra, ct) caem na nova aba unificada */}
-      <TabsContent value="physio">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="infra">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="ct">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="stadium">
-        <StadiumTab infrastructure={game.infrastructure} budget={game.club.budget} fans={game.club.fans} stadiumName={game.club.stadiumName || 'Arena'} ticketPrice={game.club.ticketPrice || 30} reputation={game.club.reputation} winStreak={winStreak} loseStreak={loseStreak} vipBoxesBuilt={game.club.vipBoxesBuilt} stadiumOps={game.club.stadiumOps} upcomingHomeMatches={(game.club.matches || []).filter((m: any) => !m.played && (m.isHome ?? true)).map((m: any) => ({ id: m.id, date: m.date, isHome: m.isHome ?? true, opponent: m.opponent, competition: (m as any).competition }))} onUpgrade={game.upgradeFacility} onSetTicketPrice={game.setTicketPrice} onRenameStadium={game.renameStadium} onBuildVipBox={game.buildVipBox} onAcceptStadiumEvent={game.acceptStadiumEvent} onRejectStadiumEvent={game.rejectStadiumEvent} onStartStadiumRepair={game.startStadiumRepair} onBuyStadiumInsurance={game.buyStadiumInsurance} onCancelStadiumInsurance={game.cancelStadiumInsurance} onAcceptStadiumSponsor={game.acceptStadiumSponsor} onRejectStadiumSponsor={game.rejectStadiumSponsor} onToggleMembershipTier={game.toggleMembershipTier} onBuyModularUpgrade={game.buyModularUpgrade} />
-      </TabsContent>
+
+      {/* INFRAESTRUTURA — única seção com 5 sub-abas internas */}
+      {(['infra','training','physio','ct','ctrooms','stadium','youth'] as const).map((tabKey) => {
+        const initialSubTab =
+          tabKey === 'physio' ? 'physio' :
+          tabKey === 'stadium' ? 'stadium' :
+          tabKey === 'youth' ? 'youth' :
+          (tabKey === 'ct' || tabKey === 'ctrooms') ? 'ctrooms' :
+          'training';
+        return (
+          <TabsContent key={tabKey} value={tabKey}>
+            {isTabBlocked('training') ? <BlockedMessage /> : (
+              <InfrastructureWrapper
+                key={initialSubTab}
+                initialSubTab={initialSubTab as any}
+                players={game.club.players}
+                infrastructure={game.infrastructure}
+                trainingFocus={game.trainingFocus}
+                onSetTrainingFocus={game.setPlayerTrainingFocus}
+                trainingIntensity={game.trainingIntensity}
+                onSetTrainingIntensity={game.setPlayerTrainingIntensity}
+                tactics={game.tactics}
+                onPlayersUpdate={game.updatePlayers}
+                currentWeek={game.season.currentWeek}
+                clubName={game.club.name}
+                userId={userId}
+                budget={game.club.budget}
+                onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+                onUpgradeFacility={game.upgradeFacility}
+                ctRooms={game.ctRooms}
+                onUpgradeCTRoom={game.upgradeCTRoom}
+                stadiumProps={{
+                  infrastructure: game.infrastructure,
+                  budget: game.club.budget,
+                  fans: game.club.fans,
+                  stadiumName: game.club.stadiumName || 'Arena',
+                  ticketPrice: game.club.ticketPrice || 30,
+                  reputation: game.club.reputation,
+                  winStreak,
+                  loseStreak,
+                  vipBoxesBuilt: game.club.vipBoxesBuilt,
+                  stadiumOps: game.club.stadiumOps,
+                  upcomingHomeMatches: (game.club.matches || []).filter((m: any) => !m.played && (m.isHome ?? true)).map((m: any) => ({ id: m.id, date: m.date, isHome: m.isHome ?? true, opponent: m.opponent, competition: (m as any).competition })),
+                  onUpgrade: game.upgradeFacility,
+                  onSetTicketPrice: game.setTicketPrice,
+                  onRenameStadium: game.renameStadium,
+                  onBuildVipBox: game.buildVipBox,
+                  onAcceptStadiumEvent: game.acceptStadiumEvent,
+                  onRejectStadiumEvent: game.rejectStadiumEvent,
+                  onStartStadiumRepair: game.startStadiumRepair,
+                  onBuyStadiumInsurance: game.buyStadiumInsurance,
+                  onCancelStadiumInsurance: game.cancelStadiumInsurance,
+                  onAcceptStadiumSponsor: game.acceptStadiumSponsor,
+                  onRejectStadiumSponsor: game.rejectStadiumSponsor,
+                  onToggleMembershipTier: game.toggleMembershipTier,
+                  onBuyModularUpgrade: game.buyModularUpgrade,
+                }}
+                youthProps={{
+                  prospects: game.youthProspects,
+                  academyLevel: game.infrastructure.youthAcademy.level,
+                  academyUpgradeCompletesAt: game.infrastructure.youthAcademy.upgradeCompletesAt,
+                  isPremium,
+                  monthlyInvestment: game.youthInvestment,
+                  budget: game.club.budget,
+                  hasScouts: (game.club.scouts?.length ?? 0) > 0,
+                  currentSeason: game.season?.currentSeason ?? 1,
+                  onPromote: game.promoteYouth,
+                  onSell: game.sellYouth,
+                  onEnrollCopinha: game.enrollCopinha,
+                  onSetInvestment: game.setYouthInvestment,
+                  onUpgradeAcademy: () => game.upgradeFacility('youthAcademy'),
+                }}
+              />
+            )}
+          </TabsContent>
+        );
+      })}
       <TabsContent value="scouts">
         {isTabBlocked('scouts') ? <BlockedMessage /> : (
           <ScoutsTab
@@ -448,7 +427,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
-      <TabsContent value="updates"><UpdatesTab /></TabsContent>
+      
       <TabsContent value="settings"><SettingsTab /></TabsContent>
       {/* clubsettings deep-link redirect: render ClubProfileTab so existing links keep working */}
       <TabsContent value="clubsettings">
@@ -530,27 +509,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onRenameStadium={game.renameStadium}
           onUpdateShield={game.updateShield}
         />
-      </TabsContent>
-      <TabsContent value="ctrooms">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <TrainingWrapper
-            players={game.club.players}
-            infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
-            onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
-            tactics={game.tactics}
-            onPlayersUpdate={game.updatePlayers}
-            currentWeek={game.season.currentWeek}
-            clubName={game.club.name}
-            userId={userId}
-            budget={game.club.budget}
-            onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
-            onUpgradeCTRoom={game.upgradeCTRoom}
-          />
-        )}
       </TabsContent>
       <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>

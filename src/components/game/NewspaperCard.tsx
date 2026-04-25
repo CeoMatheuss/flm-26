@@ -78,20 +78,42 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
               <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[main.category] || 'bg-primary'}`}>
                 {main.category}
               </span>
-              <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1">{main.text}</h3>
+              {(() => {
+                const LIMIT = 90;
+                const isLong = (main.text || '').length > LIMIT;
+                const preview = isLong ? main.text.slice(0, LIMIT).trimEnd() + '…' : main.text;
+                return (
+                  <>
+                    <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2">{preview}</h3>
+                    {isLong && onOpenFullPage && (
+                      <button
+                        onClick={onOpenFullPage}
+                        className="text-[10px] font-semibold text-primary hover:underline mt-0.5"
+                      >
+                        Ver mais →
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
               <p className="text-[8px] text-muted-foreground mt-0.5">
                 {new Date(main.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
             {secondary.length > 0 && (
               <div className="space-y-1.5">
-                {secondary.map((item) => (
-                  <div key={item.id} className="flex items-start gap-1.5">
-                    <span className="text-[8px] text-primary font-bold mt-0.5">▸</span>
-                    <p className="text-[9px] sm:text-[11px] text-muted-foreground leading-snug flex-1">{item.text}</p>
-                    <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0">{item.category}</Badge>
-                  </div>
-                ))}
+                {secondary.map((item) => {
+                  const LIMIT = 70;
+                  const isLong = (item.text || '').length > LIMIT;
+                  const preview = isLong ? item.text.slice(0, LIMIT).trimEnd() + '…' : item.text;
+                  return (
+                    <div key={item.id} className="flex items-start gap-1.5">
+                      <span className="text-[8px] text-primary font-bold mt-0.5">▸</span>
+                      <p className="text-[9px] sm:text-[11px] text-muted-foreground leading-snug flex-1 line-clamp-2">{preview}</p>
+                      <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0">{item.category}</Badge>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
