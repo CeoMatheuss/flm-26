@@ -149,9 +149,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       // Recarrega estado real do servidor
       await loadOpenSlots();
     } else {
-      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
-      triggerAutoSim(); // simula imediatamente
+      toast.success(`✅ Amistoso aceito contra ${slot.club_name}! Entrando no lobby...`);
+      triggerAutoSim(); // simula imediatamente em background como fallback
       await Promise.all([loadInvites(), loadOpenSlots()]);
+      // Abre lobby imediatamente — busca o invite recém-criado pela RPC
+      const inviteId = (data as any)?.invite_id;
+      if (inviteId) {
+        const { data: inv } = await supabase
+          .from('friendly_invites')
+          .select('*')
+          .eq('id', inviteId)
+          .maybeSingle();
+        if (inv) setLobbyInvite(inv as unknown as FriendlyInvite);
+      }
     }
     setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
   };
