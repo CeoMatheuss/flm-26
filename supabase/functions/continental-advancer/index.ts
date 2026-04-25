@@ -196,9 +196,10 @@ Deno.serve(async (req) => {
         return d;
       };
 
-      // Principal (16 → 8 oitavas, 4 quartas, 2 semi, 1 final): D21,22,23,24 (offset 6,7,8,9)
-      // Secundária (8 → 4 quartas, 2 semi, 1 final): D22,23,24 (offset 7,8,9)
-      const isPrincipal = comp.tier === "principal";
+      // Determina próxima fase baseada no número de advancers (top 2 por grupo)
+      // 16 advancers (8 grupos)  → round_of_16
+      // 8 advancers  (4 grupos)  → quarter_finals
+      // 4 advancers  (2 grupos)  → semi_finals
       const matchesToInsert: any[] = [];
 
       // Sorteia advancers (Fisher-Yates)
@@ -208,39 +209,34 @@ Deno.serve(async (req) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      if (isPrincipal && shuffled.length >= 16) {
-        // Oitavas dia 21 (offset 6)
-        for (let i = 0; i < 8; i++) {
-          matchesToInsert.push({
-            competition_id: comp.id, stage: "round_of_16", round: 1,
-            home_team_id: shuffled[i * 2].id, away_team_id: shuffled[i * 2 + 1].id,
-            scheduled_at: brtTimestamp(day(6), 20), status: "scheduled",
-          });
-        }
+      let firstStage: string;
+      let firstOffset: number;
+      if (shuffled.length >= 16) {
+        firstStage = "round_of_16"; firstOffset = 6;
+      } else if (shuffled.length >= 8) {
+        firstStage = "quarter_finals"; firstOffset = 7;
+      } else if (shuffled.length >= 4) {
+        firstStage = "semi_finals"; firstOffset = 8;
+      } else {
+        firstStage = "final"; firstOffset = 9;
       }
-      
-      // Salva apenas oitavas por enquanto; quartas/semi/final geradas após cada fase
+
+      const numMatches = Math.floor(shuffled.length / 2);
+      for (let i = 0; i < numMatches; i++) {
+        matchesToInsert.push({
+          competition_id: comp.id, stage: firstStage, round: 1,
+          home_team_id: shuffled[i * 2].id, away_team_id: shuffled[i * 2 + 1].id,
+          scheduled_at: brtTimestamp(day(firstOffset), 20), status: "scheduled",
+        });
+      }
+
       if (matchesToInsert.length > 0) {
         await supabase.from("continental_matches").insert(matchesToInsert);
-      } else if (!isPrincipal && shuffled.length >= 8) {
-        // Secundária começa direto em quartas (4 jogos) dia 22 (offset 7)
-        const quarters = [];
-        for (let i = 0; i < 4; i++) {
-          quarters.push({
-            competition_id: comp.id, stage: "quarter_finals", round: 1,
-            home_team_id: shuffled[i * 2].id, away_team_id: shuffled[i * 2 + 1].id,
-            scheduled_at: brtTimestamp(day(7), 20), status: "scheduled",
-          });
-        }
-        await supabase.from("continental_matches").insert(quarters);
+        await supabase.from("continental_competitions").update({
+          current_stage: firstStage, current_round: 1,
+        }).eq("id", comp.id);
+        compResult.advanced = firstStage;
       }
-
-      await supabase.from("continental_competitions").update({
-        current_stage: isPrincipal ? "round_of_16" : "quarter_finals",
-        current_round: 1,
-      }).eq("id", comp.id);
-
-      compResult.advanced = isPrincipal ? "round_of_16" : "quarter_finals";
     }
 
     // 3) Avança fases eliminatórias subsequentes

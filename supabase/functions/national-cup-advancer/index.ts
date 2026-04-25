@@ -130,17 +130,24 @@ Deno.serve(async (req) => {
       continue
     }
 
-    // Pegar vencedores da rodada atual
+    // Pegar vencedores da rodada atual (com fallback se match_data ausente)
     const { data: doneMatches } = await supa
       .from('cup_matches')
-      .select('id, match_data')
+      .select('id, match_data, home_team_id, away_team_id, home_goals, away_goals')
       .eq('cup_id', cup.id)
       .eq('round', cup.current_round)
       .eq('status', 'finished')
       .order('id')
 
     const winners = (doneMatches ?? [])
-      .map(m => (m.match_data as any)?.winner_team_id)
+      .map(m => {
+        const md = (m.match_data as any) ?? {}
+        if (md.winner_team_id) return md.winner_team_id
+        // Fallback: derivar do placar (mandante leva em empate por simplicidade)
+        const hg = m.home_goals ?? 0
+        const ag = m.away_goals ?? 0
+        return ag > hg ? m.away_team_id : m.home_team_id
+      })
       .filter(Boolean)
 
     // Datas das rodadas: round 1=dia atual+0 (já criada), 2=+2d, 3=+4d, 4=+6d, 5=+7d
