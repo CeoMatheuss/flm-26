@@ -57,10 +57,9 @@ function minIncrement(currentBid: number): number {
 }
 
 function fmtMoney(v: number): string {
-  // Formato realista: até <1M mostra em K (sem decimais), 1M+ mostra em M (1 casa só se necessário)
+  // Formato compacto: <1M -> "K" inteiro; >=1M -> "M" com 1 casa só se necessário
   if (v >= 1_000_000) {
     const m = v / 1_000_000;
-    // 1.0M -> "1M", 1.5M -> "1,5M"
     const formatted = m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace('.', ',');
     return `R$ ${formatted}M`;
   }
@@ -72,6 +71,21 @@ function fmtDateShort(iso: string): string {
   try {
     return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   } catch { return iso; }
+}
+
+/**
+ * Lance mínimo padronizado por faixa de OVR (espelha a validação do servidor):
+ *   <60  -> 100K
+ *   60-69 -> 200K
+ *   70-79 -> 300K
+ *   80+   -> 500K
+ */
+function startPriceByOverall(overall: number): number {
+  const ovr = Math.max(40, Math.min(99, overall || 60));
+  if (ovr >= 80) return 500_000;
+  if (ovr >= 70) return 300_000;
+  if (ovr >= 60) return 200_000;
+  return 100_000;
 }
 
 export function AuctionTab({ userId, clubName, players, budget, isPremium, onSellPlayer: _onSellPlayer }: Props) {
@@ -118,18 +132,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
   // Eligible players: 60+ overall, <= 35 age
   const eligiblePlayers = players.filter(p => p.overall >= 60 && (p.age || 25) <= 35);
 
-  const computeStartPrice = (player: any): number => {
-    // Preços de leilão mais realistas (50-70% mais baratos que mercado)
-    const ovr = Math.max(60, Math.min(99, player.overall || 60));
-    // Curva mais suave: 60 OVR ~50K, 70 OVR ~150K, 80 OVR ~500K, 90 OVR ~2M
-    const ovrFactor = Math.pow((ovr - 55) / 10, 2.0);
-    let price = Math.round(60_000 * ovrFactor);
-    const age = player.age || 25;
-    if (age <= 24) price = Math.round(price * 1.15);
-    else if (age >= 32) price = Math.round(price * 0.6);
-    else if (age >= 30) price = Math.round(price * 0.8);
-    return Math.max(50_000, Math.min(20_000_000, price));
-  };
+  const computeStartPrice = (player: any): number => startPriceByOverall(player.overall || 60);
 
   const handleCreateAuction = async (player: any) => {
     const startPrice = computeStartPrice(player);
