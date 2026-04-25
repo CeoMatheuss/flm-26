@@ -78,6 +78,8 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
   const [creatingSlot, setCreatingSlot] = useState(false);
   // Lobby state
   const [lobbyInvite, setLobbyInvite] = useState<FriendlyInvite | null>(null);
+  // Anti-spam: ids de slots em processo de aceite (evita clique duplo)
+  const [acceptingSlotIds, setAcceptingSlotIds] = useState<Set<string>>(new Set());
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
@@ -124,7 +126,32 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const acceptOpenSlot = async (slot: typeof openSlots[0]) => {
     if (slot.user_id === userId) return toast.error('Não pode aceitar sua própria partida');
+    // Anti-spam: bloqueia clique duplo no mesmo slot
+    if (acceptingSlotIds.has(slot.id)) {
+      toast.info('⏳ Já estamos processando este amistoso...');
+      return;
+    }
+    setAcceptingSlotIds(prev => new Set(prev).add(slot.id));
+    // Remove otimisticamente da UI para evitar novos cliques
+    setOpenSlots(prev => prev.filter(s => s.id !== slot.id));
     setLoading(true);
+
+    // Reserva o slot ANTES de criar o invite — só prossegue se o slot ainda estava 'open'
+    const { data: reserved, error: reserveErr } = await supabase
+      .from('open_friendly_slots')
+      .update({ status: 'matched' })
+      .eq('id', slot.id)
+      .eq('status', 'open')
+      .select();
+
+    if (reserveErr || !reserved || reserved.length === 0) {
+      toast.error('⚠️ Este amistoso já foi aceito por outro jogador.');
+      setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
+      setLoading(false);
+      loadOpenSlots();
+      return;
+    }
+
     const dateTime = new Date();
     dateTime.setMinutes(dateTime.getMinutes() + 5);
 
@@ -143,14 +170,17 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     }]);
 
     if (!error) {
-      await supabase.from('open_friendly_slots').update({ status: 'matched' }).eq('id', slot.id);
       toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
       triggerAutoSim(); // simula imediatamente, sem esperar horário
       loadInvites();
       loadOpenSlots();
     } else {
-      toast.error('Erro ao aceitar');
+      // Reverte reserva se a criação do invite falhou
+      await supabase.from('open_friendly_slots').update({ status: 'open' }).eq('id', slot.id);
+      toast.error('Erro ao aceitar — tente novamente');
+      loadOpenSlots();
     }
+    setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
     setLoading(false);
   };
 
@@ -173,14 +203,20 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     return () => { supabase.removeChannel(channel); };
   }, [loadInvites]);
 
-  const searchPlayers = async () => {
-    if (!searchTerm.trim() || searchTerm.trim().length < 2) return;
+  const searchPlayers = useCallback(async (rawTerm?: string) => {
+    const term = (rawTerm ?? searchTerm).trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
     setSearching(true);
+    // ilike é case-insensitive; busca por nome parcial em qualquer posição
     const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, display_name')
       .neq('user_id', userId)
-      .ilike('display_name', `%${searchTerm.trim()}%`)
+      .ilike('display_name', `%${term}%`)
+      .order('display_name', { ascending: true })
       .limit(10);
 
     // Fetch presence for found users
@@ -192,7 +228,6 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
         .select('user_id, is_online, last_seen')
         .in('user_id', userIds);
       (presenceData || []).forEach(p => {
-        // Consider online if is_online and last_seen within 2 minutes
         const lastSeen = new Date(p.last_seen).getTime();
         const twoMinAgo = Date.now() - 2 * 60 * 1000;
         presenceMap[p.user_id] = p.is_online && lastSeen > twoMinAgo;
@@ -204,7 +239,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       is_online: presenceMap[p.user_id] || false,
     })));
     setSearching(false);
-  };
+  }, [searchTerm, userId]);
+
+  // Autocomplete em tempo real (debounce 300ms)
+  useEffect(() => {
+    if (selectedOpponent) return; // não busca quando já há um selecionado
+    const term = searchTerm.trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const handle = setTimeout(() => { searchPlayers(term); }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm, selectedOpponent, searchPlayers]);
 
   const sendInvite = async () => {
     if (!selectedOpponent) return toast.error('Selecione um adversário');
@@ -268,12 +315,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const respondInvite = async (inviteId: string, accept: boolean) => {
     setLoading(true);
-    const { error } = await supabase
+    // Anti-spam: só aceita/recusa se ainda estiver pendente
+    const { data: updated, error } = await supabase
       .from('friendly_invites')
       .update({ status: accept ? 'accepted' : 'rejected' })
-      .eq('id', inviteId);
-    if (error) toast.error('Erro ao responder');
-    else {
+      .eq('id', inviteId)
+      .eq('status', 'pending')
+      .select();
+
+    if (error) {
+      toast.error('Erro ao responder');
+    } else if (!updated || updated.length === 0) {
+      toast.info('⚠️ Este convite já foi respondido.');
+    } else {
       toast.success(accept ? '✅ Amistoso aceito!' : '❌ Amistoso recusado');
       if (accept) triggerAutoSim(); // simula imediatamente
     }
@@ -375,10 +429,10 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                   placeholder="Buscar jogador por nome..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && searchPlayers()}
+                  onKeyDown={e => e.key === 'Enter' && searchPlayers(searchTerm)}
                   className="h-8 text-xs flex-1"
                 />
-                <Button size="sm" variant="outline" className="h-8 px-2" onClick={searchPlayers} disabled={searching}>
+                <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => searchPlayers(searchTerm)} disabled={searching}>
                   <Search className="h-3.5 w-3.5" />
                 </Button>
               </div>
