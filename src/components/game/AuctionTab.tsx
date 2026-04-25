@@ -183,11 +183,11 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Colocar Jogador em Leilão</CardTitle>
-          <p className="text-[10px] text-muted-foreground">Jogadores elegíveis: 65+ OVR, até 35 anos. Valor inicial = metade do valor de mercado.</p>
+          <p className="text-[10px] text-muted-foreground">Jogadores elegíveis: 60+ OVR, até 35 anos. Preço inicial calculado automaticamente (OVR + idade).</p>
         </CardHeader>
         <CardContent>
           {eligiblePlayers.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador elegível (65+ OVR, ≤35 anos)</p>
+            <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador elegível (60+ OVR, ≤35 anos)</p>
           ) : (
             <ScrollArea className="max-h-[200px]">
               <div className="space-y-1.5">
