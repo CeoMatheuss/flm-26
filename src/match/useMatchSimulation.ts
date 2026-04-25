@@ -316,8 +316,9 @@ export function useMatchSimulation() {
       if (ev.team === 'home') homeActions++;
       else if (ev.team === 'away') awayActions++;
 
-      // Goal events = shot + on target (includes new types)
-      if (ev.isGoal) {
+      // Goal events = shot + on target. Shootout pens (disputa) NÃO contam
+      // como chute regulamentar — placar e stats são separados.
+      if (ev.isGoal && ev.type !== 'penalty_shootout') {
         s.shots[idx]++;
         s.shotsOnTarget[idx]++;
       }
