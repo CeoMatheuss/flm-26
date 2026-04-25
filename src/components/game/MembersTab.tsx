@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Crown, Users, TrendingUp, Star, DollarSign, Pencil, Sparkles, Heart, Trophy, Gem, Award, Medal } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
+import { calculateTotalMembers, MEMBER_TIER_RATIOS } from '@/lib/membersCalc';
 import { toast } from 'sonner';
 
 interface MemberPlan {
