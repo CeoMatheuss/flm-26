@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import flmLogo from '@/assets/flm26-logo.png';
@@ -379,10 +379,60 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   // NOTE: Do NOT show pending bot friendlies as "scheduled" — they are on-demand only
   const lastFinished = [...club.matches].filter((m) => m.played).pop();
 
+  // ── Auto-hide do widget de resultado finalizado ──
+  // Regras: aparece por até FINISHED_DISPLAY_MS após detectar a partida finalizada.
+  // Reset automático quando o id muda (nova partida finalizada) ou quando uma live entra.
+  // Botão X também esconde manualmente. Ocultar imediatamente se uma nova live começar.
+  const FINISHED_DISPLAY_MS = 20_000; // 20s
+  const FADE_OUT_MS = 600;
+  const [finishedHidden, setFinishedHidden] = useState(false);
+  const [finishedFadingOut, setFinishedFadingOut] = useState(false);
+  const [trackedFinishedId, setTrackedFinishedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = lastFinished?.id ?? null;
+    if (id && id !== trackedFinishedId) {
+      // Nova partida finalizada detectada — reseta visibilidade
+      setTrackedFinishedId(id);
+      setFinishedHidden(false);
+      setFinishedFadingOut(false);
+    }
+    if (!id) {
+      setTrackedFinishedId(null);
+      setFinishedHidden(false);
+      setFinishedFadingOut(false);
+    }
+  }, [lastFinished?.id, trackedFinishedId]);
+
+  useEffect(() => {
+    // Esconde se a tela ficar oculta (mudou de aba, minimizou) — limpa o widget
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden' && trackedFinishedId) {
+        setFinishedHidden(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [trackedFinishedId]);
+
+  useEffect(() => {
+    if (!trackedFinishedId || finishedHidden || liveMatch) return;
+    const fadeTimer = setTimeout(() => setFinishedFadingOut(true), FINISHED_DISPLAY_MS - FADE_OUT_MS);
+    const hideTimer = setTimeout(() => setFinishedHidden(true), FINISHED_DISPLAY_MS);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+  }, [trackedFinishedId, finishedHidden, liveMatch]);
+
+  // Se uma nova partida ao vivo iniciar, esconde imediatamente o resultado anterior
+  useEffect(() => {
+    if (liveMatch && trackedFinishedId) {
+      setFinishedHidden(true);
+    }
+  }, [liveMatch, trackedFinishedId]);
+
   let status: MatchStatus = 'none';
   if (liveMatch) {
     status = 'live';
-  } else if (lastFinished) {
+  } else if (lastFinished && !finishedHidden) {
     status = 'finished';
   }
 
@@ -450,7 +500,22 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   const isAwayTeamClub = awayTeamName === club.name;
 
   return (
-    <Card className={`border-2 ${borderClass}`}>
+    <Card
+      className={`border-2 ${borderClass} relative transition-opacity duration-500 ${
+        status === 'finished' && finishedFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
+      {status === 'finished' && (
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Fechar widget de resultado"
+          onClick={() => { setFinishedFadingOut(true); setTimeout(() => setFinishedHidden(true), FADE_OUT_MS); }}
+          className="absolute top-1.5 right-1.5 h-7 w-7 z-20 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
       {isPremium &&
       <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-b border-yellow-500/30 px-3 py-1.5 space-y-1">
           <div className="flex items-center justify-center gap-2">
@@ -580,7 +645,14 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
           <Button
             className="w-full gap-2 font-bold"
             variant="outline"
-            disabled>
+            onClick={() => {
+              // Interação manual: fecha o widget e leva ao histórico/relatório
+              setFinishedFadingOut(true);
+              setTimeout(() => setFinishedHidden(true), FADE_OUT_MS);
+              if (lastFinished?.id) {
+                navigate(`/replay/${lastFinished.id}`);
+              }
+            }}>
             
                 <FileText className="h-4 w-4" /> VER RELATÓRIO
               </Button>
