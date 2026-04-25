@@ -331,12 +331,20 @@ export function AdminTournamentTab({ userId }: Props) {
     return fixtures;
   };
 
-  const generateKnockoutFixtures = (teamIds: string[], startDate: string, matchTime: string, intervalHours: number) => {
-    const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string }> = [];
+  const generateKnockoutFixtures = (
+    teamIds: string[],
+    startDate: string,
+    matchTime: string,
+    intervalHours: number,
+    twoLegs: boolean = false,
+  ) => {
+    const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string; leg?: number }> = [];
     const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
     const stageName = knockoutStageByTeamCount(shuffled.length);
+    const pairCount = Math.floor(shuffled.length / 2);
 
-    for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
+    // Leg 1
+    for (let i = 0; i < pairCount; i++) {
       const date = parseLocalDate(startDate, matchTime);
       date.setTime(date.getTime() + i * intervalHours * 3600000);
       fixtures.push({
@@ -345,7 +353,24 @@ export function AdminTournamentTab({ userId }: Props) {
         round: 1,
         stage: stageName,
         scheduled_at: date.toISOString(),
+        leg: 1,
       });
+    }
+
+    // Leg 2 (return) — swap home/away, scheduled after all leg-1 games
+    if (twoLegs) {
+      for (let i = 0; i < pairCount; i++) {
+        const date = parseLocalDate(startDate, matchTime);
+        date.setTime(date.getTime() + (pairCount + i) * intervalHours * 3600000);
+        fixtures.push({
+          home_team_id: shuffled[i * 2 + 1],
+          away_team_id: shuffled[i * 2],
+          round: 2,
+          stage: `${stageName} (Volta)`,
+          scheduled_at: date.toISOString(),
+          leg: 2,
+        });
+      }
     }
 
     return fixtures;
