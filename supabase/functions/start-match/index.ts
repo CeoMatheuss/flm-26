@@ -1286,13 +1286,58 @@ Deno.serve(async (req) => {
     //    deterministic per match. Two parallel callers produce identical output.
     seedRng(String(matchId));
 
-    // Simulate match
+    // 2.5 STADIUM AUTHORITATIVE RESOLUTION
+    // O público/capacidade NUNCA pode vir do cliente sem validação — senão o
+    // mandante e o visitante enviam números diferentes e o primeiro a chegar
+    // vence, causando o bug de "Time A vê 10k, Time B vê 1k".
+    // Aqui resolvemos o mandante real pelo matchId e usamos o stadium info
+    // dele do banco. Para amistosos sem matchId resolvível, caímos no fallback.
+    let resolvedHomeFans = Number(fans) || 500;
+    let resolvedAwayFans = Number(awayFans) || 500;
+    let resolvedStadiumCapacity = Number(stadiumCapacity) || 5000;
+    let resolvedStadiumName = stadiumName || 'Estádio';
+    try {
+      const { data: homeUserId } = await adminClient.rpc('resolve_home_user_for_match', { _match_id: String(matchId) });
+      if (homeUserId) {
+        // Buscar info de estádio do mandante real
+        const { data: stadiumRows } = await adminClient.rpc('get_user_stadium_info', { _user_id: homeUserId });
+        const stadium = Array.isArray(stadiumRows) ? stadiumRows[0] : stadiumRows;
+        if (stadium) {
+          resolvedStadiumName = stadium.stadium_name || resolvedStadiumName;
+          // Capacidade base por nível: 5k base * (1 + nível*0.4), igual ao client (aproximação segura)
+          const lvl = Number(stadium.stadium_level) || 1;
+          resolvedStadiumCapacity = Math.max(5000, Math.floor(5000 * (1 + (lvl - 1) * 0.4)));
+        }
+        // Fans do mandante via game_saves
+        const { data: homeSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', homeUserId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const homeFansFromSave = (homeSave?.club_data as any)?.club?.fans
+          ?? (homeSave?.club_data as any)?.fans;
+        if (typeof homeFansFromSave === 'number' && homeFansFromSave > 0) {
+          resolvedHomeFans = homeFansFromSave;
+        }
+        console.info('[Stadium] Authoritative resolution', {
+          matchId, homeUserId, capacity: resolvedStadiumCapacity, fans: resolvedHomeFans,
+        });
+      } else {
+        console.info('[Stadium] No home user resolved (likely friendly/admin) — using client values', { matchId });
+      }
+    } catch (e) {
+      console.warn('[Stadium] Resolution failed, falling back to client data', e);
+    }
+
+    // Simulate match (com dados de estádio AUTORITATIVOS)
     const result = simulateFullMatch(
       homeTeam, awayTeam, homePlayers || [],
       validatedHomeStrength, validatedAwayStrength,
-      tactics || {}, stadiumName || 'Estádio', isHome !== false,
-      competition || 'Amistoso', stadiumCapacity || 5000, fans || 500,
-      staff, awayFans || 500, validTieBreaker,
+      tactics || {}, resolvedStadiumName, isHome !== false,
+      competition || 'Amistoso', resolvedStadiumCapacity, resolvedHomeFans,
+      staff, resolvedAwayFans, validTieBreaker,
       Array.isArray(awayPlayers) ? awayPlayers : undefined,
       awayTactics || undefined
     );
