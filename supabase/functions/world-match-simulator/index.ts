@@ -122,8 +122,17 @@ async function notifyHuman(
 async function fetchNextMatch(supabase: any) {
   const nowIso = new Date(Date.now() - HUMAN_TOLERANCE_MS).toISOString();
 
-  // 1. Mundial (world_cup_tournament_matches) — TODO etapa 6
-  // Por enquanto, nem busca
+  // 1. Mundial de Clubes (world_cup_tournament_matches) — máxima prioridade
+  const { data: wctData } = await supabase
+    .from("world_cup_tournament_matches")
+    .select("id, tournament_id, round, stage, home_team_id, away_team_id, kickoff_at, match_data, world_cup_tournament!inner(edition)")
+    .eq("status", "scheduled")
+    .lte("kickoff_at", nowIso)
+    .order("kickoff_at", { ascending: true })
+    .limit(1);
+  if (wctData && wctData.length > 0) {
+    return { ...wctData[0], _kind: "world_tournament" };
+  }
 
   // 2. Internacional
   const { data: intlData } = await supabase
@@ -193,8 +202,11 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
   const awayStr = await teamStrength(supabase, away);
   let { home: hg, away: ag } = simulate(homeStr, awayStr);
 
-  // Em mata-mata (cup/intl knockout) não há empate — força decisão por disputa
-  const isKnockout = kind === "cup" || (kind === "international" && match.stage && !String(match.stage).startsWith("Grupo"));
+  // Em mata-mata (cup/intl knockout/world_tournament) não há empate — força decisão por disputa
+  const isKnockout =
+    kind === "cup" ||
+    kind === "world_tournament" ||
+    (kind === "international" && match.stage && !String(match.stage).startsWith("Grupo"));
   if (isKnockout && hg === ag) {
     if (Math.random() < (homeStr / (homeStr + awayStr))) hg++; else ag++;
   }
@@ -224,6 +236,7 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
     league: "world_matches",
     cup: "world_cup_matches",
     international: "international_matches",
+    world_tournament: "world_cup_tournament_matches",
   };
   const table = tableMap[kind];
 
@@ -267,6 +280,8 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
     compName = "🏆 " + (match.world_cups?.cup_name || "Copa");
   } else if (kind === "international") {
     compName = "🌍 " + (match.international_competitions?.competition_name || "Continental");
+  } else if (kind === "world_tournament") {
+    compName = "🏆🌍 Mundial de Clubes (Ed. " + (match.world_cup_tournament?.edition ?? "?") + ")";
   }
 
   if (home.user_id) {

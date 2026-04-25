@@ -470,7 +470,7 @@ async function runWatchdog(): Promise<void> {
 
     // Probe each table. If anything stuck found, run a scan; the scan's own
     // tolerance check will let it through (stuck > tolerance, by definition).
-    const [leagueRes, friendlyRes, tournamentRes, worldRes, cupRes, intlRes] = await Promise.all([
+    const [leagueRes, friendlyRes, tournamentRes, worldRes, cupRes, intlRes, wctRes] = await Promise.all([
       supabase.from('league_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('auto_sim_at', stuckIso),
@@ -489,14 +489,17 @@ async function runWatchdog(): Promise<void> {
       supabase.from('international_matches')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
+      supabase.from('world_cup_tournament_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('kickoff_at', stuckIso),
     ]);
 
     const legacyStuck =
       (leagueRes.count || 0) + (friendlyRes.count || 0) + (tournamentRes.count || 0);
-    const worldStuck = (worldRes.count || 0) + (cupRes.count || 0) + (intlRes.count || 0);
+    const worldStuck = (worldRes.count || 0) + (cupRes.count || 0) + (intlRes.count || 0) + (wctRes.count || 0);
     const stuckCount = legacyStuck + worldStuck;
     if (stuckCount > 0) {
-      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) (world: ${worldStuck}, cup: ${cupRes.count || 0}, intl: ${intlRes.count || 0}) — forcing scan`);
+      console.warn(`[autosim/watchdog] ${stuckCount} stuck (world: ${worldRes.count || 0}, cup: ${cupRes.count || 0}, intl: ${intlRes.count || 0}, mundial: ${wctRes.count || 0}) — forcing scan`);
       cooldownUntil = 0;
       void runScan();
 
@@ -515,13 +518,25 @@ async function runWatchdog(): Promise<void> {
     }
 
     // A cada ~5 ciclos do watchdog (≈5 minutos), aciona o cup-advancer
-    // para gerar próximas rodadas (QF/SF/F) das copas com rodada concluída.
+    // para gerar próximas rodadas (QF/SF/F) das copas + intl + mundial.
     watchdogTickCount++;
     if (watchdogTickCount % 5 === 0) {
       try {
         await supabase.functions.invoke('world-cup-advancer', { body: {} });
       } catch (err) {
         console.warn('[autosim/watchdog] cup-advancer error:', err);
+      }
+    }
+    // A cada ~30 ciclos (≈30 min), aciona os planners para detectar novos
+    // ciclos/temporadas e desbloquear competições internacionais/mundial.
+    if (watchdogTickCount % 30 === 0) {
+      try {
+        await Promise.all([
+          supabase.functions.invoke('world-international-planner', { body: {} }),
+          supabase.functions.invoke('world-tournament-planner', { body: {} }),
+        ]);
+      } catch (err) {
+        console.warn('[autosim/watchdog] planners error:', err);
       }
     }
   } catch (err) {
