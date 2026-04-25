@@ -668,6 +668,8 @@ function TournamentCalendarTab({ rounds, matches, teams, getTeamName, getTeamLog
 
     // Navigate to match page — the game_saves data (players, tactics etc) 
     // is loaded on the Index page, so we navigate back there with a trigger
+    const stageStr = String((match as any).stage || '').toLowerCase();
+    const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/', {
       replace: true,
       state: {
@@ -678,6 +680,7 @@ function TournamentCalendarTab({ rounds, matches, teams, getTeamName, getTeamLog
           opponentStrength: opponentTeam.bot_strength || 60,
           isHome: isPlayerHome,
           competition: tournamentName,
+          tieBreaker: isKnockout ? 'both' : 'none',
         },
       },
     });
