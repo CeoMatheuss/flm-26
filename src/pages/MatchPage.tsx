@@ -844,10 +844,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
     // ── Cross-client sync: persiste a substituição no servidor para o oponente ver ──
     // O INSERT é fire-and-forget — UI local já foi atualizada. Realtime entrega ao oponente.
+    // IMPORTANTE: cada lado tem seu próprio live_matches.id — usamos shared_match_id como chave compartilhada.
     if (matchDbId && !matchDbId.startsWith('offline-')) {
       const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
       supabase.from('live_match_substitutions').insert({
         live_match_id: matchDbId,
+        shared_match_id: sharedMatchId, // chave compartilhada para sincronização cross-client
         team_side: mySide,
         minute: subMinute,
         is_halftime: isHalftime,
@@ -856,7 +858,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
         player_out_name: playerOut.name,
         player_in_name: playerIn.name,
         team_name: homeTeam,
-      }).then(({ error }) => {
+      } as any).then(({ error }) => {
         if (error && error.code !== '23505') {
           // 23505 = duplicate (já sincronizado por outra aba/dispositivo) — ignorar
           console.warn('[SUB sync] Failed to publish sub:', error.message);
