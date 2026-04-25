@@ -174,6 +174,8 @@ async function fetchNextMatch(supabase: any) {
 }
 
 async function processMatch(supabase: any, match: any): Promise<boolean> {
+  const kind = match._kind || "league";
+
   // Buscar os dois times
   const { data: teams, error: tErr } = await supabase
     .from("world_league_teams")
@@ -189,60 +191,84 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
 
   const homeStr = await teamStrength(supabase, home);
   const awayStr = await teamStrength(supabase, away);
-  const { home: hg, away: ag } = simulate(homeStr, awayStr);
+  let { home: hg, away: ag } = simulate(homeStr, awayStr);
+
+  // Em mata-mata (cup/intl knockout) não há empate — força decisão por disputa
+  const isKnockout = kind === "cup" || (kind === "international" && match.stage && !String(match.stage).startsWith("Grupo"));
+  if (isKnockout && hg === ag) {
+    if (Math.random() < (homeStr / (homeStr + awayStr))) hg++; else ag++;
+  }
+
   const events = genEvents(hg, ag, home.club_name, away.club_name);
 
-  // Atomic guard: status precisa estar 'scheduled'
+  const matchPayload = {
+    home_goals: hg,
+    away_goals: ag,
+    status: "finished",
+    played_at: new Date().toISOString(),
+    match_data: {
+      ...(match.match_data || {}),
+      events,
+      auto_simulated: true,
+      simulated: true,
+      home_name: home.club_name,
+      away_name: away.club_name,
+      home_strength: homeStr,
+      away_strength: awayStr,
+      kind,
+    },
+  };
+
+  // Atomic guard por tabela
+  const tableMap: Record<string, string> = {
+    league: "world_matches",
+    cup: "world_cup_matches",
+    international: "international_matches",
+  };
+  const table = tableMap[kind];
+
   const { data: updated, error: uErr } = await supabase
-    .from("world_matches")
-    .update({
-      home_goals: hg,
-      away_goals: ag,
-      status: "finished",
-      played_at: new Date().toISOString(),
-      match_data: {
-        ...(match.match_data || {}),
-        events,
-        auto_simulated: true,
-        simulated: true,
-        home_name: home.club_name,
-        away_name: away.club_name,
-        home_strength: homeStr,
-        away_strength: awayStr,
-      },
-    })
+    .from(table)
+    .update(matchPayload)
     .eq("id", match.id)
     .eq("status", "scheduled")
     .select("id");
 
   if (uErr) throw uErr;
-  if (!updated || updated.length === 0) return false; // outra chamada simulou primeiro
+  if (!updated || updated.length === 0) return false;
 
-  // Atualiza estatísticas dos dois times
-  for (const u of [
-    { row: home, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
-    { row: away, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
-  ]) {
-    await supabase
-      .from("world_league_teams")
-      .update({
-        points: (u.row.points || 0) + (u.win ? 3 : u.draw ? 1 : 0),
-        wins: (u.row.wins || 0) + (u.win ? 1 : 0),
-        draws: (u.row.draws || 0) + (u.draw ? 1 : 0),
-        losses: (u.row.losses || 0) + (u.loss ? 1 : 0),
-        goals_for: (u.row.goals_for || 0) + u.gf,
-        goals_against: (u.row.goals_against || 0) + u.ga,
-        played: (u.row.played || 0) + 1,
-      })
-      .eq("id", u.row.id);
+  // Estatísticas só são atualizadas para LIGA (cups/intl não somam pontos na liga)
+  if (kind === "league") {
+    for (const u of [
+      { row: home, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
+      { row: away, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
+    ]) {
+      await supabase
+        .from("world_league_teams")
+        .update({
+          points: (u.row.points || 0) + (u.win ? 3 : u.draw ? 1 : 0),
+          wins: (u.row.wins || 0) + (u.win ? 1 : 0),
+          draws: (u.row.draws || 0) + (u.draw ? 1 : 0),
+          losses: (u.row.losses || 0) + (u.loss ? 1 : 0),
+          goals_for: (u.row.goals_for || 0) + u.gf,
+          goals_against: (u.row.goals_against || 0) + u.ga,
+          played: (u.row.played || 0) + 1,
+        })
+        .eq("id", u.row.id);
+    }
+    await maybeAdvanceMatchday(supabase, match.league_id, match.season, match.matchday);
   }
 
-  // Avança current_matchday da liga se essa rodada terminou
-  await maybeAdvanceMatchday(supabase, match.league_id, match.season, match.matchday);
-
   // Notifica humanos
-  const compName =
-    match.world_leagues?.country + " " + match.world_leagues?.league_name;
+  let compName = "Partida";
+  if (kind === "league") {
+    compName = (match.world_leagues?.country || "") + " " + (match.world_leagues?.league_name || "");
+  } else if (kind === "cup") {
+    compName = "🏆 " + (match.world_cups?.cup_name || "Copa");
+  } else if (kind === "international") {
+    compName = "🌍 " + (match.international_competitions?.competition_name || "Continental");
+  }
+
   if (home.user_id) {
     await notifyHuman(supabase, home.user_id, away.club_name, hg, ag, compName);
   }
