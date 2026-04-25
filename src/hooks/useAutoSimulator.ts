@@ -30,6 +30,8 @@ const SCAN_INTERVAL_MS = 5_000;       // 5s between scans
 const POST_SIM_DELAY_MS = 2_000;      // 2s cooldown after a successful sim
 const LOCK_TTL_MS = 60_000;           // 60s per-match lock
 const TOLERANCE_MS = 5 * 60_000;      // 5min tolerance: only auto-sim if match_time + 5min has passed
+const STUCK_AFTER_MS = 30 * 60_000;   // 30min: anything older = "stuck" → forced sim path
+const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
