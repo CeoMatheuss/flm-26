@@ -221,6 +221,84 @@ function simulateMatch(homeTeam: TeamData, awayTeam: TeamData) {
   return { homeGoals, awayGoals, ...result };
 }
 
+// ── Knockout tie-breaker (extra time → penalty shootout) ──
+// Applied AFTER 90' regulation when match cannot end in a draw.
+function resolveKnockoutTieBreaker(
+  baseHome: number, baseAway: number,
+  homeStr: number, awayStr: number,
+  homeName: string, awayName: string,
+) {
+  if (baseHome !== baseAway) {
+    return {
+      homeGoalsET: 0, awayGoalsET: 0,
+      hadExtraTime: false, hadShootout: false,
+      shootoutHome: 0, shootoutAway: 0,
+      winner: (baseHome > baseAway ? 'home' : 'away') as 'home' | 'away',
+      events: [] as any[],
+    };
+  }
+  const events: any[] = [];
+  const total = Math.max(60, homeStr + awayStr);
+  const homeGoalsET = Math.min(3, poissonSample(2.6 * (homeStr * 1.05 / total) * 0.34));
+  const awayGoalsET = Math.min(3, poissonSample(2.6 * (awayStr / total) * 0.34));
+
+  events.push({ minute: 91, type: 'extra_time_start', team: 'neutral', description: `⏱️ Empate em 90'! Vamos para a prorrogação.`, animType: 'kickoff' });
+
+  const used = new Set<number>();
+  const pickMin = () => {
+    let m = 91 + Math.floor(rng() * 30); let tries = 0;
+    while (used.has(m) && tries < 30) { m = 91 + Math.floor(rng() * 30); tries++; }
+    used.add(m);
+    return m;
+  };
+  for (let i = 0; i < homeGoalsET; i++) events.push({ minute: pickMin(), type: 'foot_goal', team: 'home', isGoal: true, playerName: 'Atacante', description: `⚽ GOL na prorrogação para ${homeName}!`, animType: 'goal' });
+  for (let i = 0; i < awayGoalsET; i++) events.push({ minute: pickMin(), type: 'foot_goal', team: 'away', isGoal: true, playerName: 'Atacante', description: `⚽ GOL na prorrogação para ${awayName}!`, animType: 'goal' });
+  events.push({ minute: 120, type: 'extra_time_end', team: 'neutral', description: `⏸️ Fim da prorrogação: ${baseHome + homeGoalsET} x ${baseAway + awayGoalsET}.`, animType: 'final' });
+
+  const totalH = baseHome + homeGoalsET;
+  const totalA = baseAway + awayGoalsET;
+  if (totalH !== totalA) {
+    return {
+      homeGoalsET, awayGoalsET,
+      hadExtraTime: true, hadShootout: false,
+      shootoutHome: 0, shootoutAway: 0,
+      winner: (totalH > totalA ? 'home' : 'away') as 'home' | 'away',
+      events,
+    };
+  }
+
+  events.push({ minute: 121, type: 'penalty_shootout_start', team: 'neutral', description: `🎯 Prorrogação não decidiu. Vamos para os pênaltis!`, animType: 'kickoff' });
+
+  const homeConv = Math.min(0.92, 0.72 + (homeStr - 60) * 0.004);
+  const awayConv = Math.min(0.92, 0.72 + (awayStr - 60) * 0.004);
+  let sH = 0, sA = 0; let kickMin = 121;
+  for (let i = 0; i < 5; i++) {
+    const hs = rng() < homeConv; if (hs) sH++;
+    events.push({ minute: kickMin++, type: hs ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'home', isGoal: hs, animType: 'penalty', description: hs ? `🎯 ${homeName} converte (${sH}-${sA}).` : `❌ ${homeName} desperdiça (${sH}-${sA}).` });
+    const as_ = rng() < awayConv; if (as_) sA++;
+    events.push({ minute: kickMin++, type: as_ ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'away', isGoal: as_, animType: 'penalty', description: as_ ? `🎯 ${awayName} converte (${sH}-${sA}).` : `❌ ${awayName} desperdiça (${sH}-${sA}).` });
+    const remaining = 5 - (i + 1);
+    if (Math.abs(sH - sA) > remaining) break;
+  }
+  while (sH === sA) {
+    const hs = rng() < homeConv; if (hs) sH++;
+    events.push({ minute: kickMin++, type: hs ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'home', isGoal: hs, animType: 'penalty', description: hs ? `🎯 Morte súbita: ${homeName} marca (${sH}-${sA}).` : `❌ Morte súbita: ${homeName} para no goleiro (${sH}-${sA}).` });
+    const as_ = rng() < awayConv; if (as_) sA++;
+    events.push({ minute: kickMin++, type: as_ ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'away', isGoal: as_, animType: 'penalty', description: as_ ? `🎯 Morte súbita: ${awayName} marca (${sH}-${sA}).` : `❌ Morte súbita: ${awayName} para no goleiro (${sH}-${sA}).` });
+  }
+  const winner: 'home' | 'away' = sH > sA ? 'home' : 'away';
+  events.push({ minute: kickMin, type: 'penalty_shootout_end', team: 'neutral', description: `🏆 ${winner === 'home' ? homeName : awayName} vence nos pênaltis ${sH}x${sA}!`, animType: 'final' });
+  return { homeGoalsET, awayGoalsET, hadExtraTime: true, hadShootout: true, shootoutHome: sH, shootoutAway: sA, winner, events };
+}
+
+function isKnockoutStageStr(stage: string | null | undefined): boolean {
+  if (!stage) return false;
+  const s = String(stage).toLowerCase();
+  if (s.startsWith('grupo')) return false;
+  if (s === 'league' || s === 'liga' || s === 'group') return false;
+  return true;
+}
+
 // ══════════════════════════════════════════════
 // LEAGUE PROCESSING — auto-simulate league rounds
 // ══════════════════════════════════════════════
