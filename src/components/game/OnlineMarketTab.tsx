@@ -132,6 +132,14 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
+  // Loan marketplace filters
+  const [loanPosFilter, setLoanPosFilter] = useState('all');
+  const [loanOvrMin, setLoanOvrMin] = useState('');
+  const [loanOvrMax, setLoanOvrMax] = useState('');
+  const [loanAgeMin, setLoanAgeMin] = useState('');
+  const [loanAgeMax, setLoanAgeMax] = useState('');
+  const [loanSalaryMax, setLoanSalaryMax] = useState('');
+
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
   const [offerSalary, setOfferSalary] = useState(500);
