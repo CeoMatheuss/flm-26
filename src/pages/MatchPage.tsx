@@ -1527,8 +1527,10 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, substitutedPlayerIds, subQueue, blocked, blockedReason, liveStaminaMap }: {
-  homePlayers?: Player[];
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+  currentStarters: Player[];
+  currentBench: Player[];
+  hasAnyPlayers: boolean;
   subsUsed: number;
   maxSubs: number;
   windowsUsed: number;
@@ -1538,13 +1540,12 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
   isHalftime: boolean;
   isFinished: boolean;
-  substitutedPlayerIds: Set<string>;
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
   blocked?: boolean;
   blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
 }) {
-  if (!homePlayers || homePlayers.length <= 11) {
+  if (!hasAnyPlayers) {
     return (
       <div className="text-center py-6">
         <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
@@ -1575,9 +1576,19 @@ function ManagerSubstitutionView({ homePlayers, subsUsed, maxSubs, windowsUsed, 
     );
   }
 
+  if (currentBench.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <ArrowUpDown className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-base font-bold text-muted-foreground">Banco vazio</p>
+        <p className="text-xs text-muted-foreground mt-1">Todos os reservas já entraram.</p>
+      </div>
+    );
+  }
+
   return <ImprovedSubsView
-    starters={homePlayers.slice(0, 11).filter(p => !substitutedPlayerIds.has(p.id))}
-    bench={homePlayers.slice(11)}
+    starters={currentStarters}
+    bench={currentBench}
     subQueue={subQueue}
     selectedSubOut={selectedSubOut}
     onSelectSubOut={onSelectSubOut}
