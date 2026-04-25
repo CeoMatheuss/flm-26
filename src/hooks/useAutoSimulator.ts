@@ -485,8 +485,10 @@ export function useAutoSimulator(userId: string | undefined) {
     if (!userId) return;
 
     void runScan();
+    void runWatchdog();
     const interval = setInterval(() => { void runScan(); }, SCAN_INTERVAL_MS);
-    const onOnline = () => { void runScan(); };
+    const watchdog = setInterval(() => { void runWatchdog(); }, WATCHDOG_INTERVAL_MS);
+    const onOnline = () => { void runScan(); void runWatchdog(); };
     window.addEventListener('online', onOnline);
 
     let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
