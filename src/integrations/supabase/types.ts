@@ -3399,10 +3399,6 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
-      calc_club_strength_from_save: {
-        Args: { _club_data: Json }
-        Returns: number
-      }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
@@ -3504,10 +3500,6 @@ export type Database = {
       resolve_home_user_for_match: {
         Args: { _match_id: string }
         Returns: string
-      }
-      target_division_for_strength: {
-        Args: { _strength: number }
-        Returns: number
       }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
     }
