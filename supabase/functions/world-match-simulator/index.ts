@@ -113,15 +113,32 @@ async function notifyHuman(
   });
 }
 
-// Busca a próxima partida elegível seguindo a prioridade global.
-// Retorna { match, league } ou null.
+// Busca a próxima partida elegível seguindo a prioridade global:
+// 1. Mundial de Clubes (kind='world_cup_tournament')
+// 2. Internacional (kind='international')
+// 3. Liga D1 -> D2 -> D3 -> D4 (kind='league')
+// 4. Copa Nacional (kind='cup')
+// Retorna objeto unificado { kind, ...match } ou null.
 async function fetchNextMatch(supabase: any) {
   const nowIso = new Date(Date.now() - HUMAN_TOLERANCE_MS).toISOString();
 
-  // Ordem de prioridade por divisão (1 mais alta)
-  // Como ainda não temos Mundial/Intl ativos (Etapas 5-6), começamos só pelas ligas
-  // ordenadas por divisão asc (D1 primeiro) e depois kickoff mais antigo.
-  const { data, error } = await supabase
+  // 1. Mundial (world_cup_tournament_matches) — TODO etapa 6
+  // Por enquanto, nem busca
+
+  // 2. Internacional
+  const { data: intlData } = await supabase
+    .from("international_matches")
+    .select("id, competition_id, round, stage, home_team_id, away_team_id, kickoff_at, match_data, international_competitions!inner(competition_name, continent)")
+    .eq("status", "scheduled")
+    .lte("kickoff_at", nowIso)
+    .order("kickoff_at", { ascending: true })
+    .limit(1);
+  if (intlData && intlData.length > 0) {
+    return { ...intlData[0], _kind: "international" };
+  }
+
+  // 3. Ligas — pega top 50 e ordena por divisão
+  const { data: leagueData } = await supabase
     .from("world_matches")
     .select(
       "id, league_id, season, matchday, home_team_id, away_team_id, kickoff_at, match_data, world_leagues!inner(division, kickoff_hour, country, league_name)",
@@ -129,20 +146,31 @@ async function fetchNextMatch(supabase: any) {
     .eq("status", "scheduled")
     .lte("kickoff_at", nowIso)
     .order("kickoff_at", { ascending: true })
-    .limit(50); // pega lote e ordena por prioridade aqui
+    .limit(50);
 
-  if (error) throw error;
-  if (!data || data.length === 0) return null;
+  if (leagueData && leagueData.length > 0) {
+    const sorted = [...leagueData].sort((a: any, b: any) => {
+      const da = a.world_leagues?.division ?? 99;
+      const db = b.world_leagues?.division ?? 99;
+      if (da !== db) return da - db;
+      return new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime();
+    });
+    return { ...sorted[0], _kind: "league" };
+  }
 
-  // Reordena por (divisão asc, kickoff asc)
-  const sorted = [...data].sort((a: any, b: any) => {
-    const da = a.world_leagues?.division ?? 99;
-    const db = b.world_leagues?.division ?? 99;
-    if (da !== db) return da - db;
-    return new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime();
-  });
+  // 4. Copa Nacional
+  const { data: cupData } = await supabase
+    .from("world_cup_matches")
+    .select("id, cup_id, round, stage, home_team_id, away_team_id, kickoff_at, match_data, world_cups!inner(cup_name, country)")
+    .eq("status", "scheduled")
+    .lte("kickoff_at", nowIso)
+    .order("kickoff_at", { ascending: true })
+    .limit(1);
+  if (cupData && cupData.length > 0) {
+    return { ...cupData[0], _kind: "cup" };
+  }
 
-  return sorted[0];
+  return null;
 }
 
 async function processMatch(supabase: any, match: any): Promise<boolean> {
