@@ -380,21 +380,40 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   const lastFinished = [...club.matches].filter((m) => m.played).pop();
 
   // ── Auto-hide do widget de resultado finalizado ──
-  // Regras: aparece por até FINISHED_DISPLAY_MS após detectar a partida finalizada.
-  // Reset automático quando o id muda (nova partida finalizada) ou quando uma live entra.
-  // Botão X também esconde manualmente. Ocultar imediatamente se uma nova live começar.
+  // Regras:
+  //  • Aparece por até FINISHED_DISPLAY_MS após detectar a partida finalizada.
+  //  • Reset automático quando o id muda (nova partida finalizada) ou quando uma live entra.
+  //  • Botão X também esconde manualmente. Ocultar imediatamente se uma nova live começar.
+  //  • IMPORTANTE: se a partida foi finalizada há MAIS que FINISHED_DISPLAY_MS (ex.:
+  //    save antigo, recarregou a página), o widget JÁ NASCE escondido. Isso garante
+  //    que não apareça um resultado "fantasma" travado na tela.
   const FINISHED_DISPLAY_MS = 20_000; // 20s
   const FADE_OUT_MS = 600;
   const [finishedHidden, setFinishedHidden] = useState(false);
   const [finishedFadingOut, setFinishedFadingOut] = useState(false);
   const [trackedFinishedId, setTrackedFinishedId] = useState<string | null>(null);
 
+  // Quanto tempo passou desde o término da partida finalizada (em ms)
+  const finishedAgeMs = useMemo(() => {
+    if (!lastFinished) return Number.POSITIVE_INFINITY;
+    // Tenta vários campos de timestamp possíveis
+    const tsRaw = (lastFinished as any).playedAt
+      ?? (lastFinished as any).finishedAt
+      ?? (lastFinished as any).date
+      ?? null;
+    const ts = tsRaw ? new Date(tsRaw).getTime() : NaN;
+    if (!Number.isFinite(ts)) return 0; // sem timestamp válido → trata como recém
+    return Date.now() - ts;
+  }, [lastFinished]);
+
   useEffect(() => {
     const id = lastFinished?.id ?? null;
     if (id && id !== trackedFinishedId) {
       // Nova partida finalizada detectada — reseta visibilidade
       setTrackedFinishedId(id);
-      setFinishedHidden(false);
+      // Se a partida é antiga demais, já nasce escondida (evita widget fantasma)
+      const isStale = finishedAgeMs > FINISHED_DISPLAY_MS;
+      setFinishedHidden(isStale);
       setFinishedFadingOut(false);
     }
     if (!id) {
@@ -402,7 +421,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
       setFinishedHidden(false);
       setFinishedFadingOut(false);
     }
-  }, [lastFinished?.id, trackedFinishedId]);
+  }, [lastFinished?.id, trackedFinishedId, finishedAgeMs]);
 
   useEffect(() => {
     // Esconde se a tela ficar oculta (mudou de aba, minimizou) — limpa o widget
@@ -417,10 +436,16 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
 
   useEffect(() => {
     if (!trackedFinishedId || finishedHidden || liveMatch) return;
-    const fadeTimer = setTimeout(() => setFinishedFadingOut(true), FINISHED_DISPLAY_MS - FADE_OUT_MS);
-    const hideTimer = setTimeout(() => setFinishedHidden(true), FINISHED_DISPLAY_MS);
+    // Se a partida já é antiga, não inicia o timer — esconde já.
+    if (finishedAgeMs > FINISHED_DISPLAY_MS) {
+      setFinishedHidden(true);
+      return;
+    }
+    const remaining = Math.max(1_000, FINISHED_DISPLAY_MS - Math.max(0, finishedAgeMs));
+    const fadeTimer = setTimeout(() => setFinishedFadingOut(true), Math.max(0, remaining - FADE_OUT_MS));
+    const hideTimer = setTimeout(() => setFinishedHidden(true), remaining);
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
-  }, [trackedFinishedId, finishedHidden, liveMatch]);
+  }, [trackedFinishedId, finishedHidden, liveMatch, finishedAgeMs]);
 
   // Se uma nova partida ao vivo iniciar, esconde imediatamente o resultado anterior
   useEffect(() => {
