@@ -203,14 +203,20 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     return () => { supabase.removeChannel(channel); };
   }, [loadInvites]);
 
-  const searchPlayers = async () => {
-    if (!searchTerm.trim() || searchTerm.trim().length < 2) return;
+  const searchPlayers = useCallback(async (rawTerm?: string) => {
+    const term = (rawTerm ?? searchTerm).trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
     setSearching(true);
+    // ilike é case-insensitive; busca por nome parcial em qualquer posição
     const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, display_name')
       .neq('user_id', userId)
-      .ilike('display_name', `%${searchTerm.trim()}%`)
+      .ilike('display_name', `%${term}%`)
+      .order('display_name', { ascending: true })
       .limit(10);
 
     // Fetch presence for found users
@@ -222,7 +228,6 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
         .select('user_id, is_online, last_seen')
         .in('user_id', userIds);
       (presenceData || []).forEach(p => {
-        // Consider online if is_online and last_seen within 2 minutes
         const lastSeen = new Date(p.last_seen).getTime();
         const twoMinAgo = Date.now() - 2 * 60 * 1000;
         presenceMap[p.user_id] = p.is_online && lastSeen > twoMinAgo;
@@ -234,7 +239,19 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       is_online: presenceMap[p.user_id] || false,
     })));
     setSearching(false);
-  };
+  }, [searchTerm, userId]);
+
+  // Autocomplete em tempo real (debounce 300ms)
+  useEffect(() => {
+    if (selectedOpponent) return; // não busca quando já há um selecionado
+    const term = searchTerm.trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const handle = setTimeout(() => { searchPlayers(term); }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm, selectedOpponent, searchPlayers]);
 
   const sendInvite = async () => {
     if (!selectedOpponent) return toast.error('Selecione um adversário');
