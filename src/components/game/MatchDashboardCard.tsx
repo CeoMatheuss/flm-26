@@ -88,6 +88,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         isHome: isPlayerHome,
         tournamentName: tournament?.name || 'Campeonato',
         status: myMatch.status,
+        stage: (myMatch as any).stage ?? null,
         homeGoals: myMatch.home_goals ?? null,
         awayGoals: myMatch.away_goals ?? null,
         playedAt: myMatch.played_at || null,
