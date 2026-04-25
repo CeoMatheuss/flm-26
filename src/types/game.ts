@@ -87,6 +87,10 @@ export interface Player {
   seasonRatings?: number[];
   shirtNumber?: number;
   seasonsWithoutPlaying?: number;
+  /** Posição secundária opcional (ex.: LAT pode jogar como VOL) */
+  secondaryPosition?: 'GOL' | 'ZAG' | 'LAT' | 'VOL' | 'MEI' | 'ATA';
+  /** Lado preferido para LAT/ATA: 'L' = esquerdo, 'R' = direito, 'C' = central */
+  side?: 'L' | 'R' | 'C';
   personality?: PlayerPersonality;
   /** V2 — propensão a lesão (0-100). Aumenta com o histórico. */
   injuryProneness?: number;
