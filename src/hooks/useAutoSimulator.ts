@@ -21,6 +21,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 
 const SCAN_INTERVAL_MS = 5_000;    // 5s failsafe
 const LOCK_TTL_MS = 60_000;        // 60s
