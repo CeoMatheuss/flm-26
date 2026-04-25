@@ -202,8 +202,11 @@ async function processMatch(supabase: any, match: any): Promise<boolean> {
   const awayStr = await teamStrength(supabase, away);
   let { home: hg, away: ag } = simulate(homeStr, awayStr);
 
-  // Em mata-mata (cup/intl knockout) não há empate — força decisão por disputa
-  const isKnockout = kind === "cup" || (kind === "international" && match.stage && !String(match.stage).startsWith("Grupo"));
+  // Em mata-mata (cup/intl knockout/world_tournament) não há empate — força decisão por disputa
+  const isKnockout =
+    kind === "cup" ||
+    kind === "world_tournament" ||
+    (kind === "international" && match.stage && !String(match.stage).startsWith("Grupo"));
   if (isKnockout && hg === ag) {
     if (Math.random() < (homeStr / (homeStr + awayStr))) hg++; else ag++;
   }
