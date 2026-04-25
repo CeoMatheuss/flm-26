@@ -233,7 +233,10 @@ export function MembersTab({ totalFans, reputation, wins = 0, draws = 0, losses 
             <p className="text-xl font-black text-emerald-400">{formatMoney(weeklyRevenue)}</p>
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-muted-foreground"><Users className="h-3 w-3 inline" /> {totalSubscribers} sócios</span>
-              <span className="text-emerald-400 font-bold flex items-center gap-0.5"><TrendingUp className="h-3 w-3" /> +{recentGrowth}/sem</span>
+              <span className={`font-bold flex items-center gap-0.5 ${recentGrowth >= 0 ? 'text-emerald-400' : 'text-destructive'}`}>
+                {recentGrowth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
+                {recentGrowth >= 0 ? '+' : ''}{recentGrowth}/sem
+              </span>
             </div>
           </CardContent>
         </Card>
