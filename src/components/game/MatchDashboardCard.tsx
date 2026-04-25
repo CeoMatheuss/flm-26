@@ -379,10 +379,60 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   // NOTE: Do NOT show pending bot friendlies as "scheduled" — they are on-demand only
   const lastFinished = [...club.matches].filter((m) => m.played).pop();
 
+  // ── Auto-hide do widget de resultado finalizado ──
+  // Regras: aparece por até FINISHED_DISPLAY_MS após detectar a partida finalizada.
+  // Reset automático quando o id muda (nova partida finalizada) ou quando uma live entra.
+  // Botão X também esconde manualmente. Ocultar imediatamente se uma nova live começar.
+  const FINISHED_DISPLAY_MS = 20_000; // 20s
+  const FADE_OUT_MS = 600;
+  const [finishedHidden, setFinishedHidden] = useState(false);
+  const [finishedFadingOut, setFinishedFadingOut] = useState(false);
+  const [trackedFinishedId, setTrackedFinishedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = lastFinished?.id ?? null;
+    if (id && id !== trackedFinishedId) {
+      // Nova partida finalizada detectada — reseta visibilidade
+      setTrackedFinishedId(id);
+      setFinishedHidden(false);
+      setFinishedFadingOut(false);
+    }
+    if (!id) {
+      setTrackedFinishedId(null);
+      setFinishedHidden(false);
+      setFinishedFadingOut(false);
+    }
+  }, [lastFinished?.id, trackedFinishedId]);
+
+  useEffect(() => {
+    // Esconde se a tela ficar oculta (mudou de aba, minimizou) — limpa o widget
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden' && trackedFinishedId) {
+        setFinishedHidden(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [trackedFinishedId]);
+
+  useEffect(() => {
+    if (!trackedFinishedId || finishedHidden || liveMatch) return;
+    const fadeTimer = setTimeout(() => setFinishedFadingOut(true), FINISHED_DISPLAY_MS - FADE_OUT_MS);
+    const hideTimer = setTimeout(() => setFinishedHidden(true), FINISHED_DISPLAY_MS);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+  }, [trackedFinishedId, finishedHidden, liveMatch]);
+
+  // Se uma nova partida ao vivo iniciar, esconde imediatamente o resultado anterior
+  useEffect(() => {
+    if (liveMatch && trackedFinishedId) {
+      setFinishedHidden(true);
+    }
+  }, [liveMatch, trackedFinishedId]);
+
   let status: MatchStatus = 'none';
   if (liveMatch) {
     status = 'live';
-  } else if (lastFinished) {
+  } else if (lastFinished && !finishedHidden) {
     status = 'finished';
   }
 
