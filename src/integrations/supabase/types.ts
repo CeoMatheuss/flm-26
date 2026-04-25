@@ -101,6 +101,60 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_access_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      beta_whitelist: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       chat_bans: {
         Row: {
           banned_at: string
@@ -2626,6 +2680,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_beta_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       auto_assign_league: {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
@@ -2677,6 +2735,7 @@ export type Database = {
         Returns: Json
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
+      reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
     }
     Enums: {
