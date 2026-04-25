@@ -707,12 +707,20 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [expandedWidget, setExpandedWidget] = useState<string | null>('stats');
 
   // ── Substitution system state ──
+  // SINGLE SOURCE OF TRUTH for player on-field state:
+  //   - substitutedPlayerIds: Set of starter IDs that LEFT the field (isSubstituted=true → cannot return)
+  //   - enteredInIds: Set of bench IDs that came IN (isOnField=true → cannot be brought in again)
+  //   - A starter not in substitutedPlayerIds is still on the field (isOnField=true)
+  //   - A bench player not in enteredInIds is still on the bench (isOnField=false)
   const [subsUsed, setSubsUsed] = useState(0);
   const [selectedSubOut, setSelectedSubOut] = useState<string | null>(null);
   const [substitutedPlayerIds, setSubstitutedPlayerIds] = useState<Set<string>>(new Set());
+  const [enteredInIds, setEnteredInIds] = useState<Set<string>>(new Set());
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // Local version counter — bumps on every substitution to force re-render of all consumers
+  const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
   const [enteredAtMap, setEnteredAtMap] = useState<Record<string, number>>({});
   const maxSubs = 5;
