@@ -261,20 +261,14 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     if (isNaN(dateTime.getTime())) return toast.error('Data/horário inválido');
     if (dateTime.getTime() < Date.now()) return toast.error('A data deve ser no futuro');
 
-    // Get opponent club data for stadium info
-    const { data: oppSave } = await supabase
-      .from('game_saves')
-      .select('club_data')
-      .eq('user_id', selectedOpponent.user_id)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Get opponent stadium info via SECURITY DEFINER RPC (no broad save access)
+    const { data: oppInfo } = await supabase
+      .rpc('get_user_stadium_info', { _user_id: selectedOpponent.user_id });
 
-    const oppClubData = oppSave?.club_data as any;
-    const oppClubName = oppClubData?.club?.name || selectedOpponent.display_name || 'Adversário';
-    const oppStadiumName = oppClubData?.club?.stadiumName || 'Estádio';
-    // Estimate capacity from infrastructure level
-    const oppStadiumLevel = oppClubData?.infrastructure?.stadium?.level || 1;
+    const oppRow = Array.isArray(oppInfo) ? (oppInfo[0] as any) : (oppInfo as any);
+    const oppClubName = oppRow?.club_name || selectedOpponent.display_name || 'Adversário';
+    const oppStadiumName = oppRow?.stadium_name || 'Estádio';
+    const oppStadiumLevel = oppRow?.stadium_level || 1;
     const stadiumCapacities: Record<number, number> = {
       1: 5000, 2: 8000, 3: 12000, 4: 18000, 5: 25000,
       6: 32000, 7: 40000, 8: 50000, 9: 60000, 10: 72000,

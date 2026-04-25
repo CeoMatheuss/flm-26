@@ -77,22 +77,11 @@ function genEvents(hg: number, ag: number, homeName: string, awayName: string) {
 
 async function getStrength(userId: string | null): Promise<number> {
   if (!userId) return 60;
-  const { data } = await supabase
-    .from('game_saves')
-    .select('club_data')
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const players = (data?.club_data as any)?.players as any[] | undefined;
-  if (!players || players.length === 0) return 60;
-  const healthy = players.filter(p => !p.injured);
-  const pool = (healthy.length ? healthy : players)
-    .slice()
-    .sort((a, b) => (b.overall || b.ovr || 0) - (a.overall || a.ovr || 0))
-    .slice(0, 11);
-  const sum = pool.reduce((s, p) => s + (p.overall || p.ovr || 60), 0);
-  return Math.round(sum / Math.max(1, pool.length));
+  // Use SECURITY DEFINER RPC so we don't need broad SELECT on game_saves.
+  const { data, error } = await supabase.rpc('get_user_team_strength', { _user_id: userId });
+  if (error || data == null) return 60;
+  const n = Number(data);
+  return Number.isFinite(n) && n > 0 ? n : 60;
 }
 
 function tryLock(matchId: string): boolean {
@@ -312,6 +301,26 @@ async function processTournamentMatch(m: any): Promise<boolean> {
 let scanInFlight = false;
 let cooldownUntil = 0;
 
+// Cross-tab scan lock — prevents two browser tabs from both running a scan
+// at the same instant. TTL is short so a crashed tab cannot block forever.
+const SCAN_LOCK_KEY = 'autosim_scan_lock';
+const SCAN_LOCK_TTL_MS = 8_000;
+
+function tryAcquireScanLock(): boolean {
+  try {
+    const raw = localStorage.getItem(SCAN_LOCK_KEY);
+    if (raw) {
+      const expires = parseInt(raw, 10);
+      if (Number.isFinite(expires) && expires > Date.now()) return false;
+    }
+    localStorage.setItem(SCAN_LOCK_KEY, String(Date.now() + SCAN_LOCK_TTL_MS));
+    return true;
+  } catch { return true; }
+}
+function releaseScanLock() {
+  try { localStorage.removeItem(SCAN_LOCK_KEY); } catch { /* ignore */ }
+}
+
 /**
  * Fetches the NEXT eligible pending match (priority: league → friendly →
  * tournament). Only matches whose scheduled time has passed are returned.
@@ -362,12 +371,14 @@ async function fetchNextEligibleMatch(): Promise<
 
 /**
  * Runs ONE simulation per call. Stops immediately after.
- * Concurrent calls are gated by `scanInFlight` and a post-sim cooldown.
+ * Concurrent calls are gated by `scanInFlight` (in-tab) AND a cross-tab
+ * localStorage lock with TTL.
  */
 async function runScan(): Promise<void> {
   if (scanInFlight) return;
   if (Date.now() < cooldownUntil) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  if (!tryAcquireScanLock()) return;
 
   scanInFlight = true;
   try {
@@ -391,6 +402,7 @@ async function runScan(): Promise<void> {
     console.warn('[autosim] scan error:', err);
   } finally {
     scanInFlight = false;
+    releaseScanLock();
   }
 }
 

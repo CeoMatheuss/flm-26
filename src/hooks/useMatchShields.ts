@@ -19,17 +19,16 @@ export function useMatchShields(homeTeam: string | undefined, awayTeam: string |
     const resolve = async () => {
       const found: Record<string, ShieldRenderProps> = {};
 
-      // 1. Try player game_saves.club_data
+      // 1. Public RPC — only returns shields for the requested club names
       try {
-        const { data: saves } = await supabase
-          .from('game_saves')
-          .select('club_data')
-          .limit(500);
-        if (saves) {
-          for (const row of saves) {
-            const cd: any = row.club_data;
-            if (cd?.club?.name && names.includes(cd.club.name) && !found[cd.club.name]) {
-              found[cd.club.name] = shieldPropsFromClub(cd.club);
+        const { data: shields } = await supabase
+          .rpc('get_club_shields_by_names', { _names: names });
+        if (Array.isArray(shields)) {
+          for (const row of shields as any[]) {
+            const name = row?.club_name as string | undefined;
+            const shield = row?.shield as any;
+            if (name && names.includes(name) && !found[name]) {
+              found[name] = shieldPropsFromClub({ shieldConfig: shield });
             }
           }
         }

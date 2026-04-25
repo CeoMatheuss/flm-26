@@ -2715,6 +2715,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_club_shields_by_names: {
+        Args: { _names: string[] }
+        Returns: {
+          club_name: string
+          shield: Json
+        }[]
+      }
+      get_public_club_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          club_logo: string
+          club_name: string
+          country: string
+          fans: number
+          members: number
+          reputation: number
+          stadium: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_user_club_shield: { Args: { _user_id: string }; Returns: Json }
+      get_user_stadium_info: {
+        Args: { _user_id: string }
+        Returns: {
+          club_name: string
+          stadium_level: number
+          stadium_name: string
+        }[]
+      }
+      get_user_team_strength: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
