@@ -11,6 +11,7 @@ import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
+import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 
 interface Props {
   club: Club;
