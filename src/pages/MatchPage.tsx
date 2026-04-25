@@ -794,32 +794,54 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
 
     const playerOut = homePlayers.find(p => p.id === next.outId);
     const playerIn = homePlayers.find(p => p.id === next.inId);
-    if (playerOut && playerIn) {
-      const subMinute = isHalftime ? 46 : currentMinute;
-      setSubsUsed(prev => prev + 1);
-      setSubstitutedPlayerIds(prev => new Set(prev).add(next.outId));
-      setEnteredAtMap(prev => ({
-        ...prev,
-        [next.inId]: subMinute,
-        [`__out_${next.outId}`]: subMinute,
-      }));
-      setActiveBanner({
-        minute: currentMinute,
-        playerOut: playerOut.name,
-        playerIn: playerIn.name,
-        teamName: homeTeam,
-        isHalftime,
-        shield: homeShield,
-      });
-      setInjectedSubEvents(prev => [...prev, {
-        minute: isHalftime ? 45 : currentMinute,
-        type: 'substitution',
-        team: 'home',
-        description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
-      } as SimEvent]);
+
+    // GUARDS — single source of truth checks (atomic before mutation)
+    if (!playerOut || !playerIn) {
+      console.warn('[SUB] Player not found, dropping queued sub', next);
+      setSubQueue(q => q.slice(1));
+      return;
     }
+    if (substitutedPlayerIds.has(playerOut.id)) {
+      console.warn('[SUB] playerOut already substituted, dropping', playerOut.id);
+      setSubQueue(q => q.slice(1));
+      return;
+    }
+    if (enteredInIds.has(playerIn.id)) {
+      console.warn('[SUB] playerIn already on field, dropping', playerIn.id);
+      setSubQueue(q => q.slice(1));
+      return;
+    }
+
+    const subMinute = isHalftime ? 46 : currentMinute;
+    setSubsUsed(prev => prev + 1);
+    setSubstitutedPlayerIds(prev => {
+      const n = new Set(prev); n.add(playerOut.id); return n;
+    });
+    setEnteredInIds(prev => {
+      const n = new Set(prev); n.add(playerIn.id); return n;
+    });
+    setEnteredAtMap(prev => ({
+      ...prev,
+      [next.inId]: subMinute,
+      [`__out_${next.outId}`]: subMinute,
+    }));
+    setSubStateVersion(v => v + 1);
+    setActiveBanner({
+      minute: currentMinute,
+      playerOut: playerOut.name,
+      playerIn: playerIn.name,
+      teamName: homeTeam,
+      isHalftime,
+      shield: homeShield,
+    });
+    setInjectedSubEvents(prev => [...prev, {
+      minute: isHalftime ? 45 : currentMinute,
+      type: 'substitution',
+      team: 'home',
+      description: `🔁 Substituição (${homeTeam}): ⬅️ ${playerOut.name} sai • ➡️ ${playerIn.name} entra`,
+    } as SimEvent]);
     setSubQueue(q => q.slice(1));
-  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield]);
+  }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds]);
 
   // Validation helper for substitutions — used by widget click + queue
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
