@@ -126,62 +126,34 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const acceptOpenSlot = async (slot: typeof openSlots[0]) => {
     if (slot.user_id === userId) return toast.error('Não pode aceitar sua própria partida');
-    // Anti-spam: bloqueia clique duplo no mesmo slot
-    if (acceptingSlotIds.has(slot.id)) {
-      toast.info('⏳ Já estamos processando este amistoso...');
-      return;
-    }
+    // Trava local — impede clique duplo no mesmo botão
+    if (acceptingSlotIds.has(slot.id)) return;
     setAcceptingSlotIds(prev => new Set(prev).add(slot.id));
-    // Remove otimisticamente da UI para evitar novos cliques
+    // Remove otimisticamente da UI
     setOpenSlots(prev => prev.filter(s => s.id !== slot.id));
-    setLoading(true);
 
-    // Reserva o slot ANTES de criar o invite — só prossegue se o slot ainda estava 'open'
-    const { data: reserved, error: reserveErr } = await supabase
-      .from('open_friendly_slots')
-      .update({ status: 'matched' })
-      .eq('id', slot.id)
-      .eq('status', 'open')
-      .select();
+    // Aceite atômico no servidor (SECURITY DEFINER) — apenas o primeiro vence
+    const { data, error } = await supabase.rpc('accept_open_friendly_slot' as any, { _slot_id: slot.id });
 
-    if (reserveErr || !reserved || reserved.length === 0) {
-      toast.error('⚠️ Este amistoso já foi aceito por outro jogador.');
-      setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
-      setLoading(false);
-      loadOpenSlots();
-      return;
-    }
-
-    const dateTime = new Date();
-    dateTime.setMinutes(dateTime.getMinutes() + 5);
-
-    const { error } = await supabase.from('friendly_invites').insert([{
-      sender_id: slot.user_id,
-      receiver_id: userId,
-      sender_club_name: slot.club_name,
-      receiver_club_name: clubName,
-      sender_stadium: slot.stadium_name,
-      receiver_stadium: stadiumName,
-      sender_stadium_capacity: slot.stadium_capacity,
-      receiver_stadium_capacity: stadiumCapacity,
-      home_team_id: slot.user_id,
-      match_date: dateTime.toISOString(),
-      status: 'accepted',
-    }]);
-
-    if (!error) {
-      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
-      triggerAutoSim(); // simula imediatamente, sem esperar horário
-      loadInvites();
-      loadOpenSlots();
+    if (error) {
+      const msg = String((error as any)?.message || '');
+      if (msg.includes('SLOT_ALREADY_TAKEN')) {
+        toast.error('⚠️ Este amistoso acabou de ser aceito por outro jogador.');
+      } else if (msg.includes('CANNOT_ACCEPT_OWN_SLOT')) {
+        toast.error('Você não pode aceitar sua própria partida.');
+      } else if (msg.includes('SLOT_NOT_FOUND')) {
+        toast.error('Este amistoso não existe mais.');
+      } else {
+        toast.error('Erro ao aceitar — tente novamente');
+      }
+      // Recarrega estado real do servidor
+      await loadOpenSlots();
     } else {
-      // Reverte reserva se a criação do invite falhou
-      await supabase.from('open_friendly_slots').update({ status: 'open' }).eq('id', slot.id);
-      toast.error('Erro ao aceitar — tente novamente');
-      loadOpenSlots();
+      toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
+      triggerAutoSim(); // simula imediatamente
+      await Promise.all([loadInvites(), loadOpenSlots()]);
     }
     setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
-    setLoading(false);
   };
 
   const cancelMySlot = async () => {
