@@ -3857,6 +3857,17 @@ export type Database = {
         Returns: number
       }
       close_expired_auctions: { Args: never; Returns: Json }
+      cwc_update_standings: {
+        Args: {
+          _ag: number
+          _ap: number
+          _away_id: string
+          _hg: number
+          _home_id: string
+          _hp: number
+        }
+        Returns: undefined
+      }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
