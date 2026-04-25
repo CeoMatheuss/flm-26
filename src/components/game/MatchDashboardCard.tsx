@@ -17,6 +17,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     home: string; away: string; date: string; tournament: string;
     matchId: string; homeTeamId: string; awayTeamId: string;
     opponentStrength: number; isHome: boolean; tournamentName: string;
+    stage?: string | null;
     status?: string; homeGoals?: number | null; awayGoals?: number | null; playedAt?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +88,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         isHome: isPlayerHome,
         tournamentName: tournament?.name || 'Campeonato',
         status: myMatch.status,
+        stage: (myMatch as any).stage ?? null,
         homeGoals: myMatch.home_goals ?? null,
         awayGoals: myMatch.away_goals ?? null,
         playedAt: myMatch.played_at || null,
@@ -135,6 +137,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
+    const stageStr = String(nextMatch.stage || '').toLowerCase();
+    const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
     navigate('/', {
       replace: true,
       state: {
@@ -145,6 +149,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           opponentStrength: nextMatch.opponentStrength,
           isHome: nextMatch.isHome,
           competition: nextMatch.tournamentName,
+          tieBreaker: isKnockout ? 'both' : 'none',
         },
       },
     });

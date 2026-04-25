@@ -196,7 +196,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   useEffect(() => {
     const st = location.state as {
       serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number; competition?: string };
-      playTournamentMatch?: { matchId: string; tournamentMatchId: string; opponentName: string; opponentStrength: number; isHome: boolean; competition: string };
+      playTournamentMatch?: { matchId: string; tournamentMatchId: string; opponentName: string; opponentStrength: number; isHome: boolean; competition: string; tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both' };
     } | null;
 
     if (st?.playTournamentMatch) {
@@ -216,6 +216,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           isHome: tm.isHome,
           competition: tm.competition,
           tournamentMatchId: tm.tournamentMatchId,
+          tieBreaker: tm.tieBreaker || 'none',
         },
       });
       return;

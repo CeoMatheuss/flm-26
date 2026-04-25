@@ -221,6 +221,84 @@ function simulateMatch(homeTeam: TeamData, awayTeam: TeamData) {
   return { homeGoals, awayGoals, ...result };
 }
 
+// ── Knockout tie-breaker (extra time → penalty shootout) ──
+// Applied AFTER 90' regulation when match cannot end in a draw.
+function resolveKnockoutTieBreaker(
+  baseHome: number, baseAway: number,
+  homeStr: number, awayStr: number,
+  homeName: string, awayName: string,
+) {
+  if (baseHome !== baseAway) {
+    return {
+      homeGoalsET: 0, awayGoalsET: 0,
+      hadExtraTime: false, hadShootout: false,
+      shootoutHome: 0, shootoutAway: 0,
+      winner: (baseHome > baseAway ? 'home' : 'away') as 'home' | 'away',
+      events: [] as any[],
+    };
+  }
+  const events: any[] = [];
+  const total = Math.max(60, homeStr + awayStr);
+  const homeGoalsET = Math.min(3, poissonSample(2.6 * (homeStr * 1.05 / total) * 0.34));
+  const awayGoalsET = Math.min(3, poissonSample(2.6 * (awayStr / total) * 0.34));
+
+  events.push({ minute: 91, type: 'extra_time_start', team: 'neutral', description: `⏱️ Empate em 90'! Vamos para a prorrogação.`, animType: 'kickoff' });
+
+  const used = new Set<number>();
+  const pickMin = () => {
+    let m = 91 + Math.floor(rng() * 30); let tries = 0;
+    while (used.has(m) && tries < 30) { m = 91 + Math.floor(rng() * 30); tries++; }
+    used.add(m);
+    return m;
+  };
+  for (let i = 0; i < homeGoalsET; i++) events.push({ minute: pickMin(), type: 'foot_goal', team: 'home', isGoal: true, playerName: 'Atacante', description: `⚽ GOL na prorrogação para ${homeName}!`, animType: 'goal' });
+  for (let i = 0; i < awayGoalsET; i++) events.push({ minute: pickMin(), type: 'foot_goal', team: 'away', isGoal: true, playerName: 'Atacante', description: `⚽ GOL na prorrogação para ${awayName}!`, animType: 'goal' });
+  events.push({ minute: 120, type: 'extra_time_end', team: 'neutral', description: `⏸️ Fim da prorrogação: ${baseHome + homeGoalsET} x ${baseAway + awayGoalsET}.`, animType: 'final' });
+
+  const totalH = baseHome + homeGoalsET;
+  const totalA = baseAway + awayGoalsET;
+  if (totalH !== totalA) {
+    return {
+      homeGoalsET, awayGoalsET,
+      hadExtraTime: true, hadShootout: false,
+      shootoutHome: 0, shootoutAway: 0,
+      winner: (totalH > totalA ? 'home' : 'away') as 'home' | 'away',
+      events,
+    };
+  }
+
+  events.push({ minute: 121, type: 'penalty_shootout_start', team: 'neutral', description: `🎯 Prorrogação não decidiu. Vamos para os pênaltis!`, animType: 'kickoff' });
+
+  const homeConv = Math.min(0.92, 0.72 + (homeStr - 60) * 0.004);
+  const awayConv = Math.min(0.92, 0.72 + (awayStr - 60) * 0.004);
+  let sH = 0, sA = 0; let kickMin = 121;
+  for (let i = 0; i < 5; i++) {
+    const hs = rng() < homeConv; if (hs) sH++;
+    events.push({ minute: kickMin++, type: hs ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'home', isGoal: hs, animType: 'penalty', description: hs ? `🎯 ${homeName} converte (${sH}-${sA}).` : `❌ ${homeName} desperdiça (${sH}-${sA}).` });
+    const as_ = rng() < awayConv; if (as_) sA++;
+    events.push({ minute: kickMin++, type: as_ ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'away', isGoal: as_, animType: 'penalty', description: as_ ? `🎯 ${awayName} converte (${sH}-${sA}).` : `❌ ${awayName} desperdiça (${sH}-${sA}).` });
+    const remaining = 5 - (i + 1);
+    if (Math.abs(sH - sA) > remaining) break;
+  }
+  while (sH === sA) {
+    const hs = rng() < homeConv; if (hs) sH++;
+    events.push({ minute: kickMin++, type: hs ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'home', isGoal: hs, animType: 'penalty', description: hs ? `🎯 Morte súbita: ${homeName} marca (${sH}-${sA}).` : `❌ Morte súbita: ${homeName} para no goleiro (${sH}-${sA}).` });
+    const as_ = rng() < awayConv; if (as_) sA++;
+    events.push({ minute: kickMin++, type: as_ ? 'penalty_shootout' : 'penalty_shootout_miss', team: 'away', isGoal: as_, animType: 'penalty', description: as_ ? `🎯 Morte súbita: ${awayName} marca (${sH}-${sA}).` : `❌ Morte súbita: ${awayName} para no goleiro (${sH}-${sA}).` });
+  }
+  const winner: 'home' | 'away' = sH > sA ? 'home' : 'away';
+  events.push({ minute: kickMin, type: 'penalty_shootout_end', team: 'neutral', description: `🏆 ${winner === 'home' ? homeName : awayName} vence nos pênaltis ${sH}x${sA}!`, animType: 'final' });
+  return { homeGoalsET, awayGoalsET, hadExtraTime: true, hadShootout: true, shootoutHome: sH, shootoutAway: sA, winner, events };
+}
+
+function isKnockoutStageStr(stage: string | null | undefined): boolean {
+  if (!stage) return false;
+  const s = String(stage).toLowerCase();
+  if (s.startsWith('grupo')) return false;
+  if (s === 'league' || s === 'liga' || s === 'group') return false;
+  return true;
+}
+
 // ══════════════════════════════════════════════
 // LEAGUE PROCESSING — auto-simulate league rounds
 // ══════════════════════════════════════════════
@@ -479,24 +557,37 @@ async function processCupMatches(supabase: any, now: Date) {
 
     const result = simulateMatch(home, away);
 
+    // Cup matches are ALWAYS knockout — apply ET → penalties when tied.
+    const tb = resolveKnockoutTieBreaker(
+      result.homeGoals, result.awayGoals,
+      home.bot_strength, away.bot_strength,
+      home.club_name, away.club_name,
+    );
+    const finalHome = result.homeGoals + tb.homeGoalsET;
+    const finalAway = result.awayGoals + tb.awayGoalsET;
+    const mergedEvents = [...result.events, ...tb.events];
+
     await supabase.from('cup_matches').update({
-      home_goals: result.homeGoals,
-      away_goals: result.awayGoals,
+      home_goals: finalHome,
+      away_goals: finalAway,
       match_data: {
-        events: result.events,
+        events: mergedEvents,
         goal_scorers: result.goalScorers,
         player_ratings: result.playerRatings,
         home_players: result.homePlayers,
         stats: result.stats,
+        extra_time: tb.hadExtraTime,
+        shootout: tb.hadShootout,
+        shootout_home: tb.shootoutHome,
+        shootout_away: tb.shootoutAway,
+        knockout_winner: tb.winner,
       },
       status: 'played',
       played_at: nowISO,
     }).eq('id', match.id);
 
-    // Eliminate loser
-    const winnerId = result.homeGoals > result.awayGoals ? homeTeam.id
-      : result.awayGoals > result.homeGoals ? awayTeam.id
-      : rng() > 0.5 ? homeTeam.id : awayTeam.id;
+    // Eliminate loser — ET/shootout always produces a definitive winner now.
+    const winnerId = tb.winner === 'home' ? homeTeam.id : awayTeam.id;
     const loserId = winnerId === homeTeam.id ? awayTeam.id : homeTeam.id;
 
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
@@ -526,7 +617,11 @@ async function processCupMatches(supabase: any, now: Date) {
     if (allPlayed) {
       const winners: string[] = [];
       for (const m of roundMatches) {
-        if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
+        // Prefer explicit knockout_winner (from ET/shootout) when 90' was a draw.
+        const koWinner = m.match_data?.knockout_winner as 'home' | 'away' | null | undefined;
+        if (koWinner === 'home') winners.push(m.home_team_id);
+        else if (koWinner === 'away') winners.push(m.away_team_id);
+        else if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
         else if ((m.away_goals ?? 0) > (m.home_goals ?? 0)) winners.push(m.away_team_id);
         else winners.push(rng() > 0.5 ? m.home_team_id : m.away_team_id);
       }
@@ -657,30 +752,48 @@ Deno.serve(async (req) => {
 
         const result = simulateMatch(enhancedHome, enhancedAway);
 
+        // Apply ET → penalties on knockout stages (skip group/league stages).
+        const isKO = isKnockoutStageStr(match.stage);
+        const tb = isKO
+          ? resolveKnockoutTieBreaker(
+              result.homeGoals, result.awayGoals,
+              enhancedHome.bot_strength, enhancedAway.bot_strength,
+              enhancedHome.club_name, enhancedAway.club_name,
+            )
+          : null;
+        const finalHome = result.homeGoals + (tb?.homeGoalsET ?? 0);
+        const finalAway = result.awayGoals + (tb?.awayGoalsET ?? 0);
+        const mergedEvents = tb ? [...result.events, ...tb.events] : result.events;
+
         await supabase.from('custom_tournament_matches').update({
-          home_goals: result.homeGoals,
-          away_goals: result.awayGoals,
+          home_goals: finalHome,
+          away_goals: finalAway,
           match_data: {
-            events: result.events,
+            events: mergedEvents,
             goal_scorers: result.goalScorers,
             player_ratings: result.playerRatings,
             home_players: result.homePlayers,
             stats: result.stats,
+            extra_time: tb?.hadExtraTime ?? false,
+            shootout: tb?.hadShootout ?? false,
+            shootout_home: tb?.shootoutHome ?? 0,
+            shootout_away: tb?.shootoutAway ?? 0,
+            knockout_winner: tb?.winner ?? null,
           },
           status: 'played',
           played_at: nowISO,
         }).eq('id', match.id);
 
-        const homePoints = result.homeGoals > result.awayGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
-        const awayPoints = result.awayGoals > result.homeGoals ? 3 : result.homeGoals === result.awayGoals ? 1 : 0;
+        const homePoints = finalHome > finalAway ? 3 : finalHome === finalAway ? 1 : 0;
+        const awayPoints = finalAway > finalHome ? 3 : finalHome === finalAway ? 1 : 0;
 
         await supabase.from('custom_tournament_teams').update({
           played: (homeTeam as any).played + 1,
           wins: (homeTeam as any).wins + (homePoints === 3 ? 1 : 0),
           draws: (homeTeam as any).draws + (homePoints === 1 ? 1 : 0),
           losses: (homeTeam as any).losses + (homePoints === 0 ? 1 : 0),
-          goals_for: (homeTeam as any).goals_for + result.homeGoals,
-          goals_against: (homeTeam as any).goals_against + result.awayGoals,
+          goals_for: (homeTeam as any).goals_for + finalHome,
+          goals_against: (homeTeam as any).goals_against + finalAway,
           points: (homeTeam as any).points + homePoints,
         }).eq('id', homeTeam.id);
 
@@ -689,8 +802,8 @@ Deno.serve(async (req) => {
           wins: (awayTeam as any).wins + (awayPoints === 3 ? 1 : 0),
           draws: (awayTeam as any).draws + (awayPoints === 1 ? 1 : 0),
           losses: (awayTeam as any).losses + (awayPoints === 0 ? 1 : 0),
-          goals_for: (awayTeam as any).goals_for + result.awayGoals,
-          goals_against: (awayTeam as any).goals_against + result.homeGoals,
+          goals_for: (awayTeam as any).goals_for + finalAway,
+          goals_against: (awayTeam as any).goals_against + finalHome,
           points: (awayTeam as any).points + awayPoints,
         }).eq('id', awayTeam.id);
 
@@ -722,7 +835,10 @@ Deno.serve(async (req) => {
         if (allPlayed && roundMatches.length > 0) {
           const winners: string[] = [];
           for (const m of roundMatches) {
-            if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
+            const koWinner = (m.match_data as any)?.knockout_winner as 'home' | 'away' | null | undefined;
+            if (koWinner === 'home') winners.push(m.home_team_id);
+            else if (koWinner === 'away') winners.push(m.away_team_id);
+            else if ((m.home_goals ?? 0) > (m.away_goals ?? 0)) winners.push(m.home_team_id);
             else if ((m.away_goals ?? 0) > (m.home_goals ?? 0)) winners.push(m.away_team_id);
             else winners.push(rng() > 0.5 ? m.home_team_id : m.away_team_id);
 
