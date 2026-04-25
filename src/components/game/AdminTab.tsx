@@ -19,6 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { AdminVersionPanel } from './admin/AdminVersionPanel';
 interface PendingUser {
   id: string;
   user_id: string;
