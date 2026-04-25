@@ -496,7 +496,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     cups:       ['system', 'tournaments'],
     clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support'],
+    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions'],
     simulation: ['system'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -516,6 +516,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     announcements:  { label: 'Anúncios IA',  icon: Image },
     direct_msg:     { label: 'Msg Direta',   icon: Megaphone },
     support:        { label: 'Suporte',      icon: LifeBuoy },
+    versions:       { label: 'Versões',      icon: Shield },
   };
 
   return (
@@ -1343,6 +1344,11 @@ export function AdminTab({ userId, isFounder }: Props) {
         {/* Support Tickets Tab */}
         <TabsContent value="support" className="space-y-3 mt-3">
           <AdminSupportPanel adminUserId={userId} />
+        </TabsContent>
+
+        {/* Versioning & Anti-exploit */}
+        <TabsContent value="versions" className="space-y-3 mt-3">
+          <AdminVersionPanel />
         </TabsContent>
       </Tabs>
       </AdminLayout>
