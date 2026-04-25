@@ -397,6 +397,48 @@ export type Database = {
           },
         ]
       }
+      continental_qualifications: {
+        Row: {
+          club_logo: string | null
+          club_name: string
+          consumed: boolean
+          continent: string
+          country: string
+          id: string
+          qualified_at: string
+          season_year: number
+          source: string
+          tier: string
+          user_id: string | null
+        }
+        Insert: {
+          club_logo?: string | null
+          club_name: string
+          consumed?: boolean
+          continent: string
+          country: string
+          id?: string
+          qualified_at?: string
+          season_year: number
+          source: string
+          tier: string
+          user_id?: string | null
+        }
+        Update: {
+          club_logo?: string | null
+          club_name?: string
+          consumed?: boolean
+          continent?: string
+          country?: string
+          id?: string
+          qualified_at?: string
+          season_year?: number
+          source?: string
+          tier?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       continental_teams: {
         Row: {
           bot_strength: number | null
@@ -3653,6 +3695,10 @@ export type Database = {
         }
       }
       fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
+      finish_national_cup_award_continental: {
+        Args: { _cup_id: string }
+        Returns: undefined
+      }
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
@@ -3726,6 +3772,7 @@ export type Database = {
         Args: { _continent: string; _season_year: number }
         Returns: Json
       }
+      qualify_national_cup_teams: { Args: { _country: string }; Returns: Json }
       random_bot_logo: { Args: never; Returns: string }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
@@ -3740,6 +3787,10 @@ export type Database = {
           _start_date?: string
           _tier: string
         }
+        Returns: string
+      }
+      start_national_cup: {
+        Args: { _country: string; _season_year: number }
         Returns: string
       }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
