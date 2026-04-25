@@ -132,6 +132,14 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
+  // Loan marketplace filters
+  const [loanPosFilter, setLoanPosFilter] = useState('all');
+  const [loanOvrMin, setLoanOvrMin] = useState('');
+  const [loanOvrMax, setLoanOvrMax] = useState('');
+  const [loanAgeMin, setLoanAgeMin] = useState('');
+  const [loanAgeMax, setLoanAgeMax] = useState('');
+  const [loanSalaryMax, setLoanSalaryMax] = useState('');
+
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
   const [offerSalary, setOfferSalary] = useState(500);
@@ -774,7 +782,102 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             </Button>
           </div>
 
-          {/* My loan listings */}
+          {/* Public loan marketplace */}
+          {(() => {
+            const publicLoans = loanListings.filter(l => l.seller_id !== userId);
+            const ovrMin = Number(loanOvrMin);
+            const ovrMax = Number(loanOvrMax);
+            const ageMin = Number(loanAgeMin);
+            const ageMax = Number(loanAgeMax);
+            const salMax = Number(loanSalaryMax);
+            const filtered = publicLoans.filter(l => {
+              if (loanPosFilter !== 'all' && l.player_position !== loanPosFilter) return false;
+              if (loanOvrMin && !isNaN(ovrMin) && l.player_overall < ovrMin) return false;
+              if (loanOvrMax && !isNaN(ovrMax) && l.player_overall > ovrMax) return false;
+              if (loanAgeMin && !isNaN(ageMin) && l.player_age < ageMin) return false;
+              if (loanAgeMax && !isNaN(ageMax) && l.player_age > ageMax) return false;
+              if (loanSalaryMax && !isNaN(salMax) && (l.salary || 0) > salMax * 1000) return false;
+              return true;
+            });
+            const hasFilters = loanPosFilter !== 'all' || loanOvrMin || loanOvrMax || loanAgeMin || loanAgeMax || loanSalaryMax;
+            return (
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Jogadores disponíveis para empréstimo</p>
+                <div className="flex flex-wrap gap-1.5 items-center rounded-lg p-2" style={{ background: 'hsl(var(--card))' }}>
+                  <Select value={loanPosFilter} onValueChange={setLoanPosFilter}>
+                    <SelectTrigger className="h-7 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas pos.</SelectItem>
+                      <SelectItem value="GOL">GOL</SelectItem>
+                      <SelectItem value="ZAG">ZAG</SelectItem>
+                      <SelectItem value="LAT">LAT</SelectItem>
+                      <SelectItem value="VOL">VOL</SelectItem>
+                      <SelectItem value="MEI">MEI</SelectItem>
+                      <SelectItem value="ATA">ATA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder="OVR min" type="number" value={loanOvrMin} onChange={e => setLoanOvrMin(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
+                  <Input placeholder="OVR max" type="number" value={loanOvrMax} onChange={e => setLoanOvrMax(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
+                  <Input placeholder="Idade min" type="number" value={loanAgeMin} onChange={e => setLoanAgeMin(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
+                  <Input placeholder="Idade max" type="number" value={loanAgeMax} onChange={e => setLoanAgeMax(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
+                  <Input placeholder="Sal. max (k)" type="number" value={loanSalaryMax} onChange={e => setLoanSalaryMax(e.target.value)} className="h-7 w-[90px] text-[10px] rounded-lg" />
+                  {hasFilters && (
+                    <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => {
+                      setLoanPosFilter('all'); setLoanOvrMin(''); setLoanOvrMax(''); setLoanAgeMin(''); setLoanAgeMax(''); setLoanSalaryMax('');
+                    }}>
+                      <X className="h-3 w-3 mr-1" /> Limpar
+                    </Button>
+                  )}
+                </div>
+
+                {filtered.length === 0 ? (
+                  <div className="text-center py-6 text-[11px] text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                    Nenhum jogador disponível {hasFilters ? 'com esses filtros.' : 'no momento.'}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {filtered.map(l => {
+                      const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
+                      return (
+                        <div key={l.id} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                          <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                            <span className={`text-xs font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
+                            <span className={`text-[7px] font-bold ${pos.text}`}>{l.player_position}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate">{l.player_name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {l.player_age} anos • {l.seller_club_name}
+                            </p>
+                            <p className="text-[10px] text-cyan-400 font-semibold">
+                              💰 R$ {((l.salary || 0) / 1000).toFixed(0)}k/mês • ⏳ 1 temporada
+                            </p>
+                          </div>
+                          <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1" disabled={loading} onClick={async () => {
+                            setLoading(true);
+                            const res = await supabase.functions.invoke('process-transfer', {
+                              body: { action: 'loan-accept', listingId: l.id, clubName },
+                            });
+                            setLoading(false);
+                            if (res.error || res.data?.error) {
+                              toast.error(res.data?.error || res.error?.message || 'Erro ao tomar emprestado');
+                            } else {
+                              toast.success(`✅ ${l.player_name} chegou por empréstimo!`);
+                              if (onLoanIn && res.data?.playerData) onLoanIn(res.data.playerData as Player);
+                              loadLoanListings();
+                            }
+                          }}>
+                            <ArrowLeftRight className="h-3 w-3" /> Tomar
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {loanListings.filter(l => l.seller_id === userId).length > 0 && (
             <div className="space-y-1.5">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado de empréstimo</p>

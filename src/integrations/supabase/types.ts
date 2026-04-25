@@ -101,6 +101,41 @@ export type Database = {
         }
         Relationships: []
       }
+      auction_bids: {
+        Row: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          bidder_name: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          bidder_name: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          auction_id?: string
+          bidder_id?: string
+          bidder_name?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "player_auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_access_requests: {
         Row: {
           created_at: string
@@ -1830,6 +1865,7 @@ export type Database = {
           current_bidder_name: string | null
           expires_at: string
           id: string
+          is_system: boolean
           min_price: number
           player_age: number
           player_data: Json
@@ -1846,6 +1882,7 @@ export type Database = {
           current_bidder_name?: string | null
           expires_at?: string
           id?: string
+          is_system?: boolean
           min_price: number
           player_age: number
           player_data: Json
@@ -1862,6 +1899,7 @@ export type Database = {
           current_bidder_name?: string | null
           expires_at?: string
           id?: string
+          is_system?: boolean
           min_price?: number
           player_age?: number
           player_data?: Json
@@ -2756,6 +2794,11 @@ export type Database = {
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
         Returns: boolean
+      }
+      next_sunday_17: { Args: never; Returns: string }
+      place_auction_bid: {
+        Args: { _amount: number; _auction_id: string }
+        Returns: Json
       }
       process_season_transition: {
         Args: { _country: string }
