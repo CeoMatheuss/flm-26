@@ -35,6 +35,22 @@ interface ReportData {
   };
 }
 
+interface AggregateInfo {
+  homeTeam: string;
+  awayTeam: string;
+  leg1Home: number;
+  leg1Away: number;
+  leg2Home: number;
+  leg2Away: number;
+  aggHome: number;
+  aggAway: number;
+  advanced: 'home' | 'away';
+  tieBreaker: 'aggregate' | 'extra_time' | 'penalties';
+  shootoutHome?: number;
+  shootoutAway?: number;
+  summary: string;
+}
+
 interface Props {
   matchDbId: string;
   onClose: () => void;
