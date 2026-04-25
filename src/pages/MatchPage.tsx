@@ -719,6 +719,28 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
   const [activeBanner, setActiveBanner] = useState<SubBannerData | null>(null);
   const [subQueue, setSubQueue] = useState<{ outId: string; inId: string; scheduledMinute?: number }[]>([]);
   const [injectedSubEvents, setInjectedSubEvents] = useState<SimEvent[]>([]);
+  // shared_match_id resolvido a partir do live_matches.id — chave compartilhada
+  // entre os dois clientes (cada um tem seu próprio live_matches.id, mas ambos têm o mesmo shared_match_id).
+  const [sharedMatchId, setSharedMatchId] = useState<string | null>(null);
+
+  // Resolve shared_match_id assim que matchDbId estiver disponível
+  useEffect(() => {
+    if (!matchDbId || matchDbId.startsWith('offline-')) {
+      setSharedMatchId(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('live_matches')
+      .select('shared_match_id, match_id')
+      .eq('id', matchDbId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setSharedMatchId(data.shared_match_id || data.match_id || null);
+      });
+    return () => { cancelled = true; };
+  }, [matchDbId]);
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
