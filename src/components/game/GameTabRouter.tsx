@@ -96,7 +96,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
   return (
     <>
       <TabsContent value="dashboard">
-        <DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} clubProfile={game.clubProfile} season={game.season?.currentSeason} onViewClub={(name) => { toast.info(`Perfil de ${name}`); }} />
+        <DashboardTab club={game.club} events={game.events} infrastructure={game.infrastructure} onOpenNewspaper={() => setActiveTab('journal')} onGoToFriendly={() => setActiveTab('matches')} userId={userId} onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} clubProfile={game.clubProfile} season={game.season?.currentSeason} currentWeek={game.season?.currentWeek} totalWeeks={game.season?.totalWeeks} onViewClub={(name) => { toast.info(`Perfil de ${name}`); }} />
       </TabsContent>
       <TabsContent value="tournament">
         {activeTournamentId ? (
