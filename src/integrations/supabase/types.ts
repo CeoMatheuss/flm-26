@@ -3402,6 +3402,7 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
+      close_expired_auctions: { Args: never; Returns: Json }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
