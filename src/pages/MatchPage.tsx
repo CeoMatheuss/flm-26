@@ -958,7 +958,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchDbId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
+  }, [sharedMatchId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
 
   // Validation helper for substitutions — used by widget click + queue
 
