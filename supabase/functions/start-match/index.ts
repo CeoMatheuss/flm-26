@@ -318,8 +318,13 @@ function generateReport(
   if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
   if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
 
-  const attendance = Math.floor(stadiumCapacity * (0.5 + rng() * 0.45));
-  const ticketRevenue = attendance * (50 + Math.floor(rng() * 30));
+  // Use público autoritativo da partida quando disponível; nunca random aqui.
+  const attendance = typeof attendanceOverride === 'number'
+    ? attendanceOverride
+    : Math.floor(stadiumCapacity * 0.6);
+  const ticketRevenue = typeof ticketRevenueOverride === 'number'
+    ? ticketRevenueOverride
+    : attendance * 25;
   let moraleChange = 0;
   if (result === 'win') moraleChange = resultType === 'rout_win' ? 15 : 10;
   else if (result === 'loss') moraleChange = resultType === 'rout_loss' ? -15 : -8;
