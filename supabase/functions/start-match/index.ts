@@ -263,7 +263,8 @@ function generateReport(
   stats: any, playerRatings: Record<string, number>, goalScorers: any[],
   manOfTheMatch: string | undefined, isHome: boolean, competition: string,
   homeStrength: number, awayStrength: number, tactics: any, stadiumCapacity: number,
-  homePlayers: SimPlayer[], awayPlayers: SimPlayer[]
+  homePlayers: SimPlayer[], awayPlayers: SimPlayer[],
+  attendanceOverride?: number, ticketRevenueOverride?: number
 ) {
   const isUserHome = isHome;
   const userGoals = isUserHome ? homeGoals : awayGoals;
