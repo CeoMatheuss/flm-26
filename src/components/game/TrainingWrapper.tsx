@@ -1,15 +1,24 @@
 /**
- * TrainingWrapper — Container with two sub-tabs: Treinos (regular) and Treinos 2D.
+ * TrainingWrapper — Container with sub-tabs:
+ *  - Treinos (rotina semanal)
+ *  - Treinos 2D (drills)
+ *  - Infraestrutura (Fisioterapia + Centro de Treinamento + Salas do CT)
  */
 import { useState, useCallback } from 'react';
 import type { Player } from '@/types/game';
 import type { Infrastructure } from '@/types/infrastructure';
 import type { TacticsConfig } from '@/types/tactics';
 import type { TrainingFocusKey } from '@/training/TrainingTypes';
+import type { CTRooms } from '@/types/ctRooms';
 import { TrainingTab } from './TrainingTab';
 import { TrainingMatchCanvas, TrainingReport } from './TrainingMatchCanvas';
-import { Dumbbell, Gamepad2 } from 'lucide-react';
+import { InfrastructureTab } from './InfrastructureTab';
+import { TrainingCenterTab } from './TrainingCenterTab';
+import { CTRoomsTab } from './CTRoomsTab';
+import { Dumbbell, Gamepad2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type FacilityKey = 'trainingCenter' | 'physiotherapy' | 'youthAcademy' | 'stadium';
 
 interface Props {
   players: Player[];
@@ -25,6 +34,11 @@ interface Props {
   userId?: string;
   budget?: number;
   onUpgradeCT?: () => void;
+  /** Full facility upgrade callback (Fisio + CT) — required for Infra sub-tab */
+  onUpgradeFacility?: (facility: FacilityKey) => void;
+  /** CT Rooms data for the rooms sub-tab */
+  ctRooms?: CTRooms;
+  onUpgradeCTRoom?: (room: keyof CTRooms) => void;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
@@ -38,10 +52,11 @@ const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
 
 export function TrainingWrapper({
   players, infrastructure, trainingFocus, onSetTrainingFocus,
-  trainingIntensity, onSetTrainingIntensity, budget, onUpgradeCT,
+  trainingIntensity, onSetTrainingIntensity, budget = 0, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
+  onUpgradeFacility, ctRooms, onUpgradeCTRoom,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'training' | 'training2d'>('training');
+  const [activeTab, setActiveTab] = useState<'training' | 'training2d' | 'infra'>('training');
 
   const handleTrainingFinish = useCallback((report: TrainingReport) => {
     if (!onPlayersUpdate || !report.drill) return;
@@ -49,7 +64,6 @@ export function TrainingWrapper({
     const bonuses = DRILL_BONUS_MAP[report.drill] || {};
     if (Object.keys(bonuses).length === 0) return;
 
-    // Apply temporary bonuses (last 3 matches worth of time ~2h)
     const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
     const updated = players.map(p => ({
       ...p,
@@ -65,34 +79,30 @@ export function TrainingWrapper({
     toast.success(`🎯 Treino 2D aplicou bônus: ${bonusNames} para o próximo jogo!`);
   }, [players, onPlayersUpdate]);
 
+  const tabBtn = (key: typeof activeTab, label: string, Icon: any) => (
+    <button
+      onClick={() => setActiveTab(key)}
+      className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-xs font-semibold transition-all ${
+        activeTab === key
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+      }`}
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+
   return (
     <div className="space-y-3">
       {/* Sub-tab selector */}
       <div className="flex gap-1 p-1 bg-muted/20 rounded-lg border border-border/30">
-        <button
-          onClick={() => setActiveTab('training')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-xs font-semibold transition-all ${
-            activeTab === 'training'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-          }`}
-        >
-          <Dumbbell className="h-4 w-4" /> Treinos
-        </button>
-        <button
-          onClick={() => setActiveTab('training2d')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-xs font-semibold transition-all ${
-            activeTab === 'training2d'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-          }`}
-        >
-          <Gamepad2 className="h-4 w-4" /> Treinos 2D
-        </button>
+        {tabBtn('training', 'Treinos', Dumbbell)}
+        {tabBtn('training2d', 'Treinos 2D', Gamepad2)}
+        {tabBtn('infra', 'Infraestrutura', Building2)}
       </div>
 
       {/* Content */}
-      {activeTab === 'training' ? (
+      {activeTab === 'training' && (
         <TrainingTab
           players={players}
           infrastructure={infrastructure}
@@ -107,8 +117,34 @@ export function TrainingWrapper({
           budget={budget}
           onUpgradeCT={onUpgradeCT}
         />
-      ) : (
+      )}
+      {activeTab === 'training2d' && (
         <TrainingMatchCanvas clubName={clubName} players={players} onFinish={handleTrainingFinish} />
+      )}
+      {activeTab === 'infra' && (
+        <div className="space-y-4">
+          <InfrastructureTab
+            infrastructure={infrastructure}
+            budget={budget}
+            players={players}
+            onUpgrade={(f) => onUpgradeFacility?.(f)}
+          />
+          {onUpgradeFacility && (
+            <TrainingCenterTab
+              infrastructure={infrastructure}
+              budget={budget}
+              onUpgradeFacility={onUpgradeFacility}
+            />
+          )}
+          {ctRooms && onUpgradeCTRoom && (
+            <CTRoomsTab
+              rooms={ctRooms}
+              budget={budget}
+              trainingCenterLevel={infrastructure?.trainingCenter?.level ?? 1}
+              onUpgradeRoom={onUpgradeCTRoom}
+            />
+          )}
+        </div>
       )}
     </div>
   );

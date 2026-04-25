@@ -57,8 +57,14 @@ function minIncrement(currentBid: number): number {
 }
 
 function fmtMoney(v: number): string {
-  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  // Formato realista: até <1M mostra em K (sem decimais), 1M+ mostra em M (1 casa só se necessário)
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    // 1.0M -> "1M", 1.5M -> "1,5M"
+    const formatted = m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace('.', ',');
+    return `R$ ${formatted}M`;
+  }
+  if (v >= 1_000) return `R$ ${Math.round(v / 1_000)}K`;
   return `R$ ${v}`;
 }
 
@@ -113,14 +119,16 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
   const eligiblePlayers = players.filter(p => p.overall >= 60 && (p.age || 25) <= 35);
 
   const computeStartPrice = (player: any): number => {
+    // Preços de leilão mais realistas (50-70% mais baratos que mercado)
     const ovr = Math.max(60, Math.min(99, player.overall || 60));
-    const ovrFactor = Math.pow((ovr - 55) / 10, 2.4);
-    let price = Math.round(150_000 * ovrFactor);
+    // Curva mais suave: 60 OVR ~50K, 70 OVR ~150K, 80 OVR ~500K, 90 OVR ~2M
+    const ovrFactor = Math.pow((ovr - 55) / 10, 2.0);
+    let price = Math.round(60_000 * ovrFactor);
     const age = player.age || 25;
-    if (age <= 24) price = Math.round(price * 1.2);
-    else if (age >= 32) price = Math.round(price * 0.75);
-    else if (age >= 30) price = Math.round(price * 0.9);
-    return Math.max(100_000, Math.min(50_000_000, price));
+    if (age <= 24) price = Math.round(price * 1.15);
+    else if (age >= 32) price = Math.round(price * 0.6);
+    else if (age >= 30) price = Math.round(price * 0.8);
+    return Math.max(50_000, Math.min(20_000_000, price));
   };
 
   const handleCreateAuction = async (player: any) => {

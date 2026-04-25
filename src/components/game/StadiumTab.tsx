@@ -208,16 +208,7 @@ export function StadiumTab({
         onRejectSponsor={onRejectStadiumSponsor}
       />
 
-      {/* Fase 6 — Sócio-torcedor + Modernizações */}
-      <StadiumPhase6Panel
-        phase6={ops.phase6}
-        budget={budget}
-        fans={fans}
-        reputation={reputation}
-        stadiumLevel={stadium.level}
-        onToggleMembership={onToggleMembershipTier}
-        onBuyUpgrade={onBuyModularUpgrade}
-      />
+      {/* Fase 6 — Sócio-torcedor agora é gerenciado exclusivamente na aba "Sócios Torcedores" */}
 
       {/* Receita detalhada */}
       <Card>
