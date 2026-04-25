@@ -2727,6 +2727,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
       approve_beta_request: {
         Args: { _request_id: string }
         Returns: undefined
