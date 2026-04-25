@@ -1992,12 +1992,16 @@ function LineupView({
           {starters.map((p, i) => {
             const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
             const staminaColor = staminaColorClass(stamina);
+            const cameInAsSub = enteredInIds?.has(p.id);
             return (
               <div key={p.id || i} className="flex items-center gap-2 sm:gap-3 bg-card/40 border border-border/20 rounded-lg px-2.5 sm:px-3 py-2.5">
                 <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-4 sm:w-5">{i + 1}</span>
                 <Badge variant="outline" className="text-[10px] sm:text-xs font-bold w-9 justify-center">{p.position}</Badge>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold truncate">{p.name}</p>
+                  <p className="text-xs sm:text-sm font-semibold truncate flex items-center gap-1">
+                    {p.name}
+                    {cameInAsSub && <span title="Entrou via substituição" className="text-[9px] px-1 py-0 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SUB</span>}
+                  </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <div className="h-1.5 flex-1 rounded-full bg-muted/15 overflow-hidden">
                       <div className={`h-full rounded-full transition-all ${staminaColor}`} style={{ width: `${stamina}%` }} />
