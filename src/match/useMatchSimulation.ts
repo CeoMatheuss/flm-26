@@ -316,8 +316,9 @@ export function useMatchSimulation() {
       if (ev.team === 'home') homeActions++;
       else if (ev.team === 'away') awayActions++;
 
-      // Goal events = shot + on target (includes new types)
-      if (ev.isGoal) {
+      // Goal events = shot + on target. Shootout pens (disputa) NÃO contam
+      // como chute regulamentar — placar e stats são separados.
+      if (ev.isGoal && ev.type !== 'penalty_shootout') {
         s.shots[idx]++;
         s.shotsOnTarget[idx]++;
       }
@@ -437,13 +438,18 @@ export function useMatchSimulation() {
       }
     }
 
+    // Score derivado dos eventos visíveis. Importante:
+    // 1) `penalty_shootout` tem `isGoal:true` mas é placar separado da disputa
+    //    de pênaltis — NÃO entra no placar regulamentar.
+    // 2) Garantimos que o placar nunca regrida: usamos sempre o máximo entre
+    //    o que os eventos visíveis dizem e o último valor renderizado.
     let homeGoals = 0;
     let awayGoals = 0;
     for (const ev of visibleEvents) {
-      if (ev.isGoal) {
-        if (ev.team === 'home') homeGoals++;
-        else if (ev.team === 'away') awayGoals++;
-      }
+      if (!ev.isGoal) continue;
+      if (ev.type === 'penalty_shootout') continue; // disputa, não placar
+      if (ev.team === 'home') homeGoals++;
+      else if (ev.team === 'away') awayGoals++;
     }
 
     const latestEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
@@ -455,8 +461,10 @@ export function useMatchSimulation() {
     let phase: MatchState['phase'] = 'live';
     if (isComplete) {
       phase = 'finished';
-      homeGoals = data.finalHomeGoals;
-      awayGoals = data.finalAwayGoals;
+      // Use authoritative final score, but only if it's >= what events say —
+      // never permite o placar diminuir no apito final.
+      homeGoals = Math.max(homeGoals, data.finalHomeGoals);
+      awayGoals = Math.max(awayGoals, data.finalAwayGoals);
     } else if (currentMinute >= 45 && currentMinute <= 46) {
       phase = 'halftime';
     }
@@ -811,13 +819,18 @@ export function useMatchSimulation() {
     }
   }, [loadMatch, startTick]);
 
-  // Find active match — strictly the one owned by the current user.
-  // Opponent rows are now visible via RLS but should NOT be treated as
-  // "my active match" when the user re-opens the app standalone.
+  // Find active match — looks first for a match the user owns, then for any
+  // match they participate in (visitante de partida online com a linha do
+  // mandante). Como a simulação é centralizada (`shared_match_id`), o
+  // visitante consegue ver a MESMA timeline mesmo sem ter inserido a linha.
+  // É isso que garante "single-player mode": basta UM dos lados ter
+  // disparado o start-match para o outro também conseguir assistir.
   const findActiveMatch = useCallback(async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
-    const { data } = await supabase
+
+    // 1) Partida própria
+    const { data: own } = await supabase
       .from('live_matches')
       .select('id')
       .eq('user_id', user.id)
@@ -825,8 +838,24 @@ export function useMatchSimulation() {
       .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (own) return loadMatch(own.id);
 
-    if (data) return loadMatch(data.id);
+    // 2) Qualquer partida ativa em que o usuário é participante (RLS de
+    //    SELECT já permite via `is_match_participant`). Limita a partidas
+    //    recentes (últimas 2h) para não puxar histórico antigo.
+    const recentIso = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const { data: shared } = await supabase
+      .from('live_matches')
+      .select('id, started_at')
+      .eq('status', 'live')
+      .gte('started_at', recentIso)
+      .order('started_at', { ascending: false })
+      .limit(5);
+    if (shared && shared.length > 0) {
+      // Já passamos pelo RLS — qualquer linha aqui é uma partida em que
+      // o usuário participa. Carrega a mais recente.
+      return loadMatch(shared[0].id);
+    }
     return false;
   }, [loadMatch]);
 

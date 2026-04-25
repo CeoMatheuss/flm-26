@@ -5,6 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ── Fisher-Yates shuffle (uniforme + entropia crypto) ─────────────────
+// Substitui o vício do `[...a].sort(() => Math.random() - 0.5)`, que em V8
+// produz padrões repetitivos (mesmos confrontos saindo várias temporadas
+// seguidas). Cada chamada usa entropia fresca do WebCrypto.
+function secureRandomInt(max: number): number {
+  if (max <= 1) return 0;
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0xFFFFFFFF / max) * max;
+  for (let i = 0; i < 16; i++) {
+    crypto.getRandomValues(buf);
+    if (buf[0] < limit) return buf[0] % max;
+  }
+  crypto.getRandomValues(buf);
+  return buf[0] % max;
+}
+function secureShuffle<T>(arr: readonly T[]): T[] {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = secureRandomInt(i + 1);
+    if (j !== i) { const t = out[i]; out[i] = out[j]; out[j] = t; }
+  }
+  return out;
+}
+
+
 const TIERS = ['varzea', 'pre_regional', 'regional', 'nacional'] as const;
 type Tier = typeof TIERS[number];
 
@@ -297,7 +322,7 @@ Deno.serve(async (req) => {
 
               // Create round 1 matches (16 matches)
               if (insertedTeams && insertedTeams.length >= 32) {
-                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const shuffled = secureShuffle(insertedTeams);
                 const matches = [];
                 const baseDate = new Date(now.getTime() + 7 * 24 * 3600000); // start in 7 days
 
@@ -383,7 +408,7 @@ Deno.serve(async (req) => {
               const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
               if (insertedTeams && insertedTeams.length >= 16) {
-                const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+                const shuffled = secureShuffle(insertedTeams);
                 const matches = [];
                 const baseDate = new Date(now.getTime() + 5 * 24 * 3600000);
 
@@ -487,7 +512,7 @@ Deno.serve(async (req) => {
           const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
           if (insertedTeams && insertedTeams.length >= targetSize) {
-            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const shuffled = secureShuffle(insertedTeams);
             const matches = [];
             const baseDate = new Date(now.getTime() + 10 * 24 * 3600000);
 
@@ -589,7 +614,7 @@ Deno.serve(async (req) => {
           const { data: insertedTeams } = await supabase.from('cup_teams').insert(cupTeams).select();
 
           if (insertedTeams && insertedTeams.length >= 32) {
-            const shuffled = [...insertedTeams].sort(() => Math.random() - 0.5);
+            const shuffled = secureShuffle(insertedTeams);
             const matches = [];
             const baseDate = new Date(now.getTime() + 14 * 24 * 3600000);
 

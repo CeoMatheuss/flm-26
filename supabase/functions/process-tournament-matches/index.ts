@@ -9,6 +9,30 @@ function clamp(v: number, min: number, max: number) { return Math.max(min, Math.
 function rng() { return Math.random(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
+// ── Sorteio uniforme (Fisher-Yates + entropia crypto) ─────────────────
+// O bias do `sort(() => rng() - 0.5)` em V8 fazia chaveamentos repetirem
+// confrontos rodada após rodada. Aqui temos uma fonte fresca de entropia
+// para CADA sorteio.
+function secureRandomInt(max: number): number {
+  if (max <= 1) return 0;
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0xFFFFFFFF / max) * max;
+  for (let i = 0; i < 16; i++) {
+    crypto.getRandomValues(buf);
+    if (buf[0] < limit) return buf[0] % max;
+  }
+  crypto.getRandomValues(buf);
+  return buf[0] % max;
+}
+function secureShuffle<T>(arr: readonly T[]): T[] {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = secureRandomInt(i + 1);
+    if (j !== i) { const t = out[i]; out[i] = out[j]; out[j] = t; }
+  }
+  return out;
+}
+
 function poissonSample(lambda: number): number {
   const L = Math.exp(-lambda);
   let k = 0, p = 1;

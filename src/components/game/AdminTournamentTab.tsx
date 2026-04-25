@@ -12,6 +12,7 @@ import {
   Trophy, Plus, Users, Bot, Swords, Calendar, Clock, Award, Trash2,
   RefreshCw, ChevronRight, Play, CheckCircle, XCircle, Zap, Target, Globe
 } from 'lucide-react';
+import { secureShuffle } from '@/utils/secureShuffle';
 
 interface Tournament {
   id: string;
@@ -339,7 +340,8 @@ export function AdminTournamentTab({ userId }: Props) {
     twoLegs: boolean = false,
   ) => {
     const fixtures: Array<{ home_team_id: string; away_team_id: string; round: number; stage: string; scheduled_at: string; leg?: number }> = [];
-    const shuffled = [...teamIds].sort(() => Math.random() - 0.5);
+    // Fisher-Yates seguro: cada sorteio é uniforme e independente do anterior.
+    const shuffled = secureShuffle(teamIds);
     const stageName = knockoutStageByTeamCount(shuffled.length);
     const pairCount = Math.floor(shuffled.length / 2);
 
@@ -403,7 +405,7 @@ export function AdminTournamentTab({ userId }: Props) {
   };
 
   const assignGroups = async (tournamentId: string, teamList: TournamentTeam[]): Promise<Record<string, string[]>> => {
-    const shuffled = [...teamList].sort(() => Math.random() - 0.5);
+    const shuffled = secureShuffle(teamList);
     const groupCount = Math.max(2, Math.floor(shuffled.length / 4));
     const groups: Record<string, string[]> = {};
     const letters = 'ABCDEFGH';
@@ -560,8 +562,8 @@ export function AdminTournamentTab({ userId }: Props) {
       const usedNames = new Set(allTeamInserts.map(t => t.club_name));
       const availableNames = botPool.filter(n => !usedNames.has(n));
       
-      // Shuffle available names
-      const shuffledNames = [...availableNames].sort(() => Math.random() - 0.5);
+      // Shuffle available names — Fisher-Yates uniforme
+      const shuffledNames = secureShuffle(availableNames);
 
       for (let i = 0; i < slotsForBots; i++) {
         let name = shuffledNames[i % shuffledNames.length];
