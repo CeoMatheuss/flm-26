@@ -811,12 +811,19 @@ export function useMatchSimulation() {
     }
   }, [loadMatch, startTick]);
 
-  // Find active match
+  // Find active match — strictly the one owned by the current user.
+  // Opponent rows are now visible via RLS but should NOT be treated as
+  // "my active match" when the user re-opens the app standalone.
   const findActiveMatch = useCallback(async (): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
     const { data } = await supabase
       .from('live_matches')
       .select('id')
+      .eq('user_id', user.id)
       .eq('status', 'live')
+      .order('started_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (data) return loadMatch(data.id);
