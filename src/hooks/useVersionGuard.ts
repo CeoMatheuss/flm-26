@@ -26,7 +26,7 @@ export interface VersionState {
  *       - Em caso de erro: marca migration_status='failed' e oferece rollback
  *  3. Após sucesso → status 'observation' por 1h, depois 'ready'.
  */
-export function useVersionGuard(userId: string | null, currentSave: GameState | null, onApplyState: (s: GameState) => void) {
+export function useVersionGuard(userId: string | null, currentSave: GameState | null) {
   const [state, setState] = useState<VersionState>({
     status: 'checking',
     userVersion: '0.0.0',
@@ -89,9 +89,8 @@ export function useVersionGuard(userId: string | null, currentSave: GameState | 
       }
     }
 
-    // Persiste estado migrado
+    // Persiste estado migrado (a página será recarregada para aplicar no GameState)
     await supabase.from('game_saves').update({ club_data: workingState as any }).eq('user_id', uid);
-    onApplyState(workingState);
 
     const observationUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await supabase.from('user_versions').update({
@@ -104,7 +103,7 @@ export function useVersionGuard(userId: string | null, currentSave: GameState | 
 
     setState((s) => ({ ...s, status: 'observation', userVersion: GAME_VERSION, progressLabel: 'Atualização concluída!' }));
     return { ok: true, applied: pending.length };
-  }, [onApplyState]);
+  }, []);
 
   useEffect(() => {
     if (!userId || !currentSave) return;
@@ -148,10 +147,9 @@ export function useVersionGuard(userId: string | null, currentSave: GameState | 
     if (!data?.last_backup) return false;
     await supabase.from('game_saves').update({ club_data: data.last_backup as any }).eq('user_id', userId);
     await supabase.from('user_versions').update({ migration_status: 'idle' }).eq('user_id', userId);
-    onApplyState(data.last_backup as unknown as GameState);
     setState((s) => ({ ...s, status: 'ready', error: undefined }));
     return true;
-  }, [userId, onApplyState]);
+  }, [userId]);
 
   return { ...state, isBlocked: state.status === 'migrating' || state.status === 'failed', rollback };
 }
