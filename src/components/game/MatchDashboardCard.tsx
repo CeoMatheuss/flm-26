@@ -645,7 +645,14 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
           <Button
             className="w-full gap-2 font-bold"
             variant="outline"
-            disabled>
+            onClick={() => {
+              // Interação manual: fecha o widget e leva ao histórico/relatório
+              setFinishedFadingOut(true);
+              setTimeout(() => setFinishedHidden(true), FADE_OUT_MS);
+              if (lastFinished?.id) {
+                navigate(`/replay/${lastFinished.id}`);
+              }
+            }}>
             
                 <FileText className="h-4 w-4" /> VER RELATÓRIO
               </Button>
