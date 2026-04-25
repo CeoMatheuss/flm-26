@@ -235,8 +235,20 @@ async function processTournamentMatch(m: any) {
 
     const homeStr = await getTournamentTeamStrength(home);
     const awayStr = await getTournamentTeamStrength(away);
-    const { home: hg, away: ag } = simulate(homeStr, awayStr);
-    const events = genEvents(hg, ag, home.club_name, away.club_name);
+    let { home: hg, away: ag } = simulate(homeStr, awayStr);
+    let events = genEvents(hg, ag, home.club_name, away.club_name);
+
+    // ── Knockout tie-breaker (extra time → penalties) ──
+    let tb: ReturnType<typeof resolveKnockout> | null = null;
+    if (isKnockoutStage(m.stage) && hg === ag) {
+      tb = resolveKnockout({
+        homeGoals: hg, awayGoals: ag, homeStr, awayStr,
+        homeName: home.club_name, awayName: away.club_name,
+      });
+      hg = hg + tb.homeGoalsET;
+      ag = ag + tb.awayGoalsET;
+      events = [...events, ...tb.events.map(e => ({ ...e, team: e.team as 'home' | 'away' }))] as any;
+    }
 
     const { error } = await supabase
       .from('custom_tournament_matches')
@@ -245,7 +257,18 @@ async function processTournamentMatch(m: any) {
         away_goals: ag,
         status: 'finished',
         played_at: new Date().toISOString(),
-        match_data: { ...(m.match_data || {}), events, auto_simulated: true, home_name: home.club_name, away_name: away.club_name },
+        match_data: {
+          ...(m.match_data || {}),
+          events,
+          auto_simulated: true,
+          home_name: home.club_name,
+          away_name: away.club_name,
+          extra_time: tb?.hadExtraTime ?? false,
+          shootout: tb?.hadShootout ?? false,
+          shootout_home: tb?.shootoutHome ?? 0,
+          shootout_away: tb?.shootoutAway ?? 0,
+          knockout_winner: tb?.winner ?? null,
+        },
       })
       .eq('id', m.id)
       .eq('status', 'scheduled');
