@@ -216,6 +216,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           isHome: tm.isHome,
           competition: tm.competition,
           tournamentMatchId: tm.tournamentMatchId,
+          tieBreaker: tm.tieBreaker || 'none',
         },
       });
       return;
