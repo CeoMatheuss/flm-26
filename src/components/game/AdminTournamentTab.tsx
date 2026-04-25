@@ -223,6 +223,10 @@ export function AdminTournamentTab({ userId }: Props) {
   const [batchBotMaxOvr, setBatchBotMaxOvr] = useState('80');
   const [formMaxTeams, setFormMaxTeams] = useState('20');
 
+  // Knockout customization
+  const [formKnockoutStartStage, setFormKnockoutStartStage] = useState<'oitavas' | 'quartas' | 'semi' | 'final'>('oitavas');
+  const [formTwoLegs, setFormTwoLegs] = useState(false);
+
   // Add single team state
   const [addTeamType, setAddTeamType] = useState<'bot' | 'player'>('bot');
   const [botName, setBotName] = useState('');
