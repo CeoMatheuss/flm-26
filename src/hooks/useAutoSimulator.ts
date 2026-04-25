@@ -518,13 +518,25 @@ async function runWatchdog(): Promise<void> {
     }
 
     // A cada ~5 ciclos do watchdog (≈5 minutos), aciona o cup-advancer
-    // para gerar próximas rodadas (QF/SF/F) das copas com rodada concluída.
+    // para gerar próximas rodadas (QF/SF/F) das copas + intl + mundial.
     watchdogTickCount++;
     if (watchdogTickCount % 5 === 0) {
       try {
         await supabase.functions.invoke('world-cup-advancer', { body: {} });
       } catch (err) {
         console.warn('[autosim/watchdog] cup-advancer error:', err);
+      }
+    }
+    // A cada ~30 ciclos (≈30 min), aciona os planners para detectar novos
+    // ciclos/temporadas e desbloquear competições internacionais/mundial.
+    if (watchdogTickCount % 30 === 0) {
+      try {
+        await Promise.all([
+          supabase.functions.invoke('world-international-planner', { body: {} }),
+          supabase.functions.invoke('world-tournament-planner', { body: {} }),
+        ]);
+      } catch (err) {
+        console.warn('[autosim/watchdog] planners error:', err);
       }
     }
   } catch (err) {
