@@ -269,7 +269,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
 
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
                         <p className="text-[9px] text-muted-foreground">
-                          Próximo lance mín: <span className="font-bold text-foreground">R$ {(minNextBid / 1000000).toFixed(2)}M</span> (+20%)
+                          Próximo lance mín: <span className="font-bold text-foreground">R$ {(minNextBid / 1000000).toFixed(2)}M</span> (+30%)
                         </p>
                         {!isMyAuction && (
                           <Button
