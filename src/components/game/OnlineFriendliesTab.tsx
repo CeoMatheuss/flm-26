@@ -126,7 +126,32 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const acceptOpenSlot = async (slot: typeof openSlots[0]) => {
     if (slot.user_id === userId) return toast.error('Não pode aceitar sua própria partida');
+    // Anti-spam: bloqueia clique duplo no mesmo slot
+    if (acceptingSlotIds.has(slot.id)) {
+      toast.info('⏳ Já estamos processando este amistoso...');
+      return;
+    }
+    setAcceptingSlotIds(prev => new Set(prev).add(slot.id));
+    // Remove otimisticamente da UI para evitar novos cliques
+    setOpenSlots(prev => prev.filter(s => s.id !== slot.id));
     setLoading(true);
+
+    // Reserva o slot ANTES de criar o invite — só prossegue se o slot ainda estava 'open'
+    const { data: reserved, error: reserveErr } = await supabase
+      .from('open_friendly_slots')
+      .update({ status: 'matched' })
+      .eq('id', slot.id)
+      .eq('status', 'open')
+      .select();
+
+    if (reserveErr || !reserved || reserved.length === 0) {
+      toast.error('⚠️ Este amistoso já foi aceito por outro jogador.');
+      setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
+      setLoading(false);
+      loadOpenSlots();
+      return;
+    }
+
     const dateTime = new Date();
     dateTime.setMinutes(dateTime.getMinutes() + 5);
 
@@ -145,14 +170,17 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
     }]);
 
     if (!error) {
-      await supabase.from('open_friendly_slots').update({ status: 'matched' }).eq('id', slot.id);
       toast.success(`✅ Amistoso aceito contra ${slot.club_name}!`);
       triggerAutoSim(); // simula imediatamente, sem esperar horário
       loadInvites();
       loadOpenSlots();
     } else {
-      toast.error('Erro ao aceitar');
+      // Reverte reserva se a criação do invite falhou
+      await supabase.from('open_friendly_slots').update({ status: 'open' }).eq('id', slot.id);
+      toast.error('Erro ao aceitar — tente novamente');
+      loadOpenSlots();
     }
+    setAcceptingSlotIds(prev => { const n = new Set(prev); n.delete(slot.id); return n; });
     setLoading(false);
   };
 
