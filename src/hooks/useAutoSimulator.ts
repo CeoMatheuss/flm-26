@@ -30,6 +30,8 @@ const SCAN_INTERVAL_MS = 5_000;       // 5s between scans
 const POST_SIM_DELAY_MS = 2_000;      // 2s cooldown after a successful sim
 const LOCK_TTL_MS = 60_000;           // 60s per-match lock
 const TOLERANCE_MS = 5 * 60_000;      // 5min tolerance: only auto-sim if match_time + 5min has passed
+const STUCK_AFTER_MS = 30 * 60_000;   // 30min: anything older = "stuck" → forced sim path
+const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
 // ───────────────── helpers ─────────────────
 function poisson(lambda: number): number {
@@ -381,11 +383,13 @@ async function runScan(): Promise<void> {
   if (!tryAcquireScanLock()) return;
 
   scanInFlight = true;
+  let success = false;
+  let kind: string | null = null;
   try {
     const next = await fetchNextEligibleMatch();
     if (!next) return;
+    kind = next.kind;
 
-    let success = false;
     try {
       if (next.kind === 'league')          success = await processLeagueMatch(next.row);
       else if (next.kind === 'friendly')   success = await processFriendly(next.row);
@@ -403,6 +407,60 @@ async function runScan(): Promise<void> {
   } finally {
     scanInFlight = false;
     releaseScanLock();
+  }
+
+  // CHAIN: if we just simulated a match, schedule another scan AFTER the
+  // cooldown so the next pending match in the queue is processed promptly
+  // instead of waiting up to 5s for the next interval tick.
+  if (success) {
+    setTimeout(() => { void runScan(); }, POST_SIM_DELAY_MS + 50);
+    if (kind) console.info(`[autosim] chaining next scan after ${kind} sim`);
+  }
+}
+
+// ───────────────── watchdog: rescue stuck matches ─────────────────
+/**
+ * Runs every WATCHDOG_INTERVAL_MS. Handles matches that should have been
+ * simulated long ago but got stuck (e.g., everyone offline, transient errors).
+ *
+ * "Stuck" criterion: status='scheduled' AND scheduled time + STUCK_AFTER_MS
+ * has elapsed. We bypass the 5-min tolerance for these — the player has had
+ * MORE than enough time. We forward to runScan via a relaxed selector.
+ */
+let watchdogInFlight = false;
+async function runWatchdog(): Promise<void> {
+  if (watchdogInFlight) return;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  watchdogInFlight = true;
+  try {
+    const stuckIso = new Date(Date.now() - STUCK_AFTER_MS).toISOString();
+
+    // Probe each table. If anything stuck found, run a scan; the scan's own
+    // tolerance check will let it through (stuck > tolerance, by definition).
+    const [leagueRes, friendlyRes, tournamentRes] = await Promise.all([
+      supabase.from('league_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('auto_sim_at', stuckIso),
+      supabase.from('friendly_invites')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'accepted').is('match_result', null).lte('match_date', stuckIso),
+      supabase.from('custom_tournament_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'scheduled').lte('scheduled_at', stuckIso),
+    ]);
+
+    const stuckCount =
+      (leagueRes.count || 0) + (friendlyRes.count || 0) + (tournamentRes.count || 0);
+    if (stuckCount > 0) {
+      console.warn(`[autosim/watchdog] ${stuckCount} stuck match(es) detected — forcing scan`);
+      // Bypass cooldown so the watchdog can drain the backlog.
+      cooldownUntil = 0;
+      void runScan();
+    }
+  } catch (err) {
+    console.warn('[autosim/watchdog] error:', err);
+  } finally {
+    watchdogInFlight = false;
   }
 }
 
@@ -427,8 +485,10 @@ export function useAutoSimulator(userId: string | undefined) {
     if (!userId) return;
 
     void runScan();
+    void runWatchdog();
     const interval = setInterval(() => { void runScan(); }, SCAN_INTERVAL_MS);
-    const onOnline = () => { void runScan(); };
+    const watchdog = setInterval(() => { void runWatchdog(); }, WATCHDOG_INTERVAL_MS);
+    const onOnline = () => { void runScan(); void runWatchdog(); };
     window.addEventListener('online', onOnline);
 
     let leagueChannel: ReturnType<typeof supabase.channel> | null = null;
@@ -455,6 +515,7 @@ export function useAutoSimulator(userId: string | undefined) {
 
     return () => {
       clearInterval(interval);
+      clearInterval(watchdog);
       window.removeEventListener('online', onOnline);
       if (leagueChannel) supabase.removeChannel(leagueChannel);
       if (friendlyChannel) supabase.removeChannel(friendlyChannel);
