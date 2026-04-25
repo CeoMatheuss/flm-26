@@ -174,6 +174,11 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       toast.error(`Orçamento insuficiente! Necessário: ${fmtMoney(bidAmount)}`);
       return;
     }
+    const maxAllowed = Math.floor(budget * 0.8);
+    if (bidAmount > maxAllowed) {
+      toast.error(`Lance máximo permitido: 80% do seu orçamento (${fmtMoney(maxAllowed)})`);
+      return;
+    }
     const minBid = auction.current_bidder_id ? auction.current_bid + minIncrement(auction.current_bid) : auction.min_price;
     if (bidAmount < minBid) {
       toast.error(`Lance mínimo: ${fmtMoney(minBid)}`);
@@ -186,6 +191,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       const msg = error.message || '';
       if (msg.includes('CANNOT_BID_OWN_AUCTION')) toast.error('Você não pode dar lance em seu próprio leilão.');
       else if (msg.includes('BID_TOO_LOW')) toast.error('Lance abaixo do mínimo permitido.');
+      else if (msg.includes('BID_OVER_BUDGET_LIMIT')) toast.error('Lance acima do limite de 80% do seu orçamento.');
       else if (msg.includes('AUCTION_EXPIRED')) toast.error('Leilão já encerrado.');
       else if (msg.includes('AUCTION_CLOSED')) toast.error('Leilão fechado.');
       else toast.error('Erro ao dar lance: ' + msg);
@@ -420,7 +426,12 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                   );
                 })}
               </div>
-              <p className="text-[10px] text-muted-foreground">Seu orçamento: {fmtMoney(budget)}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Seu orçamento: {fmtMoney(budget)} • Lance máx (80%): <span className="font-semibold text-amber-400">{fmtMoney(Math.floor(budget * 0.8))}</span>
+              </p>
+              {bidAmount > Math.floor(budget * 0.8) && (
+                <p className="text-[10px] text-red-400 font-semibold">⚠️ Lance acima de 80% do seu orçamento — não permitido.</p>
+              )}
             </div>
           )}
           <DialogFooter>
