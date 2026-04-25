@@ -153,34 +153,99 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
   };
 }
 
+/**
+ * Distribuição obrigatória do elenco inicial — exatos 20 jogadores:
+ *   2 GOL · 4 ZAG · 4 LAT (2 LD + 2 LE) · 3 VOL · 4 MEI · 2 ATA-lado · 1 ATA-CA
+ *           = 20 jogadores
+ *
+ * Pontas/Centroavante são salvos como `position: 'ATA'` (compatibilidade)
+ * e diferenciados por `side` ('L' ponta esquerda, 'R' ponta direita, 'C' centroavante).
+ * LAT também usa `side` para LD/LE. Cada jogador ganha `secondaryPosition`
+ * coerente com sua função.
+ */
 export function generateInitialSquad(clubName?: string): Player[] {
-  const squad: Player[] = [];
-  // Máx 2 por posição → 12 jogadores no total (variedade tática sem inflar elenco)
-  const posCount: [Player['position'], number][] = [
-    ['GOL', 2], ['ZAG', 2], ['LAT', 2], ['VOL', 2], ['MEI', 2], ['ATA', 2],
+  type Slot = {
+    pos: Player['position'];
+    side?: 'L' | 'R' | 'C';
+    secondary?: Player['position'];
+  };
+
+  const blueprint: Slot[] = [
+    // Goleiros (2)
+    { pos: 'GOL' }, { pos: 'GOL' },
+    // Zagueiros (4)
+    { pos: 'ZAG', secondary: 'VOL' }, { pos: 'ZAG' },
+    { pos: 'ZAG' },                    { pos: 'ZAG', secondary: 'LAT' },
+    // Laterais (4: 2 LD + 2 LE)
+    { pos: 'LAT', side: 'R', secondary: 'MEI' }, { pos: 'LAT', side: 'R' },
+    { pos: 'LAT', side: 'L', secondary: 'MEI' }, { pos: 'LAT', side: 'L' },
+    // Volantes (3)
+    { pos: 'VOL', secondary: 'MEI' }, { pos: 'VOL' }, { pos: 'VOL', secondary: 'ZAG' },
+    // Meio-campistas (4)
+    { pos: 'MEI', secondary: 'VOL' }, { pos: 'MEI' },
+    { pos: 'MEI', secondary: 'ATA' }, { pos: 'MEI' },
+    // Pontas (2: PE + PD) salvos como ATA com side
+    { pos: 'ATA', side: 'L', secondary: 'MEI' },
+    { pos: 'ATA', side: 'R', secondary: 'MEI' },
+    // Centroavante (1) — ajuste para fechar 20
+    { pos: 'ATA', side: 'C' },
   ];
-  for (const [pos, count] of posCount) {
-    for (let i = 0; i < count; i++) {
-      squad.push(generatePlayer([35, 55], [18, 32], pos, clubName));
-    }
+
+  if (blueprint.length !== 20) {
+    throw new Error(`generateInitialSquad: blueprint inválido (${blueprint.length}/20)`);
   }
 
-  // Pré-escalação 4-4-2: ordenar com os 11 melhores titulares no topo do array
-  // (o jogo trata os 11 primeiros do array como titulares)
-  const formation442: Player['position'][] = ['GOL', 'ZAG', 'ZAG', 'LAT', 'LAT', 'VOL', 'VOL', 'MEI', 'MEI', 'ATA', 'ATA'];
-  const pool = [...squad];
-  const starters: Player[] = [];
-  const usedIds = new Set<string>();
-  for (const slot of formation442) {
-    const candidates = pool
-      .filter(p => !usedIds.has(p.id) && p.position === slot)
-      .sort((a, b) => b.overall - a.overall);
-    if (candidates.length > 0) {
-      starters.push(candidates[0]);
-      usedIds.add(candidates[0].id);
+  const squad: Player[] = blueprint.map(slot => {
+    const p = generatePlayer([35, 55], [16, 34], slot.pos, clubName);
+    if (slot.side) p.side = slot.side;
+    if (slot.secondary) p.secondaryPosition = slot.secondary;
+    return p;
+  });
+
+  // ── VALIDAÇÃO OBRIGATÓRIA ──────────────────────────────────
+  if (squad.length !== 20) {
+    throw new Error(`generateInitialSquad: total inválido (${squad.length}/20)`);
+  }
+  const counts: Record<string, number> = {};
+  for (const p of squad) counts[p.position] = (counts[p.position] || 0) + 1;
+  const expected = { GOL: 2, ZAG: 4, LAT: 4, VOL: 3, MEI: 4, ATA: 3 };
+  for (const [pos, exp] of Object.entries(expected)) {
+    if ((counts[pos] || 0) !== exp) {
+      throw new Error(`generateInitialSquad: distribuição inválida ${pos}=${counts[pos] || 0} (esperado ${exp})`);
     }
   }
-  const bench = pool.filter(p => !usedIds.has(p.id));
+  // Anti-flood: ninguém pode ultrapassar 4 da mesma posição base
+  for (const [pos, n] of Object.entries(counts)) {
+    if (n > 4) throw new Error(`generateInitialSquad: flood de posição ${pos} (${n})`);
+  }
+
+  // ── Pré-escalação 4-3-3 com os 11 melhores nas posições corretas ──
+  const formation433: Array<{ pos: Player['position']; side?: 'L' | 'R' | 'C' }> = [
+    { pos: 'GOL' },
+    { pos: 'LAT', side: 'R' }, { pos: 'ZAG' }, { pos: 'ZAG' }, { pos: 'LAT', side: 'L' },
+    { pos: 'VOL' }, { pos: 'MEI' }, { pos: 'MEI' },
+    { pos: 'ATA', side: 'R' }, { pos: 'ATA', side: 'C' }, { pos: 'ATA', side: 'L' },
+  ];
+
+  const used = new Set<string>();
+  const starters: Player[] = [];
+  for (const slot of formation433) {
+    // tenta match exato (posição + lado)
+    let candidates = squad
+      .filter(p => !used.has(p.id) && p.position === slot.pos && (!slot.side || p.side === slot.side))
+      .sort((a, b) => b.overall - a.overall);
+    // fallback: ignora lado
+    if (candidates.length === 0) {
+      candidates = squad
+        .filter(p => !used.has(p.id) && p.position === slot.pos)
+        .sort((a, b) => b.overall - a.overall);
+    }
+    if (candidates[0]) {
+      starters.push(candidates[0]);
+      used.add(candidates[0].id);
+    }
+  }
+  const bench = squad.filter(p => !used.has(p.id));
   return [...starters, ...bench];
 }
 
