@@ -107,6 +107,28 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
+      <TabsContent value="matches">
+        {isTabBlocked('matches') ? <BlockedMessage /> : (
+          <MatchesTab
+            matches={game.club.matches}
+            clubName={game.club.name}
+            stadiumName={(game.club as any).stadiumName || 'Arena'}
+            alreadyPlayedToday={game.alreadyPlayedToday ?? false}
+            lastFriendlyDate={game.lastFriendlyDate ?? ''}
+            players={game.club.players}
+            teamStrength={Math.round(
+              (game.club.players || []).slice(0, 11).reduce((s, p: any) => s + (p.overall || p.ovr || 60), 0)
+              / Math.max(1, Math.min(11, (game.club.players || []).length))
+            )}
+            tactics={game.tactics}
+            onGenerateFriendly={game.generateFriendly}
+            userId={userId}
+            stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
+            fans={game.club.fans || 1000}
+            applyFanChange={game.applyFanChange}
+          />
+        )}
+      </TabsContent>
       <TabsContent value="squad">
         <SquadTab
           players={game.club.players}
