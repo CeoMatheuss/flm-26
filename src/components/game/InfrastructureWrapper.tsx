@@ -74,6 +74,7 @@ export function InfrastructureWrapper({
   trainingIntensity, onSetTrainingIntensity, budget = 0, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
+  trainingInvestment, onSetTrainingInvestment,
   stadiumProps, youthProps,
   initialSubTab = 'training',
   standalone = false,
