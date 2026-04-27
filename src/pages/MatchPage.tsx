@@ -889,25 +889,32 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     }
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds, matchDbId, matchState.isHome]);
 
-  // ── REALTIME: substituições do oponente ──
+  // ── REALTIME + POLLING FALLBACK: substituições do oponente ──
   // Filtra por shared_match_id (chave compartilhada entre os dois clientes).
   // Cada cliente tem seu próprio live_matches.id, então filtrar por live_match_id NÃO funcionaria.
   const seenRemoteSubsRef = useRef<Set<string>>(new Set());
+  // Refs para deps "voláteis" (shields/team names) — evita recriar canal a cada render
+  const oppContextRef = useRef({ homeTeam, awayTeam, homeShield, awayShield, isHome: matchState.isHome });
+  useEffect(() => {
+    oppContextRef.current = { homeTeam, awayTeam, homeShield, awayShield, isHome: matchState.isHome };
+  }, [homeTeam, awayTeam, homeShield, awayShield, matchState.isHome]);
+
   useEffect(() => {
     if (!sharedMatchId) return;
-    const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
-    const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
-    const oppTeam = mySide === 'home' ? awayTeam : homeTeam;
-    const oppShield = mySide === 'home' ? awayShield : homeShield;
 
     const ingest = (row: any) => {
       if (!row) return;
       if (row.shared_match_id !== sharedMatchId) return;
       if (seenRemoteSubsRef.current.has(row.id)) return;
-      seenRemoteSubsRef.current.add(row.id);
+      const ctx = oppContextRef.current;
+      const mySide: 'home' | 'away' = ctx.isHome ? 'home' : 'away';
+      const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
       // Apenas eventos do lado OPOSTO geram feed/banner.
       if (row.team_side !== oppSide) return;
+      seenRemoteSubsRef.current.add(row.id);
 
+      const oppTeam = mySide === 'home' ? ctx.awayTeam : ctx.homeTeam;
+      const oppShield = mySide === 'home' ? ctx.awayShield : ctx.homeShield;
       const minute = Number(row.minute) || 0;
       const isHalf = !!row.is_halftime;
       setInjectedSubEvents(prev => [...prev, {
@@ -926,19 +933,23 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       });
     };
 
-    // 1) Backfill — pega subs já existentes (entrou depois ou recarregou página)
-    supabase
-      .from('live_match_substitutions')
-      .select('*')
-      .eq('shared_match_id', sharedMatchId)
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn('[SUB sync] Backfill failed:', error.message);
-          return;
-        }
-        (data || []).forEach(ingest);
-      });
+    let cancelled = false;
+    const fetchAll = async () => {
+      const { data, error } = await supabase
+        .from('live_match_substitutions')
+        .select('*')
+        .eq('shared_match_id', sharedMatchId)
+        .order('created_at', { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        console.warn('[SUB sync] Fetch failed:', error.message);
+        return;
+      }
+      (data || []).forEach(ingest);
+    };
+
+    // 1) Backfill imediato (subs já existentes — entrou depois ou recarregou)
+    fetchAll();
 
     // 2) Realtime — escuta novos INSERTs filtrando pela chave compartilhada
     const channel = supabase
@@ -955,10 +966,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       )
       .subscribe();
 
+    // 3) Polling fallback a cada 4s — garante sync mesmo se Realtime falhar
+    const pollId = setInterval(fetchAll, 4000);
+
     return () => {
+      cancelled = true;
+      clearInterval(pollId);
       supabase.removeChannel(channel);
     };
-  }, [sharedMatchId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
+  }, [sharedMatchId]);
 
   // Validation helper for substitutions — used by widget click + queue
 
