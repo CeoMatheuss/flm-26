@@ -186,20 +186,50 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, []);
 
-  // Check tutorial completed status — auto-show for ANY user that hasn't finished it
+  // Check tutorial completed status — auto-show ONLY if user definitely hasn't finished it.
+  // Default state is `true` (tutorialCompleted) to prevent flashing while loading.
   useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
     const checkTutorial = async () => {
-      const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
-      const completed = !!(data as any)?.tutorial_completed;
-      setTutorialCompleted(completed);
-      // Show tutorial whenever it's not completed (not just new clubs).
-      // Small delay so it appears after the app fully loads.
-      if (!completed) {
-        setTimeout(() => setShowTutorial(true), 600);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('tutorial_completed')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) {
+          console.warn('[tutorial] check failed, assuming completed to avoid blocking UI:', error.message);
+          setTutorialCompleted(true);
+          return;
+        }
+        // No profile row yet (edge case): create one with tutorial_completed=false
+        if (!data) {
+          console.log('[tutorial] no profile row found, creating one');
+          await supabase.from('profiles').upsert({
+            user_id: userId,
+            display_name: displayName || 'Manager',
+            tutorial_completed: false,
+          } as any, { onConflict: 'user_id' });
+          setTutorialCompleted(false);
+          setTimeout(() => { if (!cancelled) setShowTutorial(true); }, 600);
+          return;
+        }
+        const completed = !!(data as any)?.tutorial_completed;
+        console.log('[tutorial] status loaded:', { completed });
+        setTutorialCompleted(completed);
+        if (!completed) {
+          setTimeout(() => { if (!cancelled) setShowTutorial(true); }, 600);
+        }
+      } catch (e) {
+        console.warn('[tutorial] unexpected error, defaulting to completed:', e);
+        setTutorialCompleted(true);
       }
     };
     checkTutorial();
-  }, [userId]);
+    return () => { cancelled = true; };
+  }, [userId, displayName]);
 
   // Allow re-opening the tutorial manually (from Settings tab) via custom event — only if not yet completed.
   useEffect(() => {
