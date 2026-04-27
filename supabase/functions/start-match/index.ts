@@ -1326,49 +1326,147 @@ Deno.serve(async (req) => {
     //    deterministic per match. Two parallel callers produce identical output.
     seedRng(String(matchId));
 
-    // 2.5 STADIUM AUTHORITATIVE RESOLUTION
-    // O público/capacidade NUNCA pode vir do cliente sem validação — senão o
-    // mandante e o visitante enviam números diferentes e o primeiro a chegar
-    // vence, causando o bug de "Time A vê 10k, Time B vê 1k".
-    // Aqui resolvemos o mandante real pelo matchId e usamos o stadium info
-    // dele do banco. Para amistosos sem matchId resolvível, caímos no fallback.
+    // 2.5 AUTHORITATIVE TEAM/STADIUM RESOLUTION (CRITICAL — DESYNC GUARD)
+    // Cada cliente envia homeTeam/awayTeam/homePlayers do SEU ponto de vista.
+    // O visitante envia INVERTIDO (próprio clube como home). Sem corrigir isso
+    // no servidor, quem chegar primeiro define a simulação errada — gerando
+    // resultados completamente diferentes para os dois jogadores na mesma
+    // partida (ex: 2x0 para um, 2x1 para o outro).
+    //
+    // Solução: resolvemos o mandante REAL pelo matchId no banco e, se o
+    // chamador for o visitante, INVERTEMOS times/elencos/táticas antes da
+    // simulação. Assim, qualquer um dos dois clientes que chegue primeiro
+    // produz EXATAMENTE a mesma timeline (porque o seed do PRNG é matchId
+    // e os inputs são idênticos).
+    let effHomeTeam: string = homeTeam;
+    let effAwayTeam: string = awayTeam;
+    let effHomePlayers: any[] = Array.isArray(homePlayers) ? homePlayers : [];
+    let effAwayPlayers: any[] | undefined = Array.isArray(awayPlayers) ? awayPlayers : undefined;
+    let effHomeStrength: number = validatedHomeStrength;
+    let effAwayStrength: number = validatedAwayStrength;
+    let effTactics: any = tactics || {};
+    let effAwayTactics: any = awayTactics || undefined;
+    let effIsHomeForReport: boolean = isHome !== false;
+
     let resolvedHomeFans = Number(fans) || 500;
     let resolvedAwayFans = Number(awayFans) || 500;
     let resolvedStadiumCapacity = Number(stadiumCapacity) || 5000;
     let resolvedStadiumName = stadiumName || 'Estádio';
+    let resolvedHomeUserId: string | null = null;
     try {
       const { data: homeUserId } = await adminClient.rpc('resolve_home_user_for_match', { _match_id: String(matchId) });
       if (homeUserId) {
+        resolvedHomeUserId = homeUserId as string;
+
+        // Se o chamador NÃO for o mandante, ele é o visitante e enviou os
+        // dados invertidos. Buscamos os dados autoritativos do mandante real
+        // via game_saves e invertemos para que a simulação rode sempre com a
+        // mesma orientação (mandante = mandante real).
+        const callerIsHome = resolvedHomeUserId === userId;
+
+        if (!callerIsHome) {
+          console.info('[start-match] Caller is VISITOR — flipping inputs to mandante=', resolvedHomeUserId);
+          // Inverte campos vindos do cliente (visitante mandou homeX = clube dele)
+          const tmpTeam = effHomeTeam; effHomeTeam = effAwayTeam; effAwayTeam = tmpTeam;
+          const tmpPlayers = effHomePlayers; effHomePlayers = effAwayPlayers || []; effAwayPlayers = tmpPlayers;
+          const tmpStr = effHomeStrength; effHomeStrength = effAwayStrength; effAwayStrength = tmpStr;
+          const tmpTac = effTactics; effTactics = effAwayTactics || {}; effAwayTactics = tmpTac;
+          const tmpFans = resolvedHomeFans; resolvedHomeFans = resolvedAwayFans; resolvedAwayFans = tmpFans;
+          effIsHomeForReport = false; // o relatório é gerado para o caller (visitante)
+        }
+
         // Buscar info de estádio do mandante real
-        const { data: stadiumRows } = await adminClient.rpc('get_user_stadium_info', { _user_id: homeUserId });
+        const { data: stadiumRows } = await adminClient.rpc('get_user_stadium_info', { _user_id: resolvedHomeUserId });
         const stadium = Array.isArray(stadiumRows) ? stadiumRows[0] : stadiumRows;
         if (stadium) {
           resolvedStadiumName = stadium.stadium_name || resolvedStadiumName;
-          // Capacidade base por nível: 5k base * (1 + nível*0.4), igual ao client (aproximação segura)
           const lvl = Number(stadium.stadium_level) || 1;
           resolvedStadiumCapacity = Math.max(5000, Math.floor(5000 * (1 + (lvl - 1) * 0.4)));
+          // Nome do mandante autoritativo (substitui o que o cliente passou)
+          if (stadium.club_name && typeof stadium.club_name === 'string' && stadium.club_name.length > 0) {
+            effHomeTeam = stadium.club_name;
+          }
         }
-        // Fans do mandante via game_saves
+        // Mandante: fans + elenco autoritativos via game_saves
         const { data: homeSave } = await adminClient
           .from('game_saves')
           .select('club_data')
-          .eq('user_id', homeUserId)
+          .eq('user_id', resolvedHomeUserId)
           .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
-        const homeFansFromSave = (homeSave?.club_data as any)?.club?.fans
-          ?? (homeSave?.club_data as any)?.fans;
+        const homeClubData: any = homeSave?.club_data || {};
+        const homeFansFromSave = homeClubData?.club?.fans ?? homeClubData?.fans;
         if (typeof homeFansFromSave === 'number' && homeFansFromSave > 0) {
           resolvedHomeFans = homeFansFromSave;
         }
-        console.info('[Stadium] Authoritative resolution', {
-          matchId, homeUserId, capacity: resolvedStadiumCapacity, fans: resolvedHomeFans,
+        // Substitui elenco do mandante pelo que está salvo no servidor
+        const homePlayersFromSave: any[] = Array.isArray(homeClubData?.players) ? homeClubData.players : [];
+        if (homePlayersFromSave.length > 0) {
+          effHomePlayers = homePlayersFromSave;
+        }
+
+        // Visitante: tentar buscar elenco autoritativo se for jogador humano
+        // (resolvido pelo matchId — ex: friendly_invites, league_matches, cup_matches).
+        try {
+          let awayUserId: string | null = null;
+          const m = String(matchId);
+          if (m.startsWith('friendly-')) {
+            const inviteId = m.slice('friendly-'.length);
+            const { data: inv } = await adminClient
+              .from('friendly_invites')
+              .select('sender_id, receiver_id, home_team_id')
+              .eq('id', inviteId)
+              .maybeSingle();
+            if (inv) {
+              awayUserId = inv.home_team_id === inv.sender_id ? inv.receiver_id : inv.sender_id;
+            }
+          } else {
+            // tenta como uuid em league_matches/cup_matches/custom_tournament_matches
+            const { data: lm } = await adminClient
+              .from('league_matches')
+              .select('home_user_id, away_user_id')
+              .eq('id', m)
+              .maybeSingle();
+            if (lm) awayUserId = lm.home_user_id === resolvedHomeUserId ? lm.away_user_id : lm.home_user_id;
+          }
+          if (awayUserId && awayUserId !== resolvedHomeUserId) {
+            const { data: awaySave } = await adminClient
+              .from('game_saves')
+              .select('club_data')
+              .eq('user_id', awayUserId)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            const awayClubData: any = awaySave?.club_data || {};
+            const awayPlayersFromSave: any[] = Array.isArray(awayClubData?.players) ? awayClubData.players : [];
+            if (awayPlayersFromSave.length > 0) {
+              effAwayPlayers = awayPlayersFromSave;
+            }
+            const awayName = awayClubData?.club?.name;
+            if (typeof awayName === 'string' && awayName.length > 0) {
+              effAwayTeam = awayName;
+            }
+            const awayFansFromSave = awayClubData?.club?.fans ?? awayClubData?.fans;
+            if (typeof awayFansFromSave === 'number' && awayFansFromSave > 0) {
+              resolvedAwayFans = awayFansFromSave;
+            }
+          }
+        } catch (e) {
+          console.warn('[start-match] Failed to load away authoritative data', e);
+        }
+
+        console.info('[start-match] Authoritative inputs', {
+          matchId, homeUserId: resolvedHomeUserId, callerIsHome,
+          effHomeTeam, effAwayTeam,
+          homePlayersCount: effHomePlayers.length, awayPlayersCount: effAwayPlayers?.length || 0,
+          capacity: resolvedStadiumCapacity, homeFans: resolvedHomeFans, awayFans: resolvedAwayFans,
         });
       } else {
-        console.info('[Stadium] No home user resolved (likely friendly/admin) — using client values', { matchId });
+        console.info('[start-match] No home user resolved (likely friendly vs BOT) — using client values', { matchId });
       }
     } catch (e) {
-      console.warn('[Stadium] Resolution failed, falling back to client data', e);
+      console.warn('[start-match] Authoritative resolution failed, falling back to client data', e);
     }
 
     // Simulate match (com dados de estádio AUTORITATIVOS)
