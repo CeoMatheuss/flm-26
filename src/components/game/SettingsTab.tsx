@@ -104,29 +104,28 @@ export function SettingsTab() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            Tutorial
-          </CardTitle>
-          <p className="text-[10px] text-muted-foreground">Reveja o passo a passo do jogo a qualquer momento.</p>
-        </CardHeader>
-        <CardContent>
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full text-xs gap-2"
-            onClick={() => window.dispatchEvent(new CustomEvent('flm:open-tutorial'))}
-          >
-            <GraduationCap className="h-3.5 w-3.5" />
-            Ver tutorial novamente
-          </Button>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            A recompensa de R$ 200.000 só é concedida na primeira conclusão.
-          </p>
-        </CardContent>
-      </Card>
+      {!tutorialCompleted && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Tutorial
+            </CardTitle>
+            <p className="text-[10px] text-muted-foreground">Conclua o tutorial para ganhar R$ 200.000.</p>
+          </CardHeader>
+          <CardContent>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full text-xs gap-2"
+              onClick={() => window.dispatchEvent(new CustomEvent('flm:open-tutorial'))}
+            >
+              <GraduationCap className="h-3.5 w-3.5" />
+              Abrir tutorial
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
