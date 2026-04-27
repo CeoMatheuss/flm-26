@@ -2418,6 +2418,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          image_key: string | null
           is_event: boolean
           narration: string | null
           text: string
@@ -2427,6 +2428,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_key?: string | null
           is_event?: boolean
           narration?: string | null
           text: string
@@ -2436,6 +2438,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_key?: string | null
           is_event?: boolean
           narration?: string | null
           text?: string
