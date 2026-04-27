@@ -659,7 +659,7 @@ export function useMatchSimulation() {
         matchDbId: data.id,
         errorMsg: null,
         competition: data.competition || 'Amistoso',
-        isHome: data.is_home,
+        isHome: derivedIsHome,
         currentMoment: 'equilíbrio',
         playerStamina: {},
         assistantTips: [],
