@@ -504,6 +504,11 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                 ))}
               </div>
             )}
+            {!selectedOpponent && searchTerm.trim().length >= 1 && !searching && searchResults.length === 0 && (
+              <p className="text-[10px] text-muted-foreground italic px-1 mt-1">
+                Nenhum jogador encontrado. Tente outras letras ou verifique a grafia.
+              </p>
+            )}
           </div>
 
           {/* Date & Time */}
