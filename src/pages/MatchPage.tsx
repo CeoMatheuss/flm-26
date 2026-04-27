@@ -1022,6 +1022,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     }
   }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
 
+  // Cancel a queued substitution before it's applied (only allowed if not yet executed)
+  const handleCancelQueuedSub = useCallback((outId: string) => {
+    setSubQueue(q => q.filter(s => s.outId !== outId));
+    toast.info('🚫 Substituição cancelada');
+  }, []);
+
   const subValidation = validateSubAllowed();
   const subBlocked = !subValidation.ok;
   const subBlockedReason = subValidation.reason;
