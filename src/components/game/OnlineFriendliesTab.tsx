@@ -209,13 +209,13 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   const searchPlayers = useCallback(async (rawTerm?: string) => {
     const term = (rawTerm ?? searchTerm).trim();
-    if (term.length < 2) {
+    if (term.length < 1) {
       setSearchResults([]);
       return;
     }
     setSearching(true);
-    // ilike é case-insensitive; busca por nome parcial em qualquer posição
-    const { data: profiles } = await supabase
+    // 1) Busca direta por substring (case-insensitive)
+    const { data: directHits } = await supabase
       .from('profiles')
       .select('user_id, display_name')
       .neq('user_id', userId)
@@ -223,8 +223,50 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       .order('display_name', { ascending: true })
       .limit(10);
 
+    let combined = (directHits || []) as Array<{ user_id: string; display_name: string | null }>;
+
+    // 2) Se vier pouco resultado, busca aproximada (prefixo de cada token + similaridade)
+    if (combined.length < 5 && term.length >= 2) {
+      const firstChar = term[0];
+      const { data: fuzzyHits } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .neq('user_id', userId)
+        .ilike('display_name', `%${firstChar}%`)
+        .limit(40);
+      // Levenshtein simples para classificar
+      const dist = (a: string, b: string): number => {
+        const al = a.length, bl = b.length;
+        if (!al) return bl; if (!bl) return al;
+        const dp = Array.from({ length: al + 1 }, () => new Array(bl + 1).fill(0));
+        for (let i = 0; i <= al; i++) dp[i][0] = i;
+        for (let j = 0; j <= bl; j++) dp[0][j] = j;
+        for (let i = 1; i <= al; i++) for (let j = 1; j <= bl; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+        }
+        return dp[al][bl];
+      };
+      const lower = term.toLowerCase();
+      const scored = (fuzzyHits || [])
+        .filter(p => p.display_name)
+        .map(p => {
+          const name = (p.display_name || '').toLowerCase();
+          const minScore = name.split(/\s+/).reduce((m, tok) => Math.min(m, dist(lower, tok.slice(0, lower.length + 1))), Infinity);
+          return { p, score: Math.min(dist(lower, name.slice(0, lower.length)), minScore) };
+        })
+        .filter(x => x.score <= Math.max(2, Math.floor(term.length / 3)))
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 10)
+        .map(x => x.p);
+      // Mescla sem duplicar
+      const seen = new Set(combined.map(c => c.user_id));
+      for (const f of scored) if (!seen.has(f.user_id)) { combined.push(f); seen.add(f.user_id); }
+    }
+
     // Fetch presence for found users
-    const userIds = (profiles || []).map(p => p.user_id);
+    const userIds = combined.map(p => p.user_id);
     let presenceMap: Record<string, boolean> = {};
     if (userIds.length > 0) {
       const { data: presenceData } = await supabase
@@ -238,22 +280,22 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       });
     }
 
-    setSearchResults((profiles || []).map(p => ({
+    setSearchResults(combined.slice(0, 12).map(p => ({
       ...p,
       is_online: presenceMap[p.user_id] || false,
     })));
     setSearching(false);
   }, [searchTerm, userId]);
 
-  // Autocomplete em tempo real (debounce 300ms)
+  // Autocomplete em tempo real (debounce 250ms) — começa com 1 char
   useEffect(() => {
-    if (selectedOpponent) return; // não busca quando já há um selecionado
+    if (selectedOpponent) return;
     const term = searchTerm.trim();
-    if (term.length < 2) {
+    if (term.length < 1) {
       setSearchResults([]);
       return;
     }
-    const handle = setTimeout(() => { searchPlayers(term); }, 300);
+    const handle = setTimeout(() => { searchPlayers(term); }, 250);
     return () => clearTimeout(handle);
   }, [searchTerm, selectedOpponent, searchPlayers]);
 
