@@ -235,6 +235,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     infrastructure: infraState.infrastructure,
     youthProspects: infraState.youthProspects,
     youthInvestment: infraState.youthInvestment,
+    trainingInvestment: infraState.trainingInvestment,
     season: infraState.season,
     sponsors: financeState.sponsors,
     sponsorOffers: financeState.sponsorOffers,
