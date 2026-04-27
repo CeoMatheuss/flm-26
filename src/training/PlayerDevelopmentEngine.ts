@@ -1,18 +1,23 @@
 /**
- * PlayerDevelopmentEngine V3 — Motor de evolução por progresso (%)
+ * PlayerDevelopmentEngine V4 — Motor de evolução por CHANCE (%)
  *
- * Regras V3:
- * - Cada semana adiciona % de progresso (0-100) baseado em CT, intensidade, idade, personalidade, moral
- * - Treino Específico: 100% do gain vai p/ atributo escolhido
- * - Treino Grupo: distribui pelos pesos do grupo (60/30/10 etc.)
- * - Ao atingir 100% → +1 no atributo principal e reseta progresso
- * - Bônus por minutos jogados (+0.5% por minuto)
+ * Regras V4:
+ * - A cada semana, rola uma chance de evolução baseada em:
+ *     CT (3% a 32%) + idade (-30 a +20) + investimento mensal (0 a +10)
+ *   Limites: 2% (mínimo) — 70% (máximo).
+ * - Se a chance dispara, o jogador ganha um incremento no atributo treinado:
+ *     ≤21 anos: +0.3   |   22-26: +0.2   |   27+: +0.1
+ * - O incremento se acumula em `trainingProgress` (0–100). Quando passa de 100,
+ *   o atributo principal sobe +1 (cap = potential do jogador).
+ * - Treino Específico: 100% do incremento vai p/ atributo escolhido.
+ * - Treino Grupo: vai p/ atributo de maior peso ainda abaixo do cap.
+ * - Stamina é descontada pelo FatigueSystem (mantido em TrainingManager).
  */
 
 import type { Player, PlayerAttributes } from '@/types/game';
 import type { TrainingFocusKey, DevelopmentLog, PlayerTrainingConfig } from './TrainingTypes';
 import { focusToAttr, intensityConfig, isGroupFocus, groupWeights } from './TrainingTypes';
-import { getCTEfficiency } from '@/types/infrastructure';
+import { calcEvolutionChance, getEvolutionGainByAge } from '@/types/infrastructure';
 
 export interface StaffConfig {
   headCoach: number;
@@ -25,131 +30,138 @@ export const defaultStaff: StaffConfig = {
   headCoach: 3, fitnessCoach: 3, youthDeveloper: 3, medicalStaff: 3,
 };
 
+export interface EvolutionBreakdown {
+  ct: number;
+  age: number;
+  investment: number;
+  total: number;          // chance final (clamp 2-70) já com modificadores
+  gainPerEvent: number;   // 0.1 / 0.2 / 0.3
+  expectedWeekly: number; // chance% × ganho × 100, em pontos de progresso
+}
+
 export class PlayerDevelopmentEngine {
   private _logs: DevelopmentLog[] = [];
-  /** Bônus Premium global: +30% nos dev points por sessão. Definido por TrainingManager. */
+  /** Bônus Premium global: +5 p.p. na chance final (cap 70). */
   public premiumBoost: boolean = false;
+  /** Investimento mensal global em treino (R$). Setado pelo TrainingManager. */
+  public monthlyInvestment: number = 0;
 
-  /**
-   * Calcula o gain semanal de progresso (em pontos %).
-   */
+  setMonthlyInvestment(value: number) {
+    this.monthlyInvestment = Math.max(0, value | 0);
+  }
+
+  /** Detalha a chance de evolução para um jogador (sem rolar). */
+  computeBreakdown(
+    player: Player,
+    config: PlayerTrainingConfig,
+    trainingCenterLevel: number,
+  ): EvolutionBreakdown {
+    const { ct, age, investment, total } = calcEvolutionChance(
+      trainingCenterLevel, player.age, this.monthlyInvestment,
+    );
+    const intensityMult = intensityConfig[config.intensity].progressMultiplier; // 0.6 / 1.0 / 1.4
+    const moraleMult = 0.85 + (player.morale / 100) * 0.3; // 0.85 a 1.15
+    let chance = total * intensityMult * moraleMult;
+    if (this.premiumBoost) chance += 5;
+    if (player.injury) chance = 0;
+    if (config.focus === 'none') chance = 0;
+    chance = Math.max(0, Math.min(70, Math.round(chance * 10) / 10));
+
+    const gainPerEvent = getEvolutionGainByAge(player.age);
+    const expectedWeekly = +(chance / 100 * gainPerEvent * 100).toFixed(2);
+    return { ct, age, investment, total: chance, gainPerEvent, expectedWeekly };
+  }
+
+  /** Compat: ganho semanal esperado em pontos de progresso (0-100). */
   calcWeeklyGain(
     player: Player,
     config: PlayerTrainingConfig,
     trainingCenterLevel: number,
-    staff: StaffConfig,
-    minutesPlayedThisWeek = 0
+    _staff: StaffConfig,
+    _minutesPlayedThisWeek = 0,
   ): number {
-    if (player.injury) return 0;
-    if (player.age > 33) return 0;
-
-    const baseEff = getCTEfficiency(trainingCenterLevel); // 1.0 a 15.0 %
-    const intensityMult = intensityConfig[config.intensity].progressMultiplier;
-    const ageFactor =
-      player.age < 20 ? 1.6 :
-      player.age < 25 ? 1.3 :
-      player.age <= 30 ? 1.0 : 0.6;
-    const personalityFactor =
-      player.personality === 'dedicado' ? 1.2 :
-      player.personality === 'preguicoso' ? 0.8 : 1.0;
-    const moraleFactor = 0.7 + (player.morale / 100) * 0.6; // 0.7 a 1.3
-    const coachBoost = 1 + (staff.headCoach - 1) * 0.04;
-    const youthBoost = player.age < 23 ? 1 + (staff.youthDeveloper - 1) * 0.05 : 1;
-    const premiumMult = this.premiumBoost ? 1.3 : 1.0; // 🌟 Premium: +30% dev points
-
-    const gain = baseEff * intensityMult * ageFactor * personalityFactor * moraleFactor * coachBoost * youthBoost * premiumMult;
-    const matchBonus = minutesPlayedThisWeek * 0.5; // +0.5%/min jogado
-    return Math.max(0, gain + matchBonus);
+    return this.computeBreakdown(player, config, trainingCenterLevel).expectedWeekly;
   }
 
-  /**
-   * Determina status visual a partir do gain semanal.
-   */
   computeStatus(gain: number, player: Player): 'evoluindo' | 'normal' | 'lento' | 'travado' {
-    if (player.age > 33 || player.injury) return 'travado';
+    if (player.injury) return 'travado';
     if (gain >= 8) return 'evoluindo';
     if (gain >= 4) return 'normal';
     if (gain >= 1) return 'lento';
     return 'travado';
   }
 
-  /**
-   * Processa uma semana de treino.
-   */
+  /** Processa uma semana: rola a chance e aplica ganho fracionário. */
   processWeek(
     player: Player,
     config: PlayerTrainingConfig,
     trainingCenterLevel: number,
-    staff: StaffConfig,
+    _staff: StaffConfig,
     week: number,
-    minutesPlayedThisWeek = 0
+    _minutesPlayedThisWeek = 0,
   ): { player: Player; log: DevelopmentLog | null } {
     const { focus } = config;
-    if (focus === 'none') {
+    if (focus === 'none' || player.injury) {
       return { player: { ...player, trainingStatus: 'travado' }, log: null };
     }
 
-    const gain = this.calcWeeklyGain(player, config, trainingCenterLevel, staff, minutesPlayedThisWeek);
-    const status = this.computeStatus(gain, player);
+    const bd = this.computeBreakdown(player, config, trainingCenterLevel);
+    const status = this.computeStatus(bd.expectedWeekly, player);
 
-    if (gain <= 0) {
+    const roll = Math.random() * 100;
+    if (roll >= bd.total) {
       return { player: { ...player, trainingStatus: status }, log: null };
     }
 
-    const currentProgress = player.trainingProgress ?? 0;
-    let newProgress = currentProgress + gain;
-    let log: DevelopmentLog | null = null;
-    let updatedPlayer = { ...player };
+    const gainPoints = bd.gainPerEvent * 100;
 
-    // Distribui ganho para atributos (Grupo) ou atributo único (Específico)
+    let mainAttr: keyof PlayerAttributes | null = null;
+    const cap = Math.max(40, Math.min(99, player.potential ?? 99));
     if (isGroupFocus(focus)) {
-      // Para grupo: aplica progresso parcial em cada atributo conforme peso
-      // Aqui preenche progress global; o "+1" vai pro atributo de maior peso ao completar
+      const weights = groupWeights[focus];
+      for (const w of weights) {
+        const cur = (player.attributes[w.attr] as number | undefined) ?? 0;
+        if (cur < cap) { mainAttr = w.attr; break; }
+      }
+    } else {
+      mainAttr = focusToAttr[focus];
     }
 
-    if (newProgress >= 100) {
-      // Determina atributo principal a evoluir
-      let mainAttr: keyof PlayerAttributes | null = null;
-      if (isGroupFocus(focus)) {
-        // pega atributo de maior peso, mas que ainda não atingiu cap
-        const weights = groupWeights[focus];
-        const cap = player.age < 25 ? 99 : 95;
-        for (const w of weights) {
-          const cur = (player.attributes[w.attr] as number | undefined) ?? 0;
-          if (cur < cap) { mainAttr = w.attr; break; }
-        }
-      } else {
-        mainAttr = focusToAttr[focus];
-      }
+    if (!mainAttr) {
+      return { player: { ...player, trainingStatus: status }, log: null };
+    }
 
-      if (mainAttr) {
-        const currentVal = (player.attributes[mainAttr] as number | undefined) ?? 0;
-        const cap = player.age < 25 ? 99 : 95;
-        if (currentVal < cap) {
-          const newVal = Math.min(cap, currentVal + 1);
-          const updatedAttributes: PlayerAttributes = { ...player.attributes, [mainAttr]: newVal };
-          const newOverall = this._recalcOverall(player, updatedAttributes);
-          updatedPlayer = {
-            ...player,
-            attributes: updatedAttributes,
-            overall: newOverall,
-            lastTrainedAttr: mainAttr,
-          };
-          log = {
-            playerId: player.id,
-            playerName: player.name,
-            attribute: mainAttr,
-            oldValue: currentVal,
-            newValue: newVal,
-            week,
-            source: 'training',
-          };
-          this._logs.push(log);
-          newProgress = newProgress - 100;
-        } else {
-          newProgress = 100; // trava
-        }
-      }
+    const currentVal = (player.attributes[mainAttr] as number | undefined) ?? 0;
+    if (currentVal >= cap) {
+      return { player: { ...player, trainingStatus: status, trainingProgress: 100 }, log: null };
+    }
+
+    const currentProgress = player.trainingProgress ?? 0;
+    let newProgress = currentProgress + gainPoints;
+    let log: DevelopmentLog | null = null;
+    let updatedPlayer: Player = { ...player };
+
+    if (newProgress >= 100) {
+      const newVal = Math.min(cap, currentVal + 1);
+      const updatedAttributes: PlayerAttributes = { ...player.attributes, [mainAttr]: newVal };
+      const newOverall = this._recalcOverall(player, updatedAttributes);
+      updatedPlayer = {
+        ...player,
+        attributes: updatedAttributes,
+        overall: newOverall,
+        lastTrainedAttr: mainAttr,
+      };
+      log = {
+        playerId: player.id,
+        playerName: player.name,
+        attribute: mainAttr,
+        oldValue: currentVal,
+        newValue: newVal,
+        week,
+        source: 'training',
+      };
+      this._logs.push(log);
+      newProgress = newProgress - 100;
     }
 
     return {
@@ -158,9 +170,6 @@ export class PlayerDevelopmentEngine {
     };
   }
 
-  /**
-   * Aplica declínio por idade para jogadores acima de 33.
-   */
   applyAgingDecline(player: Player): Player {
     if (player.age <= 33) return player;
     const declineChance = 0.08 + (player.age - 33) * 0.05;
@@ -173,7 +182,6 @@ export class PlayerDevelopmentEngine {
     const [key, val] = eligible[Math.floor(Math.random() * eligible.length)];
     const updatedAttributes: PlayerAttributes = { ...player.attributes, [key]: Math.max(40, val - 1) };
     const newOverall = this._recalcOverall(player, updatedAttributes);
-
     return { ...player, attributes: updatedAttributes, overall: newOverall };
   }
 
