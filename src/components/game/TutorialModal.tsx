@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -177,13 +177,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
     onClose();
   };
 
-  const handleOpen = (isOpen: boolean) => {
-    if (!isOpen) {
-      onClose();
-    } else {
-      onNavigateTab?.(current.tab);
-    }
-  };
+
 
   const tabDisplayName = (tab: string) => {
     const map: Record<string, string> = {
@@ -194,10 +188,12 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
     return map[tab] || tab;
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-border/50">
-        <div className="p-5 space-y-4">
+    <div className="fixed bottom-3 right-3 z-[60] w-[min(360px,calc(100vw-1.5rem))] max-h-[min(560px,calc(100vh-1.5rem))] overflow-hidden rounded-xl border border-border/60 bg-card/95 backdrop-blur-md shadow-2xl shadow-black/30 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
+      <div className="overflow-y-auto smooth-scroll">
+        <div className="p-4 space-y-3">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-[10px] gap-1">
@@ -282,7 +278,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

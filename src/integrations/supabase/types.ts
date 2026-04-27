@@ -3856,6 +3856,7 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
+      check_club_name_available: { Args: { _name: string }; Returns: Json }
       close_expired_auctions: { Args: never; Returns: Json }
       cwc_update_standings: {
         Args: {

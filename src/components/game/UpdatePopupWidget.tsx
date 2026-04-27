@@ -115,7 +115,7 @@ export function UpdatePopupWidget({ userId }: Props) {
       )}
 
       {/* Full details dialog */}
-      <Dialog open={showDetails} onOpenChange={handleCloseDetails}>
+      <Dialog open={showDetails} onOpenChange={(o) => { if (!o) handleCloseDetails(); }}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">

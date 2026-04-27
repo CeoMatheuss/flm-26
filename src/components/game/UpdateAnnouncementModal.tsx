@@ -39,7 +39,7 @@ export function UpdateAnnouncementModal({ open, onClose }: Props) {
   const style = typeStyles[CHANGELOG.type] || typeStyles.info;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">

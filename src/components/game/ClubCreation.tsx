@@ -222,6 +222,8 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [country, setCountry] = useState('BR');
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryStatuses, setCountryStatuses] = useState<Record<string, CountryStatusData>>({});
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  const [checkingName, setCheckingName] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const selectedCountry = countries.find(c => c.code === country);
@@ -265,12 +267,24 @@ export function ClubCreation({ userId, onComplete }: Props) {
     setUploading(false);
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (step === 1) {
       if (!clubName.trim()) { toast.error('Digite o nome do clube'); return; }
       if (clubName.trim().length > 30) { toast.error('Nome muito longo (máx 30 caracteres)'); return; }
       const status = getCountryStatus(country);
       if (status.locked) { toast.error('Este país está lotado! Escolha outro.'); return; }
+      // Verifica nome duplicado no servidor
+      setCheckingName(true);
+      const { data: check } = await supabase.rpc('check_club_name_available' as any, { _name: clubName.trim() });
+      setCheckingName(false);
+      const result = (check as any) || {};
+      if (result.available === false) {
+        const sugg = (result.suggestions || []) as string[];
+        setNameSuggestions(sugg);
+        toast.error(`Nome "${clubName.trim()}" já em uso. Veja as sugestões abaixo.`);
+        return;
+      }
+      setNameSuggestions([]);
       setStep(2);
     } else if (step === 2) {
       if (stadiumName.trim().length > 40) { toast.error('Nome do estádio muito longo (máx 40 caracteres)'); return; }
@@ -352,6 +366,23 @@ export function ClubCreation({ userId, onComplete }: Props) {
                   autoFocus
                 />
                 <p className="text-[10px] text-muted-foreground text-right">{clubName.length}/30</p>
+                {nameSuggestions.length > 0 && (
+                  <div className="mt-1 p-2 rounded-lg border border-amber-500/30 bg-amber-500/10 space-y-1">
+                    <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">⚠️ Nome em uso. Sugestões:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {nameSuggestions.map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => { setClubName(s); setNameSuggestions([]); }}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
