@@ -425,7 +425,18 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => { game.addBonus(500000, 'Recompensa por completar o Tutorial'); toast.success('🎉 Tutorial completo! Você ganhou R$500.000!'); await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId); setTutorialCompleted(true); }} />
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
+        // Anti-exploit: verifica no servidor se já recebeu antes de creditar
+        const { data: prof } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
+        if ((prof as any)?.tutorial_completed) {
+          setTutorialCompleted(true);
+          return;
+        }
+        await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId);
+        game.addBonus(200000, 'Recompensa por completar o Tutorial');
+        toast.success('🎉 Parabéns! Você recebeu 200K por completar o tutorial.');
+        setTutorialCompleted(true);
+      }} />
       {pendingAwardsSeason !== null && (
         <PersistentSeasonAwards
           season={pendingAwardsSeason}
