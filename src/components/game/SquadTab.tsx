@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import type { TacticsConfig, Formation } from '@/types/tactics';
 import { formationPositions } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
+import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 
 interface Props {
   players: Player[];
@@ -23,7 +24,7 @@ interface Props {
   onRest: (id: string) => void;
   onRenewContract: (playerId: string, newSalary: number, newDuration: number) => void;
   onListForSale: (playerId: string) => void;
-  onLoanOut: (playerId: string) => void;
+  onLoanOut: (playerId: string, terms?: LoanTerms) => void | Promise<void>;
   onAuction: (player: Player) => void;
   onChangeNumber: (playerId: string, number: number) => void;
   canLoanOut: boolean;
@@ -135,6 +136,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [filterOvr, setFilterOvr] = useState<'all' | '90+' | '80-89' | '70-79' | '60-69' | '<60'>('all');
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
+  const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
@@ -394,7 +397,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-primary/50 hover:bg-primary/5" onClick={() => onListForSale(player.id)} disabled={players.length <= 11}>
             <Tag className="h-3.5 w-3.5" /> Anunciar no Mercado
           </Button>
-          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-cyan-500/50 hover:bg-cyan-500/5" onClick={() => onLoanOut(player.id)} disabled={!canLoanOut || (players.length <= 11)}>
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-cyan-500/50 hover:bg-cyan-500/5" onClick={() => setLoanCandidate(player)} disabled={!canLoanOut || (players.length <= 11)}>
             <ArrowLeftRight className="h-3.5 w-3.5" /> Emprestar
           </Button>
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 rounded-xl border-border/50 hover:border-amber-500/50 hover:bg-amber-500/5" onClick={() => onAuction(player)} disabled={!auctionEligible}>
@@ -1014,6 +1017,31 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); }}
         />
       )}
+
+      {/* Loan listing terms modal */}
+      <LoanNegotiationModal
+        open={!!loanCandidate}
+        onOpenChange={(o) => { if (!o) setLoanCandidate(null); }}
+        mode="list"
+        player={loanCandidate ? {
+          name: loanCandidate.name,
+          position: loanCandidate.position,
+          age: loanCandidate.age,
+          overall: loanCandidate.overall,
+          salary: loanCandidate.salary || 0,
+        } : { name: '', position: 'MEI', age: 0, overall: 0, salary: 0 }}
+        loading={loanSubmitting}
+        onSubmit={async (terms) => {
+          if (!loanCandidate) return;
+          setLoanSubmitting(true);
+          try {
+            await onLoanOut(loanCandidate.id, terms);
+            setLoanCandidate(null);
+          } finally {
+            setLoanSubmitting(false);
+          }
+        }}
+      />
     </div>
   );
 }

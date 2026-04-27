@@ -169,7 +169,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
             }
           }}
-          onLoanOut={async (playerId) => {
+          onLoanOut={async (playerId, terms) => {
             const player = game.club.players.find(p => p.id === playerId);
             if (!player) return;
             if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
@@ -184,6 +184,10 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
                 salary: player.salary || 0,
                 clubName: game.club.name,
                 sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+                salaryPayer: terms?.salaryPayer ?? 'buyer',
+                salarySplitPct: terms?.salarySplitPct ?? 0,
+                loanFee: terms?.loanFee ?? 0,
+                openToOffers: true,
               },
             });
             if (res.error || res.data?.error) {
