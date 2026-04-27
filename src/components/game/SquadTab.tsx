@@ -762,16 +762,55 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             })}
             <div className="shrink-0 ml-auto flex items-center gap-1 border-l border-border/30 pl-1.5">
               <span className="text-[9px] text-muted-foreground shrink-0">↕</span>
-              {(['position', 'overall', 'age', 'value'] as const).map(s => (
+              {(['position', 'overall', 'age', 'value', 'salary'] as const).map(s => (
                 <button
                   key={s}
                   className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${sortBy === s ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                   onClick={() => setSortBy(s)}
+                  title={
+                    s === 'position' ? 'Por posição' :
+                    s === 'overall' ? 'Melhor OVR primeiro' :
+                    s === 'age' ? 'Mais jovem primeiro' :
+                    s === 'value' ? 'Maior valor primeiro' :
+                    'Maior salário primeiro'
+                  }
                 >
-                  {s === 'position' ? 'Pos' : s === 'overall' ? 'OVR' : s === 'age' ? 'Idade' : 'Valor'}
+                  {s === 'position' ? 'Pos' : s === 'overall' ? 'OVR ↓' : s === 'age' ? 'Jovem ↑' : s === 'value' ? 'Valor ↓' : 'Salário ↓'}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Filtro por faixa de OVR */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <span className="text-[9px] text-muted-foreground shrink-0 uppercase tracking-wider">OVR:</span>
+            {([
+              { v: 'all', label: 'Todos' },
+              { v: '90+', label: '90+' },
+              { v: '80-89', label: '80-89' },
+              { v: '70-79', label: '70-79' },
+              { v: '60-69', label: '60-69' },
+              { v: '<60', label: '< 60' },
+            ] as const).map(({ v, label }) => {
+              const count = v === 'all' ? players.length : players.filter(p => {
+                if (v === '90+') return p.overall >= 90;
+                if (v === '80-89') return p.overall >= 80 && p.overall < 90;
+                if (v === '70-79') return p.overall >= 70 && p.overall < 80;
+                if (v === '60-69') return p.overall >= 60 && p.overall < 70;
+                return p.overall < 60;
+              }).length;
+              const active = filterOvr === v;
+              return (
+                <button
+                  key={v}
+                  className={`shrink-0 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70 border border-transparent'}`}
+                  onClick={() => setFilterOvr(v)}
+                  disabled={count === 0 && v !== 'all'}
+                >
+                  {label} <span className="opacity-60">({count})</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Auto-Lineup button */}
