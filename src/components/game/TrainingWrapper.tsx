@@ -39,6 +39,9 @@ interface Props {
   /** CT Rooms data for the rooms sub-tab */
   ctRooms?: CTRooms;
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
+  /** Investimento mensal em treino (R$) — afeta a chance de evolução. */
+  trainingInvestment?: number;
+  onSetTrainingInvestment?: (value: number) => void;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
@@ -55,6 +58,7 @@ export function TrainingWrapper({
   trainingIntensity, onSetTrainingIntensity, budget = 0, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
+  trainingInvestment, onSetTrainingInvestment,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'training' | 'training2d' | 'infra'>('training');
 
@@ -134,6 +138,8 @@ export function TrainingWrapper({
               infrastructure={infrastructure}
               budget={budget}
               onUpgradeFacility={onUpgradeFacility}
+              trainingInvestment={trainingInvestment}
+              onSetTrainingInvestment={onSetTrainingInvestment}
             />
           )}
           {ctRooms && onUpgradeCTRoom && (

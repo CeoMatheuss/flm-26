@@ -45,6 +45,8 @@ interface Props {
   onUpgradeFacility?: (facility: FacilityKey) => void;
   ctRooms?: CTRooms;
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
+  trainingInvestment?: number;
+  onSetTrainingInvestment?: (value: number) => void;
 
   // Estádio
   stadiumProps?: any;
@@ -72,6 +74,7 @@ export function InfrastructureWrapper({
   trainingIntensity, onSetTrainingIntensity, budget = 0, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
+  trainingInvestment, onSetTrainingInvestment,
   stadiumProps, youthProps,
   initialSubTab = 'training',
   standalone = false,
@@ -161,6 +164,8 @@ export function InfrastructureWrapper({
               infrastructure={infrastructure}
               budget={budget}
               onUpgradeFacility={onUpgradeFacility}
+              trainingInvestment={trainingInvestment}
+              onSetTrainingInvestment={onSetTrainingInvestment}
             />
           )}
         </div>

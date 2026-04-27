@@ -31,6 +31,9 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     }));
   });
   const [youthInvestment, setYouthInvestment] = useState(initialState?.youthInvestment ?? 0);
+  const [trainingInvestment, setTrainingInvestment] = useState<number>(
+    (initialState as { trainingInvestment?: number } | undefined)?.trainingInvestment ?? 0
+  );
   const [season, setSeason] = useState<SeasonData>(initialState?.season ?? defaultSeason);
   const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
   const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
@@ -197,6 +200,24 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     addFinance('despesa', 'Base', youthInvestment, `Investimento Base (ciclo de geração)`);
     return true;
   }, [youthInvestment]);
+
+  const chargeTrainingInvestment = useCallback((
+    clubBudget: number,
+    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    deductBudget: (cost: number) => void,
+  ) => {
+    if (trainingInvestment <= 0) return false;
+    if (clubBudget < trainingInvestment) {
+      toast.error('Orçamento insuficiente para o investimento mensal em treino!');
+      // Auto-rebaixa para 0 para evitar loop
+      setTrainingInvestment(0);
+      return false;
+    }
+    deductBudget(trainingInvestment);
+    addFinance('despesa', 'CT', trainingInvestment, 'Investimento mensal em Treino');
+    toast.success(`💰 Investimento mensal em treino debitado: R$ ${trainingInvestment.toLocaleString('pt-BR')}`);
+    return true;
+  }, [trainingInvestment]);
 
   /** Run end-of-cycle: simulate youth match + roll dynamic event. Updates prospects in place. */
   const processYouthCycle = useCallback((clubName: string) => {
@@ -368,11 +389,13 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
   return {
     infrastructure, setInfrastructure, youthProspects, setYouthProspects,
-    youthInvestment, setYouthInvestment, season, setSeason,
+    youthInvestment, setYouthInvestment,
+    trainingInvestment, setTrainingInvestment,
+    season, setSeason,
     ctRooms, setCTRooms, achievements, setAchievements,
     lastMatchReport, setLastMatchReport, youthPromotedCount, setYouthPromotedCount,
     lastYouthMatchReport, setLastYouthMatchReport,
     upgradeFacility, promoteYouth, sellYouth, enrollCopinha,
-    processYouthCycle, upgradeCTRoom, chargeYouthInvestment,
+    processYouthCycle, upgradeCTRoom, chargeYouthInvestment, chargeTrainingInvestment,
   };
 }

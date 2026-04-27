@@ -35,6 +35,7 @@ export interface GameState {
   infrastructure: Infrastructure;
   youthProspects: YouthProspect[];
   youthInvestment: number;
+  trainingInvestment?: number;
   season: SeasonData;
   sponsors: Sponsor[];
   sponsorOffers: SponsorOffer[];
@@ -68,6 +69,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   useEffect(() => {
     getTrainingManager().setPremiumBoost(!!isPremium);
   }, [isPremium]);
+
+  // 💰 Investimento mensal em treino → engine de evolução
+  useEffect(() => {
+    getTrainingManager().setMonthlyTrainingInvestment(infraState.trainingInvestment ?? 0);
+  }, [infraState.trainingInvestment]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
@@ -229,6 +235,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     infrastructure: infraState.infrastructure,
     youthProspects: infraState.youthProspects,
     youthInvestment: infraState.youthInvestment,
+    trainingInvestment: infraState.trainingInvestment,
     season: infraState.season,
     sponsors: financeState.sponsors,
     sponsorOffers: financeState.sponsorOffers,
@@ -248,7 +255,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     friendliesPlayedSeason: matchState.friendliesPlayedSeason,
     lastFriendlyDate: matchState.lastFriendlyDate,
   }), [clubState.club, tactics, financeState.finances, clubState.marketPlayers, clubState.freeAgents,
-    infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.season,
+    infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.trainingInvestment, infraState.season,
     financeState.sponsors, financeState.sponsorOffers, matchState.events, clubState.loanedPlayers,
     clubState.trainingFocus, clubState.trainingIntensity, infraState.achievements, infraState.lastMatchReport, clubState.clubProfile,
     infraState.ctRooms, infraState.youthPromotedCount, matchState.ranking, matchState.rankingHistory,
@@ -272,6 +279,8 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     infrastructure: infraState.infrastructure,
     youthProspects: infraState.youthProspects,
     youthInvestment: infraState.youthInvestment,
+    trainingInvestment: infraState.trainingInvestment,
+    setTrainingInvestment: infraState.setTrainingInvestment,
     season: infraState.season,
     hasUnplayedMatches,
     sponsors: financeState.sponsors,
