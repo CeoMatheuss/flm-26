@@ -201,12 +201,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     checkTutorial();
   }, [userId]);
 
-  // Allow re-opening the tutorial manually (from Settings tab) via custom event.
+  // Allow re-opening the tutorial manually (from Settings tab) via custom event — only if not yet completed.
   useEffect(() => {
-    const handler = () => setShowTutorial(true);
+    const handler = () => {
+      if (!tutorialCompleted) setShowTutorial(true);
+    };
     window.addEventListener('flm:open-tutorial', handler);
     return () => window.removeEventListener('flm:open-tutorial', handler);
-  }, []);
+  }, [tutorialCompleted]);
 
   // Handle match/tournament navigation state
   useEffect(() => {
