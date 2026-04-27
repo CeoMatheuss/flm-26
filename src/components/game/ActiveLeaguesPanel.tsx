@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Globe, Trophy, Users, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import { countryNames, countryFlags, countryContinents } from '@/types/league';
+import { countryNames, countryFlags, countryContinents, getDivisionLabel } from '@/types/league';
 
 interface LeagueSummary {
   id: string;
@@ -44,7 +44,7 @@ const continentLabels: Record<string, string> = {
   asia: '🌏 Ásia/Oceania',
 };
 
-const divisionNames = ['Série A', 'Série B', 'Série C', 'Série D'];
+// Nomes reais de divisões agora vêm de getDivisionLabel(country, division)
 
 const statusColors: Record<string, string> = {
   registration: 'text-blue-400 border-blue-500/30',
@@ -280,7 +280,7 @@ export function ActiveLeaguesPanel() {
                           <div className="space-y-0.5">
                             {c.leagues.sort((a, b) => (a.division || 1) - (b.division || 1)).map(l => (
                               <div key={l.id} className="flex items-center gap-1.5 text-[8px] px-1.5 py-0.5 rounded bg-accent/10">
-                                <span className="font-bold w-12 shrink-0">{divisionNames[(l.division || 1) - 1] || `Div ${l.division}`}</span>
+                                <span className="font-bold shrink-0 truncate max-w-[140px]" title={getDivisionLabel(c.code, l.division)}>{getDivisionLabel(c.code, l.division)}</span>
                                 <span className="text-muted-foreground">R{l.current_round}/{l.total_rounds}</span>
                                 <span className="text-muted-foreground">{l.member_count}/{l.max_members}</span>
                                 <Badge variant="outline" className={`text-[6px] ml-auto ${statusColors[l.season_status] || ''}`}>
