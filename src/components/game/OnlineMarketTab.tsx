@@ -140,6 +140,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [loanAgeMin, setLoanAgeMin] = useState('');
   const [loanAgeMax, setLoanAgeMax] = useState('');
   const [loanSalaryMax, setLoanSalaryMax] = useState('');
+  const [negotiateLoan, setNegotiateLoan] = useState<any | null>(null);
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
