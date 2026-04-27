@@ -31,6 +31,9 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     }));
   });
   const [youthInvestment, setYouthInvestment] = useState(initialState?.youthInvestment ?? 0);
+  const [trainingInvestment, setTrainingInvestment] = useState<number>(
+    (initialState as { trainingInvestment?: number } | undefined)?.trainingInvestment ?? 0
+  );
   const [season, setSeason] = useState<SeasonData>(initialState?.season ?? defaultSeason);
   const [ctRooms, setCTRooms] = useState<CTRooms>(initialState?.ctRooms ?? defaultCTRooms);
   const [achievements, setAchievements] = useState<Achievement[]>(initialState?.achievements ?? []);
