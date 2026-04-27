@@ -222,6 +222,8 @@ export function ClubCreation({ userId, onComplete }: Props) {
   const [country, setCountry] = useState('BR');
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryStatuses, setCountryStatuses] = useState<Record<string, CountryStatusData>>({});
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  const [checkingName, setCheckingName] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const selectedCountry = countries.find(c => c.code === country);
