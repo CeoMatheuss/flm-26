@@ -441,6 +441,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onUpgradeFacility={game.upgradeFacility}
             ctRooms={game.ctRooms}
             onUpgradeCTRoom={game.upgradeCTRoom}
+            trainingInvestment={game.trainingInvestment}
+            onSetTrainingInvestment={game.setTrainingInvestment}
           />
         )}
       </TabsContent>
