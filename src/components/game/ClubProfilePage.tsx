@@ -266,6 +266,19 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
     );
   }
 
+  // League position (rank within members)
+  const leaguePosition = useMemo(() => {
+    const sorted = [...members].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      const sgA = a.goals_for - a.goals_against;
+      const sgB = b.goals_for - b.goals_against;
+      if (sgB !== sgA) return sgB - sgA;
+      return b.goals_for - a.goals_for;
+    });
+    const idx = sorted.findIndex(m => m.user_id === member.user_id);
+    return idx >= 0 ? idx + 1 : null;
+  }, [members, member.user_id]);
+
   return (
     <div className="space-y-4">
       {/* Back Button */}
@@ -273,227 +286,263 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
         <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </Button>
 
-      {/* Club Header */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            {shieldData ? (
-              <ShieldCrest {...(shieldData as any)} shape={(shieldData as any).shape as ShieldShape} size={56} />
-            ) : (
-              <ShieldCrest primaryColor={getTeamColor(member.club_name)} secondaryColor="#ffffff" pattern="solid" shape="classic" size={56} />
-            )}
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                {member.club_name}
-                {isBot && <Badge variant="secondary" className="text-[8px]">BOT</Badge>}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Reputação: {clubMeta.reputation ?? member.reputation} • {squad.length} jogadores
-                {clubMeta.fans ? ` • ${clubMeta.fans.toLocaleString()} torcedores` : ''}
-              </p>
-              {clubMeta.country && <p className="text-[10px] text-muted-foreground mt-0.5">🌍 {clubMeta.country}</p>}
+      {/* Hero Header — escudo em destaque + identidade */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
+            <div className="shrink-0">
+              {shieldData ? (
+                <ShieldCrest {...(shieldData as any)} shape={(shieldData as any).shape as ShieldShape} size={88} />
+              ) : (
+                <ShieldCrest primaryColor={getTeamColor(member.club_name)} secondaryColor="#ffffff" pattern="solid" shape="classic" size={88} />
+              )}
             </div>
-          </div>
-
-          {/* Foundation & Owner */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {clubMeta.foundedSeason && (
-              <div className="flex items-center gap-1 bg-muted/30 rounded px-2 py-1">
-                <Calendar className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Fundado na Temporada {clubMeta.foundedSeason}</span>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h2 className="text-2xl font-bold leading-tight">{member.club_name}</h2>
+                {isBot && <Badge variant="secondary" className="text-[9px]">BOT</Badge>}
+                {isUserTeam && <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Seu clube</Badge>}
               </div>
-            )}
-            {clubMeta.ownerName && (
-              <div className="flex items-center gap-1 bg-muted/30 rounded px-2 py-1">
-                <Star className="h-3 w-3 text-amber-400" />
-                <span className="text-[10px] text-muted-foreground">Dono: {clubMeta.ownerName}</span>
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap text-[11px] text-muted-foreground">
+                {clubMeta.country && <span className="inline-flex items-center gap-1">🌍 {clubMeta.country}</span>}
+                {leaguePosition && <span className="inline-flex items-center gap-1">📊 {leaguePosition}º na liga</span>}
+                <span>• {squad.length} jogadores</span>
+                {clubMeta.fans ? <span>• {clubMeta.fans.toLocaleString()} torcedores</span> : null}
               </div>
-            )}
-            {clubMeta.motto && (
-              <div className="bg-muted/30 rounded px-2 py-1">
-                <span className="text-[10px] text-muted-foreground italic">"{clubMeta.motto}"</span>
-              </div>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-lg font-bold">{member.points}</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Pontos</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-lg font-bold text-emerald-400">{member.wins}</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Vitórias</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className={`text-lg font-bold ${sg > 0 ? 'text-emerald-400' : sg < 0 ? 'text-rose-400' : ''}`}>
-                {sg > 0 ? `+${sg}` : sg}
-              </p>
-              <p className="text-[9px] text-muted-foreground uppercase">Saldo</p>
-            </div>
-            <div className="bg-muted/30 rounded p-2 text-center">
-              <p className="text-lg font-bold">{winRate}%</p>
-              <p className="text-[9px] text-muted-foreground uppercase">Aprov.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-              <span className="text-muted-foreground">J</span> <span className="font-bold ml-1">{member.played}</span>
-            </div>
-            <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-              <span className="text-muted-foreground">GP</span> <span className="font-bold ml-1">{member.goals_for}</span>
-            </div>
-            <div className="bg-muted/20 rounded p-1.5 text-center text-xs">
-              <span className="text-muted-foreground">GC</span> <span className="font-bold ml-1">{member.goals_against}</span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground">Forma:</span>
-            <div className="flex gap-0.5">
-              {last5.length === 0 ? (
-                <span className="text-[10px] text-muted-foreground">—</span>
-              ) : last5.map((r, ri) => (
-                <span key={ri} className={`w-5 h-5 rounded-sm flex items-center justify-center text-[10px] font-bold ${
-                  r === 'V' ? 'bg-emerald-500/20 text-emerald-400' : r === 'E' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-                }`}>{r}</span>
-              ))}
+              {clubMeta.motto && (
+                <p className="text-[11px] text-muted-foreground italic pt-0.5">"{clubMeta.motto}"</p>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Trophies */}
-      {trophies.length > 0 && (
-        <Card className="border-yellow-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-yellow-500" /> Troféus ({trophies.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {trophies.map((t, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-amber-500/5 rounded-lg p-2.5 border border-yellow-500/20">
-                  <span className="text-xl">🏆</span>
-                  <div>
-                    <p className="text-xs font-semibold">{t.title}</p>
-                    <p className="text-[10px] text-muted-foreground">Temporada {t.season} • {t.date}</p>
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid grid-cols-4 w-full h-auto">
+          <TabsTrigger value="overview" className="text-[11px] sm:text-xs py-2">Visão Geral</TabsTrigger>
+          <TabsTrigger value="squad" className="text-[11px] sm:text-xs py-2">Elenco</TabsTrigger>
+          <TabsTrigger value="stats" className="text-[11px] sm:text-xs py-2">Estatísticas</TabsTrigger>
+          <TabsTrigger value="history" className="text-[11px] sm:text-xs py-2">Histórico</TabsTrigger>
+        </TabsList>
+
+        {/* === VISÃO GERAL === */}
+        <TabsContent value="overview" className="space-y-3 mt-3">
+          {/* Identity blocks */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Identidade do clube</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <InfoBlock icon={<Star className="h-3.5 w-3.5 text-amber-400" />} label="Reputação" value={String(clubMeta.reputation ?? member.reputation)} />
+                <InfoBlock icon={<Calendar className="h-3.5 w-3.5 text-muted-foreground" />} label="Fundado" value={clubMeta.foundedSeason ? `Temporada ${clubMeta.foundedSeason}` : '—'} />
+                <InfoBlock icon={<Users className="h-3.5 w-3.5 text-blue-400" />} label="Dirigente" value={clubMeta.ownerName || 'Sem dados'} />
+                <InfoBlock icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" value={clubMeta.stadiumName || 'Sem dados'} sub={stadiumCapacity ? `${stadiumCapacity.toLocaleString()} lugares` : undefined} />
+                <InfoBlock icon={<Heart className="h-3.5 w-3.5 text-rose-400" />} label="Torcida" value={clubMeta.fans ? clubMeta.fans.toLocaleString() : '—'} />
+                <InfoBlock icon={<Trophy className="h-3.5 w-3.5 text-yellow-500" />} label="Posição" value={leaguePosition ? `${leaguePosition}º` : '—'} sub="na liga" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Forma */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Forma recente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {last5.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">Sem partidas disputadas ainda.</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">Últimos {last5.length} jogos:</span>
+                  <div className="flex gap-1">
+                    {last5.map((r, ri) => (
+                      <span key={ri} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${
+                        r === 'V' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                        r === 'E' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                        'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      }`}>{r}</span>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Infrastructure */}
-      {(clubMeta.stadiumLevel != null || clubMeta.trainingCenterLevel != null) && (
-        <Card className="border-amber-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Landmark className="h-4 w-4 text-amber-400" /> Infraestrutura
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <InfraItem icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" sublabel={clubMeta.stadiumName || 'Estádio'} level={clubMeta.stadiumLevel ?? 1} maxLevel={15} color="emerald" extra={stadiumCapacity ? `${stadiumCapacity.toLocaleString()} lug.` : undefined} />
-              <InfraItem icon={<Building2 className="h-3.5 w-3.5 text-blue-400" />} label="CT" sublabel="Centro de Treinamento" level={clubMeta.trainingCenterLevel ?? 0} maxLevel={10} color="blue" />
-              <InfraItem icon={<Heart className="h-3.5 w-3.5 text-rose-400" />} label="Fisioterapia" sublabel="Departamento Médico" level={clubMeta.physiotherapyLevel ?? 0} maxLevel={10} color="rose" />
-              <InfraItem icon={<GraduationCap className="h-3.5 w-3.5 text-purple-400" />} label="Base" sublabel="Categorias de Base" level={clubMeta.youthAcademyLevel ?? 0} maxLevel={30} color="purple" />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Squad */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4" /> Elenco ({sortedPlayers.length} jogadores)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sortedPlayers.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">Elenco não disponível — aguardando sincronização</p>
-          ) : (
-            <div className="space-y-1">
-              {sortedPlayers.map((p: any, i: number) => {
-                const isStarter = starterIds.has(p.id);
-                const isOnTransfer = transferPlayerNames.has(p.name);
-                const isOnLoan = loanPlayerNames.has(p.name);
-                const listing = isOnTransfer ? getListingForPlayer(p.name) : null;
-                const loan = isOnLoan ? getLoanForPlayer(p.name) : null;
-
-                return (
-                  <button
-                    key={p.id}
-                    className={`w-full flex items-center gap-2 py-2 px-2.5 rounded transition-colors text-left ${
-                      isOnTransfer ? 'bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15' :
-                      isOnLoan ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15' :
-                      'bg-muted/20 hover:bg-muted/40'
-                    }`}
-                    onClick={() => setSelectedPlayer({ ...p, listing, loan })}
-                  >
-                    <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${posColors[p.position]}`}>{p.position}</span>
-                    <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
-                    {isOnTransfer && (
-                      <Badge variant="outline" className="text-[8px] px-1 h-4 border-amber-500/50 text-amber-400 gap-0.5">
-                        <ShoppingCart className="h-2.5 w-2.5" /> À Venda
-                      </Badge>
-                    )}
-                    {isOnLoan && (
-                      <Badge variant="outline" className="text-[8px] px-1 h-4 border-blue-500/50 text-blue-400">
-                        🔄 Empréstimo
-                      </Badge>
-                    )}
-                    <span className="text-[10px] text-muted-foreground">{p.age} anos</span>
-                    <Badge variant={isStarter ? 'default' : 'outline'} className="text-[8px] px-1.5 h-4">
-                      {isStarter ? 'Titular' : 'Reserva'}
-                    </Badge>
-                    <Eye className="h-3 w-3 text-muted-foreground/50" />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Match History */}
-      {matchHistory.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="h-4 w-4" /> Histórico de Jogos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {matchHistory.filter(m => m.status === 'played').map(m => {
-              const isHome = m.home_user_id === member.user_id;
-              const oppId = isHome ? m.away_user_id : m.home_user_id;
-              const opp = members.find(mb => mb.user_id === oppId);
-              const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
-              const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
-              const result = myGoals > oppGoals ? 'V' : myGoals === oppGoals ? 'E' : 'D';
-              const resultColor = result === 'V' ? 'text-emerald-400' : result === 'D' ? 'text-rose-400' : 'text-amber-400';
-              return (
-                <div key={m.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 text-xs">
-                  <span className="text-muted-foreground font-mono w-6">R{m.round}</span>
-                  <span className={`font-bold w-4 ${resultColor}`}>{result}</span>
-                  <span className="font-mono">{myGoals} - {oppGoals}</span>
-                  <span className="text-muted-foreground">vs</span>
-                  <span className="truncate font-medium">{opp?.club_name || '???'}</span>
+          {/* Troféus */}
+          {trophies.length > 0 ? (
+            <Card className="border-yellow-500/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" /> Troféus ({trophies.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {trophies.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-amber-500/5 rounded-lg p-2.5 border border-yellow-500/20">
+                      <span className="text-xl">🏆</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">{t.title}</p>
+                        <p className="text-[10px] text-muted-foreground">Temporada {t.season} • {t.date}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* Infraestrutura */}
+          {(clubMeta.stadiumLevel != null || clubMeta.trainingCenterLevel != null) && (
+            <Card className="border-amber-500/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-amber-400" /> Infraestrutura
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  <InfraItem icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" sublabel={clubMeta.stadiumName || 'Estádio'} level={clubMeta.stadiumLevel ?? 1} maxLevel={15} color="emerald" extra={stadiumCapacity ? `${stadiumCapacity.toLocaleString()} lug.` : undefined} />
+                  <InfraItem icon={<Building2 className="h-3.5 w-3.5 text-blue-400" />} label="CT" sublabel="Centro de Treinamento" level={clubMeta.trainingCenterLevel ?? 0} maxLevel={10} color="blue" />
+                  <InfraItem icon={<Heart className="h-3.5 w-3.5 text-rose-400" />} label="Fisioterapia" sublabel="Departamento Médico" level={clubMeta.physiotherapyLevel ?? 0} maxLevel={10} color="rose" />
+                  <InfraItem icon={<GraduationCap className="h-3.5 w-3.5 text-purple-400" />} label="Base" sublabel="Categorias de Base" level={clubMeta.youthAcademyLevel ?? 0} maxLevel={30} color="purple" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* === ELENCO === */}
+        <TabsContent value="squad" className="mt-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4" /> Elenco ({sortedPlayers.length} jogadores)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sortedPlayers.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">Sem dados de elenco — aguardando sincronização.</p>
+              ) : (
+                <div className="space-y-1">
+                  {sortedPlayers.map((p: any, i: number) => {
+                    const isStarter = starterIds.has(p.id);
+                    const isOnTransfer = transferPlayerNames.has(p.name);
+                    const isOnLoan = loanPlayerNames.has(p.name);
+                    const listing = isOnTransfer ? getListingForPlayer(p.name) : null;
+                    const loan = isOnLoan ? getLoanForPlayer(p.name) : null;
+
+                    return (
+                      <button
+                        key={p.id}
+                        className={`w-full flex items-center gap-2 py-2 px-2.5 rounded-md transition-colors text-left ${
+                          isOnTransfer ? 'bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15' :
+                          isOnLoan ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15' :
+                          'bg-muted/20 hover:bg-muted/40'
+                        }`}
+                        onClick={() => setSelectedPlayer({ ...p, listing, loan })}
+                      >
+                        <span className="text-[10px] text-muted-foreground w-5 shrink-0">{i + 1}</span>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${posColors[p.position]}`}>{p.position}</span>
+                        <span className="text-xs font-medium flex-1 truncate">{p.name}</span>
+                        {isOnTransfer && (
+                          <Badge variant="outline" className="text-[8px] px-1 h-4 border-amber-500/50 text-amber-400 gap-0.5 hidden sm:inline-flex">
+                            <ShoppingCart className="h-2.5 w-2.5" /> À Venda
+                          </Badge>
+                        )}
+                        {isOnLoan && (
+                          <Badge variant="outline" className="text-[8px] px-1 h-4 border-blue-500/50 text-blue-400 hidden sm:inline-flex">
+                            🔄 Empréstimo
+                          </Badge>
+                        )}
+                        <span className="text-[10px] text-muted-foreground shrink-0">{p.age}a</span>
+                        <Badge variant={isStarter ? 'default' : 'outline'} className="text-[8px] px-1.5 h-4 shrink-0">
+                          {isStarter ? 'Titular' : 'Reserva'}
+                        </Badge>
+                        <Eye className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === ESTATÍSTICAS === */}
+        <TabsContent value="stats" className="space-y-3 mt-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Resumo da temporada</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <StatCard label="Pontos" value={member.points} accent="primary" />
+                <StatCard label="Vitórias" value={member.wins} accent="emerald" />
+                <StatCard label="Empates" value={member.draws} accent="amber" />
+                <StatCard label="Derrotas" value={member.losses} accent="rose" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <StatCard label="Jogos" value={member.played} accent="muted" />
+                <StatCard label="Gols pró" value={member.goals_for} accent="emerald" />
+                <StatCard label="Gols contra" value={member.goals_against} accent="rose" />
+                <StatCard
+                  label="Saldo"
+                  value={sg > 0 ? `+${sg}` : String(sg)}
+                  accent={sg > 0 ? 'emerald' : sg < 0 ? 'rose' : 'muted'}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <StatCard label="Aproveitamento" value={`${winRate}%`} accent="primary" />
+                <StatCard
+                  label="Média de gols"
+                  value={member.played > 0 ? (member.goals_for / member.played).toFixed(2) : '0,00'}
+                  accent="emerald"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === HISTÓRICO === */}
+        <TabsContent value="history" className="mt-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Trophy className="h-4 w-4" /> Histórico de jogos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {matchHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">Sem partidas disputadas ainda.</p>
+              ) : (
+                <div className="space-y-1">
+                  {matchHistory.filter(m => m.status === 'played').map(m => {
+                    const isHome = m.home_user_id === member.user_id;
+                    const oppId = isHome ? m.away_user_id : m.home_user_id;
+                    const opp = members.find(mb => mb.user_id === oppId);
+                    const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
+                    const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
+                    const result = myGoals > oppGoals ? 'V' : myGoals === oppGoals ? 'E' : 'D';
+                    const resultColor = result === 'V' ? 'text-emerald-400' : result === 'D' ? 'text-rose-400' : 'text-amber-400';
+                    return (
+                      <div key={m.id} className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-muted/20 text-xs">
+                        <span className="text-muted-foreground font-mono w-7 shrink-0">R{m.round}</span>
+                        <span className={`font-bold w-4 shrink-0 ${resultColor}`}>{result}</span>
+                        <span className="font-mono shrink-0">{myGoals} - {oppGoals}</span>
+                        <span className="text-muted-foreground shrink-0">{isHome ? 'vs' : '@'}</span>
+                        <span className="truncate font-medium">{opp?.club_name || '???'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Player Detail Dialog */}
       <PlayerDetailDialog
@@ -507,6 +556,37 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
           setNegotiatingListing(listing);
         }}
       />
+    </div>
+  );
+}
+
+// === Info Block (Visão Geral) ===
+function InfoBlock({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <div className="bg-muted/20 rounded-lg p-2.5 space-y-0.5">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        {icon}
+        <span className="text-[10px] uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="text-xs font-semibold truncate">{value}</p>
+      {sub && <p className="text-[9px] text-muted-foreground truncate">{sub}</p>}
+    </div>
+  );
+}
+
+// === Stat Card (Estatísticas) ===
+function StatCard({ label, value, accent }: { label: string; value: string | number; accent: 'primary' | 'emerald' | 'amber' | 'rose' | 'muted' }) {
+  const colorMap: Record<string, string> = {
+    primary: 'text-primary',
+    emerald: 'text-emerald-400',
+    amber: 'text-amber-400',
+    rose: 'text-rose-400',
+    muted: 'text-foreground',
+  };
+  return (
+    <div className="bg-muted/30 rounded-lg p-3 text-center">
+      <p className={`text-2xl font-bold ${colorMap[accent]}`}>{value}</p>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">{label}</p>
     </div>
   );
 }
