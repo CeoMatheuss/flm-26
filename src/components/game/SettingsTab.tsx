@@ -2,11 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, Sun, Moon, Monitor, GraduationCap } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
+  const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(true);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -14,6 +16,15 @@ export function SettingsTab() {
     root.classList.add(theme);
     localStorage.setItem('flm-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', user.id).maybeSingle();
+      setTutorialCompleted(!!(data as any)?.tutorial_completed);
+    })();
+  }, []);
 
   return (
     <div className="space-y-4">
