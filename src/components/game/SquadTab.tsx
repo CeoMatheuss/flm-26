@@ -171,9 +171,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   }, [players]);
 
   // Apply filter/sort to a group
+  const matchesOvr = (ovr: number) => {
+    switch (filterOvr) {
+      case '90+': return ovr >= 90;
+      case '80-89': return ovr >= 80 && ovr < 90;
+      case '70-79': return ovr >= 70 && ovr < 80;
+      case '60-69': return ovr >= 60 && ovr < 70;
+      case '<60': return ovr < 60;
+      default: return true;
+    }
+  };
+
   const processList = (list: { player: Player; idx: number }[]) => {
     return list
       .filter(({ player }) => !filterPos || player.position === filterPos)
+      .filter(({ player }) => matchesOvr(player.overall))
       .sort((a, b) => {
         if (sortBy === 'overall') return b.player.overall - a.player.overall;
         if (sortBy === 'age') return a.player.age - b.player.age;
