@@ -138,6 +138,8 @@ export function TrainingWrapper({
               infrastructure={infrastructure}
               budget={budget}
               onUpgradeFacility={onUpgradeFacility}
+              trainingInvestment={trainingInvestment}
+              onSetTrainingInvestment={onSetTrainingInvestment}
             />
           )}
           {ctRooms && onUpgradeCTRoom && (
