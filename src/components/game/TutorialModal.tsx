@@ -18,15 +18,15 @@ interface Props {
 const steps = [
   {
     icon: Sparkles,
-    title: 'Bem-vindo ao FLM 26! ⚽',
+    title: 'Bem-vindo ao FLM! ⚽',
     tab: 'dashboard',
-    description: 'Você é o novo manager! O Dashboard mostra tudo: orçamento, torcida, moral, próximo jogo, infraestrutura e eventos do clube em tempo real.',
+    description: 'Bem-vindo ao FLM! Vamos te mostrar o básico para começar. Você é o novo manager — gerencie elenco, finanças, partidas e suba no ranking global!',
     examples: [
       { label: '💰 Orçamento', detail: 'Gerencie finanças — cada decisão impacta seu caixa' },
       { label: '📊 Moral & Torcida', detail: 'Resultados afetam moral do elenco e tamanho da torcida' },
       { label: '⚡ Eventos', detail: 'Lesões, protestos, patrocínios e surpresas aparecem aqui' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-primary',
   },
   {
