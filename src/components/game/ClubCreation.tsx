@@ -267,12 +267,24 @@ export function ClubCreation({ userId, onComplete }: Props) {
     setUploading(false);
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (step === 1) {
       if (!clubName.trim()) { toast.error('Digite o nome do clube'); return; }
       if (clubName.trim().length > 30) { toast.error('Nome muito longo (máx 30 caracteres)'); return; }
       const status = getCountryStatus(country);
       if (status.locked) { toast.error('Este país está lotado! Escolha outro.'); return; }
+      // Verifica nome duplicado no servidor
+      setCheckingName(true);
+      const { data: check } = await supabase.rpc('check_club_name_available' as any, { _name: clubName.trim() });
+      setCheckingName(false);
+      const result = (check as any) || {};
+      if (result.available === false) {
+        const sugg = (result.suggestions || []) as string[];
+        setNameSuggestions(sugg);
+        toast.error(`Nome "${clubName.trim()}" já em uso. Veja as sugestões abaixo.`);
+        return;
+      }
+      setNameSuggestions([]);
       setStep(2);
     } else if (step === 2) {
       if (stadiumName.trim().length > 40) { toast.error('Nome do estádio muito longo (máx 40 caracteres)'); return; }
