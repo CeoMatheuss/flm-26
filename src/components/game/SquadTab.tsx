@@ -136,6 +136,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [filterOvr, setFilterOvr] = useState<'all' | '90+' | '80-89' | '70-79' | '60-69' | '<60'>('all');
   const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
+  const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
+  const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
