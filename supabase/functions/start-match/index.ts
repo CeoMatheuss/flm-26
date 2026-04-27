@@ -957,7 +957,9 @@ function simulateFullMatch(
     const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
+    const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
     const def = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
+    const oppGk = oppPool.find(p => p.position === 'GOL')?.name || 'Goleiro';
     stats.passes[teamIdx]++;
 
     const posTypes = [
@@ -972,6 +974,16 @@ function simulateFullMatch(
       { type: 'throw_in', desc: `📏 Lateral para o ${tName}. ${p1} cobra e encontra ${p2} que domina e tenta avançar, mas ${def} marca firme.` },
       { type: 'long_pass', desc: `🎯 ${p1} faz um lançamento de 40 metros que cruza o campo inteiro! ${p2} amortece no peito e protege. Passe cirúrgico!` },
       { type: 'pressing_recovery', desc: `🔄 Recuperação de bola do ${tName}! ${p1} pressiona ${def} que erra o passe. ${tName} sai jogando pelo lado esquerdo com ${p2}.` },
+      { type: 'triangulation', desc: `🔺 Triangulação rápida do ${tName}! ${p1} toca para ${p2}, que devolve de primeira para ${p3}. Belo trabalho coletivo no meio-campo!` },
+      { type: 'counter_attempt', desc: `⚡ Contra-ataque do ${tName}! ${p1} rouba a bola e lança para ${p2} em velocidade. ${def} corre para tentar interceptar.` },
+      { type: 'shot_blocked', desc: `🛡️ ${p1} do ${tName} arrisca de fora da área, mas ${def} se joga e bloqueia o chute! Defesa heroica do ${opp}.` },
+      { type: 'shot_off', desc: `🎯 ${p1} do ${tName} finaliza de fora da área e a bola passa raspando a trave! Por pouco não saiu o gol!` },
+      { type: 'gk_save', desc: `🧤 GRANDE DEFESA! ${oppGk} do ${opp} se estica todo e espalma a finalização de ${p1}! Defesaça!` },
+      { type: 'corner_kick', desc: `🚩 Escanteio para o ${tName}. ${p1} cobra na área, ${p2} sobe mais alto que a defesa, mas cabeceia para fora!` },
+      { type: 'interception', desc: `✋ Interceptação inteligente! ${def} do ${opp} lê o passe de ${p1} e corta a jogada antes que chegue em ${p2}.` },
+      { type: 'one_two', desc: `🤝 Tabela perfeita entre ${p1} e ${p2} do ${tName}! Trocam dois toques rápidos e abrem espaço na defesa do ${opp}.` },
+      { type: 'wing_run', desc: `🏃‍♂️ ${p1} dispara pela ponta direita do ${tName}! Deixa ${def} para trás e prepara o cruzamento na área.` },
+      { type: 'header_duel', desc: `💢 Disputa aérea no meio-campo! ${p1} e ${def} sobem juntos e a bola sobra para ${p2} retomar a posse.` },
     ];
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
