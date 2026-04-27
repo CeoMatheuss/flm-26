@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -194,7 +193,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
     <div className="fixed bottom-3 right-3 z-[60] w-[min(360px,calc(100vw-1.5rem))] max-h-[min(560px,calc(100vh-1.5rem))] overflow-hidden rounded-xl border border-border/60 bg-card/95 backdrop-blur-md shadow-2xl shadow-black/30 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
       <div className="overflow-y-auto smooth-scroll">
         <div className="p-4 space-y-3">
-          <DialogHeader>
+          <div className="flex flex-col space-y-1.5 text-center sm:text-left">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-[10px] gap-1">
                 📖 {step + 1} / {steps.length}
@@ -208,7 +207,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
                 <Icon className={`h-7 w-7 ${current.color}`} />
               </div>
               <div>
-                <DialogTitle className="text-base">{current.title}</DialogTitle>
+                <h2 className="text-base font-semibold leading-none tracking-tight">{current.title}</h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Badge variant="secondary" className="text-[9px] gap-0.5 h-4">
                     📍 Aba: {tabDisplayName(current.tab)}
@@ -216,7 +215,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
                 </div>
               </div>
             </div>
-          </DialogHeader>
+          </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
             {current.description}
