@@ -454,23 +454,30 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
-                    {m.user_id === userId && clubShield ? (
-                      <ShieldCrest
-                        primaryColor={clubShield.primaryColor}
-                        secondaryColor={clubShield.secondaryColor}
-                        pattern={clubShield.pattern}
-                        shape={clubShield.shape as ShieldShape}
-                        size={18}
-                      />
-                    ) : (
-                      <ShieldCrest
-                        primaryColor={getTeamColor(m.club_name)}
-                        secondaryColor="#ffffff"
-                        pattern="solid"
-                        shape="classic"
-                        size={18}
-                      />
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeam(m)}
+                      className="shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                      aria-label={`Ver perfil de ${m.club_name}`}
+                    >
+                      {m.user_id === userId && clubShield ? (
+                        <ShieldCrest
+                          primaryColor={clubShield.primaryColor}
+                          secondaryColor={clubShield.secondaryColor}
+                          pattern={clubShield.pattern}
+                          shape={clubShield.shape as ShieldShape}
+                          size={18}
+                        />
+                      ) : (
+                        <ShieldCrest
+                          primaryColor={getTeamColor(m.club_name)}
+                          secondaryColor="#ffffff"
+                          pattern="solid"
+                          shape="classic"
+                          size={18}
+                        />
+                      )}
+                    </button>
                     <button onClick={() => setSelectedTeam(m)} className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline cursor-pointer">{m.club_name}</button>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
