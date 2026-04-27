@@ -58,6 +58,7 @@ export function TrainingWrapper({
   trainingIntensity, onSetTrainingIntensity, budget = 0, onUpgradeCT,
   tactics, onPlayersUpdate, currentWeek, clubName = 'Meu Clube', userId,
   onUpgradeFacility, ctRooms, onUpgradeCTRoom,
+  trainingInvestment, onSetTrainingInvestment,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'training' | 'training2d' | 'infra'>('training');
 
