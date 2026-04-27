@@ -20,6 +20,7 @@ import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
+import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 
 interface TransferListing {
   id: string;
@@ -139,6 +140,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [loanAgeMin, setLoanAgeMin] = useState('');
   const [loanAgeMax, setLoanAgeMax] = useState('');
   const [loanSalaryMax, setLoanSalaryMax] = useState('');
+  const [negotiateLoan, setNegotiateLoan] = useState<any | null>(null);
 
   // Offer form state
   const [offerPrice, setOfferPrice] = useState(0);
@@ -853,22 +855,17 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                               💰 R$ {((l.salary || 0) / 1000).toFixed(0)}k/mês • ⏳ 1 temporada
                             </p>
                           </div>
-                          <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1" disabled={loading} onClick={async () => {
-                            setLoading(true);
-                            const res = await supabase.functions.invoke('process-transfer', {
-                              body: { action: 'loan-accept', listingId: l.id, clubName },
-                            });
-                            setLoading(false);
-                            if (res.error || res.data?.error) {
-                              toast.error(res.data?.error || res.error?.message || 'Erro ao tomar emprestado');
-                            } else {
-                              toast.success(`✅ ${l.player_name} chegou por empréstimo!`);
-                              if (onLoanIn && res.data?.playerData) onLoanIn(res.data.playerData as Player);
-                              loadLoanListings();
-                            }
-                          }}>
-                            <ArrowLeftRight className="h-3 w-3" /> Tomar
+                          <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1" disabled={loading} onClick={() => setNegotiateLoan(l)}>
+                            <ArrowLeftRight className="h-3 w-3" /> Negociar
                           </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
                         </div>
                       );
                     })}

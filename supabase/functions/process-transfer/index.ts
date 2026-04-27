@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
     // ACTION: LIST PLAYER FOR LOAN
     // ═══════════════════════════════════════════════════════════════
     if (action === 'loan-list') {
-      const { playerData, playerName, playerPosition, playerOverall, playerAge, salary, clubName, sellerShield } = body;
+      const { playerData, playerName, playerPosition, playerOverall, playerAge, salary, clubName, sellerShield, salaryPayer, salarySplitPct, loanFee, openToOffers } = body;
 
       if (!playerName || typeof playerName !== 'string' || playerName.length > 100) {
         return new Response(JSON.stringify({ error: 'Nome do jogador inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -509,6 +509,10 @@ Deno.serve(async (req) => {
       if (!playerData || typeof playerData !== 'object') {
         return new Response(JSON.stringify({ error: 'Dados do jogador inválidos' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+
+      const validPayer = ['seller', 'buyer', 'split'].includes(salaryPayer) ? salaryPayer : 'buyer';
+      const split = Math.min(100, Math.max(0, Number(salarySplitPct) || 0));
+      const fee = Math.max(0, Number(loanFee) || 0);
 
       // Check max simultaneous loan listings per user (limit 3)
       const { count: activeCount } = await adminClient
@@ -533,6 +537,10 @@ Deno.serve(async (req) => {
           player_overall: Math.min(99, Math.max(1, playerOverall)),
           player_age: Math.min(45, Math.max(15, playerAge)),
           salary: Math.max(0, salary || 0),
+          salary_payer: validPayer,
+          salary_split_pct: validPayer === 'split' ? split : 0,
+          loan_fee: fee,
+          open_to_offers: openToOffers !== false,
         })
         .select()
         .single();
@@ -625,6 +633,295 @@ Deno.serve(async (req) => {
       }).eq('id', listingId);
 
       return new Response(JSON.stringify({ success: true, message: `${listing.player_name} retirado do mercado de empréstimos.` }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LOAN OFFERS — counter-proposals with AI evaluation
+    // ═══════════════════════════════════════════════════════════════
+
+    // Helper: AI evaluates an offer for the seller's perspective
+    // Returns { decision: 'accept'|'counter'|'reject', counter?: {...}, reason: string }
+    function evaluateLoanOffer(listing: any, offer: { salary_payer: string; salary_split_pct: number; loan_fee: number }) {
+      const baseSalary = Number(listing.salary || 0);
+      // Estimated cost the seller pays per month under each payer scheme
+      const costForSeller = (payer: string, split: number) => {
+        if (payer === 'seller') return baseSalary;
+        if (payer === 'split') return Math.round(baseSalary * (split / 100));
+        return 0;
+      };
+      const sellerCostListed = costForSeller(listing.salary_payer, listing.salary_split_pct || 0);
+      const sellerCostOffer = costForSeller(offer.salary_payer, offer.salary_split_pct || 0);
+
+      // Effective revenue for seller (loan fee minus extra salary cost taken on)
+      const expected = Number(listing.loan_fee || 0) - sellerCostListed;
+      const offered = Number(offer.loan_fee || 0) - sellerCostOffer;
+
+      // Player desirability — better players = seller more demanding
+      const ovr = Number(listing.player_overall || 60);
+      const demandFactor = 1 + Math.max(0, (ovr - 70)) * 0.05; // OVR 80 = 1.5x demanding
+
+      const acceptThreshold = expected; // must match or beat listed terms (in seller's favor)
+      const counterFloor = expected - Math.max(50_000, baseSalary * 2) * demandFactor;
+
+      if (offered >= acceptThreshold) {
+        return { decision: 'accept' as const, reason: 'Termos iguais ou melhores que o anunciado.' };
+      }
+      if (offered < counterFloor) {
+        return { decision: 'reject' as const, reason: 'Proposta muito abaixo do esperado.' };
+      }
+      // Counter — meet halfway, prefer buyer paying full salary
+      const midFee = Math.max(
+        Number(listing.loan_fee || 0),
+        Math.round(((Number(offer.loan_fee || 0) + Number(listing.loan_fee || 0)) / 2) * demandFactor),
+      );
+      return {
+        decision: 'counter' as const,
+        counter: {
+          salary_payer: 'buyer',
+          salary_split_pct: 0,
+          loan_fee: midFee,
+        },
+        reason: 'O clube quer mais favorável: salário com o receptor e taxa próxima do anúncio.',
+      };
+    }
+
+    // ── ACTION: BUYER CREATES A LOAN OFFER ─────────────────────────
+    if (action === 'loan-offer-create') {
+      const { listingId, clubName, offeredSalaryPayer, offeredSalarySplitPct, offeredLoanFee, message } = body;
+
+      if (!listingId || typeof listingId !== 'string') {
+        return new Response(JSON.stringify({ error: 'Listing ID inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const { data: listing } = await adminClient
+        .from('loan_listings').select('*').eq('id', listingId).eq('status', 'active').single();
+      if (!listing) {
+        return new Response(JSON.stringify({ error: 'Empréstimo indisponível' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (listing.seller_id === userId) {
+        return new Response(JSON.stringify({ error: 'Você não pode propor no seu próprio empréstimo' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (listing.open_to_offers === false) {
+        return new Response(JSON.stringify({ error: 'Este clube não aceita contrapropostas. Use os termos anunciados.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Cooldown: max 1 pending offer per buyer per listing
+      const { count: existing } = await adminClient
+        .from('loan_offers')
+        .select('id', { count: 'exact', head: true })
+        .eq('listing_id', listingId)
+        .eq('buyer_id', userId)
+        .eq('status', 'pending');
+      if ((existing ?? 0) > 0) {
+        return new Response(JSON.stringify({ error: 'Você já tem uma proposta pendente para este jogador.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const validPayer = ['seller', 'buyer', 'split'].includes(offeredSalaryPayer) ? offeredSalaryPayer : 'buyer';
+      const split = Math.min(100, Math.max(0, Number(offeredSalarySplitPct) || 0));
+      const fee = Math.max(0, Number(offeredLoanFee) || 0);
+
+      const { data: offer, error: offerErr } = await adminClient
+        .from('loan_offers')
+        .insert({
+          listing_id: listingId,
+          seller_id: listing.seller_id,
+          buyer_id: userId,
+          buyer_club_name: (clubName || '').slice(0, 50),
+          offered_salary_payer: validPayer,
+          offered_salary_split_pct: validPayer === 'split' ? split : 0,
+          offered_loan_fee: fee,
+          message: (message || '').slice(0, 300),
+        })
+        .select()
+        .single();
+
+      if (offerErr) {
+        console.error('loan-offer-create error:', offerErr.message);
+        return new Response(JSON.stringify({ error: 'Erro ao criar proposta.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // AI advisory + notify seller
+      const advice = evaluateLoanOffer(listing, { salary_payer: validPayer, salary_split_pct: split, loan_fee: fee });
+      await adminClient.from('user_notifications').insert({
+        user_id: listing.seller_id,
+        type: 'loan_offer_received',
+        title: '🔄 Proposta de empréstimo',
+        message: `${(clubName || 'Um clube').slice(0, 40)} quer ${listing.player_name}. Recomendação do agente: ${advice.decision === 'accept' ? 'aceitar' : advice.decision === 'counter' ? 'contrapropor' : 'recusar'}.`,
+        icon: '🔄',
+        data: { offer_id: offer.id, listing_id: listingId, advice },
+      });
+
+      return new Response(JSON.stringify({ success: true, offer, advice }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── ACTION: SELLER COUNTER ─────────────────────────────────────
+    if (action === 'loan-offer-counter') {
+      const { offerId, counterSalaryPayer, counterSalarySplitPct, counterLoanFee, counterMessage } = body;
+
+      const { data: offer } = await adminClient
+        .from('loan_offers').select('*').eq('id', offerId).single();
+      if (!offer || offer.seller_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Proposta não encontrada ou sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.status !== 'pending') {
+        return new Response(JSON.stringify({ error: 'Proposta já resolvida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const validPayer = ['seller', 'buyer', 'split'].includes(counterSalaryPayer) ? counterSalaryPayer : 'buyer';
+      const split = Math.min(100, Math.max(0, Number(counterSalarySplitPct) || 0));
+      const fee = Math.max(0, Number(counterLoanFee) || 0);
+
+      await adminClient.from('loan_offers').update({
+        status: 'countered',
+        counter_salary_payer: validPayer,
+        counter_salary_split_pct: validPayer === 'split' ? split : 0,
+        counter_loan_fee: fee,
+        counter_message: (counterMessage || '').slice(0, 300),
+      }).eq('id', offerId);
+
+      await adminClient.from('user_notifications').insert({
+        user_id: offer.buyer_id,
+        type: 'loan_offer_countered',
+        title: '↩️ Contraproposta recebida',
+        message: `O clube fez uma contraproposta no empréstimo. Taxa: R$${(fee / 1000).toFixed(0)}k.`,
+        icon: '↩️',
+        data: { offer_id: offerId },
+      });
+
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── ACTION: SELLER REJECTS ─────────────────────────────────────
+    if (action === 'loan-offer-reject') {
+      const { offerId, reason } = body;
+      const { data: offer } = await adminClient
+        .from('loan_offers').select('*').eq('id', offerId).single();
+      if (!offer || offer.seller_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.status !== 'pending' && offer.status !== 'countered') {
+        return new Response(JSON.stringify({ error: 'Proposta já resolvida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      await adminClient.from('loan_offers').update({
+        status: 'rejected', resolved_at: new Date().toISOString(),
+      }).eq('id', offerId);
+
+      await adminClient.from('user_notifications').insert({
+        user_id: offer.buyer_id,
+        type: 'loan_offer_rejected',
+        title: '❌ Proposta recusada',
+        message: `Sua proposta de empréstimo foi recusada.${reason ? ' Motivo: ' + String(reason).slice(0, 100) : ''}`,
+        icon: '❌',
+        data: { offer_id: offerId },
+      });
+
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── ACTION: BUYER OR SELLER ACCEPTS (closes deal) ──────────────
+    if (action === 'loan-offer-accept') {
+      const { offerId, clubName } = body;
+      const { data: offer } = await adminClient
+        .from('loan_offers').select('*').eq('id', offerId).single();
+      if (!offer) {
+        return new Response(JSON.stringify({ error: 'Proposta não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      // Buyer can accept seller's counter; seller can accept buyer's offer
+      const isBuyer = offer.buyer_id === userId;
+      const isSeller = offer.seller_id === userId;
+      if (!isBuyer && !isSeller) {
+        return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.status === 'countered' && !isBuyer) {
+        return new Response(JSON.stringify({ error: 'Aguardando o comprador aceitar a contraproposta' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.status === 'pending' && !isSeller) {
+        return new Response(JSON.stringify({ error: 'Aguardando o vendedor decidir' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const { data: listing } = await adminClient
+        .from('loan_listings').select('*').eq('id', offer.listing_id).single();
+      if (!listing || listing.status !== 'active') {
+        return new Response(JSON.stringify({ error: 'Empréstimo já encerrado' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Determine final terms: counter takes priority if set
+      const finalPayer = offer.counter_salary_payer || offer.offered_salary_payer;
+      const finalSplit = offer.counter_salary_payer ? (offer.counter_salary_split_pct || 0) : (offer.offered_salary_split_pct || 0);
+      const finalFee = offer.counter_loan_fee != null ? offer.counter_loan_fee : offer.offered_loan_fee;
+
+      // Limit 3 loans-in for buyer
+      const { count: loansIn } = await adminClient
+        .from('loan_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('buyer_id', offer.buyer_id)
+        .eq('status', 'accepted');
+      if ((loansIn ?? 0) >= 3) {
+        return new Response(JSON.stringify({ error: 'Limite de 3 empréstimos recebidos atingido para o comprador.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const now = new Date();
+
+      // Lock listing with negotiated terms
+      await adminClient.from('loan_listings').update({
+        status: 'accepted',
+        buyer_id: offer.buyer_id,
+        buyer_club_name: (offer.buyer_club_name || clubName || '').slice(0, 50),
+        accepted_at: now.toISOString(),
+        salary_payer: finalPayer,
+        salary_split_pct: finalPayer === 'split' ? finalSplit : 0,
+        loan_fee: finalFee,
+      }).eq('id', listing.id);
+
+      // Mark offer accepted; auto-reject other pending offers on same listing
+      await adminClient.from('loan_offers').update({
+        status: 'accepted', resolved_at: now.toISOString(),
+      }).eq('id', offerId);
+      await adminClient.from('loan_offers').update({
+        status: 'expired', resolved_at: now.toISOString(),
+      }).eq('listing_id', listing.id).in('status', ['pending', 'countered']).neq('id', offerId);
+
+      await adminClient.from('user_notifications').insert([
+        {
+          user_id: offer.buyer_id,
+          type: 'loan_offer_accepted',
+          title: '✅ Empréstimo fechado',
+          message: `${listing.player_name} chegará por empréstimo. Taxa: R$${(Number(finalFee) / 1000).toFixed(0)}k.`,
+          icon: '✅',
+          data: { listing_id: listing.id, player: listing.player_data },
+        },
+        {
+          user_id: offer.seller_id,
+          type: 'loan_offer_accepted',
+          title: '🤝 Empréstimo confirmado',
+          message: `${listing.player_name} foi emprestado para ${offer.buyer_club_name || 'outro clube'}.`,
+          icon: '🤝',
+          data: { listing_id: listing.id },
+        },
+      ]);
+
+      return new Response(JSON.stringify({
+        success: true,
+        playerData: listing.player_data,
+        terms: { salary_payer: finalPayer, salary_split_pct: finalSplit, loan_fee: finalFee },
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── ACTION: BUYER CANCELS THEIR PENDING OFFER ──────────────────
+    if (action === 'loan-offer-cancel') {
+      const { offerId } = body;
+      const { data: offer } = await adminClient
+        .from('loan_offers').select('*').eq('id', offerId).single();
+      if (!offer || offer.buyer_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (!['pending', 'countered'].includes(offer.status)) {
+        return new Response(JSON.stringify({ error: 'Proposta já resolvida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      await adminClient.from('loan_offers').update({
+        status: 'cancelled', resolved_at: new Date().toISOString(),
+      }).eq('id', offerId);
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ error: 'Ação desconhecida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

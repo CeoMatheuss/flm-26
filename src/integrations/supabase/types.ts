@@ -2090,12 +2090,16 @@ export type Database = {
           created_at: string
           id: string
           listed_at: string
+          loan_fee: number
+          open_to_offers: boolean
           player_age: number
           player_data: Json
           player_name: string
           player_overall: number
           player_position: string
           salary: number
+          salary_payer: string
+          salary_split_pct: number
           seller_club_name: string
           seller_id: string
           seller_shield: Json | null
@@ -2108,12 +2112,16 @@ export type Database = {
           created_at?: string
           id?: string
           listed_at?: string
+          loan_fee?: number
+          open_to_offers?: boolean
           player_age: number
           player_data: Json
           player_name: string
           player_overall: number
           player_position?: string
           salary?: number
+          salary_payer?: string
+          salary_split_pct?: number
           seller_club_name?: string
           seller_id: string
           seller_shield?: Json | null
@@ -2126,18 +2134,93 @@ export type Database = {
           created_at?: string
           id?: string
           listed_at?: string
+          loan_fee?: number
+          open_to_offers?: boolean
           player_age?: number
           player_data?: Json
           player_name?: string
           player_overall?: number
           player_position?: string
           salary?: number
+          salary_payer?: string
+          salary_split_pct?: number
           seller_club_name?: string
           seller_id?: string
           seller_shield?: Json | null
           status?: string
         }
         Relationships: []
+      }
+      loan_offers: {
+        Row: {
+          buyer_club_name: string
+          buyer_id: string
+          counter_loan_fee: number | null
+          counter_message: string | null
+          counter_salary_payer: string | null
+          counter_salary_split_pct: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          listing_id: string
+          message: string | null
+          offered_loan_fee: number
+          offered_salary_payer: string
+          offered_salary_split_pct: number
+          resolved_at: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_club_name?: string
+          buyer_id: string
+          counter_loan_fee?: number | null
+          counter_message?: string | null
+          counter_salary_payer?: string | null
+          counter_salary_split_pct?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          listing_id: string
+          message?: string | null
+          offered_loan_fee?: number
+          offered_salary_payer?: string
+          offered_salary_split_pct?: number
+          resolved_at?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_club_name?: string
+          buyer_id?: string
+          counter_loan_fee?: number | null
+          counter_message?: string | null
+          counter_salary_payer?: string | null
+          counter_salary_split_pct?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          listing_id?: string
+          message?: string | null
+          offered_loan_fee?: number
+          offered_salary_payer?: string
+          offered_salary_split_pct?: number
+          resolved_at?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "loan_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_history: {
         Row: {
