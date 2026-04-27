@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Newspaper, ArrowLeft, Loader2, ChevronDown, SmilePlus } from 'lucide-react';
+import { Newspaper, ArrowLeft, Loader2, ChevronDown, SmilePlus, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import signingImg from '@/assets/transfer-signing.jpg';
+import leagueChampionImg from '@/assets/news-league-champion.jpg';
+import cupChampionImg from '@/assets/news-cup-champion.jpg';
+import ballonDorImg from '@/assets/news-ballon-dor.jpg';
 
 interface Props {
   onBack: () => void;
@@ -38,7 +41,32 @@ const categoryColors: Record<string, string> = {
   PREMIAÇÃO: 'bg-amber-600/80',
   INSATISFAÇÃO: 'bg-red-700/80',
   AWARDS: 'bg-amber-500/80',
+  CAMPEÃO: 'bg-amber-500/90',
+  COPA: 'bg-amber-600/90',
+  'BOLA DE OURO': 'bg-yellow-500/90',
 };
+
+// Visual presets keyed by image_key (or auto-detected from category/text fallback)
+const IMAGE_PRESETS: Record<string, { src: string; label: string; gradient: string }> = {
+  league_champion:    { src: leagueChampionImg, label: '🏆 CAMPEÃO DA LIGA',     gradient: 'from-amber-500/80 via-amber-600/40' },
+  league_champion_early: { src: leagueChampionImg, label: '🏆 CAMPEÃO ANTECIPADO', gradient: 'from-amber-400/80 via-orange-500/40' },
+  cup_champion:       { src: cupChampionImg,    label: '🏆 CAMPEÃO DE COPA',     gradient: 'from-amber-500/80 via-yellow-600/40' },
+  international_champion: { src: cupChampionImg, label: '🌍 CAMPEÃO INTERNACIONAL', gradient: 'from-blue-500/80 via-amber-500/40' },
+  ballon_dor:         { src: ballonDorImg,      label: '⭐ BOLA DE OURO',         gradient: 'from-yellow-400/80 via-amber-600/40' },
+  awards:             { src: ballonDorImg,      label: '🏅 PREMIAÇÃO',            gradient: 'from-amber-500/70 via-yellow-600/30' },
+};
+
+function detectImageKey(item: { image_key?: string | null; category?: string; text?: string }): string | null {
+  if (item.image_key && IMAGE_PRESETS[item.image_key]) return item.image_key;
+  const cat = (item.category || '').toUpperCase();
+  const txt = (item.text || '').toLowerCase();
+  if (cat === 'BOLA DE OURO' || txt.includes('bola de ouro')) return 'ballon_dor';
+  if (cat === 'AWARDS' || cat === 'PREMIAÇÃO') return 'awards';
+  if (cat === 'COPA' || txt.includes('vence a final') || txt.includes('campeão de copa')) return 'cup_champion';
+  if (cat === 'CAMPEÃO' || txt.includes('campeão antecipado')) return 'league_champion_early';
+  if (txt.includes('campeão da liga') || txt.includes('conquista o título')) return 'league_champion';
+  return null;
+}
 
 interface SavedEntry {
   id: string;
@@ -47,10 +75,12 @@ interface SavedEntry {
   is_event: boolean;
   created_at: string;
   user_id: string;
+  image_key?: string | null;
 }
 
 const transferCategories = ['MERCADO', 'TRANSFERÊNCIA', 'CONTRATAÇÃO', 'EMPRÉSTIMO', 'RENOVAÇÃO'];
 const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
+
 
 export function NewspaperFullPage({ onBack }: Props) {
   const [entries, setEntries] = useState<SavedEntry[]>([]);
