@@ -705,8 +705,9 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
         <CardContent className="space-y-2">
           {members.map(m => {
             const squad = leagueSquads.find(s => s.user_id === m.user_id);
-            const players = squad?.squad_data || [];
-            const avgOvr = players.length > 0 ? Math.round(players.reduce((s: number, p: any) => s + (p.overall || 0), 0) / players.length) : 0;
+            const players = (squad?.squad_data as any) || [];
+            const playersList: any[] = Array.isArray(players) ? players : (players.players || []);
+            const avgOvr = playersList.length > 0 ? Math.round(playersList.reduce((s: number, p: any) => s + (p.overall || 0), 0) / playersList.length) : 0;
             const isMe = m.user_id === userId;
             return (
               <div key={m.id} className={`p-3 rounded-lg border ${isMe ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
@@ -718,8 +719,8 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
                   <div className="text-right">
                     {squad ? (
                       <div>
-                        <p className="text-xs font-semibold">{players.length} jogadores</p>
-                        <p className="text-[10px] text-muted-foreground">OVR médio: {avgOvr}</p>
+                        <p className="text-xs font-semibold">{playersList.length} jogadores</p>
+                        <p className="text-[10px] text-muted-foreground">OVR médio: {isMe ? avgOvr : '???'}</p>
                       </div>
                     ) : (
                       <Badge variant="destructive" className="text-[10px]">Não sincronizado</Badge>
