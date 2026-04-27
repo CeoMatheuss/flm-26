@@ -866,14 +866,6 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               </div>
             );
           })()}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
           {loanListings.filter(l => l.seller_id === userId).length > 0 && (
             <div className="space-y-1.5">
