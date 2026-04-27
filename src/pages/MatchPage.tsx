@@ -1439,6 +1439,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     selectedSubOut={selectedSubOut}
                     onSelectSubOut={setSelectedSubOut}
                     onConfirmSub={handleQueueSubstitution}
+                    onCancelSub={handleCancelQueuedSub}
                     isHalftime={isHalftime}
                     isFinished={isFinished}
                     subQueue={subQueue}
