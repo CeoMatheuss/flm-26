@@ -60,6 +60,96 @@ export const countryLeagueNames: Record<string, string> = {
   QA: 'Qatar Stars League', IR: 'Persian Gulf Pro', AU: 'A-League', AE: 'UAE Pro League',
 };
 
+/**
+ * Nomes reais das 4 divisões nacionais por país.
+ * Índice 0 = D1, 1 = D2, 2 = D3, 3 = D4.
+ * Usado em toda UI/notificações/calendário para evitar nomes genéricos como "Divisão 2".
+ */
+export const countryDivisionNames: Record<string, [string, string, string, string]> = {
+  // ===== AMÉRICA DO SUL =====
+  BR: ['Brasileirão Série A', 'Brasileirão Série B', 'Brasileirão Série C', 'Brasileirão Série D'],
+  AR: ['Liga Profesional', 'Primera Nacional', 'Primera B Metropolitana', 'Primera C'],
+  UY: ['Primera División', 'Segunda División Profesional', 'Segunda División Amateur', 'Tercera División'],
+  PY: ['División de Honor', 'División Intermedia', 'Primera División B', 'Primera División C'],
+  CL: ['Primera División', 'Primera B', 'Segunda División Profesional', 'Tercera División A'],
+  CO: ['Liga BetPlay', 'Torneo BetPlay', 'Primera C Colombia', 'Segunda C Colombia'],
+  PE: ['Liga 1', 'Liga 2', 'Copa Perú', 'Liga Distrital'],
+  EC: ['LigaPro Serie A', 'LigaPro Serie B', 'Segunda Categoría', 'Provincial'],
+  BO: ['División Profesional', 'Primera A', 'Primera B', 'Copa Simón Bolívar'],
+  VE: ['Liga FUTVE', 'Segunda División', 'Tercera División', 'Cuarta División'],
+
+  // ===== EUROPA =====
+  EN: ['Premier League', 'EFL Championship', 'EFL League One', 'EFL League Two'],
+  ES: ['La Liga', 'La Liga 2', 'Primera Federación', 'Segunda Federación'],
+  DE: ['Bundesliga', '2. Bundesliga', '3. Liga', 'Regionalliga'],
+  IT: ['Serie A', 'Serie B', 'Serie C', 'Serie D'],
+  FR: ['Ligue 1', 'Ligue 2', 'Championnat National', 'National 2'],
+  PT: ['Primeira Liga', 'Liga Portugal 2', 'Liga 3', 'Campeonato de Portugal'],
+  NL: ['Eredivisie', 'Eerste Divisie', 'Tweede Divisie', 'Derde Divisie'],
+  BE: ['Jupiler Pro League', 'Challenger Pro League', 'National Division 1', 'Belgian Division 2'],
+  TR: ['Süper Lig', '1. Lig', '2. Lig', '3. Lig'],
+  SC: ['Premiership', 'Championship', 'League One', 'League Two'],
+
+  // ===== AMÉRICA DO NORTE/CENTRAL =====
+  US: ['MLS', 'USL Championship', 'USL League One', 'USL League Two'],
+  MX: ['Liga MX', 'Liga de Expansión MX', 'Liga Premier', 'Liga TDP'],
+  CA: ['Canadian Premier League', 'League1 Canada', 'PLSQ', 'BCSPL'],
+  CR: ['Primera División', 'Liga de Ascenso', 'Segunda División', 'Tercera División'],
+  HN: ['Liga Nacional', 'Liga de Ascenso', 'Segunda División', 'Liga Mayor'],
+  PA: ['Liga Panameña', 'Liga Prom', 'Liga Distritales', 'Liga Provincial'],
+
+  // ===== ÁFRICA =====
+  EG: ['Egyptian Premier League', 'Egyptian Second Division A', 'Egyptian Second Division B', 'Egyptian Third Division'],
+  MA: ['Botola Pro 1', 'Botola Pro 2', 'Botola Amateur 1', 'Botola Amateur 2'],
+  TN: ['Ligue 1 Tunisienne', 'Ligue 2', 'Ligue 3', 'Ligue 4'],
+  NG: ['Nigeria Premier Football League', 'Nigeria National League', 'Nigeria Nationwide League One', 'Nigeria Amateur League'],
+  SN: ['Ligue 1 Sénégal', 'Ligue 2', 'National 1', 'National 2'],
+  ZA: ['Premier Soccer League', 'National First Division', 'ABC Motsepe League', 'SAFA Regional League'],
+  GH: ['Ghana Premier League', 'Division One League', 'Division Two', 'Division Three'],
+  CM: ['Elite One', 'Elite Two', 'MTN Elite Three', 'Regional League'],
+
+  // ===== ÁSIA / OCEANIA =====
+  JP: ['J1 League', 'J2 League', 'J3 League', 'JFL'],
+  KR: ['K League 1', 'K League 2', 'K3 League', 'K4 League'],
+  CN: ['Chinese Super League', 'China League One', 'China League Two', 'China Champions League'],
+  SA: ['Saudi Pro League', 'Saudi First Division League', 'Saudi Second Division League', 'Saudi Third Division League'],
+  QA: ['Qatar Stars League', 'Qatari Second Division', 'Qatari Third Division', 'Qatari Fourth Division'],
+  IR: ['Persian Gulf Pro League', 'Azadegan League', 'League 2', 'League 3'],
+  AU: ['A-League Men', 'NPL Australia', 'NPL State League 1', 'NPL State League 2'],
+  AE: ['UAE Pro League', 'UAE First Division', 'UAE Second Division', 'UAE Third Division'],
+};
+
+/**
+ * Mapa reverso: nome completo do país → código.
+ * Necessário porque algumas tabelas (ex: world_leagues) armazenam o nome
+ * completo do país ("Brasil") em vez do código ("BR").
+ */
+const COUNTRY_NAME_TO_CODE: Record<string, string> = Object.fromEntries(
+  Object.entries(countryNames).map(([code, name]) => [name.toLowerCase(), code]),
+);
+
+/**
+ * Resolve o nome real de uma divisão a partir do país e do número da divisão.
+ * Aceita tanto o código ("BR") quanto o nome completo ("Brasil").
+ * Faz fallback genérico ("Divisão N") apenas quando o país é desconhecido.
+ */
+export function getDivisionLabel(country: string | null | undefined, division: number | null | undefined): string {
+  const div = Math.max(1, Math.min(4, Number(division) || 1));
+  if (!country) return `Divisão ${div}`;
+  const upper = country.toUpperCase();
+  const code = countryDivisionNames[upper]
+    ? upper
+    : COUNTRY_NAME_TO_CODE[country.toLowerCase()] || upper;
+  const names = countryDivisionNames[code];
+  if (!names) return `Divisão ${div}`;
+  return names[div - 1] ?? `Divisão ${div}`;
+}
+
+/** Atalho: retorna o nome principal (D1) do país. */
+export function getTopLeagueLabel(country: string | null | undefined): string {
+  return getDivisionLabel(country, 1);
+}
+
 // Continent mapping for continental competitions
 export const countryContinents: Record<string, string> = {
   BR: 'south_america', AR: 'south_america', UY: 'south_america', PY: 'south_america',
