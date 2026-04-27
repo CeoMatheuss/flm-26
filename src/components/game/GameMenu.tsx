@@ -7,9 +7,10 @@ interface GameMenuProps {
   onTabChange: (tab: string) => void;
   onShowTutorial: () => void;
   onMarketSubTabChange?: (subTab: string) => void;
+  tutorialCompleted?: boolean;
 }
 
-export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange }: GameMenuProps) {
+export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted }: GameMenuProps) {
   const goToMarket = (sub: string) => {
     onMarketSubTabChange?.(sub);
     onTabChange('market');
