@@ -396,6 +396,6 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     lastMatchReport, setLastMatchReport, youthPromotedCount, setYouthPromotedCount,
     lastYouthMatchReport, setLastYouthMatchReport,
     upgradeFacility, promoteYouth, sellYouth, enrollCopinha,
-    processYouthCycle, upgradeCTRoom, chargeYouthInvestment,
+    processYouthCycle, upgradeCTRoom, chargeYouthInvestment, chargeTrainingInvestment,
   };
 }
