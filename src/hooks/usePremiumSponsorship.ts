@@ -52,7 +52,7 @@ export function usePremiumSponsorship(
     if (error) {
       console.warn('[premium-sponsorship] refresh err', error.message);
     }
-    setActive((data as PremiumSponsorshipRow | null) ?? null);
+    setActive((data as unknown as PremiumSponsorshipRow | null) ?? null);
     setLoading(false);
   }, [userId]);
 
@@ -76,7 +76,7 @@ export function usePremiumSponsorship(
           .eq('active', true)
           .maybeSingle();
         if (!row || cancelled) return;
-        const r = row as PremiumSponsorshipRow;
+        const r = row as unknown as PremiumSponsorshipRow;
 
         const lastTs = r.last_payout_at ? new Date(r.last_payout_at).getTime() : new Date(r.activated_at).getTime();
         const elapsedDays = Math.floor((Date.now() - lastTs) / MS_DAY);
