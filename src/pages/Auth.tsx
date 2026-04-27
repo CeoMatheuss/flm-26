@@ -119,12 +119,17 @@ export default function AuthPage() {
       },
     });
     if (error) {
-      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado/i.test(error.message);
-      if (isBetaBlock) {
+      const msg = error.message || '';
+      // Beta whitelist block — backend mascara com "Database error saving new user"
+      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
+      const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
+      if (isDuplicate) {
+        toast.error('Este email já está cadastrado. Tente fazer login.');
+      } else if (isBetaBlock) {
         toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
         setStep('beta-request');
       } else {
-        toast.error(error.message);
+        toast.error(msg || 'Erro ao criar conta. Tente novamente.');
       }
     } else {
       setPendingEmail(email);
