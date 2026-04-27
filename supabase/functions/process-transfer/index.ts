@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
     // ACTION: LIST PLAYER FOR LOAN
     // ═══════════════════════════════════════════════════════════════
     if (action === 'loan-list') {
-      const { playerData, playerName, playerPosition, playerOverall, playerAge, salary, clubName, sellerShield } = body;
+      const { playerData, playerName, playerPosition, playerOverall, playerAge, salary, clubName, sellerShield, salaryPayer, salarySplitPct, loanFee, openToOffers } = body;
 
       if (!playerName || typeof playerName !== 'string' || playerName.length > 100) {
         return new Response(JSON.stringify({ error: 'Nome do jogador inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -509,6 +509,10 @@ Deno.serve(async (req) => {
       if (!playerData || typeof playerData !== 'object') {
         return new Response(JSON.stringify({ error: 'Dados do jogador inválidos' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+
+      const validPayer = ['seller', 'buyer', 'split'].includes(salaryPayer) ? salaryPayer : 'buyer';
+      const split = Math.min(100, Math.max(0, Number(salarySplitPct) || 0));
+      const fee = Math.max(0, Number(loanFee) || 0);
 
       // Check max simultaneous loan listings per user (limit 3)
       const { count: activeCount } = await adminClient
@@ -533,6 +537,10 @@ Deno.serve(async (req) => {
           player_overall: Math.min(99, Math.max(1, playerOverall)),
           player_age: Math.min(45, Math.max(15, playerAge)),
           salary: Math.max(0, salary || 0),
+          salary_payer: validPayer,
+          salary_split_pct: validPayer === 'split' ? split : 0,
+          loan_fee: fee,
+          open_to_offers: openToOffers !== false,
         })
         .select()
         .single();
