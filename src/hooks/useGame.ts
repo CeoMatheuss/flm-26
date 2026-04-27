@@ -255,7 +255,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     friendliesPlayedSeason: matchState.friendliesPlayedSeason,
     lastFriendlyDate: matchState.lastFriendlyDate,
   }), [clubState.club, tactics, financeState.finances, clubState.marketPlayers, clubState.freeAgents,
-    infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.season,
+    infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.trainingInvestment, infraState.season,
     financeState.sponsors, financeState.sponsorOffers, matchState.events, clubState.loanedPlayers,
     clubState.trainingFocus, clubState.trainingIntensity, infraState.achievements, infraState.lastMatchReport, clubState.clubProfile,
     infraState.ctRooms, infraState.youthPromotedCount, matchState.ranking, matchState.rankingHistory,
