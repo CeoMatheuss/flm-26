@@ -34,32 +34,41 @@ const COLORS = {
   grass2: '#228b46',
 };
 
+// 4-3-3 organizado: GK, 4 ZAG, 3 MEI, 3 ATA — espaçamento vertical balanceado para evitar sobreposição
 const HOME_POSITIONS = [
-  { x: 0.06, y: 0.5, label: '1' },
-  { x: 0.18, y: 0.15, label: '2' },
-  { x: 0.18, y: 0.38, label: '3' },
-  { x: 0.18, y: 0.62, label: '4' },
-  { x: 0.18, y: 0.85, label: '5' },
-  { x: 0.35, y: 0.15, label: '6' },
-  { x: 0.35, y: 0.38, label: '7' },
-  { x: 0.35, y: 0.62, label: '8' },
-  { x: 0.35, y: 0.85, label: '9' },
-  { x: 0.45, y: 0.35, label: '10' },
-  { x: 0.45, y: 0.65, label: '11' },
+  // Goleiro
+  { x: 0.05, y: 0.50, label: 'GK' },
+  // Defesa (4)
+  { x: 0.18, y: 0.18, label: '2' },
+  { x: 0.18, y: 0.40, label: '3' },
+  { x: 0.18, y: 0.60, label: '4' },
+  { x: 0.18, y: 0.82, label: '5' },
+  // Meio (3)
+  { x: 0.34, y: 0.28, label: '6' },
+  { x: 0.34, y: 0.50, label: '8' },
+  { x: 0.34, y: 0.72, label: '7' },
+  // Ataque (3)
+  { x: 0.46, y: 0.20, label: '11' },
+  { x: 0.48, y: 0.50, label: '9' },
+  { x: 0.46, y: 0.80, label: '10' },
 ];
 
 const AWAY_POSITIONS = [
-  { x: 0.94, y: 0.5, label: '1' },
-  { x: 0.82, y: 0.15, label: '2' },
-  { x: 0.82, y: 0.38, label: '3' },
-  { x: 0.82, y: 0.62, label: '4' },
-  { x: 0.82, y: 0.85, label: '5' },
-  { x: 0.65, y: 0.15, label: '6' },
-  { x: 0.65, y: 0.38, label: '7' },
-  { x: 0.65, y: 0.62, label: '8' },
-  { x: 0.65, y: 0.85, label: '9' },
-  { x: 0.55, y: 0.35, label: '10' },
-  { x: 0.55, y: 0.65, label: '11' },
+  // Goleiro
+  { x: 0.95, y: 0.50, label: 'GK' },
+  // Defesa (4)
+  { x: 0.82, y: 0.18, label: '2' },
+  { x: 0.82, y: 0.40, label: '3' },
+  { x: 0.82, y: 0.60, label: '4' },
+  { x: 0.82, y: 0.82, label: '5' },
+  // Meio (3)
+  { x: 0.66, y: 0.28, label: '6' },
+  { x: 0.66, y: 0.50, label: '8' },
+  { x: 0.66, y: 0.72, label: '7' },
+  // Ataque (3)
+  { x: 0.54, y: 0.20, label: '11' },
+  { x: 0.52, y: 0.50, label: '9' },
+  { x: 0.54, y: 0.80, label: '10' },
 ];
 
 const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
