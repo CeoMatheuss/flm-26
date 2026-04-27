@@ -40,6 +40,59 @@ const TIER_NAMES: Record<Tier, string> = {
   nacional: 'Nacional',
 };
 
+// Nome real da divisão nacional (D1-D4) por código de país.
+// Usado para batizar ligas auto-criadas com nomes reais em vez de "BR Nacional Div 1".
+const COUNTRY_DIVISION_NAMES: Record<string, [string, string, string, string]> = {
+  BR: ['Brasileirão Série A', 'Brasileirão Série B', 'Brasileirão Série C', 'Brasileirão Série D'],
+  AR: ['Liga Profesional', 'Primera Nacional', 'Primera B Metropolitana', 'Primera C'],
+  UY: ['Primera División', 'Segunda División Profesional', 'Segunda División Amateur', 'Tercera División'],
+  PY: ['División de Honor', 'División Intermedia', 'Primera División B', 'Primera División C'],
+  CL: ['Primera División', 'Primera B', 'Segunda División Profesional', 'Tercera División A'],
+  CO: ['Liga BetPlay', 'Torneo BetPlay', 'Primera C Colombia', 'Segunda C Colombia'],
+  PE: ['Liga 1', 'Liga 2', 'Copa Perú', 'Liga Distrital'],
+  EC: ['LigaPro Serie A', 'LigaPro Serie B', 'Segunda Categoría', 'Provincial'],
+  BO: ['División Profesional', 'Primera A', 'Primera B', 'Copa Simón Bolívar'],
+  VE: ['Liga FUTVE', 'Segunda División', 'Tercera División', 'Cuarta División'],
+  EN: ['Premier League', 'EFL Championship', 'EFL League One', 'EFL League Two'],
+  ES: ['La Liga', 'La Liga 2', 'Primera Federación', 'Segunda Federación'],
+  DE: ['Bundesliga', '2. Bundesliga', '3. Liga', 'Regionalliga'],
+  IT: ['Serie A', 'Serie B', 'Serie C', 'Serie D'],
+  FR: ['Ligue 1', 'Ligue 2', 'Championnat National', 'National 2'],
+  PT: ['Primeira Liga', 'Liga Portugal 2', 'Liga 3', 'Campeonato de Portugal'],
+  NL: ['Eredivisie', 'Eerste Divisie', 'Tweede Divisie', 'Derde Divisie'],
+  BE: ['Jupiler Pro League', 'Challenger Pro League', 'National Division 1', 'Belgian Division 2'],
+  TR: ['Süper Lig', '1. Lig', '2. Lig', '3. Lig'],
+  SC: ['Premiership', 'Championship', 'League One', 'League Two'],
+  US: ['MLS', 'USL Championship', 'USL League One', 'USL League Two'],
+  MX: ['Liga MX', 'Liga de Expansión MX', 'Liga Premier', 'Liga TDP'],
+  CA: ['Canadian Premier League', 'League1 Canada', 'PLSQ', 'BCSPL'],
+  CR: ['Primera División CR', 'Liga de Ascenso', 'Segunda División', 'Tercera División'],
+  HN: ['Liga Nacional HN', 'Liga de Ascenso', 'Segunda División', 'Liga Mayor'],
+  PA: ['Liga Panameña', 'Liga Prom', 'Liga Distritales', 'Liga Provincial'],
+  EG: ['Egyptian Premier League', 'Egyptian Second Division A', 'Egyptian Second Division B', 'Egyptian Third Division'],
+  MA: ['Botola Pro 1', 'Botola Pro 2', 'Botola Amateur 1', 'Botola Amateur 2'],
+  TN: ['Ligue 1 Tunisienne', 'Ligue 2', 'Ligue 3', 'Ligue 4'],
+  NG: ['Nigeria Premier Football League', 'Nigeria National League', 'Nigeria Nationwide League One', 'Nigeria Amateur League'],
+  SN: ['Ligue 1 Sénégal', 'Ligue 2', 'National 1', 'National 2'],
+  ZA: ['Premier Soccer League', 'National First Division', 'ABC Motsepe League', 'SAFA Regional League'],
+  GH: ['Ghana Premier League', 'Division One League', 'Division Two', 'Division Three'],
+  CM: ['Elite One', 'Elite Two', 'MTN Elite Three', 'Regional League'],
+  JP: ['J1 League', 'J2 League', 'J3 League', 'JFL'],
+  KR: ['K League 1', 'K League 2', 'K3 League', 'K4 League'],
+  CN: ['Chinese Super League', 'China League One', 'China League Two', 'China Champions League'],
+  SA: ['Saudi Pro League', 'Saudi First Division League', 'Saudi Second Division League', 'Saudi Third Division League'],
+  QA: ['Qatar Stars League', 'Qatari Second Division', 'Qatari Third Division', 'Qatari Fourth Division'],
+  IR: ['Persian Gulf Pro League', 'Azadegan League', 'League 2', 'League 3'],
+  AU: ['A-League Men', 'NPL Australia', 'NPL State League 1', 'NPL State League 2'],
+  AE: ['UAE Pro League', 'UAE First Division', 'UAE Second Division', 'UAE Third Division'],
+};
+
+function nationalDivisionName(country: string, level: number): string {
+  const names = COUNTRY_DIVISION_NAMES[country.toUpperCase()];
+  if (names && names[level - 1]) return names[level - 1];
+  return `${country} Nacional Div ${level}`;
+}
+
 const TEAMS_PER_LEAGUE = 20;
 
 const MATCH_TIMES = [
@@ -191,9 +244,12 @@ Deno.serve(async (req) => {
               season_year: seasonYear,
             }).eq('id', existing.id);
           } else {
+            // Nomes reais para o tier 'nacional' (D1-D4); demais tiers seguem padrão regional/várzea.
             const leagueName = tier === 'varzea'
               ? `${country} Várzea`
-              : `${country} ${TIER_NAMES[tier]} Div ${level}`;
+              : tier === 'nacional'
+                ? nationalDivisionName(country, level)
+                : `${country} ${TIER_NAMES[tier]} Div ${level}`;
 
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             const matchTime = MATCH_TIMES[timeIndex % MATCH_TIMES.length];
