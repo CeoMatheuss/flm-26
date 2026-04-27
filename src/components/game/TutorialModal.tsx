@@ -238,9 +238,9 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
           <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Coins className="h-3.5 w-3.5 text-yellow-400" />
-              <span className="text-[10px] text-yellow-300">Recompensa total:</span>
+              <span className="text-[10px] text-yellow-300">Recompensa ao concluir:</span>
             </div>
-            <span className="text-xs font-bold text-yellow-400">R${TOTAL_REWARD.toLocaleString('pt-BR')}</span>
+            <span className="text-xs font-bold text-yellow-400">R$ 200.000</span>
           </div>
 
           <div className="flex gap-0.5">
