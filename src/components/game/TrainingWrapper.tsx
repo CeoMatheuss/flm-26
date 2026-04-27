@@ -39,6 +39,9 @@ interface Props {
   /** CT Rooms data for the rooms sub-tab */
   ctRooms?: CTRooms;
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
+  /** Investimento mensal em treino (R$) — afeta a chance de evolução. */
+  trainingInvestment?: number;
+  onSetTrainingInvestment?: (value: number) => void;
 }
 
 const DRILL_BONUS_MAP: Record<string, Partial<Record<string, number>>> = {
