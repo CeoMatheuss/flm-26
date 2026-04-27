@@ -284,7 +284,7 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
