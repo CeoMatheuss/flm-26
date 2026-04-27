@@ -2732,6 +2732,57 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_sponsorships: {
+        Row: {
+          activated_at: string
+          active: boolean
+          completed_at: string | null
+          created_at: string
+          daily_value: number
+          id: string
+          last_payout_at: string | null
+          payout_days: number
+          plan_id: string
+          plan_name: string
+          received_value: number
+          total_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          active?: boolean
+          completed_at?: string | null
+          created_at?: string
+          daily_value: number
+          id?: string
+          last_payout_at?: string | null
+          payout_days: number
+          plan_id: string
+          plan_name: string
+          received_value?: number
+          total_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          active?: boolean
+          completed_at?: string | null
+          created_at?: string
+          daily_value?: number
+          id?: string
+          last_payout_at?: string | null
+          payout_days?: number
+          plan_id?: string
+          plan_name?: string
+          received_value?: number
+          total_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       premium_users: {
         Row: {
           activated_at: string

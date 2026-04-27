@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Handshake, Plus, DollarSign, AlertTriangle, Target, Calendar,
-  Trophy, Crown, Lock, Sparkles,
+  Trophy, Crown, Lock, Sparkles, CheckCircle2, Clock,
 } from 'lucide-react';
+import { usePremiumSponsorship } from '@/hooks/usePremiumSponsorship';
 
 interface Props {
   sponsors: Sponsor[];
@@ -17,6 +18,8 @@ interface Props {
   reputation: number;
   onAccept: (offer: SponsorOffer) => void;
   onRefreshOffers: () => void;
+  userId?: string;
+  addBonus?: (amount: number, description: string) => void;
 }
 
 const fmtBRL = (v: number) =>
@@ -24,11 +27,16 @@ const fmtBRL = (v: number) =>
   : v >= 1_000 ? `R$ ${(v / 1_000).toFixed(0)}k`
   : `R$ ${v}`;
 
-export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers }: Props) {
+export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers, userId, addBonus }: Props) {
   const atLimit = sponsors.length >= 3;
   const totalMonthly = sponsors
     .filter(s => s.payMode === 'monthly')
     .reduce((s, sp) => s + sp.monthlyPay, 0);
+
+  const premium = usePremiumSponsorship(userId, addBonus);
+  const activePremium = premium.active;
+  const remainingPremium = activePremium ? Math.max(0, activePremium.total_value - activePremium.received_value) : 0;
+  const premiumProgress = activePremium ? (activePremium.received_value / activePremium.total_value) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -193,7 +201,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
         </CardContent>
       </Card>
 
-      {/* ─── Patrocínios Premium (Mockup) ───────────────────────── */}
+      {/* ─── Patrocínios Premium SmartPit ─────────────────────── */}
       <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-amber-500/5 to-orange-500/5">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -202,17 +210,61 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
               SmartPit — Patrocínio Premium
             </span>
             <Badge variant="outline" className="ml-auto text-[10px] border-yellow-500/40 text-yellow-400">
-              <Sparkles className="h-3 w-3 mr-1" /> EM BREVE
+              <Sparkles className="h-3 w-3 mr-1" /> COMPRA ÚNICA
             </Badge>
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
-            Contratos premium com pagamento garantido pingando todo dia no caixa do clube.
+            Compre uma vez e receba o valor pingando todo dia no caixa, até zerar. Sem assinatura, sem renovação automática.
           </p>
         </CardHeader>
         <CardContent>
+          {/* Contrato Premium ATIVO */}
+          {activePremium && (
+            <div className="mb-4 p-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-yellow-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{activePremium.plan_name} <span className="text-[10px] text-yellow-300">ativo</span></p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {fmtBRL(activePremium.daily_value)}/dia · Total: {fmtBRL(activePremium.total_value)}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px] border-yellow-500/40 text-yellow-300 shrink-0">
+                  <Clock className="h-3 w-3 mr-1" /> {Math.ceil(remainingPremium / Math.max(1, activePremium.daily_value))}d
+                </Badge>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <div className="bg-card/40 rounded px-2 py-1.5 border border-yellow-500/20 text-center">
+                  <div className="text-[9px] text-muted-foreground uppercase">Recebido</div>
+                  <div className="font-bold text-yellow-400">{fmtBRL(activePremium.received_value)}</div>
+                </div>
+                <div className="bg-card/40 rounded px-2 py-1.5 border border-yellow-500/20 text-center">
+                  <div className="text-[9px] text-muted-foreground uppercase">Restante</div>
+                  <div className="font-bold text-yellow-300">{fmtBRL(remainingPremium)}</div>
+                </div>
+                <div className="bg-card/40 rounded px-2 py-1.5 border border-yellow-500/20 text-center">
+                  <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+                  <div className="font-bold text-amber-300">{fmtBRL(activePremium.total_value)}</div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>Progresso</span>
+                  <span>{premiumProgress.toFixed(0)}%</span>
+                </div>
+                <Progress value={premiumProgress} className="h-1.5" />
+              </div>
+              <p className="text-[9px] text-muted-foreground/70 leading-snug">
+                Você só poderá comprar outro plano premium depois que este contrato for totalmente quitado.
+              </p>
+            </div>
+          )}
+
+          {/* Planos disponíveis */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {premiumSponsorPlans.map(plan => {
               const dailyValue = Math.floor(plan.inGameValue / plan.payoutDays);
+              const blocked = !!activePremium || !userId;
               return (
                 <div key={plan.id} className="p-3 bg-card/60 rounded-lg border border-yellow-500/20 space-y-2">
                   <div className="flex items-center gap-2">
@@ -223,23 +275,37 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                     </div>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-tight">{plan.description}</p>
-                  <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20 text-center">
-                    <div className="text-[9px] text-muted-foreground uppercase">Pagamento diário</div>
-                    <div className="text-sm font-black text-yellow-400">{fmtBRL(dailyValue)}/dia</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-yellow-500/10 rounded px-2 py-1 border border-yellow-500/20 text-center">
+                      <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+                      <div className="text-[11px] font-black text-yellow-400">{fmtBRL(plan.inGameValue)}</div>
+                    </div>
+                    <div className="bg-yellow-500/10 rounded px-2 py-1 border border-yellow-500/20 text-center">
+                      <div className="text-[9px] text-muted-foreground uppercase">Por dia</div>
+                      <div className="text-[11px] font-black text-yellow-400">{fmtBRL(dailyValue)}</div>
+                    </div>
                   </div>
                   <Button
                     size="sm"
-                    disabled
-                    className="w-full h-8 text-xs bg-yellow-500/40 text-black/60 cursor-not-allowed"
+                    disabled={blocked}
+                    onClick={() => premium.activate({
+                      planId: plan.id,
+                      planName: plan.name,
+                      totalValue: plan.inGameValue,
+                      payoutDays: plan.payoutDays,
+                    })}
+                    className="w-full h-8 text-xs bg-yellow-500 hover:bg-yellow-600 text-black font-bold disabled:bg-yellow-500/40 disabled:text-black/60"
                   >
-                    <Lock className="h-3 w-3 mr-1" /> Em breve
+                    {activePremium
+                      ? <><Lock className="h-3 w-3 mr-1" /> Já há um ativo</>
+                      : <><Sparkles className="h-3 w-3 mr-1" /> Ativar agora</>}
                   </Button>
                 </div>
               );
             })}
           </div>
           <p className="text-[9px] text-center text-muted-foreground/60 mt-3">
-            Sistema em desenvolvimento. Em breve será possível ativar via PIX.
+            Mockup visual: ativação imediata sem cobrança real. Em breve, integração via PIX.
           </p>
         </CardContent>
       </Card>

@@ -186,20 +186,50 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, []);
 
-  // Check tutorial completed status — auto-show for ANY user that hasn't finished it
+  // Check tutorial completed status — auto-show ONLY if user definitely hasn't finished it.
+  // Default state is `true` (tutorialCompleted) to prevent flashing while loading.
   useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
     const checkTutorial = async () => {
-      const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
-      const completed = !!(data as any)?.tutorial_completed;
-      setTutorialCompleted(completed);
-      // Show tutorial whenever it's not completed (not just new clubs).
-      // Small delay so it appears after the app fully loads.
-      if (!completed) {
-        setTimeout(() => setShowTutorial(true), 600);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('tutorial_completed')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) {
+          console.warn('[tutorial] check failed, assuming completed to avoid blocking UI:', error.message);
+          setTutorialCompleted(true);
+          return;
+        }
+        // No profile row yet (edge case): create one with tutorial_completed=false
+        if (!data) {
+          console.log('[tutorial] no profile row found, creating one');
+          await supabase.from('profiles').upsert({
+            user_id: userId,
+            display_name: displayName || 'Manager',
+            tutorial_completed: false,
+          } as any, { onConflict: 'user_id' });
+          setTutorialCompleted(false);
+          setTimeout(() => { if (!cancelled) setShowTutorial(true); }, 600);
+          return;
+        }
+        const completed = !!(data as any)?.tutorial_completed;
+        console.log('[tutorial] status loaded:', { completed });
+        setTutorialCompleted(completed);
+        if (!completed) {
+          setTimeout(() => { if (!cancelled) setShowTutorial(true); }, 600);
+        }
+      } catch (e) {
+        console.warn('[tutorial] unexpected error, defaulting to completed:', e);
+        setTutorialCompleted(true);
       }
     };
     checkTutorial();
-  }, [userId]);
+    return () => { cancelled = true; };
+  }, [userId, displayName]);
 
   // Allow re-opening the tutorial manually (from Settings tab) via custom event — only if not yet completed.
   useEffect(() => {
@@ -438,16 +468,46 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
-        // Anti-exploit: verifica no servidor se já recebeu antes de creditar
-        const { data: prof } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
-        if ((prof as any)?.tutorial_completed) {
+        try {
+          // Marca local imediatamente para nunca travar a UI
           setTutorialCompleted(true);
-          return;
+          setShowTutorial(false);
+
+          // Anti-exploit: verifica no servidor se já recebeu antes de creditar
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('tutorial_completed')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          const alreadyDone = !!(prof as any)?.tutorial_completed;
+
+          // Upsert garantido (cria profile se não existir)
+          const { error: upErr } = await supabase
+            .from('profiles')
+            .upsert({
+              user_id: userId,
+              display_name: displayName || 'Manager',
+              tutorial_completed: true,
+            } as any, { onConflict: 'user_id' });
+
+          if (upErr) {
+            console.warn('[tutorial] persist err:', upErr.message);
+            toast.error('Tutorial concluído localmente, mas falhou ao salvar no servidor.');
+            return;
+          }
+
+          if (!alreadyDone) {
+            game.addBonus(200000, 'Recompensa por completar o Tutorial');
+            toast.success('🎉 Parabéns! Você recebeu R$ 200K por completar o tutorial.');
+          }
+          console.log('[tutorial] completed and persisted');
+        } catch (e) {
+          console.warn('[tutorial] complete failed:', e);
+          // Não trava a UI mesmo em erro
+          setTutorialCompleted(true);
+          setShowTutorial(false);
         }
-        await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId);
-        game.addBonus(200000, 'Recompensa por completar o Tutorial');
-        toast.success('🎉 Parabéns! Você recebeu 200K por completar o tutorial.');
-        setTutorialCompleted(true);
       }} />
       {pendingAwardsSeason !== null && (
         <PersistentSeasonAwards
