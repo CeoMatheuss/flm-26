@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -475,25 +476,27 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} />
             <GameNavBar />
           </div>
-          <GameTabRouter
-            game={game}
-            mp={mp}
-            userId={userId}
-            displayName={displayName}
-            showAdmin={showAdmin}
-            isFounder={isFounder}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            activeTournamentId={activeTournamentId}
-            setActiveTournamentId={setActiveTournamentId}
-            onSigningPlayer={setSigningPlayer}
-            saveSigningNews={saveSigningNews}
-            blockedTabs={blockedTabs}
-            isAdmin={isAdminRole}
-            isPremium={isPremium}
-            marketSubTab={marketSubTab}
-            setMarketSubTab={setMarketSubTab}
-          />
+          <ErrorBoundary label={`tab:${activeTab}`}>
+            <GameTabRouter
+              game={game}
+              mp={mp}
+              userId={userId}
+              displayName={displayName}
+              showAdmin={showAdmin}
+              isFounder={isFounder}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              activeTournamentId={activeTournamentId}
+              setActiveTournamentId={setActiveTournamentId}
+              onSigningPlayer={setSigningPlayer}
+              saveSigningNews={saveSigningNews}
+              blockedTabs={blockedTabs}
+              isAdmin={isAdminRole}
+              isPremium={isPremium}
+              marketSubTab={marketSubTab}
+              setMarketSubTab={setMarketSubTab}
+            />
+          </ErrorBoundary>
         </Tabs>
       </main>
     </div>
