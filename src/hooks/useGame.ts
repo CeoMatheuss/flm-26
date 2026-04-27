@@ -192,7 +192,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     financeState.acceptSponsor(
       offer,
       (fn) => { clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) })); },
-      infraState.season?.year ?? 1,
+      infraState.season?.currentSeason ?? 1,
     );
   }, [financeState.acceptSponsor, clubState.setClub, infraState.season]);
 
