@@ -429,23 +429,35 @@ export function TrainingTab({
           {filtered.sort((a, b) => b.overall - a.overall).map(p => {
             const focus = trainingFocus[p.id] ?? 'mental_grupo';
             const intensity = trainingIntensity[p.id] ?? 'moderado';
-            const gain = engine.calcWeeklyGain(p, { focus, intensity }, ctLevel, defaultStaff, 0);
+            const bd = engine.computeBreakdown(p, { focus, intensity }, ctLevel);
+            const gain = bd.expectedWeekly;
             const status = engine.computeStatus(gain, p);
             return (
-              <PlayerTrainingCard
-                key={p.id}
-                player={p}
-                focus={focus}
-                intensity={intensity}
-                gain={gain}
-                status={status}
-                selectionMode={selectionMode}
-                selected={selectedIds.has(p.id)}
-                onToggleSelect={() => togglePlayer(p.id)}
-                onChangeFocus={(f) => setFocusForPlayer(p.id, f)}
-                onChangeIntensity={(i) => setIntensityForPlayer(p.id, i)}
-                onHelp={openHelp}
-              />
+              <div key={p.id} className="space-y-1">
+                <PlayerTrainingCard
+                  player={p}
+                  focus={focus}
+                  intensity={intensity}
+                  gain={gain}
+                  status={status}
+                  selectionMode={selectionMode}
+                  selected={selectedIds.has(p.id)}
+                  onToggleSelect={() => togglePlayer(p.id)}
+                  onChangeFocus={(f) => setFocusForPlayer(p.id, f)}
+                  onChangeIntensity={(i) => setIntensityForPlayer(p.id, i)}
+                  onHelp={openHelp}
+                />
+                <div className="flex flex-wrap items-center justify-end gap-1.5 text-[9px] sm:text-[10px] font-mono px-2">
+                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">CT {bd.ct}%</span>
+                  <span className={`px-1.5 py-0.5 rounded ${bd.age >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                    Idade {bd.age >= 0 ? '+' : ''}{bd.age}%
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">Inv +{bd.investment}%</span>
+                  <span className="px-1.5 py-0.5 rounded bg-foreground/10 text-foreground font-bold">
+                    Chance {bd.total}% · +{bd.gainPerEvent.toFixed(1)}/evt
+                  </span>
+                </div>
+              </div>
             );
           })}
         </CardContent>
