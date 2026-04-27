@@ -366,6 +366,23 @@ export function ClubCreation({ userId, onComplete }: Props) {
                   autoFocus
                 />
                 <p className="text-[10px] text-muted-foreground text-right">{clubName.length}/30</p>
+                {nameSuggestions.length > 0 && (
+                  <div className="mt-1 p-2 rounded-lg border border-amber-500/30 bg-amber-500/10 space-y-1">
+                    <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">⚠️ Nome em uso. Sugestões:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {nameSuggestions.map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => { setClubName(s); setNameSuggestions([]); }}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
