@@ -263,7 +263,7 @@ function LeagueView(props: Props) {
           <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
+          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
@@ -454,23 +454,30 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
-                    {m.user_id === userId && clubShield ? (
-                      <ShieldCrest
-                        primaryColor={clubShield.primaryColor}
-                        secondaryColor={clubShield.secondaryColor}
-                        pattern={clubShield.pattern}
-                        shape={clubShield.shape as ShieldShape}
-                        size={18}
-                      />
-                    ) : (
-                      <ShieldCrest
-                        primaryColor={getTeamColor(m.club_name)}
-                        secondaryColor="#ffffff"
-                        pattern="solid"
-                        shape="classic"
-                        size={18}
-                      />
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeam(m)}
+                      className="shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                      aria-label={`Ver perfil de ${m.club_name}`}
+                    >
+                      {m.user_id === userId && clubShield ? (
+                        <ShieldCrest
+                          primaryColor={clubShield.primaryColor}
+                          secondaryColor={clubShield.secondaryColor}
+                          pattern={clubShield.pattern}
+                          shape={clubShield.shape as ShieldShape}
+                          size={18}
+                        />
+                      ) : (
+                        <ShieldCrest
+                          primaryColor={getTeamColor(m.club_name)}
+                          secondaryColor="#ffffff"
+                          pattern="solid"
+                          shape="classic"
+                          size={18}
+                        />
+                      )}
+                    </button>
                     <button onClick={() => setSelectedTeam(m)} className="text-xs font-semibold truncate max-w-[120px] text-primary hover:underline cursor-pointer">{m.club_name}</button>
                     {isBot && <Badge variant="secondary" className="text-[7px] px-0.5 py-0 h-3">BOT</Badge>}
                   </div>
@@ -514,7 +521,25 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
 }
 
 // === MATCHES VIEW ===
-function MatchesView({ matches, members, userId, currentRound, totalRounds }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number }) {
+function MatchesView({ matches, members, userId, currentRound, totalRounds, leagueSquads, clubShield }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number; leagueSquads: LeagueSquad[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
+  const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
+  if (selectedTeam) {
+    return (
+      <ClubProfilePage
+        member={selectedTeam}
+        members={members}
+        userId={userId}
+        leagueMatches={matches}
+        leagueSquads={leagueSquads}
+        clubShield={clubShield}
+        onBack={() => setSelectedTeam(null)}
+      />
+    );
+  }
+  const openTeam = (uid: string) => {
+    const m = members.find(x => x.user_id === uid);
+    if (m) setSelectedTeam(m);
+  };
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
   const getLogo = (_uid: string) => '';
@@ -565,10 +590,27 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds }: { 
               <div key={m.id} className={`p-3 rounded-lg border ${isMyMatch ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    
-                    <span className={`text-sm font-semibold truncate ${m.home_user_id === userId ? 'text-primary' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.home_user_id)}
+                      className="shrink-0 hover:scale-110 transition-transform"
+                      aria-label={`Ver perfil de ${getClub(m.home_user_id)}`}
+                    >
+                      <ShieldCrest
+                        primaryColor={m.home_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.home_user_id))}
+                        secondaryColor={m.home_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
+                        pattern={(m.home_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
+                        shape={(m.home_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
+                        size={20}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.home_user_id)}
+                      className={`text-sm font-semibold truncate text-left hover:underline ${m.home_user_id === userId ? 'text-primary' : ''}`}
+                    >
                       {getClub(m.home_user_id)}
-                    </span>
+                    </button>
                   </div>
                   <div className="px-3 text-center shrink-0">
                     {m.status === 'played' ? (
@@ -578,10 +620,27 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds }: { 
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className={`text-sm font-semibold truncate ${m.away_user_id === userId ? 'text-primary' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.away_user_id)}
+                      className={`text-sm font-semibold truncate text-right hover:underline ${m.away_user_id === userId ? 'text-primary' : ''}`}
+                    >
                       {getClub(m.away_user_id)}
-                    </span>
-                    
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.away_user_id)}
+                      className="shrink-0 hover:scale-110 transition-transform"
+                      aria-label={`Ver perfil de ${getClub(m.away_user_id)}`}
+                    >
+                      <ShieldCrest
+                        primaryColor={m.away_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.away_user_id))}
+                        secondaryColor={m.away_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
+                        pattern={(m.away_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
+                        shape={(m.away_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
+                        size={20}
+                      />
+                    </button>
                   </div>
                 </div>
                 {m.status === 'played' && m.match_data?.events && (
@@ -646,8 +705,9 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
         <CardContent className="space-y-2">
           {members.map(m => {
             const squad = leagueSquads.find(s => s.user_id === m.user_id);
-            const players = squad?.squad_data || [];
-            const avgOvr = players.length > 0 ? Math.round(players.reduce((s: number, p: any) => s + (p.overall || 0), 0) / players.length) : 0;
+            const players = (squad?.squad_data as any) || [];
+            const playersList: any[] = Array.isArray(players) ? players : (players.players || []);
+            const avgOvr = playersList.length > 0 ? Math.round(playersList.reduce((s: number, p: any) => s + (p.overall || 0), 0) / playersList.length) : 0;
             const isMe = m.user_id === userId;
             return (
               <div key={m.id} className={`p-3 rounded-lg border ${isMe ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
@@ -659,8 +719,8 @@ function SquadSyncView({ userId, leagueSquads, members, clubPlayers, clubTactics
                   <div className="text-right">
                     {squad ? (
                       <div>
-                        <p className="text-xs font-semibold">{players.length} jogadores</p>
-                        <p className="text-[10px] text-muted-foreground">OVR médio: {avgOvr}</p>
+                        <p className="text-xs font-semibold">{playersList.length} jogadores</p>
+                        <p className="text-[10px] text-muted-foreground">OVR médio: {isMe ? avgOvr : '???'}</p>
                       </div>
                     ) : (
                       <Badge variant="destructive" className="text-[10px]">Não sincronizado</Badge>
