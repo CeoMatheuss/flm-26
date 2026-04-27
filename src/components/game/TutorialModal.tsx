@@ -213,10 +213,6 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
                   <Badge variant="secondary" className="text-[9px] gap-0.5 h-4">
                     📍 Aba: {tabDisplayName(current.tab)}
                   </Badge>
-                  <div className="flex items-center gap-0.5">
-                    <Coins className="h-3 w-3 text-yellow-400" />
-                    <span className="text-[9px] text-yellow-400 font-bold">+R${current.reward.toLocaleString('pt-BR')}</span>
-                  </div>
                 </div>
               </div>
             </div>
