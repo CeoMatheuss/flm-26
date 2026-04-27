@@ -1814,6 +1814,35 @@ function ImprovedSubsView({
         </div>
       )}
 
+      {/* QUEUED SUBS LIST — programadas com cancelar */}
+      {subQueue.length > 0 && (
+        <div className="bg-amber-500/5 border border-amber-500/30 rounded px-1.5 py-1 space-y-1">
+          <p className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">
+            ⏱️ Substituições programadas
+          </p>
+          {subQueue.map((q, idx) => {
+            const out = starters.find(p => p.id === q.outId) || bench.find(p => p.id === q.outId);
+            const inP = bench.find(p => p.id === q.inId) || starters.find(p => p.id === q.inId);
+            const minLabel = q.scheduledMinute ? `${q.scheduledMinute}'` : isHalftime ? '46\' (2T)' : 'próximo lance';
+            return (
+              <div key={`${q.outId}-${idx}`} className="flex items-center gap-1.5 bg-card/60 border border-border/20 rounded px-1.5 py-1">
+                <span className="text-[9px] font-mono font-bold text-amber-400 shrink-0">{minLabel}</span>
+                <span className="text-[10px] truncate flex-1">
+                  ⬅ <span className="text-red-400">{out?.name || '?'}</span> • ➡ <span className="text-emerald-400">{inP?.name || '?'}</span>
+                </span>
+                <button
+                  onClick={() => onCancelSub(q.outId)}
+                  className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors shrink-0"
+                  title="Cancelar substituição"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* 2-column layout: SAI | ENTRA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* COL 1: SAI */}
