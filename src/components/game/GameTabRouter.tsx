@@ -511,6 +511,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           reputation={game.club.reputation}
           onAccept={game.acceptSponsor}
           onRefreshOffers={game.refreshSponsorOffers}
+          userId={userId}
+          addBonus={game.addBonus}
         />
       </TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
