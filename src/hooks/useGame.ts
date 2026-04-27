@@ -70,6 +70,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     getTrainingManager().setPremiumBoost(!!isPremium);
   }, [isPremium]);
 
+  // 💰 Investimento mensal em treino → engine de evolução
+  useEffect(() => {
+    getTrainingManager().setMonthlyTrainingInvestment(infraState.trainingInvestment ?? 0);
+  }, [infraState.trainingInvestment]);
+
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
     matchId, homeGoals, awayGoals, isHome = true, competition,
