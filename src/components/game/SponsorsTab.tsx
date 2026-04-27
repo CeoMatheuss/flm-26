@@ -93,7 +93,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                     {/* Objetivo */}
                     <div className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
                       <Target className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-medium">{sp.objective.label}</span>
+                      <span className="font-medium">{sp.objective?.label ?? 'Sem objetivo'}</span>
                       {winsProgress !== null && (
                         <span className="ml-auto text-[10px] text-muted-foreground">
                           {winsTracked}/{winsTarget}
