@@ -263,7 +263,7 @@ function LeagueView(props: Props) {
           <StandingsView members={members} userId={userId} division={(currentLeague as any).division || 1} leagueMatches={leagueMatches} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} />
+          <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
         </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
