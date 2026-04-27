@@ -1017,6 +1017,31 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); }}
         />
       )}
+
+      {/* Loan listing terms modal */}
+      <LoanNegotiationModal
+        open={!!loanCandidate}
+        onOpenChange={(o) => { if (!o) setLoanCandidate(null); }}
+        mode="list"
+        player={loanCandidate ? {
+          name: loanCandidate.name,
+          position: loanCandidate.position,
+          age: loanCandidate.age,
+          overall: loanCandidate.overall,
+          salary: loanCandidate.salary || 0,
+        } : { name: '', position: 'MEI', age: 0, overall: 0, salary: 0 }}
+        loading={loanSubmitting}
+        onSubmit={async (terms) => {
+          if (!loanCandidate) return;
+          setLoanSubmitting(true);
+          try {
+            await onLoanOut(loanCandidate.id, terms);
+            setLoanCandidate(null);
+          } finally {
+            setLoanSubmitting(false);
+          }
+        }}
+      />
     </div>
   );
 }
