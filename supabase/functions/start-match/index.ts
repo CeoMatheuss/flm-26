@@ -987,7 +987,10 @@ function simulateFullMatch(
     ];
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
-    if (chosen.type === 'tackle') stats.tackles[teamIdx === 0 ? 1 : 0]++;
+    if (chosen.type === 'tackle' || chosen.type === 'interception') stats.tackles[teamIdx === 0 ? 1 : 0]++;
+    if (chosen.type === 'shot_blocked' || chosen.type === 'shot_off') stats.shots[teamIdx]++;
+    if (chosen.type === 'gk_save') { stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
+    if (chosen.type === 'corner_kick') stats.corners[teamIdx]++;
 
     // Build stamina snapshot every 10 min
     let staminaData: Record<string, number> | undefined;
