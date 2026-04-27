@@ -116,7 +116,8 @@ export class PlayerDevelopmentEngine {
     const gainPoints = bd.gainPerEvent * 100;
 
     let mainAttr: keyof PlayerAttributes | null = null;
-    const cap = Math.max(40, Math.min(99, player.potential ?? 99));
+    const potential = (player as Player & { potential?: number }).potential;
+    const cap = Math.max(40, Math.min(99, potential ?? Math.max(player.overall + 15, 80)));
     if (isGroupFocus(focus)) {
       const weights = groupWeights[focus];
       for (const w of weights) {
