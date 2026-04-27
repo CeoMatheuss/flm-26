@@ -24,7 +24,7 @@ interface Props {
   onRest: (id: string) => void;
   onRenewContract: (playerId: string, newSalary: number, newDuration: number) => void;
   onListForSale: (playerId: string) => void;
-  onLoanOut: (playerId: string) => void;
+  onLoanOut: (playerId: string, terms?: LoanTerms) => void | Promise<void>;
   onAuction: (player: Player) => void;
   onChangeNumber: (playerId: string, number: number) => void;
   canLoanOut: boolean;
