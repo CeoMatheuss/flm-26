@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     }
 
     await supa.from('club_world_cup_matches').update({
-      home_goals: r.hg, away_goals: r.ag, status: 'finished', played_at: now,
+      home_goals: r.hg, away_goals: r.ag, status: 'played', played_at: now,
       match_data: { aet: r.aet, pens: r.pens, pensH: r.pensH, pensA: r.pensA, winner_team_id: winnerId },
     }).eq('id', m.id)
 
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('cup_id', cup.id)
       .eq('stage', cup.current_stage)
-      .neq('status', 'finished')
+      .neq('status', 'played')
 
     if ((pending ?? 0) > 0) continue
 
@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
       .select('id, match_data')
       .eq('cup_id', cup.id)
       .eq('stage', cup.current_stage)
-      .eq('status', 'finished')
+      .eq('status', 'played')
       .order('id')
 
     const winners = (doneMatches ?? [])

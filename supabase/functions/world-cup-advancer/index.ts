@@ -54,7 +54,7 @@ async function advanceWorldCups(supabase: any, advanced: any[]) {
       .eq("round", cup.current_round);
 
     if (!roundMatches || roundMatches.length === 0) continue;
-    if (!roundMatches.every((m: any) => m.status === "finished")) continue;
+    if (!roundMatches.every((m: any) => m.status === "played")) continue;
 
     const stage = roundMatches[0].stage as string;
     const flow = CUP_FLOW[stage];
@@ -114,7 +114,7 @@ async function advanceWorldTournament(supabase: any, advanced: any[]) {
       .eq("round", tour.current_round);
 
     if (!roundMatches || roundMatches.length === 0) continue;
-    if (!roundMatches.every((m: any) => m.status === "finished")) continue;
+    if (!roundMatches.every((m: any) => m.status === "played")) continue;
 
     const stage = roundMatches[0].stage as string;
     const flow = WCT_FLOW[stage];
@@ -175,7 +175,7 @@ async function advanceInternational(supabase: any, advanced: any[]) {
       .like("stage", "Grupo %");
 
     if (!groupMatches || groupMatches.length === 0) continue;
-    const groupsFinished = groupMatches.every((m: any) => m.status === "finished");
+    const groupsFinished = groupMatches.every((m: any) => m.status === "played");
     if (!groupsFinished) continue;
 
     // Já criamos mata-mata?
@@ -265,7 +265,7 @@ async function advanceInternational(supabase: any, advanced: any[]) {
       .not("stage", "like", "Grupo %");
 
     if (!knockMatches || knockMatches.length === 0) continue;
-    if (!knockMatches.every((m: any) => m.status === "finished")) continue;
+    if (!knockMatches.every((m: any) => m.status === "played")) continue;
 
     const currentStage = knockMatches[0].stage;
     const STAGE_NEXT: Record<string, { next: string | null; round: number }> = {
