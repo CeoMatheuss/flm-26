@@ -185,18 +185,27 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => clearInterval(interval);
   }, []);
 
-  // Check tutorial completed status
+  // Check tutorial completed status — auto-show for ANY user that hasn't finished it
   useEffect(() => {
     const checkTutorial = async () => {
       const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
       const completed = !!(data as any)?.tutorial_completed;
       setTutorialCompleted(completed);
-      if (!completed && isNewClub) {
-        setShowTutorial(true);
+      // Show tutorial whenever it's not completed (not just new clubs).
+      // Small delay so it appears after the app fully loads.
+      if (!completed) {
+        setTimeout(() => setShowTutorial(true), 600);
       }
     };
     checkTutorial();
-  }, [userId, isNewClub]);
+  }, [userId]);
+
+  // Allow re-opening the tutorial manually (from Settings tab) via custom event.
+  useEffect(() => {
+    const handler = () => setShowTutorial(true);
+    window.addEventListener('flm:open-tutorial', handler);
+    return () => window.removeEventListener('flm:open-tutorial', handler);
+  }, []);
 
   // Handle match/tournament navigation state
   useEffect(() => {
@@ -463,7 +472,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={tutorialCompleted ? undefined : () => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} />
+            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} />
             <GameNavBar />
           </div>
           <GameTabRouter
