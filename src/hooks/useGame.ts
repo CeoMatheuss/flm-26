@@ -35,6 +35,7 @@ export interface GameState {
   infrastructure: Infrastructure;
   youthProspects: YouthProspect[];
   youthInvestment: number;
+  trainingInvestment?: number;
   season: SeasonData;
   sponsors: Sponsor[];
   sponsorOffers: SponsorOffer[];
