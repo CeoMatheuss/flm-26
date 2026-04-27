@@ -189,10 +189,12 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   }, [infraState.upgradeCTRoom, clubState.club.budget, financeState.addFinance, clubState.setClub]);
 
   const acceptSponsor = useCallback((offer: SponsorOffer) => {
-    financeState.acceptSponsor(offer, (fn) => {
-      clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) }));
-    });
-  }, [financeState.acceptSponsor, clubState.setClub]);
+    financeState.acceptSponsor(
+      offer,
+      (fn) => { clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) })); },
+      infraState.season?.year ?? 1,
+    );
+  }, [financeState.acceptSponsor, clubState.setClub, infraState.season]);
 
   const refreshSponsorOffers = useCallback(() => {
     financeState.refreshSponsorOffers(clubState.club.reputation);
