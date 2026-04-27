@@ -889,25 +889,32 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     }
   }, [subQueue, latestEvent, isHalftime, currentMinute, homePlayers, homeTeam, homeShield, substitutedPlayerIds, enteredInIds, matchDbId, matchState.isHome]);
 
-  // ── REALTIME: substituições do oponente ──
+  // ── REALTIME + POLLING FALLBACK: substituições do oponente ──
   // Filtra por shared_match_id (chave compartilhada entre os dois clientes).
   // Cada cliente tem seu próprio live_matches.id, então filtrar por live_match_id NÃO funcionaria.
   const seenRemoteSubsRef = useRef<Set<string>>(new Set());
+  // Refs para deps "voláteis" (shields/team names) — evita recriar canal a cada render
+  const oppContextRef = useRef({ homeTeam, awayTeam, homeShield, awayShield, isHome: matchState.isHome });
+  useEffect(() => {
+    oppContextRef.current = { homeTeam, awayTeam, homeShield, awayShield, isHome: matchState.isHome };
+  }, [homeTeam, awayTeam, homeShield, awayShield, matchState.isHome]);
+
   useEffect(() => {
     if (!sharedMatchId) return;
-    const mySide: 'home' | 'away' = matchState.isHome ? 'home' : 'away';
-    const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
-    const oppTeam = mySide === 'home' ? awayTeam : homeTeam;
-    const oppShield = mySide === 'home' ? awayShield : homeShield;
 
     const ingest = (row: any) => {
       if (!row) return;
       if (row.shared_match_id !== sharedMatchId) return;
       if (seenRemoteSubsRef.current.has(row.id)) return;
-      seenRemoteSubsRef.current.add(row.id);
+      const ctx = oppContextRef.current;
+      const mySide: 'home' | 'away' = ctx.isHome ? 'home' : 'away';
+      const oppSide: 'home' | 'away' = mySide === 'home' ? 'away' : 'home';
       // Apenas eventos do lado OPOSTO geram feed/banner.
       if (row.team_side !== oppSide) return;
+      seenRemoteSubsRef.current.add(row.id);
 
+      const oppTeam = mySide === 'home' ? ctx.awayTeam : ctx.homeTeam;
+      const oppShield = mySide === 'home' ? ctx.awayShield : ctx.homeShield;
       const minute = Number(row.minute) || 0;
       const isHalf = !!row.is_halftime;
       setInjectedSubEvents(prev => [...prev, {
@@ -926,19 +933,23 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       });
     };
 
-    // 1) Backfill — pega subs já existentes (entrou depois ou recarregou página)
-    supabase
-      .from('live_match_substitutions')
-      .select('*')
-      .eq('shared_match_id', sharedMatchId)
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn('[SUB sync] Backfill failed:', error.message);
-          return;
-        }
-        (data || []).forEach(ingest);
-      });
+    let cancelled = false;
+    const fetchAll = async () => {
+      const { data, error } = await supabase
+        .from('live_match_substitutions')
+        .select('*')
+        .eq('shared_match_id', sharedMatchId)
+        .order('created_at', { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        console.warn('[SUB sync] Fetch failed:', error.message);
+        return;
+      }
+      (data || []).forEach(ingest);
+    };
+
+    // 1) Backfill imediato (subs já existentes — entrou depois ou recarregou)
+    fetchAll();
 
     // 2) Realtime — escuta novos INSERTs filtrando pela chave compartilhada
     const channel = supabase
@@ -955,10 +966,15 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       )
       .subscribe();
 
+    // 3) Polling fallback a cada 4s — garante sync mesmo se Realtime falhar
+    const pollId = setInterval(fetchAll, 4000);
+
     return () => {
+      cancelled = true;
+      clearInterval(pollId);
       supabase.removeChannel(channel);
     };
-  }, [sharedMatchId, matchState.isHome, homeTeam, awayTeam, homeShield, awayShield]);
+  }, [sharedMatchId]);
 
   // Validation helper for substitutions — used by widget click + queue
 
@@ -1021,6 +1037,12 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
       toast.success('✅ Substituição enviada — aplicada no próximo lance');
     }
   }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
+
+  // Cancel a queued substitution before it's applied (only allowed if not yet executed)
+  const handleCancelQueuedSub = useCallback((outId: string) => {
+    setSubQueue(q => q.filter(s => s.outId !== outId));
+    toast.info('🚫 Substituição cancelada');
+  }, []);
 
   const subValidation = validateSubAllowed();
   const subBlocked = !subValidation.ok;
@@ -1417,6 +1439,7 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     selectedSubOut={selectedSubOut}
                     onSelectSubOut={setSelectedSubOut}
                     onConfirmSub={handleQueueSubstitution}
+                    onCancelSub={handleCancelQueuedSub}
                     isHalftime={isHalftime}
                     isFinished={isFinished}
                     subQueue={subQueue}
@@ -1645,7 +1668,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
   currentStarters: Player[];
   currentBench: Player[];
   hasAnyPlayers: boolean;
@@ -1656,6 +1679,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
+  onCancelSub: (outId: string) => void;
   isHalftime: boolean;
   isFinished: boolean;
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
@@ -1711,6 +1735,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
     selectedSubOut={selectedSubOut}
     onSelectSubOut={onSelectSubOut}
     onConfirmSub={onConfirmSub}
+    onCancelSub={onCancelSub}
     subsUsed={subsUsed}
     maxSubs={maxSubs}
     windowsUsed={windowsUsed}
@@ -1723,7 +1748,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
 }
 
 function ImprovedSubsView({
-  starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub,
+  starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub,
   subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
 }: {
   starters: Player[]; bench: Player[];
@@ -1731,6 +1756,7 @@ function ImprovedSubsView({
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
+  onCancelSub: (outId: string) => void;
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
@@ -1785,6 +1811,35 @@ function ImprovedSubsView({
       {blocked && blockedReason && (
         <div className="bg-red-500/10 border border-red-500/30 rounded px-2 py-1 text-[10px] text-red-400 font-medium">
           ⛔ {blockedReason}
+        </div>
+      )}
+
+      {/* QUEUED SUBS LIST — programadas com cancelar */}
+      {subQueue.length > 0 && (
+        <div className="bg-amber-500/5 border border-amber-500/30 rounded px-1.5 py-1 space-y-1">
+          <p className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">
+            ⏱️ Substituições programadas
+          </p>
+          {subQueue.map((q, idx) => {
+            const out = starters.find(p => p.id === q.outId) || bench.find(p => p.id === q.outId);
+            const inP = bench.find(p => p.id === q.inId) || starters.find(p => p.id === q.inId);
+            const minLabel = q.scheduledMinute ? `${q.scheduledMinute}'` : isHalftime ? '46\' (2T)' : 'próximo lance';
+            return (
+              <div key={`${q.outId}-${idx}`} className="flex items-center gap-1.5 bg-card/60 border border-border/20 rounded px-1.5 py-1">
+                <span className="text-[9px] font-mono font-bold text-amber-400 shrink-0">{minLabel}</span>
+                <span className="text-[10px] truncate flex-1">
+                  ⬅ <span className="text-red-400">{out?.name || '?'}</span> • ➡ <span className="text-emerald-400">{inP?.name || '?'}</span>
+                </span>
+                <button
+                  onClick={() => onCancelSub(q.outId)}
+                  className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors shrink-0"
+                  title="Cancelar substituição"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
