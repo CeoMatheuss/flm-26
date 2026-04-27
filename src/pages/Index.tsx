@@ -468,16 +468,46 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
-        // Anti-exploit: verifica no servidor se já recebeu antes de creditar
-        const { data: prof } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', userId).maybeSingle();
-        if ((prof as any)?.tutorial_completed) {
+        try {
+          // Marca local imediatamente para nunca travar a UI
           setTutorialCompleted(true);
-          return;
+          setShowTutorial(false);
+
+          // Anti-exploit: verifica no servidor se já recebeu antes de creditar
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('tutorial_completed')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          const alreadyDone = !!(prof as any)?.tutorial_completed;
+
+          // Upsert garantido (cria profile se não existir)
+          const { error: upErr } = await supabase
+            .from('profiles')
+            .upsert({
+              user_id: userId,
+              display_name: displayName || 'Manager',
+              tutorial_completed: true,
+            } as any, { onConflict: 'user_id' });
+
+          if (upErr) {
+            console.warn('[tutorial] persist err:', upErr.message);
+            toast.error('Tutorial concluído localmente, mas falhou ao salvar no servidor.');
+            return;
+          }
+
+          if (!alreadyDone) {
+            game.addBonus(200000, 'Recompensa por completar o Tutorial');
+            toast.success('🎉 Parabéns! Você recebeu R$ 200K por completar o tutorial.');
+          }
+          console.log('[tutorial] completed and persisted');
+        } catch (e) {
+          console.warn('[tutorial] complete failed:', e);
+          // Não trava a UI mesmo em erro
+          setTutorialCompleted(true);
+          setShowTutorial(false);
         }
-        await supabase.from('profiles').update({ tutorial_completed: true } as any).eq('user_id', userId);
-        game.addBonus(200000, 'Recompensa por completar o Tutorial');
-        toast.success('🎉 Parabéns! Você recebeu 200K por completar o tutorial.');
-        setTutorialCompleted(true);
       }} />
       {pendingAwardsSeason !== null && (
         <PersistentSeasonAwards
