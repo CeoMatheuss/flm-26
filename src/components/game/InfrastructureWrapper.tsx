@@ -164,6 +164,8 @@ export function InfrastructureWrapper({
               infrastructure={infrastructure}
               budget={budget}
               onUpgradeFacility={onUpgradeFacility}
+              trainingInvestment={trainingInvestment}
+              onSetTrainingInvestment={onSetTrainingInvestment}
             />
           )}
         </div>
