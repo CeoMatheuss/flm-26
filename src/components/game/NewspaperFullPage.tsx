@@ -143,7 +143,14 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   const allCategories = [...new Set(entries.map(e => e.category))].filter(Boolean).sort();
   const filteredEntries = categoryFilter ? entries.filter(e => e.category === categoryFilter) : entries;
-  const visibleEntries = showMore ? filteredEntries : filteredEntries.slice(0, 30);
+
+  // Promote up to 3 most recent special-event news to the top in their own hero layout.
+  const featuredEntries = filteredEntries
+    .filter(e => e.is_event && detectImageKey(e))
+    .slice(0, 3);
+  const featuredIds = new Set(featuredEntries.map(e => e.id));
+  const restEntries = filteredEntries.filter(e => !featuredIds.has(e.id));
+  const visibleEntries = showMore ? restEntries : restEntries.slice(0, 30);
 
   return (
     <div className="space-y-3">
