@@ -590,10 +590,27 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
               <div key={m.id} className={`p-3 rounded-lg border ${isMyMatch ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    
-                    <span className={`text-sm font-semibold truncate ${m.home_user_id === userId ? 'text-primary' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.home_user_id)}
+                      className="shrink-0 hover:scale-110 transition-transform"
+                      aria-label={`Ver perfil de ${getClub(m.home_user_id)}`}
+                    >
+                      <ShieldCrest
+                        primaryColor={m.home_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.home_user_id))}
+                        secondaryColor={m.home_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
+                        pattern={(m.home_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
+                        shape={(m.home_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
+                        size={20}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.home_user_id)}
+                      className={`text-sm font-semibold truncate text-left hover:underline ${m.home_user_id === userId ? 'text-primary' : ''}`}
+                    >
                       {getClub(m.home_user_id)}
-                    </span>
+                    </button>
                   </div>
                   <div className="px-3 text-center shrink-0">
                     {m.status === 'played' ? (
@@ -603,10 +620,27 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className={`text-sm font-semibold truncate ${m.away_user_id === userId ? 'text-primary' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.away_user_id)}
+                      className={`text-sm font-semibold truncate text-right hover:underline ${m.away_user_id === userId ? 'text-primary' : ''}`}
+                    >
                       {getClub(m.away_user_id)}
-                    </span>
-                    
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTeam(m.away_user_id)}
+                      className="shrink-0 hover:scale-110 transition-transform"
+                      aria-label={`Ver perfil de ${getClub(m.away_user_id)}`}
+                    >
+                      <ShieldCrest
+                        primaryColor={m.away_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.away_user_id))}
+                        secondaryColor={m.away_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
+                        pattern={(m.away_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
+                        shape={(m.away_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
+                        size={20}
+                      />
+                    </button>
                   </div>
                 </div>
                 {m.status === 'played' && m.match_data?.events && (
