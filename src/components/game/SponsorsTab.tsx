@@ -1,8 +1,15 @@
-import { Sponsor, SponsorOffer, sponsorTypeLabels, generateSponsorOffers } from '@/types/sponsor';
+import {
+  Sponsor, SponsorOffer, sponsorTypeLabels,
+  premiumSponsorPlans,
+} from '@/types/sponsor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Handshake, Plus, DollarSign } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import {
+  Handshake, Plus, DollarSign, AlertTriangle, Target, Calendar,
+  Trophy, Crown, Lock, Sparkles,
+} from 'lucide-react';
 
 interface Props {
   sponsors: Sponsor[];
@@ -12,63 +19,228 @@ interface Props {
   onRefreshOffers: () => void;
 }
 
+const fmtBRL = (v: number) =>
+  v >= 1_000_000 ? `R$ ${(v / 1_000_000).toFixed(2)}M`
+  : v >= 1_000 ? `R$ ${(v / 1_000).toFixed(0)}k`
+  : `R$ ${v}`;
+
 export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers }: Props) {
-  const totalMonthly = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
   const atLimit = sponsors.length >= 3;
+  const totalMonthly = sponsors
+    .filter(s => s.payMode === 'monthly')
+    .reduce((s, sp) => s + sp.monthlyPay, 0);
 
   return (
     <div className="space-y-6">
+      {/* ─── Contratos Ativos ───────────────────────────────────── */}
       <Card className="border-primary/30">
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between">
-            <span className="flex items-center gap-2"><Handshake className="h-5 w-5" /> Patrocinadores ({sponsors.length}/3)</span>
-            <span className="text-sm font-normal text-muted-foreground">Receita mensal: <span className="text-primary font-bold">R$ {(totalMonthly / 1000).toFixed(0)}k</span></span>
+            <span className="flex items-center gap-2">
+              <Handshake className="h-5 w-5" /> Patrocínios Ativos ({sponsors.length}/3)
+            </span>
+            <span className="text-sm font-normal text-muted-foreground">
+              Receita mensal: <span className="text-primary font-bold">{fmtBRL(totalMonthly)}</span>
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {sponsors.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhum patrocinador ativo. Aceite ofertas abaixo!</p>
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Nenhum patrocinador ativo. Aceite ofertas abaixo!
+            </p>
           ) : (
-            <div className="space-y-2">
-              {sponsors.map(sp => (
-                <div key={sp.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Badge variant="secondary" className="text-xs">{sponsorTypeLabels[sp.type]}</Badge>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{sp.name}</p>
-                    <p className="text-xs text-muted-foreground">{sp.duration} temporada(s) restante(s)</p>
+            <div className="space-y-3">
+              {sponsors.map(sp => {
+                const progress = (sp.installmentsPaid / Math.max(1, sp.installmentsTotal)) * 100;
+                const winsTarget = sp.objective.target ?? 0;
+                const winsTracked = sp.winsTracked ?? 0;
+                const winsProgress = sp.objective.kind === 'win_n_matches'
+                  ? Math.min(100, (winsTracked / Math.max(1, winsTarget)) * 100)
+                  : null;
+
+                return (
+                  <div key={sp.id} className="p-3 bg-muted/30 rounded-lg border border-border/40 space-y-2">
+                    {/* Header */}
+                    <div className="flex items-center gap-3">
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {sponsorTypeLabels[sp.type]}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{sp.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Total: <span className="text-primary font-semibold">{fmtBRL(sp.totalValue)}</span>
+                          {' · '}
+                          {sp.payMode === 'monthly'
+                            ? `${fmtBRL(sp.monthlyPay)}/parcela`
+                            : 'Pagamento ao concluir'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] shrink-0">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {sp.duration} temp.
+                      </Badge>
+                    </div>
+
+                    {/* Objetivo */}
+                    <div className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
+                      <Target className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="font-medium">{sp.objective.label}</span>
+                      {winsProgress !== null && (
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {winsTracked}/{winsTarget}
+                        </span>
+                      )}
+                    </div>
+                    {winsProgress !== null && (
+                      <Progress value={winsProgress} className="h-1" />
+                    )}
+
+                    {/* Parcelas */}
+                    {sp.payMode === 'monthly' && (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>Parcelas pagas: {sp.installmentsPaid}/{sp.installmentsTotal}</span>
+                          <span>{progress.toFixed(0)}%</span>
+                        </div>
+                        <Progress value={progress} className="h-1" />
+                      </div>
+                    )}
+
+                    {/* Multa */}
+                    <div className="flex items-center gap-2 text-[11px] text-destructive/90 bg-destructive/5 rounded px-2 py-1 border border-destructive/20">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      <span>Multa por descumprir: <strong>{fmtBRL(sp.penalty)}</strong> — pode falir o clube</span>
+                    </div>
                   </div>
-                  <p className="text-sm font-bold text-primary">R$ {(sp.monthlyPay / 1000).toFixed(0)}k/mês</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* ─── Ofertas ────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between">
             <span className="flex items-center gap-2"><DollarSign className="h-5 w-5" /> Ofertas Disponíveis</span>
             <Button size="sm" variant="outline" onClick={onRefreshOffers}>Buscar Novas</Button>
           </CardTitle>
-          <p className="text-xs text-muted-foreground">Sua reputação: {reputation} — Quanto maior, melhores os patrocínios</p>
+          <p className="text-xs text-muted-foreground">
+            Reputação: <span className="text-primary font-semibold">{reputation}</span> — Quanto maior, mais ousados (e lucrativos) os contratos
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {offers.map(offer => (
-              <div key={offer.id} className="flex items-center gap-3 p-3 bg-accent/30 rounded-lg">
-                <Badge className="text-xs">{sponsorTypeLabels[offer.type]}</Badge>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{offer.name}</p>
-                  <p className="text-xs text-muted-foreground">{offer.duration} temporada(s) • Rep. mín: {offer.minReputation}</p>
+          <div className="space-y-3">
+            {offers.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma oferta no momento.</p>
+            )}
+            {offers.map(offer => {
+              const eligible = reputation >= offer.minReputation && !atLimit;
+              return (
+                <div key={offer.id} className="p-3 bg-accent/20 rounded-lg border border-border/30 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Badge className="text-xs shrink-0">{sponsorTypeLabels[offer.type]}</Badge>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{offer.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {offer.duration} temporada(s) · Rep. mín: {offer.minReputation}
+                        {' · '}
+                        <span className="text-primary font-semibold">
+                          {offer.payMode === 'monthly'
+                            ? `${fmtBRL(offer.monthlyPay)}/parcela`
+                            : 'Pago ao concluir objetivo'}
+                        </span>
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => onAccept(offer)}
+                      disabled={!eligible}
+                      className="shrink-0"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      {atLimit ? 'Limite' : reputation < offer.minReputation ? 'Rep. baixa' : 'Aceitar'}
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-[11px]">
+                    <div className="bg-primary/10 rounded px-2 py-1.5 border border-primary/20">
+                      <div className="text-[9px] text-muted-foreground uppercase">Valor total</div>
+                      <div className="font-bold text-primary">{fmtBRL(offer.totalValue)}</div>
+                    </div>
+                    <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20">
+                      <div className="text-[9px] text-muted-foreground uppercase">Objetivo</div>
+                      <div className="font-bold text-yellow-400 text-[10px] leading-tight">{offer.objective.label}</div>
+                    </div>
+                    <div className="bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20">
+                      <div className="text-[9px] text-muted-foreground uppercase">Multa</div>
+                      <div className="font-bold text-destructive">{fmtBRL(offer.penalty)}</div>
+                    </div>
+                  </div>
+
+                  {offer.payMode === 'on_complete' && (
+                    <div className="flex items-center gap-2 text-[10px] text-yellow-300 bg-yellow-500/5 rounded px-2 py-1 border border-yellow-500/20">
+                      <Trophy className="h-3 w-3 shrink-0" />
+                      Pagamento integral apenas se objetivo for cumprido
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm font-bold text-primary">R$ {(offer.monthlyPay / 1000).toFixed(0)}k/mês</p>
-                <Button size="sm" onClick={() => onAccept(offer)} disabled={reputation < offer.minReputation || atLimit}>
-                  <Plus className="h-3 w-3 mr-1" /> {atLimit ? 'Limite' : 'Aceitar'}
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ─── Patrocínios Premium (Mockup) ───────────────────────── */}
+      <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-amber-500/5 to-orange-500/5">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Crown className="h-5 w-5 text-yellow-500" />
+            <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent font-black">
+              SmartPit — Patrocínio Premium
+            </span>
+            <Badge variant="outline" className="ml-auto text-[10px] border-yellow-500/40 text-yellow-400">
+              <Sparkles className="h-3 w-3 mr-1" /> EM BREVE
+            </Badge>
+          </CardTitle>
+          <p className="text-[11px] text-muted-foreground">
+            Contratos premium com pagamento garantido pingando todo dia no caixa do clube.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {premiumSponsorPlans.map(plan => {
+              const dailyValue = Math.floor(plan.inGameValue / plan.payoutDays);
+              return (
+                <div key={plan.id} className="p-3 bg-card/60 rounded-lg border border-yellow-500/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{plan.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{plan.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{plan.realPriceLabel}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{plan.description}</p>
+                  <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20 text-center">
+                    <div className="text-[9px] text-muted-foreground uppercase">Pagamento diário</div>
+                    <div className="text-sm font-black text-yellow-400">{fmtBRL(dailyValue)}/dia</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled
+                    className="w-full h-8 text-xs bg-yellow-500/40 text-black/60 cursor-not-allowed"
+                  >
+                    <Lock className="h-3 w-3 mr-1" /> Em breve
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[9px] text-center text-muted-foreground/60 mt-3">
+            Sistema em desenvolvimento. Em breve será possível ativar via PIX.
+          </p>
         </CardContent>
       </Card>
     </div>
