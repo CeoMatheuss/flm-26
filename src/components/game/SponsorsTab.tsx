@@ -93,7 +93,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                     {/* Objetivo */}
                     <div className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
                       <Target className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-medium">{sp.objective.label}</span>
+                      <span className="font-medium">{sp.objective?.label ?? 'Sem objetivo'}</span>
                       {winsProgress !== null && (
                         <span className="ml-auto text-[10px] text-muted-foreground">
                           {winsTracked}/{winsTarget}
@@ -180,7 +180,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                     </div>
                     <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20">
                       <div className="text-[9px] text-muted-foreground uppercase">Objetivo</div>
-                      <div className="font-bold text-yellow-400 text-[10px] leading-tight">{offer.objective.label}</div>
+                      <div className="font-bold text-yellow-400 text-[10px] leading-tight">{offer.objective?.label ?? '—'}</div>
                     </div>
                     <div className="bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20">
                       <div className="text-[9px] text-muted-foreground uppercase">Multa</div>

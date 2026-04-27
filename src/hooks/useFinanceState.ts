@@ -21,7 +21,9 @@ export function useFinanceState(initialState: any) {
       installmentsPaid: s.installmentsPaid ?? 0,
       payMode: s.payMode ?? 'monthly',
       penalty: s.penalty ?? 0,
-      objective: s.objective ?? { kind: 'top10', label: '⭐ Terminar no top 10' },
+      objective: (s.objective && s.objective.label)
+        ? s.objective
+        : { kind: 'top10', label: '⭐ Terminar no top 10' },
       signedSeason: s.signedSeason ?? 0,
       duration: s.duration ?? 1,
       status: s.status ?? 'active',
