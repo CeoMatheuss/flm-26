@@ -1668,7 +1668,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
   currentStarters: Player[];
   currentBench: Player[];
   hasAnyPlayers: boolean;
@@ -1679,6 +1679,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
+  onCancelSub: (outId: string) => void;
   isHalftime: boolean;
   isFinished: boolean;
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
