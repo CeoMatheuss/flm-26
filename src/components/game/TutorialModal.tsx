@@ -148,7 +148,7 @@ const steps = [
   },
 ];
 
-const TOTAL_REWARD = steps.reduce((sum, s) => sum + s.reward, 0);
+const TOTAL_REWARD = 200000;
 
 export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Props) {
   const [step, setStep] = useState(0);
