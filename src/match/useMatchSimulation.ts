@@ -612,6 +612,18 @@ export function useMatchSimulation() {
     const now = Date.now();
     const adjustedStart = startTime > now + 5000 ? now : startTime;
 
+    // CRITICAL: data.is_home reflete a perspectiva de quem INSERIU a linha.
+    // Em PvP, mandante e visitante leem a MESMA linha (shared_match_id), então
+    // o oponente precisa derivar isHome localmente: se ele for o user_id da
+    // linha, usa data.is_home; caso contrário, é o lado oposto.
+    let derivedIsHome = data.is_home;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && data.user_id && user.id !== data.user_id) {
+        derivedIsHome = !data.is_home;
+      }
+    } catch { /* ignore */ }
+
     // Defensive: ensure durationMs is always > 0 to avoid NaN progress and stuck matches.
     const safeDurationMs = Math.max(60_000, (data.duration_seconds || 720) * 1000);
     dataRef.current = {
@@ -627,7 +639,7 @@ export function useMatchSimulation() {
       stadiumName: data.stadium_name,
       matchDbId: data.id,
       competition: data.competition || 'Amistoso',
-      isHome: data.is_home,
+      isHome: derivedIsHome,
     };
 
     if (data.status === 'finished') {
