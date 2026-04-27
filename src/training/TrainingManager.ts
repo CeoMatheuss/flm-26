@@ -37,6 +37,11 @@ export class TrainingManager {
     this.devEngine.premiumBoost = enabled;
   }
 
+  /** Define investimento mensal global em treino (R$). Afeta a chance de evolução. */
+  setMonthlyTrainingInvestment(value: number): void {
+    this.devEngine.setMonthlyInvestment(value);
+  }
+
   /**
    * Processa uma semana de treinos para todo o elenco.
    * Retorna os jogadores atualizados e o resultado detalhado.
