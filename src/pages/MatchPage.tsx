@@ -1735,6 +1735,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
     selectedSubOut={selectedSubOut}
     onSelectSubOut={onSelectSubOut}
     onConfirmSub={onConfirmSub}
+    onCancelSub={onCancelSub}
     subsUsed={subsUsed}
     maxSubs={maxSubs}
     windowsUsed={windowsUsed}
@@ -1747,7 +1748,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
 }
 
 function ImprovedSubsView({
-  starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub,
+  starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub,
   subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
 }: {
   starters: Player[]; bench: Player[];
@@ -1755,6 +1756,7 @@ function ImprovedSubsView({
   selectedSubOut: string | null;
   onSelectSubOut: (id: string | null) => void;
   onConfirmSub: (outId: string, inId: string, scheduledMinute?: number) => void;
+  onCancelSub: (outId: string) => void;
   subsUsed: number; maxSubs: number; windowsUsed: number; maxWindows: number;
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
