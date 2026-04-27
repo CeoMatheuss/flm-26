@@ -201,6 +201,24 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     return true;
   }, [youthInvestment]);
 
+  const chargeTrainingInvestment = useCallback((
+    clubBudget: number,
+    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    deductBudget: (cost: number) => void,
+  ) => {
+    if (trainingInvestment <= 0) return false;
+    if (clubBudget < trainingInvestment) {
+      toast.error('Orçamento insuficiente para o investimento mensal em treino!');
+      // Auto-rebaixa para 0 para evitar loop
+      setTrainingInvestment(0);
+      return false;
+    }
+    deductBudget(trainingInvestment);
+    addFinance('despesa', 'CT', trainingInvestment, 'Investimento mensal em Treino');
+    toast.success(`💰 Investimento mensal em treino debitado: R$ ${trainingInvestment.toLocaleString('pt-BR')}`);
+    return true;
+  }, [trainingInvestment]);
+
   /** Run end-of-cycle: simulate youth match + roll dynamic event. Updates prospects in place. */
   const processYouthCycle = useCallback((clubName: string) => {
     setYouthProspects(prev => {
