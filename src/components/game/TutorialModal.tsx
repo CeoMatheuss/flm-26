@@ -18,15 +18,15 @@ interface Props {
 const steps = [
   {
     icon: Sparkles,
-    title: 'Bem-vindo ao FLM 26! ⚽',
+    title: 'Bem-vindo ao FLM! ⚽',
     tab: 'dashboard',
-    description: 'Você é o novo manager! O Dashboard mostra tudo: orçamento, torcida, moral, próximo jogo, infraestrutura e eventos do clube em tempo real.',
+    description: 'Bem-vindo ao FLM! Vamos te mostrar o básico para começar. Você é o novo manager — gerencie elenco, finanças, partidas e suba no ranking global!',
     examples: [
       { label: '💰 Orçamento', detail: 'Gerencie finanças — cada decisão impacta seu caixa' },
       { label: '📊 Moral & Torcida', detail: 'Resultados afetam moral do elenco e tamanho da torcida' },
       { label: '⚡ Eventos', detail: 'Lesões, protestos, patrocínios e surpresas aparecem aqui' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-primary',
   },
   {
@@ -39,7 +39,7 @@ const steps = [
       { label: '🤖 Narração IA', detail: 'Clique para gerar narrações cinematográficas' },
       { label: '📢 Comunicados', detail: 'Avisos importantes da administração do jogo' },
     ],
-    reward: 25000,
+    reward: 0,
     color: 'text-blue-400',
   },
   {
@@ -52,7 +52,7 @@ const steps = [
       { label: '😴 Fadiga & Descanso', detail: 'Jogadores cansados rendem -20%. Use "Descansar" para recuperar' },
       { label: '📝 Contratos', detail: 'Renove antes de expirar ou perde o jogador de graça!' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-green-400',
   },
   {
@@ -65,7 +65,7 @@ const steps = [
       { label: '⚔️ Estilo', detail: 'Ofensivo → mais gols mas sofre mais. Contra-ataque → explosivo' },
       { label: '🔥 Pressão & Tempo', detail: 'Pressão alta cansa mas rouba bolas. Tempo rápido = mais chances' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-red-400',
   },
   {
@@ -78,7 +78,7 @@ const steps = [
       { label: '⚡ Contra-Ataque', detail: 'Simule transições rápidas e ganhe +2 em Velocidade temporário' },
       { label: '📐 Cruzamentos', detail: 'Treine jogadas pela ponta e ganhe bônus em Cruzamento' },
     ],
-    reward: 75000,
+    reward: 0,
     color: 'text-orange-400',
   },
   {
@@ -91,7 +91,7 @@ const steps = [
       { label: '💼 Negociar', detail: 'Oferte preço + salário + bônus por performance' },
       { label: '🔄 Empréstimos', detail: 'Empreste jogadores para economizar ou reforçar temporariamente' },
     ],
-    reward: 75000,
+    reward: 0,
     color: 'text-yellow-400',
   },
   {
@@ -104,7 +104,7 @@ const steps = [
       { label: '🎬 Lances 2D', detail: 'Animações de gols, defesas, trave, contra-ataques e faltas' },
       { label: '📊 Estatísticas', detail: 'Posse, chutes, escanteios, faltas — tudo em tempo real' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-emerald-400',
   },
   {
@@ -117,7 +117,7 @@ const steps = [
       { label: '💬 Chat & Propostas', detail: 'Negocie jogadores e converse diretamente com rivais' },
       { label: '🎖️ Torneios', detail: 'Campeonatos especiais com grupos, mata-mata e premiação' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-cyan-400',
   },
   {
@@ -130,7 +130,7 @@ const steps = [
       { label: '🏋️ CT', detail: 'Nível maior = evolução de atributos mais rápida' },
       { label: '🏥 Fisioterapia', detail: 'Lesões duram menos dias com nível alto' },
     ],
-    reward: 50000,
+    reward: 0,
     color: 'text-purple-400',
   },
   {
@@ -143,12 +143,12 @@ const steps = [
       { label: '🏅 Conquistas', detail: '100 gols, 10 vitórias seguidas, campeão invicto e mais' },
       { label: '🏆 Troféus', detail: 'Títulos de liga ficam eternizados na galeria do clube' },
     ],
-    reward: 75000,
+    reward: 0,
     color: 'text-amber-400',
   },
 ];
 
-const TOTAL_REWARD = steps.reduce((sum, s) => sum + s.reward, 0);
+const TOTAL_REWARD = 200000;
 
 export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Props) {
   const [step, setStep] = useState(0);
@@ -213,10 +213,6 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
                   <Badge variant="secondary" className="text-[9px] gap-0.5 h-4">
                     📍 Aba: {tabDisplayName(current.tab)}
                   </Badge>
-                  <div className="flex items-center gap-0.5">
-                    <Coins className="h-3 w-3 text-yellow-400" />
-                    <span className="text-[9px] text-yellow-400 font-bold">+R${current.reward.toLocaleString('pt-BR')}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -242,9 +238,9 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
           <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Coins className="h-3.5 w-3.5 text-yellow-400" />
-              <span className="text-[10px] text-yellow-300">Recompensa total:</span>
+              <span className="text-[10px] text-yellow-300">Recompensa ao concluir:</span>
             </div>
-            <span className="text-xs font-bold text-yellow-400">R${TOTAL_REWARD.toLocaleString('pt-BR')}</span>
+            <span className="text-xs font-bold text-yellow-400">R$ 200.000</span>
           </div>
 
           <div className="flex gap-0.5">
