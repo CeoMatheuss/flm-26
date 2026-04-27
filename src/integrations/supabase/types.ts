@@ -2418,6 +2418,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          image_key: string | null
           is_event: boolean
           narration: string | null
           text: string
@@ -2427,6 +2428,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_key?: string | null
           is_event?: boolean
           narration?: string | null
           text: string
@@ -2436,6 +2438,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_key?: string | null
           is_event?: boolean
           narration?: string | null
           text?: string
@@ -3978,6 +3981,15 @@ export type Database = {
       }
       process_season_transition: {
         Args: { _country: string }
+        Returns: undefined
+      }
+      publish_newspaper_event: {
+        Args: {
+          _category: string
+          _image_key: string
+          _text: string
+          _user_id: string
+        }
         Returns: undefined
       }
       qualify_club_world_cup: { Args: { _season_year: number }; Returns: Json }
