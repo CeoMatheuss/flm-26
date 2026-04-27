@@ -41,6 +41,58 @@ export function getCTEfficiency(level: number): number {
   return ctEfficiencyByLevel[level] ?? 1.0;
 }
 
+// ─── V4: Sistema de chance de evolução por sessão ──────────────────────
+// Chance base por nível do CT (1→3% até 30→32%).
+export function getCTEvolutionChance(level: number): number {
+  const lv = Math.max(1, Math.min(30, level));
+  return 2 + lv; // 1→3, 2→4, ..., 30→32
+}
+
+// Bônus/penalidade por idade.
+export function getAgeEvolutionBonus(age: number): number {
+  if (age <= 21) return 20;
+  if (age <= 26) return 10;
+  if (age <= 30) return 0;
+  if (age <= 34) return -15;
+  return -30;
+}
+
+// Tiers de investimento mensal em treino. Valores em R$.
+export const trainingInvestmentTiers = [0, 50_000, 100_000, 200_000, 300_000, 500_000] as const;
+export type TrainingInvestmentTier = typeof trainingInvestmentTiers[number];
+
+export function getInvestmentEvolutionBonus(monthlyInvestment: number): number {
+  const v = Math.max(0, monthlyInvestment | 0);
+  if (v >= 500_000) return 10;
+  if (v >= 300_000) return 8;
+  if (v >= 200_000) return 6;
+  if (v >= 100_000) return 4;
+  if (v >= 50_000)  return 2;
+  return 0;
+}
+
+// Chance final (clamp 2% — 70%).
+export function calcEvolutionChance(
+  ctLevel: number,
+  age: number,
+  monthlyInvestment: number,
+): { ct: number; age: number; investment: number; total: number } {
+  const ct = getCTEvolutionChance(ctLevel);
+  const ageB = getAgeEvolutionBonus(age);
+  const inv = getInvestmentEvolutionBonus(monthlyInvestment);
+  const raw = ct + ageB + inv;
+  const total = Math.max(2, Math.min(70, raw));
+  return { ct, age: ageB, investment: inv, total };
+}
+
+// Ganho de atributo por evento de evolução, por idade.
+// Jovens evoluem mais rápido (já que escolhemos "Por idade" no design).
+export function getEvolutionGainByAge(age: number): number {
+  if (age <= 21) return 0.3; // forte
+  if (age <= 26) return 0.2; // médio
+  return 0.1;                // fraco
+}
+
 export interface FacilityLevel {
   level: number;
   maxLevel: number;
