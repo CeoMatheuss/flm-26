@@ -1469,22 +1469,22 @@ Deno.serve(async (req) => {
       console.warn('[start-match] Authoritative resolution failed, falling back to client data', e);
     }
 
-    // Simulate match (com dados de estádio AUTORITATIVOS)
+    // Simulate match (com inputs AUTORITATIVOS — sempre orientação mandante=mandante real)
     const result = simulateFullMatch(
-      homeTeam, awayTeam, homePlayers || [],
-      validatedHomeStrength, validatedAwayStrength,
-      tactics || {}, resolvedStadiumName, isHome !== false,
+      effHomeTeam, effAwayTeam, effHomePlayers,
+      effHomeStrength, effAwayStrength,
+      effTactics, resolvedStadiumName, effIsHomeForReport,
       competition || 'Amistoso', resolvedStadiumCapacity, resolvedHomeFans,
       staff, resolvedAwayFans, validTieBreaker,
-      Array.isArray(awayPlayers) ? awayPlayers : undefined,
-      awayTactics || undefined
+      effAwayPlayers,
+      effAwayTactics
     );
 
     // Fallback: ensure minimum events so UI never hangs
     if (!Array.isArray(result.events) || result.events.length === 0) {
       console.warn('[Sim] Empty events generated — applying fallback');
-      const fallbackHomeGoals = poissonSample(Math.max(0.3, validatedHomeStrength / 60));
-      const fallbackAwayGoals = poissonSample(Math.max(0.3, validatedAwayStrength / 60));
+      const fallbackHomeGoals = poissonSample(Math.max(0.3, effHomeStrength / 60));
+      const fallbackAwayGoals = poissonSample(Math.max(0.3, effAwayStrength / 60));
       result.events = [
         { minute: 0, type: 'kickoff', team: 'neutral', description: '⚽ Início da partida!' },
         { minute: 45, type: 'halftime', team: 'neutral', description: '🟡 Fim do 1º tempo' },
@@ -1497,28 +1497,35 @@ Deno.serve(async (req) => {
     const durationSeconds = 720; // 12 minutes real time
 
     // Insert into live_matches with shared_match_id mirror so both clients converge.
+    // home_team/away_team/home_players gravados são SEMPRE a orientação autoritativa
+    // (mandante real à esquerda). is_home reflete a perspectiva do user_id que inseriu;
+    // o oponente lê a MESMA linha (RLS via is_match_participant) e deve derivar
+    // sua própria perspectiva localmente — nunca confiar no is_home da linha.
+    const callerIsHomeOnInsert = resolvedHomeUserId
+      ? resolvedHomeUserId === userId
+      : (isHome !== false);
     const insertPayload = {
       user_id: userId,
       match_id: matchId,
       shared_match_id: String(matchId),
-      home_team: homeTeam,
-      away_team: awayTeam,
-      home_strength: validatedHomeStrength,
-      away_strength: validatedAwayStrength,
+      home_team: effHomeTeam,
+      away_team: effAwayTeam,
+      home_strength: effHomeStrength,
+      away_strength: effAwayStrength,
       stadium_name: resolvedStadiumName,
       stadium_capacity: resolvedStadiumCapacity,
       attendance: result.attendance,
       ticket_revenue: result.ticketRevenue,
-      is_home: isHome !== false,
+      is_home: callerIsHomeOnInsert,
       competition: competition || 'Amistoso',
       duration_seconds: durationSeconds,
       events: result.events as any,
       home_goals: result.homeGoals,
       away_goals: result.awayGoals,
       stats: result.stats as any,
-      home_players: (homePlayers || []) as any,
+      home_players: effHomePlayers as any,
       player_ratings: result.playerRatings as any,
-      tactics: (tactics || {}) as any,
+      tactics: effTactics as any,
       status: 'live',
       roster_locked_at: new Date().toISOString(),
     };
