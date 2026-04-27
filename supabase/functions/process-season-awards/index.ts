@@ -368,12 +368,18 @@ Deno.serve(async (req) => {
       const headline = `🏆 ${a.label} — ${subjectName} é eleito(a) na Temporada ${season}`;
       const narrativeText = ai_narrative || `${subjectName} conquistou o prêmio de ${a.label} ao final da Temporada ${season}!`;
       if (insertRow.user_id) {
+        // Define image_key visual: Bola de Ouro recebe destaque especial
+        const lbl = (a.label || '').toLowerCase();
+        const imgKey = lbl.includes('bola de ouro') || lbl.includes('ballon') || lbl.includes('melhor jogador')
+          ? 'ballon_dor'
+          : 'awards';
         await admin.from('newspaper_entries').insert([{
           user_id: insertRow.user_id,
-          category: 'awards',
+          category: 'AWARDS',
           text: `${headline}\n\n${narrativeText}`,
           is_event: true,
           narration: ai_image_url || null,
+          image_key: imgKey,
         }]).then(() => {}, () => {});
       }
     }
