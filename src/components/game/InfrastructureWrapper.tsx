@@ -45,6 +45,8 @@ interface Props {
   onUpgradeFacility?: (facility: FacilityKey) => void;
   ctRooms?: CTRooms;
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
+  trainingInvestment?: number;
+  onSetTrainingInvestment?: (value: number) => void;
 
   // Estádio
   stadiumProps?: any;
