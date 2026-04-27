@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import type { TacticsConfig, Formation } from '@/types/tactics';
 import { formationPositions } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
+import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 
 interface Props {
   players: Player[];
