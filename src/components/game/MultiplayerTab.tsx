@@ -521,7 +521,25 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
 }
 
 // === MATCHES VIEW ===
-function MatchesView({ matches, members, userId, currentRound, totalRounds }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number }) {
+function MatchesView({ matches, members, userId, currentRound, totalRounds, leagueSquads, clubShield }: { matches: LeagueMatch[]; members: LeagueMember[]; userId: string; currentRound: number; totalRounds: number; leagueSquads: LeagueSquad[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
+  const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
+  if (selectedTeam) {
+    return (
+      <ClubProfilePage
+        member={selectedTeam}
+        members={members}
+        userId={userId}
+        leagueMatches={matches}
+        leagueSquads={leagueSquads}
+        clubShield={clubShield}
+        onBack={() => setSelectedTeam(null)}
+      />
+    );
+  }
+  const openTeam = (uid: string) => {
+    const m = members.find(x => x.user_id === uid);
+    if (m) setSelectedTeam(m);
+  };
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
   const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
   const getLogo = (_uid: string) => '';
