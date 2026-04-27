@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Handshake, Plus, DollarSign, AlertTriangle, Target, Calendar,
-  Trophy, Crown, Lock, Sparkles,
+  Trophy, Crown, Lock, Sparkles, CheckCircle2, Clock,
 } from 'lucide-react';
+import { usePremiumSponsorship } from '@/hooks/usePremiumSponsorship';
 
 interface Props {
   sponsors: Sponsor[];
@@ -17,6 +18,8 @@ interface Props {
   reputation: number;
   onAccept: (offer: SponsorOffer) => void;
   onRefreshOffers: () => void;
+  userId?: string;
+  addBonus?: (amount: number, description: string) => void;
 }
 
 const fmtBRL = (v: number) =>
@@ -24,11 +27,16 @@ const fmtBRL = (v: number) =>
   : v >= 1_000 ? `R$ ${(v / 1_000).toFixed(0)}k`
   : `R$ ${v}`;
 
-export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers }: Props) {
+export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshOffers, userId, addBonus }: Props) {
   const atLimit = sponsors.length >= 3;
   const totalMonthly = sponsors
     .filter(s => s.payMode === 'monthly')
     .reduce((s, sp) => s + sp.monthlyPay, 0);
+
+  const premium = usePremiumSponsorship(userId, addBonus);
+  const activePremium = premium.active;
+  const remainingPremium = activePremium ? Math.max(0, activePremium.total_value - activePremium.received_value) : 0;
+  const premiumProgress = activePremium ? (activePremium.received_value / activePremium.total_value) * 100 : 0;
 
   return (
     <div className="space-y-6">
