@@ -792,6 +792,21 @@ function simulateFullMatch(
     const gk = pickByAttr(oppPlayers.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
 
+    // ── LANCE ANTERIOR (jogada na área que gera o pênalti) ──
+    const attacker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'dribbling', rng() > 0.4 ? 'ATA' : undefined) || kicker;
+    const defender = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'defending', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
+    const buildupVariants = [
+      `🏃 Jogada perigosa do ${tName}! ${attacker?.name || 'Atacante'} entra na área driblando, ${defender?.name || 'defensor'} do ${opp} chega atrasado e derruba dentro da área!`,
+      `⚡ ${attacker?.name || 'Atacante'} do ${tName} avança na área, gira o corpo e ${defender?.name || 'zagueiro'} do ${opp} comete a falta na disputa!`,
+      `🎯 Cruzamento na área do ${opp}! ${attacker?.name || 'Atacante'} se antecipa para cabecear e é segurado por ${defender?.name || 'defensor'}! O árbitro não tem dúvidas!`,
+      `🔥 ${attacker?.name || 'Atacante'} do ${tName} recebe na pequena área, prepara o chute e ${defender?.name || 'defensor'} do ${opp} chega com o pé alto!`,
+    ];
+    allPlanned.push({
+      minute: pen.minute, type: 'penalty_won', team, animType: 'chance',
+      playerName: attacker?.name,
+      description: pick(buildupVariants),
+    } as SimEvent);
+
     if (pen.isGoal) {
       if (team === 'home') penaltyHomeGoals++; else penaltyAwayGoals++;
       const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
