@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Sun, Moon, Monitor } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Settings, Sun, Moon, Monitor, GraduationCap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function SettingsTab() {
