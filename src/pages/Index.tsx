@@ -201,12 +201,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     checkTutorial();
   }, [userId]);
 
-  // Allow re-opening the tutorial manually (from Settings tab) via custom event.
+  // Allow re-opening the tutorial manually (from Settings tab) via custom event — only if not yet completed.
   useEffect(() => {
-    const handler = () => setShowTutorial(true);
+    const handler = () => {
+      if (!tutorialCompleted) setShowTutorial(true);
+    };
     window.addEventListener('flm:open-tutorial', handler);
     return () => window.removeEventListener('flm:open-tutorial', handler);
-  }, []);
+  }, [tutorialCompleted]);
 
   // Handle match/tournament navigation state
   useEffect(() => {
@@ -473,7 +475,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} />
+            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
             <GameNavBar />
           </div>
           <ErrorBoundary label={`tab:${activeTab}`}>
