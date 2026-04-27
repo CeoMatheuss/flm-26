@@ -177,13 +177,8 @@ export function TutorialModal({ open, onClose, onComplete, onNavigateTab }: Prop
     onClose();
   };
 
-  const handleOpen = (isOpen: boolean) => {
-    if (!isOpen) {
-      onClose();
-    } else {
-      onNavigateTab?.(current.tab);
-    }
-  };
+  // Navigate to current step's tab on mount/open
+  const lastNavigatedRef = useState<string | null>(null);
 
   const tabDisplayName = (tab: string) => {
     const map: Record<string, string> = {
