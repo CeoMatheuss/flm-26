@@ -3983,6 +3983,15 @@ export type Database = {
         Args: { _country: string }
         Returns: undefined
       }
+      publish_newspaper_event: {
+        Args: {
+          _category: string
+          _image_key: string
+          _text: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       qualify_club_world_cup: { Args: { _season_year: number }; Returns: Json }
       qualify_continental_humans: {
         Args: { _continent: string; _season: number; _tier: string }
