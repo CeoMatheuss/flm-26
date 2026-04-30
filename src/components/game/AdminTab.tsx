@@ -3,6 +3,8 @@ import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
 import { SystemPanel } from './admin/SystemPanel';
 import { AdminSupportPanel } from './admin/AdminSupportPanel';
+import { FinancePanel } from './admin/FinancePanel';
+import { CustomizationPanel } from './admin/CustomizationPanel';
 import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
