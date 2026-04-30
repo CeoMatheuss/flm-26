@@ -114,10 +114,10 @@ export function generateMatchReport(
   // Yellow/red cards
   for (let i = 0; i < homeYellows; i++) {
     const p = allOutfield[Math.floor(Math.random() * allOutfield.length)];
-    if (p) events.push({ minute: Math.floor(Math.random() * 90 + 1), type: 'yellow_card', playerName: p.name, team: 'home', description: `🟨 Cartão amarelo: ${p.name}` });
+    if (p) events.push({ minute: Math.floor(Math.random() * 90 + 1), type: 'yellow_card', playerName: p.name, team: 'home', description: `Cartão amarelo: ${p.name}` });
   }
   for (let i = 0; i < awayYellows; i++) {
-    events.push({ minute: Math.floor(Math.random() * 90 + 1), type: 'yellow_card', playerName: 'Adversário', team: 'away', description: `🟨 Cartão amarelo` });
+    events.push({ minute: Math.floor(Math.random() * 90 + 1), type: 'yellow_card', playerName: 'Adversário', team: 'away', description: `Cartão amarelo` });
   }
 
   events.sort((a, b) => a.minute - b.minute);
