@@ -1,11 +1,19 @@
 import { useState } from 'react';
-import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu } from 'lucide-react';
+import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu, Wallet, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-export type AdminCategory = 'leagues' | 'cups' | 'clubs' | 'players' | 'system' | 'simulation';
+export type AdminCategory =
+  | 'leagues'
+  | 'cups'
+  | 'clubs'
+  | 'players'
+  | 'finance'
+  | 'customization'
+  | 'system'
+  | 'simulation';
 
 interface CategoryDef {
   id: AdminCategory;
@@ -14,12 +22,14 @@ interface CategoryDef {
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { id: 'leagues',    label: 'Ligas',     icon: Globe },
-  { id: 'cups',       label: 'Copas',     icon: Trophy },
-  { id: 'clubs',      label: 'Clubes',    icon: Users },
-  { id: 'players',    label: 'Players',   icon: UserCog },
-  { id: 'system',     label: 'Sistema',   icon: Settings },
-  { id: 'simulation', label: 'Simulação', icon: FlaskConical },
+  { id: 'leagues',       label: 'Ligas',          icon: Globe },
+  { id: 'cups',          label: 'Copas',          icon: Trophy },
+  { id: 'clubs',         label: 'Clubes',         icon: Users },
+  { id: 'players',       label: 'Players',        icon: UserCog },
+  { id: 'finance',       label: 'Financeiro',     icon: Wallet },
+  { id: 'customization', label: 'Personalização', icon: Palette },
+  { id: 'system',        label: 'Sistema',        icon: Settings },
+  { id: 'simulation',    label: 'Simulação',      icon: FlaskConical },
 ];
 
 interface Props {
