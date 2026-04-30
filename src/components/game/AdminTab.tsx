@@ -726,6 +726,9 @@ export function AdminTab({ userId, isFounder }: Props) {
             </Card>
           )}
 
+          {/* Adicionar Dinheiro a qualquer clube — admin */}
+          <AdminAddMoneyCard />
+
           {/* Customization Unlock - any admin */}
           <Card className="border-amber-500/30">
             <CardHeader className="pb-2">
