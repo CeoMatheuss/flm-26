@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
+  BookOpen, FlaskConical, Calendar, ShieldCheck
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
