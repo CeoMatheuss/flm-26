@@ -79,26 +79,34 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget(cost);
     addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
 
-    // Non-Premium youth academy: 24h delay
-    if (facility === 'youthAcademy' && !isPremium) {
+    // Bloqueia se já houver obra em andamento nesta instalação
+    const existingPending = infrastructure[facility].upgradeCompletesAt;
+    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
+      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
+      return;
+    }
+
+    // Não-Premium: TODAS as obras demoram 24h
+    if (!isPremium) {
       const completesAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       setInfrastructure(prev => ({
         ...prev,
-        youthAcademy: { ...prev.youthAcademy, upgradeCompletesAt: completesAt },
+        [facility]: { ...prev[facility], upgradeCompletesAt: completesAt },
       }));
-      toast.success('🏗️ Obra iniciada na Academia!', {
+      toast.success(`🏗️ Obra iniciada em ${label}!`, {
         description: `Conclui em 24h. ⭐ Premium libera obras instantâneas.`,
       });
       if (userId) {
         supabase.from('newspaper_entries').insert([{
           user_id: userId,
-          text: `🏗️ ${clubName} iniciou expansão da Academia de Base — obra prevista para 24h.`,
+          text: `🏗️ ${clubName} iniciou expansão de ${label} — obra prevista para 24h.`,
           category: 'EVOLUÇÃO', is_event: false,
         }]).then(() => {});
       }
       return;
     }
 
+    // Premium: instantâneo
     setInfrastructure(prev => ({
       ...prev,
       [facility]: { ...prev[facility], level: prev[facility].level + 1, upgradeCompletesAt: undefined },
@@ -109,7 +117,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
 
-    toast.success(`🏗️ Base atualizada — ${label} Nv.${newLevel}`, { description: desc });
+    toast.success(`⭐ ${label} Nv.${newLevel} (Premium — instantâneo)`, { description: desc });
     console.log('[Persist] infrastructure upgrade', { facility, newLevel });
 
     if (userId) {
