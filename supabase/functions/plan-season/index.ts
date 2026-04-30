@@ -242,16 +242,21 @@ Deno.serve(async (req) => {
             const botsNeeded = TEAMS_PER_LEAGUE - currentCount;
 
             if (botsNeeded > 0) {
-              for (let b = 0; b < botsNeeded; b++) {
+              // Batch insert: mais rápido + atômico (evita liga ficar incompleta
+              // se uma única request HTTP falhar no meio do loop).
+              const botRows = Array.from({ length: botsNeeded }, (_, b) => {
                 const botIdx = currentCount + b;
-                await supabase.from('league_members').insert({
+                return {
                   league_id: existing.id,
                   user_id: crypto.randomUUID(),
                   club_name: generateBotName(botIdx + leaguesCreated * 20),
                   club_logo: BOT_LOGOS[botIdx % BOT_LOGOS.length],
                   budget: 1000000,
-                });
-              }
+                  is_bot: true,
+                  bot_strength: botStrengthFor(tier, level),
+                };
+              });
+              await supabase.from('league_members').insert(botRows);
             }
 
             await supabase.from('multiplayer_leagues').update({
@@ -290,16 +295,26 @@ Deno.serve(async (req) => {
             }).select().single();
 
             if (newLeague) {
-              for (let b = 0; b < TEAMS_PER_LEAGUE; b++) {
-                await supabase.from('league_members').insert({
-                  league_id: newLeague.id,
-                  user_id: crypto.randomUUID(),
-                  club_name: generateBotName(b + leaguesCreated * 20),
-                  club_logo: BOT_LOGOS[b % BOT_LOGOS.length],
-                  budget: 1000000,
-                });
+              // VALIDAÇÃO: garante 20/20 times. Batch insert evita liga incompleta.
+              const botRows = Array.from({ length: TEAMS_PER_LEAGUE }, (_, b) => ({
+                league_id: newLeague.id,
+                user_id: crypto.randomUUID(),
+                club_name: generateBotName(b + leaguesCreated * 20),
+                club_logo: BOT_LOGOS[b % BOT_LOGOS.length],
+                budget: 1000000,
+                is_bot: true,
+                bot_strength: botStrengthFor(tier, level),
+              }));
+              const { error: insErr } = await supabase
+                .from('league_members')
+                .insert(botRows);
+              if (insErr) {
+                // Rollback: remove a liga se não conseguiu preencher 20 bots
+                await supabase.from('multiplayer_leagues').delete().eq('id', newLeague.id);
+                console.error(`[plan-season] Falha ao preencher ${country}/${tier}/D${level}:`, insErr.message);
+              } else {
+                leaguesCreated++;
               }
-              leaguesCreated++;
             }
           }
           timeIndex++;
