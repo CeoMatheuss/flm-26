@@ -1838,6 +1838,7 @@ export type Database = {
       }
       league_members: {
         Row: {
+          bot_strength: number | null
           budget: number
           club_logo: string
           club_name: string
@@ -1845,6 +1846,7 @@ export type Database = {
           goals_against: number
           goals_for: number
           id: string
+          is_bot: boolean
           joined_at: string
           league_id: string
           losses: number
@@ -1855,6 +1857,7 @@ export type Database = {
           wins: number
         }
         Insert: {
+          bot_strength?: number | null
           budget?: number
           club_logo?: string
           club_name?: string
@@ -1862,6 +1865,7 @@ export type Database = {
           goals_against?: number
           goals_for?: number
           id?: string
+          is_bot?: boolean
           joined_at?: string
           league_id: string
           losses?: number
@@ -1872,6 +1876,7 @@ export type Database = {
           wins?: number
         }
         Update: {
+          bot_strength?: number | null
           budget?: number
           club_logo?: string
           club_name?: string
@@ -1879,6 +1884,7 @@ export type Database = {
           goals_against?: number
           goals_for?: number
           id?: string
+          is_bot?: boolean
           joined_at?: string
           league_id?: string
           losses?: number
