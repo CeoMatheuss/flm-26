@@ -115,7 +115,24 @@ const BOT_LOGOS = ['⚽', '🏟️', '🦅', '🐺', '🦁', '🐂', '🔴', '�
 function generateBotName(index: number): string {
   const prefix = BOT_PREFIXES[index % BOT_PREFIXES.length];
   const suffix = BOT_SUFFIXES[index % BOT_SUFFIXES.length];
-  return `${prefix} ${suffix}`;
+  // Sufixo numérico garante unicidade global mesmo entre ligas diferentes
+  // (evita choque de nomes "FC Nova Esperança" em D1 e D2 do mesmo país).
+  const tag = Math.floor(index / (BOT_PREFIXES.length * BOT_SUFFIXES.length)) + 1;
+  return tag === 1 ? `${prefix} ${suffix}` : `${prefix} ${suffix} ${tag}`;
+}
+
+// Força média do bot baseada no nível competitivo da liga.
+// Garante que bots de D1 sejam fortes e os de várzea sejam fracos —
+// essencial para subidas/descidas fazerem sentido.
+function botStrengthFor(tier: Tier, level: number): number {
+  const ranges: Record<Tier, [number, number]> = {
+    nacional: level === 1 ? [75, 90] : level === 2 ? [65, 80] : level === 3 ? [55, 70] : [45, 60],
+    regional: [50, 70],
+    pre_regional: [42, 62],
+    varzea: [35, 55],
+  };
+  const [lo, hi] = ranges[tier];
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
 }
 
 // Continent mapping
@@ -181,30 +198,29 @@ Deno.serve(async (req) => {
     const results: any[] = [];
 
     // ── PHASE 1: Create/update leagues per country ──
+    // REGRA CRÍTICA: a estrutura nacional completa (D1-D4) é SEMPRE criada,
+    // independente de quantos jogadores estão online — bots preenchem 100%
+    // das vagas vazias. Tiers regionais escalam com a base de jogadores.
     for (const country of ALL_COUNTRIES) {
       const playerCount = countryPlayers[country]?.size || 0;
 
-      let tiers: { tier: Tier; levels: number }[] = [];
-      if (playerCount < 20) {
-        tiers = [{ tier: 'varzea', levels: 1 }];
-      } else if (playerCount < 80) {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: Math.min(Math.ceil((playerCount - 20) / 20), 8) },
-        ];
-      } else if (playerCount < 260) {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: Math.min(8, Math.ceil((playerCount - 100) / 20)) },
-          { tier: 'regional', levels: Math.min(5, Math.ceil((playerCount - 80) / 20)) },
-        ];
-      } else {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: 8 },
-          { tier: 'regional', levels: 5 },
-          { tier: 'nacional', levels: 4 },
-        ];
+      // Estrutura mínima garantida: SEMPRE 4 divisões nacionais + 1 várzea.
+      // Tiers regionais aparecem apenas quando há massa crítica de jogadores.
+      const tiers: { tier: Tier; levels: number }[] = [
+        { tier: 'varzea', levels: 1 },
+        { tier: 'nacional', levels: 4 },
+      ];
+      if (playerCount >= 80) {
+        tiers.splice(1, 0, {
+          tier: 'pre_regional',
+          levels: Math.min(8, Math.max(1, Math.ceil((playerCount - 20) / 20))),
+        });
+      }
+      if (playerCount >= 260) {
+        tiers.splice(2, 0, {
+          tier: 'regional',
+          levels: Math.min(5, Math.max(1, Math.ceil((playerCount - 80) / 20))),
+        });
       }
 
       let leaguesCreated = 0;
@@ -226,16 +242,21 @@ Deno.serve(async (req) => {
             const botsNeeded = TEAMS_PER_LEAGUE - currentCount;
 
             if (botsNeeded > 0) {
-              for (let b = 0; b < botsNeeded; b++) {
+              // Batch insert: mais rápido + atômico (evita liga ficar incompleta
+              // se uma única request HTTP falhar no meio do loop).
+              const botRows = Array.from({ length: botsNeeded }, (_, b) => {
                 const botIdx = currentCount + b;
-                await supabase.from('league_members').insert({
+                return {
                   league_id: existing.id,
                   user_id: crypto.randomUUID(),
                   club_name: generateBotName(botIdx + leaguesCreated * 20),
                   club_logo: BOT_LOGOS[botIdx % BOT_LOGOS.length],
                   budget: 1000000,
-                });
-              }
+                  is_bot: true,
+                  bot_strength: botStrengthFor(tier, level),
+                };
+              });
+              await supabase.from('league_members').insert(botRows);
             }
 
             await supabase.from('multiplayer_leagues').update({
@@ -274,16 +295,26 @@ Deno.serve(async (req) => {
             }).select().single();
 
             if (newLeague) {
-              for (let b = 0; b < TEAMS_PER_LEAGUE; b++) {
-                await supabase.from('league_members').insert({
-                  league_id: newLeague.id,
-                  user_id: crypto.randomUUID(),
-                  club_name: generateBotName(b + leaguesCreated * 20),
-                  club_logo: BOT_LOGOS[b % BOT_LOGOS.length],
-                  budget: 1000000,
-                });
+              // VALIDAÇÃO: garante 20/20 times. Batch insert evita liga incompleta.
+              const botRows = Array.from({ length: TEAMS_PER_LEAGUE }, (_, b) => ({
+                league_id: newLeague.id,
+                user_id: crypto.randomUUID(),
+                club_name: generateBotName(b + leaguesCreated * 20),
+                club_logo: BOT_LOGOS[b % BOT_LOGOS.length],
+                budget: 1000000,
+                is_bot: true,
+                bot_strength: botStrengthFor(tier, level),
+              }));
+              const { error: insErr } = await supabase
+                .from('league_members')
+                .insert(botRows);
+              if (insErr) {
+                // Rollback: remove a liga se não conseguiu preencher 20 bots
+                await supabase.from('multiplayer_leagues').delete().eq('id', newLeague.id);
+                console.error(`[plan-season] Falha ao preencher ${country}/${tier}/D${level}:`, insErr.message);
+              } else {
+                leaguesCreated++;
               }
-              leaguesCreated++;
             }
           }
           timeIndex++;
