@@ -19,6 +19,8 @@ export interface Notification {
   type: 'warning' | 'info' | 'danger' | 'success';
   createdAt: Date;
   actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
+  /** Optional structured payload (e.g. { match_db_id } for match_report notifications). */
+  data?: Record<string, any> | null;
 }
 
 interface FriendlyInvite {
@@ -49,7 +51,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [fullPage, setFullPage] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [dbNotifications, setDbNotifications] = useState<Array<{
-    id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string;
+    id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string; data: any;
   }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [persistedReadKeys, setPersistedReadKeys] = useState<Set<string>>(new Set());
@@ -68,7 +70,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from('user_notifications')
-      .select('id, icon, title, message, type, read_at, created_at')
+      .select('id, icon, title, message, type, read_at, created_at, data')
       .eq('user_id', userId)
       .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
@@ -146,6 +148,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       message: dbN.message,
       type: typeMap[dbN.type] || 'info',
       createdAt: new Date(dbN.created_at),
+      data: dbN.data ?? null,
     });
   });
 
