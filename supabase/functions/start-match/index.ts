@@ -858,7 +858,7 @@ function simulateFullMatch(
     allPlanned.push({
       minute: m, type: 'yellow_card', team, animType: 'card',
       playerName: player?.name || 'Jogador',
-      description: `🟨 CARTÃO AMARELO para ${player?.name || 'Jogador'} do ${tName}! Falta dura no meio-campo!`,
+      description: `CARTÃO AMARELO para ${player?.name || 'Jogador'} do ${tName}! Falta dura no meio-campo!`,
     });
   }
 
