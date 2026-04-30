@@ -259,6 +259,11 @@ async function getTournamentTeamStrength(t: { user_id: string | null; bot_streng
 }
 
 async function processTournamentMatch(m: any): Promise<boolean> {
+  // Skip if a centralized live_matches row already exists — central engine owns this match.
+  if (await hasCentralLiveMatch(String(m.id))) {
+    console.info('[autosim] tournament match already in central engine, skipping', { id: m.id });
+    return false;
+  }
   if (!tryLock(m.id)) return false;
   try {
     const { data: teams } = await supabase
