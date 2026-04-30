@@ -168,6 +168,10 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
           )}
         </div>
       </ScrollArea>
+
+      {openReportMatchId && (
+        <PostGameReportModal matchDbId={openReportMatchId} onClose={() => setOpenReportMatchId(null)} />
+      )}
     </div>
   );
 }
