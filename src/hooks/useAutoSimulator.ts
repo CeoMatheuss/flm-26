@@ -210,6 +210,11 @@ async function processLeagueMatch(m: any): Promise<boolean> {
 
 // ───────────────── friendly processing ─────────────────
 async function processFriendly(f: any): Promise<boolean> {
+  // Skip if a centralized live_matches row already exists for this friendly.
+  if (await hasCentralLiveMatch(`friendly-${f.id}`)) {
+    console.info('[autosim] friendly already in central engine, skipping', { id: f.id });
+    return false;
+  }
   if (!tryLock(f.id)) return false;
   try {
     const homeIsSender = f.home_team_id === f.sender_id;
