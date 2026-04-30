@@ -816,19 +816,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             })}
           </div>
 
-          {/* Auto-Lineup button */}
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full h-9 gap-1.5 text-[11px] rounded-xl border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50"
-            onClick={autoLineup}
-            disabled={!onReorderPlayers || players.length < 11}
-            title={!onReorderPlayers ? 'Não disponível' : tactics?.formation ? `Monta o XI ideal para ${tactics.formation}` : 'Monta o XI ideal (4-4-2)'}
-          >
-            <Wand2 className="h-3.5 w-3.5 text-primary" />
-            <span className="font-bold">Montar Time Automaticamente</span>
-            {tactics?.formation && <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1 border-primary/40 text-primary">{tactics.formation}</Badge>}
-          </Button>
+
 
           {pendingSwap && (
             <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
