@@ -130,9 +130,22 @@ export function SeasonAwardsModal({ open, onClose, season }: Props) {
               )}
 
               <div>
-                <Badge className="mb-2 bg-amber-500/20 text-amber-300 border-amber-500/40">
-                  {AWARD_LABELS[a.award_type] || a.award_type}
-                </Badge>
+                {(() => {
+                  const cat = AWARD_CATEGORY[a.award_type];
+                  const info = cat ? CATEGORY_INFO[cat] : null;
+                  return (
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                      {info && (
+                        <Badge variant="outline" className={`${info.color} text-[10px]`}>
+                          {info.emoji} {info.label}
+                        </Badge>
+                      )}
+                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40">
+                        {AWARD_LABELS[a.award_type] || a.award_type}
+                      </Badge>
+                    </div>
+                  );
+                })()}
                 <h3 className="text-2xl font-bold">{a.player_name || a.club_name}</h3>
                 {a.club_name && a.player_name && <p className="text-sm text-muted-foreground">{a.club_name}</p>}
               </div>
