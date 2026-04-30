@@ -240,8 +240,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [userSearch, setUserSearch] = useState('');
   const [giftUserId, setGiftUserId] = useState('');
   const [giftType, setGiftType] = useState<'premium' | 'sticker' | 'unban'>('premium');
-  const [customizationUserId, setCustomizationUserId] = useState('');
-  const [customizationLoading, setCustomizationLoading] = useState(false);
+  // (Personalização migrada para CustomizationPanel — sem estado aqui)
   const [abuseAlerts, setAbuseAlerts] = useState<Array<{
     id: string; user_id: string; alert_type: string; severity: string;
     title: string; description: string; details: any; status: string;
