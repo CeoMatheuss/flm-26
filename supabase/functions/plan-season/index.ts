@@ -181,30 +181,29 @@ Deno.serve(async (req) => {
     const results: any[] = [];
 
     // ── PHASE 1: Create/update leagues per country ──
+    // REGRA CRÍTICA: a estrutura nacional completa (D1-D4) é SEMPRE criada,
+    // independente de quantos jogadores estão online — bots preenchem 100%
+    // das vagas vazias. Tiers regionais escalam com a base de jogadores.
     for (const country of ALL_COUNTRIES) {
       const playerCount = countryPlayers[country]?.size || 0;
 
-      let tiers: { tier: Tier; levels: number }[] = [];
-      if (playerCount < 20) {
-        tiers = [{ tier: 'varzea', levels: 1 }];
-      } else if (playerCount < 80) {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: Math.min(Math.ceil((playerCount - 20) / 20), 8) },
-        ];
-      } else if (playerCount < 260) {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: Math.min(8, Math.ceil((playerCount - 100) / 20)) },
-          { tier: 'regional', levels: Math.min(5, Math.ceil((playerCount - 80) / 20)) },
-        ];
-      } else {
-        tiers = [
-          { tier: 'varzea', levels: 1 },
-          { tier: 'pre_regional', levels: 8 },
-          { tier: 'regional', levels: 5 },
-          { tier: 'nacional', levels: 4 },
-        ];
+      // Estrutura mínima garantida: SEMPRE 4 divisões nacionais + 1 várzea.
+      // Tiers regionais aparecem apenas quando há massa crítica de jogadores.
+      const tiers: { tier: Tier; levels: number }[] = [
+        { tier: 'varzea', levels: 1 },
+        { tier: 'nacional', levels: 4 },
+      ];
+      if (playerCount >= 80) {
+        tiers.splice(1, 0, {
+          tier: 'pre_regional',
+          levels: Math.min(8, Math.max(1, Math.ceil((playerCount - 20) / 20))),
+        });
+      }
+      if (playerCount >= 260) {
+        tiers.splice(2, 0, {
+          tier: 'regional',
+          levels: Math.min(5, Math.max(1, Math.ceil((playerCount - 80) / 20))),
+        });
       }
 
       let leaguesCreated = 0;
