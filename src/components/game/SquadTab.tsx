@@ -11,8 +11,7 @@ import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
-import type { TacticsConfig, Formation } from '@/types/tactics';
-import { formationPositions } from '@/types/tactics';
+import type { TacticsConfig } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 
