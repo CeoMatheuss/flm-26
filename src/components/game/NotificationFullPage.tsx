@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { X, CheckCheck, Bell, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PostGameReportModal } from './PostGameReportModal';
 import type { Notification } from './NotificationBell';
 
 interface Props {
@@ -58,6 +60,15 @@ const typeStyles: Record<string, { border: string; dot: string }> = {
 export function NotificationFullPage({ notifications, isRead, onMarkRead, onMarkAllRead, onClose, respondingId }: Props) {
   const unreadCount = notifications.filter(n => !isRead(n)).length;
   const groups = groupByTime(notifications);
+  const [openReportMatchId, setOpenReportMatchId] = useState<string | null>(null);
+
+  const handleClickNotification = (n: Notification) => {
+    const matchDbId = n.data?.match_db_id;
+    if (matchDbId && typeof matchDbId === 'string') {
+      setOpenReportMatchId(matchDbId);
+    }
+    if (!n.actions) onMarkRead(n.id);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md flex flex-col animate-in fade-in duration-200">
@@ -115,7 +126,7 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
                       <div
                         key={n.id}
                         className={`relative rounded-lg border-l-[3px] ${style.border} bg-card/90 hover:bg-card p-3 transition-all cursor-pointer ${read && !n.actions ? 'opacity-50' : ''}`}
-                        onClick={() => !n.actions && onMarkRead(n.id)}
+                        onClick={() => handleClickNotification(n)}
                       >
                         <div className="flex items-start gap-2.5">
                           <span className="text-base leading-none mt-0.5 shrink-0">{n.icon}</span>
