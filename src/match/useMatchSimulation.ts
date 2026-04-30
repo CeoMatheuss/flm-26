@@ -688,12 +688,17 @@ export function useMatchSimulation() {
     requestNotificationPermission();
     notifiedEventsRef.current.clear();
 
-    // Reusable offline runner — used for amistosos vs BOT or as last-resort fallback
+    // Reusable offline runner — used ONLY for amistosos vs BOT.
+    // CRITICAL: NEVER fall back to client-side simulation for PvP. Two humans must
+    // always converge on the centralized server simulation, otherwise each client
+    // would invent its own events ("gols fantasmas") and the players would see
+    // different matches.
     const runOfflineMatch = (reason: string): { success: boolean; error?: string } => {
       console.warn('[Match] Running OFFLINE simulation. Reason:', reason);
       const isFriendly = (params.competition || 'Amistoso').toLowerCase().includes('amistoso');
-      // Only auto-fallback for friendlies / BOT matches; PvP must remain server-driven
-      if (!isFriendly) {
+      const isPvP = typeof params.matchId === 'string' && params.matchId.startsWith('friendly-');
+      // Only auto-fallback for BOT friendlies; PvP and competitive matches must remain server-driven
+      if (!isFriendly || isPvP) {
         setState(s => ({ ...s, phase: 'error', errorMsg: 'Erro ao iniciar partida. Tente novamente.' }));
         return { success: false, error: 'server-required' };
       }
