@@ -651,12 +651,12 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   // ── Category → tab map (visible triggers) ─────────────────────
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
-    leagues:    ['system'],
-    cups:       ['system', 'tournaments'],
+    leagues:    ['leagues_overview'],
+    cups:       ['cups_overview', 'tournaments'],
     clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions'],
-    simulation: ['system'],
+    system:     ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    simulation: ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
