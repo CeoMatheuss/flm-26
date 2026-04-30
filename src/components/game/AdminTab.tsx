@@ -268,15 +268,15 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBanLoading, setGameBanLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('users');
 
-  // Reset active tab when category changes
+  // Reset active tab when category changes — must mirror CATEGORY_TABS below
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
-      leagues:    ['system'],
-      cups:       ['system', 'tournaments'],
+      leagues:    ['leagues_overview'],
+      cups:       ['cups_overview', 'tournaments'],
       clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
       players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support'],
-      simulation: ['system'],
+      system:     ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      simulation: ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
