@@ -140,10 +140,10 @@ export function getUpgradeCost(currentLevel: number, facility?: 'physiotherapy' 
 }
 
 export const defaultInfrastructure: Infrastructure = {
-  trainingCenter: { level: 1, maxLevel: 30 },
+  trainingCenter: { level: 0, maxLevel: 30 },
   youthAcademy: { level: 0, maxLevel: 30 },
   stadium: { level: 1, maxLevel: 15 },
-  physiotherapy: { level: 1, maxLevel: 20 },
+  physiotherapy: { level: 0, maxLevel: 20 },
 };
 
 // ─── Physiotherapy V3 (Nv 1-20) — Custos rebalanceados ──────────────────

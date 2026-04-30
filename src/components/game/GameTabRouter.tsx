@@ -32,7 +32,7 @@ import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 
-import { StaffTab } from '@/components/game/StaffTab';
+// StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { SupportTab } from '@/components/game/SupportTab';
@@ -530,55 +530,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onUpdateShield={game.updateShield}
         />
       </TabsContent>
-      <TabsContent value="staff">
-        <StaffTab
-          staff={game.club.staff || []}
-          budget={game.club.budget}
-          staffMarket={game.club.staffMarket || []}
-          lastStaffMarketRefreshAt={game.club.lastStaffMarketRefreshAt}
-          onHireStaff={(member) => {
-            const newStaff = { ...member, id: crypto.randomUUID() };
-            game.setClub((prev: any) => ({
-              ...prev,
-              staff: [...(prev.staff || []), newStaff],
-              budget: prev.budget - newStaff.salary,
-              // remove from market if it was a market entry (matched by id)
-              staffMarket: (prev.staffMarket || []).filter((s: any) => s.id !== (member as any).id),
-            }));
-          }}
-          onFireStaff={(id) => {
-            game.setClub((prev: any) => ({ ...prev, staff: (prev.staff || []).filter((s: any) => s.id !== id) }));
-          }}
-          onRefreshMarket={() => {
-            const last = game.club.lastStaffMarketRefreshAt ? new Date(game.club.lastStaffMarketRefreshAt).getTime() : 0;
-            const cooldownMs = 24 * 60 * 60 * 1000;
-            if (last && Date.now() - last < cooldownMs) {
-              const hoursLeft = Math.ceil((cooldownMs - (Date.now() - last)) / (60 * 60 * 1000));
-              toast.error(`Aguarde ${hoursLeft}h para atualizar o mercado novamente.`);
-              return;
-            }
-            const names = ['Carlos Mendes', 'Ricardo Souza', 'Fernando Lima', 'André Santos', 'Paulo Costa', 'Marcos Silva', 'João Ferreira', 'Pedro Almeida', 'Luis Gomes', 'Felipe Rocha', 'Tiago Barros', 'Bruno Vitalino'];
-            const make = (role: 'assistente' | 'medico' | 'preparador_fisico', count: number) =>
-              Array.from({ length: count }, () => {
-                const skill = Math.floor(Math.random() * 7) + 3;
-                return {
-                  id: Math.random().toString(36).substr(2, 9),
-                  name: names[Math.floor(Math.random() * names.length)],
-                  role,
-                  skill,
-                  salary: skill * 18000,
-                  contract: 2,
-                };
-              });
-            game.setClub((prev: any) => ({
-              ...prev,
-              staffMarket: [...make('assistente', 5), ...make('medico', 2), ...make('preparador_fisico', 2)],
-              lastStaffMarketRefreshAt: new Date().toISOString(),
-            }));
-            toast.success('🔄 Mercado de staff renovado!');
-          }}
-        />
-      </TabsContent>
+      {/* Aba "staff" removida — sistema de equipe técnica desativado. */}
+
       <TabsContent value="chat">{isTabBlocked('chat') ? <BlockedMessage /> : <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />}</TabsContent>
       <TabsContent value="journal"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="newspaper"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>

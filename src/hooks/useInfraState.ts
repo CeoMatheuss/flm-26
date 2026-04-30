@@ -67,38 +67,40 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
-    // Block if youth academy already under construction
-    if (facility === 'youthAcademy' && infrastructure.youthAcademy.upgradeCompletesAt) {
-      const completesAt = new Date(infrastructure.youthAcademy.upgradeCompletesAt).getTime();
-      if (completesAt > Date.now()) {
-        toast.error('🏗️ Já existe uma obra em andamento na Academia!');
-        return;
-      }
-    }
+    // (Bloqueio de obras em andamento agora ocorre logo antes do início da obra,
+    // dentro do bloco de cobrança/agendamento — válido para TODAS as instalações.)
 
     deductBudget(cost);
     addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
 
-    // Non-Premium youth academy: 24h delay
-    if (facility === 'youthAcademy' && !isPremium) {
+    // Bloqueia se já houver obra em andamento nesta instalação
+    const existingPending = infrastructure[facility].upgradeCompletesAt;
+    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
+      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
+      return;
+    }
+
+    // Não-Premium: TODAS as obras demoram 24h
+    if (!isPremium) {
       const completesAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       setInfrastructure(prev => ({
         ...prev,
-        youthAcademy: { ...prev.youthAcademy, upgradeCompletesAt: completesAt },
+        [facility]: { ...prev[facility], upgradeCompletesAt: completesAt },
       }));
-      toast.success('🏗️ Obra iniciada na Academia!', {
+      toast.success(`🏗️ Obra iniciada em ${label}!`, {
         description: `Conclui em 24h. ⭐ Premium libera obras instantâneas.`,
       });
       if (userId) {
         supabase.from('newspaper_entries').insert([{
           user_id: userId,
-          text: `🏗️ ${clubName} iniciou expansão da Academia de Base — obra prevista para 24h.`,
+          text: `🏗️ ${clubName} iniciou expansão de ${label} — obra prevista para 24h.`,
           category: 'EVOLUÇÃO', is_event: false,
         }]).then(() => {});
       }
       return;
     }
 
+    // Premium: instantâneo
     setInfrastructure(prev => ({
       ...prev,
       [facility]: { ...prev[facility], level: prev[facility].level + 1, upgradeCompletesAt: undefined },
@@ -109,7 +111,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       ? `${label} expandido para nível ${newLevel}! Capacidade: ${getStadiumCapacity(newLevel).toLocaleString()} lugares.`
       : `${label} atualizado para nível ${newLevel}!`;
 
-    toast.success(`🏗️ Base atualizada — ${label} Nv.${newLevel}`, { description: desc });
+    toast.success(`⭐ ${label} Nv.${newLevel} (Premium — instantâneo)`, { description: desc });
     console.log('[Persist] infrastructure upgrade', { facility, newLevel });
 
     if (userId) {
@@ -121,70 +123,67 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     }
   }, [infrastructure, userId, isPremium]);
 
-  // Tick: complete pending youth academy upgrade after 24h
+  // Tick: completa qualquer obra pendente (todas as 4 instalações) após o tempo decorrer.
+  // Premium ativo conclui instantaneamente.
   useEffect(() => {
-    const completesAt = infrastructure.youthAcademy.upgradeCompletesAt;
-    if (!completesAt) return;
-    const check = () => {
-      const ts = new Date(completesAt).getTime();
-      if (Date.now() >= ts) {
+    const facilityList: Array<'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy'> = [
+      'trainingCenter', 'youthAcademy', 'stadium', 'physiotherapy',
+    ];
+    const labelOf: Record<string, string> = {
+      trainingCenter: 'Centro de Treinamento',
+      youthAcademy: 'Academia',
+      stadium: 'Estádio',
+      physiotherapy: 'Fisioterapia',
+    };
+    const emojiOf: Record<string, string> = {
+      trainingCenter: '⚽', youthAcademy: '🎓', stadium: '🏟️', physiotherapy: '🏥',
+    };
+
+    const completePending = (instant: boolean) => {
+      facilityList.forEach((f) => {
+        const completesAt = infrastructure[f].upgradeCompletesAt;
+        if (!completesAt) return;
+        const ts = new Date(completesAt).getTime();
+        if (!instant && Date.now() < ts) return;
+
         setInfrastructure(prev => {
-          if (!prev.youthAcademy.upgradeCompletesAt) return prev;
-          const newLevel = prev.youthAcademy.level + 1;
-          toast.success('🎓 Obra concluída!', { description: `Academia agora é nível ${newLevel}.` });
+          if (!prev[f].upgradeCompletesAt) return prev;
+          const newLevel = prev[f].level + 1;
+          const label = labelOf[f];
+          const emoji = emojiOf[f];
+          if (instant) {
+            toast.success(`⭐ ${label} Nv.${newLevel} (Premium — instantâneo)`);
+          } else {
+            toast.success(`${emoji} Obra concluída!`, { description: `${label} agora é nível ${newLevel}.` });
+          }
           if (userId) {
             supabase.from('newspaper_entries').insert([{
               user_id: userId,
-              text: `🎓 Obra concluída! Academia de Base elevada ao nível ${newLevel}.`,
+              text: instant
+                ? `⭐ Premium: obra em ${label} concluída instantaneamente — Nv.${newLevel}.`
+                : `${emoji} Obra concluída! ${label} elevado(a) ao nível ${newLevel}.`,
               category: 'EVOLUÇÃO', is_event: true,
             }]).then(() => {});
           }
           return {
             ...prev,
-            youthAcademy: { ...prev.youthAcademy, level: newLevel, upgradeCompletesAt: undefined },
+            [f]: { ...prev[f], level: newLevel, upgradeCompletesAt: undefined },
           };
         });
-      }
-    };
-    check();
-    const interval = setInterval(check, 60_000);
-    return () => clearInterval(interval);
-  }, [infrastructure.youthAcademy.upgradeCompletesAt, userId]);
-
-  // ⭐ Premium ativado durante obra: concluir imediatamente
-  useEffect(() => {
-    if (!isPremium) return;
-    const completesAt = infrastructure.youthAcademy.upgradeCompletesAt;
-    if (!completesAt) return;
-    // Already past — handled by other effect
-    if (new Date(completesAt).getTime() <= Date.now()) return;
-
-    setInfrastructure(prev => {
-      if (!prev.youthAcademy.upgradeCompletesAt) return prev;
-      const newLevel = prev.youthAcademy.level + 1;
-      toast.success('⭐ Obra concluída instantaneamente pelo Premium!', {
-        description: `Academia agora é nível ${newLevel}.`,
       });
-      if (userId) {
-        supabase.from('user_notifications').insert([{
-          user_id: userId,
-          icon: '🏗️',
-          type: 'success',
-          title: 'Obra Concluída — Premium',
-          message: `Sua obra na Academia foi concluída automaticamente devido ao seu Premium ativo. Academia agora é Nv.${newLevel}.`,
-        }]).then(() => {});
-        supabase.from('newspaper_entries').insert([{
-          user_id: userId,
-          text: `⭐ Premium ativado: obra na Academia concluída instantaneamente — Nv.${newLevel}.`,
-          category: 'EVOLUÇÃO', is_event: true,
-        }]).then(() => {});
-      }
-      return {
-        ...prev,
-        youthAcademy: { ...prev.youthAcademy, level: newLevel, upgradeCompletesAt: undefined },
-      };
-    });
-  }, [isPremium, infrastructure.youthAcademy.upgradeCompletesAt, userId]);
+    };
+
+    completePending(isPremium);
+    if (isPremium) return; // Não precisa de intervalo: Premium já concluiu tudo
+    const interval = setInterval(() => completePending(false), 60_000);
+    return () => clearInterval(interval);
+  }, [
+    isPremium, userId,
+    infrastructure.trainingCenter.upgradeCompletesAt,
+    infrastructure.youthAcademy.upgradeCompletesAt,
+    infrastructure.stadium.upgradeCompletesAt,
+    infrastructure.physiotherapy.upgradeCompletesAt,
+  ]);
 
   const chargeYouthInvestment = useCallback((
     clubBudget: number,

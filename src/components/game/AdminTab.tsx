@@ -60,6 +60,70 @@ interface Props {
   isFounder: boolean;
 }
 
+function AdminAddMoneyCard() {
+  const [targetId, setTargetId] = useState('');
+  const [amount, setAmount] = useState<string>('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    const id = targetId.trim();
+    const value = Math.trunc(Number(amount));
+    if (!id) return toast.error('Informe o ID do clube/usuário.');
+    if (!Number.isFinite(value) || value === 0) return toast.error('Informe um valor diferente de zero.');
+    setBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sessão expirada'); return; }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ giftType: 'add_money', targetUserId: id, amount: value }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success(`💰 ${result.message}`);
+        setAmount('');
+      } else {
+        toast.error(result.error || 'Falha na operação');
+      }
+    } catch {
+      toast.error('Erro ao conectar com o servidor');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="border-emerald-500/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <span className="text-emerald-400">💰</span>
+          Adicionar Dinheiro a Clube
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Input
+          placeholder="ID do usuário/clube"
+          value={targetId}
+          onChange={e => setTargetId(e.target.value)}
+          className="text-xs h-8 font-mono"
+        />
+        <Input
+          type="number"
+          placeholder="Valor em R$ (use negativo para descontar)"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          className="text-xs h-8"
+        />
+        <p className="text-[10px] text-muted-foreground">Limite: ±R$ 1.000.000.000 por operação. A ação é registrada e o jogador é notificado.</p>
+        <Button size="sm" className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={submit} disabled={busy}>
+          {busy ? 'Processando…' : 'Confirmar'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -725,6 +789,9 @@ export function AdminTab({ userId, isFounder }: Props) {
               </CardContent>
             </Card>
           )}
+
+          {/* Adicionar Dinheiro a qualquer clube — admin */}
+          <AdminAddMoneyCard />
 
           {/* Customization Unlock - any admin */}
           <Card className="border-amber-500/30">
