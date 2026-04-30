@@ -116,8 +116,39 @@ async function notify(userId: string, opponent: string, mine: number, theirs: nu
   } catch { /* ignore */ }
 }
 
+/**
+ * Returns true if a centralized live_matches row already exists for this
+ * source matchId (live or finished). When that's the case, the match is being
+ * (or was) handled by the central simulation engine and the auto-simulator
+ * MUST skip it — otherwise we'd write a parallel result and fire a misleading
+ * "Partida simulada automaticamente" notification while players are watching.
+ *
+ * The expected shared_match_id is:
+ *   - friendly: 'friendly-<inviteId>'
+ *   - league:   '<league_matches.id>' (uuid)
+ *   - tournament: '<custom_tournament_matches.id>' (uuid)
+ */
+async function hasCentralLiveMatch(sharedMatchId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('live_matches')
+      .select('id, status')
+      .eq('shared_match_id', sharedMatchId)
+      .neq('status', 'superseded')
+      .limit(1);
+    return !!(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
+
 // ───────────────── league processing ─────────────────
 async function processLeagueMatch(m: any): Promise<boolean> {
+  // Skip if a centralized live_matches row already exists — central engine owns this match.
+  if (await hasCentralLiveMatch(String(m.id))) {
+    console.info('[autosim] league match already in central engine, skipping', { id: m.id });
+    return false;
+  }
   if (!tryLock(m.id)) return false;
   try {
     const homeStr = await getStrength(m.home_user_id);
@@ -179,6 +210,11 @@ async function processLeagueMatch(m: any): Promise<boolean> {
 
 // ───────────────── friendly processing ─────────────────
 async function processFriendly(f: any): Promise<boolean> {
+  // Skip if a centralized live_matches row already exists for this friendly.
+  if (await hasCentralLiveMatch(`friendly-${f.id}`)) {
+    console.info('[autosim] friendly already in central engine, skipping', { id: f.id });
+    return false;
+  }
   if (!tryLock(f.id)) return false;
   try {
     const homeIsSender = f.home_team_id === f.sender_id;
@@ -223,6 +259,11 @@ async function getTournamentTeamStrength(t: { user_id: string | null; bot_streng
 }
 
 async function processTournamentMatch(m: any): Promise<boolean> {
+  // Skip if a centralized live_matches row already exists — central engine owns this match.
+  if (await hasCentralLiveMatch(String(m.id))) {
+    console.info('[autosim] tournament match already in central engine, skipping', { id: m.id });
+    return false;
+  }
   if (!tryLock(m.id)) return false;
   try {
     const { data: teams } = await supabase
