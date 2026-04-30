@@ -3983,6 +3983,10 @@ export type Database = {
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
+      admin_add_money_to_club: {
+        Args: { p_amount: number; p_target_user_id: string }
+        Returns: Json
+      }
       approve_beta_request: {
         Args: { _request_id: string }
         Returns: undefined
