@@ -64,7 +64,70 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { giftType, targetUserId, banPassword, banReason, banMonths, playerOverall, playerPosition, playerDestination, playerMinPrice, playerAge: requestedAge } = body;
+    const { giftType, targetUserId, banPassword, banReason, banMonths, playerOverall, playerPosition, playerDestination, playerMinPrice, playerAge: requestedAge, amount } = body;
+
+    // ========== ADD MONEY (qualquer admin) ==========
+    if (giftType === 'add_money') {
+      if (!targetUserId || typeof targetUserId !== 'string') {
+        return new Response(JSON.stringify({ error: 'ID do clube/usuário inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const value = Number(amount);
+      if (!Number.isFinite(value) || value === 0) {
+        return new Response(JSON.stringify({ error: 'Valor inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      // Limites de segurança
+      if (Math.abs(value) > 1_000_000_000) {
+        return new Response(JSON.stringify({ error: 'Valor excede o limite (máx. R$ 1B por operação).' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Carrega game_state e atualiza budget dentro do JSONB
+      const { data: saveRow, error: loadErr } = await adminClient
+        .from('game_saves')
+        .select('id, game_state')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      if (loadErr) throw loadErr;
+      if (!saveRow) {
+        return new Response(JSON.stringify({ error: 'Save do clube não encontrado.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const gs: any = saveRow.game_state || {};
+      const club: any = gs.club || {};
+      const currentBudget = Number(club.budget) || 0;
+      const newBudget = Math.max(0, Math.floor(currentBudget + value));
+      const updatedGs = { ...gs, club: { ...club, budget: newBudget } };
+
+      const { error: updErr } = await adminClient
+        .from('game_saves')
+        .update({ game_state: updatedGs })
+        .eq('id', saveRow.id);
+      if (updErr) throw updErr;
+
+      // Log + notificação
+      await adminClient.from('admin_logs').insert({
+        admin_id: userId,
+        action: 'add_money',
+        target_user_id: targetUserId,
+        details: { amount: value, new_budget: newBudget },
+      }).then(() => {}, () => {});
+
+      await adminClient.from('user_notifications').insert({
+        user_id: targetUserId,
+        icon: value > 0 ? '💰' : '⚠️',
+        type: value > 0 ? 'success' : 'warning',
+        title: value > 0 ? 'Crédito da Administração' : 'Ajuste da Administração',
+        message: value > 0
+          ? `A administração creditou R$ ${value.toLocaleString('pt-BR')} no seu orçamento. Novo saldo: R$ ${newBudget.toLocaleString('pt-BR')}.`
+          : `A administração ajustou seu orçamento em R$ ${value.toLocaleString('pt-BR')}. Novo saldo: R$ ${newBudget.toLocaleString('pt-BR')}.`,
+      }).then(() => {}, () => {});
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `Operação concluída. Novo saldo: R$ ${newBudget.toLocaleString('pt-BR')}.`,
+        newBudget,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // ========== GAME BAN ==========
     if (giftType === 'game_ban') {
