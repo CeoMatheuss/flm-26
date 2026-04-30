@@ -1483,9 +1483,29 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminTournamentTab userId={userId} />
         </TabsContent>
 
-        {/* System Tab (FLM Control Center) */}
-        <TabsContent value="system" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} />
+        {/* Categoria: Ligas */}
+        <TabsContent value="leagues_overview" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['preview', 'pyramid', 'season']} defaultSection="preview" />
+        </TabsContent>
+
+        {/* Categoria: Copas (visão geral) */}
+        <TabsContent value="cups_overview" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['cups']} defaultSection="cups" />
+        </TabsContent>
+
+        {/* Categoria: Simulação */}
+        <TabsContent value="simulation_panel" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
+        </TabsContent>
+
+        {/* Categoria: Sistema → BETA */}
+        <TabsContent value="beta_access" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
+        </TabsContent>
+
+        {/* Categoria: Sistema → Como Funciona */}
+        <TabsContent value="how_it_works" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
         </TabsContent>
 
         {/* Moderation Tab */}
