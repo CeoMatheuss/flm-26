@@ -28,7 +28,28 @@ const AWARD_LABELS: Record<string, string> = {
   best_team: '🏆 Melhor Time',
   best_player: '⭐ Melhor Jogador da Liga',
   team_of_season: '🌟 Seleção da Temporada',
+  prize_money: '💰 Premiação Financeira',
 };
+
+type AwardCategory = 'individuais' | 'coletivas' | 'financeiras';
+
+const AWARD_CATEGORY: Record<string, AwardCategory> = {
+  ballon_dor: 'individuais',
+  top_scorer: 'individuais',
+  top_assists: 'individuais',
+  best_gk: 'individuais',
+  best_player: 'individuais',
+  best_team: 'coletivas',
+  team_of_season: 'coletivas',
+  prize_money: 'financeiras',
+};
+
+const CATEGORY_INFO: Record<AwardCategory, { label: string; emoji: string; color: string }> = {
+  individuais: { label: 'Individuais', emoji: '⭐', color: 'border-amber-500/40 bg-amber-500/10 text-amber-300' },
+  coletivas:   { label: 'Coletivas',   emoji: '🏆', color: 'border-primary/40 bg-primary/10 text-primary' },
+  financeiras: { label: 'Financeiras', emoji: '💰', color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' },
+};
+
 
 interface Props {
   open: boolean;
