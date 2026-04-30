@@ -174,7 +174,7 @@ function generateRichEvents(
     const descriptions: Record<string, string> = {
       dangerous_foul: `⚠️ Falta perigosa de ${player.name}! Livre direto na entrada da área.`,
       midfield_foul: `⚠️ ${player.name} comete falta no meio de campo.`,
-      yellow_card: `🟡 CARTÃO AMARELO para ${player.name}! Entrada imprudente.`,
+      yellow_card: `CARTÃO AMARELO para ${player.name}! Entrada imprudente.`,
     };
     events.push({ minute: min, type: foulType, description: descriptions[foulType] || `Falta de ${player.name}`, team, playerName: player.name, animType: foulType === 'yellow_card' ? 'card' : 'foul' });
   }
