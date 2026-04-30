@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.match-lobby-join]
 verify_jwt = false
+
+[functions.world-leagues-preview]
+verify_jwt = false
+
+[functions.world-leagues-activate]
+verify_jwt = false
