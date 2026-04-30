@@ -270,12 +270,14 @@ export function AdminTab({ userId, isFounder }: Props) {
   // Reset active tab when category changes — must mirror CATEGORY_TABS below
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
-      leagues:    ['leagues_overview'],
-      cups:       ['cups_overview', 'tournaments'],
-      clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
-      players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-      system:     ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
-      simulation: ['simulation_panel'],
+      leagues:       ['leagues_overview'],
+      cups:          ['cups_overview', 'tournaments'],
+      clubs:         ['users', 'premium', 'bans', 'gameban', 'moderation'],
+      players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
+      finance:       ['finance_panel'],
+      customization: ['customization_panel'],
+      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
