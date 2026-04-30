@@ -67,14 +67,8 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
-    // Block if youth academy already under construction
-    if (facility === 'youthAcademy' && infrastructure.youthAcademy.upgradeCompletesAt) {
-      const completesAt = new Date(infrastructure.youthAcademy.upgradeCompletesAt).getTime();
-      if (completesAt > Date.now()) {
-        toast.error('🏗️ Já existe uma obra em andamento na Academia!');
-        return;
-      }
-    }
+    // (Bloqueio de obras em andamento agora ocorre logo antes do início da obra,
+    // dentro do bloco de cobrança/agendamento — válido para TODAS as instalações.)
 
     deductBudget(cost);
     addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
