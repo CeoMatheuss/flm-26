@@ -4145,6 +4145,15 @@ export type Database = {
       random_bot_logo: { Args: never; Returns: string }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
+      replace_bot_with_player: {
+        Args: {
+          _club_logo?: string
+          _club_name: string
+          _league_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       resolve_home_user_for_match: {
         Args: { _match_id: string }
         Returns: string
