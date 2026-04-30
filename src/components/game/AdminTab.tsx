@@ -60,15 +60,57 @@ interface Props {
   isFounder: boolean;
 }
 
+type ClubOption = { user_id: string; club_name: string; club_logo: string };
+
 function AdminAddMoneyCard() {
-  const [targetId, setTargetId] = useState('');
+  const [allClubs, setAllClubs] = useState<ClubOption[]>([]);
+  const [loadingClubs, setLoadingClubs] = useState(false);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<ClubOption | null>(null);
   const [amount, setAmount] = useState<string>('');
   const [busy, setBusy] = useState(false);
+  const [lastResult, setLastResult] = useState<{ club: string; newBudget: number; delta: number } | null>(null);
+
+  // Load all clubs once for autocomplete
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoadingClubs(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-all-clubs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ scope: 'Mundial' }),
+        });
+        const result = await res.json();
+        if (mounted && Array.isArray(result.clubs)) setAllClubs(result.clubs);
+      } catch {
+        // silent — autocomplete is optional
+      } finally {
+        if (mounted) setLoadingClubs(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q || selected?.club_name.toLowerCase() === q) return [];
+    return allClubs
+      .filter(c => c.club_name.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [search, allClubs, selected]);
+
+  const pick = (c: ClubOption) => {
+    setSelected(c);
+    setSearch(c.club_name);
+  };
 
   const submit = async () => {
-    const id = targetId.trim();
+    if (!selected) return toast.error('Selecione um clube na busca.');
     const value = Math.trunc(Number(amount));
-    if (!id) return toast.error('Informe o ID do clube/usuário.');
     if (!Number.isFinite(value) || value === 0) return toast.error('Informe um valor diferente de zero.');
     setBusy(true);
     try {
@@ -77,11 +119,14 @@ function AdminAddMoneyCard() {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ giftType: 'add_money', targetUserId: id, amount: value }),
+        body: JSON.stringify({ giftType: 'add_money', targetUserId: selected.user_id, amount: value }),
       });
       const result = await res.json();
       if (result.success) {
-        toast.success(`💰 ${result.message}`);
+        const delta = value;
+        const newBudget = Number(result.newBudget) || 0;
+        toast.success(`✅ Valor ${delta >= 0 ? 'adicionado' : 'descontado'} com sucesso ao clube ${selected.club_name}`);
+        setLastResult({ club: selected.club_name, newBudget, delta });
         setAmount('');
       } else {
         toast.error(result.error || 'Falha na operação');
@@ -102,12 +147,45 @@ function AdminAddMoneyCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <Input
-          placeholder="ID do usuário/clube"
-          value={targetId}
-          onChange={e => setTargetId(e.target.value)}
-          className="text-xs h-8 font-mono"
-        />
+        <div className="relative">
+          <Input
+            placeholder={loadingClubs ? 'Carregando clubes…' : 'Buscar clube por nome (ex: Pal...)'}
+            value={search}
+            onChange={e => { setSearch(e.target.value); setSelected(null); }}
+            className="text-xs h-8"
+            autoComplete="off"
+          />
+          {suggestions.length > 0 && (
+            <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg">
+              {suggestions.map(c => (
+                <button
+                  key={c.user_id}
+                  type="button"
+                  onClick={() => pick(c)}
+                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted flex items-center gap-2"
+                >
+                  <span className="shrink-0">{c.club_logo || '⚽'}</span>
+                  <span className="font-medium truncate">{c.club_name}</span>
+                  <span className="ml-auto text-[9px] text-muted-foreground font-mono truncate max-w-[100px]">{c.user_id.slice(0, 8)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selected && (
+          <div className="flex items-center gap-2 p-2 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+            <span className="text-base">{selected.club_logo || '⚽'}</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold truncate">{selected.club_name}</p>
+              <p className="text-[9px] text-muted-foreground font-mono truncate">{selected.user_id}</p>
+            </div>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => { setSelected(null); setSearch(''); }}>
+              Trocar
+            </Button>
+          </div>
+        )}
+
         <Input
           type="number"
           placeholder="Valor em R$ (use negativo para descontar)"
@@ -115,10 +193,26 @@ function AdminAddMoneyCard() {
           onChange={e => setAmount(e.target.value)}
           className="text-xs h-8"
         />
-        <p className="text-[10px] text-muted-foreground">Limite: ±R$ 1.000.000.000 por operação. A ação é registrada e o jogador é notificado.</p>
-        <Button size="sm" className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={submit} disabled={busy}>
+        <p className="text-[10px] text-muted-foreground">Limite: ±R$ 1.000.000.000. A ação é registrada em admin_logs e o jogador é notificado.</p>
+        <Button
+          size="sm"
+          className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={submit}
+          disabled={busy || !selected}
+        >
           {busy ? 'Processando…' : 'Confirmar'}
         </Button>
+
+        {lastResult && (
+          <div className="mt-2 p-2 rounded-md bg-muted/40 border text-[10px] space-y-0.5">
+            <p className="font-semibold text-emerald-400">
+              {lastResult.delta >= 0 ? '✅ Crédito aplicado' : '⚠️ Débito aplicado'}
+            </p>
+            <p>Clube: <span className="font-medium">{lastResult.club}</span></p>
+            <p>Operação: <span className="font-mono">{lastResult.delta >= 0 ? '+' : ''}R$ {lastResult.delta.toLocaleString('pt-BR')}</span></p>
+            <p>Novo saldo: <span className="font-mono font-semibold">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
