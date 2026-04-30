@@ -692,6 +692,59 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
     };
   }, [isFinished]);
 
+  // ── POST-MATCH: send report notification + update global ranking (idempotent) ──
+  const postMatchSentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isFinished || !matchDbId) return;
+    if (postMatchSentRef.current === matchDbId) return;
+    postMatchSentRef.current = matchDbId;
+
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const userId = sess.session?.user?.id;
+        if (!userId) return;
+
+        // Determine my side / outcome
+        const isHome = matchState.isHome ?? true;
+        const myGoals = isHome ? homeGoals : awayGoals;
+        const oppGoals = isHome ? awayGoals : homeGoals;
+        const myClub = isHome ? homeTeam : awayTeam;
+        const oppClub = isHome ? awayTeam : homeTeam;
+        const outcome: 'win' | 'draw' | 'loss' =
+          myGoals > oppGoals ? 'win' : myGoals === oppGoals ? 'draw' : 'loss';
+        const resultIcon = outcome === 'win' ? '🟢' : outcome === 'draw' ? '🟡' : '🔴';
+        const compLabel = competition || 'Amistoso';
+        const compKey: 'friendly' | 'league' | 'cup' | 'continental' | 'world' =
+          /mundial/i.test(compLabel) ? 'world'
+          : /continental|libertadores|champions|sul-american|europa/i.test(compLabel) ? 'continental'
+          : /copa|cup/i.test(compLabel) ? 'cup'
+          : /liga|league|série|serie|brasileir/i.test(compLabel) ? 'league'
+          : 'friendly';
+
+        // 1) Insert notification (uses created_at + matchDbId in data for dedup on bell side)
+        await supabase.from('user_notifications').insert({
+          user_id: userId,
+          type: 'match_report',
+          icon: '📊',
+          title: `${resultIcon} Relatório: ${myClub} ${myGoals}x${oppGoals} ${oppClub}`,
+          message: `${compLabel} • Toque para ver os detalhes da partida.`,
+          data: { match_db_id: matchDbId, competition: compLabel, my_goals: myGoals, opp_goals: oppGoals },
+        });
+
+        // 2) Update global ranking
+        const { updateGlobalRanking } = await import('@/match/rankingUpdater');
+        await updateGlobalRanking({
+          userId,
+          clubName: myClub,
+          outcome,
+          competition: compKey,
+          competitionLabel: compLabel,
+        });
+      } catch { /* silencioso */ }
+    })();
+  }, [isFinished, matchDbId, homeGoals, awayGoals, homeTeam, awayTeam, competition, matchState.isHome]);
+
   // Auto-scroll events
   const eventsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
