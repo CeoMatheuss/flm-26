@@ -683,7 +683,9 @@ export function AdminTab({ userId, isFounder }: Props) {
     announcements:     { label: 'Anúncios IA',    icon: Image },
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
-    versions:          { label: 'Versões',        icon: Shield },
+    versions:           { label: 'Versões',         icon: Shield },
+    finance_panel:      { label: 'Financeiro',      icon: Wallet },
+    customization_panel:{ label: 'Personalização',  icon: Palette },
   };
 
   return (
