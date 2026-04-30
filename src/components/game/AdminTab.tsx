@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
-  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy
+  AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
+  BookOpen, FlaskConical, Calendar, ShieldCheck
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -267,15 +268,15 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBanLoading, setGameBanLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('users');
 
-  // Reset active tab when category changes
+  // Reset active tab when category changes — must mirror CATEGORY_TABS below
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
-      leagues:    ['system'],
-      cups:       ['system', 'tournaments'],
+      leagues:    ['leagues_overview'],
+      cups:       ['cups_overview', 'tournaments'],
       clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
       players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-      system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support'],
-      simulation: ['system'],
+      system:     ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      simulation: ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
@@ -651,31 +652,35 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   // ── Category → tab map (visible triggers) ─────────────────────
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
-    leagues:    ['system'],
-    cups:       ['system', 'tournaments'],
+    leagues:    ['leagues_overview'],
+    cups:       ['cups_overview', 'tournaments'],
     clubs:      ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:    isFounder ? ['generator', 'abuse'] : ['abuse'],
-    system:     [...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions'],
-    simulation: ['system'],
+    system:     ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    simulation: ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
   const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
-    team:           { label: 'Equipe',       icon: Users },
-    users:          { label: 'Usuários',     icon: Users },
-    premium:        { label: 'Premium',      icon: Crown },
-    bans:           { label: 'Bans Chat',    icon: Ban },
-    gameban:        { label: 'Ban Game',     icon: Lock },
-    generator:      { label: 'Gerar',        icon: Wand2 },
-    abuse:          { label: 'Anti-Abuso',   icon: AlertTriangle },
-    tournaments:    { label: 'Torneios',     icon: Trophy },
-    system:         { label: 'Sistema',      icon: Globe },
-    moderation:     { label: 'Chat',         icon: MessageCircle },
-    updates_mgmt:   { label: 'Atualizações', icon: Megaphone },
-    announcements:  { label: 'Anúncios IA',  icon: Image },
-    direct_msg:     { label: 'Msg Direta',   icon: Megaphone },
-    support:        { label: 'Suporte',      icon: LifeBuoy },
-    versions:       { label: 'Versões',      icon: Shield },
+    team:              { label: 'Equipe',         icon: Users },
+    users:             { label: 'Usuários',       icon: Users },
+    premium:           { label: 'Premium',        icon: Crown },
+    bans:              { label: 'Bans Chat',      icon: Ban },
+    gameban:           { label: 'Ban Game',       icon: Lock },
+    generator:         { label: 'Gerar',          icon: Wand2 },
+    abuse:             { label: 'Anti-Abuso',     icon: AlertTriangle },
+    tournaments:       { label: 'Torneios',       icon: Trophy },
+    leagues_overview:  { label: 'Ligas',          icon: Globe },
+    cups_overview:     { label: 'Visão de Copas', icon: Trophy },
+    simulation_panel:  { label: 'Simulação',      icon: FlaskConical },
+    beta_access:       { label: 'BETA',           icon: ShieldCheck },
+    how_it_works:      { label: 'Como Funciona',  icon: BookOpen },
+    moderation:        { label: 'Chat',           icon: MessageCircle },
+    updates_mgmt:      { label: 'Atualizações',   icon: Megaphone },
+    announcements:     { label: 'Anúncios IA',    icon: Image },
+    direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
+    support:           { label: 'Suporte',        icon: LifeBuoy },
+    versions:          { label: 'Versões',        icon: Shield },
   };
 
   return (
@@ -1478,9 +1483,29 @@ export function AdminTab({ userId, isFounder }: Props) {
           <AdminTournamentTab userId={userId} />
         </TabsContent>
 
-        {/* System Tab (FLM Control Center) */}
-        <TabsContent value="system" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} />
+        {/* Categoria: Ligas */}
+        <TabsContent value="leagues_overview" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['preview', 'pyramid', 'season']} defaultSection="preview" />
+        </TabsContent>
+
+        {/* Categoria: Copas (visão geral) */}
+        <TabsContent value="cups_overview" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['cups']} defaultSection="cups" />
+        </TabsContent>
+
+        {/* Categoria: Simulação */}
+        <TabsContent value="simulation_panel" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
+        </TabsContent>
+
+        {/* Categoria: Sistema → BETA */}
+        <TabsContent value="beta_access" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
+        </TabsContent>
+
+        {/* Categoria: Sistema → Como Funciona */}
+        <TabsContent value="how_it_works" className="space-y-3 mt-3">
+          <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
         </TabsContent>
 
         {/* Moderation Tab */}
