@@ -115,7 +115,24 @@ const BOT_LOGOS = ['⚽', '🏟️', '🦅', '🐺', '🦁', '🐂', '🔴', '�
 function generateBotName(index: number): string {
   const prefix = BOT_PREFIXES[index % BOT_PREFIXES.length];
   const suffix = BOT_SUFFIXES[index % BOT_SUFFIXES.length];
-  return `${prefix} ${suffix}`;
+  // Sufixo numérico garante unicidade global mesmo entre ligas diferentes
+  // (evita choque de nomes "FC Nova Esperança" em D1 e D2 do mesmo país).
+  const tag = Math.floor(index / (BOT_PREFIXES.length * BOT_SUFFIXES.length)) + 1;
+  return tag === 1 ? `${prefix} ${suffix}` : `${prefix} ${suffix} ${tag}`;
+}
+
+// Força média do bot baseada no nível competitivo da liga.
+// Garante que bots de D1 sejam fortes e os de várzea sejam fracos —
+// essencial para subidas/descidas fazerem sentido.
+function botStrengthFor(tier: Tier, level: number): number {
+  const ranges: Record<Tier, [number, number]> = {
+    nacional: level === 1 ? [75, 90] : level === 2 ? [65, 80] : level === 3 ? [55, 70] : [45, 60],
+    regional: [50, 70],
+    pre_regional: [42, 62],
+    varzea: [35, 55],
+  };
+  const [lo, hi] = ranges[tier];
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
 }
 
 // Continent mapping
