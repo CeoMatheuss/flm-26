@@ -1260,6 +1260,16 @@ export function AdminTab({ userId, isFounder }: Props) {
           <SystemPanel adminUserId={userId} sections={['cups']} defaultSection="cups" />
         </TabsContent>
 
+        {/* Categoria: 💰 Financeiro (isolado) */}
+        <TabsContent value="finance_panel" className="space-y-3 mt-3">
+          <FinancePanel />
+        </TabsContent>
+
+        {/* Categoria: 🎨 Personalização (isolado) */}
+        <TabsContent value="customization_panel" className="space-y-3 mt-3">
+          <CustomizationPanel />
+        </TabsContent>
+
         {/* Categoria: Simulação */}
         <TabsContent value="simulation_panel" className="space-y-3 mt-3">
           <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
