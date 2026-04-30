@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Wand2, Target } from 'lucide-react';
+import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Target } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { RescindModal } from './RescindModal';
@@ -274,64 +274,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     setSquadSubTab(pendingSwap.from);
   };
 
-  // ─── Auto-Lineup: build best XI based on tactics formation ───
-  const autoLineup = () => {
-    if (!onReorderPlayers) {
-      toast.error('Não disponível neste modo');
-      return;
-    }
-    const formation: Formation = (tactics?.formation as Formation) || '4-4-2';
-    const slots = formationPositions[formation] || formationPositions['4-4-2'];
-    // Build flat slot list (e.g. [GOL, ZAG, ZAG, LAT, LAT, ...])
-    const slotList: string[] = [];
-    Object.entries(slots).forEach(([pos, count]) => {
-      for (let i = 0; i < count; i++) slotList.push(pos);
-    });
-    // Pad to 11 (in case formation has 10) — fill with MEI
-    while (slotList.length < 11) slotList.push('MEI');
+  // (autoLineup removido — montagem do time é manual)
 
-    // Position groups for partial-match scoring
-    const groupOf = (p: string): 'def' | 'mid' | 'atk' | 'gk' => {
-      if (p === 'GOL') return 'gk';
-      if (p === 'ZAG' || p === 'LAT') return 'def';
-      if (p === 'VOL' || p === 'MEI') return 'mid';
-      return 'atk';
-    };
-
-    const scorePlayer = (player: Player, slotPos: string) => {
-      let score = (player.overall || 50) * 10 + (player.stamina || 50);
-      if (player.position === slotPos) score += 1000;
-      else if (groupOf(player.position) === groupOf(slotPos)) score += 500;
-      if (player.injury) score -= 1000;
-      return score;
-    };
-
-    const available = [...players];
-    const starters: Player[] = [];
-
-    for (const slot of slotList) {
-      let bestIdx = -1;
-      let bestScore = -Infinity;
-      available.forEach((p, idx) => {
-        const s = scorePlayer(p, slot);
-        if (s > bestScore) { bestScore = s; bestIdx = idx; }
-      });
-      if (bestIdx >= 0) {
-        starters.push(available[bestIdx]);
-        available.splice(bestIdx, 1);
-      }
-    }
-
-    // Reserves: sort remaining by OVR, take 7
-    available.sort((a, b) => (b.overall || 0) - (a.overall || 0));
-    const reserves = available.slice(0, 7);
-    const rest = available.slice(7);
-
-    const newOrder = [...starters, ...reserves, ...rest];
-    onReorderPlayers(newOrder);
-    const avgOvrStart = Math.round(starters.reduce((s, p) => s + (p.overall || 0), 0) / Math.max(1, starters.length));
-    toast.success(`✅ Time montado: ${formation} • OVR médio ${avgOvrStart}`);
-  };
   if (viewingPlayer) {
     const player = viewingPlayer;
     const avgRating = player.seasonRatings && player.seasonRatings.length > 0
