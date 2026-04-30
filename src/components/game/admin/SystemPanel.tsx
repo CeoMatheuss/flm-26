@@ -9,45 +9,72 @@ import { SimulationValidationTab } from './SimulationValidationTab';
 import { BetaAccessPanel } from './BetaAccessPanel';
 import { LeaguesPreviewTab } from './LeaguesPreviewTab';
 
-interface Props { adminUserId: string }
+export type SystemSection = 'beta' | 'preview' | 'how' | 'pyramid' | 'cups' | 'season' | 'sim';
 
-export function SystemPanel({ adminUserId }: Props) {
+interface Props {
+  adminUserId: string;
+  /** Restringe quais seções aparecem. Se omitido, mostra todas. */
+  sections?: SystemSection[];
+  defaultSection?: SystemSection;
+}
+
+const ALL_SECTIONS: { id: SystemSection; label: string; icon: any }[] = [
+  { id: 'beta',    label: 'BETA',                  icon: ShieldCheck },
+  { id: 'preview', label: 'Prévia Ligas',          icon: Sparkles },
+  { id: 'pyramid', label: 'Países & Pirâmide',     icon: Globe },
+  { id: 'season',  label: 'Temporada',             icon: Calendar },
+  { id: 'cups',    label: 'Copas',                 icon: Trophy },
+  { id: 'sim',     label: 'Simulação & Validação', icon: FlaskConical },
+  { id: 'how',     label: 'Como Funciona',         icon: BookOpen },
+];
+
+export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
+  const visible = sections && sections.length > 0
+    ? ALL_SECTIONS.filter(s => sections.includes(s.id))
+    : ALL_SECTIONS;
+
+  if (visible.length === 0) return null;
+  const initial = defaultSection && visible.some(s => s.id === defaultSection)
+    ? defaultSection
+    : visible[0].id;
+
   return (
     <div className="space-y-2">
-      <Tabs defaultValue="beta" className="w-full">
+      <Tabs defaultValue={initial} className="w-full">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-auto min-w-full gap-0.5 overflow-x-auto scrollbar-none">
-            <TabsTrigger value="beta" className="text-[10px] gap-1 px-2 shrink-0">
-              <ShieldCheck className="h-3 w-3" /> BETA
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="text-[10px] gap-1 px-2 shrink-0">
-              <Sparkles className="h-3 w-3" /> Prévia Ligas
-            </TabsTrigger>
-            <TabsTrigger value="how" className="text-[10px] gap-1 px-2 shrink-0">
-              <BookOpen className="h-3 w-3" /> Como Funciona
-            </TabsTrigger>
-            <TabsTrigger value="pyramid" className="text-[10px] gap-1 px-2 shrink-0">
-              <Globe className="h-3 w-3" /> Países & Pirâmide
-            </TabsTrigger>
-            <TabsTrigger value="cups" className="text-[10px] gap-1 px-2 shrink-0">
-              <Trophy className="h-3 w-3" /> Copas
-            </TabsTrigger>
-            <TabsTrigger value="season" className="text-[10px] gap-1 px-2 shrink-0">
-              <Calendar className="h-3 w-3" /> Temporada
-            </TabsTrigger>
-            <TabsTrigger value="sim" className="text-[10px] gap-1 px-2 shrink-0">
-              <FlaskConical className="h-3 w-3" /> Simulação & Validação
-            </TabsTrigger>
+            {visible.map(s => {
+              const Icon = s.icon;
+              return (
+                <TabsTrigger key={s.id} value={s.id} className="text-[10px] gap-1 px-2 shrink-0">
+                  <Icon className="h-3 w-3" /> {s.label}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </ScrollArea>
 
-        <TabsContent value="beta" className="mt-3"><BetaAccessPanel /></TabsContent>
-        <TabsContent value="preview" className="mt-3"><LeaguesPreviewTab /></TabsContent>
-        <TabsContent value="how" className="mt-3"><HowItWorksTab /></TabsContent>
-        <TabsContent value="pyramid" className="mt-3"><CountriesPyramidTab /></TabsContent>
-        <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
-        <TabsContent value="season" className="mt-3"><SeasonControlTab adminUserId={adminUserId} /></TabsContent>
-        <TabsContent value="sim" className="mt-3"><SimulationValidationTab adminUserId={adminUserId} /></TabsContent>
+        {visible.some(s => s.id === 'beta') && (
+          <TabsContent value="beta" className="mt-3"><BetaAccessPanel /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'preview') && (
+          <TabsContent value="preview" className="mt-3"><LeaguesPreviewTab /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'pyramid') && (
+          <TabsContent value="pyramid" className="mt-3"><CountriesPyramidTab /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'season') && (
+          <TabsContent value="season" className="mt-3"><SeasonControlTab adminUserId={adminUserId} /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'cups') && (
+          <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'sim') && (
+          <TabsContent value="sim" className="mt-3"><SimulationValidationTab adminUserId={adminUserId} /></TabsContent>
+        )}
+        {visible.some(s => s.id === 'how') && (
+          <TabsContent value="how" className="mt-3"><HowItWorksTab /></TabsContent>
+        )}
       </Tabs>
     </div>
   );
