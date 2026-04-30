@@ -2443,9 +2443,9 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
 
       {matchDbId && (
         <>
-          <Button variant="outline" className="w-full gap-2 text-sm sm:text-base" onClick={() => setShowReport(true)}>
-            📊 Ver Relatório Pós-Jogo
-          </Button>
+          <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-center text-xs sm:text-sm">
+            🔔 Relatório completo enviado para o sino de notificações.
+          </div>
           {showReport && <PostGameReportModal matchDbId={matchDbId} onClose={() => setShowReport(false)} />}
         </>
       )}
