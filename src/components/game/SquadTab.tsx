@@ -206,14 +206,25 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const player = players[idx];
     const without = players.filter(p => p.id !== playerId);
 
+    // Regra: jogador só fica FORA do time se o banco estiver LOTADO.
+    // Se alguém pediu 'out' mas o banco ainda tem vaga, redireciona para 'reserves'.
+    let effectiveTarget: Group = target;
+    if (effectiveTarget === 'out') {
+      const benchSize = without.slice(STARTERS_END, RESERVES_END).length;
+      const benchCapacity = RESERVES_END - STARTERS_END; // 7 lugares
+      if (benchSize < benchCapacity) {
+        effectiveTarget = 'reserves';
+      }
+    }
+
     let insertAt = 0;
-    if (target === 'starters') {
-      insertAt = 0; // promote to top of starters
-    } else if (target === 'reserves') {
-      // Place right after the 11th starter (so it sits in reserves zone)
+    if (effectiveTarget === 'starters') {
+      insertAt = 0; // promove ao topo dos titulares
+    } else if (effectiveTarget === 'reserves') {
+      // Coloca logo após o 11º titular (cai no banco)
       insertAt = Math.min(without.length, STARTERS_END);
     } else {
-      // 'out' — put it at position RESERVES_END so it falls outside both groups
+      // 'out' — só usado quando banco realmente está lotado
       insertAt = Math.min(without.length, RESERVES_END);
     }
     const newOrder = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
