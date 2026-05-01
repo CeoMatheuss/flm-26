@@ -13,6 +13,7 @@ import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 import { ActiveCompetitionsWidget } from './ActiveCompetitionsWidget';
+import { UpcomingLeagueMatchesWidget } from './UpcomingLeagueMatchesWidget';
 
 interface Props {
   club: Club;
@@ -186,6 +187,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       {/* Próximos Jogos Oficiais (Liga, Copa, Continental, Mundial) */}
       {userId && <GlobalCompetitionsWidget userId={userId} />}
+
+      {/* Próximos jogos das ligas mundiais (compacto, scrollável) */}
+      <UpcomingLeagueMatchesWidget />
 
       {/* Campeonatos ativos no mundo (todas as ligas oficiais) */}
       <ActiveCompetitionsWidget />

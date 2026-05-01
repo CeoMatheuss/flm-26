@@ -12,6 +12,7 @@ interface ActiveLeague {
   division: number;
   league_name: string;
   kickoff_hour: number;
+  kickoff_minute: number;
   current_matchday: number;
   total_matchdays: number;
   total_slots: number;
@@ -38,7 +39,7 @@ export function ActiveCompetitionsWidget({ onOpenLeagues }: Props) {
     const load = async () => {
       const { data } = await supabase
         .from('world_leagues')
-        .select('id, country, flag_emoji, division, league_name, kickoff_hour, current_matchday, total_matchdays, total_slots, status, season')
+        .select('id, country, flag_emoji, division, league_name, kickoff_hour, kickoff_minute, current_matchday, total_matchdays, total_slots, status, season')
         .in('status', ['pending', 'in_progress'])
         .order('kickoff_hour', { ascending: true })
         .order('country', { ascending: true });
@@ -62,11 +63,14 @@ export function ActiveCompetitionsWidget({ onOpenLeagues }: Props) {
     };
   }, []);
 
-  const grouped = leagues.reduce<Record<number, ActiveLeague[]>>((acc, l) => {
-    (acc[l.kickoff_hour] ||= []).push(l);
+  const fmtTime = (h: number, m: number) =>
+    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  const grouped = leagues.reduce<Record<string, ActiveLeague[]>>((acc, l) => {
+    const key = fmtTime(l.kickoff_hour, l.kickoff_minute ?? 0);
+    (acc[key] ||= []).push(l);
     return acc;
   }, {});
-  const hours = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+  const timeKeys = Object.keys(grouped).sort();
 
   return (
     <Card>
@@ -92,17 +96,17 @@ export function ActiveCompetitionsWidget({ onOpenLeagues }: Props) {
         ) : leagues.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma competição ativa no momento.</p>
         ) : (
-          hours.map((h) => (
-            <div key={h} className="space-y-1.5">
+          timeKeys.map((tk) => (
+            <div key={tk} className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                 <Clock className="w-3 h-3" />
-                {String(h).padStart(2, '0')}:00 BRT
+                {tk} BRT
                 <span className="text-[10px] font-normal normal-case opacity-60">
-                  · {grouped[h].length} ligas
+                  · {grouped[tk].length} ligas
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {grouped[h].map((l) => {
+                {grouped[tk].map((l) => {
                   const meta = STATUS_META[l.status] ?? STATUS_META.in_progress;
                   return (
                     <div

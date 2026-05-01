@@ -48,13 +48,25 @@ const TOP_LEAGUE_NAMES: Record<string, string> = {
   AE:"UAE Pro League",
 };
 
-// D1: rotaciona entre 16..22 BRT (7 janelas) — distribui carga.
-// D2..D4: horários fixos mais cedo, sempre <= 22.
-const KICKOFF_BY_DIVISION: Record<number, number> = { 2: 16, 3: 18, 4: 19 };
-const D1_HOURS = [16, 17, 18, 19, 20, 21, 22];
-function kickoffFor(division: number, countryIndex: number): number {
-  if (division === 1) return D1_HOURS[countryIndex % D1_HOURS.length];
-  return KICKOFF_BY_DIVISION[division] ?? 17;
+// Horários FIXOS por (país, divisão) — determinístico.
+// Cada país tem hora-base estável (hash) na janela 16..22 BRT.
+// D1 = base, D2 = base:30, D3 = base-1, D4 = base+1, Várzea = base-2.
+function hashCountry(country: string): number {
+  let h = 0;
+  for (let i = 0; i < country.length; i++) {
+    h = ((h << 5) - h + country.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+function kickoffFor(country: string, division: number): { hour: number; minute: number } {
+  const base = 16 + (hashCountry(country) % 7); // 16..22
+  switch (division) {
+    case 1: return { hour: base, minute: 0 };
+    case 2: return { hour: base, minute: 30 };
+    case 3: return { hour: Math.max(12, base - 1), minute: 0 };
+    case 4: return { hour: Math.min(22, base + 1), minute: 0 };
+    default: return { hour: Math.max(12, base - 2), minute: 0 };
+  }
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -159,7 +171,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // 1. Cria a liga
+        // 1. Cria a liga (kickoff fixo determinístico por país+divisão)
+        const k = kickoffFor(country, division);
         const { data: leagueRow, error: lErr } = await sb
           .from("world_leagues")
           .insert({
@@ -167,7 +180,8 @@ Deno.serve(async (req) => {
             flag_emoji: COUNTRY_FLAGS[country] ?? "🏳️",
             division,
             league_name: TOP_LEAGUE_NAMES[country] ?? `${country} D1`,
-            kickoff_hour: kickoffFor(division, ci),
+            kickoff_hour: k.hour,
+            kickoff_minute: k.minute,
             season: nextSeason,
             current_matchday: 0,
             total_matchdays: 30,
@@ -241,6 +255,15 @@ Deno.serve(async (req) => {
         }
       } catch (e: any) {
         validation_warnings.push({ type: "planner_call_failed", error: e?.message });
+      }
+    }
+
+    // 3.5 Aplica horários fixos determinísticos (autoritativo via SQL)
+    if (!dryRun) {
+      try {
+        await sb.rpc("world_leagues_apply_fixed_kickoff");
+      } catch (e: any) {
+        validation_warnings.push({ type: "apply_fixed_kickoff_failed", error: e?.message });
       }
     }
 
