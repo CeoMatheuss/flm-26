@@ -39,7 +39,7 @@ export function ActiveCompetitionsWidget({ onOpenLeagues }: Props) {
     const load = async () => {
       const { data } = await supabase
         .from('world_leagues')
-        .select('id, country, flag_emoji, division, league_name, kickoff_hour, current_matchday, total_matchdays, total_slots, status, season')
+        .select('id, country, flag_emoji, division, league_name, kickoff_hour, kickoff_minute, current_matchday, total_matchdays, total_slots, status, season')
         .in('status', ['pending', 'in_progress'])
         .order('kickoff_hour', { ascending: true })
         .order('country', { ascending: true });
