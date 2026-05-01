@@ -46,18 +46,16 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Converte uma data (YYYY-MM-DD) + hora BRT para UTC ISO
-function brtDateTimeToUtcIso(dateStr: string, hour: number): string {
-  // BRT = UTC-3 (sem horário de verão atualmente no Brasil)
-  // Para hora BRT H, UTC = H + 3
+// Converte uma data (YYYY-MM-DD) + hora/min BRT para UTC ISO
+function brtDateTimeToUtcIso(dateStr: string, hour: number, minute = 0): string {
+  // BRT = UTC-3
   const [y, m, d] = dateStr.split("-").map(Number);
   const utcHour = hour + 3;
-  // Pode passar de 24h (mas hora máx é 22 → 22+3=25). Se >=24, avança 1 dia.
   if (utcHour >= 24) {
-    const dt = new Date(Date.UTC(y, m - 1, d + 1, utcHour - 24, 0, 0));
+    const dt = new Date(Date.UTC(y, m - 1, d + 1, utcHour - 24, minute, 0));
     return dt.toISOString();
   }
-  const dt = new Date(Date.UTC(y, m - 1, d, utcHour, 0, 0));
+  const dt = new Date(Date.UTC(y, m - 1, d, utcHour, minute, 0));
   return dt.toISOString();
 }
 
