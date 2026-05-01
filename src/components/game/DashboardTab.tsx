@@ -188,6 +188,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Próximos Jogos Oficiais (Liga, Copa, Continental, Mundial) */}
       {userId && <GlobalCompetitionsWidget userId={userId} />}
 
+      {/* Próximos jogos das ligas mundiais (compacto, scrollável) */}
+      <UpcomingLeagueMatchesWidget />
+
       {/* Campeonatos ativos no mundo (todas as ligas oficiais) */}
       <ActiveCompetitionsWidget />
 
