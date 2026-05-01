@@ -4177,6 +4177,7 @@ export type Database = {
         Returns: string
       }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
+      world_leagues_redistribute_kickoff: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
