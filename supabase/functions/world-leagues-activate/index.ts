@@ -171,7 +171,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // 1. Cria a liga
+        // 1. Cria a liga (kickoff fixo determinístico por país+divisão)
+        const k = kickoffFor(country, division);
         const { data: leagueRow, error: lErr } = await sb
           .from("world_leagues")
           .insert({
@@ -179,7 +180,8 @@ Deno.serve(async (req) => {
             flag_emoji: COUNTRY_FLAGS[country] ?? "🏳️",
             division,
             league_name: TOP_LEAGUE_NAMES[country] ?? `${country} D1`,
-            kickoff_hour: kickoffFor(division, ci),
+            kickoff_hour: k.hour,
+            kickoff_minute: k.minute,
             season: nextSeason,
             current_matchday: 0,
             total_matchdays: 30,
