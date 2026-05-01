@@ -258,6 +258,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 3.5 Aplica horários fixos determinísticos (autoritativo via SQL)
+    if (!dryRun) {
+      try {
+        await sb.rpc("world_leagues_apply_fixed_kickoff");
+      } catch (e: any) {
+        validation_warnings.push({ type: "apply_fixed_kickoff_failed", error: e?.message });
+      }
+    }
+
     // 4. Validação pós-criação: cada liga deve ter exatamente 20 times e 300 matches
     if (!dryRun) {
       const { data: validate } = await sb
