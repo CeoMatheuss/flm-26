@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
             flag_emoji: COUNTRY_FLAGS[country] ?? "🏳️",
             division,
             league_name: TOP_LEAGUE_NAMES[country] ?? `${country} D1`,
-            kickoff_hour: KICKOFF_BY_DIVISION[division],
+            kickoff_hour: kickoffFor(division, ci),
             season: nextSeason,
             current_matchday: 0,
             total_matchdays: 30,
