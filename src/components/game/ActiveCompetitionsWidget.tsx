@@ -102,11 +102,11 @@ export function ActiveCompetitionsWidget({ onOpenLeagues }: Props) {
                 <Clock className="w-3 h-3" />
                 {tk} BRT
                 <span className="text-[10px] font-normal normal-case opacity-60">
-                  · {grouped[h].length} ligas
+                  · {grouped[tk].length} ligas
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {grouped[h].map((l) => {
+                {grouped[tk].map((l) => {
                   const meta = STATUS_META[l.status] ?? STATUS_META.in_progress;
                   return (
                     <div
