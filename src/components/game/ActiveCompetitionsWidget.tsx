@@ -12,6 +12,7 @@ interface ActiveLeague {
   division: number;
   league_name: string;
   kickoff_hour: number;
+  kickoff_minute: number;
   current_matchday: number;
   total_matchdays: number;
   total_slots: number;
