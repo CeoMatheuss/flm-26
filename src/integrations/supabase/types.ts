@@ -3862,6 +3862,7 @@ export type Database = {
           flag_emoji: string
           id: string
           kickoff_hour: number
+          kickoff_minute: number
           league_name: string
           season: number
           season_ends_at: string | null
@@ -3879,6 +3880,7 @@ export type Database = {
           flag_emoji?: string
           id?: string
           kickoff_hour: number
+          kickoff_minute?: number
           league_name: string
           season?: number
           season_ends_at?: string | null
@@ -3896,6 +3898,7 @@ export type Database = {
           flag_emoji?: string
           id?: string
           kickoff_hour?: number
+          kickoff_minute?: number
           league_name?: string
           season?: number
           season_ends_at?: string | null
@@ -4177,6 +4180,14 @@ export type Database = {
         Returns: string
       }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
+      world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
+      world_leagues_kickoff_for: {
+        Args: { _country: string; _division: number }
+        Returns: {
+          h: number
+          m: number
+        }[]
+      }
       world_leagues_redistribute_kickoff: { Args: never; Returns: Json }
     }
     Enums: {
