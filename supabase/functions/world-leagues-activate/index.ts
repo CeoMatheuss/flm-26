@@ -48,7 +48,14 @@ const TOP_LEAGUE_NAMES: Record<string, string> = {
   AE:"UAE Pro League",
 };
 
-const KICKOFF_BY_DIVISION: Record<number, number> = { 1: 17, 2: 16, 3: 18, 4: 19 };
+// D1: rotaciona entre 16..22 BRT (7 janelas) — distribui carga.
+// D2..D4: horários fixos mais cedo, sempre <= 22.
+const KICKOFF_BY_DIVISION: Record<number, number> = { 2: 16, 3: 18, 4: 19 };
+const D1_HOURS = [16, 17, 18, 19, 20, 21, 22];
+function kickoffFor(division: number, countryIndex: number): number {
+  if (division === 1) return D1_HOURS[countryIndex % D1_HOURS.length];
+  return KICKOFF_BY_DIVISION[division] ?? 17;
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
