@@ -134,7 +134,8 @@ Deno.serve(async (req) => {
       Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate(), 3, 0, 0),
     ).toISOString();
 
-    for (const country of COUNTRIES) {
+    for (let ci = 0; ci < COUNTRIES.length; ci++) {
+      const country = COUNTRIES[ci];
       const division = 1;
       const key = `${country}|${division}`;
       let leagueId = existingMap.get(key);
