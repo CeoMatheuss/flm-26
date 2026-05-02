@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { ClubProfilePage } from './ClubProfilePage';
 import { LeaguesOverview } from './LeaguesOverview';
 import { ShieldCrest, ShieldShape, ShieldPattern } from './ShieldCrest';
@@ -446,7 +447,7 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/15 font-black border-2 border-primary/30 shadow-md' : ''} ${getZoneBorder(zone)} transition-colors hover:bg-muted/30`}
+                className={`${m.user_id === userId ? 'bg-primary/20 font-black border-l-4 border-l-primary' : ''} ${zone === 'title' ? 'bg-emerald-500/5' : zone === 'relegation' ? 'bg-red-500/5' : ''} transition-colors hover:bg-muted/30`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
