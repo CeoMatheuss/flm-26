@@ -30,7 +30,6 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     let cancelled = false;
 
     const loadFriendly = async () => {
-      // Próximo amistoso aceito (qualquer um onde o usuário participa)
       const { data: invites } = await supabase
         .from('friendly_invites')
         .select('*')
@@ -39,13 +38,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .order('match_date', { ascending: true })
         .limit(20);
       if (!invites || invites.length === 0) return null;
-      // Prefere o mais próximo no futuro; senão pega o último
       const now = Date.now();
       const future = invites.filter(i => new Date(i.match_date).getTime() >= now - 5 * 60_000);
       const inv: any = future[0] || invites[invites.length - 1];
       const isSender = inv.sender_id === userId;
-      const myClub = isSender ? inv.sender_club_name : inv.receiver_club_name;
-      const oppClub = isSender ? inv.receiver_club_name : inv.sender_club_name;
       const isHome = inv.home_team_id === userId;
       const homeName = inv.home_team_id === inv.sender_id ? inv.sender_club_name : inv.receiver_club_name;
       const awayName = homeName === inv.sender_club_name ? inv.receiver_club_name : inv.sender_club_name;
@@ -66,6 +62,50 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         awayGoals: null,
         playedAt: null,
         kind: 'friendly' as const,
+      };
+    };
+
+    const loadLeague = async () => {
+      const { data: member } = await supabase
+        .from('league_members')
+        .select('id, league_id, team_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!member) return null;
+
+      const { data: match } = await supabase
+        .from('league_matches')
+        .select('*, multiplayer_leagues(name)')
+        .eq('league_id', member.league_id)
+        .or(`home_team_id.eq.${member.id},away_team_id.eq.${member.id}`)
+        .in('status', ['scheduled', 'live'])
+        .order('match_time', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!match) return null;
+
+      const isHome = match.home_team_id === member.id;
+      const { data: oppTeam } = await supabase
+        .from('league_members')
+        .select('team_name')
+        .eq('id', isHome ? match.away_team_id : match.home_team_id)
+        .maybeSingle();
+
+      return {
+        home: isHome ? member.team_name : (oppTeam?.team_name || '???'),
+        away: isHome ? (oppTeam?.team_name || '???') : member.team_name,
+        date: match.match_time,
+        tournament: match.multiplayer_leagues?.name || '🏆 Liga Online',
+        matchId: match.id,
+        homeTeamId: match.home_team_id,
+        awayTeamId: match.away_team_id,
+        opponentStrength: 75,
+        isHome,
+        tournamentName: match.multiplayer_leagues?.name || 'Liga Online',
+        status: match.status,
+        kind: 'league' as const,
       };
     };
 
@@ -136,18 +176,21 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     };
 
     const load = async () => {
-      const [friendly, tourney] = await Promise.all([loadFriendly(), loadTournament()]);
+      const [friendly, league, tourney] = await Promise.all([loadFriendly(), loadLeague(), loadTournament()]);
       if (cancelled) return;
 
-      // Escolhe o que está mais próximo no tempo (e ainda não passou muito).
-      // Amistoso só substitui torneio se for futuro/recém-iniciado.
+      const now = Date.now();
+      const options = [friendly, league, tourney].filter(o => o !== null);
+      
+      // Prioritize by proximity to now, but keep league and tourney high priority
       let chosen: any = null;
-      if (friendly && tourney) {
-        const fTs = new Date(friendly.date).getTime();
-        const tTs = new Date(tourney.date).getTime();
-        chosen = Math.abs(fTs - Date.now()) < Math.abs(tTs - Date.now()) ? friendly : tourney;
-      } else {
-        chosen = friendly || tourney;
+      if (options.length > 0) {
+        options.sort((a, b) => {
+          const aDiff = Math.abs(new Date(a.date).getTime() - now);
+          const bDiff = Math.abs(new Date(b.date).getTime() - now);
+          return aDiff - bDiff;
+        });
+        chosen = options[0];
       }
 
       setNextMatch(chosen);
@@ -161,6 +204,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       .channel(`dash-next-match-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `sender_id=eq.${userId}` }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `receiver_id=eq.${userId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_matches' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_tournament_matches' }, () => load())
       .subscribe();
 
