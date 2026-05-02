@@ -296,7 +296,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       if (userLeague?.league_id) {
         const { data: wm } = await supabase
           .from('world_matches')
-          .select('*, home_team:world_league_teams!home_team_id(team_name), away_team:world_league_teams!away_team_id(team_name)')
+          .select('*, home_team:world_league_teams!home_team_id(club_name), away_team:world_league_teams!away_team_id(club_name)')
           .eq('league_id', userLeague.league_id)
           .order('matchday', { ascending: true })
           .order('kickoff_at', { ascending: true });
