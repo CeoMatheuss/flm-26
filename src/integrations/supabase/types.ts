@@ -1856,7 +1856,7 @@ export type Database = {
           played: number
           points: number
           reputation: number
-          user_id: string
+          user_id: string | null
           wins: number
         }
         Insert: {
@@ -1875,7 +1875,7 @@ export type Database = {
           played?: number
           points?: number
           reputation?: number
-          user_id: string
+          user_id?: string | null
           wins?: number
         }
         Update: {
@@ -1894,7 +1894,7 @@ export type Database = {
           played?: number
           points?: number
           reputation?: number
-          user_id?: string
+          user_id?: string | null
           wins?: number
         }
         Relationships: [
