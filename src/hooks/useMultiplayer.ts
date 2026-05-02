@@ -30,9 +30,9 @@ export interface MultiplayerLeague {
 }
 
 export interface LeagueMember {
-  id: string;
+  id: string; // This is league_members.id (team_id in view)
   league_id: string;
-  user_id: string;
+  user_id?: string;
   club_name: string;
   club_logo: string;
   points: number;
@@ -45,6 +45,8 @@ export interface LeagueMember {
   reputation: number;
   budget: number;
   joined_at: string;
+  position?: number;
+  goals_diff?: number;
 }
 
 export interface ChatMessage {
