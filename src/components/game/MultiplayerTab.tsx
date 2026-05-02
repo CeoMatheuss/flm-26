@@ -1162,3 +1162,82 @@ function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; m
     </Card>
   );
 }
+
+// === INDIVIDUAL STATS ===
+function IndividualStatsView({ leagueId }: { leagueId: string }) {
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating'>('goals');
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('league_player_stats')
+        .select('*')
+        .eq('league_id', leagueId)
+        .order(activeStat === 'rating' ? 'total_rating' : activeStat, { ascending: false })
+        .limit(20);
+
+      if (!error && data) {
+        setStats(data);
+      }
+      setLoading(false);
+    };
+
+    fetchStats();
+  }, [leagueId, activeStat]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center justify-between">
+          Estatísticas Individuais
+          <div className="flex gap-1">
+            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('goals')}>Gols</Button>
+            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('assists')}>Assists</Button>
+            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('rating')}>Nota</Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-8 text-[10px]">Pos</TableHead>
+              <TableHead className="text-[10px]">Jogador</TableHead>
+              <TableHead className="text-[10px]">Time</TableHead>
+              <TableHead className="text-right text-[10px]">{activeStat === 'rating' ? 'Nota' : activeStat === 'goals' ? 'Gols' : 'Assists'}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stats.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">Nenhuma estatística registrada ainda.</TableCell>
+              </TableRow>
+            ) : (
+              stats.map((s, i) => (
+                <TableRow key={s.id} className="text-xs">
+                  <TableCell className="font-bold">{i + 1}º</TableCell>
+                  <TableCell className="font-medium">{s.player_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{s.team_name}</TableCell>
+                  <TableCell className="text-right font-bold">
+                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : activeStat === 'goals' ? s.goals : s.assists}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
