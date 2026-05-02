@@ -9,6 +9,7 @@ import { Globe, Trophy, Target, Layers } from 'lucide-react';
 import { LeaguesOverview } from './LeaguesOverview';
 import { CupBracketView } from './CupBracketView';
 import { supabase } from '@/integrations/supabase/client';
+import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 
 interface CupCompetition {
   id: string;
