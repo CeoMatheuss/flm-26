@@ -267,6 +267,8 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
   const [worldMatches, setWorldMatches] = useState<any[]>([]);
+  const [selectedMatchday, setSelectedMatchday] = useState<number>(1);
+  const [maxMatchdays, setMaxMatchdays] = useState<number>(38);
 
   useEffect(() => {
     const load = async () => {
@@ -274,29 +276,25 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Sincronizar estado da liga
-      await supabase.rpc('sync_league_state', { _user_id: user.id });
-
-      // Load match history
-      const { data: historyData } = await supabase
-        .from('match_history')
-        .select('*')
-        .eq('user_id', userId)
-        .order('played_at', { ascending: false })
-        .limit(100);
-      setMatches((historyData as MatchHistoryItem[]) || []);
-
-      // Load World Matches (Liga Oficial)
+      // Carregar liga do usuário para saber a rodada atual
       const { data: userLeague } = await supabase
         .from('world_league_teams')
-        .select('league_id')
+        .select('league_id, world_leagues(current_matchday, total_matchdays)')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (userLeague?.league_id) {
+        const currentMd = (userLeague.world_leagues as any)?.current_matchday || 1;
+        const totalMd = (userLeague.world_leagues as any)?.total_matchdays || 38;
+        setSelectedMatchday(currentMd);
+        setMaxMatchdays(totalMd);
+
+        // Validar e corrigir liga se necessário (garante 38 rounds)
+        await supabase.rpc('validate_world_league', { p_league_id: userLeague.league_id });
+
         const { data: wm } = await supabase
           .from('world_matches')
-          .select('*, home_team:world_league_teams!home_team_id(club_name), away_team:world_league_teams!away_team_id(club_name)')
+          .select('*, home_team:world_league_teams!home_team_id(club_name, club_logo), away_team:world_league_teams!away_team_id(club_name, club_logo)')
           .eq('league_id', userLeague.league_id)
           .order('matchday', { ascending: true })
           .order('kickoff_at', { ascending: true });
