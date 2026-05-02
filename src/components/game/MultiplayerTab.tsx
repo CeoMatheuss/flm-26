@@ -355,10 +355,10 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
     a.losses - b.losses
   );
   
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2];
+  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
   const getExpectedReward = (pos: number) => {
-    const idx = Math.min(pos, 20) - 1;
+    const idx = Math.min(pos, 16) - 1;
     const val = baseRewards[idx] / getDivisor(division);
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
@@ -1038,7 +1038,7 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
   const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
   const sorted = [...members].sort((a, b) => b.points - a.points);
 
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2];
+  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
   const divLabel = division === 1 ? 'Série A' : division === 2 ? 'Série B' : division === 3 ? 'Série C' : 'Série D';
   const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
