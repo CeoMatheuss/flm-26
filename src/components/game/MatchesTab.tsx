@@ -76,7 +76,7 @@ export function MatchesTab({
       // Load Official World League matches
       const { data: userLeague } = await supabase
         .from('world_league_teams')
-        .select('league_id, team_name')
+        .select('league_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -89,18 +89,18 @@ export function MatchesTab({
 
         const { data: wm } = await supabase
           .from('world_matches')
-          .select('*, home_team:world_league_teams!home_team_id(team_name, bot_strength), away_team:world_league_teams!away_team_id(team_name, bot_strength)')
+          .select('*, home_team:world_league_teams!home_team_id(club_name, bot_strength), away_team:world_league_teams!away_team_id(club_name, bot_strength)')
           .eq('league_id', userLeague.league_id)
           .eq('matchday', wl?.current_matchday || 1)
           .order('kickoff_at', { ascending: true });
         
         if (wm) {
-          const enriched = wm.map(m => {
-            const isHome = m.home_team?.team_name === clubName;
+          const enriched = wm.map((m: any) => {
+            const isHome = m.home_team?.club_name === clubName;
             return {
               ...m,
-              homeName: m.home_team?.team_name || '???',
-              awayName: m.away_team?.team_name || '???',
+              homeName: m.home_team?.club_name || '???',
+              awayName: m.away_team?.club_name || '???',
               homeStrength: m.home_team?.bot_strength || 60,
               awayStrength: m.away_team?.bot_strength || 60,
               isHome,
