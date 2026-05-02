@@ -254,8 +254,9 @@ function LeagueView(props: Props) {
         <TabsList className="w-full flex-wrap h-auto gap-1 bg-card/50">
           <TabsTrigger value="standings" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Tabela</TabsTrigger>
           <TabsTrigger value="matches" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Jogos</TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1 text-xs"><Award className="h-3 w-3" /> Premiações Individuais</TabsTrigger>
           <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat</TabsTrigger>
-          <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios</TabsTrigger>
+          <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios Liga</TabsTrigger>
           <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rival</TabsTrigger>
         </TabsList>
 
@@ -264,6 +265,9 @@ function LeagueView(props: Props) {
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
+        </TabsContent>
+        <TabsContent value="stats">
+          <IndividualStatsView leagueId={currentLeague!.id} />
         </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
@@ -352,11 +356,12 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
+  const baseRewards = [12, 10, 8.5, 7, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 0, 0, 0, 0];
+  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
     const idx = Math.min(pos, 16) - 1;
     const val = baseRewards[idx] / getDivisor(division);
+    if (val === 0) return '---';
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
