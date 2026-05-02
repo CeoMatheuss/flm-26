@@ -348,12 +348,9 @@ function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: 
 // === STANDINGS ===
 function StandingsView({ members, userId, division, leagueMatches, leagueSquads, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; leagueSquads: LeagueSquad[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
   const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
-  const sorted = [...members].sort((a, b) => 
-    b.points - a.points || 
-    (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || 
-    b.goals_for - a.goals_for ||
-    a.losses - b.losses
-  );
+  
+  // No need to sort, members already come sorted from league_standings
+  const sorted = members;
   
   const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
@@ -386,16 +383,16 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   };
 
   const getZoneBorder = (zone: string) => {
-    if (zone === 'title') return 'border-l-2 border-l-emerald-500';
-    if (zone === 'continental') return 'border-l-2 border-l-blue-500';
-    if (zone === 'relegation') return 'border-l-2 border-l-rose-500';
-    return '';
+    if (zone === 'title') return 'border-l-4 border-l-emerald-500';
+    if (zone === 'continental') return 'border-l-4 border-l-blue-500';
+    if (zone === 'relegation') return 'border-l-4 border-l-rose-500';
+    return 'border-l-4 border-l-transparent';
   };
 
   const getZoneIcon = (zone: string) => {
-    if (zone === 'title') return '🟢';
-    if (zone === 'continental') return '🔵';
-    if (zone === 'relegation') return '🔴';
+    if (zone === 'title') return '🏆';
+    if (zone === 'continental') return '🌍';
+    if (zone === 'relegation') return '📉';
     return '';
   };
 
