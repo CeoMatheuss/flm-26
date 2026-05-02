@@ -17,14 +17,15 @@ export function useLeagueFixer(userId: string | undefined) {
         }
 
         if (data) {
-          console.log('LeagueFixer: Sincronização concluída.', data);
-          if (data.matches === 0 && data.league_id) {
+          const result = data as any;
+          console.log('LeagueFixer: Sincronização concluída.', result);
+          if (result.matches === 0 && result.league_id) {
             console.log('LeagueFixer: Liga detectada sem jogos. Forçando correção...');
-            const { data: fixData, error: fixError } = await supabase.rpc('fix_league_forcefully', { p_league_id: data.league_id });
+            const { data: fixData, error: fixError } = await supabase.rpc('fix_league_forcefully', { p_league_id: result.league_id });
             if (fixError) console.error('LeagueFixer: Erro na correção forçada:', fixError);
             else console.log('LeagueFixer: Resultado da correção:', fixData);
-          } else if (data.matches > 0) {
-            console.log(`LeagueFixer: Liga OK. Total de jogos: ${data.matches}`);
+          } else if (result.matches > 0) {
+            console.log(`LeagueFixer: Liga OK. Total de jogos: ${result.matches}`);
           }
         }
       } catch (e) {
