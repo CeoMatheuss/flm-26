@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calendar, Trophy, ArrowLeft, Star, BarChart3, Play,
-  Home, Plane, Clock, User, Loader2, ChevronRight
+  Clock, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 interface MatchHistoryItem {
@@ -62,7 +61,6 @@ function eventColor(type: string) {
   return 'text-muted-foreground';
 }
 
-// ── MODAL: Relatório + Replay de uma partida ─────────────────────
 function MatchDetailModal({ match, clubName, onClose }: {
   match: MatchHistoryItem;
   clubName: string;
@@ -71,7 +69,6 @@ function MatchDetailModal({ match, clubName, onClose }: {
   const isHome = match.is_home;
   const myGoals = isHome ? match.home_goals : match.away_goals;
   const oppGoals = isHome ? match.away_goals : match.home_goals;
-  const oppName = isHome ? match.away_team : match.home_team;
   const isWin = myGoals > oppGoals;
   const isDraw = myGoals === oppGoals;
 
@@ -87,7 +84,6 @@ function MatchDetailModal({ match, clubName, onClose }: {
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onClose} className="h-8 px-2 gap-1">
           <ArrowLeft className="h-4 w-4" />
@@ -98,7 +94,6 @@ function MatchDetailModal({ match, clubName, onClose }: {
         </div>
       </div>
 
-      {/* Score card */}
       <Card className={`border-2 ${cardBorder}`}>
         <CardContent className="p-4 text-center space-y-2">
           <Badge variant="outline" className={`text-xs ${resultColor}`}>{resultLabel}</Badge>
@@ -120,15 +115,9 @@ function MatchDetailModal({ match, clubName, onClose }: {
               <span className="text-[10px] text-yellow-400">Melhor em campo: {match.man_of_the_match}</span>
             </div>
           )}
-          {goalScorers.length > 0 && (
-            <div className="text-[10px] text-muted-foreground">
-              ⚽ {goalScorers.map((g: any) => `${g.name} ${g.minute}'`).join(' • ')}
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Tabs */}
       <Tabs defaultValue="replay">
         <TabsList className="w-full">
           <TabsTrigger value="replay" className="flex-1 text-xs gap-1"><Play className="h-3 w-3" />Replay</TabsTrigger>
@@ -136,29 +125,15 @@ function MatchDetailModal({ match, clubName, onClose }: {
           <TabsTrigger value="ratings" className="flex-1 text-xs gap-1"><Star className="h-3 w-3" />Notas</TabsTrigger>
         </TabsList>
 
-        {/* REPLAY — lista completa de lances em texto */}
         <TabsContent value="replay">
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="h-[360px]">
                 <div className="p-3 space-y-1">
-                  {events.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-8">Sem lances registrados</p>
-                  )}
+                  {events.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Sem lances registrados</p>}
                   {events.map((ev: any, i: number) => (
-                    <div
-                      key={i}
-                      className={`flex items-start gap-2 px-2 py-1.5 rounded text-xs ${
-                        ev.isGoal ? 'bg-emerald-500/15 border border-emerald-500/30' :
-                        ev.type === 'halftime' || ev.type === 'final_whistle' || ev.type === 'kickoff' ? 'bg-primary/10 border border-primary/20' :
-                        ev.type === 'yellow_card' ? 'bg-yellow-500/10' :
-                        ev.type === 'red_card' ? 'bg-destructive/10' :
-                        ev.team === 'home' ? 'bg-blue-500/5' : ev.team === 'away' ? 'bg-red-500/5' : 'bg-muted/10'
-                      }`}
-                    >
-                      <Badge variant="outline" className="text-[8px] font-mono w-8 justify-center shrink-0 mt-0.5">
-                        {ev.minute}'
-                      </Badge>
+                    <div key={i} className={`flex items-start gap-2 px-2 py-1.5 rounded text-xs ${ev.isGoal ? 'bg-emerald-500/15 border border-emerald-500/30' : 'bg-muted/10'}`}>
+                      <Badge variant="outline" className="text-[8px] font-mono w-8 justify-center shrink-0 mt-0.5">{ev.minute}'</Badge>
                       <span className={eventColor(ev.type)}>{ev.description}</span>
                     </div>
                   ))}
@@ -168,7 +143,6 @@ function MatchDetailModal({ match, clubName, onClose }: {
           </Card>
         </TabsContent>
 
-        {/* ESTATÍSTICAS */}
         <TabsContent value="stats">
           <Card>
             <CardContent className="p-3 space-y-2">
@@ -177,10 +151,6 @@ function MatchDetailModal({ match, clubName, onClose }: {
                 ['Finalizações', stats.shots?.[0] ?? 0, stats.shots?.[1] ?? 0, ''],
                 ['No Alvo', stats.shotsOnTarget?.[0] ?? 0, stats.shotsOnTarget?.[1] ?? 0, ''],
                 ['Escanteios', stats.corners?.[0] ?? 0, stats.corners?.[1] ?? 0, ''],
-                ['Passes', stats.passes?.[0] ?? 0, stats.passes?.[1] ?? 0, ''],
-                ['Faltas', stats.fouls?.[0] ?? 0, stats.fouls?.[1] ?? 0, ''],
-                ['Cartões Am.', stats.yellowCards?.[0] ?? 0, stats.yellowCards?.[1] ?? 0, ''],
-                ['Defesas', stats.saves?.[0] ?? 0, stats.saves?.[1] ?? 0, ''],
               ] as [string, number, number, string][]).map(([label, h, a, suf]) => (
                 <div key={label} className="flex items-center gap-2">
                   <span className="text-[10px] font-mono w-7 text-right font-bold">{h}{suf}</span>
@@ -192,53 +162,26 @@ function MatchDetailModal({ match, clubName, onClose }: {
                   <span className="text-[9px] text-muted-foreground w-16 truncate">{label}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-[8px] text-muted-foreground pt-1 border-t border-border/20">
-                <span className="text-blue-400 font-medium">{match.home_team}</span>
-                <span className="text-red-400 font-medium">{match.away_team}</span>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* NOTAS DOS JOGADORES */}
         <TabsContent value="ratings">
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="h-[340px]">
                 <div className="p-3 space-y-1">
-                  {players.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-8">Dados não disponíveis</p>
-                  )}
-                  {players
-                    .map((p: any) => ({ ...p, note: ratings[p.id] ?? 6.0 }))
-                    .sort((a: any, b: any) => b.note - a.note)
-                    .map((p: any) => {
-                      const note = p.note;
-                      const noteColor = note >= 8 ? 'text-emerald-400' : note >= 7 ? 'text-primary' : note >= 6 ? 'text-yellow-400' : 'text-destructive';
-                      const isMOTM = p.name === match.man_of_the_match;
-                      const scorer = goalScorers.filter((g: any) => g.name === p.name);
-                      const assists = goalScorers.filter((g: any) => g.assist === p.name);
-                      return (
-                        <div key={p.id} className={`flex items-center justify-between px-2 py-1.5 rounded ${isMOTM ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-muted/10'}`}>
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {isMOTM && <Star className="h-3 w-3 text-yellow-400 fill-yellow-400 shrink-0" />}
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium truncate">{p.name}</p>
-                              <p className="text-[9px] text-muted-foreground">{p.position}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {scorer.length > 0 && (
-                              <span className="text-[8px] text-emerald-400 font-bold">⚽×{scorer.length}</span>
-                            )}
-                            {assists.length > 0 && (
-                              <span className="text-[8px] text-blue-400 font-bold">🅰×{assists.length}</span>
-                            )}
-                            <span className={`text-sm font-black font-mono ${noteColor}`}>{note.toFixed(1)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  {players.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Dados não disponíveis</p>}
+                  {players.map((p: any) => {
+                    const note = ratings[p.id] ?? 6.0;
+                    const noteColor = note >= 8 ? 'text-emerald-400' : note >= 7 ? 'text-primary' : 'text-muted-foreground';
+                    return (
+                      <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-muted/10">
+                        <p className="text-xs font-medium truncate">{p.name}</p>
+                        <span className={`text-sm font-black font-mono ${noteColor}`}>{note.toFixed(1)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -249,24 +192,12 @@ function MatchDetailModal({ match, clubName, onClose }: {
   );
 }
 
-// ── CALENDÁRIO PRINCIPAL ─────────────────────────────────────────
-interface ScheduledMatch {
-  id: string;
-  home_team: string;
-  away_team: string;
-  scheduled_at: string;
-  stage: string;
-  tournament_name: string;
-  stadium_name: string;
-}
-
 export function MatchCalendarTab({ userId, clubName }: Props) {
-  const [matches, setMatches] = useState<MatchHistoryItem[]>([]);
-  const [scheduled, setScheduled] = useState<ScheduledMatch[]>([]);
+  const [history, setHistory] = useState<MatchHistoryItem[]>([]);
+  const [worldMatches, setWorldMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
-  const [worldMatches, setWorldMatches] = useState<any[]>([]);
   const [selectedMatchday, setSelectedMatchday] = useState<number>(1);
   const [maxMatchdays, setMaxMatchdays] = useState<number>(38);
 
@@ -276,7 +207,14 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Carregar liga do usuário para saber a rodada atual
+      const { data: historyData } = await supabase
+        .from('match_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('played_at', { ascending: false })
+        .limit(100);
+      setHistory((historyData as MatchHistoryItem[]) || []);
+
       const { data: userLeague } = await supabase
         .from('world_league_teams')
         .select('league_id, world_leagues(current_matchday, total_matchdays)')
@@ -284,13 +222,9 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .maybeSingle();
 
       if (userLeague?.league_id) {
-        const currentMd = (userLeague.world_leagues as any)?.current_matchday || 1;
-        const totalMd = (userLeague.world_leagues as any)?.total_matchdays || 38;
-        setSelectedMatchday(currentMd);
-        setMaxMatchdays(totalMd);
-
-        // Validar e corrigir liga se necessário (garante 38 rounds)
-        await supabase.rpc('validate_world_league', { p_league_id: userLeague.league_id });
+        const leagueInfo = userLeague.world_leagues as any;
+        setSelectedMatchday(leagueInfo?.current_matchday || 1);
+        setMaxMatchdays(leagueInfo?.total_matchdays || 38);
 
         const { data: wm } = await supabase
           .from('world_matches')
@@ -304,247 +238,81 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       setLoading(false);
     };
     load();
-  }, [userId, clubName]);
+  }, [userId]);
 
-  if (selected) {
-    return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
-  }
+  if (selected) return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Summary stats
-  const total = matches.length;
-  const wins = matches.filter(m => {
-    const myG = m.is_home ? m.home_goals : m.away_goals;
-    const oppG = m.is_home ? m.away_goals : m.home_goals;
-    return myG > oppG;
-  }).length;
-  const draws = matches.filter(m => m.home_goals === m.away_goals).length;
-  const losses = total - wins - draws;
-  const goalsFor = matches.reduce((s, m) => s + (m.is_home ? m.home_goals : m.away_goals), 0);
-  const goalsAgainst = matches.reduce((s, m) => s + (m.is_home ? m.away_goals : m.home_goals), 0);
+  const filteredMatches = worldMatches.filter(m => m.matchday === selectedMatchday);
 
   return (
     <div className="space-y-3">
-      {/* View Toggle */}
       <div className="flex gap-1 bg-muted/20 rounded-lg p-0.5">
-        <button
-          onClick={() => setActiveView('scheduled')}
-          className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-            activeView === 'scheduled' ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Clock className="h-3.5 w-3.5" />
-          Agendadas ({scheduled.length})
+        <button onClick={() => setActiveView('scheduled')} className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${activeView === 'scheduled' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'}`}>
+          <Clock className="h-3.5 w-3.5" /> Calendário da Liga
         </button>
-        <button
-          onClick={() => setActiveView('history')}
-          className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-            activeView === 'history' ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Calendar className="h-3.5 w-3.5" />
-          Histórico ({matches.length})
+        <button onClick={() => setActiveView('history')} className={`flex-1 h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${activeView === 'history' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'}`}>
+          <Calendar className="h-3.5 w-3.5" /> Histórico ({history.length})
         </button>
       </div>
 
       {activeView === 'scheduled' ? (
         <div className="space-y-3">
-          {scheduled.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center space-y-3">
-                <Clock className="h-10 w-10 text-muted-foreground mx-auto" />
-                <p className="text-sm font-medium">Nenhuma partida agendada</p>
-                <p className="text-xs text-muted-foreground">Participe de um campeonato para ter jogos agendados!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-primary" />
-                    Partidas Agendadas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-[10px] text-muted-foreground">
-                  {worldMatches.length} rodada{worldMatches.length !== 1 ? 's' : ''} no calendário da liga • Jogos oficiais iniciam automaticamente
-                </CardContent>
-              </Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="p-3 flex items-center justify-between">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} disabled={selectedMatchday === 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-center">
+                <p className="text-xs font-bold">Rodada {selectedMatchday} de {maxMatchdays}</p>
+                <p className="text-[10px] text-muted-foreground">Calendário Oficial</p>
+              </div>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} disabled={selectedMatchday === maxMatchdays}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[460px]">
-                    <div className="divide-y divide-border/20">
-                      {worldMatches.length === 0 ? (
-                        <div className="p-8 text-center text-xs text-muted-foreground">Nenhuma partida da liga encontrada.</div>
-                      ) : (
-                        worldMatches.map((match) => {
-                          const isHome = match.home_team?.team_name === clubName;
-                          const isFinished = match.status === 'finished';
-                          const now = new Date();
-                          const kickoff = new Date(match.kickoff_at);
-                          const isSoon = !isFinished && (kickoff.getTime() - now.getTime()) < 3600000 && kickoff.getTime() > now.getTime();
-
-                          return (
-                            <div
-                              key={match.id}
-                              className={`flex items-center gap-3 px-3 py-3 transition-colors ${
-                                isSoon ? 'bg-primary/8 border-l-2 border-primary' : ''
-                              }`}
-                            >
-                              <div className="w-16 shrink-0">
-                                <p className="text-[10px] font-mono font-bold text-foreground">
-                                  {kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                                <p className="text-[8px] text-muted-foreground">
-                                  {kickoff.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                </p>
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  {isHome
-                                    ? <Home className="h-3 w-3 text-primary shrink-0" />
-                                    : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                  <span className={`text-xs font-bold truncate ${isHome ? 'text-primary' : ''}`}>{match.home_team?.club_name || 'Desconhecido'}</span>
-                                  {isFinished ? (
-                                    <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-muted">
-                                      {match.home_goals}–{match.away_goals}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[9px] text-muted-foreground font-bold shrink-0 mx-1">vs</span>
-                                  )}
-                                  <span className={`text-xs font-bold truncate ${!isHome ? 'text-primary' : ''}`}>{match.away_team?.club_name || 'Desconhecido'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <Badge variant="outline" className="text-[7px] h-4">Rodada {match.matchday}</Badge>
-                                  {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
-                                  {isFinished && <Badge variant="secondary" className="text-[7px] h-4">Encerrado</Badge>}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
+          <ScrollArea className="h-[460px]">
+            <div className="space-y-2">
+              {filteredMatches.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-10">Nenhum jogo nesta rodada.</p>
+              ) : filteredMatches.map(m => (
+                <Card key={m.id} className="border-border/40">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <div className="flex-1 text-right min-w-0">
+                      <p className="text-xs font-bold truncate">{m.home_team?.club_name}</p>
                     </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </>
-          )}
+                    <div className="bg-muted/30 px-3 py-1 rounded text-xs font-mono font-bold">
+                      {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : formatTime(m.kickoff_at)}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-xs font-bold truncate">{m.away_team?.club_name}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       ) : (
-        <div className="space-y-3">
-          {matches.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center space-y-3">
-                <Calendar className="h-10 w-10 text-muted-foreground mx-auto" />
-                <p className="text-sm font-medium">Nenhuma partida registrada</p>
-                <p className="text-xs text-muted-foreground">Jogue seu primeiro amistoso para começar o histórico!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Summary */}
-              <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Histórico de Partidas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-5 gap-1 text-center">
-                    {[
-                      { label: 'J', value: total, color: 'text-foreground' },
-                      { label: 'V', value: wins, color: 'text-success' },
-                      { label: 'E', value: draws, color: 'text-warning' },
-                      { label: 'D', value: losses, color: 'text-destructive' },
-                      { label: 'GP', value: goalsFor, color: 'text-primary' },
-                    ].map(({ label, value, color }) => (
-                      <div key={label} className="bg-muted/20 rounded p-1.5">
-                        <p className={`text-sm font-black font-mono ${color}`}>{value}</p>
-                        <p className="text-[9px] text-muted-foreground">{label}</p>
-                      </div>
-                    ))}
+        <ScrollArea className="h-[520px]">
+          <div className="space-y-2">
+            {history.map(m => (
+              <Card key={m.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelected(m)}>
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div className="text-[10px] text-muted-foreground w-16">{formatDate(m.played_at)}</div>
+                  <div className="flex-1 text-center font-bold text-xs truncate mx-2">
+                    {m.home_team} {m.home_goals} x {m.away_goals} {m.away_team}
                   </div>
-                  <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
-                    <span>GP {goalsFor}</span>
-                    <span>·</span>
-                    <span>GC {goalsAgainst}</span>
-                    <span>·</span>
-                    <span>SG {goalsFor - goalsAgainst > 0 ? '+' : ''}{goalsFor - goalsAgainst}</span>
-                  </div>
+                  <Badge variant={m.home_goals > m.away_goals ? 'default' : 'outline'} className="text-[8px]">
+                    {m.home_goals > m.away_goals ? 'V' : m.home_goals === m.away_goals ? 'E' : 'D'}
+                  </Badge>
                 </CardContent>
               </Card>
-
-              {/* Match list */}
-              <Card>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[460px]">
-                    <div className="divide-y divide-border/20">
-                      {matches.map((match, idx) => {
-                        const myGoals = match.is_home ? match.home_goals : match.away_goals;
-                        const oppGoals = match.is_home ? match.away_goals : match.home_goals;
-                        const oppName = match.is_home ? match.away_team : match.home_team;
-                        const isWin = myGoals > oppGoals;
-                        const isDraw = myGoals === oppGoals;
-                        const isLatest = idx === 0;
-
-                        return (
-                          <button
-                            key={match.id}
-                            onClick={() => setSelected(match)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/20 transition-colors text-left"
-                          >
-                            <div className={`w-6 h-6 rounded flex items-center justify-center text-[9px] font-black shrink-0 ${
-                              isWin ? 'bg-success/20 text-success' :
-                              isDraw ? 'bg-warning/20 text-warning' :
-                              'bg-destructive/20 text-destructive'
-                            }`}>
-                              {isWin ? 'V' : isDraw ? 'E' : 'D'}
-                            </div>
-
-                            <div className="w-16 shrink-0">
-                              <p className="text-[9px] font-mono text-muted-foreground">{formatDate(match.played_at)}</p>
-                              <p className="text-[8px] text-muted-foreground/60">{formatTime(match.played_at)}</p>
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                {match.is_home
-                                  ? <Home className="h-2.5 w-2.5 text-primary shrink-0" />
-                                  : <Plane className="h-2.5 w-2.5 text-muted-foreground shrink-0" />}
-                                <span className="text-xs font-medium truncate">vs {oppName}</span>
-                                {isLatest && <Badge variant="secondary" className="text-[7px] ml-1 shrink-0">Último</Badge>}
-                              </div>
-                              <p className="text-[9px] text-muted-foreground truncate">{match.competition}</p>
-                            </div>
-
-                            <div className={`text-sm font-black font-mono shrink-0 ${
-                              isWin ? 'text-success' : isDraw ? 'text-warning' : 'text-destructive'
-                            }`}>
-                              {match.home_goals}–{match.away_goals}
-                            </div>
-
-                            <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
       )}
     </div>
   );
