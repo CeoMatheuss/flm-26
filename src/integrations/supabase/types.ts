@@ -3987,26 +3987,17 @@ export type Database = {
     Views: {
       league_standings: {
         Row: {
-          bot_strength: number | null
           budget: number | null
           club_logo: string | null
           club_name: string | null
           draws: number | null
           goals_against: number | null
+          goals_diff: number | null
           goals_for: number | null
           id: string | null
-          is_bot: boolean | null
           joined_at: string | null
           league_id: string | null
           losses: number | null
-          matches_draws: number | null
-          matches_goals_against: number | null
-          matches_goals_diff: number | null
-          matches_goals_for: number | null
-          matches_losses: number | null
-          matches_played: number | null
-          matches_points: number | null
-          matches_wins: number | null
           played: number | null
           points: number | null
           position: number | null
