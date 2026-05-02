@@ -14,7 +14,7 @@ import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
-import { ActiveCompetitionsWidget } from './ActiveCompetitionsWidget';
+
 import { UpcomingLeagueMatchesWidget } from './UpcomingLeagueMatchesWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 
