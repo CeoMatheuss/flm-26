@@ -3982,7 +3982,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      world_league_standings: {
+        Row: {
+          d: number | null
+          ga: number | null
+          gd: number | null
+          gf: number | null
+          l: number | null
+          league_id: string | null
+          mp: number | null
+          pts: number | null
+          team_id: string | null
+          w: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
@@ -4051,6 +4065,7 @@ export type Database = {
         Args: { _cup_id: string }
         Returns: undefined
       }
+      fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
@@ -4179,6 +4194,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
+      sync_league_state: { Args: { _user_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
       world_leagues_kickoff_for: {
