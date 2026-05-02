@@ -4096,6 +4096,10 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      generate_league_matches_v2: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       get_club_shields_by_names: {
         Args: { _names: string[] }
         Returns: {
