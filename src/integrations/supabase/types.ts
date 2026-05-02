@@ -4123,6 +4123,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_world_league: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
         Returns: boolean
@@ -4195,6 +4199,7 @@ export type Database = {
         Returns: string
       }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
+      validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
       world_leagues_kickoff_for: {
