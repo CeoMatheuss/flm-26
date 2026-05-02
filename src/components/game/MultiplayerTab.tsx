@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { ClubProfilePage } from './ClubProfilePage';
 import { LeaguesOverview } from './LeaguesOverview';
 import { ShieldCrest, ShieldShape, ShieldPattern } from './ShieldCrest';
@@ -254,8 +255,9 @@ function LeagueView(props: Props) {
         <TabsList className="w-full flex-wrap h-auto gap-1 bg-card/50">
           <TabsTrigger value="standings" className="gap-1 text-xs"><Trophy className="h-3 w-3" /> Tabela</TabsTrigger>
           <TabsTrigger value="matches" className="gap-1 text-xs"><CalendarDays className="h-3 w-3" /> Jogos</TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1 text-xs"><Award className="h-3 w-3" /> Premiações Individuais</TabsTrigger>
           <TabsTrigger value="chat" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Chat</TabsTrigger>
-          <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios</TabsTrigger>
+          <TabsTrigger value="awards" className="gap-1 text-xs"><Award className="h-3 w-3" /> Prêmios Liga</TabsTrigger>
           <TabsTrigger value="rivalries" className="gap-1 text-xs"><Swords className="h-3 w-3" /> Rival</TabsTrigger>
         </TabsList>
 
@@ -264,6 +266,9 @@ function LeagueView(props: Props) {
         </TabsContent>
         <TabsContent value="matches">
           <MatchesView matches={leagueMatches} members={members} userId={userId} currentRound={currentLeague!.current_round} totalRounds={totalRounds} leagueSquads={props.leagueSquads} clubShield={props.clubShield} />
+        </TabsContent>
+        <TabsContent value="stats">
+          <IndividualStatsView leagueId={currentLeague!.id} />
         </TabsContent>
         <TabsContent value="chat">
           <ChatView messages={chatMessages} userId={userId} onSend={onSendChat} />
@@ -352,11 +357,12 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
+  const baseRewards = [12, 10, 8.5, 7, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 0, 0, 0, 0];
+  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
     const idx = Math.min(pos, 16) - 1;
     const val = baseRewards[idx] / getDivisor(division);
+    if (val === 0) return '---';
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
@@ -441,7 +447,7 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/15 font-black border-2 border-primary/30 shadow-md' : ''} ${getZoneBorder(zone)} transition-colors hover:bg-muted/30`}
+                className={`${m.user_id === userId ? 'bg-primary/20 font-black border-l-4 border-l-primary' : ''} ${zone === 'title' ? 'bg-emerald-500/5' : zone === 'relegation' ? 'bg-red-500/5' : ''} transition-colors hover:bg-muted/30`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
@@ -1153,6 +1159,85 @@ function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; m
             </p>
           </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// === INDIVIDUAL STATS ===
+function IndividualStatsView({ leagueId }: { leagueId: string }) {
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating'>('goals');
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('league_player_stats')
+        .select('*')
+        .eq('league_id', leagueId)
+        .order(activeStat === 'rating' ? 'total_rating' : activeStat, { ascending: false })
+        .limit(20);
+
+      if (!error && data) {
+        setStats(data);
+      }
+      setLoading(false);
+    };
+
+    fetchStats();
+  }, [leagueId, activeStat]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center justify-between">
+          Estatísticas Individuais
+          <div className="flex gap-1">
+            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('goals')}>Gols</Button>
+            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('assists')}>Assists</Button>
+            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('rating')}>Nota</Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-8 text-[10px]">Pos</TableHead>
+              <TableHead className="text-[10px]">Jogador</TableHead>
+              <TableHead className="text-[10px]">Time</TableHead>
+              <TableHead className="text-right text-[10px]">{activeStat === 'rating' ? 'Nota' : activeStat === 'goals' ? 'Gols' : 'Assists'}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stats.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">Nenhuma estatística registrada ainda.</TableCell>
+              </TableRow>
+            ) : (
+              stats.map((s, i) => (
+                <TableRow key={s.id} className="text-xs">
+                  <TableCell className="font-bold">{i + 1}º</TableCell>
+                  <TableCell className="font-medium">{s.player_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{s.team_name}</TableCell>
+                  <TableCell className="text-right font-bold">
+                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : activeStat === 'goals' ? s.goals : s.assists}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

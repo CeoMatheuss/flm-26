@@ -1907,6 +1907,70 @@ export type Database = {
           },
         ]
       }
+      league_player_stats: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          goals: number | null
+          id: string
+          league_id: string | null
+          matches_played: number | null
+          member_id: string | null
+          player_name: string
+          team_name: string
+          total_rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          league_id?: string | null
+          matches_played?: number | null
+          member_id?: string | null
+          player_name: string
+          team_name: string
+          total_rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          league_id?: string | null
+          matches_played?: number | null
+          member_id?: string | null
+          player_name?: string
+          team_name?: string
+          total_rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_player_stats_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "league_player_stats_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "league_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "league_player_stats_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "league_standings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       league_squads: {
         Row: {
           id: string
@@ -2435,6 +2499,7 @@ export type Database = {
           created_at: string
           current_round: number
           division: number | null
+          division_level: number | null
           id: string
           league_type: string
           match_time: string | null
@@ -2460,6 +2525,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           division?: number | null
+          division_level?: number | null
           id?: string
           league_type?: string
           match_time?: string | null
@@ -2485,6 +2551,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           division?: number | null
+          division_level?: number | null
           id?: string
           league_type?: string
           match_time?: string | null
@@ -4092,6 +4159,10 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      ensure_league_full: {
+        Args: { target_league_id: string }
+        Returns: undefined
+      }
       ensure_league_size: { Args: { p_league_id: string }; Returns: undefined }
       ensure_user_version: {
         Args: { _current_version: string; _user_id: string }
@@ -4128,7 +4199,7 @@ export type Database = {
         Returns: string
       }
       generate_league_calendar: {
-        Args: { p_league_id: string }
+        Args: { target_league_id: string }
         Returns: undefined
       }
       generate_league_matches: {
@@ -4151,6 +4222,7 @@ export type Database = {
         }[]
       }
       get_continent_for_country: { Args: { _country: string }; Returns: string }
+      get_division_start_time: { Args: { div_level: number }; Returns: string }
       get_public_club_profile: {
         Args: { _user_id: string }
         Returns: {
