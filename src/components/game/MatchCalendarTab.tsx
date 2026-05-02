@@ -277,7 +277,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       // Sincronizar estado da liga
       await supabase.rpc('sync_league_state', { _user_id: user.id });
 
-      // Load match history (Amistosos e Outros)
+      // Load match history
       const { data: historyData } = await supabase
         .from('match_history')
         .select('*')
@@ -289,7 +289,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       // Load World Matches (Liga Oficial)
       const { data: userLeague } = await supabase
         .from('world_league_teams')
-        .select('league_id, team_name')
+        .select('league_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -302,16 +302,6 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           .order('kickoff_at', { ascending: true });
         
         if (wm) setWorldMatches(wm);
-      }
-
-      // Load scheduled tournament matches (Customizados)
-      const { data: activeTournaments } = await supabase
-        .from('custom_tournaments')
-        .select('id, name')
-        .in('status', ['in_progress', 'registration']);
-
-      if (activeTournaments && activeTournaments.length > 0) {
-        // ... (manter lógica original de tournamentMatches aqui se necessário, mas world_matches é o foco)
       }
 
       setLoading(false);
