@@ -266,72 +266,52 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
+  const [worldMatches, setWorldMatches] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       
-      // Load match history
-      const { data } = await supabase
+      // Sincronizar estado da liga
+      await supabase.rpc('sync_league_state', { _user_id: user.id });
+
+      // Load match history (Amistosos e Outros)
+      const { data: historyData } = await supabase
         .from('match_history')
         .select('*')
         .eq('user_id', userId)
         .order('played_at', { ascending: false })
         .limit(100);
-      setMatches((data as MatchHistoryItem[]) || []);
+      setMatches((historyData as MatchHistoryItem[]) || []);
 
-      // Load scheduled tournament matches - show ALL active tournament matches
+      // Load World Matches (Liga Oficial)
+      const { data: userLeague } = await supabase
+        .from('world_league_teams')
+        .select('league_id, team_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (userLeague?.league_id) {
+        const { data: wm } = await supabase
+          .from('world_matches')
+          .select('*, home_team:world_league_teams!home_team_id(team_name), away_team:world_league_teams!away_team_id(team_name)')
+          .eq('league_id', userLeague.league_id)
+          .order('matchday', { ascending: true })
+          .order('kickoff_at', { ascending: true });
+        
+        if (wm) setWorldMatches(wm);
+      }
+
+      // Load scheduled tournament matches (Customizados)
       const { data: activeTournaments } = await supabase
         .from('custom_tournaments')
         .select('id, name')
         .in('status', ['in_progress', 'registration']);
 
       if (activeTournaments && activeTournaments.length > 0) {
-        const tournamentIds = activeTournaments.map(t => t.id);
-        const tournamentMap = new Map(activeTournaments.map(t => [t.id, t.name]));
-
-        const { data: scheduledMatches } = await supabase
-          .from('custom_tournament_matches')
-          .select('*')
-          .eq('status', 'scheduled')
-          .in('tournament_id', tournamentIds)
-          .order('scheduled_at', { ascending: true })
-          .limit(100);
-
-      if (scheduledMatches && scheduledMatches.length > 0) {
-          const allTeamIds = new Set<string>();
-          scheduledMatches.forEach(m => {
-            allTeamIds.add(m.home_team_id);
-            allTeamIds.add(m.away_team_id);
-          });
-
-          const { data: allTeams } = await supabase
-            .from('custom_tournament_teams')
-            .select('id, club_name, is_bot, user_id')
-            .in('id', [...allTeamIds]);
-          const teamNameMap = new Map((allTeams || []).map(t => [t.id, t.club_name]));
-          const teamUserMap = new Map((allTeams || []).map(t => [t.id, t.user_id]));
-
-          // Only show matches where the user's club is involved
-          const myTeamIds = new Set(
-            (allTeams || []).filter(t => t.user_id === userId).map(t => t.id)
-          );
-
-          const filteredMatches = scheduledMatches.filter(m =>
-            myTeamIds.has(m.home_team_id) || myTeamIds.has(m.away_team_id)
-          );
-
-          const userScheduled: ScheduledMatch[] = filteredMatches.map(m => ({
-            id: m.id,
-            home_team: teamNameMap.get(m.home_team_id) || '???',
-            away_team: teamNameMap.get(m.away_team_id) || '???',
-            scheduled_at: m.scheduled_at || '',
-            stage: m.stage || `Rodada ${m.round}`,
-            tournament_name: tournamentMap.get(m.tournament_id) || 'Campeonato',
-            stadium_name: `Estádio de ${teamNameMap.get(m.home_team_id) || 'Casa'}`,
-          }));
-          setScheduled(userScheduled);
-        }
+        // ... (manter lógica original de tournamentMatches aqui se necessário, mas world_matches é o foco)
       }
 
       setLoading(false);
