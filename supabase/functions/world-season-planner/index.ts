@@ -154,9 +154,8 @@ Deno.serve(async (req: Request) => {
         );
         const allRounds = [...firstHalf, ...secondHalf]; // 38 rodadas
 
-        // Mas a temporada é 30 dias → cada dia tem 1 rodada → 30 rodadas
-        // Usamos as primeiras 30 rodadas (todos jogam todos no turno + parte do returno)
-        const rounds = allRounds.slice(0, 30);
+        // A temporada completa tem 38 rodadas (ida e volta para 20 times)
+        const rounds = allRounds; // Usar todas as 38 rodadas
 
         const startDate = league.season_started_at
           ? new Date(league.season_started_at).toISOString().slice(0, 10)
