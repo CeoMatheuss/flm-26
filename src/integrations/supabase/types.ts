@@ -4100,6 +4100,10 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      generate_league_matches_v3: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       get_club_shields_by_names: {
         Args: { _names: string[] }
         Returns: {
@@ -4200,6 +4204,10 @@ export type Database = {
       qualify_national_cup_teams: { Args: { _country: string }; Returns: Json }
       random_bot_logo: { Args: never; Returns: string }
       rebuild_all_leagues_v3: { Args: never; Returns: undefined }
+      rebuild_league_teams_to_16: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player: {
