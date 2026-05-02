@@ -197,27 +197,35 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((team, i) => (
-                <TableRow key={team.name} className={team.name === clubName ? 'bg-primary/10 font-semibold' : ''}>
-                  <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 3 ? 'text-red-400 font-bold' : ''}>
-                    {i + 1}
-                  </TableCell>
-                  <TableCell>
-                    <span className="flex items-center gap-1">
-                      <span className="mr-1">{team.logo}</span>
-                      {team.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">{team.played}</TableCell>
-                  <TableCell className="text-center">{team.wins}</TableCell>
-                  <TableCell className="text-center">{team.draws}</TableCell>
-                  <TableCell className="text-center">{team.losses}</TableCell>
-                  <TableCell className="text-center">{team.goalsFor}</TableCell>
-                  <TableCell className="text-center">{team.goalsAgainst}</TableCell>
-                  <TableCell className="text-center">{team.goalsFor - team.goalsAgainst}</TableCell>
-                  <TableCell className="text-center font-bold">{team.points}</TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                 <TableRow><TableCell colSpan={10} className="text-center py-8">Carregando classificação...</TableCell></TableRow>
+              ) : sorted.length === 0 ? (
+                 <TableRow><TableCell colSpan={10} className="text-center py-8">Nenhum time encontrado na liga.</TableCell></TableRow>
+              ) : sorted.map((row, i) => {
+                const teamName = row.team?.team_name || 'Desconhecido';
+                const teamLogo = row.team?.logo || '⚽';
+                return (
+                  <TableRow key={row.team_id} className={teamName === clubName ? 'bg-primary/10 font-semibold' : ''}>
+                    <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
+                      {i + 1}
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        <span className="mr-1">{teamLogo}</span>
+                        {teamName}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">{row.mp}</TableCell>
+                    <TableCell className="text-center">{row.w}</TableCell>
+                    <TableCell className="text-center">{row.d}</TableCell>
+                    <TableCell className="text-center">{row.l}</TableCell>
+                    <TableCell className="text-center">{row.gf}</TableCell>
+                    <TableCell className="text-center">{row.ga}</TableCell>
+                    <TableCell className="text-center">{row.gd}</TableCell>
+                    <TableCell className="text-center font-bold">{row.pts}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
