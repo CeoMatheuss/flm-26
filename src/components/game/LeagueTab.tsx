@@ -48,28 +48,21 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Sincronizar estado da liga no backend antes de carregar
-      await supabase.rpc('sync_league_state', { _user_id: user.id });
+      // sync_league_integrity garante que a liga do usuário esteja robusta
+      await supabase.rpc('sync_league_integrity', { _user_id: user.id });
 
-      // Carregar classificação da view autoritativa
-      const { data: userLeague } = await supabase
-        .from('world_league_teams')
-        .select('league_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (userLeague?.league_id) {
-        const { data: standingsData } = await supabase
-          .from('world_league_standings')
-          .select('*, team:world_league_teams(club_name, club_logo)')
-          .eq('league_id', userLeague.league_id)
-          .order('pts', { ascending: false })
-          .order('gd', { ascending: false })
-          .order('gf', { ascending: false });
-        
-        if (standingsData) {
-          setStandings(standingsData);
-        }
+      // Carregar classificação da VIEW autoritativa
+      const { data: standingsData, error: sErr } = await supabase
+        .from('world_league_table')
+        .select('*')
+        .order('pts', { ascending: false })
+        .order('gd', { ascending: false })
+        .order('gf', { ascending: false });
+      
+      if (sErr) {
+        console.error('Erro ao carregar tabela autoritativa:', sErr);
+      } else if (standingsData) {
+        setStandings(standingsData);
       }
 
       if (country) {
