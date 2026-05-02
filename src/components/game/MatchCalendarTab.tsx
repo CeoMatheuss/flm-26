@@ -377,7 +377,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-[10px] text-muted-foreground">
-                  {scheduled.length} jogo{scheduled.length !== 1 ? 's' : ''} agendado{scheduled.length !== 1 ? 's' : ''} • Jogos iniciam automaticamente no horário
+                  {worldMatches.length} rodada{worldMatches.length !== 1 ? 's' : ''} no calendário da liga • Jogos oficiais iniciam automaticamente
                 </CardContent>
               </Card>
 
@@ -385,58 +385,57 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 <CardContent className="p-0">
                   <ScrollArea className="h-[460px]">
                     <div className="divide-y divide-border/20">
-                      {scheduled.map((match) => {
-                        const isHome = match.home_team === clubName;
-                        const now = new Date();
-                        const matchDate = match.scheduled_at ? new Date(match.scheduled_at) : null;
-                        const isToday = matchDate && matchDate.toDateString() === now.toDateString();
-                        const isSoon = matchDate && (matchDate.getTime() - now.getTime()) < 3600000 && matchDate.getTime() > now.getTime();
+                      {worldMatches.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-muted-foreground">Nenhuma partida da liga encontrada.</div>
+                      ) : (
+                        worldMatches.map((match) => {
+                          const isHome = match.home_team?.team_name === clubName;
+                          const isFinished = match.status === 'finished';
+                          const now = new Date();
+                          const kickoff = new Date(match.kickoff_at);
+                          const isSoon = !isFinished && (kickoff.getTime() - now.getTime()) < 3600000 && kickoff.getTime() > now.getTime();
 
-                        return (
-                          <div
-                            key={match.id}
-                            className={`flex items-center gap-3 px-3 py-3 transition-colors ${
-                              isSoon ? 'bg-primary/8 border-l-2 border-primary' : isToday ? 'bg-accent/20' : ''
-                            }`}
-                          >
-                            {/* Time */}
-                            <div className="w-16 shrink-0">
-                              {match.scheduled_at ? (
-                                <>
-                                  <p className="text-[10px] font-mono font-bold text-foreground">
-                                    {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                  <p className="text-[8px] text-muted-foreground">
-                                    {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="text-[9px] text-muted-foreground">A definir</p>
-                              )}
-                            </div>
+                          return (
+                            <div
+                              key={match.id}
+                              className={`flex items-center gap-3 px-3 py-3 transition-colors ${
+                                isSoon ? 'bg-primary/8 border-l-2 border-primary' : ''
+                              }`}
+                            >
+                              <div className="w-16 shrink-0">
+                                <p className="text-[10px] font-mono font-bold text-foreground">
+                                  {kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                <p className="text-[8px] text-muted-foreground">
+                                  {kickoff.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                </p>
+                              </div>
 
-                            {/* Match info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                {isHome
-                                  ? <Home className="h-3 w-3 text-primary shrink-0" />
-                                  : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                <span className="text-xs font-bold truncate">{match.home_team}</span>
-                                <span className="text-[9px] text-primary font-bold shrink-0">vs</span>
-                                <span className="text-xs font-bold truncate">{match.away_team}</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[8px] text-muted-foreground">🏟️ {match.stadium_name}</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <Badge variant="outline" className="text-[7px] h-4">{match.tournament_name}</Badge>
-                                <span className="text-[8px] text-muted-foreground">{match.stage}</span>
-                                {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  {isHome
+                                    ? <Home className="h-3 w-3 text-primary shrink-0" />
+                                    : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                  <span className={`text-xs font-bold truncate ${isHome ? 'text-primary' : ''}`}>{match.home_team?.team_name || 'Desconhecido'}</span>
+                                  {isFinished ? (
+                                    <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-muted">
+                                      {match.home_goals}–{match.away_goals}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] text-muted-foreground font-bold shrink-0 mx-1">vs</span>
+                                  )}
+                                  <span className={`text-xs font-bold truncate ${!isHome ? 'text-primary' : ''}`}>{match.away_team?.team_name || 'Desconhecido'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <Badge variant="outline" className="text-[7px] h-4">Rodada {match.matchday}</Badge>
+                                  {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
+                                  {isFinished && <Badge variant="secondary" className="text-[7px] h-4">Encerrado</Badge>}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   </ScrollArea>
                 </CardContent>
