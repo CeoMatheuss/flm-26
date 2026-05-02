@@ -53,7 +53,7 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
       if (userLeague?.league_id) {
         const { data: standingsData } = await supabase
           .from('world_league_standings')
-          .select('*, team:world_league_teams(team_name, logo)')
+          .select('*, team:world_league_teams(club_name, club_logo)')
           .eq('league_id', userLeague.league_id)
           .order('pts', { ascending: false })
           .order('gd', { ascending: false })
