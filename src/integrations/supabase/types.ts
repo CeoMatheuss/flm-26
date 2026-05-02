@@ -4065,6 +4065,7 @@ export type Database = {
         Args: { _cup_id: string }
         Returns: undefined
       }
+      fix_league_forcefully: { Args: { p_league_id: string }; Returns: Json }
       fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
