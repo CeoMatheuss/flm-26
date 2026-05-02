@@ -3997,6 +3997,23 @@ export type Database = {
         }
         Relationships: []
       }
+      world_league_table: {
+        Row: {
+          club_logo: string | null
+          club_name: string | null
+          d: number | null
+          ga: number | null
+          gd: number | null
+          gf: number | null
+          l: number | null
+          league_id: string | null
+          mp: number | null
+          pts: number | null
+          team_id: string | null
+          w: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
@@ -4019,6 +4036,10 @@ export type Database = {
       bot_strength_for_division: {
         Args: { _division: number }
         Returns: number
+      }
+      check_and_advance_round: {
+        Args: { p_league_id: string }
+        Returns: undefined
       }
       check_club_name_available: { Args: { _name: string }; Returns: Json }
       close_expired_auctions: { Args: never; Returns: Json }
@@ -4070,6 +4091,10 @@ export type Database = {
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
+      }
+      generate_league_matches: {
+        Args: { p_league_id: string }
+        Returns: undefined
       }
       get_club_shields_by_names: {
         Args: { _names: string[] }
@@ -4185,6 +4210,10 @@ export type Database = {
         Args: { _match_id: string }
         Returns: string
       }
+      simulate_league_matchday: {
+        Args: { p_league_id: string; p_matchday: number }
+        Returns: undefined
+      }
       start_club_world_cup: { Args: { _season_year: number }; Returns: string }
       start_continental_tournament: {
         Args: {
@@ -4199,6 +4228,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
+      sync_league_integrity: { Args: { _user_id: string }; Returns: Json }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
