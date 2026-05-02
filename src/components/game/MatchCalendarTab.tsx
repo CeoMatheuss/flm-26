@@ -303,7 +303,6 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         
         if (wm) setWorldMatches(wm);
       }
-
       setLoading(false);
     };
     load();
