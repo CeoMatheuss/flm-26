@@ -508,11 +508,10 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
         </Table>
 
         {/* Legend */}
-        <div className="flex gap-3 px-3 py-2 border-t border-border/50 text-[10px] text-muted-foreground">
-          <span>🟢 Título</span>
-          <span>🔵 Continental</span>
-          <span>🔴 Rebaixamento</span>
-          
+        <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-border/50 bg-muted/20 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Mundial (1º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Continental (2º-8º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Rebaixamento (13º-16º)</div>
         </div>
       </CardContent>
     </Card>
