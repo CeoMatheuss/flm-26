@@ -4199,6 +4199,7 @@ export type Database = {
       }
       qualify_national_cup_teams: { Args: { _country: string }; Returns: Json }
       random_bot_logo: { Args: never; Returns: string }
+      rebuild_all_leagues_v3: { Args: never; Returns: undefined }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player: {
