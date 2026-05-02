@@ -1790,6 +1790,7 @@ export type Database = {
           match_data: Json | null
           played_at: string | null
           round: number
+          scheduled_at: string | null
           status: string
         }
         Insert: {
@@ -1807,6 +1808,7 @@ export type Database = {
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          scheduled_at?: string | null
           status?: string
         }
         Update: {
@@ -1824,6 +1826,7 @@ export type Database = {
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          scheduled_at?: string | null
           status?: string
         }
         Relationships: [
@@ -3982,6 +3985,24 @@ export type Database = {
       }
     }
     Views: {
+      league_standings: {
+        Row: {
+          club_logo: string | null
+          club_name: string | null
+          draws: number | null
+          goals_against: number | null
+          goals_diff: number | null
+          goals_for: number | null
+          league_id: string | null
+          losses: number | null
+          played: number | null
+          points: number | null
+          position: number | null
+          team_id: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
       world_league_standings: {
         Row: {
           d: number | null
@@ -4029,6 +4050,7 @@ export type Database = {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
       }
+      auto_simulate_overdue_matches: { Args: never; Returns: undefined }
       award_club_world_cup_prizes: {
         Args: { _cup_id: string }
         Returns: undefined
@@ -4058,6 +4080,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      ensure_league_size: { Args: { p_league_id: string }; Returns: undefined }
       ensure_user_version: {
         Args: { _current_version: string; _user_id: string }
         Returns: {
@@ -4091,6 +4114,10 @@ export type Database = {
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
+      }
+      generate_league_calendar: {
+        Args: { p_league_id: string }
+        Returns: undefined
       }
       generate_league_matches: {
         Args: { p_league_id: string }
