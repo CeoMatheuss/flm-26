@@ -363,13 +363,13 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
-  const getLast5 = (uid: string) => {
+  const getLast5 = (teamId: string) => {
     const played = leagueMatches
-      .filter(m => m.status === 'played' && (m.home_user_id === uid || m.away_user_id === uid))
-      .sort((a, b) => (b.round || 0) - (a.round || 0))
+      .filter(m => m.status === 'played' && (m.home_user_id === teamId || m.away_user_id === teamId))
+      .sort((a, b) => new Date(b.played_at || 0).getTime() - new Date(a.played_at || 0).getTime())
       .slice(0, 5);
     return played.map(m => {
-      const isHome = m.home_user_id === uid;
+      const isHome = m.home_user_id === teamId;
       const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
       const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
       if (myGoals > oppGoals) return 'W';
@@ -378,11 +378,10 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
     }).reverse();
   };
 
-  const totalTeams = sorted.length;
   const getZone = (pos: number) => {
     if (pos <= 1) return 'title';
-    if (pos <= 6) return 'continental';
-    if (pos > totalTeams - 4 && totalTeams > 8) return 'relegation';
+    if (pos <= 8) return 'continental';
+    if (pos >= 13) return 'relegation';
     return 'none';
   };
 
@@ -436,16 +435,16 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
           </TableHeader>
           <TableBody>
             {sorted.map((m, i) => {
-              const isBot = m.user_id.startsWith('bot_');
+              const isBot = !m.user_id;
               const pos = i + 1;
               const zone = getZone(pos);
-              const last5 = getLast5(m.user_id);
+              const last5 = getLast5(m.id);
               const sg = m.goals_for - m.goals_against;
               
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${getZoneBorder(zone)}`}
+                className={`${m.user_id === userId ? 'bg-primary/15 font-black border-2 border-primary/30 shadow-md' : ''} ${getZoneBorder(zone)} transition-colors hover:bg-muted/30`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
