@@ -540,11 +540,17 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
     if (m) setSelectedTeam(m);
   };
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
-  const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
+  const getClub = (uid: string) => members.find(m => m.id === uid)?.club_name || members.find(m => m.user_id === uid)?.club_name || '?';
   const getLogo = (_uid: string) => '';
   
   const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : totalRounds;
   const roundMatches = matches.filter(m => m.round === selectedRound);
+
+  const nextPlayerMatch = useMemo(() => {
+    const myTeam = members.find(m => m.user_id === userId);
+    if (!myTeam) return null;
+    return matches.find(m => m.status === 'scheduled' && (m.home_user_id === myTeam.id || m.away_user_id === myTeam.id));
+  }, [matches, members, userId]);
 
   if (matches.length === 0) {
     return (
