@@ -66,66 +66,58 @@ export function MatchesTab({
 
   useEffect(() => {
     if (!userId) return;
-    const loadTournamentMatches = async () => {
-      const { data: myTeams } = await supabase
-        .from('custom_tournament_teams')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('eliminated', false);
+    const loadMatches = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      if (!myTeams || myTeams.length === 0) {
-        setTournamentMatches([]);
-        return;
+      // Sincronizar estado da liga
+      await supabase.rpc('sync_league_state', { _user_id: user.id });
+
+      // Load Official World League matches
+      const { data: userLeague } = await supabase
+        .from('world_league_teams')
+        .select('league_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (userLeague?.league_id) {
+        const { data: wl } = await supabase
+          .from('world_leagues')
+          .select('current_matchday')
+          .eq('id', userLeague.league_id)
+          .maybeSingle();
+
+        const { data: wm } = await supabase
+          .from('world_matches')
+          .select('*, home_team:world_league_teams!home_team_id(club_name, bot_strength), away_team:world_league_teams!away_team_id(club_name, bot_strength)')
+          .eq('league_id', userLeague.league_id)
+          .eq('matchday', wl?.current_matchday || 1)
+          .order('kickoff_at', { ascending: true });
+        
+        if (wm) {
+          const enriched = wm.map((m: any) => {
+            const isHome = m.home_team?.club_name === clubName;
+            return {
+              ...m,
+              homeName: m.home_team?.club_name || '???',
+              awayName: m.away_team?.club_name || '???',
+              homeStrength: m.home_team?.bot_strength || 60,
+              awayStrength: m.away_team?.bot_strength || 60,
+              isHome,
+              isOfficial: true,
+              scheduled_at: m.kickoff_at
+            };
+          });
+          setTournamentMatches(enriched);
+        }
       }
 
-      setTournamentTeams(myTeams);
-      const teamIds = myTeams.map(t => t.id);
-      const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
-
-      const { data: tournaments } = await supabase
-        .from('custom_tournaments')
-        .select('id, name')
-        .in('id', tournamentIds);
-
-      if (tournaments) {
-        const names: Record<string, string> = {};
-        tournaments.forEach(t => { names[t.id] = t.name; });
-        setTournamentNames(names);
-      }
-
-      const { data: upcomingMatches } = await supabase
-        .from('custom_tournament_matches')
-        .select('*')
-        .eq('status', 'scheduled')
-        .or(teamIds.map(id => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(','))
-        .order('scheduled_at', { ascending: true })
-        .limit(10);
-
-      if (upcomingMatches) {
-        const allTeamIds = new Set<string>();
-        upcomingMatches.forEach(m => {
-          allTeamIds.add(m.home_team_id);
-          allTeamIds.add(m.away_team_id);
-        });
-        const { data: matchTeams } = await supabase
-          .from('custom_tournament_teams')
-          .select('*')
-          .in('id', [...allTeamIds]);
-
-        const enriched = upcomingMatches.map(m => {
-          const home = matchTeams?.find(t => t.id === m.home_team_id);
-          const away = matchTeams?.find(t => t.id === m.away_team_id);
-          const myTeam = myTeams.find(t => t.id === m.home_team_id || t.id === m.away_team_id);
-          const isHome = myTeam?.id === m.home_team_id;
-          return { ...m, homeName: home?.club_name || '???', awayName: away?.club_name || '???', homeStrength: home?.bot_strength || 60, awayStrength: away?.bot_strength || 60, isHome, myTeamId: myTeam?.id, opponentIsBot: isHome ? away?.is_bot : home?.is_bot };
-        });
-        setTournamentMatches(enriched);
-      }
+      // Load Custom Tournament matches (manter se houver)
     };
-    loadTournamentMatches();
-    const interval = setInterval(loadTournamentMatches, 30000);
+    loadMatches();
+    const interval = setInterval(loadMatches, 60000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, clubName]);
 
   const goToTournamentMatch = (tm: any) => {
     const isHome = tm.isHome;

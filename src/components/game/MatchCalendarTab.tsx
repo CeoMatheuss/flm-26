@@ -266,74 +266,43 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
+  const [worldMatches, setWorldMatches] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       
+      // Sincronizar estado da liga
+      await supabase.rpc('sync_league_state', { _user_id: user.id });
+
       // Load match history
-      const { data } = await supabase
+      const { data: historyData } = await supabase
         .from('match_history')
         .select('*')
         .eq('user_id', userId)
         .order('played_at', { ascending: false })
         .limit(100);
-      setMatches((data as MatchHistoryItem[]) || []);
+      setMatches((historyData as MatchHistoryItem[]) || []);
 
-      // Load scheduled tournament matches - show ALL active tournament matches
-      const { data: activeTournaments } = await supabase
-        .from('custom_tournaments')
-        .select('id, name')
-        .in('status', ['in_progress', 'registration']);
+      // Load World Matches (Liga Oficial)
+      const { data: userLeague } = await supabase
+        .from('world_league_teams')
+        .select('league_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (activeTournaments && activeTournaments.length > 0) {
-        const tournamentIds = activeTournaments.map(t => t.id);
-        const tournamentMap = new Map(activeTournaments.map(t => [t.id, t.name]));
-
-        const { data: scheduledMatches } = await supabase
-          .from('custom_tournament_matches')
-          .select('*')
-          .eq('status', 'scheduled')
-          .in('tournament_id', tournamentIds)
-          .order('scheduled_at', { ascending: true })
-          .limit(100);
-
-      if (scheduledMatches && scheduledMatches.length > 0) {
-          const allTeamIds = new Set<string>();
-          scheduledMatches.forEach(m => {
-            allTeamIds.add(m.home_team_id);
-            allTeamIds.add(m.away_team_id);
-          });
-
-          const { data: allTeams } = await supabase
-            .from('custom_tournament_teams')
-            .select('id, club_name, is_bot, user_id')
-            .in('id', [...allTeamIds]);
-          const teamNameMap = new Map((allTeams || []).map(t => [t.id, t.club_name]));
-          const teamUserMap = new Map((allTeams || []).map(t => [t.id, t.user_id]));
-
-          // Only show matches where the user's club is involved
-          const myTeamIds = new Set(
-            (allTeams || []).filter(t => t.user_id === userId).map(t => t.id)
-          );
-
-          const filteredMatches = scheduledMatches.filter(m =>
-            myTeamIds.has(m.home_team_id) || myTeamIds.has(m.away_team_id)
-          );
-
-          const userScheduled: ScheduledMatch[] = filteredMatches.map(m => ({
-            id: m.id,
-            home_team: teamNameMap.get(m.home_team_id) || '???',
-            away_team: teamNameMap.get(m.away_team_id) || '???',
-            scheduled_at: m.scheduled_at || '',
-            stage: m.stage || `Rodada ${m.round}`,
-            tournament_name: tournamentMap.get(m.tournament_id) || 'Campeonato',
-            stadium_name: `Estádio de ${teamNameMap.get(m.home_team_id) || 'Casa'}`,
-          }));
-          setScheduled(userScheduled);
-        }
+      if (userLeague?.league_id) {
+        const { data: wm } = await supabase
+          .from('world_matches')
+          .select('*, home_team:world_league_teams!home_team_id(club_name), away_team:world_league_teams!away_team_id(club_name)')
+          .eq('league_id', userLeague.league_id)
+          .order('matchday', { ascending: true })
+          .order('kickoff_at', { ascending: true });
+        
+        if (wm) setWorldMatches(wm);
       }
-
       setLoading(false);
     };
     load();
@@ -407,7 +376,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-[10px] text-muted-foreground">
-                  {scheduled.length} jogo{scheduled.length !== 1 ? 's' : ''} agendado{scheduled.length !== 1 ? 's' : ''} • Jogos iniciam automaticamente no horário
+                  {worldMatches.length} rodada{worldMatches.length !== 1 ? 's' : ''} no calendário da liga • Jogos oficiais iniciam automaticamente
                 </CardContent>
               </Card>
 
@@ -415,58 +384,57 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 <CardContent className="p-0">
                   <ScrollArea className="h-[460px]">
                     <div className="divide-y divide-border/20">
-                      {scheduled.map((match) => {
-                        const isHome = match.home_team === clubName;
-                        const now = new Date();
-                        const matchDate = match.scheduled_at ? new Date(match.scheduled_at) : null;
-                        const isToday = matchDate && matchDate.toDateString() === now.toDateString();
-                        const isSoon = matchDate && (matchDate.getTime() - now.getTime()) < 3600000 && matchDate.getTime() > now.getTime();
+                      {worldMatches.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-muted-foreground">Nenhuma partida da liga encontrada.</div>
+                      ) : (
+                        worldMatches.map((match) => {
+                          const isHome = match.home_team?.team_name === clubName;
+                          const isFinished = match.status === 'finished';
+                          const now = new Date();
+                          const kickoff = new Date(match.kickoff_at);
+                          const isSoon = !isFinished && (kickoff.getTime() - now.getTime()) < 3600000 && kickoff.getTime() > now.getTime();
 
-                        return (
-                          <div
-                            key={match.id}
-                            className={`flex items-center gap-3 px-3 py-3 transition-colors ${
-                              isSoon ? 'bg-primary/8 border-l-2 border-primary' : isToday ? 'bg-accent/20' : ''
-                            }`}
-                          >
-                            {/* Time */}
-                            <div className="w-16 shrink-0">
-                              {match.scheduled_at ? (
-                                <>
-                                  <p className="text-[10px] font-mono font-bold text-foreground">
-                                    {new Date(match.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                  <p className="text-[8px] text-muted-foreground">
-                                    {new Date(match.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="text-[9px] text-muted-foreground">A definir</p>
-                              )}
-                            </div>
+                          return (
+                            <div
+                              key={match.id}
+                              className={`flex items-center gap-3 px-3 py-3 transition-colors ${
+                                isSoon ? 'bg-primary/8 border-l-2 border-primary' : ''
+                              }`}
+                            >
+                              <div className="w-16 shrink-0">
+                                <p className="text-[10px] font-mono font-bold text-foreground">
+                                  {kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                <p className="text-[8px] text-muted-foreground">
+                                  {kickoff.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                </p>
+                              </div>
 
-                            {/* Match info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                {isHome
-                                  ? <Home className="h-3 w-3 text-primary shrink-0" />
-                                  : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                <span className="text-xs font-bold truncate">{match.home_team}</span>
-                                <span className="text-[9px] text-primary font-bold shrink-0">vs</span>
-                                <span className="text-xs font-bold truncate">{match.away_team}</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[8px] text-muted-foreground">🏟️ {match.stadium_name}</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <Badge variant="outline" className="text-[7px] h-4">{match.tournament_name}</Badge>
-                                <span className="text-[8px] text-muted-foreground">{match.stage}</span>
-                                {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  {isHome
+                                    ? <Home className="h-3 w-3 text-primary shrink-0" />
+                                    : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                  <span className={`text-xs font-bold truncate ${isHome ? 'text-primary' : ''}`}>{match.home_team?.club_name || 'Desconhecido'}</span>
+                                  {isFinished ? (
+                                    <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-muted">
+                                      {match.home_goals}–{match.away_goals}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] text-muted-foreground font-bold shrink-0 mx-1">vs</span>
+                                  )}
+                                  <span className={`text-xs font-bold truncate ${!isHome ? 'text-primary' : ''}`}>{match.away_team?.club_name || 'Desconhecido'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <Badge variant="outline" className="text-[7px] h-4">Rodada {match.matchday}</Badge>
+                                  {isSoon && <Badge className="text-[7px] h-4 bg-primary/20 text-primary border-primary/30">Em breve!</Badge>}
+                                  {isFinished && <Badge variant="secondary" className="text-[7px] h-4">Encerrado</Badge>}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   </ScrollArea>
                 </CardContent>

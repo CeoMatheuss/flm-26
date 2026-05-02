@@ -27,88 +27,72 @@ interface Props {
   currentTierLevel?: number;
 }
 
-export function LeagueTab({ teams, clubName, country, clubPlayers, currentTier, currentTierLevel }: Props) {
+export function LeagueTab({ clubName, country, clubPlayers, currentTier, currentTierLevel }: Props) {
   const [showAllLeagues, setShowAllLeagues] = useState(false);
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [cups, setCups] = useState<CupCompetition[]>([]);
+  const [standings, setStandings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (country) {
-      supabase
-        .from('cup_competitions')
-        .select('*')
-        .eq('country', country)
-        .then(({ data }) => {
-          if (data) setCups(data as unknown as CupCompetition[]);
-        });
-    }
-  }, [country]);
+    const loadData = async () => {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  const sorted = useMemo(() => 
-    [...teams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)),
-    [teams]
-  );
+      // Sincronizar estado da liga no backend antes de carregar
+      await supabase.rpc('sync_league_state', { _user_id: user.id });
+
+      // Carregar classificação da view autoritativa
+      const { data: userLeague } = await supabase
+        .from('world_league_teams')
+        .select('league_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (userLeague?.league_id) {
+        const { data: standingsData } = await supabase
+          .from('world_league_standings')
+          .select('*, team:world_league_teams(club_name, club_logo)')
+          .eq('league_id', userLeague.league_id)
+          .order('pts', { ascending: false })
+          .order('gd', { ascending: false })
+          .order('gf', { ascending: false });
+        
+        if (standingsData) {
+          setStandings(standingsData);
+        }
+      }
+
+      if (country) {
+        const { data: cupData } = await supabase
+          .from('cup_competitions')
+          .select('*')
+          .eq('country', country);
+        if (cupData) setCups(cupData as unknown as CupCompetition[]);
+      }
+      setLoading(false);
+    };
+
+    loadData();
+  }, [country, clubName]);
+
+  const sorted = useMemo(() => standings, [standings]);
 
   const topScorers = useMemo(() => {
-    const scorers: { name: string; team: string; goals: number }[] = [];
-    if (clubPlayers) {
-      for (const p of clubPlayers) {
-        if ((p.goals ?? 0) > 0) {
-          scorers.push({ name: p.name, team: clubName, goals: p.goals ?? 0 });
-        }
-      }
-    }
-    for (const team of sorted) {
-      if (team.name === clubName) continue;
-      if (team.goalsFor > 0) {
-        const numScorers = Math.min(3, Math.max(1, Math.floor(team.goalsFor / 4)));
-        for (let i = 0; i < numScorers; i++) {
-          const share = i === 0 ? 0.4 : i === 1 ? 0.3 : 0.3;
-          const goals = Math.max(1, Math.round(team.goalsFor * share));
-          const fakeNames = [
-            'R. Silva', 'M. Santos', 'G. Oliveira', 'L. Costa', 'F. Lima',
-            'D. Pereira', 'A. Souza', 'T. Ferreira', 'P. Almeida', 'V. Rodrigues',
-            'J. Araújo', 'H. Barbosa', 'C. Ribeiro', 'E. Martins', 'B. Cardoso',
-            'N. Nascimento', 'K. Monteiro', 'W. Campos', 'I. Duarte', 'S. Correia',
-          ];
-          const nameIdx = (team.name.length + i * 7) % fakeNames.length;
-          scorers.push({ name: fakeNames[nameIdx], team: team.name, goals });
-        }
-      }
-    }
-    return scorers.sort((a, b) => b.goals - a.goals).slice(0, 10);
-  }, [sorted, clubPlayers, clubName]);
+    // ... manter lógica de scorers se necessário, ou simplificar para mostrar apenas do clube por enquanto
+    return (clubPlayers || []).filter(p => (p.goals ?? 0) > 0)
+      .map(p => ({ name: p.name, team: clubName, goals: p.goals ?? 0 }))
+      .sort((a, b) => b.goals - a.goals).slice(0, 10);
+  }, [clubPlayers, clubName]);
 
   const topAssisters = useMemo(() => {
-    const assisters: { name: string; team: string; assists: number }[] = [];
-    if (clubPlayers) {
-      for (const p of clubPlayers) {
-        if ((p.assists ?? 0) > 0) {
-          assisters.push({ name: p.name, team: clubName, assists: p.assists ?? 0 });
-        }
-      }
-    }
-    for (const team of sorted) {
-      if (team.name === clubName) continue;
-      if (team.goalsFor > 1) {
-        const numAssisters = Math.min(2, Math.max(1, Math.floor(team.goalsFor / 6)));
-        for (let i = 0; i < numAssisters; i++) {
-          const share = i === 0 ? 0.35 : 0.25;
-          const assists = Math.max(1, Math.round(team.goalsFor * share * 0.7));
-          const fakeNames = [
-            'L. Mendes', 'C. Rocha', 'R. Borges', 'M. Reis', 'A. Amaral',
-            'T. Melo', 'J. Pires', 'F. Tavares', 'D. Fonseca', 'G. Castro',
-            'V. Azevedo', 'P. Moura', 'H. Barros', 'E. Sampaio', 'B. Andrade',
-          ];
-          const nameIdx = (team.name.length + i * 5 + 3) % fakeNames.length;
-          assisters.push({ name: fakeNames[nameIdx], team: team.name, assists });
-        }
-      }
-    }
-    return assisters.sort((a, b) => b.assists - a.assists).slice(0, 10);
-  }, [sorted, clubPlayers, clubName]);
+    return (clubPlayers || []).filter(p => (p.assists ?? 0) > 0)
+      .map(p => ({ name: p.name, team: clubName, assists: p.assists ?? 0 }))
+      .sort((a, b) => b.assists - a.assists).slice(0, 10);
+  }, [clubPlayers, clubName]);
 
-  const hasGames = sorted.some(t => t.played > 0);
+  const hasGames = sorted.some(t => t.mp > 0);
 
   if (selectedCupId) {
     return <CupBracketView cupId={selectedCupId} onBack={() => setSelectedCupId(null)} />;
@@ -213,27 +197,35 @@ export function LeagueTab({ teams, clubName, country, clubPlayers, currentTier, 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((team, i) => (
-                <TableRow key={team.name} className={team.name === clubName ? 'bg-primary/10 font-semibold' : ''}>
-                  <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 3 ? 'text-red-400 font-bold' : ''}>
-                    {i + 1}
-                  </TableCell>
-                  <TableCell>
-                    <span className="flex items-center gap-1">
-                      <span className="mr-1">{team.logo}</span>
-                      {team.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">{team.played}</TableCell>
-                  <TableCell className="text-center">{team.wins}</TableCell>
-                  <TableCell className="text-center">{team.draws}</TableCell>
-                  <TableCell className="text-center">{team.losses}</TableCell>
-                  <TableCell className="text-center">{team.goalsFor}</TableCell>
-                  <TableCell className="text-center">{team.goalsAgainst}</TableCell>
-                  <TableCell className="text-center">{team.goalsFor - team.goalsAgainst}</TableCell>
-                  <TableCell className="text-center font-bold">{team.points}</TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                 <TableRow><TableCell colSpan={10} className="text-center py-8">Carregando classificação...</TableCell></TableRow>
+              ) : sorted.length === 0 ? (
+                 <TableRow><TableCell colSpan={10} className="text-center py-8">Nenhum time encontrado na liga.</TableCell></TableRow>
+              ) : sorted.map((row, i) => {
+                const teamName = row.team?.club_name || 'Desconhecido';
+                const teamLogo = row.team?.club_logo || '⚽';
+                return (
+                  <TableRow key={row.team_id} className={teamName === clubName ? 'bg-primary/10 font-semibold' : ''}>
+                    <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
+                      {i + 1}
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        <span className="mr-1">{teamLogo}</span>
+                        {teamName}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">{row.mp}</TableCell>
+                    <TableCell className="text-center">{row.w}</TableCell>
+                    <TableCell className="text-center">{row.d}</TableCell>
+                    <TableCell className="text-center">{row.l}</TableCell>
+                    <TableCell className="text-center">{row.gf}</TableCell>
+                    <TableCell className="text-center">{row.ga}</TableCell>
+                    <TableCell className="text-center">{row.gd}</TableCell>
+                    <TableCell className="text-center font-bold">{row.pts}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

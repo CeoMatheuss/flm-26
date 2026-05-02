@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +33,11 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
+  useEffect(() => {
+    if (userId) {
+      supabase.rpc('sync_league_state', { _user_id: userId });
+    }
+  }, [userId]);
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
