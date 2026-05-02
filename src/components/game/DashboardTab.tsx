@@ -16,6 +16,7 @@ import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 import { ActiveCompetitionsWidget } from './ActiveCompetitionsWidget';
 import { UpcomingLeagueMatchesWidget } from './UpcomingLeagueMatchesWidget';
+import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 
 interface Props {
   club: Club;
@@ -33,11 +34,8 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
-  useEffect(() => {
-    if (userId) {
-      supabase.rpc('sync_league_state', { _user_id: userId });
-    }
-  }, [userId]);
+  // Use the auto-fixer hook to ensure league integrity
+  useLeagueFixer(userId);
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
