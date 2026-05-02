@@ -81,26 +81,34 @@ export function MatchesTab({
         .maybeSingle();
 
       if (userLeague?.league_id) {
-        const { data: wl } = await supabase
-          .from('world_leagues')
-          .select('current_matchday')
-          .eq('id', userLeague.league_id)
-          .maybeSingle();
-
-        const { data: wm } = await supabase
+        // Aba Jogos agora puxa diretamente de world_matches como fonte da verdade
+        const { data: wm, error: wmErr } = await supabase
           .from('world_matches')
-          .select('*, home_team:world_league_teams!home_team_id(club_name, bot_strength), away_team:world_league_teams!away_team_id(club_name, bot_strength)')
+          .select(`
+            id, 
+            matchday, 
+            kickoff_at, 
+            status, 
+            home_goals, 
+            away_goals,
+            home_team:world_league_teams!home_team_id(club_name, bot_strength), 
+            away_team:world_league_teams!away_team_id(club_name, bot_strength)
+          `)
           .eq('league_id', userLeague.league_id)
-          .eq('matchday', wl?.current_matchday || 1)
+          .order('matchday', { ascending: true })
           .order('kickoff_at', { ascending: true });
         
-        if (wm) {
+        if (wmErr) {
+          console.error('Erro ao buscar jogos da liga:', wmErr);
+        } else if (wm) {
           const enriched = wm.map((m: any) => {
-            const isHome = m.home_team?.club_name === clubName;
+            const hName = m.home_team?.club_name || '???';
+            const aName = m.away_team?.club_name || '???';
+            const isHome = hName === clubName;
             return {
               ...m,
-              homeName: m.home_team?.club_name || '???',
-              awayName: m.away_team?.club_name || '???',
+              homeName: hName,
+              awayName: aName,
               homeStrength: m.home_team?.bot_strength || 60,
               awayStrength: m.away_team?.bot_strength || 60,
               isHome,
