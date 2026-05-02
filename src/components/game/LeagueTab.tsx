@@ -164,7 +164,7 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
               })}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Top 3 sobem • Últimos 3 descem • Temporada mensal
+              Top 1 🌎 Mundial • 2-8 🏆 Continental • Últimos 4 ⬇️ Rebaixamento
             </p>
           </CardContent>
         </Card>
@@ -200,7 +200,7 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
                 const teamLogo = row.club_logo || '⚽';
                 return (
                   <TableRow key={row.team_id} className={teamName === clubName ? 'bg-primary/10 font-semibold' : ''}>
-                    <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
+                    <TableCell className={i === 0 ? 'text-yellow-400 font-bold' : i < 8 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
                       {i + 1}
                     </TableCell>
                     <TableCell>
