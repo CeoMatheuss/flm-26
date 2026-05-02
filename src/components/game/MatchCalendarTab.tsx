@@ -416,7 +416,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                                   {isHome
                                     ? <Home className="h-3 w-3 text-primary shrink-0" />
                                     : <Plane className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                  <span className={`text-xs font-bold truncate ${isHome ? 'text-primary' : ''}`}>{match.home_team?.team_name || 'Desconhecido'}</span>
+                                  <span className={`text-xs font-bold truncate ${isHome ? 'text-primary' : ''}`}>{match.home_team?.club_name || 'Desconhecido'}</span>
                                   {isFinished ? (
                                     <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-muted">
                                       {match.home_goals}–{match.away_goals}
@@ -424,7 +424,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                                   ) : (
                                     <span className="text-[9px] text-muted-foreground font-bold shrink-0 mx-1">vs</span>
                                   )}
-                                  <span className={`text-xs font-bold truncate ${!isHome ? 'text-primary' : ''}`}>{match.away_team?.team_name || 'Desconhecido'}</span>
+                                  <span className={`text-xs font-bold truncate ${!isHome ? 'text-primary' : ''}`}>{match.away_team?.club_name || 'Desconhecido'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <Badge variant="outline" className="text-[7px] h-4">Rodada {match.matchday}</Badge>
