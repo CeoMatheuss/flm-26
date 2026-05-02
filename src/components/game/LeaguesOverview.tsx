@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Trophy } from 'lucide-react';
-import { leaguesByCountry, countryNames, countryFlags, countryLeagueNames, countryContinents, LeagueTeam } from '@/types/league';
+import { ArrowLeft, Globe, Trophy, Loader2 } from 'lucide-react';
+import { countryNames, countryFlags, countryLeagueNames, countryContinents } from '@/types/league';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   currentCountry?: string;
@@ -23,27 +24,56 @@ const continentLabels: Record<string, string> = {
 const continentOrder = ['south_america', 'europe', 'north_america', 'africa', 'asia'];
 
 export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
+  const [leagues, setLeagues] = useState<any[]>([]);
+  const [standings, setStandings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingStandings, setLoadingStandings] = useState(false);
 
-  const countries = Object.keys(leaguesByCountry);
-  const grouped = continentOrder.map(cont => ({
-    continent: cont,
-    label: continentLabels[cont],
-    codes: countries.filter(c => countryContinents[c] === cont),
-  }));
+  useEffect(() => {
+    const loadLeagues = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('world_leagues')
+        .select('*')
+        .order('division', { ascending: true })
+        .order('country', { ascending: true });
+      if (data) setLeagues(data);
+      setLoading(false);
+    };
+    loadLeagues();
+  }, []);
 
-  if (selectedCountry) {
-    const teams = [...leaguesByCountry[selectedCountry]].sort((a, b) => (b.strength || 0) - (a.strength || 0));
+  useEffect(() => {
+    if (selectedLeagueId) {
+      const loadStandings = async () => {
+        setLoadingStandings(true);
+        const { data } = await supabase
+          .from('world_league_standings')
+          .select('*, team:world_league_teams(club_name, club_logo)')
+          .eq('league_id', selectedLeagueId)
+          .order('pts', { ascending: false })
+          .order('gd', { ascending: false })
+          .order('gf', { ascending: false });
+        if (data) setStandings(data);
+        setLoadingStandings(false);
+      };
+      loadStandings();
+    }
+  }, [selectedLeagueId]);
+
+  if (selectedLeagueId) {
+    const league = leagues.find(l => l.id === selectedLeagueId);
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedCountry(null)} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedLeagueId(null)} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Button>
           <h2 className="text-lg font-bold flex items-center gap-2">
-            {countryFlags[selectedCountry]} {countryLeagueNames[selectedCountry]}
+            {league?.flag_emoji} {league?.league_name}
           </h2>
-          {selectedCountry === currentCountry && (
+          {league?.country === currentCountry && (
             <Badge variant="default" className="text-[10px]">Sua Liga</Badge>
           )}
         </div>
@@ -52,45 +82,54 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Trophy className="h-4 w-4 text-primary" />
-              {countryNames[selectedCountry]} — {teams.length} clubes (Série A)
+              {league?.league_name} — Série {league?.division === 1 ? 'A' : league?.division === 2 ? 'B' : league?.division === 3 ? 'C' : 'D'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">#</TableHead>
-                  <TableHead>Clube</TableHead>
-                  <TableHead className="text-center w-16">Força</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teams.map((team, i) => (
-                  <TableRow key={team.name}>
-                    <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                    <TableCell className="flex items-center gap-2 text-sm">
-                      <span className="text-base">{team.logo}</span>
-                      <span className="font-medium">{team.name}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                        (team.strength || 0) >= 85 ? 'bg-emerald-500/20 text-emerald-400' :
-                        (team.strength || 0) >= 75 ? 'bg-primary/20 text-primary' :
-                        (team.strength || 0) >= 65 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {team.strength || '?'}
-                      </span>
-                    </TableCell>
+            {loadingStandings ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8">#</TableHead>
+                    <TableHead>Clube</TableHead>
+                    <TableHead className="text-center w-10">P</TableHead>
+                    <TableHead className="text-center w-10">J</TableHead>
+                    <TableHead className="text-center w-10">V</TableHead>
+                    <TableHead className="text-center w-10">SG</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {standings.map((row, i) => (
+                    <TableRow key={row.team_id} className={row.team?.club_name === clubName ? 'bg-primary/10' : ''}>
+                      <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                      <TableCell className="flex items-center gap-2 text-sm truncate">
+                        <span className="text-base">{row.team?.club_logo}</span>
+                        <span className="font-medium truncate">{row.team?.club_name}</span>
+                      </TableCell>
+                      <TableCell className="text-center font-bold">{row.pts}</TableCell>
+                      <TableCell className="text-center text-xs">{row.mp}</TableCell>
+                      <TableCell className="text-center text-xs">{row.w}</TableCell>
+                      <TableCell className="text-center text-xs">{row.gd}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
+
+  const grouped = continentOrder.map(cont => ({
+    continent: cont,
+    label: continentLabels[cont],
+    leagues: leagues.filter(l => countryContinents[l.country] === cont),
+  })).filter(g => g.leagues.length > 0);
 
   return (
     <div className="space-y-4">
@@ -101,52 +140,39 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
         <h2 className="text-lg font-bold flex items-center gap-2">
           <Globe className="h-5 w-5 text-primary" /> Ligas do Mundo
         </h2>
-        <Badge variant="secondary" className="text-[10px]">{countries.length} países</Badge>
+        <Badge variant="secondary" className="text-[10px]">{leagues.length} competições</Badge>
       </div>
 
-      {grouped.map(g => (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : grouped.map(g => (
         <div key={g.continent} className="space-y-2">
           <h3 className="font-bold text-sm text-muted-foreground">{g.label}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {g.codes.map(code => {
-              const teams = leaguesByCountry[code];
-              const topTeams = [...teams].sort((a, b) => (b.strength || 0) - (a.strength || 0)).slice(0, 3);
-              const isCurrentLeague = code === currentCountry;
-
-              return (
-                <Card
-                  key={code}
-                  className={`cursor-pointer transition-all hover:scale-[1.02] hover:border-primary/50 ${isCurrentLeague ? 'border-primary ring-1 ring-primary/30' : ''}`}
-                  onClick={() => setSelectedCountry(code)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{countryFlags[code]}</span>
-                        <div>
-                          <p className="font-bold text-sm">{countryLeagueNames[code]}</p>
-                          <p className="text-[10px] text-muted-foreground">{countryNames[code]} • {teams.length} clubes</p>
-                        </div>
+            {g.leagues.map(league => (
+              <Card
+                key={league.id}
+                className={`cursor-pointer transition-all hover:scale-[1.02] hover:border-primary/50 ${league.country === currentCountry ? 'border-primary ring-1 ring-primary/30' : ''}`}
+                onClick={() => setSelectedLeagueId(league.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{league.flag_emoji}</span>
+                      <div>
+                        <p className="font-bold text-sm">{league.league_name}</p>
+                        <p className="text-[10px] text-muted-foreground">{countryNames[league.country]} • Série {league.division === 1 ? 'A' : league.division === 2 ? 'B' : league.division === 3 ? 'C' : 'D'}</p>
                       </div>
-                      {isCurrentLeague && (
-                        <Badge variant="default" className="text-[9px]">Sua Liga</Badge>
-                      )}
                     </div>
-
-                    <div className="space-y-1">
-                      {topTeams.map((t, i) => (
-                        <div key={t.name} className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground w-3">{i + 1}</span>
-                          <span>{t.logo}</span>
-                          <span className="flex-1 truncate">{t.name}</span>
-                          <span className="text-[10px] font-mono text-muted-foreground">{t.strength}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    {league.country === currentCountry && (
+                      <Badge variant="default" className="text-[9px]">Sua Liga</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       ))}
