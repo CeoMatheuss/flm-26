@@ -28,6 +28,7 @@ import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { useAutoSimulator } from '@/hooks/useAutoSimulator';
 import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
+import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
