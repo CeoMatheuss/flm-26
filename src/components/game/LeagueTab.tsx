@@ -81,7 +81,6 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
   const sorted = useMemo(() => standings, [standings]);
 
   const topScorers = useMemo(() => {
-    // ... manter lógica de scorers se necessário, ou simplificar para mostrar apenas do clube por enquanto
     return (clubPlayers || []).filter(p => (p.goals ?? 0) > 0)
       .map(p => ({ name: p.name, team: clubName, goals: p.goals ?? 0 }))
       .sort((a, b) => b.goals - a.goals).slice(0, 10);
@@ -103,7 +102,6 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
     return <LeaguesOverview currentCountry={country} clubName={clubName} onBack={() => setShowAllLeagues(false)} />;
   }
 
-  // Tier display
   const tierLabels: Record<string, string> = {
     varzea: '⚽ Várzea',
     pre_regional: '🏟️ Pré-Regional',
@@ -111,10 +109,6 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
     nacional: '👑 Nacional',
   };
   const tierLabel = currentTier ? tierLabels[currentTier] || currentTier : null;
-
-
-
-
 
   return (
     <div className="space-y-4">
@@ -150,7 +144,6 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
         </div>
       </div>
 
-      {/* Pyramid indicator */}
       {currentTier && (
         <Card className="border-primary/20">
           <CardContent className="p-3">
@@ -171,7 +164,7 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
               })}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Top {3} sobem • Últimos {3} descem • Temporada mensal
+              Top 3 sobem • Últimos 3 descem • Temporada mensal
             </p>
           </CardContent>
         </Card>
@@ -203,8 +196,8 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
               ) : sorted.length === 0 ? (
                  <TableRow><TableCell colSpan={10} className="text-center py-8">Nenhum time encontrado na liga.</TableCell></TableRow>
               ) : sorted.map((row, i) => {
-                const teamName = row.team?.club_name || 'Desconhecido';
-                const teamLogo = row.team?.club_logo || '⚽';
+                const teamName = row.club_name || 'Desconhecido';
+                const teamLogo = row.club_logo || '⚽';
                 return (
                   <TableRow key={row.team_id} className={teamName === clubName ? 'bg-primary/10 font-semibold' : ''}>
                     <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
@@ -232,10 +225,8 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
         </CardContent>
       </Card>
 
-      {/* Awards Section */}
       {hasGames && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Top Scorers */}
           <Card className="border-amber-500/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -260,7 +251,6 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
             </CardContent>
           </Card>
 
-          {/* Top Assisters */}
           <Card className="border-blue-500/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
