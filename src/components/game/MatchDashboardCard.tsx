@@ -68,7 +68,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     const loadLeague = async () => {
       const { data: member } = await supabase
         .from('league_members')
-        .select('id, league_id, team_name')
+        .select('id, league_id, club_name')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -78,29 +78,31 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .from('league_matches')
         .select('*, multiplayer_leagues(name)')
         .eq('league_id', member.league_id)
-        .or(`home_team_id.eq.${member.id},away_team_id.eq.${member.id}`)
+        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
         .in('status', ['scheduled', 'live'])
-        .order('match_time', { ascending: true })
+        .order('scheduled_at', { ascending: true })
         .limit(1)
         .maybeSingle();
 
       if (!match) return null;
 
-      const isHome = match.home_team_id === member.id;
+      const isHome = match.home_user_id === userId;
+      const oppUserId = isHome ? match.away_user_id : match.home_user_id;
+      
       const { data: oppTeam } = await supabase
         .from('league_members')
-        .select('team_name')
-        .eq('id', isHome ? match.away_team_id : match.home_team_id)
+        .select('club_name')
+        .eq('user_id', oppUserId)
         .maybeSingle();
 
       return {
-        home: isHome ? member.team_name : (oppTeam?.team_name || '???'),
-        away: isHome ? (oppTeam?.team_name || '???') : member.team_name,
-        date: match.match_time,
+        home: isHome ? member.club_name : (oppTeam?.club_name || '???'),
+        away: isHome ? (oppTeam?.club_name || '???') : member.club_name,
+        date: match.scheduled_at,
         tournament: match.multiplayer_leagues?.name || '🏆 Liga Online',
         matchId: match.id,
-        homeTeamId: match.home_team_id,
-        awayTeamId: match.away_team_id,
+        homeTeamId: match.home_user_id,
+        awayTeamId: match.away_user_id,
         opponentStrength: 75,
         isHome,
         tournamentName: match.multiplayer_leagues?.name || 'Liga Online',
