@@ -35,6 +35,13 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Auto-fix league if broken
+  const [userId, setUserId] = useState<string | undefined>();
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id));
+  }, []);
+  useLeagueFixer(userId);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
