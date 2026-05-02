@@ -1790,6 +1790,7 @@ export type Database = {
           match_data: Json | null
           played_at: string | null
           round: number
+          scheduled_at: string | null
           status: string
         }
         Insert: {
@@ -1807,6 +1808,7 @@ export type Database = {
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          scheduled_at?: string | null
           status?: string
         }
         Update: {
@@ -1824,6 +1826,7 @@ export type Database = {
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          scheduled_at?: string | null
           status?: string
         }
         Relationships: [
@@ -1853,7 +1856,7 @@ export type Database = {
           played: number
           points: number
           reputation: number
-          user_id: string
+          user_id: string | null
           wins: number
         }
         Insert: {
@@ -1872,7 +1875,7 @@ export type Database = {
           played?: number
           points?: number
           reputation?: number
-          user_id: string
+          user_id?: string | null
           wins?: number
         }
         Update: {
@@ -1891,7 +1894,7 @@ export type Database = {
           played?: number
           points?: number
           reputation?: number
-          user_id?: string
+          user_id?: string | null
           wins?: number
         }
         Relationships: [
@@ -3982,6 +3985,36 @@ export type Database = {
       }
     }
     Views: {
+      league_standings: {
+        Row: {
+          budget: number | null
+          club_logo: string | null
+          club_name: string | null
+          draws: number | null
+          goals_against: number | null
+          goals_diff: number | null
+          goals_for: number | null
+          id: string | null
+          joined_at: string | null
+          league_id: string | null
+          losses: number | null
+          played: number | null
+          points: number | null
+          position: number | null
+          reputation: number | null
+          user_id: string | null
+          wins: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_league_standings: {
         Row: {
           d: number | null
@@ -4029,6 +4062,7 @@ export type Database = {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
       }
+      auto_simulate_overdue_matches: { Args: never; Returns: undefined }
       award_club_world_cup_prizes: {
         Args: { _cup_id: string }
         Returns: undefined
@@ -4058,6 +4092,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      ensure_league_size: { Args: { p_league_id: string }; Returns: undefined }
       ensure_user_version: {
         Args: { _current_version: string; _user_id: string }
         Returns: {
@@ -4091,6 +4126,10 @@ export type Database = {
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
+      }
+      generate_league_calendar: {
+        Args: { p_league_id: string }
+        Returns: undefined
       }
       generate_league_matches: {
         Args: { p_league_id: string }

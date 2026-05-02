@@ -30,9 +30,9 @@ export interface MultiplayerLeague {
 }
 
 export interface LeagueMember {
-  id: string;
+  id: string; // This is league_members.id (team_id in view)
   league_id: string;
-  user_id: string;
+  user_id?: string;
   club_name: string;
   club_logo: string;
   points: number;
@@ -45,6 +45,8 @@ export interface LeagueMember {
   reputation: number;
   budget: number;
   joined_at: string;
+  position?: number;
+  goals_diff?: number;
 }
 
 export interface ChatMessage {
@@ -275,7 +277,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     setCurrentLeague(league);
 
     const [membersRes, chatRes, pmRes, proposalsRes, rivalriesRes, matchesRes, squadsRes] = await Promise.all([
-      supabase.from('league_members').select('*').eq('league_id', league.id).order('points', { ascending: false }),
+      supabase.from('league_standings').select('*').eq('league_id', league.id).order('position', { ascending: true }),
       supabase.from('chat_messages').select('*').eq('league_id', league.id).order('created_at', { ascending: true }).limit(100),
       supabase.from('private_messages').select('*').eq('league_id', league.id).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: true }),
       supabase.from('trade_proposals').select('*').eq('league_id', league.id).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
@@ -318,8 +320,8 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'league_members', filter: `league_id=eq.${league.id}` },
         () => {
-          supabase.from('league_members').select('*').eq('league_id', league.id).order('points', { ascending: false })
-            .then(({ data }) => setMembers((data as LeagueMember[]) || []));
+          supabase.from('league_standings').select('*').eq('league_id', league.id).order('position', { ascending: true })
+            .then(({ data }) => setMembers((data as any[]) || []));
         })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'league_matches', filter: `league_id=eq.${league.id}` },
         () => {

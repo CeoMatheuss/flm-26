@@ -348,12 +348,9 @@ function BotSquadCard({ teamName, reputation }: { teamName: string; reputation: 
 // === STANDINGS ===
 function StandingsView({ members, userId, division, leagueMatches, leagueSquads, clubShield }: { members: LeagueMember[]; userId: string; division: number; leagueMatches: LeagueMatch[]; leagueSquads: LeagueSquad[]; clubShield?: { primaryColor: string; secondaryColor: string; pattern: string; shape: string } }) {
   const [selectedTeam, setSelectedTeam] = useState<LeagueMember | null>(null);
-  const sorted = [...members].sort((a, b) => 
-    b.points - a.points || 
-    (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || 
-    b.goals_for - a.goals_for ||
-    a.losses - b.losses
-  );
+  
+  // No need to sort, members already come sorted from league_standings
+  const sorted = members;
   
   const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
@@ -363,13 +360,13 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
     return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
   };
 
-  const getLast5 = (uid: string) => {
+  const getLast5 = (teamId: string) => {
     const played = leagueMatches
-      .filter(m => m.status === 'played' && (m.home_user_id === uid || m.away_user_id === uid))
-      .sort((a, b) => (b.round || 0) - (a.round || 0))
+      .filter(m => m.status === 'played' && (m.home_user_id === teamId || m.away_user_id === teamId))
+      .sort((a, b) => new Date(b.played_at || 0).getTime() - new Date(a.played_at || 0).getTime())
       .slice(0, 5);
     return played.map(m => {
-      const isHome = m.home_user_id === uid;
+      const isHome = m.home_user_id === teamId;
       const myGoals = isHome ? (m.home_goals ?? 0) : (m.away_goals ?? 0);
       const oppGoals = isHome ? (m.away_goals ?? 0) : (m.home_goals ?? 0);
       if (myGoals > oppGoals) return 'W';
@@ -378,25 +375,24 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
     }).reverse();
   };
 
-  const totalTeams = sorted.length;
   const getZone = (pos: number) => {
     if (pos <= 1) return 'title';
-    if (pos <= 6) return 'continental';
-    if (pos > totalTeams - 4 && totalTeams > 8) return 'relegation';
+    if (pos <= 8) return 'continental';
+    if (pos >= 13) return 'relegation';
     return 'none';
   };
 
   const getZoneBorder = (zone: string) => {
-    if (zone === 'title') return 'border-l-2 border-l-emerald-500';
-    if (zone === 'continental') return 'border-l-2 border-l-blue-500';
-    if (zone === 'relegation') return 'border-l-2 border-l-rose-500';
-    return '';
+    if (zone === 'title') return 'border-l-4 border-l-emerald-500';
+    if (zone === 'continental') return 'border-l-4 border-l-blue-500';
+    if (zone === 'relegation') return 'border-l-4 border-l-rose-500';
+    return 'border-l-4 border-l-transparent';
   };
 
   const getZoneIcon = (zone: string) => {
-    if (zone === 'title') return '🟢';
-    if (zone === 'continental') return '🔵';
-    if (zone === 'relegation') return '🔴';
+    if (zone === 'title') return '🏆';
+    if (zone === 'continental') return '🌍';
+    if (zone === 'relegation') return '📉';
     return '';
   };
 
@@ -436,16 +432,16 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
           </TableHeader>
           <TableBody>
             {sorted.map((m, i) => {
-              const isBot = m.user_id.startsWith('bot_');
+              const isBot = !m.user_id;
               const pos = i + 1;
               const zone = getZone(pos);
-              const last5 = getLast5(m.user_id);
+              const last5 = getLast5(m.id);
               const sg = m.goals_for - m.goals_against;
               
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/10 font-semibold' : ''} ${getZoneBorder(zone)}`}
+                className={`${m.user_id === userId ? 'bg-primary/15 font-black border-2 border-primary/30 shadow-md' : ''} ${getZoneBorder(zone)} transition-colors hover:bg-muted/30`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
@@ -509,11 +505,10 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
         </Table>
 
         {/* Legend */}
-        <div className="flex gap-3 px-3 py-2 border-t border-border/50 text-[10px] text-muted-foreground">
-          <span>🟢 Título</span>
-          <span>🔵 Continental</span>
-          <span>🔴 Rebaixamento</span>
-          
+        <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-border/50 bg-muted/20 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Mundial (1º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Continental (2º-8º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Rebaixamento (13º-16º)</div>
         </div>
       </CardContent>
     </Card>
@@ -541,11 +536,17 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
     if (m) setSelectedTeam(m);
   };
   const [selectedRound, setSelectedRound] = useState(currentRound || 1);
-  const getClub = (uid: string) => members.find(m => m.user_id === uid)?.club_name || '?';
+  const getClub = (uid: string) => members.find(m => m.id === uid)?.club_name || members.find(m => m.user_id === uid)?.club_name || '?';
   const getLogo = (_uid: string) => '';
   
   const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : totalRounds;
   const roundMatches = matches.filter(m => m.round === selectedRound);
+
+  const nextPlayerMatch = useMemo(() => {
+    const myTeam = members.find(m => m.user_id === userId);
+    if (!myTeam) return null;
+    return matches.find(m => m.status === 'scheduled' && (m.home_user_id === myTeam.id || m.away_user_id === myTeam.id));
+  }, [matches, members, userId]);
 
   if (matches.length === 0) {
     return (
