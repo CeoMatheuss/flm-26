@@ -159,9 +159,11 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
 
+  // Auto-fix league if broken (runs on game entry)
+  useLeagueFixer(userId);
+
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
-
 
   const { isPremium } = usePremiumStatus(userId);
   const game = useGame(initialState, userId, isPremium);
