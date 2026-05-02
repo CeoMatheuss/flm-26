@@ -202,8 +202,8 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
               ) : sorted.length === 0 ? (
                  <TableRow><TableCell colSpan={10} className="text-center py-8">Nenhum time encontrado na liga.</TableCell></TableRow>
               ) : sorted.map((row, i) => {
-                const teamName = row.team?.team_name || 'Desconhecido';
-                const teamLogo = row.team?.logo || '⚽';
+                const teamName = row.team?.club_name || 'Desconhecido';
+                const teamLogo = row.team?.club_logo || '⚽';
                 return (
                   <TableRow key={row.team_id} className={teamName === clubName ? 'bg-primary/10 font-semibold' : ''}>
                     <TableCell className={i < 4 ? 'text-emerald-400 font-bold' : i >= sorted.length - 4 ? 'text-red-400 font-bold' : ''}>
