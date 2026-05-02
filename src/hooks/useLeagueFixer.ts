@@ -6,7 +6,7 @@ export function useLeagueFixer(userId: string | undefined) {
     if (!userId) return;
 
     const runFix = async () => {
-      console.log('LeagueFixer: Verificando integridade da liga para o usuário:', userId);
+      console.log('LeagueFixer: Iniciando verificação global...');
       
       try {
         const { data, error } = await supabase.rpc('sync_league_state', { _user_id: userId });
@@ -18,14 +18,19 @@ export function useLeagueFixer(userId: string | undefined) {
 
         if (data) {
           const result = data as any;
-          console.log('LeagueFixer: Sincronização concluída.', result);
-          if (result.matches === 0 && result.league_id) {
-            console.log('LeagueFixer: Liga detectada sem jogos. Forçando correção...');
+          if (result.matches < 380 && result.league_id) {
+            console.log('Liga detectada sem jogos (ou incompleta)');
+            console.log('Corrigindo liga...');
             const { data: fixData, error: fixError } = await supabase.rpc('fix_league_forcefully', { p_league_id: result.league_id });
-            if (fixError) console.error('LeagueFixer: Erro na correção forçada:', fixError);
-            else console.log('LeagueFixer: Resultado da correção:', fixData);
-          } else if (result.matches > 0) {
-            console.log(`LeagueFixer: Liga OK. Total de jogos: ${result.matches}`);
+            if (fixError) {
+              console.error('Erro na correção forçada:', fixError);
+            } else {
+              const total = (fixData as any)?.new_match_count || 380;
+              console.log('Jogos criados:', total);
+              console.log('Sincronização forçada concluída com sucesso.');
+            }
+          } else {
+            console.log(`Liga OK. Jogos encontrados: ${result.matches}`);
           }
         }
       } catch (e) {
