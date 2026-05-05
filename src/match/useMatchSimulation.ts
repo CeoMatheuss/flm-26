@@ -410,100 +410,111 @@ export function useMatchSimulation() {
   // Core tick function — reads time, computes visible events
   const tick = useCallback(() => {
     const data = dataRef.current;
-    if (!data) return;
+    if (!data || isAnimatingRef.current) return;
 
     const now = Date.now();
     const elapsed = now - data.startTime;
-    const progress = Math.min(1, Math.max(0, elapsed / data.durationMs));
+    
+    // Adjusted progress based on simulationSpeed
+    const speedFactor = simulationSpeed;
+    const virtualElapsed = elapsed * speedFactor;
+    const progress = Math.min(1, Math.max(0, virtualElapsed / data.durationMs));
     const currentMinute = Math.min(
       data.maxMinute,
       Math.floor(progress * data.maxMinute)
     );
-    const isComplete = elapsed >= data.durationMs;
+    const isComplete = virtualElapsed >= data.durationMs;
 
-    const visibleEvents = data.allEvents.filter(e => e.minute <= currentMinute);
+    // FIND THE NEXT EVENT TO REVEAL (IN ORDER)
+    const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    
+    if (nextEvent && nextEvent.minute <= currentMinute) {
+      // We have a new event to reveal!
+      const visibleEvents = data.allEvents.slice(0, nextVisibleEventIdxRef.current + 1);
+      nextVisibleEventIdxRef.current++;
 
-    // Push notifications for new important events
-    for (const ev of visibleEvents) {
-      const evKey = `${ev.minute}-${ev.type}-${ev.team}`;
+      // Check if it's a 2D animation event
+      const isHighlight = isHighlightEvent(nextEvent.type);
+      if (isHighlight) {
+        isAnimatingRef.current = true; // PAUSE THE CLOCK UNTIL ANIMATION FINISHES
+      }
+
+      // Update state with the new event
+      let homeGoals = 0;
+      let awayGoals = 0;
+      for (const ev of visibleEvents) {
+        if (ev.isGoal && ev.type !== 'penalty_shootout') {
+          if (ev.team === 'home') homeGoals++;
+          else if (ev.team === 'away') awayGoals++;
+        }
+      }
+
+      const liveStats = computeStatsFromEvents(visibleEvents);
+      const momentEvents = visibleEvents.filter(e => e.momentPhase);
+      const currentMoment = momentEvents.length > 0 ? momentEvents[momentEvents.length - 1].momentPhase || 'equilíbrio' : 'equilíbrio';
+      const staminaEvents = visibleEvents.filter(e => e.staminaData);
+      const playerStamina = staminaEvents.length > 0 ? staminaEvents[staminaEvents.length - 1].staminaData || {} : {};
+      const assistantTips = visibleEvents.filter(e => e.type === 'assistant_tip');
+
+      setState(prev => ({
+        ...prev,
+        currentMinute: nextEvent.minute,
+        progress,
+        homeGoals,
+        awayGoals,
+        visibleEvents,
+        latestEvent: nextEvent,
+        stats: liveStats,
+        currentMoment,
+        playerStamina,
+        assistantTips,
+      }));
+
+      // Notifications
+      const evKey = `${nextEvent.minute}-${nextEvent.type}-${nextEvent.team}`;
       if (!notifiedEventsRef.current.has(evKey)) {
         notifiedEventsRef.current.add(evKey);
-        if (ev.isGoal) {
+        if (nextEvent.isGoal) {
           sendPushNotification(
-            `⚽ GOL! ${ev.team === 'home' ? data.homeTeam : data.awayTeam}`,
-            `${ev.minute}' - ${ev.playerName || 'Gol'}${ev.assistName ? ` (assist: ${ev.assistName})` : ''}`
-          );
-        } else if (ev.type === 'red_card') {
-          sendPushNotification(
-            `🟥 Cartão Vermelho!`,
-            `${ev.minute}' - ${ev.playerName || 'Jogador'} expulso`
+            `⚽ GOL! ${nextEvent.team === 'home' ? data.homeTeam : data.awayTeam}`,
+            `${nextEvent.minute}' - ${nextEvent.playerName || 'Gol'}`
           );
         }
       }
+      return; // Stop here for this tick to ensure order
     }
 
-    // Score derivado dos eventos visíveis. Importante:
-    // 1) `penalty_shootout` tem `isGoal:true` mas é placar separado da disputa
-    //    de pênaltis — NÃO entra no placar regulamentar.
-    // 2) Garantimos que o placar nunca regrida: usamos sempre o máximo entre
-    //    o que os eventos visíveis dizem e o último valor renderizado.
+    // No new event to reveal, just update clock/progress
+    const visibleEvents = data.allEvents.slice(0, nextVisibleEventIdxRef.current);
     let homeGoals = 0;
     let awayGoals = 0;
     for (const ev of visibleEvents) {
-      if (!ev.isGoal) continue;
-      if (ev.type === 'penalty_shootout') continue; // disputa, não placar
-      if (ev.team === 'home') homeGoals++;
-      else if (ev.team === 'away') awayGoals++;
+      if (ev.isGoal && ev.type !== 'penalty_shootout') {
+        if (ev.team === 'home') homeGoals++;
+        else if (ev.team === 'away') awayGoals++;
+      }
     }
-
-    const latestEvent = visibleEvents.length > 0 ? visibleEvents[visibleEvents.length - 1] : null;
-
-    // Compute stats progressively from revealed events
-    const liveStats = isComplete ? data.stats : computeStatsFromEvents(visibleEvents);
 
     // Determine phase
     let phase: MatchState['phase'] = 'live';
     if (isComplete) {
       phase = 'finished';
-      // Use authoritative final score, but only if it's >= what events say —
-      // never permite o placar diminuir no apito final.
       homeGoals = Math.max(homeGoals, data.finalHomeGoals);
       awayGoals = Math.max(awayGoals, data.finalAwayGoals);
     } else if (currentMinute >= 45 && currentMinute <= 46) {
       phase = 'halftime';
     }
 
-    // Extract moment and stamina from latest visible events
-    const momentEvents = visibleEvents.filter(e => e.momentPhase);
-    const currentMoment = momentEvents.length > 0 ? momentEvents[momentEvents.length - 1].momentPhase || 'equilíbrio' : 'equilíbrio';
-    
-    // Get latest stamina data
-    const staminaEvents = visibleEvents.filter(e => e.staminaData);
-    const playerStamina = staminaEvents.length > 0 ? staminaEvents[staminaEvents.length - 1].staminaData || {} : {};
-    
-    // Extract assistant tips
-    const assistantTips = visibleEvents.filter(e => e.type === 'assistant_tip');
-
-    setState({
+    setState(prev => ({
+      ...prev,
       phase,
       currentMinute,
       progress,
-      homeTeam: data.homeTeam,
-      awayTeam: data.awayTeam,
       homeGoals,
       awayGoals,
-      visibleEvents,
-      latestEvent,
-      stats: liveStats,
-      stadiumName: data.stadiumName,
-      matchDbId: data.matchDbId,
-      errorMsg: null,
-      competition: data.competition,
-      isHome: data.isHome,
-      currentMoment,
-      playerStamina,
-      assistantTips,
-    });
+      simulationSpeed,
+    }));
+
 
     // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
     const shouldForceFinish = elapsed >= data.durationMs + 30_000 && phase !== 'finished';
