@@ -4138,6 +4138,7 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
+      calculate_league_reward: { Args: { p_pos: number }; Returns: number }
       check_and_advance_round: {
         Args: { p_league_id: string }
         Returns: undefined
@@ -4225,6 +4226,16 @@ export type Database = {
       get_division_start_time: { Args: { div_level: number }; Returns: string }
       get_league_match_time: {
         Args: { division_level: number }
+        Returns: string
+      }
+      get_match_commentary: {
+        Args: {
+          away_goals: number
+          away_name: string
+          home_goals: number
+          home_name: string
+          match_data: Json
+        }
         Returns: string
       }
       get_public_club_profile: {
