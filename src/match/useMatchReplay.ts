@@ -20,6 +20,7 @@ const INITIAL: MatchState = {
   stadiumName: '', matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+  simulationSpeed: 1,
 };
 
 const TICK_MS = 300;
@@ -100,7 +101,7 @@ export function useMatchReplay() {
       phase, currentMinute, progress, homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals, awayGoals, visibleEvents, latestEvent, stats: liveStats,
       stadiumName: 'Campeonato', matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
-      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
 
     if (isComplete) stopTick();
@@ -137,7 +138,7 @@ export function useMatchReplay() {
       visibleEvents: data.allEvents, latestEvent: data.allEvents[data.allEvents.length - 1] || null,
       stats: data.stats, stadiumName: 'Campeonato', matchDbId: null, errorMsg: null,
       competition: 'Campeonato', isHome: true,
-      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
   }, [stopTick]);
 
