@@ -39,21 +39,27 @@ const fmtDay = (iso: string) => {
 
 export function UpcomingLeagueMatchesWidget() {
   const [matches, setMatches] = useState<UpcomingMatch[]>([]);
+  const [userMatch, setUserMatch] = useState<UpcomingMatch | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
-      // Próximo jogo de cada liga (limitado a 30 ligas para o widget)
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+
+      // 1. Get all active leagues
       const { data: leagues } = await supabase
         .from('world_leagues')
-        .select(
-          'id, league_name, flag_emoji, division, total_matchdays, kickoff_hour, kickoff_minute',
-        )
+        .select('id, league_name, flag_emoji, division, total_matchdays, kickoff_hour, kickoff_minute')
         .eq('status', 'in_progress')
-        .order('kickoff_hour', { ascending: true })
-        .limit(60);
+        .limit(100);
 
       if (!leagues || leagues.length === 0) {
         if (mounted) {
@@ -66,64 +72,69 @@ export function UpcomingLeagueMatchesWidget() {
       const leagueIds = leagues.map((l) => l.id);
       const nowIso = new Date().toISOString();
 
-      // Próximos matches agendados
+      // 2. Fetch matches, deduplicating via SQL grouping if possible, but here we'll filter in JS
+      // for better control over the "user match" logic.
       const { data: rows } = await supabase
         .from('world_matches')
-        .select(
-          'id, league_id, matchday, kickoff_at, home_team:home_team_id(club_name), away_team:away_team_id(club_name)',
-        )
+        .select('id, league_id, matchday, kickoff_at, home_team_id, away_team_id, home_team:home_team_id(club_name), away_team:away_team_id(club_name)')
         .in('league_id', leagueIds)
         .eq('status', 'scheduled')
-        .gte('kickoff_at', nowIso)
         .order('kickoff_at', { ascending: true })
-        .limit(120);
+        .limit(500);
 
-      const byLeague = new Map<string, any>();
-      for (const r of rows ?? []) {
-        if (!byLeague.has(r.league_id)) byLeague.set(r.league_id, r);
-      }
+      if (!rows) return;
 
-      const merged: UpcomingMatch[] = [];
-      for (const l of leagues) {
-        const m = byLeague.get(l.id);
-        if (!m) continue;
-        merged.push({
-          match_id: m.id,
+      const leagueMap = new Map(leagues.map(l => [l.id, l]));
+      
+      // Deduplicate: only one match per league/round
+      const seen = new Set<string>();
+      const processed: UpcomingMatch[] = [];
+      let playerMatch: UpcomingMatch | null = null;
+
+      for (const r of rows) {
+        const l = leagueMap.get(r.league_id);
+        if (!l) continue;
+
+        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_user_id}`; // Unique enough
+        if (seen.has(matchKey)) continue;
+        seen.add(matchKey);
+
+        const m: UpcomingMatch = {
+          match_id: r.id,
           league_id: l.id,
           league_name: l.league_name,
           flag_emoji: l.flag_emoji,
           division: l.division,
-          matchday: m.matchday,
+          matchday: r.matchday,
           total_matchdays: l.total_matchdays,
-          kickoff_at: m.kickoff_at,
+          kickoff_at: r.kickoff_at,
           kickoff_hour: l.kickoff_hour,
           kickoff_minute: l.kickoff_minute ?? 0,
-          home_name: (m.home_team as any)?.club_name ?? '?',
-          away_name: (m.away_team as any)?.club_name ?? '?',
-        });
+          home_name: (r.home_team as any)?.club_name ?? '?',
+          away_name: (r.away_team as any)?.club_name ?? '?',
+        };
+
+        // Check if this is the player's match
+        if (currentUserId && (r.home_team_id === currentUserId || r.away_team_id === currentUserId)) {
+          if (!playerMatch) playerMatch = m;
+        }
+
+        processed.push(m);
       }
 
-      merged.sort(
-        (a, b) =>
-          new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime(),
-      );
-
       if (mounted) {
-        setMatches(merged);
+        setMatches(processed);
+        setUserMatch(playerMatch);
         setLoading(false);
       }
     };
 
     load();
-    const channel = supabase
-      .channel('upcoming-league-matches')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'world_matches' },
-        load,
-      )
+    const channel = supabase.channel('upcoming-matches-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, load)
       .subscribe();
-    const interval = setInterval(load, 60_000);
+    
+    const interval = setInterval(load, 30_000); // Sync every 30s as requested
     return () => {
       mounted = false;
       clearInterval(interval);
