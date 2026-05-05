@@ -57,6 +57,8 @@ export interface MatchState {
   playerStamina: Record<string, number>;
   assistantTips: SimEvent[];
   simulationSpeed: number;
+  onAnimationComplete?: () => void;
+  setSpeed?: (s: number) => void;
 }
 
 const INITIAL: MatchState = {
