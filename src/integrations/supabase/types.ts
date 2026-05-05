@@ -4334,6 +4334,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reset_league_structure: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
       resolve_home_user_for_match: {
         Args: { _match_id: string }
         Returns: string
@@ -4357,7 +4361,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
-      sync_league_integrity: { Args: { _user_id: string }; Returns: Json }
+      sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
