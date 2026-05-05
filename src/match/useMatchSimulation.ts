@@ -566,10 +566,11 @@ export function useMatchSimulation() {
           awayGoals: data.finalAwayGoals,
           currentMinute: data.maxMinute,
           progress: 1,
+          simulationSpeed,
         }));
       }
     }
-  }, []);
+  }, [simulationSpeed]);
 
   // Re-tick immediately when tab becomes visible (catches up missed events from throttling)
   useEffect(() => {
