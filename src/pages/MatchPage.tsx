@@ -1284,14 +1284,18 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
                     playerName={activeHighlight?.playerName}
                     currentMinute={currentMinute}
                     onComplete={() => {
-                      // Clear any previous pending timeout to avoid orphan timers
+                      // Call hook handler to resume simulation clock
+                      if (matchState.onAnimationComplete) {
+                        matchState.onAnimationComplete();
+                      }
+                      
                       if (highlightTimeoutRef.current) {
                         clearTimeout(highlightTimeoutRef.current);
                       }
                       highlightTimeoutRef.current = setTimeout(() => {
                         setActiveHighlight(null);
                         highlightTimeoutRef.current = null;
-                      }, 1500);
+                      }, 1000);
                     }}
                   />
                 </div>
