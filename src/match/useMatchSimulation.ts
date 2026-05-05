@@ -527,53 +527,8 @@ export function useMatchSimulation() {
     isAnimatingRef.current = false;
   }, []);
 
-  // Use the animation completion in the tick function indirectly by returning it
-
-
-
-    // Watchdog: force finished if virtual elapsed exceeds duration + 30s buffer (avoids match hanging)
-    const shouldForceFinish = virtualElapsed >= data.durationMs + 30_000 && phase !== 'finished';
-
-    // Persist when finished + notify (idempotent: retry on error)
-    if ((isComplete || shouldForceFinish) && !persistedRef.current) {
-      persistedRef.current = true;
-      sendPushNotification(
-        '🏁 Fim de Jogo!',
-        `${data.homeTeam} ${data.finalHomeGoals} x ${data.finalAwayGoals} ${data.awayTeam}`
-      );
-      stopTick();
-
-      const persist = (attempt: number) => {
-        supabase
-          .from('live_matches')
-          .update({ status: 'finished', current_minute: data.maxMinute })
-          .eq('id', data.matchDbId)
-          .then(({ error }) => {
-            if (error) {
-              console.error('[Match] Persist error (attempt ' + attempt + '):', error.message);
-              if (attempt < 3) setTimeout(() => persist(attempt + 1), 5000);
-            } else {
-              console.log('[Match] Result persisted');
-            }
-          });
-      };
-      persist(1);
-
-      // If forced, also reflect finished phase locally with final score
-      if (shouldForceFinish) {
-        console.warn('[Match] Watchdog forced finish at virtualElapsed=' + virtualElapsed + 'ms');
-        setState(s => ({
-          ...s,
-          phase: 'finished',
-          homeGoals: data.finalHomeGoals,
-          awayGoals: data.finalAwayGoals,
-          currentMinute: data.maxMinute,
-          progress: 1,
-          simulationSpeed,
-        }));
-      }
-    }
   }, [simulationSpeed, computeStatsFromEvents, stopTick]);
+
 
   // Re-tick immediately when tab becomes visible (catches up missed events from throttling)
   useEffect(() => {
