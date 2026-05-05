@@ -1086,9 +1086,9 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
               </TableRow>
             </TableHeader>
             <TableBody>
-              {baseRewards.map((val, i) => {
+              {Array.from({ length: 16 }).map((_, i) => {
                 const pos = i + 1;
-                const reward = val / getDivisor(division);
+                const reward = getRewardVal(pos);
                 return (
                   <TableRow key={pos} className="border-emerald-500/10">
                     <TableCell className={`text-xs py-1 ${pos <= 3 ? 'font-bold' : ''}`}>
