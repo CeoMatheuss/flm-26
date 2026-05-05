@@ -199,8 +199,9 @@ async function processLeagueMatch(m: any): Promise<boolean> {
       }).eq('league_id', m.league_id).eq('user_id', u.uid);
     }
 
-    await notify(m.home_user_id, awayName, hg, ag, 'Liga');
-    await notify(m.away_user_id, homeName, ag, hg, 'Liga');
+    // Removed notifications for league matches as per user request ("NÃO mostrar aviso")
+    // await notify(m.home_user_id, awayName, hg, ag, 'Liga');
+    // await notify(m.away_user_id, homeName, ag, hg, 'Liga');
     console.info('[autosim] league match simulated', { id: m.id, score: `${hg}x${ag}` });
     return true;
   } finally {
