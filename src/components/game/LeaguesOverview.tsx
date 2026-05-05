@@ -107,12 +107,16 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
                   {standings.map((row, i) => {
                     const pos = i + 1;
                     let reward = '—';
-                    if (pos === 1) reward = '18M';
-                    else if (pos === 2) reward = '12M';
-                    else if (pos === 3) reward = '10M';
-                    else if (pos === 4) reward = '8M';
-                    else if (pos >= 5 && pos <= 8) reward = '6M';
-                    else if (pos >= 9 && pos <= 12) reward = '3M';
+                    if (pos === 1) reward = '16M';
+                    else if (pos === 2) reward = '15M';
+                    else if (pos === 3) reward = '14M';
+                    else if (pos === 4) reward = '13M';
+                    else if (pos >= 5 && pos <= 8) {
+                      reward = (13 - (pos - 4)).toString() + 'M';
+                    }
+                    else {
+                      reward = Math.max(4, 7 - (pos - 9)).toString() + 'M';
+                    }
                     
                     return (
                       <TableRow key={row.team_id} className={row.team?.club_name === clubName ? 'bg-primary/10' : ''}>
