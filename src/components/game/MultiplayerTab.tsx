@@ -146,6 +146,7 @@ function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
 }
 
 function LeagueCard({ league, onEnter, isBeginner }: { league: MultiplayerLeague; onEnter: () => void; isBeginner?: boolean }) {
+  const l = league as any;
   const totalRounds = 30;
   const currentRound = l.current_round || 0;
   const daysLeft = Math.max(0, totalRounds - currentRound);
