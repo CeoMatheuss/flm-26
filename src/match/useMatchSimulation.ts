@@ -691,6 +691,7 @@ export function useMatchSimulation() {
         currentMoment: 'equilíbrio',
         playerStamina: {},
         assistantTips: [],
+        simulationSpeed,
       });
       return true;
     }
