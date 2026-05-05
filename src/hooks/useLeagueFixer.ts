@@ -10,25 +10,11 @@ export function useLeagueFixer(userId: string | undefined) {
     if (!userId) return;
 
     const runFix = async () => {
-      console.log('LeagueFixer: Verificando integridade global (world_matches)...');
-      
+      console.log('LeagueFixer: Executando simulação de rodadas atrasadas...');
       try {
-        // sync_league_integrity implements the new robust verification logic
-        const { data, error } = await supabase.rpc('sync_league_integrity', { _user_id: userId });
-        
-        if (error) {
-          console.error('LeagueFixer: Erro ao sincronizar integridade:', error);
-          return;
-        }
-
-        const result = data as any;
-        if (result?.action === 'regenerated') {
-          console.log('LeagueFixer: Liga regenerada com sucesso baseada em MATCHES.');
-        } else {
-          console.log('LeagueFixer: Integridade validada. Status:', result?.action || 'ok');
-        }
+        await supabase.rpc('simulate_overdue_matches');
       } catch (e) {
-        console.error('LeagueFixer: Exceção na verificação:', e);
+        console.error('LeagueFixer: Erro ao simular partidas:', e);
       }
     };
 
