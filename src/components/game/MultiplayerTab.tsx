@@ -357,13 +357,13 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [8, 6.5, 5, 4, 3.5, 3, 2.8, 2.5, 2.2, 2, 1.8, 1.5, 1.2, 1, 0.8, 0.5];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
-    const idx = Math.min(pos, 16) - 1;
-    const val = baseRewards[idx] / getDivisor(division);
-    if (val === 0) return '---';
-    return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
+    if (pos === 1) return '16M';
+    if (pos === 2) return '15M';
+    if (pos === 3) return '14M';
+    if (pos === 4) return '13M';
+    if (pos >= 5 && pos <= 8) return (13 - (pos - 4)).toString() + 'M';
+    return Math.max(4, 7 - (pos - 9)).toString() + 'M';
   };
 
   const getLast5 = (teamId: string) => {
