@@ -78,7 +78,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .from('league_matches')
         .select('*, multiplayer_leagues(name)')
         .eq('league_id', member.league_id)
-        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
+        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId},home_user_id.in.(SELECT id FROM league_members WHERE user_id = '${userId}'),away_user_id.in.(SELECT id FROM league_members WHERE user_id = '${userId}')`)
         .in('status', ['scheduled', 'live'])
         .order('scheduled_at', { ascending: true })
         .limit(1)
@@ -133,7 +133,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       if (!matches) return null;
 
       const myScheduled = matches
-        .filter(m => m.status === 'scheduled' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)));
+        .filter(m => m.status === 'scheduled' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)))
+        .sort((a, b) => new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime());
       const myFinished = matches
         .filter(m => m.status === 'finished' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)))
         .sort((a, b) => new Date(b.played_at || b.scheduled_at || 0).getTime() - new Date(a.played_at || a.scheduled_at || 0).getTime());

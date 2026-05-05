@@ -357,7 +357,7 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [12, 10, 8.5, 7, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 0, 0, 0, 0];
+  const baseRewards = [8, 6.5, 5, 4, 3.5, 3, 2.8, 2.5, 2.2, 2, 1.8, 1.5, 1.2, 1, 0.8, 0.5];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
     const idx = Math.min(pos, 16) - 1;
@@ -583,87 +583,89 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
         })}
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            DIA {selectedRound} DE {totalRounds}
-            {selectedRound === currentRound && <Badge className="text-[9px]">Hoje</Badge>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {roundMatches.map(m => {
-            const isMyMatch = m.home_user_id === userId || m.away_user_id === userId;
-            return (
-              <div key={m.id} className={`p-3 rounded-lg border ${isMyMatch ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-muted/30'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => openTeam(m.home_user_id)}
-                      className="shrink-0 hover:scale-110 transition-transform"
-                      aria-label={`Ver perfil de ${getClub(m.home_user_id)}`}
-                    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {nextPlayerMatch && (
+          <Card className="border-primary/50 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Play className="h-4 w-4 text-primary animate-pulse" /> PRÓXIMO JOGO DO CLUBE
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-3 rounded bg-background/50 border border-primary/20">
+                <div className="text-center flex-1">
+                  <p className="text-xs font-bold truncate">{getClub(nextPlayerMatch.home_user_id)}</p>
+                  <p className="text-[10px] text-muted-foreground">CASA</p>
+                </div>
+                <div className="px-4 text-center">
+                   <Badge variant="outline" className="text-xs font-mono">
+                    {nextPlayerMatch.scheduled_at ? new Date(nextPlayerMatch.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                   </Badge>
+                   <p className="text-[9px] text-muted-foreground mt-1 uppercase">Rodada {nextPlayerMatch.round}</p>
+                </div>
+                <div className="text-center flex-1">
+                  <p className="text-xs font-bold truncate">{getClub(nextPlayerMatch.away_user_id)}</p>
+                  <p className="text-[10px] text-muted-foreground">FORA</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" /> CALENDÁRIO DO DIA {selectedRound}
+              {selectedRound === currentRound && <Badge className="text-[9px] bg-emerald-500">Hoje</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-[400px] overflow-y-auto">
+            {roundMatches.map(m => {
+              const isMyMatch = m.home_user_id === userId || m.away_user_id === userId;
+              const matchTime = m.scheduled_at ? new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+              return (
+                <div key={m.id} className={`p-2.5 rounded-lg border ${isMyMatch ? 'border-primary/50 bg-primary/10 shadow-sm' : 'border-border/50 bg-muted/20'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       <ShieldCrest
-                        primaryColor={m.home_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.home_user_id))}
-                        secondaryColor={m.home_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
-                        pattern={(m.home_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
-                        shape={(m.home_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
-                        size={20}
+                        primaryColor={getTeamColor(getClub(m.home_user_id))}
+                        secondaryColor="#ffffff"
+                        pattern="solid"
+                        shape="classic"
+                        size={16}
                       />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openTeam(m.home_user_id)}
-                      className={`text-sm font-semibold truncate text-left hover:underline ${m.home_user_id === userId ? 'text-primary' : ''}`}
-                    >
-                      {getClub(m.home_user_id)}
-                    </button>
-                  </div>
-                  <div className="px-3 text-center shrink-0">
-                    {m.status === 'played' ? (
-                      <span className="text-lg font-bold">{m.home_goals} - {m.away_goals}</span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted">VS</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => openTeam(m.away_user_id)}
-                      className={`text-sm font-semibold truncate text-right hover:underline ${m.away_user_id === userId ? 'text-primary' : ''}`}
-                    >
-                      {getClub(m.away_user_id)}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openTeam(m.away_user_id)}
-                      className="shrink-0 hover:scale-110 transition-transform"
-                      aria-label={`Ver perfil de ${getClub(m.away_user_id)}`}
-                    >
+                      <span className={`text-xs font-medium truncate ${isMyMatch && m.home_user_id === userId ? 'font-bold text-primary' : ''}`}>
+                        {getClub(m.home_user_id)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center shrink-0 px-2">
+                      {m.status === 'played' ? (
+                        <span className="text-sm font-black tabular-nums">{m.home_goals} - {m.away_goals}</span>
+                      ) : (
+                        <span className="text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{matchTime}</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                      <span className={`text-xs font-medium truncate text-right ${isMyMatch && m.away_user_id === userId ? 'font-bold text-primary' : ''}`}>
+                        {getClub(m.away_user_id)}
+                      </span>
                       <ShieldCrest
-                        primaryColor={m.away_user_id === userId && clubShield ? clubShield.primaryColor : getTeamColor(getClub(m.away_user_id))}
-                        secondaryColor={m.away_user_id === userId && clubShield ? clubShield.secondaryColor : '#ffffff'}
-                        pattern={(m.away_user_id === userId && clubShield ? clubShield.pattern : 'solid') as ShieldPattern}
-                        shape={(m.away_user_id === userId && clubShield ? clubShield.shape : 'classic') as ShieldShape}
-                        size={20}
+                        primaryColor={getTeamColor(getClub(m.away_user_id))}
+                        secondaryColor="#ffffff"
+                        pattern="solid"
+                        shape="classic"
+                        size={16}
                       />
-                    </button>
+                    </div>
                   </div>
                 </div>
-                {m.status === 'played' && m.match_data?.events && (
-                  <div className="mt-2 pt-2 border-t border-border/30">
-                    {(m.match_data.events as any[]).map((ev: any, i: number) => (
-                      <p key={i} className="text-[10px] text-muted-foreground">
-                        {ev.minute}' ⚽ {ev.playerName} ({ev.team === 'home' ? getClub(m.home_user_id) : getClub(m.away_user_id)})
-                      </p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

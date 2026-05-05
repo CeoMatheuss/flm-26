@@ -4199,7 +4199,7 @@ export type Database = {
         Returns: string
       }
       generate_league_calendar: {
-        Args: { target_league_id: string }
+        Args: { p_league_id: string }
         Returns: undefined
       }
       generate_league_matches: {
@@ -4223,6 +4223,10 @@ export type Database = {
       }
       get_continent_for_country: { Args: { _country: string }; Returns: string }
       get_division_start_time: { Args: { div_level: number }; Returns: string }
+      get_league_match_time: {
+        Args: { division_level: number }
+        Returns: string
+      }
       get_public_club_profile: {
         Args: { _user_id: string }
         Returns: {
@@ -4338,6 +4342,7 @@ export type Database = {
         Args: { p_league_id: string; p_matchday: number }
         Returns: undefined
       }
+      simulate_overdue_matches: { Args: never; Returns: undefined }
       start_club_world_cup: { Args: { _season_year: number }; Returns: string }
       start_continental_tournament: {
         Args: {
