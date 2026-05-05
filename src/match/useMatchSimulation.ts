@@ -515,6 +515,17 @@ export function useMatchSimulation() {
       awayGoals,
       simulationSpeed,
     }));
+  }, [simulationSpeed, computeStatsFromEvents]);
+
+  // Handle speed change
+  const setSpeed = useCallback((speed: number) => {
+    setSimulationSpeed(speed);
+  }, []);
+
+  // Handle animation completion
+  const onAnimationComplete = useCallback(() => {
+    isAnimatingRef.current = false;
+  }, []);
 
 
     // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
