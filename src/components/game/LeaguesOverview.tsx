@@ -100,22 +100,35 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
                     <TableHead className="text-center w-10">J</TableHead>
                     <TableHead className="text-center w-10">V</TableHead>
                     <TableHead className="text-center w-10">SG</TableHead>
+                    <TableHead className="text-center w-14">Prêmio</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {standings.map((row, i) => (
-                    <TableRow key={row.team_id} className={row.team?.club_name === clubName ? 'bg-primary/10' : ''}>
-                      <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="flex items-center gap-2 text-sm truncate">
-                        <span className="text-base">{row.team?.club_logo}</span>
-                        <span className="font-medium truncate">{row.team?.club_name}</span>
-                      </TableCell>
-                      <TableCell className="text-center font-bold">{row.pts}</TableCell>
-                      <TableCell className="text-center text-xs">{row.mp}</TableCell>
-                      <TableCell className="text-center text-xs">{row.w}</TableCell>
-                      <TableCell className="text-center text-xs">{row.gd}</TableCell>
-                    </TableRow>
-                  ))}
+                  {standings.map((row, i) => {
+                    const pos = i + 1;
+                    let reward = '—';
+                    if (pos === 1) reward = '18M';
+                    else if (pos === 2) reward = '12M';
+                    else if (pos === 3) reward = '10M';
+                    else if (pos === 4) reward = '8M';
+                    else if (pos >= 5 && pos <= 8) reward = '6M';
+                    else if (pos >= 9 && pos <= 12) reward = '3M';
+                    
+                    return (
+                      <TableRow key={row.team_id} className={row.team?.club_name === clubName ? 'bg-primary/10' : ''}>
+                        <TableCell className="text-muted-foreground text-xs">{pos}</TableCell>
+                        <TableCell className="flex items-center gap-2 text-sm truncate">
+                          <span className="text-base">{row.team?.club_logo}</span>
+                          <span className="font-medium truncate">{row.team?.club_name}</span>
+                        </TableCell>
+                        <TableCell className="text-center font-bold">{row.pts}</TableCell>
+                        <TableCell className="text-center text-xs">{row.mp}</TableCell>
+                        <TableCell className="text-center text-xs">{row.w}</TableCell>
+                        <TableCell className="text-center text-xs">{row.gd}</TableCell>
+                        <TableCell className="text-center text-[10px] font-bold text-emerald-500">{reward}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
