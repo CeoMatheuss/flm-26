@@ -225,16 +225,14 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       const now = Date.now();
       const diff = scheduledTime - now;
       const elapsed = now - scheduledTime;
-      if (diff <= 0 && elapsed >= WINDOW_MS) {
-        // Past 5-min window — auto-simulator handles it; show "Simulando..."
-        setTimeLeft('Simulando agora...');
+      
+      if (diff <= 0 && elapsed >= 1 * 60 * 1000) {
+        // More than 1 min past -> should be simulated
+        setTimeLeft('Simulando...');
         setIsReady(false);
       } else if (diff <= 0) {
-        // Within 5-min window — can play
-        const remaining = WINDOW_MS - elapsed;
-        const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
-        setTimeLeft(`${mins}:${String(secs).padStart(2, '0')} restantes`);
+        // Within the kickoff window
+        setTimeLeft('🔴 AO VIVO');
         setIsReady(true);
       } else {
         setIsReady(false);
