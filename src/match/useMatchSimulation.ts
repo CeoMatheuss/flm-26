@@ -209,6 +209,8 @@ export function useMatchSimulation() {
         currentMoment: moment,
         playerStamina: stamina,
         assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
+        onAnimationComplete: () => { isAnimatingRef.current = false; },
+        setSpeed: (s: number) => { setSimulationSpeed(s); },
       }));
       return;
     }
@@ -218,7 +220,17 @@ export function useMatchSimulation() {
     if (isComplete) { phase = 'finished'; hG = Math.max(hG, data.finalHomeGoals); aG = Math.max(aG, data.finalAwayGoals); }
     else if (currentMinute >= 45 && currentMinute <= 46) phase = 'halftime';
 
-    setState(prev => ({ ...prev, phase, currentMinute, progress, homeGoals: hG, awayGoals: aG, simulationSpeed }));
+    setState(prev => ({ 
+      ...prev, 
+      phase, 
+      currentMinute, 
+      progress, 
+      homeGoals: hG, 
+      awayGoals: aG, 
+      simulationSpeed,
+      onAnimationComplete: () => { isAnimatingRef.current = false; },
+      setSpeed: (s: number) => { setSimulationSpeed(s); },
+    }));
 
     if ((isComplete || virtualElapsed >= data.durationMs + 30000) && !persistedRef.current) {
       persistedRef.current = true;
