@@ -1058,6 +1058,7 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
   const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
   const sorted = [...members].sort((a, b) => b.points - a.points);
 
+  const divLabel = division === 1 ? 'Série A' : division === 2 ? 'Série B' : division === 3 ? 'Série C' : 'Série D';
   const getRewardVal = (pos: number) => {
     if (pos === 1) return 16;
     if (pos === 2) return 15;
