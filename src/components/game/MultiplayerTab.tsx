@@ -357,7 +357,7 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [12, 10, 8.5, 7, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 0, 0, 0, 0];
+  const baseRewards = [8, 6.5, 5, 4, 3.5, 3, 2.8, 2.5, 2.2, 2, 1.8, 1.5, 1.2, 1, 0.8, 0.5];
   const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
     const idx = Math.min(pos, 16) - 1;

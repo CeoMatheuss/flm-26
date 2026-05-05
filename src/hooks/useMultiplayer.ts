@@ -120,14 +120,13 @@ export interface LeagueSquad {
   updated_at: string;
 }
 
-// Generate round-robin schedule for members
-function generateRoundRobin(memberIds: string[], totalRounds: number): { round: number; home: string; away: string }[] {
+// Generate round-robin schedule for members with dates and times
+function generateRoundRobin(memberIds: string[], totalRounds: number, startDate: Date, matchTime: string): { round: number; home: string; away: string; scheduled_at: string }[] {
   const ids = [...memberIds];
-  if (ids.length % 2 !== 0) ids.push('BYE');
+  if (ids.length % 2 !== 0) ids.push('BOT'); // Standardized placeholder
   const n = ids.length;
-  const rounds: { round: number; home: string; away: string }[] = [];
+  const matches: { round: number; home: string; away: string; scheduled_at: string }[] = [];
   
-  // Generate enough base rounds, then cycle to fill totalRounds
   const baseRounds = n - 1;
   
   for (let round = 0; round < totalRounds; round++) {
@@ -141,18 +140,25 @@ function generateRoundRobin(memberIds: string[], totalRounds: number): { round: 
       rotated.splice(1, 0, last);
     }
     
+    // Calculate date for this round
+    const matchDate = new Date(startDate);
+    matchDate.setDate(matchDate.getDate() + round);
+    const [hours, minutes] = matchTime.split(':').map(Number);
+    matchDate.setHours(hours || 19, minutes || 0, 0, 0);
+
     for (let i = 0; i < n / 2; i++) {
       const home = rotated[i];
       const away = rotated[n - 1 - i];
-      if (home === 'BYE' || away === 'BYE') continue;
-      rounds.push({
+      if (home === 'BOT' || away === 'BOT') continue;
+      matches.push({
         round: round + 1,
         home: isReturn ? away : home,
         away: isReturn ? home : away,
+        scheduled_at: matchDate.toISOString(),
       });
     }
   }
-  return rounds;
+  return matches;
 }
 
 // Simulate a PvP match based on squad overall ratings
@@ -417,19 +423,25 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     }
 
     setLoading(true);
-    const memberIds = members.map(m => m.user_id);
+    const memberIds = members.map(m => m.user_id || m.id); // Ensure we catch bot IDs
     const numRounds = currentLeague.total_rounds || 30;
-    const schedule = generateRoundRobin(memberIds, numRounds);
+    
+    // Get fixed match time by division
+    const division = (currentLeague as any).division || 1;
+    const matchTime = division === 1 ? "19:00" : division === 2 ? "20:00" : "21:00";
     
     const now = new Date();
+    const schedule = generateRoundRobin(memberIds, numRounds, now, matchTime);
+    
     const seasonEnd = new Date(now);
-    seasonEnd.setDate(seasonEnd.getDate() + numRounds); // 1 round per day
+    seasonEnd.setDate(seasonEnd.getDate() + numRounds);
 
     const matchInserts = schedule.map(s => ({
       league_id: currentLeague.id,
       round: s.round,
       home_user_id: s.home,
       away_user_id: s.away,
+      scheduled_at: s.scheduled_at,
       status: 'scheduled',
     }));
 
