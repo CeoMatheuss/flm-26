@@ -531,7 +531,7 @@ export function useMatchSimulation() {
 
 
 
-    // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
+    // Watchdog: force finished if virtual elapsed exceeds duration + 30s buffer (avoids match hanging)
     const shouldForceFinish = virtualElapsed >= data.durationMs + 30_000 && phase !== 'finished';
 
     // Persist when finished + notify (idempotent: retry on error)
