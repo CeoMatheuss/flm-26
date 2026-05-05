@@ -16,8 +16,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Tolerância: dá tempo do humano entrar antes de auto-simular
-const HUMAN_TOLERANCE_MS = 5 * 60_000;
+// Tolerância: removida conforme regra "19:36 não entrou -> simular" (apenas 1min para evitar race conditions)
+const HUMAN_TOLERANCE_MS = 1 * 60_000;
 
 function poisson(lambda: number): number {
   if (lambda <= 0) return 0;

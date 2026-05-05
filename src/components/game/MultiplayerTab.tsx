@@ -147,9 +147,9 @@ function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
 
 function LeagueCard({ league, onEnter, isBeginner }: { league: MultiplayerLeague; onEnter: () => void; isBeginner?: boolean }) {
   const l = league as any;
-  const totalRounds = l.total_rounds || 30;
+  const totalRounds = 30;
   const currentRound = l.current_round || 0;
-  const daysLeft = totalRounds - currentRound;
+  const daysLeft = Math.max(0, totalRounds - currentRound);
   const division = l.division || 1;
 
   return (
@@ -357,13 +357,13 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   // No need to sort, members already come sorted from league_standings
   const sorted = members;
   
-  const baseRewards = [8, 6.5, 5, 4, 3.5, 3, 2.8, 2.5, 2.2, 2, 1.8, 1.5, 1.2, 1, 0.8, 0.5];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : 5;
   const getExpectedReward = (pos: number) => {
-    const idx = Math.min(pos, 16) - 1;
-    const val = baseRewards[idx] / getDivisor(division);
-    if (val === 0) return '---';
-    return val >= 1 ? `${val.toFixed(1)}M` : `${(val * 1000).toFixed(0)}k`;
+    if (pos === 1) return '16M';
+    if (pos === 2) return '15M';
+    if (pos === 3) return '14M';
+    if (pos === 4) return '13M';
+    if (pos >= 5 && pos <= 8) return (13 - (pos - 4)).toString() + 'M';
+    return Math.max(4, 7 - (pos - 9)).toString() + 'M';
   };
 
   const getLast5 = (teamId: string) => {
@@ -1058,10 +1058,16 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
   const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
   const sorted = [...members].sort((a, b) => b.points - a.points);
 
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
   const divLabel = division === 1 ? 'Série A' : division === 2 ? 'Série B' : division === 3 ? 'Série C' : 'Série D';
-  const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
+  const getRewardVal = (pos: number) => {
+    if (pos === 1) return 16;
+    if (pos === 2) return 15;
+    if (pos === 3) return 14;
+    if (pos === 4) return 13;
+    if (pos >= 5 && pos <= 8) return 13 - (pos - 4);
+    return Math.max(4, 7 - (pos - 9));
+  };
+  const fmt = (v: number) => `R$ ${v}M`;
 
   return (
     <div className="space-y-4">
@@ -1080,9 +1086,9 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
               </TableRow>
             </TableHeader>
             <TableBody>
-              {baseRewards.map((val, i) => {
+              {Array.from({ length: 16 }).map((_, i) => {
                 const pos = i + 1;
-                const reward = val / getDivisor(division);
+                const reward = getRewardVal(pos);
                 return (
                   <TableRow key={pos} className="border-emerald-500/10">
                     <TableCell className={`text-xs py-1 ${pos <= 3 ? 'font-bold' : ''}`}>

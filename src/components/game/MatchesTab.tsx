@@ -96,7 +96,8 @@ export function MatchesTab({
           `)
           .eq('league_id', userLeague.league_id)
           .order('matchday', { ascending: true })
-          .order('kickoff_at', { ascending: true });
+          .order('kickoff_at', { ascending: true })
+          .limit(100);
         
         if (wmErr) {
           console.error('Erro ao buscar jogos da liga:', wmErr);
@@ -164,14 +165,11 @@ export function MatchesTab({
     const scheduledTime = new Date(scheduledAt).getTime();
     const now = Date.now();
     const diff = scheduledTime - now;
-    const WINDOW_MS = 5 * 60 * 1000;
+    const WINDOW_MS = 1 * 60 * 1000; // 1 min window
     if (diff <= 0) {
       const elapsed = now - scheduledTime;
       if (elapsed >= WINDOW_MS) return { text: 'Simulada', isNow: false, isExpired: true };
-      const remaining = WINDOW_MS - elapsed;
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      return { text: `${mins}:${String(secs).padStart(2, '0')} restantes`, isNow: true, isExpired: false };
+      return { text: 'AO VIVO', isNow: true, isExpired: false };
     }
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
