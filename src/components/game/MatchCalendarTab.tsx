@@ -216,22 +216,22 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       setHistory((historyData as MatchHistoryItem[]) || []);
 
       const { data: userLeague } = await supabase
-        .from('world_league_teams')
-        .select('league_id, world_leagues(current_matchday, total_matchdays)')
+        .from('league_members')
+        .select('league_id, multiplayer_leagues(current_round, total_rounds)')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (userLeague?.league_id) {
-        const leagueInfo = userLeague.world_leagues as any;
-        setSelectedMatchday(leagueInfo?.current_matchday || 1);
-        setMaxMatchdays(leagueInfo?.total_matchdays || 38);
+        const leagueInfo = userLeague.multiplayer_leagues as any;
+        setSelectedMatchday(leagueInfo?.current_round || 1);
+        setMaxMatchdays(leagueInfo?.total_rounds || 30);
 
         const { data: wm } = await supabase
-          .from('world_matches')
-          .select('*, home_team:world_league_teams!home_team_id(club_name, club_logo), away_team:world_league_teams!away_team_id(club_name, club_logo)')
+          .from('league_matches')
+          .select('*, home_team:league_members!home_user_id(club_name, club_logo), away_team:league_members!away_user_id(club_name, club_logo)')
           .eq('league_id', userLeague.league_id)
-          .order('matchday', { ascending: true })
-          .order('kickoff_at', { ascending: true });
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
         
         if (wm) setWorldMatches(wm);
       }
@@ -243,7 +243,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   if (selected) return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
-  const filteredMatches = worldMatches.filter(m => m.matchday === selectedMatchday);
+  const filteredMatches = worldMatches.filter(m => m.round === selectedMatchday);
 
   return (
     <div className="space-y-3">
@@ -284,7 +284,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                       <p className="text-xs font-bold truncate">{m.home_team?.club_name}</p>
                     </div>
                     <div className="bg-muted/30 px-3 py-1 rounded text-xs font-mono font-bold">
-                      {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : formatTime(m.kickoff_at)}
+                      {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : formatTime(m.scheduled_at)}
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-xs font-bold truncate">{m.away_team?.club_name}</p>
