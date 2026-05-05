@@ -20,6 +20,7 @@ const INITIAL: MatchState = {
   stadiumName: '', matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+  simulationSpeed: 1,
 };
 
 const TICK_MS = 300;
