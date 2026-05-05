@@ -527,6 +527,9 @@ export function useMatchSimulation() {
     isAnimatingRef.current = false;
   }, []);
 
+  // Use the animation completion in the tick function indirectly by returning it
+
+
 
     // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
     const shouldForceFinish = elapsed >= data.durationMs + 30_000 && phase !== 'finished';
