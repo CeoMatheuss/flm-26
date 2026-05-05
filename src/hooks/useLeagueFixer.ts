@@ -13,6 +13,8 @@ export function useLeagueFixer(userId: string | undefined) {
       console.log('LeagueFixer: Executando simulação de rodadas atrasadas...');
       try {
         await supabase.rpc('sync_league_integrity', { _user_id: userId });
+        // After syncing, trigger one pass of the auto-simulator via Edge Function
+        await supabase.functions.invoke('world-match-simulator', { body: { force_until_empty: true, max: 10 } });
       } catch (e) {
         console.error('LeagueFixer: Erro ao sincronizar liga:', e);
       }
