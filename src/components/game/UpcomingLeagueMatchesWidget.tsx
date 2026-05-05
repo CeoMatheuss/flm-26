@@ -95,7 +95,7 @@ export function UpcomingLeagueMatchesWidget() {
         const l = leagueMap.get(r.league_id);
         if (!l) continue;
 
-        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_user_id}`; // Unique enough
+        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_team_id}`; // Fixed key
         if (seen.has(matchKey)) continue;
         seen.add(matchKey);
 
