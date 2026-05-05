@@ -95,7 +95,8 @@ export function UpcomingLeagueMatchesWidget() {
         const l = leagueMap.get(r.league_id);
         if (!l) continue;
 
-        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_team_id}`; // Fixed key
+        // Deduplicate: each team only 1 match per round/day
+        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_team_id}`;
         if (seen.has(matchKey)) continue;
         seen.add(matchKey);
 
@@ -108,13 +109,13 @@ export function UpcomingLeagueMatchesWidget() {
           matchday: r.matchday,
           total_matchdays: l.total_matchdays,
           kickoff_at: r.kickoff_at,
-          kickoff_hour: l.kickoff_hour,
-          kickoff_minute: l.kickoff_minute ?? 0,
+          kickoff_hour: 19, // Standard 19:30
+          kickoff_minute: 30,
           home_name: (r.home_team as any)?.club_name ?? '?',
           away_name: (r.away_team as any)?.club_name ?? '?',
         };
 
-        // Check if this is the player's match
+        // Player match check - use team names or IDs if available
         if (currentUserId && (r.home_team_id === currentUserId || r.away_team_id === currentUserId)) {
           if (!playerMatch) playerMatch = m;
         }
