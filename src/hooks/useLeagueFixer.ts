@@ -12,9 +12,9 @@ export function useLeagueFixer(userId: string | undefined) {
     const runFix = async () => {
       console.log('LeagueFixer: Executando simulação de rodadas atrasadas...');
       try {
-        await supabase.rpc('simulate_overdue_matches');
+        await supabase.rpc('sync_league_integrity', { _user_id: userId });
       } catch (e) {
-        console.error('LeagueFixer: Erro ao simular partidas:', e);
+        console.error('LeagueFixer: Erro ao sincronizar liga:', e);
       }
     };
 
