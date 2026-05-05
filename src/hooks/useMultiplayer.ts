@@ -107,6 +107,7 @@ export interface LeagueMatch {
   away_goals: number | null;
   match_data: any;
   status: string;
+  scheduled_at: string | null;
   played_at: string | null;
   created_at: string;
 }
