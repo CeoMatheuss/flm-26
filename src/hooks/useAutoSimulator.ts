@@ -26,11 +26,11 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 
-const SCAN_INTERVAL_MS = 5_000;       // 5s between scans
-const POST_SIM_DELAY_MS = 2_000;      // 2s cooldown after a successful sim
-const LOCK_TTL_MS = 60_000;           // 60s per-match lock
-const TOLERANCE_MS = 5 * 60_000;      // 5min tolerance: only auto-sim if match_time + 5min has passed
-const STUCK_AFTER_MS = 30 * 60_000;   // 30min: anything older = "stuck" → forced sim path
+const SCAN_INTERVAL_MS = 2_000;       // 2s between scans (faster)
+const POST_SIM_DELAY_MS = 1_000;      // 1s cooldown
+const LOCK_TTL_MS = 30_000;           // 30s lock
+const TOLERANCE_MS = 1 * 60_000;      // 1min tolerance (very fast)
+const STUCK_AFTER_MS = 15 * 60_000;   // 15min forced sim
 const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
 // ───────────────── helpers ─────────────────
@@ -199,8 +199,9 @@ async function processLeagueMatch(m: any): Promise<boolean> {
       }).eq('league_id', m.league_id).eq('user_id', u.uid);
     }
 
-    await notify(m.home_user_id, awayName, hg, ag, 'Liga');
-    await notify(m.away_user_id, homeName, ag, hg, 'Liga');
+    // Removed notifications for league matches as per user request ("NÃO mostrar aviso")
+    // await notify(m.home_user_id, awayName, hg, ag, 'Liga');
+    // await notify(m.away_user_id, homeName, ag, hg, 'Liga');
     console.info('[autosim] league match simulated', { id: m.id, score: `${hg}x${ag}` });
     return true;
   } finally {

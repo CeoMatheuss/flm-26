@@ -429,7 +429,7 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     
     // Get fixed match time by division
     const division = (currentLeague as any).division || 1;
-    const matchTime = division === 1 ? "19:00" : division === 2 ? "20:00" : "21:00";
+    const matchTime = division === 1 ? "19:30" : division === 2 ? "20:00" : "21:00";
     
     const now = new Date();
     const schedule = generateRoundRobin(memberIds, numRounds, now, matchTime);

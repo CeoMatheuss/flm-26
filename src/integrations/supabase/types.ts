@@ -4160,6 +4160,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      ensure_16_teams: { Args: { _league_id: string }; Returns: undefined }
       ensure_league_full: {
         Args: { target_league_id: string }
         Returns: undefined
