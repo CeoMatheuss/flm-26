@@ -546,7 +546,18 @@ function MatchesView({ matches, members, userId, currentRound, totalRounds, leag
   const getLogo = (_uid: string) => '';
   
   const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : totalRounds;
-  const roundMatches = matches.filter(m => m.round === selectedRound);
+  
+  // Deduplicate matches for the current round
+  const roundMatches = useMemo(() => {
+    const seen = new Set<string>();
+    return matches.filter(m => {
+      if (m.round !== selectedRound) return false;
+      const key = `${m.home_user_id}-${m.away_user_id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [matches, selectedRound]);
 
   const nextPlayerMatch = useMemo(() => {
     const myTeam = members.find(m => m.user_id === userId);
