@@ -96,7 +96,8 @@ export function MatchesTab({
           `)
           .eq('league_id', userLeague.league_id)
           .order('matchday', { ascending: true })
-          .order('kickoff_at', { ascending: true });
+          .order('kickoff_at', { ascending: true })
+          .limit(100);
         
         if (wmErr) {
           console.error('Erro ao buscar jogos da liga:', wmErr);
