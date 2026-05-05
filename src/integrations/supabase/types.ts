@@ -4375,6 +4375,7 @@ export type Database = {
       }
       sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
+      sync_league_team_count: { Args: never; Returns: undefined }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
