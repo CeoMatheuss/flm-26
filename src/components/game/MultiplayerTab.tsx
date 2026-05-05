@@ -1058,10 +1058,15 @@ function AwardsView({ leagueMatches, members, division }: { leagueMatches: Leagu
   const topScorers = Object.values(playerStats).sort((a, b) => b.goals - a.goals).slice(0, 10);
   const sorted = [...members].sort((a, b) => b.points - a.points);
 
-  const baseRewards = [20,17,14.5,12.5,11,10,9.2,8.4,7.8,7.2,6.6,6,5.4,4.8,4.2,3.6];
-  const getDivisor = (d: number) => d === 1 ? 1 : d === 2 ? 2 : d === 3 ? 4 : 10;
-  const divLabel = division === 1 ? 'Série A' : division === 2 ? 'Série B' : division === 3 ? 'Série C' : 'Série D';
-  const fmt = (v: number) => v >= 1 ? `R$ ${v.toFixed(1)}M` : `R$ ${(v*1000).toFixed(0)}k`;
+  const getRewardVal = (pos: number) => {
+    if (pos === 1) return 16;
+    if (pos === 2) return 15;
+    if (pos === 3) return 14;
+    if (pos === 4) return 13;
+    if (pos >= 5 && pos <= 8) return 13 - (pos - 4);
+    return Math.max(4, 7 - (pos - 9));
+  };
+  const fmt = (v: number) => `R$ ${v}M`;
 
   return (
     <div className="space-y-4">
