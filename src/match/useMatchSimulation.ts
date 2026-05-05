@@ -84,6 +84,7 @@ const INITIAL: MatchState = {
   currentMoment: 'equilíbrio',
   playerStamina: {},
   assistantTips: [],
+  simulationSpeed: 1,
 };
 
 interface MatchData {
