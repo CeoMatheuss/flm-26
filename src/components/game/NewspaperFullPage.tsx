@@ -97,7 +97,7 @@ export function NewspaperFullPage({ onBack }: Props) {
       .from('newspaper_entries')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200);
+      .limit(300);
     if (data) setEntries(data as SavedEntry[]);
 
     // Load user reactions
@@ -309,7 +309,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                           {item.category}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs leading-snug whitespace-pre-line">{item.text}</p>
+                          <p className="text-xs leading-snug whitespace-pre-line font-medium">{item.text}</p>
                         </div>
                         <div className="flex flex-col items-end shrink-0 gap-1">
                           {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}

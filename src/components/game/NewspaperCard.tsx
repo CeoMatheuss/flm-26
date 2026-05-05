@@ -46,7 +46,7 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
         .from('newspaper_entries')
         .select('id, text, category, created_at')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(8);
       if (data) setNews(data as NewsEntry[]);
       setLoading(false);
     };
