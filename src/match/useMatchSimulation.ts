@@ -532,7 +532,7 @@ export function useMatchSimulation() {
 
 
     // Watchdog: force finished if elapsed exceeds duration + 30s buffer (avoids match hanging)
-    const shouldForceFinish = elapsed >= data.durationMs + 30_000 && phase !== 'finished';
+    const shouldForceFinish = virtualElapsed >= data.durationMs + 30_000 && phase !== 'finished';
 
     // Persist when finished + notify (idempotent: retry on error)
     if ((isComplete || shouldForceFinish) && !persistedRef.current) {
@@ -561,7 +561,7 @@ export function useMatchSimulation() {
 
       // If forced, also reflect finished phase locally with final score
       if (shouldForceFinish) {
-        console.warn('[Match] Watchdog forced finish at elapsed=' + elapsed + 'ms');
+        console.warn('[Match] Watchdog forced finish at virtualElapsed=' + virtualElapsed + 'ms');
         setState(s => ({
           ...s,
           phase: 'finished',
@@ -573,7 +573,7 @@ export function useMatchSimulation() {
         }));
       }
     }
-  }, [simulationSpeed]);
+  }, [simulationSpeed, computeStatsFromEvents, stopTick]);
 
   // Re-tick immediately when tab becomes visible (catches up missed events from throttling)
   useEffect(() => {
