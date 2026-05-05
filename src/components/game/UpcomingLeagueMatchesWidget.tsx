@@ -181,7 +181,7 @@ export function UpcomingLeagueMatchesWidget() {
         <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <CalendarDays className="w-4 h-4 text-primary" />
-            Próximos Jogos das Ligas
+            Próximos Jogos
             {!loading && (
               <Badge variant="secondary" className="text-[10px]">
                 {matches.length}
@@ -204,11 +204,22 @@ export function UpcomingLeagueMatchesWidget() {
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : matches.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nenhum jogo agendado nas ligas mundiais.
+              Nenhum jogo agendado.
             </p>
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
-              {matches.slice(0, 20).map((m) => renderItem(m, true))}
+            <div className="flex flex-col gap-3">
+              {userMatch && (
+                <div className="border-b pb-2 mb-2">
+                  <p className="text-[10px] font-bold text-primary uppercase mb-2">SEU PRÓXIMO JOGO</p>
+                  {renderItem(userMatch, false)}
+                </div>
+              )}
+              <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
+                {matches
+                  .filter(m => m.match_id !== userMatch?.match_id)
+                  .slice(0, 20)
+                  .map((m) => renderItem(m, true))}
+              </div>
             </div>
           )}
         </CardContent>
