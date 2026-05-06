@@ -386,6 +386,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
             _logo: '⚽' 
           });
         }
+        // Always sync cup status to ensure fixtures are generated/simulated
+        await supabase.rpc('sync_beginner_cup', { _user_id: userId });
       } catch (e) {
         console.error('League sync error:', e);
       }
