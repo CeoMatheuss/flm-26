@@ -228,40 +228,12 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       <TabsContent value="league">
-        {isTabBlocked('league') ? <BlockedMessage /> : (
-        <MultiplayerTab
-          userId={userId}
-          leagues={mp.leagues}
-          currentLeague={mp.currentLeague}
-          members={mp.members}
-          chatMessages={mp.chatMessages}
-          privateMessages={mp.privateMessages}
-          proposals={mp.proposals}
-          rivalries={mp.rivalries}
-          leagueMatches={mp.leagueMatches}
-          leagueSquads={mp.leagueSquads}
-          loading={mp.loading}
-          autoJoining={mp.autoJoining}
-          clubPlayers={game.club.players}
-          clubTactics={game.tactics}
-          clubShield={{
-            primaryColor: game.club.primaryColor || '#1a365d',
-            secondaryColor: game.club.secondaryColor || '#f6e05e',
-            pattern: game.club.shieldPattern || 'solid',
-            shape: game.club.shieldShape || 'classic',
-          }}
-          onEnterLeague={mp.enterLeague}
-          onLeaveLeague={mp.leaveLeague}
-          onSendChat={mp.sendChat}
-          onSendPrivateMessage={mp.sendPrivateMessage}
-          onSendProposal={mp.sendProposal}
-          onRespondProposal={mp.respondProposal}
-          onSyncSquad={mp.syncSquad}
-          onStartSeason={mp.startSeason}
-          onSimulateRound={mp.simulateRound}
-          onEndSeason={mp.endSeason}
-        />
-        )}
+        <Card className="border-orange-500/30 bg-gradient-to-br from-card to-orange-500/5">
+          <CardContent className="p-8 text-center space-y-3">
+            <h3 className="text-sm font-bold text-orange-400">Liga Indisponível</h3>
+            <p className="text-xs text-muted-foreground">O sistema de liga foi removido para manutenção total.</p>
+          </CardContent>
+        </Card>
       </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
