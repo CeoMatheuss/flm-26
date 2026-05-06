@@ -160,6 +160,86 @@ export type Database = {
         }
         Relationships: []
       }
+      beginner_cup_matches: {
+        Row: {
+          away_goals: number | null
+          away_penalties: number | null
+          away_team_id: string | null
+          created_at: string | null
+          cup_id: string | null
+          home_goals: number | null
+          home_penalties: number | null
+          home_team_id: string | null
+          id: string
+          phase: string
+          played_at: string | null
+          scheduled_at: string
+          status: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          away_goals?: number | null
+          away_penalties?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_penalties?: number | null
+          home_team_id?: string | null
+          id?: string
+          phase: string
+          played_at?: string | null
+          scheduled_at: string
+          status?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          away_goals?: number | null
+          away_penalties?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_penalties?: number | null
+          home_team_id?: string | null
+          id?: string
+          phase?: string
+          played_at?: string | null
+          scheduled_at?: string
+          status?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beginner_cup_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beginner_cup_matches_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "beginner_cup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beginner_cup_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beginner_cup_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beginner_cup_participants: {
         Row: {
           created_at: string | null
@@ -4374,6 +4454,10 @@ export type Database = {
         Args: { p_amount: number; p_target_user_id: string }
         Returns: Json
       }
+      advance_cup_winners: {
+        Args: { _cup_id: string; _current_phase: string }
+        Returns: undefined
+      }
       approve_beta_request: {
         Args: { _request_id: string }
         Returns: undefined
@@ -4458,6 +4542,10 @@ export type Database = {
       }
       fix_league_forcefully: { Args: { p_league_id: string }; Returns: Json }
       fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
+      generate_beginner_cup_fixtures: {
+        Args: { _cup_id: string }
+        Returns: undefined
+      }
       generate_bot_club_name: {
         Args: { _country: string; _idx: number }
         Returns: string
@@ -4612,10 +4700,9 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
-      process_season_transition: {
-        Args: { _country: string }
-        Returns: undefined
-      }
+      process_season_transition:
+        | { Args: never; Returns: undefined }
+        | { Args: { _country: string }; Returns: undefined }
       publish_newspaper_event: {
         Args: {
           _category: string
