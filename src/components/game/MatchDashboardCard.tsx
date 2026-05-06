@@ -315,6 +315,19 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
     };
     checkPremium();
   }, [userId]);
+  // Trigger league sync on dashboard load
+  useEffect(() => {
+    if (!userId) return;
+    const sync = async () => {
+      try {
+        const { data: team } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
+        if (team) {
+          await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
+        }
+      } catch (e) {}
+    };
+    sync();
+  }, [userId]);
 
   // Poll DB for active live match
   useEffect(() => {
