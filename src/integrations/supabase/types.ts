@@ -1879,6 +1879,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "league_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_table"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "league_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "league_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_table"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "league_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_league_teams"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "league_matches_league_id_fkey"
             columns: ["league_id"]
             isOneToOne: false
