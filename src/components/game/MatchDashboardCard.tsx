@@ -45,7 +45,48 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Load next league match
+      // 1. Check for next beginner cup match
+      const { data: cupMatch, error: cupError } = await supabase
+        .from('beginner_cup_matches')
+        .select(`
+          id,
+          status,
+          phase,
+          scheduled_at,
+          home_team_id,
+          away_team_id,
+          home_team:world_teams!beginner_cup_matches_home_team_id_fkey (name, strength),
+          away_team:world_teams!beginner_cup_matches_away_team_id_fkey (name, strength)
+        `)
+        .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (cupMatch && !cancelled) {
+        const isHome = cupMatch.home_team_id === teamData.id;
+        setNextMatch({
+          home: cupMatch.home_team.name,
+          away: cupMatch.away_team.name,
+          date: cupMatch.scheduled_at,
+          tournament: 'Copa de Iniciantes',
+          matchId: cupMatch.id,
+          homeTeamId: cupMatch.home_team_id,
+          awayTeamId: cupMatch.away_team_id,
+          opponentStrength: isHome ? cupMatch.away_team.strength : cupMatch.home_team.strength,
+          isHome,
+          tournamentName: 'Copa de Iniciantes',
+          status: cupMatch.status,
+          round: 0,
+          kind: 'tournament',
+          stage: cupMatch.phase,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Check for next league match
       const { data: matches, error } = await supabase
         .from('world_matches')
         .select(`
@@ -345,6 +386,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
             _logo: '⚽' 
           });
         }
+        // Always sync cup status to ensure fixtures are generated/simulated
+        await supabase.rpc('sync_beginner_cup', { _user_id: userId });
       } catch (e) {
         console.error('League sync error:', e);
       }
