@@ -80,41 +80,47 @@ export function MatchesTab({
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (userLeague?.league_id) {
-        // Aba Jogos agora puxa diretamente de world_matches como fonte da verdade
-        const { data: wm, error: wmErr } = await supabase
-          .from('world_matches')
+      const { data: teamData } = await supabase
+        .from('world_teams')
+        .select('id, division_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (teamData?.division_id) {
+        // Use any to bypass TS depth issues with recursive table relationships
+        const { data: wm, error: wmErr } = await (supabase
+          .from('world_matches' as any)
           .select(`
             id, 
-            matchday, 
-            kickoff_at, 
+            round, 
+            scheduled_at, 
             status, 
             home_goals, 
             away_goals,
-            home_team:world_league_teams!home_team_id(club_name, bot_strength), 
-            away_team:world_league_teams!away_team_id(club_name, bot_strength)
+            home_team:world_teams!home_team_id(name, strength), 
+            away_team:world_teams!away_team_id(name, strength)
           `)
-          .eq('league_id', userLeague.league_id)
-          .order('matchday', { ascending: true })
-          .order('kickoff_at', { ascending: true })
-          .limit(100);
+          .eq('division_id', teamData.division_id)
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true })
+          .limit(100) as any);
         
         if (wmErr) {
           console.error('Erro ao buscar jogos da liga:', wmErr);
         } else if (wm) {
           const enriched = wm.map((m: any) => {
-            const hName = m.home_team?.club_name || '???';
-            const aName = m.away_team?.club_name || '???';
+            const hName = m.home_team?.name || '???';
+            const aName = m.away_team?.name || '???';
             const isHome = hName === clubName;
             return {
               ...m,
               homeName: hName,
               awayName: aName,
-              homeStrength: m.home_team?.bot_strength || 60,
-              awayStrength: m.away_team?.bot_strength || 60,
+              homeStrength: m.home_team?.strength || 60,
+              awayStrength: m.away_team?.strength || 60,
               isHome,
               isOfficial: true,
-              scheduled_at: m.kickoff_at
+              matchday: m.round
             };
           });
           setTournamentMatches(enriched);
