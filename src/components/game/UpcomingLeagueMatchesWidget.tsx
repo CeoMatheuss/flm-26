@@ -125,8 +125,14 @@ export function UpcomingLeagueMatchesWidget() {
       }
 
       if (mounted) {
-        setMatches(processed);
-        setUserMatch(playerMatch);
+        // If there's a player match, we only want to show that ONE match
+        if (playerMatch) {
+          setMatches([playerMatch]);
+          setUserMatch(playerMatch);
+        } else {
+          setMatches(processed.slice(0, 1)); // Strict: only show 1 match even for bots
+          setUserMatch(null);
+        }
         setLoading(false);
       }
     };
