@@ -17,9 +17,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     home: string; away: string; date: string; tournament: string;
     matchId: string; homeTeamId: string; awayTeamId: string;
     opponentStrength: number; isHome: boolean; tournamentName: string;
-    stage?: string | null;
     status?: string; homeGoals?: number | null; awayGoals?: number | null; playedAt?: string | null;
-    kind?: 'friendly' | 'tournament';
+    round?: number;
+    kind?: 'friendly' | 'tournament' | 'league';
+    stage?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
@@ -29,190 +30,83 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     if (!userId) { setLoading(false); return; }
     let cancelled = false;
 
-    const loadFriendly = async () => {
-      const { data: invites } = await supabase
-        .from('friendly_invites')
-        .select('*')
-        .eq('status', 'accepted')
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .order('match_date', { ascending: true })
-        .limit(20);
-      if (!invites || invites.length === 0) return null;
-      const now = Date.now();
-      const future = invites.filter(i => new Date(i.match_date).getTime() >= now - 5 * 60_000);
-      const inv: any = future[0] || invites[invites.length - 1];
-      const isSender = inv.sender_id === userId;
-      const isHome = inv.home_team_id === userId;
-      const homeName = inv.home_team_id === inv.sender_id ? inv.sender_club_name : inv.receiver_club_name;
-      const awayName = homeName === inv.sender_club_name ? inv.receiver_club_name : inv.sender_club_name;
-      return {
-        home: homeName,
-        away: awayName,
-        date: inv.match_date,
-        tournament: '⚽ Amistoso Online',
-        matchId: `friendly-${inv.id}`,
-        homeTeamId: inv.home_team_id,
-        awayTeamId: isHome ? (isSender ? inv.receiver_id : inv.sender_id) : userId,
-        opponentStrength: 70,
-        isHome,
-        tournamentName: 'Amistoso Online',
-        status: 'scheduled',
-        stage: null,
-        homeGoals: null,
-        awayGoals: null,
-        playedAt: null,
-        kind: 'friendly' as const,
-      };
-    };
-
-    const loadLeague = async () => {
-      const { data: member } = await supabase
-        .from('league_members')
+    const loadNextMatch = async () => {
+      // O objetivo é buscar o próximo jogo agendado do usuário
+      // Primeiro, identificamos qual é o time/clube do usuário
+      const { data: userClub } = await supabase
+        .from('world_league_teams')
         .select('id, league_id, club_name')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (!member) return null;
+      if (!userClub) {
+        if (!cancelled) {
+          setNextMatch(null);
+          setLoading(false);
+        }
+        return;
+      }
 
-      const { data: match } = await supabase
-        .from('league_matches')
-        .select('*, multiplayer_leagues(name)')
-        .eq('league_id', member.league_id)
-        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
+      // Buscamos a partida agendada mais próxima (hoje ou no futuro)
+      const now = new Date().toISOString();
+      const { data: match, error } = await supabase
+        .from('world_matches')
+        .select(`
+          id, 
+          matchday, 
+          kickoff_at, 
+          status,
+          home_team:home_team_id(id, club_name, bot_strength),
+          away_team:away_team_id(id, club_name, bot_strength),
+          league:league_id(league_name)
+        `)
+        .or(`home_team_id.eq.${userClub.id},away_team_id.eq.${userClub.id}`)
         .eq('status', 'scheduled')
-        .order('scheduled_at', { ascending: true })
+        .gte('kickoff_at', now)
+        .order('kickoff_at', { ascending: true })
         .limit(1)
         .maybeSingle();
 
-      if (!match) return null;
-
-      const isHome = match.home_user_id === userId;
-      const oppUserId = isHome ? match.away_user_id : match.home_user_id;
-      
-      const { data: oppTeam } = await supabase
-        .from('league_members')
-        .select('club_name')
-        .eq('user_id', oppUserId)
-        .maybeSingle();
-
-      return {
-        home: isHome ? member.club_name : (oppTeam?.club_name || '???'),
-        away: isHome ? (oppTeam?.club_name || '???') : member.club_name,
-        date: match.scheduled_at,
-        tournament: (match.multiplayer_leagues as any)?.name || '🏆 Liga Online',
-        matchId: match.id,
-        homeTeamId: match.home_user_id,
-        awayTeamId: match.away_user_id,
-        opponentStrength: 75,
-        isHome,
-        tournamentName: (match.multiplayer_leagues as any)?.name || 'Liga Online',
-        status: match.status,
-        kind: 'league' as const,
-      };
-    };
-
-    const loadTournament = async () => {
-      const { data: myTeams } = await supabase
-        .from('custom_tournament_teams')
-        .select('id, tournament_id, club_name, bot_strength, user_id')
-        .eq('user_id', userId);
-
-      if (!myTeams || myTeams.length === 0) return null;
-
-      const teamIds = myTeams.map(t => t.id);
-      const tournamentIds = [...new Set(myTeams.map(t => t.tournament_id))];
-
-      const { data: matches } = await supabase
-        .from('custom_tournament_matches')
-        .select('*')
-        .in('status', ['scheduled', 'finished'])
-        .in('tournament_id', tournamentIds)
-        .order('scheduled_at', { ascending: true })
-        .limit(80);
-
-      if (!matches) return null;
-
-      const myScheduled = matches
-        .filter(m => m.status === 'scheduled' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)))
-        .sort((a, b) => new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime());
-      const myFinished = matches
-        .filter(m => m.status === 'finished' && (teamIds.includes(m.home_team_id) || teamIds.includes(m.away_team_id)))
-        .sort((a, b) => new Date(b.played_at || b.scheduled_at || 0).getTime() - new Date(a.played_at || a.scheduled_at || 0).getTime());
-
-      const myMatch = myScheduled[0] || myFinished[0];
-      if (!myMatch) return null;
-
-      const { data: matchTeams } = await supabase
-        .from('custom_tournament_teams')
-        .select('id, club_name, bot_strength, user_id')
-        .in('id', [myMatch.home_team_id, myMatch.away_team_id]);
-
-      const { data: tournament } = await supabase
-        .from('custom_tournaments')
-        .select('name')
-        .eq('id', myMatch.tournament_id)
-        .single();
-
-      const homeT = matchTeams?.find(t => t.id === myMatch.home_team_id);
-      const awayT = matchTeams?.find(t => t.id === myMatch.away_team_id);
-      const isPlayerHome = homeT?.user_id === userId;
-      const opponent = isPlayerHome ? awayT : homeT;
-
-      return {
-        home: homeT?.club_name || '???',
-        away: awayT?.club_name || '???',
-        date: myMatch.scheduled_at || '',
-        tournament: tournament?.name || 'Campeonato',
-        matchId: myMatch.id,
-        homeTeamId: myMatch.home_team_id,
-        awayTeamId: myMatch.away_team_id,
-        opponentStrength: opponent?.bot_strength || 60,
-        isHome: isPlayerHome,
-        tournamentName: tournament?.name || 'Campeonato',
-        status: myMatch.status,
-        stage: (myMatch as any).stage ?? null,
-        homeGoals: myMatch.home_goals ?? null,
-        awayGoals: myMatch.away_goals ?? null,
-        playedAt: myMatch.played_at || null,
-        kind: 'tournament' as const,
-      };
-    };
-
-    const load = async () => {
-      const [friendly, league, tourney] = await Promise.all([loadFriendly(), loadLeague(), loadTournament()]);
-      if (cancelled) return;
-
-      const now = Date.now();
-      const options = [friendly, league, tourney].filter(o => o !== null);
-      
-      // Prioritize by proximity to now, but keep league and tourney high priority
-      let chosen: any = null;
-      if (options.length > 0) {
-        options.sort((a, b) => {
-          const aDiff = Math.abs(new Date(a.date).getTime() - now);
-          const bDiff = Math.abs(new Date(b.date).getTime() - now);
-          return aDiff - bDiff;
-        });
-        chosen = options[0];
+      if (error) {
+        console.error('Error fetching next match:', error);
       }
 
-      setNextMatch(chosen);
-      setLoading(false);
+      if (!cancelled) {
+        if (!match) {
+          setNextMatch(null);
+        } else {
+          const isHome = (match.home_team as any).id === userClub.id;
+          const opponent = isHome ? match.away_team : match.home_team;
+
+          setNextMatch({
+            home: (match.home_team as any).club_name,
+            away: (match.away_team as any).club_name,
+            date: match.kickoff_at,
+            tournament: (match.league as any)?.league_name || 'Liga',
+            matchId: match.id,
+            homeTeamId: (match.home_team as any).id,
+            awayTeamId: (match.away_team as any).id,
+            opponentStrength: (opponent as any).bot_strength || 70,
+            isHome,
+            tournamentName: (match.league as any)?.league_name || 'Liga',
+            status: match.status,
+            round: (match as any).matchday,
+            kind: 'tournament',
+            stage: 'Liga',
+          });
+        }
+        setLoading(false);
+      }
     };
 
-    load();
+    loadNextMatch();
 
-    // Realtime: atualiza imediatamente quando um amistoso é aceito/criado
     const channel = supabase
       .channel(`dash-next-match-${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `sender_id=eq.${userId}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendly_invites', filter: `receiver_id=eq.${userId}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_matches' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_tournament_matches' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
       .subscribe();
 
-    // Poll de segurança a cada 10s
-    const interval = setInterval(load, 10000);
+    const interval = setInterval(loadNextMatch, 30000); // 30s update
     return () => { cancelled = true; clearInterval(interval); supabase.removeChannel(channel); };
   }, [userId]);
 
@@ -327,12 +221,14 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       <div className="text-center py-3 space-y-2">
         <div className="flex items-center justify-center gap-1.5">
           <Trophy className="h-4 w-4 text-primary" />
-          <p className="text-[10px] font-bold text-primary uppercase">{nextMatch.tournament}</p>
+          <p className="text-[10px] font-bold text-primary uppercase">
+            {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
+          </p>
         </div>
         <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
-          {isReady ? '🔴 PRONTO PARA JOGAR!' :
+          {isReady ? '🔴 AO VIVO' :
             isToday ? `⏰ HOJE às ${fmt?.timeFormatted}` :
-            fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
+            fmt ? `📅 ${fmt.dateFormatted} às 19:30` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
           <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
@@ -353,11 +249,6 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           >
             {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>}
           </Button>
-          {onGoToFriendly && !isReady && (
-            <Button size="sm" variant="ghost" className="gap-2 text-[10px] h-7" onClick={onGoToFriendly}>
-              <Swords className="h-3 w-3" /> Jogar Amistoso
-            </Button>
-          )}
         </div>
       </div>
     );
