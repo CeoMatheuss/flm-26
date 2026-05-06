@@ -1,240 +1,67 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { CalendarDays, Clock, Maximize2 } from 'lucide-react';
+import { CalendarDays, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface UpcomingMatch {
-  match_id: string;
-  league_id: string;
-  league_name: string;
-  flag_emoji: string;
-  division: number;
-  matchday: number;
-  total_matchdays: number;
-  kickoff_at: string;
-  kickoff_hour: number;
-  kickoff_minute: number;
-  home_name: string;
-  away_name: string;
-}
-
-const fmtHM = (h: number, m: number) =>
-  `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-const fmtDay = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-  });
-};
-
 export function UpcomingLeagueMatchesWidget() {
-  const [matches, setMatches] = useState<UpcomingMatch[]>([]);
-  const [userMatch, setUserMatch] = useState<UpcomingMatch | null>(null);
+  const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const currentUserId = user?.id;
+      if (!user) return;
 
-      // 1. Get all active leagues
-      const { data: leagues } = await supabase
-        .from('world_leagues')
-        .select('id, league_name, flag_emoji, division, total_matchdays, kickoff_hour, kickoff_minute')
-        .eq('status', 'in_progress')
-        .limit(100);
-
-      if (!leagues || leagues.length === 0) {
-        if (mounted) {
-          setMatches([]);
-          setLoading(false);
-        }
-        return;
-      }
-
-      const leagueIds = leagues.map((l) => l.id);
-      const nowIso = new Date().toISOString();
-
-      // 2. Fetch matches, deduplicating via SQL grouping if possible, but here we'll filter in JS
-      // for better control over the "user match" logic.
-      const { data: rows } = await supabase
-        .from('world_matches')
-        .select('id, league_id, matchday, kickoff_at, home_team_id, away_team_id, home_team:home_team_id(club_name, name), away_team:away_team_id(club_name, name)')
-        .in('league_id', leagueIds)
-        .eq('status', 'scheduled')
-        .order('matchday', { ascending: true })
-        .order('kickoff_at', { ascending: true })
-        .limit(240);
-
-      if (!rows) return;
-
-      const leagueMap = new Map(leagues.map(l => [l.id, l]));
+      const { data, error } = await supabase.rpc('get_user_next_match', { _user_id: user.id });
       
-      // Deduplicate: only one match per league/round
-      const seen = new Set<string>();
-      const processed: UpcomingMatch[] = [];
-      let playerMatch: UpcomingMatch | null = null;
-
-      for (const r of rows) {
-        const l = leagueMap.get(r.league_id);
-        if (!l) continue;
-
-        // Deduplicate: each team only 1 match per round
-        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}`;
-        if (seen.has(matchKey)) continue;
-        seen.add(matchKey);
-        seen.add(`${r.league_id}-${r.matchday}-${r.away_team_id}`);
-
-        const m: UpcomingMatch = {
-          match_id: r.id,
-          league_id: l.id,
-          league_name: l.league_name,
-          flag_emoji: l.flag_emoji,
-          division: l.division,
-          matchday: r.matchday,
-          total_matchdays: l.total_matchdays,
-          kickoff_at: r.kickoff_at,
-          kickoff_hour: 19, // Standard 19:30
-          kickoff_minute: 30,
-          home_name: (r.home_team as any)?.club_name || (r.home_team as any)?.name || '?',
-          away_name: (r.away_team as any)?.club_name || (r.away_team as any)?.name || '?',
-        };
-
-        if (currentUserId && (r.home_team_id === currentUserId || r.away_team_id === currentUserId)) {
-          if (!playerMatch) playerMatch = m;
-        }
-
-        processed.push(m);
+      if (!error && data && data.length > 0) {
+        setMatch(data[0]);
+      } else {
+        setMatch(null);
       }
-
-      if (mounted) {
-        // If there's a player match, we only want to show that ONE match
-        if (playerMatch) {
-          setMatches([playerMatch]);
-          setUserMatch(playerMatch);
-        } else {
-          setMatches(processed.slice(0, 1)); // Strict: only show 1 match even for bots
-          setUserMatch(null);
-        }
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
     load();
-    const channel = supabase.channel('upcoming-matches-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, load)
-      .subscribe();
-    
-    const interval = setInterval(load, 30_000); // Sync every 30s as requested
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const renderItem = (m: UpcomingMatch, compact = false) => (
-    <div
-      key={m.match_id}
-      className={
-        compact
-          ? 'shrink-0 w-56 p-2.5 rounded-md border bg-card/60 snap-start'
-          : 'p-3 rounded-md border bg-card/40'
-      }
-    >
-      <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-base">{m.flag_emoji}</span>
-        <span className="text-[11px] font-semibold truncate flex-1">
-          {m.league_name}
-        </span>
-        <Badge variant="outline" className="text-[9px] py-0 px-1">
-          D{m.division}
-        </Badge>
-      </div>
-      <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
-        <Clock className="w-3 h-3" />
-        {fmtHM(m.kickoff_hour, m.kickoff_minute)} BRT
-        <span>· {fmtDay(m.kickoff_at)}</span>
-        <span className="ml-auto">
-          R{m.matchday}/{m.total_matchdays}
-        </span>
-      </div>
-      <div className="text-xs font-medium truncate">
-        {m.home_name} <span className="text-muted-foreground">vs</span>{' '}
-        {m.away_name}
-      </div>
-    </div>
-  );
+  if (loading) return <Card><CardContent className="p-4 text-xs">Carregando...</CardContent></Card>;
+  if (!match) return null;
+
+  const date = new Date(match.scheduled_at);
 
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="w-4 h-4 text-primary" />
-            Próximos Jogos
-            {!loading && (
-              <Badge variant="secondary" className="text-[10px]">
-                {matches.length}
-              </Badge>
-            )}
-          </CardTitle>
-          {matches.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs gap-1"
-              onClick={() => setOpen(true)}
-            >
-              <Maximize2 className="w-3 h-3" /> Ver tudo
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="pt-0">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando...</p>
-          ) : matches.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum jogo agendado.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {matches[0] && renderItem(matches[0], false)}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4" />
-              Calendário Completo das Ligas Mundiais
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-            {matches.map((m) => renderItem(m, false))}
+    <Card className="border-primary/20 bg-primary/5">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <CalendarDays className="w-4 h-4 text-primary" />
+          Próximo Jogo da Liga
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span className="font-bold text-primary">{match.league_name} • {match.division_name}</span>
+          <span>Rodada {match.round}</span>
+        </div>
+        <div className="flex items-center justify-center gap-4 py-2">
+          <div className="text-center flex-1">
+            <p className="text-xs font-bold truncate">{match.home_team_name}</p>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          <Badge variant="outline" className="text-[10px] font-black">VS</Badge>
+          <div className="text-center flex-1">
+            <p className="text-xs font-bold truncate">{match.away_team_name}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-2 text-[10px] bg-background/50 rounded-full py-1">
+          <Clock className="w-3 h-3" />
+          <span className="font-bold">
+            {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
