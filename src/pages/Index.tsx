@@ -123,7 +123,16 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       clubProfile: initialClubProfile,
     };
     const jsonState = JSON.parse(JSON.stringify(newState));
-    await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
+    console.log('[club-save] creating club for user', userId, 'name:', config.name);
+    const { error: insertErr } = await supabase
+      .from('game_saves')
+      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+    if (insertErr) {
+      console.error('[club-save] FAILED to persist club:', insertErr);
+      toast.error(`Erro ao salvar clube: ${insertErr.message}. Tente novamente.`);
+      return;
+    }
+    console.log('[club-save] club persisted successfully');
     // Welcome notification
     await supabase.from('user_notifications').insert([{
       user_id: userId,
@@ -402,9 +411,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const saveGame = useCallback(async (silent = false) => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
-    const { data: existing } = await supabase.from('game_saves').select('id').eq('user_id', userId).limit(1).maybeSingle();
-    if (existing) await supabase.from('game_saves').update({ club_data: jsonState }).eq('id', existing.id);
-    else await supabase.from('game_saves').insert([{ user_id: userId, club_data: jsonState }]);
+    const { error } = await supabase
+      .from('game_saves')
+      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+    if (error) {
+      console.error('[auto-save] failed:', error);
+      if (!silent) toast.error(`Falha ao salvar: ${error.message}`);
+      return;
+    }
     if (!silent) toast.success('Jogo salvo!');
   }, [game, userId]);
 
