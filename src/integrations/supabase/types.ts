@@ -4203,6 +4203,39 @@ export type Database = {
           },
         ]
       }
+      world_league_table: {
+        Row: {
+          club_logo: string | null
+          club_name: string | null
+          d: number | null
+          division_id: string | null
+          ga: number | null
+          gd: number | null
+          gf: number | null
+          l: number | null
+          mp: number | null
+          pts: number | null
+          team_id: string | null
+          user_id: string | null
+          w: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_standings_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "world_divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_standings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
@@ -4344,6 +4377,23 @@ export type Database = {
         }[]
       }
       get_user_club_shield: { Args: { _user_id: string }; Returns: Json }
+      get_user_next_match: {
+        Args: { _user_id: string }
+        Returns: {
+          auto_sim_at: string
+          away_team_id: string
+          away_team_name: string
+          division_id: string
+          division_name: string
+          home_team_id: string
+          home_team_name: string
+          id: string
+          league_name: string
+          round: number
+          scheduled_at: string
+          status: string
+        }[]
+      }
       get_user_stadium_info: {
         Args: { _user_id: string }
         Returns: {
