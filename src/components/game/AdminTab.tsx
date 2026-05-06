@@ -1252,7 +1252,7 @@ export function AdminTab({ userId, isFounder }: Props) {
 
         {/* Categoria: Ligas */}
         <TabsContent value="leagues_overview" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['leagues', 'preview', 'pyramid', 'season']} defaultSection="leagues" />
+          <SystemPanel adminUserId={userId} sections={['preview', 'pyramid', 'season']} defaultSection="preview" />
         </TabsContent>
 
         {/* Categoria: Copas (visão geral) */}
