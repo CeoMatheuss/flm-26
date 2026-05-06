@@ -230,12 +230,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       <TabsContent value="league">
-        <Card className="border-orange-500/30 bg-gradient-to-br from-card to-orange-500/5">
-          <CardContent className="p-8 text-center space-y-3">
-            <h3 className="text-sm font-bold text-orange-400">Liga Indisponível</h3>
-            <p className="text-xs text-muted-foreground">O sistema de liga foi removido para manutenção total.</p>
-          </CardContent>
-        </Card>
+        <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
       </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
