@@ -16,6 +16,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   const [standings, setStandings] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [leagueInfo, setLeagueInfo] = useState<any | null>(null);
+  const [cupInfo, setCupInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentRound, setCurrentRound] = useState(new Date().getDate());
 
@@ -57,8 +58,32 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         .order('scheduled_at', { ascending: true });
       
       if (fixturesData) setFixtures(fixturesData);
-    } else {
-      setLeagueInfo(null);
+    } else if (teamData) {
+      // Check if in Beginner Cup
+      const { data: participant } = await supabase
+        .from('beginner_cup_participants')
+        .select('*, beginner_cup(*)')
+        .eq('team_id', teamData.id)
+        .maybeSingle();
+
+      if (participant) {
+        setCupInfo({
+          cup_id: participant.cup_id,
+          team_id: teamData.id,
+          status: participant.status,
+          season_month: participant.beginner_cup?.season_month,
+          season_year: participant.beginner_cup?.season_year
+        });
+
+        // Load Cup Matches
+        const { data: cupMatches } = await supabase
+          .from('beginner_cup_matches')
+          .select('*, home_team:world_teams!beginner_cup_matches_home_team_id_fkey(name), away_team:world_teams!beginner_cup_matches_away_team_id_fkey(name)')
+          .eq('cup_id', participant.cup_id)
+          .order('scheduled_at', { ascending: true });
+        
+        if (cupMatches) setFixtures(cupMatches);
+      }
     }
     setLoading(false);
   };
@@ -83,12 +108,86 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   }
 
   if (!leagueInfo) {
+    if (cupInfo) {
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500">
+          <div className="flex items-center justify-between">
+            <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">
+              <Trophy className="h-3 w-3 mr-1" />
+              Copa de Iniciantes
+            </Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              Fase de Eliminatórias
+            </Badge>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2 border-b">
+              <CardTitle className="text-lg">Chaveamento</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/50">
+                {fixtures.map((match) => (
+                  <div key={match.id} className="grid grid-cols-7 items-center p-3 hover:bg-accent/50 transition-colors text-center">
+                    <div className="col-span-3 text-right font-semibold truncate pr-2">
+                      {match.home_team?.name}
+                    </div>
+                    <div className="col-span-1 flex flex-col items-center justify-center gap-1">
+                      <Badge variant="outline" className="text-[8px] px-1">{match.phase}</Badge>
+                      {match.status === 'finished' ? (
+                        <div className="flex items-center gap-2 bg-primary/10 px-2 py-0.5 rounded font-black text-primary text-sm">
+                          <span>{match.home_goals}</span>
+                          <span className="text-[10px] text-muted-foreground">x</span>
+                          <span>{match.away_goals}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                          20:00
+                        </div>
+                      )}
+                    </div>
+                    <div className="col-span-3 text-left font-semibold truncate pl-2">
+                      {match.away_team?.name}
+                    </div>
+                  </div>
+                ))}
+                {fixtures.length === 0 && (
+                  <div className="py-20 text-center px-6 space-y-4">
+                    <Swords className="h-12 w-12 text-muted-foreground/20 mx-auto" />
+                    <h3 className="text-lg font-bold">Aguardando confrontos</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Você está inscrito na Copa de Iniciantes. Os confrontos serão gerados automaticamente no dia 10 do mês.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-primary/5 border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" /> Objetivo da Copa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground space-y-2">
+              <p>Os 8 melhores jogadores da Copa de Iniciantes garantem vaga direta na Liga Mundial do próximo mês.</p>
+              <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded text-[10px] text-amber-500 font-bold">
+                <CheckCircle2 className="h-3 w-3" />
+                Transição automática no dia 1º
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-6">
         <Trophy className="h-12 w-12 text-muted-foreground/20" />
-        <h3 className="text-lg font-bold">Liga em andamento</h3>
+        <h3 className="text-lg font-bold">Buscando sua liga...</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
-          Uma temporada já está em curso. Você foi inscrito na <span className="text-primary font-bold">Copa de Iniciantes</span> e entrará na liga principal no dia 1º do próximo mês.
+          Estamos organizando sua entrada na próxima competição disponível.
         </p>
       </div>
     );
