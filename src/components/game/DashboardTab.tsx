@@ -27,7 +27,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
       if (teamData && teamData.league_id) {
         const { data: table } = await supabase
           .from('world_league_table')
-          .select('*')
+          .select('*, world_teams(name)')
           .eq('league_id', teamData.league_id)
           .order('points', { ascending: false })
           .limit(5);
