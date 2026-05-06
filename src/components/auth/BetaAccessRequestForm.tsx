@@ -23,18 +23,16 @@ export function BetaAccessRequestForm({ onBack }: Props) {
     const lower = mail.trim().toLowerCase();
     if (!lower) return null;
 
-    const [{ data: wl }, { data: req }] = await Promise.all([
-      supabase.from('beta_whitelist').select('id').ilike('email', lower).maybeSingle(),
-      supabase
-        .from('beta_access_requests')
-        .select('status')
-        .ilike('email', lower)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
-
-    return { whitelisted: !!wl, status: (req?.status as RequestStatus) ?? null };
+    const { data, error } = await supabase.rpc('check_beta_access', { _email: lower });
+    if (error) {
+      console.error('check_beta_access error', error);
+      return { whitelisted: false, status: null as RequestStatus };
+    }
+    const result = (data ?? {}) as { whitelisted?: boolean; status?: string | null };
+    return {
+      whitelisted: !!result.whitelisted,
+      status: (result.status as RequestStatus) ?? null,
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
