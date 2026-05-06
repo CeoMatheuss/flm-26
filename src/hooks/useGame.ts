@@ -360,5 +360,6 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     addPackPlayers,
     addBonus,
     rescindPlayer: clubState.rescindPlayer,
+    enrollWorldLeague: clubState.enrollWorldLeague,
   };
 }
