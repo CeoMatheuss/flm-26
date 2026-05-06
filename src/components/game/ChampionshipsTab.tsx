@@ -43,34 +43,38 @@ export function ChampionshipsTab({ onBack }: Props) {
   }, []);
 
   useEffect(() => {
-    if (selectedLeagueId) {
-      const loadDetails = async () => {
-        setLoadingDetails(true);
-        
-        // Load Standings
-        const { data: standingsData } = await supabase
+    if (!selectedLeagueId) return;
+
+    const loadDetails = async () => {
+      setLoadingDetails(true);
+      const [{ data: standingsData }, { data: fixturesData }] = await Promise.all([
+        supabase
           .from('world_league_table')
           .select('*, world_teams(name, logo)')
           .eq('league_id', selectedLeagueId)
           .order('points', { ascending: false })
-          .order('goals_for', { ascending: false });
-        
-        if (standingsData) setStandings(standingsData);
-
-        // Load Fixtures
-        const { data: fixturesData } = await supabase
+          .order('goals_for', { ascending: false }),
+        supabase
           .from('world_matches')
           .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name), away_team:world_teams!world_matches_away_team_id_fkey(name)')
           .eq('league_id', selectedLeagueId)
           .eq('round', currentRound)
-          .order('scheduled_at', { ascending: true });
-        
-        if (fixturesData) setFixtures(fixturesData);
-        
-        setLoadingDetails(false);
-      };
-      loadDetails();
-    }
+          .order('scheduled_at', { ascending: true }),
+      ]);
+      if (standingsData) setStandings(standingsData);
+      if (fixturesData) setFixtures(fixturesData);
+      setLoadingDetails(false);
+    };
+    loadDetails();
+
+    // 🔴 Realtime: refresh standings + fixtures on any change in this league
+    const channel = supabase
+      .channel(`championship-${selectedLeagueId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches', filter: `league_id=eq.${selectedLeagueId}` }, () => loadDetails())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table', filter: `league_id=eq.${selectedLeagueId}` }, () => loadDetails())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [selectedLeagueId, currentRound]);
 
   if (selectedLeagueId) {
