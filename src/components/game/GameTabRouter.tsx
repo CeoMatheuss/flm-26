@@ -31,6 +31,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
+import { ChampionshipsTab } from './ChampionshipsTab';
 
 // StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
@@ -42,7 +43,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Globe } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -231,6 +232,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="league">
         <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
+      </TabsContent>
+      <TabsContent value="championships">
+        <ChampionshipsTab />
       </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
