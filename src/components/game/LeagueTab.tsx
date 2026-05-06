@@ -1,29 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Trophy, Target, Layers, Loader2, UserPlus, CheckCircle2, Calendar } from 'lucide-react';
-import { LeaguesOverview } from './LeaguesOverview';
-import { CupBracketView } from './CupBracketView';
+import { Trophy, Loader2, CheckCircle2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-
-interface CupCompetition {
-  id: string;
-  name: string;
-  cup_type: string;
-  country: string | null;
-  status: string;
-}
-
-interface LeagueInfo {
-  league_id: string;
-  league_name: string;
-  status: string;
-  team_count: number;
-  player_team_id: string;
-}
 
 interface Props {
   clubName: string;
@@ -31,7 +11,7 @@ interface Props {
   clubPlayers?: any[];
 }
 
-export function LeagueTab({ clubName, country, clubPlayers }: Props) {
+export function LeagueTab({ clubName, clubPlayers }: Props) {
   const [standings, setStandings] = useState<any[]>([]);
   const [leagueInfo, setLeagueInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +21,6 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Load user team and league info
     const { data: teamData } = await supabase
       .from('world_teams')
       .select('*, world_leagues(name)')
@@ -52,8 +31,7 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
       setLeagueInfo({
         league_id: teamData.league_id,
         league_name: teamData.world_leagues?.name || 'Liga Mundial',
-        player_team_id: teamData.id,
-        status: 'in_progress'
+        player_team_id: teamData.id
       });
       
       const { data: standingsData } = await supabase
@@ -63,9 +41,7 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
         .order('points', { ascending: false })
         .order('goals_for', { ascending: false });
       
-      if (standingsData) {
-        setStandings(standingsData);
-      }
+      if (standingsData) setStandings(standingsData);
     } else {
       setLeagueInfo(null);
     }
@@ -74,18 +50,12 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
 
   useEffect(() => {
     loadData();
-  }, [country, clubName]);
+  }, [clubName]);
 
   const topScorers = useMemo(() => {
     return (clubPlayers || []).filter(p => (p.goals ?? 0) > 0)
       .map(p => ({ name: p.name, team: clubName, goals: p.goals ?? 0 }))
-      .sort((a, b) => b.goals - a.goals).slice(0, 10);
-  }, [clubPlayers, clubName]);
-
-  const topAssisters = useMemo(() => {
-    return (clubPlayers || []).filter(p => (p.assists ?? 0) > 0)
-      .map(p => ({ name: p.name, team: clubName, assists: p.assists ?? 0 }))
-      .sort((a, b) => b.assists - a.assists).slice(0, 10);
+      .sort((a, b) => b.goals - a.goals).slice(0, 3);
   }, [clubPlayers, clubName]);
 
   if (loading) {
@@ -152,7 +122,7 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
                       <TableCell>
                         <span className="flex items-center gap-2">
                           <span className="text-base">⚽</span>
-                          <span className="truncate max-w-[120px] sm:max-w-none">{row.team_id === leagueInfo.player_team_id ? clubName : `Time ${i + 1}`}</span>
+                          <span className="truncate max-w-[120px] sm:max-w-none">{isPlayerTeam ? clubName : `Time ${i + 1}`}</span>
                         </span>
                       </TableCell>
                       <TableCell className="text-center text-xs">{row.played}</TableCell>
@@ -189,10 +159,6 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </div>
-  );
 
           <Card className="border-amber-500/20">
             <CardHeader className="pb-2">
@@ -203,12 +169,12 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
             <CardContent className="space-y-2">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase">Artilheiros</p>
-                {topScorers.slice(0, 3).map((s, i) => (
+                {topScorers.length > 0 ? topScorers.map((s, i) => (
                   <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
                     <span className="truncate">{s.name}</span>
                     <span className="font-bold">{s.goals} ⚽</span>
                   </div>
-                ))}
+                )) : <p className="text-[10px] text-muted-foreground italic">Nenhum gol ainda</p>}
               </div>
             </CardContent>
           </Card>
