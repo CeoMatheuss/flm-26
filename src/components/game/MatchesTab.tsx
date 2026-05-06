@@ -70,24 +70,14 @@ export function MatchesTab({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Sincronizar estado da liga
-      await supabase.rpc('sync_league_state', { _user_id: user.id });
-
-      // Load Official World League matches
-      const { data: userLeague } = await supabase
-        .from('world_league_teams')
-        .select('league_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
+      // Official World League matches initialization handled by replace_bot_with_player RPC
       const { data: teamData } = await supabase
         .from('world_teams')
-        .select('id, division_id')
+        .select('id, league_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (teamData?.division_id) {
-        // Use any to bypass TS depth issues with recursive table relationships
+      if (teamData?.league_id) {
         const { data: wm, error: wmErr } = await (supabase
           .from('world_matches' as any)
           .select(`
@@ -100,7 +90,7 @@ export function MatchesTab({
             home_team:world_teams!home_team_id(name, strength), 
             away_team:world_teams!away_team_id(name, strength)
           `)
-          .eq('division_id', teamData.division_id)
+          .eq('league_id', teamData.league_id)
           .order('round', { ascending: true })
           .order('scheduled_at', { ascending: true })
           .limit(100) as any);
@@ -111,7 +101,7 @@ export function MatchesTab({
           const enriched = wm.map((m: any) => {
             const hName = m.home_team?.name || '???';
             const aName = m.away_team?.name || '???';
-            const isHome = hName === clubName;
+            const isHome = m.home_team_id === teamData.id;
             return {
               ...m,
               homeName: hName,
