@@ -179,6 +179,10 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     });
   }, [infraState.enrollCopinha, clubState.club.name, clubState.clubProfile, clubState.updateClubProfile]);
 
+  const enrollWorldLeague = useCallback(async (teamId: string, countryId: string) => {
+    await clubState.enrollWorldLeague(teamId, countryId);
+  }, [clubState.enrollWorldLeague]);
+
   const upgradeCTRoom = useCallback((room: keyof CTRooms) => {
     infraState.upgradeCTRoom(
       room,
@@ -356,5 +360,6 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     addPackPlayers,
     addBonus,
     rescindPlayer: clubState.rescindPlayer,
+    enrollWorldLeague: clubState.enrollWorldLeague,
   };
 }

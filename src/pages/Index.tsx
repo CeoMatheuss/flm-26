@@ -160,22 +160,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
 
-  // Auto-fix and Initialize league for current month (CRITICAL SYNC)
-  useEffect(() => {
-    if (!userId) return;
-    const initLeague = async () => {
-      try {
-        const { data: team } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
-        if (team) {
-          await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
-        }
-      } catch (e) {
-        console.error('Failed to sync league:', e);
-      }
-    };
-    initLeague();
-  }, [userId]);
-
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
 
@@ -185,6 +169,29 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   usePresence(userId);
   usePendingMatchFlush(userId);
   useAutoSimulator(userId);
+
+  // Auto-fix and Initialize league for current month (CRITICAL SYNC)
+  useEffect(() => {
+    if (!userId) return;
+    const initLeague = async () => {
+      try {
+        const { data: team } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
+        if (team) {
+          if (!team.league_id) {
+            const countryCode = initialState?.club?.country || 'BR';
+            const { data: country } = await supabase.from('countries').select('id').eq('code', countryCode).maybeSingle();
+            if (country) {
+              await game.enrollWorldLeague(team.id, country.id);
+            }
+          }
+          await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
+        }
+      } catch (e) {
+        console.error('Failed to sync league:', e);
+      }
+    };
+    initLeague();
+  }, [userId, game.enrollWorldLeague]);
 
   // Check maintenance mode + tutorial status
   useEffect(() => {
