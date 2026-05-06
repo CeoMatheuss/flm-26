@@ -4143,6 +4143,7 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      check_beta_access: { Args: { _email: string }; Returns: Json }
       check_club_name_available: { Args: { _name: string }; Returns: Json }
       close_expired_auctions: { Args: never; Returns: Json }
       cwc_update_standings: {
