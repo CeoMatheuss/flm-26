@@ -19,6 +19,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     opponentStrength: number; isHome: boolean; tournamentName: string;
     status?: string; homeGoals?: number | null; awayGoals?: number | null; playedAt?: string | null;
     round?: number;
+    kind?: 'friendly' | 'tournament' | 'league';
+    stage?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
@@ -89,6 +91,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
             tournamentName: (match.league as any)?.league_name || 'Liga',
             status: match.status,
             round: (match as any).matchday,
+            kind: 'tournament',
+            stage: 'Liga',
           });
         }
         setLoading(false);
