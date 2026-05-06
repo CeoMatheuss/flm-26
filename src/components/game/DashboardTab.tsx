@@ -15,8 +15,8 @@ import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 
-import { UpcomingLeagueMatchesWidget } from './UpcomingLeagueMatchesWidget';
-import { useLeagueFixer } from '@/hooks/useLeagueFixer';
+// ... imports removidos do sistema de liga
+
 
 interface Props {
   club: Club;
@@ -34,8 +34,8 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
-  // Use the auto-fixer hook to ensure league integrity
-  useLeagueFixer(userId);
+  // Sistema de liga desativado
+
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
@@ -190,11 +190,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Active Tournaments */}
       <TournamentDashboardCard onExpand={onOpenTournament} />
 
-      {/* Próximos Jogos Oficiais (Liga, Copa, Continental, Mundial) */}
-      {userId && <GlobalCompetitionsWidget userId={userId} />}
+      {/* Próximos Jogos Oficiais removidos */}
 
-      {/* Próximos jogos das ligas mundiais (compacto, scrollável) */}
-      <UpcomingLeagueMatchesWidget />
 
       {/* Newspaper */}
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
