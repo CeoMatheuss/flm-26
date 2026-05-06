@@ -45,32 +45,47 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Use RPC for reliability and to avoid TS inference depth issues
-      const { data, error } = await supabase.rpc('get_user_next_match', { _user_id: userId });
+      // Load next league match
+      const { data: matches, error } = await supabase
+        .from('world_matches')
+        .select(`
+          id,
+          round,
+          status,
+          scheduled_at,
+          home_team_id,
+          away_team_id,
+          world_leagues (name),
+          home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
+          away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
+        `)
+        .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
 
       if (error) {
         console.error('Error fetching next match:', error);
       }
 
       if (!cancelled) {
-        if (!data || data.length === 0) {
+        if (!matches || matches.length === 0) {
           setNextMatch(null);
         } else {
-          const match = data[0];
+          const match: any = matches[0];
           const isHome = match.home_team_id === teamData.id;
-          const opponentName = isHome ? match.away_team_name : match.home_team_name;
 
           setNextMatch({
-            home: match.home_team_name,
-            away: match.away_team_name,
+            home: match.home_team.name,
+            away: match.away_team.name,
             date: match.scheduled_at,
-            tournament: match.league_name,
+            tournament: match.world_leagues?.name || 'Liga',
             matchId: match.id,
             homeTeamId: match.home_team_id,
             awayTeamId: match.away_team_id,
-            opponentStrength: 70, // Default for now
+            opponentStrength: isHome ? match.away_team.strength : match.home_team.strength,
             isHome,
-            tournamentName: match.league_name,
+            tournamentName: match.world_leagues?.name || 'Liga',
             status: match.status,
             round: match.round,
             kind: 'league',
@@ -88,9 +103,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
       .subscribe();
 
-    const interval = setInterval(loadNextMatch, 30000);
+    const interval = setInterval(loadNextMatch, 60000);
     return () => { cancelled = true; clearInterval(interval); supabase.removeChannel(channel); };
   }, [userId]);
+
 
   // Live countdown timer (only relevant when match is still scheduled)
   useEffect(() => {

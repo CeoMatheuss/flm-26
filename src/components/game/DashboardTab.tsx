@@ -27,7 +27,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
       if (teamData && teamData.league_id) {
         const { data: table } = await supabase
           .from('world_league_table')
-          .select('*')
+          .select('*, world_teams(name)')
           .eq('league_id', teamData.league_id)
           .order('points', { ascending: false })
           .limit(5);
@@ -54,7 +54,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
             <div key={s.id} className="flex items-center justify-between px-3 py-1.5 text-[10px]">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
-                <span className="truncate max-w-[100px]">{s.team_id === userId ? 'Seu Time' : `Time ${i + 1}`}</span>
+                <span className="truncate max-w-[100px]">{s.team_id === userId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}</span>
               </div>
               <span className="font-bold text-primary">{s.points} pts</span>
             </div>
