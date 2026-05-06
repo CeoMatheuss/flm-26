@@ -3975,20 +3975,32 @@ export type Database = {
         Row: {
           country_id: string | null
           created_at: string | null
+          current_round: number | null
+          division_level: number | null
           id: string
+          match_time: string | null
           name: string
+          status: string | null
         }
         Insert: {
           country_id?: string | null
           created_at?: string | null
+          current_round?: number | null
+          division_level?: number | null
           id?: string
+          match_time?: string | null
           name: string
+          status?: string | null
         }
         Update: {
           country_id?: string | null
           created_at?: string | null
+          current_round?: number | null
+          division_level?: number | null
           id?: string
+          match_time?: string | null
           name?: string
+          status?: string | null
         }
         Relationships: [
           {
@@ -4265,6 +4277,10 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      check_and_start_league: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
       check_beta_access: { Args: { _email: string }; Returns: Json }
       check_club_name_available: { Args: { _name: string }; Returns: Json }
       close_expired_auctions: { Args: never; Returns: Json }
@@ -4325,6 +4341,10 @@ export type Database = {
       }
       generate_league_calendar: {
         Args: { p_league_id: string }
+        Returns: undefined
+      }
+      generate_league_fixtures: {
+        Args: { _league_id: string }
         Returns: undefined
       }
       generate_league_matches: {
@@ -4439,6 +4459,10 @@ export type Database = {
       is_match_participant: {
         Args: { _shared_match_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_world_league: {
+        Args: { _league_id: string; _user_id: string }
+        Returns: undefined
       }
       next_sunday_17: { Args: never; Returns: string }
       normalize_country: { Args: { _input: string }; Returns: string }
