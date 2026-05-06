@@ -320,14 +320,21 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
     if (!userId) return;
     const sync = async () => {
       try {
-        const { data: team } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
-        if (team) {
-          await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
+        const { data: team } = await supabase.from('world_teams').select('id, name, logo').eq('user_id', userId).maybeSingle();
+        if (!team) {
+          // Initialize player in the world league system (replaces a bot or joins cup)
+          await supabase.rpc('replace_bot_with_player', { 
+            _user_id: userId, 
+            _team_name: club.name, 
+            _logo: '⚽' 
+          });
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('League sync error:', e);
+      }
     };
     sync();
-  }, [userId]);
+  }, [userId, club.name]);
 
   // Poll DB for active live match
   useEffect(() => {
