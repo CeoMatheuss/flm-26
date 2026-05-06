@@ -136,6 +136,69 @@ export type Database = {
           },
         ]
       }
+      beginner_cup: {
+        Row: {
+          created_at: string | null
+          id: string
+          season_month: number
+          season_year: number
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          season_month: number
+          season_year: number
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          season_month?: number
+          season_year?: number
+          status?: string | null
+        }
+        Relationships: []
+      }
+      beginner_cup_participants: {
+        Row: {
+          created_at: string | null
+          cup_id: string | null
+          id: string
+          status: string | null
+          team_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cup_id?: string | null
+          id?: string
+          status?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cup_id?: string | null
+          id?: string
+          status?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beginner_cup_participants_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "beginner_cup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beginner_cup_participants_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_access_requests: {
         Row: {
           created_at: string
@@ -1601,13 +1664,6 @@ export type Database = {
             foreignKeyName: "international_competition_clubs_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "international_competition_clubs_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
           },
@@ -1706,13 +1762,6 @@ export type Database = {
             foreignKeyName: "international_matches_away_team_id_fkey"
             columns: ["away_team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "international_matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
           },
@@ -1722,13 +1771,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "international_competitions"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "international_matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "international_matches_home_team_id_fkey"
@@ -1882,22 +1924,8 @@ export type Database = {
             foreignKeyName: "league_matches_away_team_id_fkey"
             columns: ["away_team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "league_matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "league_matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "league_matches_home_team_id_fkey"
@@ -3671,6 +3699,27 @@ export type Database = {
         }
         Relationships: []
       }
+      world_countries: {
+        Row: {
+          flag_emoji: string | null
+          id: string
+          iso_code: string | null
+          name: string
+        }
+        Insert: {
+          flag_emoji?: string | null
+          id?: string
+          iso_code?: string | null
+          name: string
+        }
+        Update: {
+          flag_emoji?: string | null
+          id?: string
+          iso_code?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       world_cup_matches: {
         Row: {
           away_goals: number | null
@@ -3722,13 +3771,6 @@ export type Database = {
             foreignKeyName: "world_cup_matches_away_team_id_fkey"
             columns: ["away_team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "world_cup_matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
           },
@@ -3738,13 +3780,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "world_cups"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "world_cup_matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "world_cup_matches_home_team_id_fkey"
@@ -3821,13 +3856,6 @@ export type Database = {
             foreignKeyName: "world_cup_tournament_clubs_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "world_cup_tournament_clubs_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
           },
@@ -3891,22 +3919,8 @@ export type Database = {
             foreignKeyName: "world_cup_tournament_matches_away_team_id_fkey"
             columns: ["away_team_id"]
             isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "world_cup_tournament_matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
             referencedRelation: "world_league_teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "world_cup_tournament_matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "world_league_table"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "world_cup_tournament_matches_home_team_id_fkey"
@@ -3991,12 +4005,67 @@ export type Database = {
           match_time?: string
           name?: string
         }
+        Relationships: []
+      }
+      world_league_table: {
+        Row: {
+          draws: number | null
+          goals_against: number | null
+          goals_for: number | null
+          id: string
+          league_id: string | null
+          losses: number | null
+          played: number | null
+          points: number | null
+          season_month: number
+          season_year: number
+          team_id: string | null
+          updated_at: string | null
+          wins: number | null
+        }
+        Insert: {
+          draws?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          id?: string
+          league_id?: string | null
+          losses?: number | null
+          played?: number | null
+          points?: number | null
+          season_month: number
+          season_year: number
+          team_id?: string | null
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Update: {
+          draws?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          id?: string
+          league_id?: string | null
+          losses?: number | null
+          played?: number | null
+          points?: number | null
+          season_month?: number
+          season_year?: number
+          team_id?: string | null
+          updated_at?: string | null
+          wins?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "world_divisions_league_id_fkey"
+            foreignKeyName: "world_league_table_league_id_fkey"
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_league_table_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -4063,90 +4132,87 @@ export type Database = {
       }
       world_leagues: {
         Row: {
+          active: boolean | null
           country_id: string | null
           created_at: string | null
-          current_round: number | null
-          division_level: number | null
+          division: number | null
           id: string
-          match_time: string | null
           name: string
-          status: string | null
         }
         Insert: {
+          active?: boolean | null
           country_id?: string | null
           created_at?: string | null
-          current_round?: number | null
-          division_level?: number | null
+          division?: number | null
           id?: string
-          match_time?: string | null
           name: string
-          status?: string | null
         }
         Update: {
+          active?: boolean | null
           country_id?: string | null
           created_at?: string | null
-          current_round?: number | null
-          division_level?: number | null
+          division?: number | null
           id?: string
-          match_time?: string | null
           name?: string
-          status?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "world_leagues_country_id_fkey"
             columns: ["country_id"]
             isOneToOne: false
-            referencedRelation: "countries"
+            referencedRelation: "world_countries"
             referencedColumns: ["id"]
           },
         ]
       }
       world_matches: {
         Row: {
-          auto_sim_at: string
           away_goals: number | null
           away_team_id: string | null
           created_at: string | null
-          division_id: string | null
           home_goals: number | null
           home_team_id: string | null
           id: string
+          league_id: string | null
           match_data: Json | null
           played_at: string | null
           round: number
           scheduled_at: string
-          status: string
+          season_month: number
+          season_year: number
+          status: string | null
         }
         Insert: {
-          auto_sim_at: string
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
-          division_id?: string | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
+          league_id?: string | null
           match_data?: Json | null
           played_at?: string | null
           round: number
           scheduled_at: string
-          status?: string
+          season_month: number
+          season_year: number
+          status?: string | null
         }
         Update: {
-          auto_sim_at?: string
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
-          division_id?: string | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
+          league_id?: string | null
           match_data?: Json | null
           played_at?: string | null
           round?: number
           scheduled_at?: string
-          status?: string
+          season_month?: number
+          season_year?: number
+          status?: string | null
         }
         Relationships: [
           {
@@ -4157,17 +4223,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "world_matches_division_id_fkey"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "world_divisions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "world_matches_home_team_id_fkey"
             columns: ["home_team_id"]
             isOneToOne: false
             referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "world_leagues"
             referencedColumns: ["id"]
           },
         ]
@@ -4223,52 +4289,48 @@ export type Database = {
             referencedRelation: "world_divisions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "world_standings_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "world_teams"
-            referencedColumns: ["id"]
-          },
         ]
       }
       world_teams: {
         Row: {
           created_at: string | null
-          division_id: string | null
           id: string
           is_bot: boolean | null
+          league_id: string | null
           logo: string | null
           name: string
           strength: number | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          division_id?: string | null
           id?: string
           is_bot?: boolean | null
+          league_id?: string | null
           logo?: string | null
           name: string
           strength?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
-          division_id?: string | null
           id?: string
           is_bot?: boolean | null
+          league_id?: string | null
           logo?: string | null
           name?: string
           strength?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "world_teams_division_id_fkey"
-            columns: ["division_id"]
+            foreignKeyName: "world_teams_league_id_fkey"
+            columns: ["league_id"]
             isOneToOne: false
-            referencedRelation: "world_divisions"
+            referencedRelation: "world_leagues"
             referencedColumns: ["id"]
           },
         ]
@@ -4304,54 +4366,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      world_league_table: {
-        Row: {
-          club_logo: string | null
-          club_name: string | null
-          d: number | null
-          ga: number | null
-          gd: number | null
-          gf: number | null
-          l: number | null
-          league_id: string | null
-          mp: number | null
-          pts: number | null
-          team_id: string | null
-          user_id: string | null
-          w: number | null
-        }
-        Insert: {
-          club_logo?: string | null
-          club_name?: string | null
-          d?: number | null
-          ga?: number | null
-          gd?: never
-          gf?: number | null
-          l?: number | null
-          league_id?: string | null
-          mp?: number | null
-          pts?: number | null
-          team_id?: string | null
-          user_id?: string | null
-          w?: number | null
-        }
-        Update: {
-          club_logo?: string | null
-          club_name?: string | null
-          d?: number | null
-          ga?: number | null
-          gd?: never
-          gf?: number | null
-          l?: number | null
-          league_id?: string | null
-          mp?: number | null
-          pts?: number | null
-          team_id?: string | null
-          user_id?: string | null
-          w?: number | null
-        }
-        Relationships: []
       }
     }
     Functions: {
@@ -4452,10 +4466,12 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
-      generate_league_fixtures: {
-        Args: { p_league_id: string }
-        Returns: undefined
-      }
+      generate_league_fixtures:
+        | {
+            Args: { _league_id: string; _month: number; _year: number }
+            Returns: undefined
+          }
+        | { Args: { p_league_id: string }; Returns: undefined }
       generate_league_matches: {
         Args: { p_league_id: string }
         Returns: undefined
@@ -4628,15 +4644,20 @@ export type Database = {
       rebuild_league_v6: { Args: never; Returns: undefined }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
-      replace_bot_with_player: {
-        Args: {
-          _club_logo?: string
-          _club_name: string
-          _league_id: string
-          _user_id: string
-        }
-        Returns: Json
-      }
+      replace_bot_with_player:
+        | {
+            Args: {
+              _club_logo?: string
+              _club_name: string
+              _league_id: string
+              _user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: { _logo: string; _team_name: string; _user_id: string }
+            Returns: string
+          }
       reset_league_structure: {
         Args: { _league_id: string }
         Returns: undefined

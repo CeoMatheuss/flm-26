@@ -23,13 +23,13 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const { data: info } = await supabase.rpc('get_user_league_info', { _user_id: userId });
-      if (info && info.length > 0) {
+      const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
+      if (teamData && teamData.league_id) {
         const { data: table } = await supabase
-          .from('world_league_table' as any)
+          .from('world_league_table')
           .select('*')
-          .eq('league_id', info[0].league_id)
-          .order('pts', { ascending: false })
+          .eq('league_id', teamData.league_id)
+          .order('points', { ascending: false })
           .limit(5);
         if (table) setStandings(table);
       }
@@ -51,12 +51,12 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
       <CardContent className="p-0">
         <div className="divide-y divide-border/30">
           {standings.map((s, i) => (
-            <div key={s.team_id} className="flex items-center justify-between px-3 py-1.5 text-[10px]">
+            <div key={s.id} className="flex items-center justify-between px-3 py-1.5 text-[10px]">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
-                <span className="truncate max-w-[100px]">{s.club_name}</span>
+                <span className="truncate max-w-[100px]">{s.team_id === userId ? 'Seu Time' : `Time ${i + 1}`}</span>
               </div>
-              <span className="font-bold text-primary">{s.pts} pts</span>
+              <span className="font-bold text-primary">{s.points} pts</span>
             </div>
           ))}
         </div>
