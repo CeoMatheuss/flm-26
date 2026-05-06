@@ -79,8 +79,9 @@ export function UpcomingLeagueMatchesWidget() {
         .select('id, league_id, matchday, kickoff_at, home_team_id, away_team_id, home_team:home_team_id(club_name), away_team:away_team_id(club_name)')
         .in('league_id', leagueIds)
         .eq('status', 'scheduled')
+        .order('matchday', { ascending: true })
         .order('kickoff_at', { ascending: true })
-        .limit(500);
+        .limit(240);
 
       if (!rows) return;
 
@@ -95,10 +96,11 @@ export function UpcomingLeagueMatchesWidget() {
         const l = leagueMap.get(r.league_id);
         if (!l) continue;
 
-        // Deduplicate: each team only 1 match per round/day
-        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}-${r.away_team_id}`;
+        // Deduplicate: each team only 1 match per round
+        const matchKey = `${r.league_id}-${r.matchday}-${r.home_team_id}`;
         if (seen.has(matchKey)) continue;
         seen.add(matchKey);
+        seen.add(`${r.league_id}-${r.matchday}-${r.away_team_id}`);
 
         const m: UpcomingMatch = {
           match_id: r.id,
