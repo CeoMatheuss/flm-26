@@ -52,12 +52,12 @@ export function LeagueTab({ clubName, country, clubPlayers, currentTier, current
       await supabase.rpc('sync_league_integrity', { _user_id: user.id });
 
       // Carregar classificação da VIEW autoritativa
-      const { data: standingsData, error: sErr } = await supabase
-        .from('world_league_table')
+      const { data: standingsData, error: sErr } = await (supabase
+        .from('world_league_table' as any)
         .select('*')
         .order('pts', { ascending: false })
         .order('gd', { ascending: false })
-        .order('gf', { ascending: false });
+        .order('gf', { ascending: false }) as any);
       
       if (sErr) {
         console.error('Erro ao carregar tabela autoritativa:', sErr);

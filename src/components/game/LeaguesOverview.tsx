@@ -33,12 +33,21 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
   useEffect(() => {
     const loadLeagues = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('world_leagues')
-        .select('*')
-        .order('division', { ascending: true })
-        .order('country', { ascending: true });
-      if (data) setLeagues(data);
+      const { data } = await (supabase
+        .from('world_divisions' as any)
+        .select('*, league:world_leagues(*, country:countries(*))')
+        .order('level', { ascending: true }) as any);
+      
+      if (data) {
+        setLeagues(data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          level: d.level,
+          league_name: d.league?.name,
+          country: d.league?.country?.code,
+          flag_emoji: d.league?.country?.code === 'BR' ? '🇧🇷' : '⚽', // Simple fallback
+        })));
+      }
       setLoading(false);
     };
     loadLeagues();
@@ -48,13 +57,13 @@ export function LeaguesOverview({ currentCountry, clubName, onBack }: Props) {
     if (selectedLeagueId) {
       const loadStandings = async () => {
         setLoadingStandings(true);
-        const { data } = await supabase
-          .from('world_league_standings')
-          .select('*, team:world_league_teams(club_name, club_logo)')
-          .eq('league_id', selectedLeagueId)
+        const { data } = await (supabase
+          .from('world_league_table' as any)
+          .select('*')
+          .eq('division_id', selectedLeagueId)
           .order('pts', { ascending: false })
           .order('gd', { ascending: false })
-          .order('gf', { ascending: false });
+          .order('gf', { ascending: false }) as any);
         if (data) setStandings(data);
         setLoadingStandings(false);
       };

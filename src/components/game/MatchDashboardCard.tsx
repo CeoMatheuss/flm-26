@@ -31,15 +31,13 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     let cancelled = false;
 
     const loadNextMatch = async () => {
-      // O objetivo é buscar o próximo jogo agendado do usuário
-      // Primeiro, identificamos qual é o time/clube do usuário
-      const { data: userClub } = await supabase
-        .from('world_league_teams')
-        .select('id, league_id, club_name')
+      const { data: teamData } = await supabase
+        .from('world_teams')
+        .select('id, name')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (!userClub) {
+      if (!teamData) {
         if (!cancelled) {
           setNextMatch(null);
           setLoading(false);
@@ -47,51 +45,35 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Buscamos a partida agendada mais próxima (hoje ou no futuro)
-      const now = new Date().toISOString();
-      const { data: match, error } = await supabase
-        .from('world_matches')
-        .select(`
-          id, 
-          matchday, 
-          kickoff_at, 
-          status,
-          home_team:home_team_id(id, club_name, bot_strength),
-          away_team:away_team_id(id, club_name, bot_strength),
-          league:league_id(league_name)
-        `)
-        .or(`home_team_id.eq.${userClub.id},away_team_id.eq.${userClub.id}`)
-        .eq('status', 'scheduled')
-        .gte('kickoff_at', now)
-        .order('kickoff_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      // Use RPC for reliability and to avoid TS inference depth issues
+      const { data, error } = await supabase.rpc('get_user_next_match', { _user_id: userId });
 
       if (error) {
         console.error('Error fetching next match:', error);
       }
 
       if (!cancelled) {
-        if (!match) {
+        if (!data || data.length === 0) {
           setNextMatch(null);
         } else {
-          const isHome = (match.home_team as any).id === userClub.id;
-          const opponent = isHome ? match.away_team : match.home_team;
+          const match = data[0];
+          const isHome = match.home_team_id === teamData.id;
+          const opponentName = isHome ? match.away_team_name : match.home_team_name;
 
           setNextMatch({
-            home: (match.home_team as any).club_name,
-            away: (match.away_team as any).club_name,
-            date: match.kickoff_at,
-            tournament: (match.league as any)?.league_name || 'Liga',
+            home: match.home_team_name,
+            away: match.away_team_name,
+            date: match.scheduled_at,
+            tournament: match.league_name,
             matchId: match.id,
-            homeTeamId: (match.home_team as any).id,
-            awayTeamId: (match.away_team as any).id,
-            opponentStrength: (opponent as any).bot_strength || 70,
+            homeTeamId: match.home_team_id,
+            awayTeamId: match.away_team_id,
+            opponentStrength: 70, // Default for now
             isHome,
-            tournamentName: (match.league as any)?.league_name || 'Liga',
+            tournamentName: match.league_name,
             status: match.status,
-            round: (match as any).matchday,
-            kind: 'tournament',
+            round: match.round,
+            kind: 'league',
             stage: 'Liga',
           });
         }
@@ -106,7 +88,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
       .subscribe();
 
-    const interval = setInterval(loadNextMatch, 30000); // 30s update
+    const interval = setInterval(loadNextMatch, 30000);
     return () => { cancelled = true; clearInterval(interval); supabase.removeChannel(channel); };
   }, [userId]);
 
