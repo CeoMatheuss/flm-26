@@ -4410,6 +4410,10 @@ export type Database = {
         Returns: undefined
       }
       ensure_league_size: { Args: { p_league_id: string }; Returns: undefined }
+      ensure_league_teams: {
+        Args: { p_league_id: string; p_player_team_id: string }
+        Returns: undefined
+      }
       ensure_user_version: {
         Args: { _current_version: string; _user_id: string }
         Returns: {
@@ -4449,7 +4453,7 @@ export type Database = {
         Returns: undefined
       }
       generate_league_fixtures: {
-        Args: { _league_id: string }
+        Args: { p_league_id: string }
         Returns: undefined
       }
       generate_league_matches: {
@@ -4485,6 +4489,10 @@ export type Database = {
           home_name: string
           match_data: Json
         }
+        Returns: string
+      }
+      get_or_create_current_league: {
+        Args: { p_division_id: string }
         Returns: string
       }
       get_public_club_profile: {
@@ -4557,6 +4565,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_player_league: {
+        Args: { p_player_team_id: string }
+        Returns: string
       }
       initialize_world_league: {
         Args: { p_league_id: string }
@@ -4653,6 +4665,10 @@ export type Database = {
         Returns: string
       }
       sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
+      sync_league_progress: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
       sync_league_team_count: { Args: never; Returns: undefined }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
