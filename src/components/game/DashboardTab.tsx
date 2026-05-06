@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
@@ -15,8 +15,55 @@ import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 
-// ... imports removidos do sistema de liga
+// Logic for standing sync
+function LeagueStandingsMini({ userId }: { userId?: string }) {
+  const [standings, setStandings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const { data: info } = await supabase.rpc('get_user_league_info', { _user_id: userId });
+      if (info && info.length > 0) {
+        const { data: table } = await supabase
+          .from('world_league_table' as any)
+          .select('*')
+          .eq('league_id', info[0].league_id)
+          .order('pts', { ascending: false })
+          .limit(5);
+        if (table) setStandings(table);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  if (loading) return <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>;
+  if (standings.length === 0) return null;
+
+  return (
+    <Card className="game-card">
+      <CardHeader className="py-2 px-3 border-b border-border/50">
+        <CardTitle className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <Trophy className="h-3 w-3 text-emerald-400" /> Top 5 Liga
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y divide-border/30">
+          {standings.map((s, i) => (
+            <div key={s.team_id} className="flex items-center justify-between px-3 py-1.5 text-[10px]">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
+                <span className="truncate max-w-[100px]">{s.club_name}</span>
+              </div>
+              <span className="font-bold text-primary">{s.pts} pts</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 interface Props {
   club: Club;
@@ -34,7 +81,7 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
-  // Sistema de liga desativado
+  // Liga synchronization via mini-widget
 
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
