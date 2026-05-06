@@ -32,32 +32,36 @@ interface Props {
 }
 
 export function LeagueTab({ clubName, country, clubPlayers }: Props) {
-  const [showAllLeagues, setShowAllLeagues] = useState(false);
-  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
-  const [cups, setCups] = useState<CupCompetition[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
-  const [leagueInfo, setLeagueInfo] = useState<LeagueInfo | null>(null);
+  const [leagueInfo, setLeagueInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Load user league status
-    const { data: info, error: iErr } = await supabase.rpc('get_user_league_info', { _user_id: user.id });
-    if (!iErr && info && info.length > 0) {
-      setLeagueInfo(info[0] as any);
+    // Load user team and league info
+    const { data: teamData } = await supabase
+      .from('world_teams')
+      .select('*, world_leagues(name)')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (teamData && teamData.league_id) {
+      setLeagueInfo({
+        league_id: teamData.league_id,
+        league_name: teamData.world_leagues?.name || 'Liga Mundial',
+        player_team_id: teamData.id,
+        status: 'in_progress'
+      });
       
-      // Carregar classificação se estiver em uma liga
       const { data: standingsData } = await supabase
-        .from('world_league_table' as any)
+        .from('world_league_table')
         .select('*')
-        .eq('league_id', info[0].league_id)
-        .order('pts', { ascending: false })
-        .order('gd', { ascending: false })
-        .order('gf', { ascending: false });
+        .eq('league_id', teamData.league_id)
+        .order('points', { ascending: false })
+        .order('goals_for', { ascending: false });
       
       if (standingsData) {
         setStandings(standingsData);
@@ -65,44 +69,12 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
     } else {
       setLeagueInfo(null);
     }
-
-    if (country) {
-      const { data: cupData } = await supabase
-        .from('cup_competitions')
-        .select('*')
-        .eq('country', country);
-      if (cupData) setCups(cupData as unknown as CupCompetition[]);
-    }
     setLoading(false);
   };
 
   useEffect(() => {
     loadData();
   }, [country, clubName]);
-
-  const handleJoinLeague = async (leagueId: string) => {
-    setJoining(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    try {
-      const { error } = await supabase.rpc('join_world_league', {
-        _user_id: user.id,
-        _league_id: leagueId
-      });
-
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Você entrou na liga com sucesso!");
-        loadData();
-      }
-    } catch (err) {
-      toast.error("Erro ao entrar na liga.");
-    } finally {
-      setJoining(false);
-    }
-  };
 
   const topScorers = useMemo(() => {
     return (clubPlayers || []).filter(p => (p.goals ?? 0) > 0)
