@@ -210,18 +210,7 @@ export function UpcomingLeagueMatchesWidget() {
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {userMatch && (
-                <div className="border-b pb-2 mb-2">
-                  <p className="text-[10px] font-bold text-primary uppercase mb-2">SEU PRÓXIMO JOGO</p>
-                  {renderItem(userMatch, false)}
-                </div>
-              )}
-              <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
-                {matches
-                  .filter(m => m.match_id !== userMatch?.match_id)
-                  .slice(0, 20)
-                  .map((m) => renderItem(m, true))}
-              </div>
+              {matches[0] && renderItem(matches[0], false)}
             </div>
           )}
         </CardContent>
