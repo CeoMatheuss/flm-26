@@ -165,8 +165,18 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     if (!userId) return;
     const initLeague = async () => {
       try {
-        const { data: team } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
+        const { data: team } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
         if (team) {
+          // If already has league_id, skip or sync. If not, enroll.
+          if (!team.league_id) {
+            const { data: profile } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
+            // Default to BR for now or use config.country if stored
+            const countryCode = initialState?.club?.country || 'BR';
+            const { data: country } = await supabase.from('countries').select('id').eq('code', countryCode).maybeSingle();
+            if (country) {
+              await game.enrollWorldLeague(team.id, country.id);
+            }
+          }
           await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
         }
       } catch (e) {
@@ -174,7 +184,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       }
     };
     initLeague();
-  }, [userId]);
+  }, [userId, game.enrollWorldLeague]);
 
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
