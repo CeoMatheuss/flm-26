@@ -160,6 +160,16 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
 
+  // Version guard: bloqueia o jogo durante atualizações de dados
+  const versionGuard = useVersionGuard(userId, initialState ?? null);
+
+  const { isPremium } = usePremiumStatus(userId);
+  const game = useGame(initialState, userId, isPremium);
+  const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
+  usePresence(userId);
+  usePendingMatchFlush(userId);
+  useAutoSimulator(userId);
+
   // Auto-fix and Initialize league for current month (CRITICAL SYNC)
   useEffect(() => {
     if (!userId) return;
@@ -167,10 +177,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       try {
         const { data: team } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
         if (team) {
-          // If already has league_id, skip or sync. If not, enroll.
           if (!team.league_id) {
-            const { data: profile } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
-            // Default to BR for now or use config.country if stored
             const countryCode = initialState?.club?.country || 'BR';
             const { data: country } = await supabase.from('countries').select('id').eq('code', countryCode).maybeSingle();
             if (country) {
@@ -185,16 +192,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     };
     initLeague();
   }, [userId, game.enrollWorldLeague]);
-
-  // Version guard: bloqueia o jogo durante atualizações de dados
-  const versionGuard = useVersionGuard(userId, initialState ?? null);
-
-  const { isPremium } = usePremiumStatus(userId);
-  const game = useGame(initialState, userId, isPremium);
-  const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
-  usePresence(userId);
-  usePendingMatchFlush(userId);
-  useAutoSimulator(userId);
 
   // Check maintenance mode + tutorial status
   useEffect(() => {
