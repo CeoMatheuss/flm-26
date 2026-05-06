@@ -4753,6 +4753,7 @@ export type Database = {
         Args: { _match_id: string }
         Returns: string
       }
+      simulate_cup_match: { Args: { _match_id: string }; Returns: undefined }
       simulate_league_matchday: {
         Args: { p_league_id: string; p_matchday: number }
         Returns: undefined
@@ -4772,6 +4773,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
+      sync_beginner_cup: { Args: { _user_id: string }; Returns: undefined }
       sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
       sync_league_progress: {
         Args: { p_league_id: string }
