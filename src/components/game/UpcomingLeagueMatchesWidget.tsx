@@ -43,7 +43,7 @@ export function UpcomingLeagueMatchesWidget() {
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-          <span className="font-bold text-primary">{match.league_name} • {match.division_name}</span>
+          <span className="font-bold text-primary">{match.league_name}</span>
           <span>Rodada {match.round}</span>
         </div>
         <div className="flex items-center justify-center gap-4 py-2">
