@@ -4663,6 +4663,10 @@ export type Database = {
           stage: string
         }[]
       }
+      handle_team_league_entry: {
+        Args: { _country_id: string; _team_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
