@@ -872,6 +872,17 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
+  const enrollWorldLeague = useCallback(async (teamId: string, countryId: string) => {
+    try {
+      const { error } = await supabase.rpc('handle_team_league_entry', { _team_id: teamId, _country_id: countryId });
+      if (error) throw error;
+      toast.success('Inscrição na Liga Mundial confirmada! 🌍');
+    } catch (err) {
+      console.error('Error enrolling in world league:', err);
+      toast.error('Erro ao inscrever na liga');
+    }
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
@@ -886,6 +897,7 @@ export function useClubState(initialState: any, userId?: string) {
     acceptStadiumSponsor, rejectStadiumSponsor,
     toggleMembershipTier, buyModularUpgrade,
     applyFanChange,
+    enrollWorldLeague,
   };
 
 }
