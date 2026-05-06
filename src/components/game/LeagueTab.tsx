@@ -97,19 +97,15 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
     );
   }
 
-  if (selectedCupId) {
-    return <CupBracketView cupId={selectedCupId} onBack={() => setSelectedCupId(null)} />;
-  }
-
-  if (showAllLeagues || !leagueInfo) {
+  if (!leagueInfo) {
     return (
-      <LeaguesOverview 
-        currentCountry={country} 
-        clubName={clubName} 
-        onBack={() => setShowAllLeagues(false)} 
-        onJoin={handleJoinLeague}
-        isJoining={joining}
-      />
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-6">
+        <Trophy className="h-12 w-12 text-muted-foreground/20" />
+        <h3 className="text-lg font-bold">Liga em andamento</h3>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Uma temporada já está em curso. Você foi inscrito na <span className="text-primary font-bold">Copa de Iniciantes</span> e entrará na liga principal no dia 1º do próximo mês.
+        </p>
+      </div>
     );
   }
 
@@ -122,29 +118,8 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
             {leagueInfo.league_name}
           </Badge>
           <Badge variant="outline" className="text-[10px]">
-            {leagueInfo.status === 'in_progress' ? '● Em Andamento' : '○ Aguardando'}
+            ● Em Andamento
           </Badge>
-        </div>
-        <div className="flex gap-2">
-          {cups.length > 0 && (
-            <div className="flex gap-1">
-              {cups.map(cup => (
-                <Button
-                  key={cup.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedCupId(cup.id)}
-                  className="gap-1 text-[10px] h-7"
-                >
-                  <Trophy className="h-3 w-3" />
-                  {cup.name.length > 15 ? cup.name.slice(0, 15) + '…' : cup.name}
-                </Button>
-              ))}
-            </div>
-          )}
-          <Button variant="outline" size="sm" onClick={() => setShowAllLeagues(true)} className="gap-1.5 text-xs">
-            <Globe className="h-3.5 w-3.5" /> Outras Ligas
-          </Button>
         </div>
       </div>
 
@@ -163,13 +138,12 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Time</TableHead>
                   <TableHead className="text-center w-10">J</TableHead>
-                  <TableHead className="text-center w-10">V</TableHead>
                   <TableHead className="text-center w-10 font-bold">P</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {standings.map((row, i) => {
-                  const isPlayerTeam = row.user_id === leagueInfo.player_team_id || row.club_name === clubName;
+                  const isPlayerTeam = row.team_id === leagueInfo.player_team_id;
                   return (
                     <TableRow key={row.team_id} className={`${isPlayerTeam ? 'bg-primary/15 font-semibold' : ''} border-b border-border/40`}>
                       <TableCell className={i === 0 ? 'text-yellow-400 font-black' : i < 4 ? 'text-emerald-400 font-bold' : i >= standings.length - 4 ? 'text-red-400 font-bold' : 'text-muted-foreground'}>
@@ -177,13 +151,12 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
                       </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-2">
-                          <span className="text-base">{row.club_logo || '⚽'}</span>
-                          <span className="truncate max-w-[120px] sm:max-w-none">{row.club_name}</span>
+                          <span className="text-base">⚽</span>
+                          <span className="truncate max-w-[120px] sm:max-w-none">{row.team_id === leagueInfo.player_team_id ? clubName : `Time ${i + 1}`}</span>
                         </span>
                       </TableCell>
-                      <TableCell className="text-center text-xs">{row.mp}</TableCell>
-                      <TableCell className="text-center text-xs">{row.w}</TableCell>
-                      <TableCell className="text-center font-black text-primary">{row.pts}</TableCell>
+                      <TableCell className="text-center text-xs">{row.played}</TableCell>
+                      <TableCell className="text-center font-black text-primary">{row.points}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -196,34 +169,30 @@ export function LeagueTab({ clubName, country, clubPlayers }: Props) {
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" /> Status da Liga
+                <Calendar className="h-4 w-4 text-primary" /> Info da Temporada
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Times inscritos:</span>
-                <span className="font-bold">{leagueInfo.team_count} / 16</span>
+                <span className="text-muted-foreground">Progresso do mês:</span>
+                <span className="font-bold">{new Date().getDate()} / 30 dias</span>
               </div>
               <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${(leagueInfo.team_count / 16) * 100}%` }}
+                  style={{ width: `${(new Date().getDate() / 30) * 100}%` }}
                 />
               </div>
-              {leagueInfo.status === 'waiting' && (
-                <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded text-[10px] text-amber-500 font-medium">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Aguardando outros times para iniciar...
-                </div>
-              )}
-              {leagueInfo.status === 'in_progress' && (
-                <div className="flex items-center gap-2 p-2 bg-emerald-500/10 rounded text-[10px] text-emerald-500 font-bold">
-                  <CheckCircle2 className="h-3 w-3" />
-                  A liga começou! Boa sorte.
-                </div>
-              )}
+              <div className="flex items-center gap-2 p-2 bg-emerald-500/10 rounded text-[10px] text-emerald-500 font-bold">
+                <CheckCircle2 className="h-3 w-3" />
+                A temporada está ativa!
+              </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    </div>
+  );
 
           <Card className="border-amber-500/20">
             <CardHeader className="pb-2">
