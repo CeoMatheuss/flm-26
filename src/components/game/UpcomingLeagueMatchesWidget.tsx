@@ -76,7 +76,7 @@ export function UpcomingLeagueMatchesWidget() {
       // for better control over the "user match" logic.
       const { data: rows } = await supabase
         .from('world_matches')
-        .select('id, league_id, matchday, kickoff_at, home_team_id, away_team_id, home_team:home_team_id(club_name), away_team:away_team_id(club_name)')
+        .select('id, league_id, matchday, kickoff_at, home_team_id, away_team_id, home_team:home_team_id(club_name, name), away_team:away_team_id(club_name, name)')
         .in('league_id', leagueIds)
         .eq('status', 'scheduled')
         .order('matchday', { ascending: true })
@@ -113,11 +113,10 @@ export function UpcomingLeagueMatchesWidget() {
           kickoff_at: r.kickoff_at,
           kickoff_hour: 19, // Standard 19:30
           kickoff_minute: 30,
-          home_name: (r.home_team as any)?.club_name ?? '?',
-          away_name: (r.away_team as any)?.club_name ?? '?',
+          home_name: (r.home_team as any)?.club_name || (r.home_team as any)?.name || '?',
+          away_name: (r.away_team as any)?.club_name || (r.away_team as any)?.name || '?',
         };
 
-        // Player match check - use team names or IDs if available
         if (currentUserId && (r.home_team_id === currentUserId || r.away_team_id === currentUserId)) {
           if (!playerMatch) playerMatch = m;
         }
