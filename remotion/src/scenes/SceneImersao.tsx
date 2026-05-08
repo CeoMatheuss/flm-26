@@ -8,10 +8,11 @@ const SHOT_LEN = 30;
 const Shot: React.FC<{ children: React.ReactNode; index: number }> = ({ children, index }) => {
   const frame = useCurrentFrame();
   const local = frame - index * SHOT_LEN;
-  if (local < 0 || local > SHOT_LEN) return null;
-  const opacity = interpolate(local, [0, 3, SHOT_LEN - 3, SHOT_LEN], [0, 1, 1, 0]);
+  // overlap window so cross-fades blend without black gaps
+  if (local < -6 || local > SHOT_LEN + 6) return null;
+  const opacity = interpolate(local, [-6, 4, SHOT_LEN - 4, SHOT_LEN + 6], [0, 1, 1, 0]);
   const scale = interpolate(local, [0, SHOT_LEN], [1.05, 1.15]);
-  const blur = interpolate(local, [0, 4, SHOT_LEN - 4, SHOT_LEN], [10, 0, 0, 8]);
+  const blur = interpolate(local, [-6, 4, SHOT_LEN - 4, SHOT_LEN + 6], [12, 0, 0, 10]);
   return (
     <AbsoluteFill style={{ opacity, transform: `scale(${scale})`, filter: `blur(${blur}px)` }}>
       {children}
