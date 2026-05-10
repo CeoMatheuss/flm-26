@@ -113,7 +113,7 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                     <TableRow key={row.id} className={row.world_teams?.name === clubName ? 'bg-primary/10' : ''}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                       <TableCell className="flex items-center gap-2 text-sm truncate">
-                        <span className="text-base">{row.world_teams?.logo || '⚽'}</span>
+                        <ClubShield club={{ logoUrl: row.world_teams?.logo } as any} size={24} />
                         <span className="font-medium truncate">{row.world_teams?.name}</span>
                       </TableCell>
                       <TableCell className="text-center font-bold">{row.points}</TableCell>
