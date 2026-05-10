@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calendar, Trophy, ArrowLeft, Star, BarChart3, Play,
-  Clock, Loader2, ChevronLeft, ChevronRight
+  Clock, Loader2, ChevronLeft, ChevronRight, MapPin
 } from 'lucide-react';
 
 interface MatchHistoryItem {
