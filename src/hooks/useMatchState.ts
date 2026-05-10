@@ -189,9 +189,9 @@ export function useMatchState(initialState: any, userId?: string) {
     infrastructureLevel: number,
     setClub: React.Dispatch<React.SetStateAction<Club>>,
   ) => {
-    const hasUnplayed = club.matches.some(m => !m.played);
+    const hasUnplayed = club.matches.some(m => !m.played && (!m.date || new Date(m.date).getTime() > Date.now()));
     if (hasUnplayed) {
-      toast.error('Você já tem um amistoso agendado! Jogue-o primeiro.');
+      toast.error('Você já tem uma partida oficial ou amistosa pendente!');
       return;
     }
 
