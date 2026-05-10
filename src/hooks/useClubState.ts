@@ -386,10 +386,44 @@ export function useClubState(initialState: any, userId?: string) {
   }, []);
 
   const restPlayer = useCallback((playerId: string) => {
-    setClub(prev => ({
-      ...prev,
-      players: prev.players.map(p => p.id === playerId ? { ...p, stamina: Math.min(100, p.stamina + 20) } : p),
-    }));
+    setClub(prev => {
+      const p = prev.players.find(pl => pl.id === playerId);
+      if (!p) return prev;
+      
+      const newStamina = Math.min(100, p.stamina + 25);
+      const getStatus = (s: number): PhysicalStatus => {
+        if (s >= 95) return 'Descansado';
+        if (s >= 80) return 'Em forma';
+        if (s >= 60) return 'Desgastado';
+        if (s >= 40) return 'Cansado';
+        if (s >= 20) return 'Exausto';
+        return 'Risco de Lesão';
+      };
+
+      return {
+        ...prev,
+        players: prev.players.map(p => 
+          p.id === playerId 
+            ? { 
+                ...p, 
+                stamina: newStamina, 
+                physicalStatus: getStatus(newStamina),
+                staminaLastUpdatedAt: new Date().toISOString() 
+              } 
+            : p
+        ),
+      };
+    });
+    toast.success('Jogador colocado em descanso.');
+  }, []);
+
+  const rotateSquad = useCallback(() => {
+    setClub(prev => {
+      // Regra de rotação: coloca os mais cansados no final e os mais descansados no início
+      const sorted = [...prev.players].sort((a, b) => b.stamina - a.stamina);
+      toast.success('Elenco rotacionado por condição física.');
+      return { ...prev, players: sorted };
+    });
   }, []);
 
   const buyPlayer = useCallback((player: Player) => {
