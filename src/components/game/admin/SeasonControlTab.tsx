@@ -188,6 +188,38 @@ export function SeasonControlTab({ adminUserId }: Props) {
         </CardContent>
       </Card>
 
+      <Card className="border-amber-500/40 bg-gradient-to-r from-amber-500/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-400" /> Reset de Ligas Mundiais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Apaga calendário e classificação do mês atual de TODAS as ligas mundiais ativas, gera novo calendário (round-robin), simula automaticamente todas as rodadas até hoje e envia notificação para todos os jogadores.
+          </p>
+          {resetConfirm ? (
+            <div className="p-2 rounded bg-destructive/10 border border-destructive/30 space-y-2">
+              <p className="text-[10px] flex items-center gap-1 text-destructive">
+                <AlertTriangle className="h-3 w-3" /> Isso vai apagar a tabela e os jogos do mês atual de todas as ligas mundiais. Confirma?
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="destructive" className="h-7 text-[10px] flex-1" onClick={resetWorldLeagues} disabled={!!actionLoading}>
+                  {actionLoading === 'reset-world' ? 'Resetando…' : 'Sim, resetar tudo'}
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1" onClick={() => setResetConfirm(false)} disabled={!!actionLoading}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button size="sm" onClick={() => setResetConfirm(true)} disabled={!!actionLoading} className="h-8 text-xs gap-1 bg-amber-500 hover:bg-amber-500/90 text-black">
+              <RotateCcw className="h-3 w-3" /> Resetar e simular ligas
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       {Object.entries(byCountry).map(([country, list]) => {
         const inProgress = list.filter(l => l.season_status === 'in_progress').length;
         const finished = list.filter(l => l.season_status === 'finished').length;
