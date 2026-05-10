@@ -398,7 +398,12 @@ async function processCupMatch(m: any): Promise<boolean> {
     const winnerId = (hg > ag || (tb?.winner === 'home')) ? m.home_team_id : m.away_team_id;
     const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
-    await supabase.rpc('process_cup_match_results', { v_match_id: m.id, v_home_goals: hg, v_away_goals: ag });
+    await supabase.rpc('process_cup_match_results', { 
+      v_match_id: m.id, 
+      v_home_goals: hg, 
+      v_away_goals: ag,
+      v_is_auto: true 
+    });
 
     return true;
 
