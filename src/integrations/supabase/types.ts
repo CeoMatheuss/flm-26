@@ -960,6 +960,8 @@ export type Database = {
           current_round: number | null
           format: string | null
           id: string
+          is_national_cup: boolean | null
+          last_season_processed: number | null
           name: string
           prize_pool: number | null
           season_month: number | null
@@ -978,6 +980,8 @@ export type Database = {
           current_round?: number | null
           format?: string | null
           id?: string
+          is_national_cup?: boolean | null
+          last_season_processed?: number | null
           name: string
           prize_pool?: number | null
           season_month?: number | null
@@ -996,6 +1000,8 @@ export type Database = {
           current_round?: number | null
           format?: string | null
           id?: string
+          is_national_cup?: boolean | null
+          last_season_processed?: number | null
           name?: string
           prize_pool?: number | null
           season_month?: number | null
@@ -1025,10 +1031,12 @@ export type Database = {
           home_goals: number | null
           home_team_id: string | null
           id: string
+          is_simulated: boolean | null
           leg: number | null
           match_data: Json | null
           played_at: string | null
           round: number
+          round_name: string | null
           scheduled_at: string | null
           status: string | null
         }
@@ -1041,10 +1049,12 @@ export type Database = {
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
+          is_simulated?: boolean | null
           leg?: number | null
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          round_name?: string | null
           scheduled_at?: string | null
           status?: string | null
         }
@@ -1057,10 +1067,12 @@ export type Database = {
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
+          is_simulated?: boolean | null
           leg?: number | null
           match_data?: Json | null
           played_at?: string | null
           round?: number
+          round_name?: string | null
           scheduled_at?: string | null
           status?: string | null
         }
@@ -4937,6 +4949,10 @@ export type Database = {
         }[]
       }
       get_continent_for_country: { Args: { _country: string }; Returns: string }
+      get_cup_name_by_country: {
+        Args: { country_code: string }
+        Returns: string
+      }
       get_division_start_time: { Args: { div_level: number }; Returns: string }
       get_league_match_time: {
         Args: { division_level: number }

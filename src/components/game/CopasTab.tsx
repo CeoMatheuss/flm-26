@@ -101,16 +101,16 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                       🏆
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black">{matches[0]?.competition || 'Copa Ativa'}</h3>
+                      <h3 className="text-2xl font-black">{matches[0]?.competition || matches[0]?.round_name || 'Copa Ativa'}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary">Temporada Atual</Badge>
-                        <Badge variant="outline">Mata-Mata</Badge>
+                        <Badge variant="secondary">Temporada {new Date().getFullYear()}</Badge>
+                        <Badge variant="outline">Mata-Mata Oficial</Badge>
                       </div>
                     </div>
                   </div>
                   <div className="text-right hidden sm:block">
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Fase Atual</p>
-                    <p className="text-lg font-black text-primary">{matches[0]?.stage || 'Oitavas'}</p>
+                    <p className="text-lg font-black text-primary">{matches.find(m => m.status === 'scheduled')?.round_name || matches[0]?.round_name || 'Oitavas'}</p>
                   </div>
                 </CardContent>
               </Card>

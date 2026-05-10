@@ -176,10 +176,11 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             setCompetition({
               id: comp.id,
               name: comp.name,
-              cup_type: 'national', // Treating as national for widget logic
+              cup_type: 'national',
               status: comp.status,
               current_round: comp.current_round,
               total_rounds: comp.total_rounds,
+              current_phase: (comp as any).current_phase,
             } as any);
             setIsEliminated(customTeam.eliminated);
 
@@ -329,7 +330,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
           <Button 
             variant="outline" 
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
@@ -345,18 +346,10 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             <BarChart3 className="h-3 w-3" /> Chaveamento
           </Button>
           <Button 
-            variant="outline" 
-            className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
+            className="h-8 text-[9px] gap-1 px-2 bg-primary hover:bg-primary/90 font-bold"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <Trophy className="h-3 w-3" /> Premiações
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
-            onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
-          >
-            <Users className="h-3 w-3" /> Estatísticas
+            <Trophy className="h-3 w-3" /> ABRIR COPA
           </Button>
         </div>
       </CardContent>

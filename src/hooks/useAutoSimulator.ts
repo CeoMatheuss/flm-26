@@ -397,8 +397,21 @@ async function processCupMatch(m: any): Promise<boolean> {
 
     const winnerId = (hg > ag || (tb?.winner === 'home')) ? m.home_team_id : m.away_team_id;
     const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+    
+    // Marcar eliminado na tabela cup_teams
     await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
-    await supabase.rpc('process_cup_match_results', { v_match_id: m.id, v_home_goals: hg, v_away_goals: ag });
+    
+    // Processar resultados financeiros e avanço de fase
+    await supabase.rpc('process_cup_match_results', { 
+      v_match_id: m.id, 
+      v_home_goals: hg, 
+      v_away_goals: ag,
+      v_is_auto: true 
+    });
+
+    // Enviar notificação se for um usuário real
+    if (home.user_id) await notify(home.user_id, away.club_name, hg, ag, 'Copa Nacional');
+    if (away.user_id) await notify(away.user_id, home.club_name, ag, hg, 'Copa Nacional');
 
     return true;
 

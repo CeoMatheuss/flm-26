@@ -1181,6 +1181,60 @@ export function AdminTournamentTab({ userId }: Props) {
           </Card>
         )}
 
+        <Card className="mb-4 border-primary/20 bg-primary/5">
+          <CardHeader className="py-3">
+            <CardTitle className="text-xs uppercase flex items-center gap-2">
+              <Globe className="h-4 w-4" /> Global National Cups
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pb-4">
+            <p className="text-[10px] text-muted-foreground">
+              Gerencie as Copas Nacionais automáticas de todos os países (Brasil, Inglaterra, etc).
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                size="sm" 
+                className="flex-1 h-8 text-[10px] gap-1"
+                onClick={async () => {
+                  if(!confirm('Isso irá gerar novas copas para todos os países. Continuar?')) return;
+                  setLoading(true);
+                  const { data, error } = await supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all' } });
+                  setLoading(false);
+                  if (error) toast.error('Erro ao gerar copas: ' + error.message);
+                  else toast.success('Copas Globais geradas com sucesso!');
+                }}
+                disabled={loading}
+              >
+                <Zap className="h-3 w-3" /> Gerar Todas Copas (Dia 10)
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="flex-1 h-8 text-[10px] gap-1 border-red-500/20 text-red-400"
+                onClick={async () => {
+                  if(!confirm('AVISO: Isso irá apagar TODAS as Copas Nacionais e seus históricos. Deseja prosseguir?')) return;
+                  setLoading(true);
+                  // Using an RPC or direct delete if permitted, or we can add a reset action to the edge function
+                  await supabase.from('cup_matches').delete().filter('cup_id', 'in', 
+                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
+                  );
+                  await supabase.from('cup_teams').delete().filter('cup_id', 'in', 
+                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
+                  );
+                  await supabase.from('cup_competitions').delete().eq('is_national_cup', true);
+                  
+                  setLoading(false);
+                  toast.success('Sistema de Copas Nacionais reiniciado!');
+                  loadTournaments();
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className="h-3 w-3" /> Reiniciar Copas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Tournament List */}
         {tournaments.length === 0 ? (
           <Card>
@@ -1282,6 +1336,37 @@ export function AdminTournamentTab({ userId }: Props) {
               <p className="text-[10px] font-semibold">{matches.filter(m => m.status === 'played').length}</p>
             </div>
           </div>
+
+          {selectedTournament && (selectedTournament as any).is_national_cup && (
+            <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20 mb-2">
+              <p className="text-[10px] font-bold text-blue-400 flex items-center gap-1">
+                <Globe className="h-3 w-3" /> Sistema de Copa Nacional
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-1">
+                Esta competição é uma Copa Nacional oficial. Sorteios e simulações são automáticos.
+              </p>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full h-7 text-[9px] mt-2 gap-1 border-blue-500/30 text-blue-300"
+                onClick={async () => {
+                  setLoading(true);
+                  const { data, error } = await supabase.functions.invoke('national-cup-manager', { 
+                    body: { action: 'draw_round', cupId: selectedTournament.id } 
+                  });
+                  setLoading(false);
+                  if (error) toast.error('Erro ao realizar sorteio: ' + error.message);
+                  else {
+                    toast.success('Sorteio realizado! Jogos gerados.');
+                    loadMatches(selectedTournament.id);
+                  }
+                }}
+                disabled={loading}
+              >
+                <Zap className="h-3 w-3" /> Realizar Sorteio Manual
+              </Button>
+            </div>
+          )}
 
           {/* Online vs Bot count */}
           <div className="flex items-center gap-2 text-[9px]">
