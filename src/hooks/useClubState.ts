@@ -562,10 +562,13 @@ export function useClubState(initialState: any, userId?: string) {
     return { salary: player.salary };
   }, [loansIn.length]);
 
-  const renameClub = useCallback((newName: string) => {
+  const renameClub = useCallback(async (newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
+    if (userId) {
+      await supabase.from('world_teams').update({ name: newName }).eq('user_id', userId);
+    }
     toast.success(`Clube renomeado para ${newName}!`);
-  }, []);
+  }, [userId]);
 
   const renameStadium = useCallback((newName: string) => {
     setClub(prev => ({ ...prev, stadiumName: newName }));
