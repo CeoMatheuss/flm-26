@@ -154,8 +154,70 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
           if (continentalTeam.continental_competitions.status === 'finished' && !continentalTeam.eliminated) {
             setIsChampion(true);
           }
+        } else {
+          // 3. Procurar em Campeonatos Customizados (Admin)
+          const { data: customTeam } = await supabase
+            .from('custom_tournament_teams')
+            .select('*, custom_tournaments(*)')
+            .eq('user_id', userId)
+            .neq('custom_tournaments.status', 'finished')
+            .maybeSingle();
+
+          if (customTeam && customTeam.custom_tournaments) {
+            setPlayerTeam({
+              id: customTeam.id,
+              club_name: customTeam.club_name,
+              club_logo: customTeam.club_logo,
+              eliminated: customTeam.eliminated,
+              user_id: customTeam.user_id
+            } as any);
+
+            const comp = customTeam.custom_tournaments;
+            setCompetition({
+              id: comp.id,
+              name: comp.name,
+              cup_type: 'national', // Treating as national for widget logic
+              status: comp.status,
+              current_round: comp.current_round,
+              total_rounds: comp.total_rounds,
+            } as any);
+            setIsEliminated(customTeam.eliminated);
+
+            const { data: matches } = await supabase
+              .from('custom_tournament_matches')
+              .select('*')
+              .eq('tournament_id', comp.id)
+              .or(`home_team_id.eq.${customTeam.id},away_team_id.eq.${customTeam.id}`)
+              .eq('status', 'scheduled')
+              .order('scheduled_at', { ascending: true })
+              .limit(1);
+
+            if (matches && matches.length > 0) {
+              const m = matches[0];
+              const isHome = m.home_team_id === customTeam.id;
+              const opponentId = isHome ? m.away_team_id : m.home_team_id;
+
+              // Fetch opponent data
+              const { data: opponent } = await supabase
+                .from('custom_tournament_teams')
+                .select('club_name, club_logo')
+                .eq('id', opponentId)
+                .maybeSingle();
+
+              setNextMatch({
+                ...m,
+                home_team_name: isHome ? customTeam.club_name : opponent?.club_name,
+                away_team_name: isHome ? opponent?.club_name : customTeam.club_name,
+                home_team_logo: isHome ? customTeam.club_logo : opponent?.club_logo,
+                away_team_logo: isHome ? opponent?.club_logo : customTeam.club_logo,
+              } as any);
+            }
+
+            if (customTeam.custom_tournaments.status === 'finished' && !customTeam.eliminated) {
+              setIsChampion(true);
+            }
+          }
         }
-      }
     } catch (e) {
       console.error('Error loading cup widget:', e);
     } finally {
