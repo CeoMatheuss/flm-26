@@ -4516,6 +4516,44 @@ export type Database = {
           },
         ]
       }
+      world_players: {
+        Row: {
+          age: number | null
+          created_at: string | null
+          id: string
+          name: string
+          overall: number | null
+          position: string
+          team_id: string
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          overall?: number | null
+          position: string
+          team_id: string
+        }
+        Update: {
+          age?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          overall?: number | null
+          position?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_standings: {
         Row: {
           division_id: string | null
