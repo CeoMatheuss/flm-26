@@ -54,6 +54,7 @@ export interface GameState {
   friendliesPlayedToday?: number;
   friendliesPlayedSeason?: number;
   lastFriendlyDate?: string;
+  lastYouthGenAt?: string;
 }
 
 export function useGame(initialState?: GameState, userId?: string, isPremium: boolean = false) {
