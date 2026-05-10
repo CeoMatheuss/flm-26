@@ -17,6 +17,7 @@ export interface ShieldSourceLike {
   shieldPattern?: string;
   shieldShape?: string;
   shieldIcon?: string;
+  logoUrl?: string;
 }
 
 export interface ShieldRenderProps {
