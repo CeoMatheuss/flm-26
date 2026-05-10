@@ -4143,6 +4143,7 @@ export type Database = {
       }
       world_league_table: {
         Row: {
+          country: string | null
           draws: number | null
           goals_against: number | null
           goals_for: number | null
@@ -4158,6 +4159,7 @@ export type Database = {
           wins: number | null
         }
         Insert: {
+          country?: string | null
           draws?: number | null
           goals_against?: number | null
           goals_for?: number | null
@@ -4173,6 +4175,7 @@ export type Database = {
           wins?: number | null
         }
         Update: {
+          country?: string | null
           draws?: number | null
           goals_against?: number | null
           goals_for?: number | null
@@ -4267,6 +4270,7 @@ export type Database = {
       world_leagues: {
         Row: {
           active: boolean | null
+          country: string | null
           country_id: string | null
           created_at: string | null
           current_round: number | null
@@ -4280,6 +4284,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          country?: string | null
           country_id?: string | null
           created_at?: string | null
           current_round?: number | null
@@ -4293,6 +4298,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          country?: string | null
           country_id?: string | null
           created_at?: string | null
           current_round?: number | null
