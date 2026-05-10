@@ -6,6 +6,7 @@ import { TacticsTab } from '@/components/game/TacticsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
+import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
 
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
@@ -43,7 +44,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock, Globe } from 'lucide-react';
+import { Lock, Globe, Star } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
