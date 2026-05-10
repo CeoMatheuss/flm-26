@@ -32,14 +32,14 @@ export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }
   ];
 
   return (
-    <div className="w-full bg-card/80 backdrop-blur-xl border-b border-border/40 sticky top-14 sm:top-16 z-40">
+    <div className="w-full bg-card/90 backdrop-blur-xl border-b border-border/40 sticky top-14 sm:top-16 z-40 shadow-md">
       <ScrollArea className="w-full whitespace-nowrap">
-        <TabsList className="inline-flex h-12 sm:h-14 items-center justify-start bg-transparent p-1 gap-1">
+        <TabsList className="inline-flex h-12 items-center justify-start bg-transparent p-1 gap-1">
           {mainTabs.map((tab) => (
             <TabsTrigger
               key={tab.id}
               value={tab.id}
-              className="px-4 h-full rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all flex items-center gap-2"
+              className="px-4 h-9 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all flex items-center gap-2 border border-transparent data-[state=active]:border-primary/20"
             >
               <tab.icon className="h-4 w-4 shrink-0" />
               <span className="text-xs font-bold">{tab.label}</span>
@@ -53,7 +53,7 @@ export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }
               showAdmin={showAdmin}
               onShowTutorial={onShowTutorial}
               trigger={
-                <button className="h-9 px-3 flex items-center gap-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all">
+                <button className="h-9 px-3 flex items-center gap-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all border border-transparent">
                   <MoreHorizontal className="h-4 w-4" />
                   <span className="text-xs font-bold">Mais</span>
                 </button>
