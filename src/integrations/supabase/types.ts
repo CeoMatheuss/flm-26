@@ -4824,12 +4824,8 @@ export type Database = {
             Returns: Json
           }
         | {
-            Args: { _logo: string; _team_name: string; _user_id: string }
-            Returns: string
-          }
-        | {
             Args: {
-              _country?: string
+              _country_code?: string
               _logo: string
               _team_name: string
               _user_id: string
