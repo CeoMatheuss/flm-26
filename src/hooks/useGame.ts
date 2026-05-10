@@ -54,6 +54,7 @@ export interface GameState {
   friendliesPlayedToday?: number;
   friendliesPlayedSeason?: number;
   lastFriendlyDate?: string;
+  lastYouthGenAt?: string;
 }
 
 export function useGame(initialState?: GameState, userId?: string, isPremium: boolean = false) {
@@ -260,8 +261,10 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     friendliesPlayedToday: matchState.friendliesPlayedToday,
     friendliesPlayedSeason: matchState.friendliesPlayedSeason,
     lastFriendlyDate: matchState.lastFriendlyDate,
+    lastYouthGenAt: infraState.lastYouthGenAt,
   }), [clubState.club, tactics, financeState.finances, clubState.marketPlayers, clubState.freeAgents,
     infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.trainingInvestment, infraState.season,
+    infraState.lastYouthGenAt,
     financeState.sponsors, financeState.sponsorOffers, matchState.events, clubState.loanedPlayers,
     clubState.trainingFocus, clubState.trainingIntensity, infraState.achievements, infraState.lastMatchReport, clubState.clubProfile,
     infraState.ctRooms, infraState.youthPromotedCount, matchState.ranking, matchState.rankingHistory,

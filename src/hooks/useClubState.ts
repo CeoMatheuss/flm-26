@@ -190,7 +190,7 @@ export function useClubState(initialState: any, userId?: string) {
           changed = true;
         }
 
-        // 4) gerar novas propostas a cada 2 dias
+        // 4) gerar novas propostas a cada 2 dias (escala com nível do estádio)
         const lastGenTs = nextOps.lastProposalGenAt ? new Date(nextOps.lastProposalGenAt).getTime() : 0;
         if ((!lastGenTs || now - lastGenTs >= TWO_DAYS) && nextOps.proposals.length < 4) {
           const modules = buildStadiumModules(stadiumLevel, prev.vipBoxesBuilt);
@@ -198,7 +198,12 @@ export function useClubState(initialState: any, userId?: string) {
             modules, reputation: prev.reputation ?? 50, existingCount: nextOps.proposals.length,
           });
           if (newProps.length > 0) {
-            nextOps.proposals = [...nextOps.proposals, ...newProps];
+            // Melhora o sistema financeiro do estádio: propostas maiores se estádio melhor
+            const adjustedProps = newProps.map(p => {
+              const bonusFactor = 1 + (stadiumLevel - 1) * 0.15; // +15% por nível
+              return { ...p, revenue: Math.round(p.revenue * bonusFactor) };
+            });
+            nextOps.proposals = [...nextOps.proposals, ...adjustedProps];
             nextOps.lastProposalGenAt = new Date(now).toISOString();
             changed = true;
           }
@@ -557,10 +562,13 @@ export function useClubState(initialState: any, userId?: string) {
     return { salary: player.salary };
   }, [loansIn.length]);
 
-  const renameClub = useCallback((newName: string) => {
+  const renameClub = useCallback(async (newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
+    if (userId) {
+      await supabase.from('world_teams').update({ name: newName }).eq('user_id', userId);
+    }
     toast.success(`Clube renomeado para ${newName}!`);
-  }, []);
+  }, [userId]);
 
   const renameStadium = useCallback((newName: string) => {
     setClub(prev => ({ ...prev, stadiumName: newName }));

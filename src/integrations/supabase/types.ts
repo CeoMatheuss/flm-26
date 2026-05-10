@@ -1644,6 +1644,7 @@ export type Database = {
           created_at: string
           id: string
           last_match_timestamp: string | null
+          last_youth_gen_at: string | null
           save_name: string
           updated_at: string
           user_id: string
@@ -1653,6 +1654,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_match_timestamp?: string | null
+          last_youth_gen_at?: string | null
           save_name?: string
           updated_at?: string
           user_id: string
@@ -1662,6 +1664,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_match_timestamp?: string | null
+          last_youth_gen_at?: string | null
           save_name?: string
           updated_at?: string
           user_id?: string
@@ -5095,6 +5098,10 @@ export type Database = {
       }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
       sync_league_team_count: { Args: never; Returns: undefined }
+      update_club_budget: {
+        Args: { p_amount: number; p_description: string; p_user_id: string }
+        Returns: undefined
+      }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }

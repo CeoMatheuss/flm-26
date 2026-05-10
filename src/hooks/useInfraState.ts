@@ -5,6 +5,7 @@ import {
   getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
+  getYouthMinOverall, getYouthMaxOverall,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
@@ -17,9 +18,9 @@ import { useEffect } from 'react';
 
 export function useInfraState(initialState: any, userId?: string, isPremium: boolean = false) {
   const [infrastructure, setInfrastructure] = useState<Infrastructure>(initialState?.infrastructure ?? defaultInfrastructure);
+  const [lastYouthGenAt, setLastYouthGenAt] = useState<string>(initialState?.lastYouthGenAt ?? new Date().toISOString());
   const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(() => {
     const list: YouthProspect[] = initialState?.youthProspects ?? [];
-    // Backfill new V2 fields for old saves
     return list.map(p => ({
       ...p,
       potentialTier: p.potentialTier ?? getPotentialTier(p.potential ?? 60),
@@ -174,7 +175,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     };
 
     completePending(isPremium);
-    if (isPremium) return; // Não precisa de intervalo: Premium já concluiu tudo
+    if (isPremium) return;
     const interval = setInterval(() => completePending(false), 60_000);
     return () => clearInterval(interval);
   }, [
@@ -184,6 +185,46 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     infrastructure.stadium.upgradeCompletesAt,
     infrastructure.physiotherapy.upgradeCompletesAt,
   ]);
+
+  // V4 — Sistema de geração automática de jogadores da base (1 por semana se houver investimento)
+  useEffect(() => {
+    if (!userId || youthInvestment <= 0) return;
+    
+    const checkYouthGen = () => {
+      const now = Date.now();
+      const lastGen = new Date(lastYouthGenAt).getTime();
+      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+      const weeksPassed = Math.floor((now - lastGen) / ONE_WEEK);
+      
+      if (weeksPassed >= 1) {
+        console.log(`[Base] Gerando ${weeksPassed} jogador(es) atrasados...`);
+        for (let i = 0; i < Math.min(weeksPassed, 4); i++) {
+          const academyLevel = infrastructure.youthAcademy.level;
+          const minOvr = getYouthMinOverall(academyLevel);
+          const maxOvr = getYouthMaxOverall(academyLevel);
+          const bonus = Math.min(10, Math.floor(youthInvestment / 250000));
+          
+          const { generatePlayer } = require('@/utils/playerGenerator');
+          const p = generatePlayer([minOvr + bonus, maxOvr + bonus], [16, 17]);
+          const newProspect: YouthProspect = {
+            ...p,
+            potential: Math.min(99, p.overall + 15 + Math.floor(Math.random() * 15)),
+            monthsInAcademy: 0,
+            potentialTier: getPotentialTier(p.potential),
+            evolutionStatus: 'evoluindo',
+          };
+          
+          setYouthProspects(prev => [...prev, newProspect]);
+        }
+        setLastYouthGenAt(new Date(now).toISOString());
+        toast.success(`🌟 Novos jogadores surgiram na base!`);
+      }
+    };
+    
+    const interval = setInterval(checkYouthGen, 300_000); // Checa a cada 5 min
+    checkYouthGen();
+    return () => clearInterval(interval);
+  }, [userId, youthInvestment, lastYouthGenAt, infrastructure.youthAcademy.level]);
 
   const chargeYouthInvestment = useCallback((
     clubBudget: number,
@@ -388,6 +429,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
   return {
     infrastructure, setInfrastructure, youthProspects, setYouthProspects,
+    lastYouthGenAt, setLastYouthGenAt,
     youthInvestment, setYouthInvestment,
     trainingInvestment, setTrainingInvestment,
     season, setSeason,
