@@ -4697,6 +4697,7 @@ export type Database = {
         Args: { _cup_id: string; _current_phase: string }
         Returns: undefined
       }
+      advance_world_system_day: { Args: never; Returns: undefined }
       approve_beta_request: {
         Args: { _request_id: string }
         Returns: undefined
@@ -4834,6 +4835,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_national_cup_name: { Args: { p_country: string }; Returns: string }
       get_or_create_current_league: {
         Args: { p_division_id: string }
         Returns: string
