@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Globe, Trophy, Loader2, UserPlus, Users } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
