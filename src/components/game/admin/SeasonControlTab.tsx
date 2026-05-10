@@ -107,8 +107,36 @@ export function SeasonControlTab({ adminUserId }: Props) {
     } catch (e: any) {
       toast.error(e.message || 'Erro');
     }
-    setActionLoading(null);
+  setActionLoading(null);
     setConfirm(null);
+  };
+
+  const seedInitialLeagues = async () => {
+    setActionLoading('seed-leagues');
+    try {
+      const { error } = await supabase.rpc('seed_initial_world_leagues');
+      if (error) throw error;
+      toast.success('✅ Ligas iniciais criadas com sucesso!');
+      await logAdmin('seed_initial_leagues', {});
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
+  };
+
+  const syncAllSaves = async () => {
+    setActionLoading('sync-saves');
+    try {
+      const { error } = await supabase.rpc('sync_all_saves_to_world_system');
+      if (error) throw error;
+      toast.success('✅ Todos os clubes foram inscritos no sistema mundial!');
+      await logAdmin('sync_all_saves', {});
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
   };
 
   const redistributeBeginners = async (country: string) => {
@@ -154,6 +182,37 @@ export function SeasonControlTab({ adminUserId }: Props) {
           >
             <Zap className="h-3 w-3" /> {actionLoading === 'plan-season' ? 'Executando…' : 'Rodar plan-season agora'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-500/40 bg-gradient-to-r from-blue-500/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Sprout className="h-4 w-4 text-blue-400" /> Inicialização do Sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Use estes botões para garantir que a estrutura base existam e que todos os jogadores atuais estejam inscritos corretamente.
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={seedInitialLeagues} 
+              disabled={!!actionLoading} 
+              className="h-8 text-xs flex-1 gap-1"
+            >
+              {actionLoading === 'seed-leagues' ? 'Criando...' : '1. Criar Ligas Base'}
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={syncAllSaves} 
+              disabled={!!actionLoading} 
+              className="h-8 text-xs flex-1 gap-1"
+            >
+              {actionLoading === 'sync-saves' ? 'Sincronizando...' : '2. Inscrever Clubes'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

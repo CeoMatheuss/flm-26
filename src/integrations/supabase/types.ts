@@ -4269,25 +4269,40 @@ export type Database = {
           active: boolean | null
           country_id: string | null
           created_at: string | null
+          current_round: number | null
           division: number | null
+          division_level: number | null
           id: string
+          max_teams: number | null
           name: string
+          season_month: number | null
+          season_year: number | null
         }
         Insert: {
           active?: boolean | null
           country_id?: string | null
           created_at?: string | null
+          current_round?: number | null
           division?: number | null
+          division_level?: number | null
           id?: string
+          max_teams?: number | null
           name: string
+          season_month?: number | null
+          season_year?: number | null
         }
         Update: {
           active?: boolean | null
           country_id?: string | null
           created_at?: string | null
+          current_round?: number | null
           division?: number | null
+          division_level?: number | null
           id?: string
+          max_teams?: number | null
           name?: string
+          season_month?: number | null
+          season_year?: number | null
         }
         Relationships: [
           {
@@ -4823,6 +4838,7 @@ export type Database = {
         Args: { _match_id: string }
         Returns: string
       }
+      seed_initial_world_leagues: { Args: never; Returns: undefined }
       simulate_cup_match: { Args: { _match_id: string }; Returns: undefined }
       simulate_league_matchday: {
         Args: { p_league_id: string; p_matchday: number }
@@ -4843,6 +4859,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
+      sync_all_saves_to_world_system: { Args: never; Returns: undefined }
       sync_beginner_cup: { Args: { _user_id: string }; Returns: undefined }
       sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
       sync_league_progress: {

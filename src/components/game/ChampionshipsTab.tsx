@@ -17,14 +17,21 @@ export function ChampionshipsTab({ onBack }: Props) {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [currentRound, setCurrentRound] = useState(new Date().getDate());
+  const [currentRound, setCurrentRound] = useState(1);
+
+  // Sincroniza rodada inicial com a data atual (considerando que cada dia é uma rodada)
+  useEffect(() => {
+    const day = new Date().getDate();
+    setCurrentRound(day);
+  }, []);
 
   useEffect(() => {
     const loadLeagues = async () => {
       setLoading(true);
       const { data } = await supabase
         .from('world_leagues')
-        .select('*, country:world_countries(name, code)')
+        .select('*')
+        .eq('active', true)
         .order('division_level', { ascending: true });
       
       if (data) {
@@ -32,9 +39,9 @@ export function ChampionshipsTab({ onBack }: Props) {
           id: d.id,
           name: d.name,
           level: d.division_level,
-          country_name: d.country?.name || 'Internacional',
-          country_code: d.country?.code || 'GL',
-          match_time: d.match_time
+          country_name: 'Brasil', // Default for now
+          country_code: 'BR',
+          match_time: '19:30:00'
         })));
       }
       setLoading(false);
@@ -52,6 +59,8 @@ export function ChampionshipsTab({ onBack }: Props) {
           .from('world_league_table')
           .select('*, world_teams(name, logo)')
           .eq('league_id', selectedLeagueId)
+          .eq('season_month', new Date().getMonth() + 1)
+          .eq('season_year', new Date().getFullYear())
           .order('points', { ascending: false })
           .order('goals_for', { ascending: false }),
         supabase
@@ -59,6 +68,8 @@ export function ChampionshipsTab({ onBack }: Props) {
           .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name), away_team:world_teams!world_matches_away_team_id_fkey(name)')
           .eq('league_id', selectedLeagueId)
           .eq('round', currentRound)
+          .eq('season_month', new Date().getMonth() + 1)
+          .eq('season_year', new Date().getFullYear())
           .order('scheduled_at', { ascending: true }),
       ]);
       if (standingsData) setStandings(standingsData);
