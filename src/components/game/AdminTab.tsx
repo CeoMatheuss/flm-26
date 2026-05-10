@@ -548,9 +548,30 @@ export function AdminTab({ userId, isFounder }: Props) {
                 {isFounder ? '⭐ Fundador' : '🛡️ Admin'}
               </Badge>
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
-              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={async () => {
+                  if (!confirm("Isso irá apagar TODAS as competições mata-mata, confrontos e inscrições. Deseja continuar?")) return;
+                  setLoading(true);
+                  const { error } = await supabase.functions.invoke('world-cup-advancer', { body: { force_reset_all: true } });
+                  if (error) toast.error('Erro ao reiniciar copas');
+                  else {
+                    toast.success('Todas as copas foram reiniciadas com sucesso!');
+                    loadAll();
+                  }
+                  setLoading(false);
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className="h-3 w-3" /> RECOMEÇAR COPAS
+              </Button>
+              <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
