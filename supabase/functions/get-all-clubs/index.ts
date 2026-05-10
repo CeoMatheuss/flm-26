@@ -156,22 +156,34 @@ Deno.serve(async (req) => {
       if (from > 10000) break;
     }
 
-    const clubs: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    const clubs: Array<{ 
+      user_id: string; 
+      club_name: string; 
+      club_logo: string;
+      is_online: boolean;
+      last_seen: string | null;
+      updated_at: string | null;
+    }> = [];
     const seenUsers = new Set<string>();
 
-    for (const save of saves) {
-      if (seenUsers.has(save.user_id)) continue;
+    for (const row of (saves as any[])) {
+      if (seenUsers.has(row.user_id)) continue;
 
-      const extracted = extractClub(save);
+      const extracted = extractClub(row);
       if (!extracted) continue;
 
       if (scope !== 'Mundial' && extracted.club_country !== normalizedScope) continue;
 
-      seenUsers.add(save.user_id);
+      const presence = Array.isArray(row.user_presence) ? row.user_presence[0] : row.user_presence;
+
+      seenUsers.add(row.user_id);
       clubs.push({
         user_id: extracted.user_id,
         club_name: extracted.club_name,
         club_logo: extracted.club_logo,
+        is_online: !!presence?.is_online,
+        last_seen: presence?.last_seen || null,
+        updated_at: row.updated_at,
       });
     }
 
