@@ -4141,6 +4141,54 @@ export type Database = {
         }
         Relationships: []
       }
+      world_league_news: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          id: string
+          importance: number | null
+          league_id: string | null
+          match_id: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          league_id?: string | null
+          match_id?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          league_id?: string | null
+          match_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_league_news_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_league_news_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "world_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_league_table: {
         Row: {
           country: string | null
@@ -4148,14 +4196,17 @@ export type Database = {
           goals_against: number | null
           goals_for: number | null
           id: string
+          last_5_games: string | null
           league_id: string | null
           losses: number | null
           played: number | null
           points: number | null
           season_month: number
           season_year: number
+          sequence: string | null
           team_id: string | null
           updated_at: string | null
+          win_rate: number | null
           wins: number | null
         }
         Insert: {
@@ -4164,14 +4215,17 @@ export type Database = {
           goals_against?: number | null
           goals_for?: number | null
           id?: string
+          last_5_games?: string | null
           league_id?: string | null
           losses?: number | null
           played?: number | null
           points?: number | null
           season_month: number
           season_year: number
+          sequence?: string | null
           team_id?: string | null
           updated_at?: string | null
+          win_rate?: number | null
           wins?: number | null
         }
         Update: {
@@ -4180,14 +4234,17 @@ export type Database = {
           goals_against?: number | null
           goals_for?: number | null
           id?: string
+          last_5_games?: string | null
           league_id?: string | null
           losses?: number | null
           played?: number | null
           points?: number | null
           season_month?: number
           season_year?: number
+          sequence?: string | null
           team_id?: string | null
           updated_at?: string | null
+          win_rate?: number | null
           wins?: number | null
         }
         Relationships: [
@@ -4389,6 +4446,72 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_player_stats: {
+        Row: {
+          assists: number | null
+          avg_rating: number | null
+          best_rating: number | null
+          created_at: string | null
+          goals: number | null
+          id: string
+          league_id: string
+          matches_played: number | null
+          mvp_count: number | null
+          player_id: string
+          season_month: number
+          season_year: number
+          team_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assists?: number | null
+          avg_rating?: number | null
+          best_rating?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          league_id: string
+          matches_played?: number | null
+          mvp_count?: number | null
+          player_id: string
+          season_month: number
+          season_year: number
+          team_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assists?: number | null
+          avg_rating?: number | null
+          best_rating?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          league_id?: string
+          matches_played?: number | null
+          mvp_count?: number | null
+          player_id?: string
+          season_month?: number
+          season_year?: number
+          team_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_player_stats_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_player_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
             referencedColumns: ["id"]
           },
         ]
