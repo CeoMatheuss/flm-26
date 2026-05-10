@@ -112,7 +112,7 @@ export function MatchesTab({
         for (const ct of cupTeams) {
           const { data: cm } = await supabase
             .from('cup_matches')
-            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name)')
+            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)')
             .eq('cup_id', ct.cup_id)
             .or(`home_team_id.eq.${ct.id},away_team_id.eq.${ct.id}`)
             .order('scheduled_at', { ascending: true })
