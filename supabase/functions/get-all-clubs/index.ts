@@ -162,7 +162,6 @@ Deno.serve(async (req) => {
         user_id: extracted.user_id,
         club_name: extracted.club_name,
         club_logo: extracted.club_logo,
-        updated_at: save.updated_at,
       });
     }
 

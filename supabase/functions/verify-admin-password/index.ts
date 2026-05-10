@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const securitySalt = Deno.env.get('SECURITY_SALT') || 'FLM26_INTERNAL_SEC_SALT_v1';
     
     // Use stored hash only if it looks like a valid SHA-256 hex string (64 chars)
-    const storedHash = (rawHash && /^[a-f0-9]{64}$/.test(rawHash)) ? rawHash : '494a69a9e4fa9c8c8be15372ba59af72fa2cbdfa2a9528eb8a266c10a8981c6d';
+    const storedHash = (rawHash && /^[a-f0-9]{64}$/.test(rawHash)) ? rawHash : 'aa0f487585c2def6cf9ed1720603fa983a5a424ebf4018915adde36917a53b3c';
 
     // Verify user
     const userClient = createClient(supabaseUrl, anonKey, {

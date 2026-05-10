@@ -152,17 +152,9 @@
     @apply border-border;
   }
 
-  html {
-    font-size: 16px;
-  }
-
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-black tracking-tight leading-tight;
   }
 }
 
@@ -170,13 +162,73 @@
   /* Enhanced card styling for game tabs */
   .game-card {
     @apply bg-card/95 backdrop-blur-md border border-border/40 rounded-xl shadow-xl shadow-black/20;
-    @apply transition-all duration-300;
+  }
+
+  /* Primary accent card */
+  .game-card-accent {
+    @apply bg-card/95 backdrop-blur-md border border-primary/15 rounded-xl shadow-xl shadow-primary/5;
+  }
+
+  /* Premium card with gradient border */
+  .game-card-premium {
+    @apply relative bg-card/95 backdrop-blur-md rounded-xl shadow-xl overflow-hidden;
+  }
+
+  .game-card-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.4), transparent 60%, hsl(var(--primary) / 0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 
   /* Stat mini card */
   .stat-card {
-    @apply bg-card/40 border border-border/20 rounded-xl p-3 transition-all duration-300 hover:bg-accent/60;
-    @apply flex items-center gap-3 min-w-0;
+    @apply bg-accent/50 border border-border/25 rounded-lg p-2.5 sm:p-3 transition-all duration-300 hover:bg-accent/70 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5;
+  }
+
+  /* Subtle gradient header for sections */
+  .section-header {
+    @apply border-b border-border/25 px-4 py-3 rounded-t-xl;
+    background: linear-gradient(to right, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.03), transparent);
+  }
+
+  /* Navigation tab pill style */
+  .nav-tab {
+    @apply relative flex flex-col sm:flex-row items-center gap-0.5 px-1.5 sm:px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-200;
+  }
+
+  .nav-tab[data-state="active"] {
+    @apply bg-primary/15 text-primary shadow-sm shadow-primary/10;
+  }
+
+  .nav-tab[data-state="inactive"] {
+    @apply text-muted-foreground hover:text-foreground hover:bg-accent/50;
+  }
+
+  /* Dropdown menu category label */
+  .menu-category {
+    @apply text-[9px] font-bold text-primary/60 uppercase tracking-widest px-3 py-1.5 select-none;
+  }
+
+  /* Dropdown menu item */
+  .menu-item {
+    @apply gap-2.5 text-xs rounded-lg py-2 px-2.5 cursor-pointer transition-colors hover:bg-primary/10 hover:text-primary;
+  }
+
+  /* Quick action button */
+  .quick-action {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all duration-200 cursor-pointer;
+  }
+
+  /* Badge-like indicator */
+  .game-badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold;
   }
 
   /* Smooth scrollbar */
@@ -186,11 +238,109 @@
   }
 
   .smooth-scroll::-webkit-scrollbar {
-    width: 5px;
+    width: 4px;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   .smooth-scroll::-webkit-scrollbar-thumb {
     background: hsl(var(--muted));
-    border-radius: 10px;
+    border-radius: 2px;
+  }
+
+  /* Glow effect for important elements */
+  .glow-primary {
+    box-shadow: 0 0 25px -5px hsl(var(--primary) / 0.3), 0 0 10px -5px hsl(var(--primary) / 0.2);
+  }
+
+  /* Progress bar improvement */
+  .progress-glow [data-state="complete"],
+  .progress-glow [role="progressbar"] > div {
+    box-shadow: 0 0 8px -2px hsl(var(--primary) / 0.5);
+  }
+
+  /* Glass panel */
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl;
+  }
+
+  /* Animated gradient shimmer */
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .shimmer-text {
+    background: linear-gradient(90deg, hsl(var(--foreground)), hsl(var(--primary)), hsl(var(--foreground)));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  /* Fade in animation */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-slide-up {
+    animation: fadeSlideUp 0.4s ease-out;
+  }
+
+  /* Pulse dot */
+  .pulse-dot {
+    @apply relative;
+  }
+  .pulse-dot::after {
+    content: '';
+    @apply absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* Match feed — themed scrollbar matching primary tone */
+  .match-feed-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.3) hsl(var(--muted) / 0.05);
+  }
+  .match-feed-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .match-feed-scroll::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.05);
+    border-radius: 3px;
+  }
+  .match-feed-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.15));
+    border-radius: 3px;
+  }
+  .match-feed-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, hsl(var(--primary) / 0.55), hsl(var(--primary) / 0.25));
+  }
+
+  /* Highlight 2D fade-in */
+  @keyframes highlightFadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-highlight-in {
+    animation: highlightFadeIn 0.3s ease-out;
+  }
+
+  /* Scoreboard goal glow pulse */
+  @keyframes goalGlowPulse {
+    0%, 100% { box-shadow: 0 0 16px hsl(var(--primary) / 0.3), 0 0 4px hsl(var(--primary) / 0.2); }
+    50%      { box-shadow: 0 0 28px hsl(var(--primary) / 0.55), 0 0 10px hsl(var(--primary) / 0.35); }
+  }
+  .animate-goal-glow {
+    animation: goalGlowPulse 1.2s ease-in-out infinite;
   }
 }

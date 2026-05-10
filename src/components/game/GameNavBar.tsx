@@ -1,70 +1,32 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { 
-  LayoutDashboard, Users, Target, Trophy, 
-  Newspaper, Calendar, DollarSign, Building2, 
-  Settings, Globe, Shield, Star, ShoppingBag,
-  MoreHorizontal
-} from 'lucide-react';
-import { GameMenu } from './GameMenu';
+import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe, Swords } from 'lucide-react';
 
-interface GameNavBarProps {
-  onTabChange: (tab: string) => void;
-  activeTab: string;
-  showAdmin: boolean;
-  onShowTutorial: () => void;
-}
-
-export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }: GameNavBarProps) {
-  const mainTabs = [
-    { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
-    { id: 'squad', label: 'Elenco', icon: Users },
-    { id: 'tactics', label: 'Táticas', icon: Target },
-    { id: 'league', label: 'Liga', icon: Trophy },
-    { id: 'copas', label: 'Copas', icon: Shield },
-    { id: 'journal', label: 'Jornal', icon: Newspaper },
-    { id: 'market', label: 'Mercado', icon: ShoppingBag },
-    { id: 'calendar', label: 'Calendário', icon: Calendar },
-    { id: 'finance', label: 'Finanças', icon: DollarSign },
-    { id: 'stadium', label: 'Estádio', icon: Building2 },
-    { id: 'world', label: 'Mundo', icon: Globe },
-    { id: 'ranking', label: 'Ranking', icon: Star },
-  ];
-
+export function GameNavBar() {
   return (
-    <div className="w-full bg-card/90 backdrop-blur-xl border-b border-border/40 sticky top-14 sm:top-16 z-40 shadow-md">
-      <ScrollArea className="w-full whitespace-nowrap">
-        <TabsList className="inline-flex h-12 items-center justify-start bg-transparent p-1 gap-1">
-          {mainTabs.map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              value={tab.id}
-              className="px-4 h-9 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all flex items-center gap-2 border border-transparent data-[state=active]:border-primary/20"
-            >
-              <tab.icon className="h-4 w-4 shrink-0" />
-              <span className="text-xs font-bold">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-          
-          <div className="flex items-center ml-2 border-l border-border/40 pl-2">
-            <GameMenu 
-              onTabChange={onTabChange} 
-              activeTab={activeTab} 
-              showAdmin={showAdmin}
-              onShowTutorial={onShowTutorial}
-              trigger={
-                <button className="h-9 px-3 flex items-center gap-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all border border-transparent">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="text-xs font-bold">Mais</span>
-                </button>
-              } 
-            />
-          </div>
-        </TabsList>
-        <ScrollBar orientation="horizontal" className="hidden" />
-      </ScrollArea>
+    <div className="flex-1 flex flex-col gap-1">
+      <TabsList className="grid grid-cols-5 h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/20 rounded-xl overflow-hidden">
+        <TabsTrigger value="dashboard" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Início</span>
+        </TabsTrigger>
+        <TabsTrigger value="squad" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Elenco</span>
+        </TabsTrigger>
+        <TabsTrigger value="journal" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Jornal</span>
+        </TabsTrigger>
+        <TabsTrigger value="tactics" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Táticas</span>
+        </TabsTrigger>
+        <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
+        </TabsTrigger>
+      </TabsList>
     </div>
   );
 }
-
 

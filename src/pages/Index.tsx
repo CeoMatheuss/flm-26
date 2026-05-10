@@ -634,37 +634,33 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
       <GameHeader club={game.club} season={game.season} infrastructure={game.infrastructure} listedPlayers={game.listedForSale} userId={userId} isNewClub={isNewClub} onSignOut={onSignOut} />
 
-      <main className="max-w-[1920px] mx-auto px-4 pb-12 pt-2">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <GameNavBar 
-            onTabChange={setActiveTab} 
-            activeTab={activeTab} 
-            showAdmin={showAdmin} 
-            onShowTutorial={() => setShowTutorial(true)} 
-          />
-          <div className="mt-4">
-            <ErrorBoundary label={`tab:${activeTab}`}>
-              <GameTabRouter
-                game={game}
-                mp={mp}
-                userId={userId}
-                displayName={displayName}
-                showAdmin={showAdmin}
-                isFounder={isFounder}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                activeTournamentId={activeTournamentId}
-                setActiveTournamentId={setActiveTournamentId}
-                onSigningPlayer={setSigningPlayer}
-                saveSigningNews={saveSigningNews}
-                blockedTabs={blockedTabs}
-                isAdmin={isAdminRole}
-                isPremium={isPremium}
-                marketSubTab={marketSubTab}
-                setMarketSubTab={setMarketSubTab}
-              />
-            </ErrorBoundary>
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
+            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
+            <GameNavBar />
           </div>
+          <ErrorBoundary label={`tab:${activeTab}`}>
+            <GameTabRouter
+              game={game}
+              mp={mp}
+              userId={userId}
+              displayName={displayName}
+              showAdmin={showAdmin}
+              isFounder={isFounder}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              activeTournamentId={activeTournamentId}
+              setActiveTournamentId={setActiveTournamentId}
+              onSigningPlayer={setSigningPlayer}
+              saveSigningNews={saveSigningNews}
+              blockedTabs={blockedTabs}
+              isAdmin={isAdminRole}
+              isPremium={isPremium}
+              marketSubTab={marketSubTab}
+              setMarketSubTab={setMarketSubTab}
+            />
+          </ErrorBoundary>
         </Tabs>
       </main>
     </div>

@@ -8,11 +8,9 @@ interface GameMenuProps {
   onShowTutorial: () => void;
   onMarketSubTabChange?: (subTab: string) => void;
   tutorialCompleted?: boolean;
-  trigger?: React.ReactNode;
-  activeTab?: string;
 }
 
-export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted, trigger, activeTab }: GameMenuProps) {
+export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted }: GameMenuProps) {
   const goToMarket = (sub: string) => {
     onMarketSubTabChange?.(sub);
     onTabChange('market');
@@ -20,11 +18,9 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0 border-border/30 bg-card/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        )}
+        <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0 border-border/30 bg-card/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">🌎 Competições</p>

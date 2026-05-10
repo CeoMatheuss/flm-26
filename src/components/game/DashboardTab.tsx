@@ -5,15 +5,19 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, TrendingUp, Flame, Heart, Zap, Building2, Activity, Calendar, User, Landmark, Loader2, Dumbbell } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
+import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
+import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
+import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 
+// Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,9 +84,11 @@ interface Props {
   onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, onViewClub, onGoToSquad, onRestAll }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
+
+  const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
 
   const playedMatchesCount = club.stats.wins + club.stats.draws + club.stats.losses;
   const winRate = playedMatchesCount > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (playedMatchesCount * 3)) * 100) : 0;
@@ -128,6 +134,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     player_unhappy: 'border-l-destructive bg-destructive/5',
   };
 
+
   const stats = [
     { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, color: 'text-primary' },
     { label: 'Torcida', value: club.fans >= 1000 ? `${(club.fans / 1000).toFixed(0)}k` : club.fans.toLocaleString(), icon: Users, color: 'text-foreground' },
@@ -136,108 +143,332 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     { label: 'Aproveit.', value: `${winRate}%`, icon: TrendingUp, color: 'text-foreground' },
   ];
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <div className="lg:col-span-8 space-y-6">
-        {showFatigueWarning && (
-          <Card className="border-orange-500/50 bg-orange-500/10">
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Activity className="h-5 w-5 text-orange-400" />
-                <div>
-                  <h3 className="text-sm font-bold text-orange-400">Aviso de Fadiga</h3>
-                  <p className="text-xs text-muted-foreground">{tiredPlayers.length} jogadores cansados.</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={onRestAll}>Descansar</Button>
-                <Button size="sm" className="h-8 text-[11px] bg-orange-500" onClick={onGoToSquad}>Ver Elenco</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+  const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
 
-        <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl border border-primary/30 shrink-0">⚽</div>
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Fatigue Warning V4 */}
+      {showFatigueWarning && (
+        <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                <Activity className="h-6 w-6 animate-pulse" />
+              </div>
               <div className="flex-1 space-y-2">
-                <div>
-                  <h2 className="text-2xl font-black">{club.name}</h2>
-                  {clubProfile?.motto && <p className="text-xs text-muted-foreground italic">"{clubProfile.motto}"</p>}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black text-orange-400 uppercase tracking-wider">Aviso de Fadiga</h3>
+                  <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-400 bg-orange-500/10">
+                    {tiredPlayers.length} Jogadores
+                  </Badge>
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm font-medium">
-                  <div className="flex items-center gap-1.5"><User className="h-4 w-4 text-primary" /> {clubProfile?.ownerName || '—'}</div>
-                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> {clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</div>
-                </div>
-                <div className="flex gap-2">
-                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold"><Dumbbell className="h-3 w-3" /> CT Lvl.{infrastructure?.trainingCenter?.level || 0}</Badge>
-                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold"><Building2 className="h-3 w-3" /> Estádio Lvl.{infrastructure?.stadium?.level || 1}</Badge>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Atenção: <span className="text-foreground font-bold">{tiredPlayers.length} jogadores</span> estão com fadiga elevada. 
+                  Recomenda-se descanso para evitar lesões graves e queda drástica de rendimento físico.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <Button size="sm" variant="outline" className="h-8 text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg" onClick={onRestAll}>
+                    Descansar Elenco
+                  </Button>
+                  <Button size="sm" className="h-8 text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20" onClick={onGoToSquad}>
+                    Ir para Elenco
+                  </Button>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {stats.map(item => (
-            <div key={item.label} className="bg-card/40 border border-border/20 rounded-xl p-3 flex flex-col items-center text-center transition-all hover:bg-accent/20">
-              <div className="p-1.5 rounded-lg bg-primary/10 mb-1">
-                <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
-              </div>
-              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-tight">{item.label}</p>
-              <p className="text-base font-black leading-none">{item.value}</p>
+      {/* Club Info Widget */}
+      <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0">
+              {club.shieldPattern ? (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
+                  <span className="text-3xl">🛡️</span>
+                </div>
+              ) : (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center text-2xl">⚽</div>
+              )}
             </div>
-          ))}
-        </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <h2 className="text-sm sm:text-base font-black truncate">{club.name}</h2>
+              {clubProfile?.motto && <p className="text-[9px] text-muted-foreground italic">"{clubProfile.motto}"</p>}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <User className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Presidente:</span>
+                  <span className="font-bold truncate">{clubProfile?.ownerName || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Fundação:</span>
+                  <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Landmark className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Estádio:</span>
+                  <span className="font-bold truncate">{club.stadiumName} ({stadiumCapacity?.toLocaleString() || '?'})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Elenco:</span>
+                  <span className="font-bold">{club.players.length} jogadores</span>
+                </div>
+              </div>
+              {/* Infrastructure mini */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Dumbbell className="h-2.5 w-2.5" /> CT Lv.{infrastructure?.trainingCenter?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Stethoscope className="h-2.5 w-2.5" /> Fisio Lv.{infrastructure?.physiotherapy?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <GraduationCap className="h-2.5 w-2.5" /> Base Lv.{infrastructure?.youthAcademy?.level || 0}
+                </Badge>
+                <Badge variant="outline" className="text-[8px] gap-1">
+                  <Building2 className="h-2.5 w-2.5" /> Estádio Lv.{infrastructure?.stadium?.level || 1}
+                </Badge>
+              </div>
+              {/* Instagram */}
+              {clubProfile?.instagram ? (
+                <a href={clubProfile.instagram.startsWith('http') ? clubProfile.instagram : `https://instagram.com/${clubProfile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-pink-400 hover:underline mt-0.5">
+                  <Instagram className="h-3 w-3" /> {clubProfile.instagram.startsWith('http') ? clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1] ? `@${clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1]}` : clubProfile.instagram : `@${clubProfile.instagram.replace('@', '')}`}
+                </a>
+              ) : (
+                <p className="text-[9px] text-muted-foreground/50 mt-0.5">📸 Vincule seu Instagram no Perfil do Clube</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
+      {/* Season Start Widget */}
+      <SeasonStartWidget seasonNumber={season} userId={userId} />
+
+      {/* Ballon d'Or Teaser — aparece nas últimas 4 rodadas da temporada */}
+      <BallonDorTeaserWidget
+        season={season ?? 1}
+        currentWeek={currentWeek ?? 1}
+        totalWeeks={totalWeeks ?? 38}
+        userId={userId}
+      />
+
+
+      {/* Match Card */}
+      <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {stats.map(item => (
+          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2">
+            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0`} />
+            <div className="min-w-0">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
+              <p className="text-sm sm:text-sm font-bold truncate">{item.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="lg:col-span-4 space-y-6">
-        <SeasonStartWidget seasonNumber={season} userId={userId} />
-        {userId && <PersonalizedCupWidget userId={userId} onOpenCompetition={onOpenTournament} onGoToMatches={onGoToFriendly} />}
-        <LeagueStandingsMini userId={userId} />
-        
-        <Card className="game-card">
-          <CardHeader className="py-4 px-6 border-b border-border/10">
-            <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-              <Heart className="h-4 w-4 text-primary" /> Torcida & Moral
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Humor da Torcida</span>
-              <span className={`text-sm font-black ${fanMoodColor}`}>{fanMood}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Sequência Atual</span>
-              <span className="text-sm font-black">{streakLabel}</span>
-            </div>
-            <Progress value={Math.min(100, club.reputation)} className="h-2" />
-          </CardContent>
-        </Card>
+      {/* Personalized Cup Widget */}
+      {userId && (
+        <PersonalizedCupWidget 
+          userId={userId} 
+          onOpenCompetition={(id) => onOpenTournament?.(id)}
+          onGoToMatches={onGoToFriendly}
+        />
+      )}
 
+      {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
+          unless they are also considered part of "World" */}
+      {/* <TournamentDashboardCard onExpand={onOpenTournament} /> */}
+
+      {/* Próximos Jogos Oficiais removidos */}
+
+
+      {/* Newspaper */}
+      <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
+
+      {/* Top 5 League Standings */}
+      <LeagueStandingsMini userId={userId} />
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Events Feed */}
         {recentEvents.length > 0 && (
-          <Card className="game-card">
-            <CardHeader className="py-4 px-6 border-b border-border/10">
-              <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" /> Feed de Notícias
+          <Card className="game-card-accent">
+            <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+              <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-primary" /> Eventos Recentes
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 space-y-2">
+            <CardContent className="px-3 sm:px-4 pb-3 space-y-1.5">
               {recentEvents.map(ev => (
-                <div key={ev.id} className={`border-l-4 rounded-r-lg px-4 py-3 ${eventColors[ev.type] || 'border-l-border'} bg-accent/20`}>
-                  <p className="text-xs font-bold mb-1">{ev.icon} {ev.title}</p>
-                  <p className="text-[10px] text-muted-foreground line-clamp-2">{ev.description}</p>
+                <div key={ev.id} className={`border-l-2 rounded-r-lg px-3 py-2 ${eventColors[ev.type] || 'border-l-border'} transition-colors`}>
+                  <p className="text-xs sm:text-sm font-semibold">{ev.icon} {ev.title}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{ev.description}</p>
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
+
+        {/* Fan Mood Card */}
+        <Card className="game-card-accent">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Heart className="h-3.5 w-3.5 text-primary" /> Torcida & Moral
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5 px-3 sm:px-4 pb-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Humor</span>
+              <span className={`text-xs font-bold ${fanMoodColor}`}>{fanMood}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Sequência</span>
+              <span className="text-xs font-bold flex items-center gap-1">
+                {streak >= 3 && streakType === 'V' && <Flame className="h-3 w-3 text-warning" />}
+                {streakLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Torcedores</span>
+              <span className="text-xs font-bold">{club.fans.toLocaleString()}</span>
+            </div>
+            <Progress value={Math.min(100, club.reputation)} className="h-1.5 progress-glow" />
+            <p className="text-[9px] text-muted-foreground text-center">
+              {recentWins >= 3 ? '🔥 A torcida está lotando o estádio!' : recentLosses >= 3 ? '😤 Torcedores abandonando o clube...' : 'Mantenha bons resultados para crescer a torcida'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Performance + Infrastructure */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Performance */}
+        <Card className="game-card">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-primary" /> Desempenho
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5 px-3 sm:px-4 pb-3">
+            {totalGames > 0 ? (
+              <>
+                <div className="flex gap-3 text-xs font-mono">
+                  <span className="game-badge bg-success/15 text-success">{club.stats.wins}V</span>
+                  <span className="game-badge bg-primary/15 text-primary">{club.stats.draws}E</span>
+                  <span className="game-badge bg-destructive/15 text-destructive">{club.stats.losses}D</span>
+                  <span className="text-muted-foreground ml-auto text-[10px] self-center">{totalGames} jogos</span>
+                </div>
+                <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+                  {club.stats.wins > 0 && <div className="bg-success transition-all" style={{ flex: club.stats.wins }} />}
+                  {club.stats.draws > 0 && <div className="bg-primary transition-all" style={{ flex: club.stats.draws }} />}
+                  {club.stats.losses > 0 && <div className="bg-destructive transition-all" style={{ flex: club.stats.losses }} />}
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="stat-card text-center">
+                    <p className="text-lg font-bold text-success">{club.stats.goalsFor}</p>
+                    <p className="text-[8px] text-muted-foreground uppercase">Gols Pró</p>
+                  </div>
+                  <div className="stat-card text-center">
+                    <p className="text-lg font-bold text-destructive">{club.stats.goalsAgainst}</p>
+                    <p className="text-[8px] text-muted-foreground uppercase">Gols Contra</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogo disputado ainda</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Infrastructure Summary */}
+        <Card className="game-card">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-primary" /> Infraestrutura
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 px-3 sm:px-4 pb-3">
+            {infrastructure ? (
+              <>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Estádio', value: infrastructure.stadium?.level || 1, max: 10, icon: '🏟️' },
+                    { label: 'CT', value: infrastructure.trainingCenter?.level || 1, max: 10, icon: '⚽' },
+                    { label: 'Fisioterapia', value: infrastructure.physiotherapy?.level || 1, max: 10, icon: '🏥' },
+                    { label: 'Academia', value: infrastructure.youthAcademy?.level || 1, max: 10, icon: '🎓' },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <span className="text-[10px] w-4">{item.icon}</span>
+                      <span className="text-[10px] text-muted-foreground w-16">{item.label}</span>
+                      <Progress value={(item.value / item.max) * 100} className="flex-1 h-1.5 progress-glow" />
+                      <span className="text-[9px] font-bold w-6 text-right">Lv.{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-4">Carregando...</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Last 5 Results */}
+      {last5.length > 0 && (
+        <Card className="game-card">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Activity className="h-3.5 w-3.5 text-primary" /> Últimos Resultados
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-4 pb-3">
+            <div className="flex gap-2 justify-center">
+              {last5.map((m, i) => {
+                const r = m.result!;
+                const w = r.home > r.away;
+                const d = r.home === r.away;
+                return (
+                  <div key={i} className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold transition-all ${w ? 'bg-success/15 text-success border border-success/20 shadow-sm shadow-success/10' : d ? 'bg-primary/15 text-primary border border-primary/20' : 'bg-destructive/15 text-destructive border border-destructive/20'}`}>
+                    <span className="text-[7px] text-muted-foreground">{w ? 'V' : d ? 'E' : 'D'}</span>
+                    {r.home}-{r.away}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Players */}
+      <Card className="game-card">
+        <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Star className="h-3.5 w-3.5 text-primary" /> Melhores do Elenco
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-4 pb-3">
+          <div className="space-y-1.5">
+            {[...club.players].sort((a, b) => b.overall - a.overall).slice(0, 5).map((player, i) => (
+              <div key={player.id} className="flex items-center gap-2 py-1.5 rounded-lg hover:bg-accent/30 px-2 transition-colors">
+                <span className={`text-[10px] w-4 text-center font-mono ${i === 0 ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{i === 0 ? '⭐' : i + 1}</span>
+                <span className="text-[9px] font-mono game-badge bg-primary/15 text-primary">{player.position}</span>
+                <span className="flex-1 text-xs font-medium truncate">{player.name}</span>
+                <span className="text-[10px] text-muted-foreground">{player.age}a</span>
+                <span className="text-xs font-bold w-7 text-right tabular-nums">{player.overall}</span>
+                <Progress value={player.overall} className="w-12 h-1.5 progress-glow" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
