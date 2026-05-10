@@ -30,7 +30,8 @@ export function ChampionshipsTab({ onBack }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from('world_leagues')
-        .select('*, country:world_countries(name, code)')
+        .select('*')
+        .eq('active', true)
         .order('division_level', { ascending: true });
       
       if (data) {
