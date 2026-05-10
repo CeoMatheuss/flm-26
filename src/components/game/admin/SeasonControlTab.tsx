@@ -74,6 +74,28 @@ export function SeasonControlTab({ adminUserId }: Props) {
     setActionLoading(null);
   };
 
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const resetWorldLeagues = async () => {
+    setActionLoading('reset-world');
+    try {
+      const { data, error } = await supabase.functions.invoke('world-leagues-reset', {
+        body: { admin_user_id: adminUserId, notify: true },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || 'Erro ao resetar');
+      toast.success(
+        `✅ ${data.leagues_reset} ligas resetadas. ${data.total_simulated} jogos simulados, ${data.users_notified} usuários avisados.`,
+        { duration: 6000 }
+      );
+      await logAdmin('reset_world_leagues', { result: data });
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
+    setResetConfirm(false);
+  };
+
   const forceSeasonEnd = async (country: string) => {
     setActionLoading(`force-${country}`);
     try {
