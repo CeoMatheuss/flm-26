@@ -227,6 +227,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           transferBudget={(game as any).transferBudget}
           onRescindPlayer={(game as any).rescindPlayer}
           onReorderPlayers={game.updatePlayers}
+          onRotateSquad={(game as any).rotateSquad}
           tactics={game.tactics}
         />
       </TabsContent>
