@@ -79,9 +79,11 @@ interface Props {
   currentWeek?: number;
   totalWeeks?: number;
   onViewClub?: (clubName: string) => void;
+  onGoToSquad?: () => void;
+  onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
