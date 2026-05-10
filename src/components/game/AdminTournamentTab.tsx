@@ -1313,6 +1313,39 @@ export function AdminTournamentTab({ userId }: Props) {
             </div>
           </div>
 
+          </div>
+
+          {selectedTournament.is_national_cup && (
+            <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20 mb-2">
+              <p className="text-[10px] font-bold text-blue-400 flex items-center gap-1">
+                <Globe className="h-3 w-3" /> Sistema de Copa Nacional
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-1">
+                Esta competição é uma Copa Nacional oficial. Sorteios e simulações são automáticos.
+              </p>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full h-7 text-[9px] mt-2 gap-1 border-blue-500/30 text-blue-300"
+                onClick={async () => {
+                  setLoading(true);
+                  const { data, error } = await supabase.functions.invoke('national-cup-manager', { 
+                    body: { action: 'draw_round', cupId: selectedTournament.id } 
+                  });
+                  setLoading(false);
+                  if (error) toast.error('Erro ao realizar sorteio: ' + error.message);
+                  else {
+                    toast.success('Sorteio realizado! Jogos gerados.');
+                    loadMatches(selectedTournament.id);
+                  }
+                }}
+                disabled={loading}
+              >
+                <Zap className="h-3 w-3" /> Realizar Sorteio Manual
+              </Button>
+            </div>
+          )}
+
           {/* Online vs Bot count */}
           <div className="flex items-center gap-2 text-[9px]">
             <span className="text-green-400">👤 {teams.filter(t => !t.is_bot).length} online</span>
