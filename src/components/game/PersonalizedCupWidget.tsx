@@ -195,7 +195,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
   const getStatusIcon = () => {
     if (isChampion) return <Trophy className="h-10 w-10 text-yellow-400 animate-bounce" />;
     if (isEliminated) return <Swords className="h-10 w-10 text-muted-foreground/30" />;
-    return <Trophy className="h-10 w-10 text-primary opacity-20" />;
+    return <Trophy className="h-10 w-10 text-primary animate-pulse" />;
   };
 
   const getCompetitionIcon = () => {
@@ -272,7 +272,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={onGoToMatches}
           >
-            <Calendar className="h-3 w-3" /> Ver Jogos
+            <Calendar className="h-3 w-3" /> Ver Calendário
           </Button>
           <Button 
             variant="outline" 
