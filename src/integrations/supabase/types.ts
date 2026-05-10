@@ -83,6 +83,7 @@ export type Database = {
           created_at: string
           details: Json
           id: string
+          target_user_id: string | null
           user_id: string
         }
         Insert: {
@@ -90,6 +91,7 @@ export type Database = {
           created_at?: string
           details?: Json
           id?: string
+          target_user_id?: string | null
           user_id: string
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           created_at?: string
           details?: Json
           id?: string
+          target_user_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -4793,10 +4796,19 @@ export type Database = {
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
-      admin_add_money_to_club: {
-        Args: { p_amount: number; p_target_user_id: string }
-        Returns: Json
-      }
+      admin_add_money_to_club:
+        | {
+            Args: { p_amount: number; p_target_user_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_reason?: string
+              p_target_user_id: string
+            }
+            Returns: Json
+          }
       advance_cup_round: { Args: { _cup_id: string }; Returns: undefined }
       advance_cup_winners: {
         Args: { _cup_id: string; _current_phase: string }

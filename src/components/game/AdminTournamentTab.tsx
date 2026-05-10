@@ -429,7 +429,14 @@ export function AdminTournamentTab({ userId }: Props) {
   };
 
   // ── Fetch ALL existing teams via backend function (bypasses RLS) ──
-  const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }> | null> => {
+  const fetchOnlineTeams = async (scope: string): Promise<Array<{ 
+    user_id: string; 
+    club_name: string; 
+    club_logo: string;
+    is_online?: boolean;
+    last_seen?: string | null;
+    updated_at?: string | null;
+  }> | null> => {
     try {
       const { data, error } = await supabase.functions.invoke('get-all-clubs', {
         body: { scope },
@@ -487,7 +494,14 @@ export function AdminTournamentTab({ userId }: Props) {
 
     setLoading(true);
 
-    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    let onlineTeams: Array<{ 
+      user_id: string; 
+      club_name: string; 
+      club_logo: string;
+      is_online?: boolean;
+      last_seen?: string | null;
+      updated_at?: string | null;
+    }> = [];
     if (teamSource !== 'bots_only') {
       const fetchedTeams = await fetchOnlineTeams(scope);
       if (fetchedTeams === null) {
@@ -495,6 +509,23 @@ export function AdminTournamentTab({ userId }: Props) {
         return;
       }
       onlineTeams = fetchedTeams;
+
+      // Prioritize: Online -> Recently Active -> Human Offline
+      onlineTeams.sort((a, b) => {
+        // 1. Online first
+        if (a.is_online && !b.is_online) return -1;
+        if (!a.is_online && b.is_online) return 1;
+
+        // 2. Then by last_seen (if available)
+        const dateA = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+        const dateB = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+        if (dateA !== dateB) return dateB - dateA;
+
+        // 3. Then by updated_at
+        const updA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const updB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return updB - updA;
+      });
 
       if (teamSource === 'online_only' && onlineTeams.length < 2) {
         toast.error('Não há clubes suficientes para criar campeonato apenas com times online.');
@@ -772,6 +803,31 @@ export function AdminTournamentTab({ userId }: Props) {
 
     toast.success(`🔄 ${fixtures.length} jogos regenerados!`);
     await loadMatches(selectedTournament.id);
+    setLoading(false);
+  };
+
+  const resetTournament = async () => {
+    if (!selectedTournament) return;
+    if (!confirm('DESEJA REINICIAR COMPLETAMENTE? Isso apagará todos os jogos e zerará a pontuação de todos os times.')) return;
+    setLoading(true);
+    
+    // 1. Delete all matches
+    await supabase.from('custom_tournament_matches').delete().eq('tournament_id', selectedTournament.id);
+    
+    // 2. Reset team stats
+    await supabase.from('custom_tournament_teams').update({
+      points: 0, wins: 0, draws: 0, losses: 0, goals_for: 0, goals_against: 0, played: 0, eliminated: false
+    } as any).eq('tournament_id', selectedTournament.id);
+    
+    // 3. Set status back to registration
+    await supabase.from('custom_tournaments').update({ status: 'registration', current_round: 1 } as any).eq('id', selectedTournament.id);
+    
+    toast.success('🏆 Campeonato reiniciado com sucesso!');
+    
+    setSelectedTournament({ ...selectedTournament, status: 'registration', current_round: 1 });
+    loadTournaments();
+    loadTeams(selectedTournament.id);
+    loadMatches(selectedTournament.id);
     setLoading(false);
   };
 
@@ -1268,6 +1324,9 @@ export function AdminTournamentTab({ userId }: Props) {
             )}
             <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1" onClick={regenerateFixtures} disabled={loading}>
               <Zap className="h-3 w-3" /> Regerar Jogos
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 text-orange-400 border-orange-500/30" onClick={resetTournament} disabled={loading}>
+              <RefreshCw className="h-3 w-3" /> Reiniciar Total
             </Button>
             {selectedTournament.status !== 'cancelled' && selectedTournament.status !== 'finished' && (
               <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 text-red-400 border-red-500/30" onClick={() => updateTournamentStatus('cancelled')}>

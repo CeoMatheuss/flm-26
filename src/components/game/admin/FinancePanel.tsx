@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,13 +15,16 @@ type ClubOption = { user_id: string; club_name: string; club_logo: string };
  * Trava de execução dupla via flag local `busy`.
  */
 export function FinancePanel() {
-  const [allClubs, setAllClubs] = useState<ClubOption[]>([]);
+  const [allClubs, setAllClubs] = useState<any[]>([]);
   const [loadingClubs, setLoadingClubs] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<ClubOption | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [amount, setAmount] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState<{ club: string; newBudget: number; delta: number } | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Carrega clubes uma vez para autocomplete
   useEffect(() => {
@@ -47,6 +50,26 @@ export function FinancePanel() {
     return () => { mounted = false; };
   }, []);
 
+  const loadLogs = useCallback(async () => {
+    setLoadingLogs(true);
+    const { data } = await supabase
+      .from('admin_logs')
+      .select(`
+        *,
+        admin:user_id(display_name),
+        target:target_user_id(display_name)
+      `)
+      .eq('action', 'add_money')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setLogs(data);
+    setLoadingLogs(false);
+  }, []);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
+
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q || selected?.club_name.toLowerCase() === q) return [];
@@ -60,6 +83,7 @@ export function FinancePanel() {
     const { data, error } = await supabase.rpc('admin_add_money_to_club', {
       p_target_user_id: targetUserId,
       p_amount: value,
+      p_reason: reason || 'Ajuste administrativo'
     });
     if (error) {
       throw new Error(error.message || 'Falha ao ajustar saldo');
@@ -90,6 +114,8 @@ export function FinancePanel() {
       );
       setLastResult({ club: r.clubName, newBudget: r.newBudget, delta: r.delta });
       setAmount('');
+      setReason('');
+      loadLogs();
     } catch (e: any) {
       toast.error(`❌ ${e?.message || 'Erro ao ajustar saldo'}`);
     } finally {
@@ -148,36 +174,73 @@ export function FinancePanel() {
           </div>
         )}
 
-        <Input
-          type="number"
-          placeholder="Valor em R$ (use negativo para descontar)"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          className="text-xs h-8"
-        />
-        <p className="text-[10px] text-muted-foreground">
-          Limite: ±R$ 1.000.000.000 por operação. Ação registrada em admin_logs e o jogador é notificado.
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            placeholder="Valor (R$)"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            className="text-xs h-8"
+          />
+          <Input
+            placeholder="Motivo (ex: Evento, Bônus)"
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            className="text-xs h-8"
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground italic">
+          O jogador receberá uma notificação no sino com o valor e o motivo.
         </p>
 
         <Button
           size="sm"
-          className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
           onClick={submit}
           disabled={busy || !selected}
         >
-          {busy ? 'Processando…' : 'Confirmar'}
+          {busy ? 'Processando…' : 'CONFIRMAR ENTREGA'}
         </Button>
 
         {lastResult && (
-          <div className="mt-2 p-2 rounded-md bg-muted/40 border text-[10px] space-y-0.5">
-            <p className="font-semibold text-emerald-400">
-              {lastResult.delta >= 0 ? '✔ Crédito aplicado' : '⚠ Débito aplicado'}
-            </p>
-            <p>Clube: <span className="font-medium">{lastResult.club}</span></p>
-            <p>Operação: <span className="font-mono">{lastResult.delta >= 0 ? '+' : ''}R$ {lastResult.delta.toLocaleString('pt-BR')}</span></p>
-            <p>Novo saldo: <span className="font-mono font-semibold">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
+          <div className="mt-2 p-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] animate-in fade-in slide-in-from-top-1">
+            <p className="font-semibold text-emerald-400">✔ Operação realizada com sucesso!</p>
+            <p>Saldo atualizado de <span className="font-medium">{lastResult.club}</span>: <span className="font-mono font-bold text-emerald-300">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
           </div>
         )}
+
+        <div className="pt-4 border-t border-white/5 mt-4">
+          <h4 className="text-[11px] font-bold text-muted-foreground uppercase mb-2 tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Histórico Recente
+          </h4>
+          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
+            {loadingLogs ? (
+              <p className="text-[10px] text-center py-2 text-muted-foreground">Carregando histórico...</p>
+            ) : logs.length === 0 ? (
+              <p className="text-[10px] text-center py-2 text-muted-foreground">Nenhuma transação recente.</p>
+            ) : (
+              logs.map(log => (
+                <div key={log.id} className="p-1.5 rounded bg-white/5 border border-white/5 flex flex-col gap-0.5">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-medium text-emerald-400">
+                      {log.details?.amount > 0 ? '+' : ''}R$ {log.details?.amount?.toLocaleString()}
+                    </span>
+                    <span className="text-[8px] text-muted-foreground font-mono">
+                      {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-[9px] truncate">
+                    Para: <span className="text-white">{log.details?.club_name || log.target?.display_name || 'Desconhecido'}</span>
+                  </p>
+                  <p className="text-[9px] text-muted-foreground italic truncate">
+                    Motivo: {log.details?.reason || 'Sem motivo'}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
