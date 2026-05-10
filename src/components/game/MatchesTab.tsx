@@ -126,8 +126,10 @@ export function MatchesTab({
               ...m,
               homeName: m.home_team?.club_name,
               awayName: m.away_team?.club_name,
+              homeLogo: m.home_team?.club_logo,
+              awayLogo: m.away_team?.club_logo,
               homeStrength: 70, 
-              awayStrength: 70, 
+              awayStrength: 70,
               isHome: m.home_team_id === ct.id,
               competition: (m.cup_competitions as any)?.name || 'Copa',
               stage: roundNames[m.round] || `Fase ${m.round}`
