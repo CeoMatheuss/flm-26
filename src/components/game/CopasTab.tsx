@@ -16,37 +16,52 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
   const [myCupId, setMyCupId] = useState<string | null>(null);
   const [myCupType, setMyCupType] = useState<'national' | 'continental' | 'world_cup'>('national');
   const [loading, setLoading] = useState(true);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
 
-  useEffect(() => {
-    const loadMyCup = async () => {
-      setLoading(true);
-      const { data: national } = await supabase
-        .from('cup_teams')
-        .select('cup_id, cup_competitions(status)')
+  const loadMyCup = async () => {
+    setLoading(true);
+    const { data: national } = await supabase
+      .from('cup_teams')
+      .select('cup_id, cup_competitions(status)')
+      .eq('user_id', userId)
+      .neq('cup_competitions.status', 'finished')
+      .maybeSingle();
+    
+    if (national) {
+      setMyCupId(national.cup_id);
+      setMyCupType('national');
+      
+      // Load current matches for this cup
+      const { data: cupMatches } = await supabase
+        .from('cup_matches')
+        .select(`
+          *,
+          home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo),
+          away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)
+        `)
+        .eq('cup_id', national.cup_id)
+        .order('round', { ascending: true });
+      if (cupMatches) setMatches(cupMatches);
+    } else {
+      const { data: continental } = await supabase
+        .from('continental_teams')
+        .select('competition_id, continental_competitions(status)')
         .eq('user_id', userId)
-        .neq('cup_competitions.status', 'finished')
+        .neq('continental_competitions.status', 'finished')
         .maybeSingle();
       
-      if (national) {
-        setMyCupId(national.cup_id);
-        setMyCupType('national');
+      if (continental) {
+        setMyCupId(continental.competition_id);
+        setMyCupType('continental');
       } else {
-        const { data: continental } = await supabase
-          .from('continental_teams')
-          .select('competition_id, continental_competitions(status)')
-          .eq('user_id', userId)
-          .neq('continental_competitions.status', 'finished')
-          .maybeSingle();
-        
-        if (continental) {
-          setMyCupId(continental.competition_id);
-          setMyCupType('continental');
-        } else {
-          setActiveTab('world');
-        }
+        setActiveTab('world');
       }
-      setLoading(false);
-    };
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     loadMyCup();
   }, [userId]);
 
@@ -67,13 +82,63 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
           </h2>
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="my-cup" className="text-xs px-4">Minha Copa</TabsTrigger>
+            <TabsTrigger value="bracket" className="text-xs px-4">Chaveamento</TabsTrigger>
             <TabsTrigger value="world" className="text-xs px-4">Mundo</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="my-cup" className="mt-0">
           {myCupId ? (
-            <CupBracketView cupId={myCupId} cupType={myCupType} />
+            <div className="space-y-6">
+              {/* Header section with cup info */}
+              <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center text-3xl">
+                      🏆
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black">Copa Nacional</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary">Temporada Atual</Badge>
+                        <Badge variant="outline">Eliminatórias</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Próximo Desafio</p>
+                    <p className="text-lg font-black text-primary">Oitavas de Final</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Current matches in the cup */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold flex items-center gap-2">
+                  <Star className="h-4 w-4 text-primary" /> Jogos Recentes & Agendados
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {matches.filter(m => m.round === 1).map(match => (
+                    <Card key={match.id} className="hover:border-primary/50 transition-colors">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="text-lg">{match.home_team?.club_logo}</span>
+                          <span className="text-sm font-bold truncate">{match.home_team?.club_name}</span>
+                        </div>
+                        <div className="flex flex-col items-center px-4">
+                          <span className="text-lg font-black">{match.home_goals ?? '-'} x {match.away_goals ?? '-'}</span>
+                          <Badge variant="outline" className="text-[8px] uppercase">{match.status === 'finished' ? 'Final' : 'Agendado'}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 flex-1 justify-end">
+                          <span className="text-sm font-bold truncate text-right">{match.away_team?.club_name}</span>
+                          <span className="text-lg">{match.away_team?.club_logo}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <Card className="border-dashed bg-muted/20">
               <CardContent className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -87,6 +152,10 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="bracket" className="mt-0">
+          {myCupId && <CupBracketView cupId={myCupId} cupType={myCupType} />}
         </TabsContent>
 
         <TabsContent value="world" className="mt-0">
