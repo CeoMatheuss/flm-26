@@ -4806,6 +4806,15 @@ export type Database = {
             Args: { _logo: string; _team_name: string; _user_id: string }
             Returns: string
           }
+        | {
+            Args: {
+              _country?: string
+              _logo: string
+              _team_name: string
+              _user_id: string
+            }
+            Returns: string
+          }
       reset_league_structure: {
         Args: { _league_id: string }
         Returns: undefined
