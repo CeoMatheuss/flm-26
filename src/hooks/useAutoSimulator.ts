@@ -29,7 +29,7 @@ import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 const SCAN_INTERVAL_MS = 2_000;       // 2s between scans (faster)
 const POST_SIM_DELAY_MS = 1_000;      // 1s cooldown
 const LOCK_TTL_MS = 30_000;           // 30s lock
-const TOLERANCE_MS = 1 * 60_000;      // 1min tolerance (very fast)
+const TOLERANCE_MS = 10_000;          // 10s tolerance (very fast)
 const STUCK_AFTER_MS = 15 * 60_000;   // 15min forced sim
 const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
@@ -409,6 +409,26 @@ async function fetchNextEligibleMatch(): Promise<
     .order('scheduled_at', { ascending: true, nullsFirst: false })
     .limit(1);
   if (tournament && tournament.length > 0) return { kind: 'tournament', row: tournament[0] };
+
+  // 4) Cup Matches
+  const { data: cup } = await supabase
+    .from('cup_matches')
+    .select('id, cup_id, home_team_id, away_team_id, round, status, scheduled_at')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(1);
+  if (cup && cup.length > 0) return { kind: 'cup' as any, row: cup[0] };
+
+  // 5) Continental Matches
+  const { data: continental } = await supabase
+    .from('continental_matches')
+    .select('id, competition_id, home_team_id, away_team_id, round, status, scheduled_at')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(1);
+  if (continental && continental.length > 0) return { kind: 'continental' as any, row: continental[0] };
 
   return null;
 }

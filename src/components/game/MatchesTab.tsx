@@ -70,59 +70,71 @@ export function MatchesTab({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Official World League matches initialization handled by replace_bot_with_player RPC
       const { data: teamData } = await supabase
         .from('world_teams')
         .select('id, league_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      const allCompetitionsMatches: any[] = [];
+
+      // 1. World League Matches
       if (teamData?.league_id) {
-        const { data: wm, error: wmErr } = await (supabase
+        const { data: wm } = await (supabase
           .from('world_matches' as any)
           .select(`
-            id, 
-            round, 
-            scheduled_at, 
-            status, 
-            home_goals, 
-            away_goals,
+            id, round, scheduled_at, status, home_goals, away_goals,
             home_team:world_teams!home_team_id(name, strength), 
             away_team:world_teams!away_team_id(name, strength)
           `)
           .eq('league_id', teamData.league_id)
-          .eq('season_month', new Date().getMonth() + 1)
-          .eq('season_year', new Date().getFullYear())
-          .order('round', { ascending: true })
           .order('scheduled_at', { ascending: true })
-          .limit(100) as any);
+          .limit(20) as any);
         
-        if (wmErr) {
-          console.error('Erro ao buscar jogos da liga:', wmErr);
-        } else if (wm) {
-          const enriched = wm.map((m: any) => {
-            const hName = m.home_team?.name || '???';
-            const aName = m.away_team?.name || '???';
-            const isHome = m.home_team_id === teamData.id;
-            return {
-              ...m,
-              homeName: hName,
-              awayName: aName,
-              homeStrength: m.home_team?.strength || 60,
-              awayStrength: m.away_team?.strength || 60,
-              isHome,
-              isOfficial: true,
-              matchday: m.round
-            };
-          });
-          setTournamentMatches(enriched);
+        if (wm) {
+          allCompetitionsMatches.push(...wm.map((m: any) => ({
+            ...m,
+            homeName: m.home_team?.name || '???',
+            awayName: m.away_team?.name || '???',
+            homeStrength: m.home_team?.strength || 60,
+            awayStrength: m.away_team?.strength || 60,
+            isHome: m.home_team_id === teamData.id,
+            competition: 'Brasileirão',
+            stage: `Rodada ${m.round}`
+          })));
         }
       }
 
-      // Load Custom Tournament matches (manter se houver)
+      // 2. National Cup Matches
+      const { data: cupTeam } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId).maybeSingle();
+      if (cupTeam) {
+        const { data: cm } = await supabase
+          .from('cup_matches')
+          .select('*, home_team:cup_teams!cup_matches_home_team_id_fkey(club_name), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name)')
+          .eq('cup_id', cupTeam.cup_id)
+          .or(`home_team_id.eq.${cupTeam.id},away_team_id.eq.${cupTeam.id}`)
+          .order('scheduled_at', { ascending: true })
+          .limit(10);
+        
+        if (cm) {
+          const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
+          allCompetitionsMatches.push(...cm.map(m => ({
+            ...m,
+            homeName: m.home_team?.club_name,
+            awayName: m.away_team?.club_name,
+            homeStrength: 70, // Fallback
+            awayStrength: 70, // Fallback
+            isHome: m.home_team_id === cupTeam.id,
+            competition: 'Copa do Brasil',
+            stage: roundNames[m.round] || `Fase ${m.round}`
+          })));
+        }
+      }
+
+      setTournamentMatches(allCompetitionsMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));
     };
     loadMatches();
-    const interval = setInterval(loadMatches, 60000);
+    const interval = setInterval(loadMatches, 30000);
     return () => clearInterval(interval);
   }, [userId, clubName]);
 
@@ -329,7 +341,7 @@ export function MatchesTab({
                     <CardContent className="p-2.5">
                       <div className="flex items-center gap-2 mb-1.5 pb-1 border-b border-border/20">
                         <Badge variant="secondary" className="text-[8px] gap-1">
-                          🏆 {tournamentNames[tm.tournament_id] || 'Campeonato'}
+                          🏆 {tm.competition || 'Campeonato'}
                         </Badge>
                         <Badge variant="outline" className="text-[8px] gap-1">
                           {tm.stage || `Rodada ${tm.round}`}

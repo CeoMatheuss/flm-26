@@ -24,9 +24,12 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">🌎 Competições</p>
+        <DropdownMenuItem onClick={() => onTabChange('matches')} className="menu-item"><Swords className="h-3.5 w-3.5 text-orange-400" /> Partidas Atuais <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('world')} className="menu-item"><Globe className="h-3.5 w-3.5 text-purple-400" /> Mundo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('copas')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-blue-400" /> Copas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('tactics')} className="menu-item"><Target className="h-3.5 w-3.5 text-orange-400" /> Táticas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('ranking')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Rankings <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('trophies')} className="menu-item"><Medal className="h-3.5 w-3.5 text-primary/70" /> Histórico <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTabChange('stats')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Estatísticas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">⚽ Clube</p>
@@ -68,8 +71,6 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🏆 Conquistas</p>
         <DropdownMenuItem onClick={() => onTabChange('achievements')} className="menu-item"><Medal className="h-3.5 w-3.5 text-primary/70" /> Conquistas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('trophies')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-primary/70" /> Troféus <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('ranking')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Ranking Global <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">⚙️ Sistema</p>
