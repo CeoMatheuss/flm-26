@@ -185,6 +185,37 @@ export function SeasonControlTab({ adminUserId }: Props) {
         </CardContent>
       </Card>
 
+      <Card className="border-blue-500/40 bg-gradient-to-r from-blue-500/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Sprout className="h-4 w-4 text-blue-400" /> Inicialização do Sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">
+            Use estes botões para garantir que a estrutura base existam e que todos os jogadores atuais estejam inscritos corretamente.
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={seedInitialLeagues} 
+              disabled={!!actionLoading} 
+              className="h-8 text-xs flex-1 gap-1"
+            >
+              {actionLoading === 'seed-leagues' ? 'Criando...' : '1. Criar Ligas Base'}
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={syncAllSaves} 
+              disabled={!!actionLoading} 
+              className="h-8 text-xs flex-1 gap-1"
+            >
+              {actionLoading === 'sync-saves' ? 'Sincronizando...' : '2. Inscrever Clubes'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
