@@ -806,6 +806,31 @@ export function AdminTournamentTab({ userId }: Props) {
     setLoading(false);
   };
 
+  const resetTournament = async () => {
+    if (!selectedTournament) return;
+    if (!confirm('DESEJA REINICIAR COMPLETAMENTE? Isso apagará todos os jogos e zerará a pontuação de todos os times.')) return;
+    setLoading(true);
+    
+    // 1. Delete all matches
+    await supabase.from('custom_tournament_matches').delete().eq('tournament_id', selectedTournament.id);
+    
+    // 2. Reset team stats
+    await supabase.from('custom_tournament_teams').update({
+      points: 0, wins: 0, draws: 0, losses: 0, goals_for: 0, goals_against: 0, played: 0, eliminated: false
+    } as any).eq('tournament_id', selectedTournament.id);
+    
+    // 3. Set status back to registration
+    await supabase.from('custom_tournaments').update({ status: 'registration', current_round: 1 } as any).eq('id', selectedTournament.id);
+    
+    toast.success('🏆 Campeonato reiniciado com sucesso!');
+    
+    setSelectedTournament({ ...selectedTournament, status: 'registration', current_round: 1 });
+    loadTournaments();
+    loadTeams(selectedTournament.id);
+    loadMatches(selectedTournament.id);
+    setLoading(false);
+  };
+
   const updateTournamentStatus = async (status: string) => {
     if (!selectedTournament) return;
     const { error } = await supabase.from('custom_tournaments').update({ status } as any).eq('id', selectedTournament.id);
