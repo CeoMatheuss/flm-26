@@ -114,6 +114,8 @@ export function FinancePanel() {
       );
       setLastResult({ club: r.clubName, newBudget: r.newBudget, delta: r.delta });
       setAmount('');
+      setReason('');
+      loadLogs();
     } catch (e: any) {
       toast.error(`❌ ${e?.message || 'Erro ao ajustar saldo'}`);
     } finally {
