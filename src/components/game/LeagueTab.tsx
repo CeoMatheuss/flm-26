@@ -235,9 +235,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <span className="text-lg w-6 h-6 flex items-center justify-center bg-muted rounded-full shrink-0">
-                                {row.world_teams?.logo || '⚽'}
-                              </span>
+                              <ClubShield 
+                                club={{ logoUrl: row.world_teams?.logo } as any} 
+                                size={24} 
+                                className="shrink-0" 
+                              />
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
