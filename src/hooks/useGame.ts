@@ -262,7 +262,6 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     friendliesPlayedSeason: matchState.friendliesPlayedSeason,
     lastFriendlyDate: matchState.lastFriendlyDate,
     lastYouthGenAt: infraState.lastYouthGenAt,
-    lastYouthGenAt: infraState.lastYouthGenAt,
   }), [clubState.club, tactics, financeState.finances, clubState.marketPlayers, clubState.freeAgents,
     infraState.infrastructure, infraState.youthProspects, infraState.youthInvestment, infraState.trainingInvestment, infraState.season,
     infraState.lastYouthGenAt,
