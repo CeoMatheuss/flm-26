@@ -634,12 +634,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
       <GameHeader club={game.club} season={game.season} infrastructure={game.infrastructure} listedPlayers={game.listedForSale} userId={userId} isNewClub={isNewClub} onSignOut={onSignOut} />
 
-      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+      <main className="max-w-[1920px] mx-auto fluid-px pb-24 pt-4 sm:pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
-            <GameNavBar />
-          </div>
+          <GameNavBar 
+            onTabChange={setActiveTab} 
+            activeTab={activeTab} 
+            showAdmin={showAdmin} 
+            onShowTutorial={() => setShowTutorial(true)} 
+          />
           <ErrorBoundary label={`tab:${activeTab}`}>
             <GameTabRouter
               game={game}
