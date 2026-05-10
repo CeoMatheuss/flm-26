@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Club, Player, Scout, ScoutReport, PlayerAttributes } from '@/types/game';
+import { Club, Player, Scout, ScoutReport, PlayerAttributes, PhysicalStatus } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
