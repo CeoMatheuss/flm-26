@@ -429,7 +429,14 @@ export function AdminTournamentTab({ userId }: Props) {
   };
 
   // ── Fetch ALL existing teams via backend function (bypasses RLS) ──
-  const fetchOnlineTeams = async (scope: string): Promise<Array<{ user_id: string; club_name: string; club_logo: string }> | null> => {
+  const fetchOnlineTeams = async (scope: string): Promise<Array<{ 
+    user_id: string; 
+    club_name: string; 
+    club_logo: string;
+    is_online?: boolean;
+    last_seen?: string | null;
+    updated_at?: string | null;
+  }> | null> => {
     try {
       const { data, error } = await supabase.functions.invoke('get-all-clubs', {
         body: { scope },
