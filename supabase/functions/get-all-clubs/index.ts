@@ -128,7 +128,15 @@ Deno.serve(async (req) => {
     while (true) {
       const { data, error } = await adminClient
         .from('game_saves')
-        .select('user_id, club_data, updated_at')
+        .select(`
+          user_id, 
+          club_data, 
+          updated_at,
+          user_presence:user_id (
+            is_online,
+            last_seen
+          )
+        `)
         .order('updated_at', { ascending: false })
         .range(from, from + pageSize - 1);
 
