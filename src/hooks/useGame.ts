@@ -314,6 +314,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     applyServerResult,
     trainPlayer: clubState.trainPlayer,
     restPlayer: clubState.restPlayer,
+    rotateSquad: (clubState as any).rotateSquad,
     buyPlayer,
     sellPlayer,
     signFreeAgent,
