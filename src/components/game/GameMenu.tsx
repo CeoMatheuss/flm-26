@@ -8,6 +8,8 @@ interface GameMenuProps {
   onShowTutorial: () => void;
   onMarketSubTabChange?: (subTab: string) => void;
   tutorialCompleted?: boolean;
+  trigger?: React.ReactNode;
+  activeTab?: string;
 }
 
 export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted }: GameMenuProps) {
