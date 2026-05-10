@@ -14,22 +14,36 @@ interface Props {
 export function CopasTab({ userId, onOpenTournament }: Props) {
   const [activeTab, setActiveTab] = useState('my-cup');
   const [myCupId, setMyCupId] = useState<string | null>(null);
+  const [myCupType, setMyCupType] = useState<'national' | 'continental' | 'world_cup'>('national');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadMyCup = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data: national } = await supabase
         .from('cup_teams')
         .select('cup_id, cup_competitions(status)')
         .eq('user_id', userId)
         .neq('cup_competitions.status', 'finished')
         .maybeSingle();
       
-      if (data) {
-        setMyCupId(data.cup_id);
+      if (national) {
+        setMyCupId(national.cup_id);
+        setMyCupType('national');
       } else {
-        setActiveTab('world');
+        const { data: continental } = await supabase
+          .from('continental_teams')
+          .select('competition_id, continental_competitions(status)')
+          .eq('user_id', userId)
+          .neq('continental_competitions.status', 'finished')
+          .maybeSingle();
+        
+        if (continental) {
+          setMyCupId(continental.competition_id);
+          setMyCupType('continental');
+        } else {
+          setActiveTab('world');
+        }
       }
       setLoading(false);
     };
@@ -59,7 +73,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
 
         <TabsContent value="my-cup" className="mt-0">
           {myCupId ? (
-            <CupBracketView cupId={myCupId} />
+            <CupBracketView cupId={myCupId} cupType={myCupType} />
           ) : (
             <Card className="border-dashed bg-muted/20">
               <CardContent className="flex flex-col items-center justify-center py-20 gap-4 text-center">
