@@ -5,7 +5,15 @@ import { ActiveLeaguesPanel } from './ActiveLeaguesPanel';
 import { RankingTab } from './RankingTab';
 import { Globe, MapPin, Trophy, BarChart3, TrendingUp } from 'lucide-react';
 
-export function WorldLeagues() {
+interface Props {
+  rating?: number;
+  rankingHistory?: any[];
+  clubName?: string;
+  stats?: { wins: number; draws: number; losses: number };
+  season?: number;
+}
+
+export function WorldLeagues({ rating = 0, rankingHistory = [], clubName = 'Manager', stats = { wins: 0, draws: 0, losses: 0 }, season = 1 }: Props) {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
@@ -30,7 +38,13 @@ export function WorldLeagues() {
           <ActiveLeaguesPanel />
         </TabsContent>
         <TabsContent value="ranking" className="mt-0">
-          <RankingTab />
+          <RankingTab 
+            rating={rating} 
+            rankingHistory={rankingHistory} 
+            clubName={clubName} 
+            stats={stats} 
+            season={season} 
+          />
         </TabsContent>
         <TabsContent value="stats" className="mt-0">
           <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl">
