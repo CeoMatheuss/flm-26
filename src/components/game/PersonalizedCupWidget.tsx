@@ -290,9 +290,9 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
           </Button>
           <Button 
             className="h-8 text-[9px] gap-1 px-2 bg-primary hover:bg-primary/90 text-white font-bold"
-            onClick={onGoToMatches}
+            onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <ChevronRight className="h-3 w-3" /> Ir para Partida
+            <ChevronRight className="h-3 w-3" /> ABRIR COPA
           </Button>
         </div>
       </CardContent>
