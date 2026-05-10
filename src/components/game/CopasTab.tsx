@@ -83,8 +83,10 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
           </h2>
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="my-cup" className="text-xs px-4">Minha Copa</TabsTrigger>
-            <TabsTrigger value="bracket" className="text-xs px-4">Chaveamento</TabsTrigger>
             <TabsTrigger value="world" className="text-xs px-4">Mundo</TabsTrigger>
+            <TabsTrigger value="matches" className="text-xs px-4">Jogos</TabsTrigger>
+            <TabsTrigger value="bracket" className="text-xs px-4">Chaveamento</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs px-4">Artilheiros</TabsTrigger>
           </TabsList>
         </div>
 
