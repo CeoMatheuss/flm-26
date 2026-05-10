@@ -950,47 +950,64 @@ export type Database = {
           country: string | null
           created_at: string | null
           cup_type: string
+          current_phase: string | null
           current_round: number | null
           format: string | null
           id: string
           name: string
+          prize_pool: number | null
           season_month: number | null
           season_year: number | null
           status: string | null
           tier: string | null
           total_rounds: number | null
+          winner_id: string | null
         }
         Insert: {
           continent?: string | null
           country?: string | null
           created_at?: string | null
           cup_type?: string
+          current_phase?: string | null
           current_round?: number | null
           format?: string | null
           id?: string
           name: string
+          prize_pool?: number | null
           season_month?: number | null
           season_year?: number | null
           status?: string | null
           tier?: string | null
           total_rounds?: number | null
+          winner_id?: string | null
         }
         Update: {
           continent?: string | null
           country?: string | null
           created_at?: string | null
           cup_type?: string
+          current_phase?: string | null
           current_round?: number | null
           format?: string | null
           id?: string
           name?: string
+          prize_pool?: number | null
           season_month?: number | null
           season_year?: number | null
           status?: string | null
           tier?: string | null
           total_rounds?: number | null
+          winner_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cup_competitions_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "cup_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cup_matches: {
         Row: {
@@ -1061,6 +1078,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cup_season_history: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          cup_name: string
+          cup_type: string
+          id: string
+          runner_up_club_name: string | null
+          season_year: number
+          winner_club_logo: string | null
+          winner_club_name: string
+          winner_user_id: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          cup_name: string
+          cup_type: string
+          id?: string
+          runner_up_club_name?: string | null
+          season_year: number
+          winner_club_logo?: string | null
+          winner_club_name: string
+          winner_user_id?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          cup_name?: string
+          cup_type?: string
+          id?: string
+          runner_up_club_name?: string | null
+          season_year?: number
+          winner_club_logo?: string | null
+          winner_club_name?: string
+          winner_user_id?: string | null
+        }
+        Relationships: []
       }
       cup_teams: {
         Row: {
@@ -4945,6 +5001,7 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
+      process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_season_transition:
         | { Args: never; Returns: undefined }
         | { Args: { _country: string }; Returns: undefined }
