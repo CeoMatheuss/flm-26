@@ -13,17 +13,17 @@ export function GameNavBar() {
           <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Elenco</span>
         </TabsTrigger>
-        <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
-          <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
-          <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
-        </TabsTrigger>
-        <TabsTrigger value="matches" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
-          <Swords className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-400" />
-          <span className="text-[9px] sm:text-xs leading-tight font-medium">Partidas</span>
-        </TabsTrigger>
         <TabsTrigger value="journal" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
           <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Jornal</span>
+        </TabsTrigger>
+        <TabsTrigger value="tactics" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Táticas</span>
+        </TabsTrigger>
+        <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
         </TabsTrigger>
       </TabsList>
     </div>
