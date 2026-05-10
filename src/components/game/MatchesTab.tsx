@@ -91,6 +91,8 @@ export function MatchesTab({
             away_team:world_teams!away_team_id(name, strength)
           `)
           .eq('league_id', teamData.league_id)
+          .eq('season_month', new Date().getMonth() + 1)
+          .eq('season_year', new Date().getFullYear())
           .order('round', { ascending: true })
           .order('scheduled_at', { ascending: true })
           .limit(100) as any);
