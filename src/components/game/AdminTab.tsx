@@ -1313,7 +1313,7 @@ export function AdminTab({ userId, isFounder }: Props) {
 
         {/* Updates Management Tab */}
         <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
-          <AdminUpdatesPanel userId={userId} />
+          <AdminUpdatesPanel />
         </TabsContent>
 
         {/* Announcements with AI Tab */}
