@@ -64,7 +64,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => onTabChange('fans')} className="menu-item"><Heart className="h-3.5 w-3.5 text-primary/70" /> Torcida <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('members')} className="menu-item"><Crown className="h-3.5 w-3.5 text-yellow-400" /> Sócios Torcedores <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('chat')} className="menu-item"><MessageCircle className="h-3.5 w-3.5 text-primary/70" /> Chat Global <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('matches')} className="menu-item"><Swords className="h-3.5 w-3.5 text-primary/70" /> Amistosos Online <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
         <DropdownMenuItem onClick={() => onTabChange('pacotinhos')} className="menu-item"><Gift className="h-3.5 w-3.5 text-primary/70" /> Pacotinhos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
