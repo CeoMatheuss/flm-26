@@ -480,6 +480,8 @@ async function runScan(): Promise<void> {
         if (next.kind === 'league')          success = await processLeagueMatch(next.row);
         else if (next.kind === 'friendly')   success = await processFriendly(next.row);
         else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
+        else if (next.kind === 'cup')        success = await processCupMatch(next.row);
+        else if (next.kind === 'continental') success = await processContinentalMatch(next.row);
       } catch (err) {
         console.warn(`[autosim] ${next.kind} sim error:`, err);
       }
