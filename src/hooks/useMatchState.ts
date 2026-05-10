@@ -56,6 +56,7 @@ export function useMatchState(initialState: any, userId?: string) {
 
     deps.setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
+      if (match?.played) return prev; // Trava para evitar processamento duplo
       
       const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, prev.players.length);
       const strengthDiff = 65 - teamStrength;
