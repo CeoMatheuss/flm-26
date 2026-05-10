@@ -332,7 +332,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Sequência</span>
               <span className="text-xs font-bold flex items-center gap-1">
-                {streak >= 3 && streakType === 'W' && <Flame className="h-3 w-3 text-warning" />}
+                {streak >= 3 && streakType === 'V' && <Flame className="h-3 w-3 text-warning" />}
                 {streakLabel}
               </span>
             </div>
