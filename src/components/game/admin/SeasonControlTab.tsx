@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, RefreshCw, FastForward, Sprout, Zap, AlertTriangle, Bot } from 'lucide-react';
+import { Calendar, RefreshCw, FastForward, Sprout, Zap, AlertTriangle, Bot, Trophy, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { countryFlags, countryNames } from '@/types/league';
 import { LeagueRow, statusColors, statusLabels } from './leagueHelpers';
