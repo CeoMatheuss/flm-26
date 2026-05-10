@@ -254,6 +254,15 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="copas">
         <CopasTab userId={userId} onOpenTournament={(id) => { setActiveTournamentId(id); setActiveTab('tournament'); }} />
       </TabsContent>
+      <TabsContent value="world">
+        <WorldLeagues 
+          rating={game.ranking} 
+          rankingHistory={game.rankingHistory} 
+          clubName={game.club.name} 
+          stats={game.club.stats} 
+          season={game.season?.currentSeason ?? 1} 
+        />
+      </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
