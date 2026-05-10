@@ -10,6 +10,7 @@ import { ShieldCrest, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
 
