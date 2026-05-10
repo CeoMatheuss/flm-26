@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Globe, Trophy, Loader2, UserPlus, Users } from 'lucide-react';
-import { countryNames } from '@/types/league';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
@@ -27,7 +26,7 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
       setLoading(true);
       const { data } = await supabase
         .from('world_leagues')
-        .select('*, country:countries(name, code)')
+        .select('*, country_ref:world_countries(name, iso_code, flag_emoji)')
         .order('division_level', { ascending: true });
       
       if (data) {
@@ -35,13 +34,11 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
           id: d.id,
           name: d.name,
           level: d.division_level,
-          country_code: d.country?.code,
-          country_name: d.country?.name,
-          flag_emoji: d.country?.code === 'BR' ? '🇧🇷' : 
-                      d.country?.code === 'ES' ? '🇪🇸' :
-                      d.country?.code === 'EN' ? '🏴󠁧󠁢󠁥󠁮󠁧󠁿' : '⚽',
-          status: d.status,
-          match_time: d.match_time
+          country_code: d.country_ref?.iso_code,
+          country_name: d.country_ref?.name,
+          flag_emoji: d.country_ref?.flag_emoji || '⚽',
+          status: 'started', // World leagues are usually active
+          match_time: '19:30:00'
         })));
       }
       setLoading(false);
@@ -54,11 +51,11 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
       const loadStandings = async () => {
         setLoadingStandings(true);
         const { data } = await supabase
-          .from('world_league_table' as any)
-          .select('*')
+          .from('world_league_table')
+          .select('*, world_teams(name, logo)')
           .eq('league_id', selectedLeagueId)
-          .order('pts', { ascending: false })
-          .order('gd', { ascending: false });
+          .order('points', { ascending: false })
+          .order('goals_for', { ascending: false });
         if (data) setStandings(data);
         setLoadingStandings(false);
       };
@@ -86,17 +83,6 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                 <Trophy className="h-4 w-4 text-primary" />
                 {league?.name} ({league?.country_name})
               </CardTitle>
-              {onJoin && (
-                <Button 
-                  size="sm" 
-                  onClick={() => onJoin(league.id)} 
-                  disabled={isJoining || league.status !== 'waiting'}
-                  className="h-8 gap-1.5 text-xs"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  {league.status === 'waiting' ? 'Entrar nesta Liga' : 'Liga Iniciada'}
-                </Button>
-              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -123,16 +109,16 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                 </TableHeader>
                 <TableBody>
                   {standings.map((row, i) => (
-                    <TableRow key={row.team_id} className={row.club_name === clubName ? 'bg-primary/10' : ''}>
+                    <TableRow key={row.id} className={row.world_teams?.name === clubName ? 'bg-primary/10' : ''}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                       <TableCell className="flex items-center gap-2 text-sm truncate">
-                        <span className="text-base">{row.club_logo || '⚽'}</span>
-                        <span className="font-medium truncate">{row.club_name}</span>
+                        <span className="text-base">{row.world_teams?.logo || '⚽'}</span>
+                        <span className="font-medium truncate">{row.world_teams?.name}</span>
                       </TableCell>
-                      <TableCell className="text-center font-bold">{row.pts}</TableCell>
-                      <TableCell className="text-center text-xs">{row.mp}</TableCell>
-                      <TableCell className="text-center text-xs">{row.w}</TableCell>
-                      <TableCell className="text-center text-xs">{row.gd}</TableCell>
+                      <TableCell className="text-center font-bold">{row.points}</TableCell>
+                      <TableCell className="text-center text-xs">{row.played}</TableCell>
+                      <TableCell className="text-center text-xs">{row.wins}</TableCell>
+                      <TableCell className="text-center text-xs">{row.goals_for - row.goals_against}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -151,7 +137,7 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
         <h2 className="text-lg font-bold flex items-center gap-2">
-          <Globe className="h-5 w-5 text-primary" /> Escolha sua Liga
+          <Globe className="h-5 w-5 text-primary" /> Ligas do Mundo
         </h2>
       </div>
 
@@ -180,11 +166,11 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <Badge variant={league.status === 'waiting' ? 'outline' : 'default'} className="text-[8px] uppercase font-black">
-                    {league.status === 'waiting' ? 'Aberto' : 'Iniciado'}
+                  <Badge variant="default" className="text-[8px] uppercase font-black bg-emerald-500">
+                    Ativa
                   </Badge>
                   {league.country_code === currentCountry && (
-                    <span className="text-[8px] text-primary font-bold">SUA REGIÃO</span>
+                    <span className="text-[8px] text-primary font-bold uppercase">Sua Região</span>
                   )}
                 </div>
               </div>
