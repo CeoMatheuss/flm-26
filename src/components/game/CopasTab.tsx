@@ -172,6 +172,38 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
             </section>
           </div>
         </TabsContent>
+
+        <TabsContent value="matches" className="mt-0">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold">Todos os Jogos das Copas</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {matches.map(match => (
+                <Card key={match.id} className="hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-lg">{match.home_team?.club_logo}</span>
+                      <span className="text-sm font-bold truncate">{match.home_team?.club_name}</span>
+                    </div>
+                    <div className="flex flex-col items-center px-4">
+                      <span className="text-lg font-black">{match.home_goals ?? '-'} x {match.away_goals ?? '-'}</span>
+                      <Badge variant="outline" className="text-[8px] uppercase">12:00</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 flex-1 justify-end">
+                      <span className="text-sm font-bold truncate text-right">{match.away_team?.club_name}</span>
+                      <span className="text-lg">{match.away_team?.club_logo}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-0">
+          <div className="py-12 text-center text-muted-foreground">
+            Estatísticas detalhadas estarão disponíveis ao fim da primeira fase.
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
