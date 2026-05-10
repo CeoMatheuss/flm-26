@@ -137,63 +137,42 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   ];
 
   return (
-    <div className="dashboard-grid">
-      <div className="dashboard-main">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="lg:col-span-8 space-y-6">
         {showFatigueWarning && (
-          <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 mx-auto sm:mx-0">
-                  <Activity className="h-6 w-6 animate-pulse" />
+          <Card className="border-orange-500/50 bg-orange-500/10">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Activity className="h-5 w-5 text-orange-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-orange-400">Aviso de Fadiga</h3>
+                  <p className="text-xs text-muted-foreground">{tiredPlayers.length} jogadores cansados.</p>
                 </div>
-                <div className="flex-1 space-y-2 text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                    <h3 className="text-sm font-black text-orange-400 uppercase tracking-wider">Aviso de Fadiga</h3>
-                    <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-400 bg-orange-500/10">
-                      {tiredPlayers.length} Jogadores
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Atenção: <span className="text-foreground font-bold">{tiredPlayers.length} jogadores</span> estão com fadiga elevada.
-                  </p>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                    <Button size="sm" variant="outline" className="h-9 sm:h-8 text-[11px] border-orange-500/30 text-orange-400" onClick={onRestAll}>Descansar</Button>
-                    <Button size="sm" className="h-9 sm:h-8 text-[11px] bg-orange-500 hover:bg-orange-600" onClick={onGoToSquad}>Ver Elenco</Button>
-                  </div>
-                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={onRestAll}>Descansar</Button>
+                <Button size="sm" className="h-8 text-[11px] bg-orange-500" onClick={onGoToSquad}>Ver Elenco</Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-              <div className="shrink-0">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl border border-primary/30">⚽</div>
-              </div>
-              <div className="flex-1 w-full space-y-3 text-center sm:text-left">
+        <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl border border-primary/30 shrink-0">⚽</div>
+              <div className="flex-1 space-y-2">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black truncate leading-none mb-1">{club.name}</h2>
+                  <h2 className="text-2xl font-black">{club.name}</h2>
                   {clubProfile?.motto && <p className="text-xs text-muted-foreground italic">"{clubProfile.motto}"</p>}
                 </div>
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
-                    <User className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold truncate">{clubProfile?.ownerName || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
-                  </div>
+                <div className="flex flex-wrap gap-4 text-sm font-medium">
+                  <div className="flex items-center gap-1.5"><User className="h-4 w-4 text-primary" /> {clubProfile?.ownerName || '—'}</div>
+                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> {clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</div>
                 </div>
-                <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
-                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold">
-                    <Dumbbell className="h-3 w-3" /> CT Lvl.{infrastructure?.trainingCenter?.level || 0}
-                  </Badge>
-                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold">
-                    <Building2 className="h-3 w-3" /> Estádio Lvl.{infrastructure?.stadium?.level || 1}
-                  </Badge>
+                <div className="flex gap-2">
+                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold"><Dumbbell className="h-3 w-3" /> CT Lvl.{infrastructure?.trainingCenter?.level || 0}</Badge>
+                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold"><Building2 className="h-3 w-3" /> Estádio Lvl.{infrastructure?.stadium?.level || 1}</Badge>
                 </div>
               </div>
             </div>
@@ -202,16 +181,14 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
         <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {stats.map(item => (
-            <div key={item.label} className="stat-card">
-              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+            <div key={item.label} className="stat-card p-4">
+              <div className="p-2 rounded-lg bg-primary/10 mb-2 w-fit">
                 <item.icon className={`h-4 w-4 ${item.color}`} />
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">{item.label}</p>
-                <p className="text-sm font-black truncate">{item.value}</p>
-              </div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">{item.label}</p>
+              <p className="text-lg font-black">{item.value}</p>
             </div>
           ))}
         </div>
@@ -219,42 +196,40 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
       </div>
 
-      <div className="dashboard-sidebar">
+      <div className="lg:col-span-4 space-y-6">
         <SeasonStartWidget seasonNumber={season} userId={userId} />
         {userId && <PersonalizedCupWidget userId={userId} onOpenCompetition={onOpenTournament} onGoToMatches={onGoToFriendly} />}
         <LeagueStandingsMini userId={userId} />
         
-        <Card className="game-card-accent overflow-hidden">
-          <CardHeader className="section-header pb-3 pt-4">
+        <Card className="game-card">
+          <CardHeader className="py-4 px-6 border-b border-border/10">
             <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
               <Heart className="h-4 w-4 text-primary" /> Torcida & Moral
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 p-4">
+          <CardContent className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Humor</span>
+              <span className="text-sm text-muted-foreground font-medium">Humor da Torcida</span>
               <span className={`text-sm font-black ${fanMoodColor}`}>{fanMood}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Sequência</span>
-              <span className="text-sm font-black flex items-center gap-1.5">{streakLabel}</span>
+              <span className="text-sm text-muted-foreground font-medium">Sequência Atual</span>
+              <span className="text-sm font-black">{streakLabel}</span>
             </div>
-            <div className="space-y-2">
-              <Progress value={Math.min(100, club.reputation)} className="h-2 progress-glow" />
-            </div>
+            <Progress value={Math.min(100, club.reputation)} className="h-2" />
           </CardContent>
         </Card>
 
         {recentEvents.length > 0 && (
-          <Card className="game-card-accent">
-            <CardHeader className="section-header pb-3 pt-4">
+          <Card className="game-card">
+            <CardHeader className="py-4 px-6 border-b border-border/10">
               <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" /> Feed
+                <Zap className="h-4 w-4 text-primary" /> Feed de Notícias
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2 space-y-1">
+            <CardContent className="p-3 space-y-2">
               {recentEvents.map(ev => (
-                <div key={ev.id} className={`border-l-4 rounded-r-lg px-3 py-2 ${eventColors[ev.type] || 'border-l-border'} hover:bg-accent/30 transition-colors`}>
+                <div key={ev.id} className={`border-l-4 rounded-r-lg px-4 py-3 ${eventColors[ev.type] || 'border-l-border'} bg-accent/20`}>
                   <p className="text-xs font-bold mb-1">{ev.icon} {ev.title}</p>
                   <p className="text-[10px] text-muted-foreground line-clamp-2">{ev.description}</p>
                 </div>
