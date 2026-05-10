@@ -1,5 +1,5 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe, Swords } from 'lucide-react';
 
 export function GameNavBar() {
   return (
