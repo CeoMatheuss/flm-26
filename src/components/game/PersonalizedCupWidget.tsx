@@ -76,7 +76,6 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
         setCompetition(nationalTeam.cup_competitions as any);
         setIsEliminated(nationalTeam.eliminated);
         
-        // Buscar próxima partida
         const { data: matches } = await supabase
           .from('cup_matches')
           .select('*, home_team:cup_teams!cup_matches_home_team_id_fkey(*), away_team:cup_teams!cup_matches_away_team_id_fkey(*)')
@@ -96,14 +95,55 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             away_team_logo: m.away_team?.club_logo,
           } as any);
         }
-        
-        // Verificar se é campeão (se a competição acabou e ele não foi eliminado)
-        if (nationalTeam.cup_competitions.status === 'finished' && !nationalTeam.eliminated) {
-          setIsChampion(true);
-        }
       } else {
-        // 2. Procurar em Continentais (exemplo simplificado, precisaria de tabela similar)
-        // Por enquanto, focar nas Copas Nacionais que o usuário mencionou como prioridade
+        // 2. Procurar em Continentais
+        const { data: continentalTeam } = await supabase
+          .from('continental_teams')
+          .select('*, continental_competitions(*)')
+          .eq('user_id', userId)
+          .neq('continental_competitions.status', 'finished')
+          .maybeSingle();
+
+        if (continentalTeam && continentalTeam.continental_competitions) {
+          setPlayerTeam({
+            id: continentalTeam.id,
+            club_name: continentalTeam.club_name,
+            club_logo: continentalTeam.club_logo,
+            eliminated: continentalTeam.eliminated,
+            user_id: continentalTeam.user_id
+          } as any);
+          
+          const comp = continentalTeam.continental_competitions;
+          setCompetition({
+            id: comp.id,
+            name: `Continental ${comp.continent}`,
+            cup_type: 'continental',
+            status: comp.status,
+            current_round: comp.current_round,
+            total_rounds: 7, // Default for continental
+          } as any);
+          setIsEliminated(continentalTeam.eliminated);
+
+          const { data: matches } = await supabase
+            .from('continental_matches')
+            .select('*, home_team:continental_teams!continental_matches_home_team_id_fkey(*), away_team:continental_teams!continental_matches_away_team_id_fkey(*)')
+            .eq('competition_id', comp.id)
+            .or(`home_team_id.eq.${continentalTeam.id},away_team_id.eq.${continentalTeam.id}`)
+            .eq('status', 'scheduled')
+            .order('scheduled_at', { ascending: true })
+            .limit(1);
+
+          if (matches && matches.length > 0) {
+            const m = matches[0];
+            setNextMatch({
+              ...m,
+              home_team_name: m.home_team?.club_name,
+              away_team_name: m.away_team?.club_name,
+              home_team_logo: m.home_team?.club_logo,
+              away_team_logo: m.away_team?.club_logo,
+            } as any);
+          }
+        }
       }
     } catch (e) {
       console.error('Error loading cup widget:', e);
