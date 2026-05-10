@@ -30,7 +30,14 @@ export function AdminUpdatesPanel() {
   const createUpdate = async () => {
     if (!title || !content) return toast.error('Preencha título e conteúdo');
     setLoading(true);
-    const { error } = await supabase.from('game_updates').insert([{ title, content, type, version }]);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('game_updates').insert([{ 
+      title, 
+      description: content, 
+      type, 
+      version,
+      author_id: user?.id || ''
+    } as any]);
     if (error) toast.error('Erro ao criar: ' + error.message);
     else {
       toast.success('Atualização publicada!');
