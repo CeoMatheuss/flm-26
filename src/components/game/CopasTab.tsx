@@ -110,7 +110,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                   </div>
                   <div className="text-right hidden sm:block">
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Fase Atual</p>
-                    <p className="text-lg font-black text-primary">{matches.find(m => m.status === 'scheduled')?.round_name || matches[0]?.round_name || 'Oitavas'}</p>
+                    <p className="text-lg font-black text-primary">{matches.find(m => m.status === 'scheduled')?.round_name || matches[matches.length-1]?.round_name || 'Oitavas'}</p>
                   </div>
                 </CardContent>
               </Card>
