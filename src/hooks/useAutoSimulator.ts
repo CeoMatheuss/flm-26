@@ -29,7 +29,7 @@ import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 const SCAN_INTERVAL_MS = 2_000;       // 2s between scans (faster)
 const POST_SIM_DELAY_MS = 1_000;      // 1s cooldown
 const LOCK_TTL_MS = 30_000;           // 30s lock
-const TOLERANCE_MS = 10_000;          // 10s tolerance (very fast)
+const TOLERANCE_MS = 300_000;         // 5 minutos de tolerância antes da simulação automática
 const STUCK_AFTER_MS = 15 * 60_000;   // 15min forced sim
 const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
@@ -341,12 +341,142 @@ async function processTournamentMatch(m: any): Promise<boolean> {
   }
 }
 
+async function processCupMatch(m: any): Promise<boolean> {
+  if (await hasCentralLiveMatch(`cup-${m.id}`)) return false;
+  if (!tryLock(m.id)) return false;
+  try {
+    const { data: teams } = await supabase
+      .from('cup_teams')
+      .select('id, club_name, user_id, bot_strength')
+      .in('id', [m.home_team_id, m.away_team_id]);
+    const home = teams?.find(t => t.id === m.home_team_id);
+    const away = teams?.find(t => t.id === m.away_team_id);
+    if (!home || !away) return false;
+
+    const homeStr = home.user_id ? await getStrength(home.user_id) : (home.bot_strength || 60);
+    const awayStr = away.user_id ? await getStrength(away.user_id) : (away.bot_strength || 60);
+    let { home: hg, away: ag } = simulate(homeStr, awayStr);
+    let events = genEvents(hg, ag, home.club_name, away.club_name);
+
+    let tb: any = null;
+    if (hg === ag) {
+      tb = resolveKnockout({
+        homeGoals: hg, awayGoals: ag, homeStr, awayStr,
+        homeName: home.club_name, awayName: away.club_name,
+      });
+      hg += tb.homeGoalsET;
+      ag += tb.awayGoalsET;
+      events = [...events, ...tb.events];
+    }
+
+    const { error, data: updated } = await supabase
+      .from('cup_matches')
+      .update({
+        home_goals: hg,
+        away_goals: ag,
+        status: 'finished',
+        played_at: new Date().toISOString(),
+        match_data: {
+          events,
+          auto_simulated: true,
+          simulated: true,
+          home_name: home.club_name,
+          away_name: away.club_name,
+          extra_time: tb?.hadExtraTime ?? false,
+          shootout: tb?.hadShootout ?? false,
+          shootout_home: tb?.shootoutHome ?? 0,
+          shootout_away: tb?.shootoutAway ?? 0,
+          knockout_winner: tb?.winner ?? null,
+        },
+      })
+      .eq('id', m.id)
+      .eq('status', 'scheduled')
+      .select('id');
+    
+    if (error || !updated?.length) return false;
+
+    const winnerId = (hg > ag || (tb?.winner === 'home')) ? m.home_team_id : m.away_team_id;
+    const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+    await supabase.from('cup_teams').update({ eliminated: true }).eq('id', loserId);
+
+    if (home.user_id) await notify(home.user_id, away.club_name, hg, ag, 'Copa');
+    if (away.user_id) await notify(away.user_id, home.club_name, ag, hg, 'Copa');
+    return true;
+  } finally {
+    releaseLock(m.id);
+  }
+}
+
+async function processContinentalMatch(m: any): Promise<boolean> {
+  if (await hasCentralLiveMatch(`continental-${m.id}`)) return false;
+  if (!tryLock(m.id)) return false;
+  try {
+    const { data: teams } = await supabase
+      .from('continental_teams')
+      .select('id, club_name, user_id, bot_strength')
+      .in('id', [m.home_team_id, m.away_team_id]);
+    const home = teams?.find(t => t.id === m.home_team_id);
+    const away = teams?.find(t => t.id === m.away_team_id);
+    if (!home || !away) return false;
+
+    const homeStr = home.user_id ? await getStrength(home.user_id) : (home.bot_strength || 65);
+    const awayStr = away.user_id ? await getStrength(away.user_id) : (away.bot_strength || 65);
+    let { home: hg, away: ag } = simulate(homeStr, awayStr);
+    let events = genEvents(hg, ag, home.club_name, away.club_name);
+
+    let tb: any = null;
+    if (hg === ag) {
+      tb = resolveKnockout({
+        homeGoals: hg, awayGoals: ag, homeStr, awayStr,
+        homeName: home.club_name, awayName: away.club_name,
+      });
+      hg += tb.homeGoalsET;
+      ag += tb.awayGoalsET;
+      events = [...events, ...tb.events];
+    }
+
+    const { error, data: updated } = await supabase
+      .from('continental_matches')
+      .update({
+        home_goals: hg,
+        away_goals: ag,
+        status: 'finished',
+        played_at: new Date().toISOString(),
+        match_data: {
+          events,
+          auto_simulated: true,
+          simulated: true,
+          home_name: home.club_name,
+          away_name: away.club_name,
+          extra_time: tb?.hadExtraTime ?? false,
+          shootout: tb?.hadShootout ?? false,
+          shootout_home: tb?.shootoutHome ?? 0,
+          shootout_away: tb?.shootoutAway ?? 0,
+          knockout_winner: tb?.winner ?? null,
+        },
+      })
+      .eq('id', m.id)
+      .eq('status', 'scheduled')
+      .select('id');
+    
+    if (error || !updated?.length) return false;
+
+    const winnerId = (hg > ag || (tb?.winner === 'home')) ? m.home_team_id : m.away_team_id;
+    const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+    await supabase.from('continental_teams').update({ eliminated: true }).eq('id', loserId);
+
+    if (home.user_id) await notify(home.user_id, away.club_name, hg, ag, 'Continental');
+    if (away.user_id) await notify(away.user_id, home.club_name, ag, hg, 'Continental');
+    return true;
+  } finally {
+    releaseLock(m.id);
+  }
+}
+
 // ───────────────── single-match queue (1 sim per cycle) ─────────────────
 let scanInFlight = false;
 let cooldownUntil = 0;
 
-// Cross-tab scan lock — prevents two browser tabs from both running a scan
-// at the same instant. TTL is short so a crashed tab cannot block forever.
 const SCAN_LOCK_KEY = 'autosim_scan_lock';
 const SCAN_LOCK_TTL_MS = 8_000;
 
@@ -365,21 +495,16 @@ function releaseScanLock() {
   try { localStorage.removeItem(SCAN_LOCK_KEY); } catch { /* ignore */ }
 }
 
-/**
- * Fetches the NEXT eligible pending match (priority: league → friendly →
- * tournament). Only matches whose scheduled time has passed are returned.
- */
 async function fetchNextEligibleMatch(): Promise<
   | { kind: 'league'; row: any }
   | { kind: 'friendly'; row: any }
   | { kind: 'tournament'; row: any }
+  | { kind: 'cup'; row: any }
+  | { kind: 'continental'; row: any }
   | null
 > {
-  // TOLERANCE: only auto-sim matches whose scheduled time passed AT LEAST 5 minutes ago.
-  // Gives the player time to come back online before the system simulates for them.
   const nowIso = new Date(Date.now() - TOLERANCE_MS).toISOString();
 
-  // 1) League — needs auto_sim_at <= now (or null + created long ago as fallback)
   const { data: league } = await supabase
     .from('league_matches')
     .select('id, league_id, home_user_id, away_user_id, match_data, auto_sim_at, created_at')
@@ -389,7 +514,6 @@ async function fetchNextEligibleMatch(): Promise<
     .limit(1);
   if (league && league.length > 0) return { kind: 'league', row: league[0] };
 
-  // 2) Friendly — accepted with no result and time passed
   const { data: friendly } = await supabase
     .from('friendly_invites')
     .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, match_result, auto_sim_at')
@@ -400,7 +524,6 @@ async function fetchNextEligibleMatch(): Promise<
     .limit(1);
   if (friendly && friendly.length > 0) return { kind: 'friendly', row: friendly[0] };
 
-  // 3) Tournament — scheduled and scheduled_at passed
   const { data: tournament } = await supabase
     .from('custom_tournament_matches')
     .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data, scheduled_at')
@@ -410,7 +533,6 @@ async function fetchNextEligibleMatch(): Promise<
     .limit(1);
   if (tournament && tournament.length > 0) return { kind: 'tournament', row: tournament[0] };
 
-  // 4) Cup Matches
   const { data: cup } = await supabase
     .from('cup_matches')
     .select('id, cup_id, home_team_id, away_team_id, round, status, scheduled_at')
@@ -418,9 +540,8 @@ async function fetchNextEligibleMatch(): Promise<
     .lte('scheduled_at', nowIso)
     .order('scheduled_at', { ascending: true })
     .limit(1);
-  if (cup && cup.length > 0) return { kind: 'cup' as any, row: cup[0] };
+  if (cup && cup.length > 0) return { kind: 'cup', row: cup[0] };
 
-  // 5) Continental Matches
   const { data: continental } = await supabase
     .from('continental_matches')
     .select('id, competition_id, home_team_id, away_team_id, round, status, scheduled_at')
@@ -428,7 +549,7 @@ async function fetchNextEligibleMatch(): Promise<
     .lte('scheduled_at', nowIso)
     .order('scheduled_at', { ascending: true })
     .limit(1);
-  if (continental && continental.length > 0) return { kind: 'continental' as any, row: continental[0] };
+  if (continental && continental.length > 0) return { kind: 'continental', row: continental[0] };
 
   return null;
 }
@@ -480,6 +601,8 @@ async function runScan(): Promise<void> {
         if (next.kind === 'league')          success = await processLeagueMatch(next.row);
         else if (next.kind === 'friendly')   success = await processFriendly(next.row);
         else if (next.kind === 'tournament') success = await processTournamentMatch(next.row);
+        else if (next.kind === 'cup')        success = await processCupMatch(next.row);
+        else if (next.kind === 'continental') success = await processContinentalMatch(next.row);
       } catch (err) {
         console.warn(`[autosim] ${next.kind} sim error:`, err);
       }

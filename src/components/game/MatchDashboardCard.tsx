@@ -246,11 +246,6 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
             >
               <FileText className="h-3.5 w-3.5" /> VER RELATÓRIO
             </Button>
-            {onGoToFriendly && (
-              <Button size="sm" variant="ghost" className="gap-2 text-[10px] h-7" onClick={onGoToFriendly}>
-                <Swords className="h-3 w-3" /> Jogar Amistoso
-              </Button>
-            )}
           </div>
         </div>
       );
@@ -298,11 +293,6 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       <Swords className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-muted-foreground" />
       <p className="font-bold text-sm">Nenhuma partida agendada</p>
       <p className="text-xs text-muted-foreground mt-1">Jogue um amistoso contra BOT FC!</p>
-      {onGoToFriendly && (
-        <Button size="sm" className="mt-3 gap-2" onClick={onGoToFriendly}>
-          <Swords className="h-3.5 w-3.5" /> Ir para Amistosos
-        </Button>
-      )}
     </div>
   );
 }

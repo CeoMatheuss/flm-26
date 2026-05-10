@@ -9,7 +9,7 @@ import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
 
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
-import { MatchesTab } from '@/components/game/MatchesTab';
+// MatchesTab removido
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
@@ -106,7 +106,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           events={game.events} 
           infrastructure={game.infrastructure} 
           onOpenNewspaper={() => setActiveTab('journal')} 
-          onGoToFriendly={() => setActiveTab('matches')} 
+          onGoToFriendly={() => setActiveTab('copas')} 
           userId={userId} 
           onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} 
           clubProfile={game.clubProfile} 
@@ -127,28 +127,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
-      <TabsContent value="matches">
-        {isTabBlocked('matches') ? <BlockedMessage /> : (
-          <MatchesTab
-            matches={game.club.matches}
-            clubName={game.club.name}
-            stadiumName={(game.club as any).stadiumName || 'Arena'}
-            alreadyPlayedToday={game.alreadyPlayedToday ?? false}
-            lastFriendlyDate={game.lastFriendlyDate ?? ''}
-            players={game.club.players}
-            teamStrength={Math.round(
-              (game.club.players || []).slice(0, 11).reduce((s, p: any) => s + (p.overall || p.ovr || 60), 0)
-              / Math.max(1, Math.min(11, (game.club.players || []).length))
-            )}
-            tactics={game.tactics}
-            onGenerateFriendly={game.generateFriendly}
-            userId={userId}
-            stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
-            fans={game.club.fans || 1000}
-            applyFanChange={game.applyFanChange}
-          />
-        )}
-      </TabsContent>
+
       <TabsContent value="squad">
         <SquadTab
           players={game.club.players}
