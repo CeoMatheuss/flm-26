@@ -148,12 +148,26 @@ export function useMatchState(initialState: any, userId?: string) {
       return {
         ...prev,
         matches: prev.matches.filter(m => m.id !== matchId),
-        players: prev.players.map(p => ({
-          ...p,
-          morale: Math.min(100, Math.max(20, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
-          stamina: Math.min(100, Math.max(20, p.stamina - Math.floor(Math.random() * 10 + 5))),
-          gamesPlayed: p.gamesPlayed + 1,
-        })),
+        players: prev.players.map(p => {
+          const drain = Math.floor(Math.random() * 15 + 10); 
+          const newStamina = Math.max(0, p.stamina - drain);
+          const getStatus = (s: number): PhysicalStatus => {
+            if (s >= 95) return 'Descansado';
+            if (s >= 80) return 'Em forma';
+            if (s >= 60) return 'Desgastado';
+            if (s >= 40) return 'Cansado';
+            if (s >= 20) return 'Exausto';
+            return 'Risco de Lesão';
+          };
+          return {
+            ...p,
+            stamina: newStamina,
+            physicalStatus: getStatus(newStamina),
+            staminaLastUpdatedAt: new Date().toISOString(),
+            morale: Math.min(100, Math.max(20, p.morale + (isWin ? 5 : isDraw ? 0 : -5))),
+            gamesPlayed: p.gamesPlayed + 1,
+          };
+        }),
         budget: prev.budget + prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine,
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
