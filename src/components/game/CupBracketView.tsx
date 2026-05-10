@@ -90,10 +90,11 @@ export function CupBracketView({ cupId, cupType = 'national', onBack }: Props) {
   };
 
   const roundNames: Record<number, string> = {
-    1: 'Oitavas de Final',
-    2: 'Quartas de Final',
-    3: 'Semifinal',
-    4: 'Final',
+    1: 'Fase 3',
+    2: 'Oitavas de Final',
+    3: 'Quartas de Final',
+    4: 'Semifinal',
+    5: 'Final',
   };
 
   if (loading) {
