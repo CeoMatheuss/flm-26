@@ -155,19 +155,10 @@
   html {
     font-size: 16px;
   }
-  @media (min-width: 640px) {
-    html { font-size: 17px; }
-  }
-  @media (min-width: 768px) {
-    html { font-size: 18px; }
-  }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    overflow-x: hidden;
-    width: 100%;
-    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -176,77 +167,17 @@
 }
 
 @layer components {
-  /* Fluid scaling utilities */
-  .fluid-px {
-    @apply px-[clamp(0.75rem,5vw,2rem)];
-  }
-
-  .fluid-py {
-    @apply py-[clamp(0.5rem,3vh,1.5rem)];
-  }
-
   /* Enhanced card styling for game tabs */
   .game-card {
     @apply bg-card/95 backdrop-blur-md border border-border/40 rounded-xl shadow-xl shadow-black/20;
     @apply transition-all duration-300;
   }
 
-  /* Primary accent card */
-  .game-card-accent {
-    @apply bg-card/95 backdrop-blur-md border border-primary/15 rounded-xl shadow-xl shadow-primary/5;
-  }
-
   /* Stat mini card */
   .stat-card {
-    @apply bg-accent/40 border border-border/20 rounded-lg p-3 transition-all duration-300 hover:bg-accent/60 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5;
+    @apply bg-accent/40 border border-border/20 rounded-lg p-3 transition-all duration-300 hover:bg-accent/60 hover:border-primary/30;
     @apply flex items-center gap-3 min-w-0;
   }
-
-  /* Subtle gradient header for sections */
-  .section-header {
-    @apply border-b border-border/20 px-4 py-3 rounded-t-xl;
-    background: linear-gradient(to right, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.03), transparent);
-  }
-
-  /* Navigation tab pill style - Mobile Optimized */
-  .nav-tab {
-    @apply relative flex flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-all duration-300;
-    @apply h-full min-h-[48px] px-1;
-    @apply sm:flex-row sm:gap-2 sm:text-xs sm:min-h-0 sm:py-2.5 sm:px-4;
-  }
-
-  .nav-tab[data-state="active"] {
-    @apply bg-primary/20 text-primary shadow-lg shadow-primary/10;
-  }
-
-  .nav-tab[data-state="inactive"] {
-    @apply text-muted-foreground hover:text-foreground hover:bg-accent/40;
-  }
-
-  /* Responsive Grid for Dashboard */
-  .dashboard-grid {
-    @apply grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start;
-  }
-
-  .dashboard-main {
-    @apply space-y-4 lg:col-span-8;
-  }
-
-  .dashboard-sidebar {
-    @apply space-y-4 lg:col-span-4 lg:sticky lg:top-20;
-  }
-
-  /* Responsive Table replacement (Cards for Mobile) */
-  .responsive-table-row {
-    @apply flex flex-col gap-2 p-4 border border-border/20 rounded-xl bg-card/40;
-    @apply md:flex-row md:items-center md:justify-between md:p-3 md:rounded-none md:bg-transparent md:border-0 md:border-b last:md:border-0;
-  }
-
-  /* Touch Targets */
-  .touch-target {
-    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
-  }
-
 
   /* Smooth scrollbar */
   .smooth-scroll {
@@ -261,24 +192,5 @@
   .smooth-scroll::-webkit-scrollbar-thumb {
     background: hsl(var(--muted));
     border-radius: 10px;
-  }
-
-  /* Glow effects */
-  .glow-primary {
-    box-shadow: 0 0 25px -5px hsl(var(--primary) / 0.35);
-  }
-
-  /* Glass panel */
-  .glass-panel {
-    @apply bg-card/70 backdrop-blur-2xl border border-border/40 rounded-2xl;
-  }
-
-  /* Scoreboard goal glow pulse */
-  @keyframes goalGlowPulse {
-    0%, 100% { box-shadow: 0 0 16px hsl(var(--primary) / 0.3); }
-    50%      { box-shadow: 0 0 28px hsl(var(--primary) / 0.6); }
-  }
-  .animate-goal-glow {
-    animation: goalGlowPulse 1.2s ease-in-out infinite;
   }
 }
