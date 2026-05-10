@@ -64,10 +64,12 @@ interface SimEvent {
 // ── ATTRIBUTE-BASED ACTION POWER ──────────────────────────────
 
 function getStaminaMultiplier(stamina: number): number {
-  if (stamina >= 70) return 1.0;
-  if (stamina >= 60) return 0.95;
-  if (stamina >= 40) return 0.85;
-  return 0.75;
+  if (stamina >= 80) return 1.0;
+  if (stamina >= 65) return 0.92;
+  if (stamina >= 50) return 0.82;
+  if (stamina >= 35) return 0.68;
+  if (stamina >= 20) return 0.52;
+  return 0.35; // Penalidade Crítica
 }
 
 function getMoraleMultiplier(morale: number): number {
