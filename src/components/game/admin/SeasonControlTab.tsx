@@ -107,8 +107,36 @@ export function SeasonControlTab({ adminUserId }: Props) {
     } catch (e: any) {
       toast.error(e.message || 'Erro');
     }
-    setActionLoading(null);
+  setActionLoading(null);
     setConfirm(null);
+  };
+
+  const seedInitialLeagues = async () => {
+    setActionLoading('seed-leagues');
+    try {
+      const { error } = await supabase.rpc('seed_initial_world_leagues');
+      if (error) throw error;
+      toast.success('✅ Ligas iniciais criadas com sucesso!');
+      await logAdmin('seed_initial_leagues', {});
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
+  };
+
+  const syncAllSaves = async () => {
+    setActionLoading('sync-saves');
+    try {
+      const { error } = await supabase.rpc('sync_all_saves_to_world_system');
+      if (error) throw error;
+      toast.success('✅ Todos os clubes foram inscritos no sistema mundial!');
+      await logAdmin('sync_all_saves', {});
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro');
+    }
+    setActionLoading(null);
   };
 
   const redistributeBeginners = async (country: string) => {
