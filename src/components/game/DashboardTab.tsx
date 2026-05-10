@@ -81,10 +81,11 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
-  // Liga synchronization via mini-widget
-
+  const tiredPlayers = club.players.filter(p => p.stamina < 45);
+  const showFatigueWarning = tiredPlayers.length >= 3;
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
+
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
