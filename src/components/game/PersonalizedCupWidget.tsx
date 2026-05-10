@@ -189,7 +189,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
     5: 'Final'
   };
 
-  const phaseName = roundLabels[competition.current_round] || `Fase ${competition.current_round}`;
+  const phaseName = competition.current_phase || roundLabels[competition.current_round] || `Fase ${competition.current_round}`;
 
   const getStatusIcon = () => {
     if (isChampion) return <Trophy className="h-10 w-10 text-yellow-400 animate-bounce" />;
@@ -269,23 +269,23 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
           <Button 
             variant="outline" 
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
-            onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
-          >
-            <BarChart3 className="h-3 w-3" /> Chaveamento
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={onGoToMatches}
           >
-            <Calendar className="h-3 w-3" /> Jogos
+            <Calendar className="h-3 w-3" /> Ver Jogos
           </Button>
           <Button 
             variant="outline" 
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <Trophy className="h-3 w-3" /> Estatísticas
+            <BarChart3 className="h-3 w-3" /> Ver Chaveamento
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
+            onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
+          >
+            <Trophy className="h-3 w-3" /> Ver Estatísticas
           </Button>
           <Button 
             className="h-8 text-[9px] gap-1 px-2 bg-primary hover:bg-primary/90 text-white font-bold"
