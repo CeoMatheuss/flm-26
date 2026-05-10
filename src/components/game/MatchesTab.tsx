@@ -85,8 +85,8 @@ export function MatchesTab({
           .from('world_matches' as any)
           .select(`
             id, round, scheduled_at, status, home_goals, away_goals,
-            home_team:world_teams!home_team_id(name, strength), 
-            away_team:world_teams!away_team_id(name, strength)
+            home_team:world_teams!home_team_id(name, strength, logo), 
+            away_team:world_teams!away_team_id(name, strength, logo)
           `)
           .eq('league_id', teamData.league_id)
           .order('scheduled_at', { ascending: true })
