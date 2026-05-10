@@ -231,10 +231,10 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           .from('world_matches') // Using modern world_matches instead of legacy league_matches
           .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name, logo), away_team:world_teams!world_matches_away_team_id_fkey(name, logo)')
           .eq('league_id', userLeague.league_id)
-          .order('matchday', { ascending: true })
-          .order('kickoff_at', { ascending: true });
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
         
-        if (wm) setWorldMatches(wm.map(m => ({ ...m, round: m.matchday, scheduled_at: m.kickoff_at, home_team: { club_name: m.home_team?.name }, away_team: { club_name: m.away_team?.name } })));
+        if (wm) setWorldMatches(wm.map(m => ({ ...m, home_team: { club_name: (m as any).home_team?.name }, away_team: { club_name: (m as any).away_team?.name } })));
 
         // Fetch Cup Matches
         const { data: teamData } = await supabase.from('world_teams').select('id, country').eq('user_id', user.id).maybeSingle();
