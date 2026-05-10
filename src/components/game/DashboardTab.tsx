@@ -186,13 +186,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-3">
             <div className="shrink-0">
-              {club.shieldPattern ? (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
-                  <span className="text-3xl">🛡️</span>
-                </div>
-              ) : (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center text-2xl">⚽</div>
-              )}
+              <ClubShield club={club as any} size={64} className="sm:w-16 sm:h-16" />
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
               <h2 className="text-sm sm:text-base font-black truncate">{club.name}</h2>
