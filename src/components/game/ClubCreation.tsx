@@ -301,12 +301,12 @@ export function ClubCreation({ userId, onComplete }: Props) {
 
   const handleConfirm = () => {
     onComplete({
-      name: clubName.trim(),
-      stadiumName: stadiumName.trim() || 'Estádio Municipal',
+      name: validateAndCleanClubName(clubName),
+      stadiumName: validateAndCleanClubName(stadiumName.trim() || 'Estádio Municipal'),
       primaryColor: shieldConfig.primaryColor,
       secondaryColor: shieldConfig.secondaryColor,
       detailColor: shieldConfig.detailColor,
-      logoUrl: useCustomLogo ? customLogoUrl : shieldConfig.pattern,
+      logoUrl: useCustomLogo ? customLogoUrl : '', // Don't save "solid" in logoUrl
       shieldPattern: useCustomLogo ? undefined : shieldConfig.pattern,
       shieldShape: useCustomLogo ? undefined : shieldConfig.shape,
       shieldIcon: useCustomLogo ? undefined : shieldConfig.icon,
