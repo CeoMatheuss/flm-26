@@ -5,9 +5,11 @@ import { GameMenu } from './GameMenu';
 interface GameNavBarProps {
   onTabChange: (tab: string) => void;
   activeTab: string;
+  showAdmin: boolean;
+  onShowTutorial: () => void;
 }
 
-export function GameNavBar({ onTabChange, activeTab }: GameNavBarProps) {
+export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }: GameNavBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-2xl border-t border-border/40 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
       <div className="max-w-[1920px] mx-auto h-16 sm:h-20">
