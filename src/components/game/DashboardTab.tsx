@@ -146,211 +146,187 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* Fatigue Warning V4 */}
-      {showFatigueWarning && (
-        <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
-                <Activity className="h-6 w-6 animate-pulse" />
-              </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black text-orange-400 uppercase tracking-wider">Aviso de Fadiga</h3>
-                  <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-400 bg-orange-500/10">
-                    {tiredPlayers.length} Jogadores
-                  </Badge>
+    <div className="dashboard-grid">
+      <div className="dashboard-main">
+        {/* Fatigue Warning V4 */}
+        {showFatigueWarning && (
+          <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 mx-auto sm:mx-0">
+                  <Activity className="h-6 w-6 animate-pulse" />
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Atenção: <span className="text-foreground font-bold">{tiredPlayers.length} jogadores</span> estão com fadiga elevada. 
-                  Recomenda-se descanso para evitar lesões graves e queda drástica de rendimento físico.
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <Button size="sm" variant="outline" className="h-8 text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg" onClick={onRestAll}>
-                    Descansar Elenco
-                  </Button>
-                  <Button size="sm" className="h-8 text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20" onClick={onGoToSquad}>
-                    Ir para Elenco
-                  </Button>
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <h3 className="text-sm font-black text-orange-400 uppercase tracking-wider">Aviso de Fadiga</h3>
+                    <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-400 bg-orange-500/10">
+                      {tiredPlayers.length} Jogadores
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Atenção: <span className="text-foreground font-bold">{tiredPlayers.length} jogadores</span> estão com fadiga elevada. 
+                    Recomenda-se descanso para evitar lesões graves.
+                  </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                    <Button size="sm" variant="outline" className="h-9 sm:h-8 text-[11px] sm:text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg flex-1 sm:flex-none" onClick={onRestAll}>
+                      Descansar
+                    </Button>
+                    <Button size="sm" className="h-9 sm:h-8 text-[11px] sm:text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20 flex-1 sm:flex-none" onClick={onGoToSquad}>
+                      Ver Elenco
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Club Info Widget */}
+        <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+              <div className="shrink-0">
+                {club.shieldPattern ? (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center bg-card/40 rounded-2xl border border-border/40 shadow-inner">
+                    <span className="text-5xl sm:text-6xl">🛡️</span>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl sm:text-5xl border border-primary/30">⚽</div>
+                )}
+              </div>
+              <div className="flex-1 w-full space-y-3 text-center sm:text-left">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black truncate leading-none mb-1">{club.name}</h2>
+                  {clubProfile?.motto && <p className="text-xs text-muted-foreground italic">"{clubProfile.motto}"</p>}
+                </div>
+                
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
+                    <User className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-muted-foreground">Presidente:</span>
+                    <span className="font-bold truncate max-w-[120px]">{clubProfile?.ownerName || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-muted-foreground">Fundação:</span>
+                    <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
+                    <Landmark className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-muted-foreground">Estádio:</span>
+                    <span className="font-bold truncate max-w-[150px]">{club.stadiumName}</span>
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
+                    <Users className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-muted-foreground">Elenco:</span>
+                    <span className="font-bold">{club.players.length} jogadores</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
+                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold">
+                    <Dumbbell className="h-3 w-3" /> CT Lvl.{infrastructure?.trainingCenter?.level || 0}
+                  </Badge>
+                  <Badge variant="secondary" className="px-2 py-0.5 text-[10px] gap-1.5 font-bold">
+                    <Building2 className="h-3 w-3" /> Estádio Lvl.{infrastructure?.stadium?.level || 1}
+                  </Badge>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Club Info Widget */}
-      <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-start gap-3">
-            <div className="shrink-0">
-              {club.shieldPattern ? (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
-                  <span className="text-3xl">🛡️</span>
-                </div>
-              ) : (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center text-2xl">⚽</div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <h2 className="text-sm sm:text-base font-black truncate">{club.name}</h2>
-              {clubProfile?.motto && <p className="text-[9px] text-muted-foreground italic">"{clubProfile.motto}"</p>}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">Presidente:</span>
-                  <span className="font-bold truncate">{clubProfile?.ownerName || '—'}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">Fundação:</span>
-                  <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Landmark className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">Estádio:</span>
-                  <span className="font-bold truncate">{club.stadiumName} ({stadiumCapacity?.toLocaleString() || '?'})</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">Elenco:</span>
-                  <span className="font-bold">{club.players.length} jogadores</span>
-                </div>
+        {/* Match Card */}
+        <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
+
+        {/* Stats Grid - Fluid scaling */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          {stats.map(item => (
+            <div key={item.label} className="stat-card">
+              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                <item.icon className={`h-4 w-4 ${item.color}`} />
               </div>
-              {/* Infrastructure mini */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <Badge variant="outline" className="text-[8px] gap-1">
-                  <Dumbbell className="h-2.5 w-2.5" /> CT Lv.{infrastructure?.trainingCenter?.level || 0}
-                </Badge>
-                <Badge variant="outline" className="text-[8px] gap-1">
-                  <Stethoscope className="h-2.5 w-2.5" /> Fisio Lv.{infrastructure?.physiotherapy?.level || 0}
-                </Badge>
-                <Badge variant="outline" className="text-[8px] gap-1">
-                  <GraduationCap className="h-2.5 w-2.5" /> Base Lv.{infrastructure?.youthAcademy?.level || 0}
-                </Badge>
-                <Badge variant="outline" className="text-[8px] gap-1">
-                  <Building2 className="h-2.5 w-2.5" /> Estádio Lv.{infrastructure?.stadium?.level || 1}
-                </Badge>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">{item.label}</p>
+                <p className="text-sm font-black truncate">{item.value}</p>
               </div>
-              {/* Instagram */}
-              {clubProfile?.instagram ? (
-                <a href={clubProfile.instagram.startsWith('http') ? clubProfile.instagram : `https://instagram.com/${clubProfile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-pink-400 hover:underline mt-0.5">
-                  <Instagram className="h-3 w-3" /> {clubProfile.instagram.startsWith('http') ? clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1] ? `@${clubProfile.instagram.match(/instagram\.com\/([^/?]+)/)?.[1]}` : clubProfile.instagram : `@${clubProfile.instagram.replace('@', '')}`}
-                </a>
-              ) : (
-                <p className="text-[9px] text-muted-foreground/50 mt-0.5">📸 Vincule seu Instagram no Perfil do Clube</p>
-              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
 
-      {/* Season Start Widget */}
-      <SeasonStartWidget seasonNumber={season} userId={userId} />
-
-      {/* Ballon d'Or Teaser — aparece nas últimas 4 rodadas da temporada */}
-      <BallonDorTeaserWidget
-        season={season ?? 1}
-        currentWeek={currentWeek ?? 1}
-        totalWeeks={totalWeeks ?? 38}
-        userId={userId}
-      />
-
-
-      {/* Match Card */}
-      <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {stats.map(item => (
-          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2">
-            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0`} />
-            <div className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
-              <p className="text-sm sm:text-sm font-bold truncate">{item.value}</p>
-            </div>
-          </div>
-        ))}
+        {/* Newspaper */}
+        <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
       </div>
 
-      {/* Personalized Cup Widget */}
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenCompetition={(id) => onOpenTournament?.(id)}
-          onGoToMatches={onGoToFriendly}
-        />
-      )}
+      <div className="dashboard-sidebar">
+        {/* Season Start Widget */}
+        <SeasonStartWidget seasonNumber={season} userId={userId} />
 
-      {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
-          unless they are also considered part of "World" */}
-      {/* <TournamentDashboardCard onExpand={onOpenTournament} /> */}
+        {/* Personalized Cup Widget */}
+        {userId && (
+          <PersonalizedCupWidget 
+            userId={userId} 
+            onOpenCompetition={(id) => onOpenTournament?.(id)}
+            onGoToMatches={onGoToFriendly}
+          />
+        )}
 
-      {/* Próximos Jogos Oficiais removidos */}
+        {/* League Standings Sidebar */}
+        <LeagueStandingsMini userId={userId} />
 
+        {/* Fan Mood Card */}
+        <Card className="game-card-accent overflow-hidden">
+          <CardHeader className="section-header pb-3 pt-4">
+            <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Heart className="h-4 w-4 text-primary" /> Torcida & Moral
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Humor</span>
+              <span className={`text-sm font-black ${fanMoodColor}`}>{fanMood}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Sequência</span>
+              <span className="text-sm font-black flex items-center gap-1.5">
+                {streak >= 3 && streakType === 'V' && <Flame className="h-3.5 w-3.5 text-warning" />}
+                {streakLabel}
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
+                <span>Reputação</span>
+                <span>{club.reputation}%</span>
+              </div>
+              <Progress value={Math.min(100, club.reputation)} className="h-2 progress-glow" />
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center leading-relaxed px-2">
+              {recentWins >= 3 ? '🔥 A torcida está lotando o estádio!' : recentLosses >= 3 ? '😤 Torcedores abandonando o clube...' : 'Mantenha bons resultados para crescer a torcida'}
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Newspaper */}
-      <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
-
-      {/* Top 5 League Standings */}
-      <LeagueStandingsMini userId={userId} />
-
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Events Feed */}
+        {/* Recent Events Feed */}
         {recentEvents.length > 0 && (
           <Card className="game-card-accent">
-            <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-              <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-primary" /> Eventos Recentes
+            <CardHeader className="section-header pb-3 pt-4">
+              <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" /> Feed de Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 sm:px-4 pb-3 space-y-1.5">
+            <CardContent className="p-2 space-y-1">
               {recentEvents.map(ev => (
-                <div key={ev.id} className={`border-l-2 rounded-r-lg px-3 py-2 ${eventColors[ev.type] || 'border-l-border'} transition-colors`}>
-                  <p className="text-xs sm:text-sm font-semibold">{ev.icon} {ev.title}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">{ev.description}</p>
+                <div key={ev.id} className={`border-l-4 rounded-r-lg px-3 py-2.5 ${eventColors[ev.type] || 'border-l-border'} hover:bg-accent/30 transition-colors cursor-default`}>
+                  <p className="text-xs font-bold leading-none mb-1">{ev.icon} {ev.title}</p>
+                  <p className="text-[10px] text-muted-foreground line-clamp-2">{ev.description}</p>
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
-
-        {/* Fan Mood Card */}
-        <Card className="game-card-accent">
-          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Heart className="h-3.5 w-3.5 text-primary" /> Torcida & Moral
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2.5 px-3 sm:px-4 pb-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Humor</span>
-              <span className={`text-xs font-bold ${fanMoodColor}`}>{fanMood}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Sequência</span>
-              <span className="text-xs font-bold flex items-center gap-1">
-                {streak >= 3 && streakType === 'V' && <Flame className="h-3 w-3 text-warning" />}
-                {streakLabel}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Torcedores</span>
-              <span className="text-xs font-bold">{club.fans.toLocaleString()}</span>
-            </div>
-            <Progress value={Math.min(100, club.reputation)} className="h-1.5 progress-glow" />
-            <p className="text-[9px] text-muted-foreground text-center">
-              {recentWins >= 3 ? '🔥 A torcida está lotando o estádio!' : recentLosses >= 3 ? '😤 Torcedores abandonando o clube...' : 'Mantenha bons resultados para crescer a torcida'}
-            </p>
-          </CardContent>
-        </Card>
       </div>
+    </div>
 
-      {/* Performance + Infrastructure */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Performance */}
         <Card className="game-card">
           <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
             <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
