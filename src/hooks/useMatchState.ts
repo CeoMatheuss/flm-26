@@ -154,7 +154,7 @@ export function useMatchState(initialState: any, userId?: string) {
         }).then(() => {});
       }
 
-      deps.setSeason((s: any) => ({ ...s, currentWeek: s.currentWeek + 1 }));
+      deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
 
       return {
         ...prev,
