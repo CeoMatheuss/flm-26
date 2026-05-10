@@ -586,18 +586,30 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
-                <span className="text-[8px] text-muted-foreground">⚡</span>
-                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
-                </div>
+            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+              {/* Stamina Badge V4 */}
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                  player.stamina >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                  player.stamina >= 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  player.stamina >= 40 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                  'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse'
+                }`}>
+                  {Math.round(player.stamina)}%
+                </span>
+                {player.physicalStatus && (
+                  <span className={`text-[9px] font-bold uppercase tracking-tighter ${
+                    player.stamina < 30 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {player.physicalStatus}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
-                <span className="text-[8px]">{getMoraleEmoji(player.morale)}</span>
-                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full ${getMoraleColor(player.morale)}`} style={{ width: `${player.morale}%` }} />
-                </div>
+              
+              {/* Morale Badge */}
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-muted/30 border border-border/20">
+                <span className="text-[10px]">{getMoraleEmoji(player.morale)}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">{player.morale}%</span>
               </div>
             </div>
           </button>
