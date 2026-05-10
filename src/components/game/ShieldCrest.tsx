@@ -159,6 +159,7 @@ export interface ShieldConfig {
   showCrown?: boolean;
   bannerText?: string;
   bannerColor?: string;
+  logoUrl?: string;
 }
 
 interface ShieldProps {

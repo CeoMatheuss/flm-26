@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Upload, Shield, ChevronDown, ChevronUp, Globe, ArrowLeft, ArrowRight, Check, Lock, Users, Gift, Trophy, Sparkles, Lightbulb, Building2, Coins, Target, Eye, Swords } from 'lucide-react';
 import { ShieldCrest, ShieldPattern, ShieldShape, ShieldIcon, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
+import { validateAndCleanClubName } from '@/utils/clubUtils';
 import flmLogo from '@/assets/flm26-logo.png';
 import { cn } from '@/lib/utils';
 
@@ -300,12 +301,12 @@ export function ClubCreation({ userId, onComplete }: Props) {
 
   const handleConfirm = () => {
     onComplete({
-      name: clubName.trim(),
-      stadiumName: stadiumName.trim() || 'Estádio Municipal',
+      name: validateAndCleanClubName(clubName),
+      stadiumName: validateAndCleanClubName(stadiumName.trim() || 'Estádio Municipal'),
       primaryColor: shieldConfig.primaryColor,
       secondaryColor: shieldConfig.secondaryColor,
       detailColor: shieldConfig.detailColor,
-      logoUrl: useCustomLogo ? customLogoUrl : shieldConfig.pattern,
+      logoUrl: useCustomLogo ? customLogoUrl : '', // Don't save "solid" in logoUrl
       shieldPattern: useCustomLogo ? undefined : shieldConfig.pattern,
       shieldShape: useCustomLogo ? undefined : shieldConfig.shape,
       shieldIcon: useCustomLogo ? undefined : shieldConfig.icon,

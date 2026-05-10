@@ -10,6 +10,7 @@ import { ShieldCrest, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
 
@@ -101,13 +102,7 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="shrink-0">
-              {hasShield(club as any) ? (
-                <ShieldCrest {...shieldPropsFromClub(club as any)} size={72} />
-              ) : club.logoUrl ? (
-                <img src={club.logoUrl} alt={club.name} className="w-16 h-16 rounded-xl object-cover" />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center text-2xl">⚽</div>
-              )}
+              <ClubShield club={club as any} size={72} />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg font-black">{club.name}</h2>

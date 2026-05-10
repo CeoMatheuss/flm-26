@@ -7,6 +7,7 @@ import {
   TrendingUp, Users, Star, Newspaper, MessageSquare, 
   ChevronLeft, ChevronRight, Activity, Zap
 } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -234,9 +235,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <span className="text-lg w-6 h-6 flex items-center justify-center bg-muted rounded-full shrink-0">
-                                {row.world_teams?.logo || '⚽'}
-                              </span>
+                              <ClubShield 
+                                club={{ logoUrl: row.world_teams?.logo } as any} 
+                                size={24} 
+                                className="shrink-0" 
+                              />
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
@@ -298,9 +301,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                      <div className="grid grid-cols-7 items-center gap-2">
                        <div className="col-span-3 text-right space-y-1">
                          <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
-                         <div className="flex justify-end gap-1">
-                           <span className="text-lg">{match.home_team?.logo || '⚽'}</span>
-                         </div>
+                          <div className="flex justify-end gap-1">
+                            <ClubShield club={{ logoUrl: match.home_team?.logo } as any} size={24} />
+                          </div>
                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
                          {match.status === 'finished' ? (
@@ -318,9 +321,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        </div>
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
-                         <div className="flex justify-start gap-1">
-                           <span className="text-lg">{match.away_team?.logo || '⚽'}</span>
-                         </div>
+                          <div className="flex justify-start gap-1">
+                            <ClubShield club={{ logoUrl: match.away_team?.logo } as any} size={24} />
+                          </div>
                        </div>
                      </div>
                      

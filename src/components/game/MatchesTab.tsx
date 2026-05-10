@@ -9,6 +9,7 @@ import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { ClubShield } from './ClubShield';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
@@ -84,8 +85,8 @@ export function MatchesTab({
           .from('world_matches' as any)
           .select(`
             id, round, scheduled_at, status, home_goals, away_goals,
-            home_team:world_teams!home_team_id(name, strength), 
-            away_team:world_teams!away_team_id(name, strength)
+            home_team:world_teams!home_team_id(name, strength, logo), 
+            away_team:world_teams!away_team_id(name, strength, logo)
           `)
           .eq('league_id', teamData.league_id)
           .order('scheduled_at', { ascending: true })
@@ -96,6 +97,8 @@ export function MatchesTab({
             ...m,
             homeName: m.home_team?.name || '???',
             awayName: m.away_team?.name || '???',
+            homeLogo: m.home_team?.logo,
+            awayLogo: m.away_team?.logo,
             homeStrength: m.home_team?.strength || 60,
             awayStrength: m.away_team?.strength || 60,
             isHome: m.home_team_id === teamData.id,
@@ -111,7 +114,7 @@ export function MatchesTab({
         for (const ct of cupTeams) {
           const { data: cm } = await supabase
             .from('cup_matches')
-            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name)')
+            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)')
             .eq('cup_id', ct.cup_id)
             .or(`home_team_id.eq.${ct.id},away_team_id.eq.${ct.id}`)
             .order('scheduled_at', { ascending: true })
@@ -123,8 +126,10 @@ export function MatchesTab({
               ...m,
               homeName: m.home_team?.club_name,
               awayName: m.away_team?.club_name,
+              homeLogo: m.home_team?.club_logo,
+              awayLogo: m.away_team?.club_logo,
               homeStrength: 70, 
-              awayStrength: 70, 
+              awayStrength: 70,
               isHome: m.home_team_id === ct.id,
               competition: (m.cup_competitions as any)?.name || 'Copa',
               stage: roundNames[m.round] || `Fase ${m.round}`
@@ -352,9 +357,11 @@ export function MatchesTab({
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-xs">
+                            <ClubShield club={{ logoUrl: tm.homeLogo } as any} size={16} />
                             <span className={`font-medium truncate ${tm.isHome ? 'text-primary' : ''}`}>{tm.homeName}</span>
                             <span className="text-muted-foreground">vs</span>
                             <span className={`font-medium truncate ${!tm.isHome ? 'text-primary' : ''}`}>{tm.awayName}</span>
+                            <ClubShield club={{ logoUrl: tm.awayLogo } as any} size={16} />
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[8px] text-muted-foreground">
