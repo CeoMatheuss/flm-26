@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Shield, Star, Flame, BarChart3, RefreshCw, Globe, Users } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Star, Flame, BarChart3, RefreshCw, Globe, Users } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
