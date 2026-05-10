@@ -123,39 +123,46 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       clubProfile: initialClubProfile,
     };
     const jsonState = JSON.parse(JSON.stringify(newState));
-    console.log('[club-save] creating club for user', userId, 'name:', config.name);
+    console.log('[club-save] Saving table: game_saves');
+    const gameSavePayload = { user_id: userId, club_data: jsonState };
+    console.log('[club-save] Payload:', gameSavePayload);
     
     // Save to game_saves (full state)
     const { error: insertErr } = await supabase
       .from('game_saves')
-      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+      .upsert(gameSavePayload, { onConflict: 'user_id' });
     
     if (insertErr) {
       console.error('[club-save] FAILED to persist club in game_saves:', insertErr);
+      console.log('[club-save] Error details:', insertErr.message, insertErr.details, insertErr.hint);
       toast.error(`Erro ao salvar save do jogo: ${insertErr.message}`);
       return;
     }
 
+    console.log('[club-save] Saving table: clubs');
+    const clubsPayload = {
+      user_id: userId,
+      name: config.name,
+      country: config.country,
+      stadium_name: config.stadiumName || 'Estádio Municipal',
+      primary_color: config.primaryColor,
+      secondary_color: config.secondaryColor,
+      detail_color: config.detailColor,
+      logo_url: config.logoUrl,
+      fans: 1000,
+      reputation: 65,
+      budget: 1000000,
+    };
+    console.log('[club-save] Payload:', clubsPayload);
+
     // Save to clubs table (metadata/searchable)
     const { error: clubErr } = await supabase
       .from('clubs')
-      .upsert({
-        user_id: userId,
-        name: config.name,
-        country: config.country,
-        stadium_name: config.stadiumName || 'Estádio Municipal',
-        primary_color: config.primaryColor,
-        secondary_color: config.secondaryColor,
-        detail_color: config.detailColor,
-        logo_url: config.logoUrl,
-        fans: 1000,
-        reputation: 65,
-        budget: 1000000,
-      }, { onConflict: 'user_id' });
+      .upsert(clubsPayload, { onConflict: 'user_id' });
 
     if (clubErr) {
       console.error('[club-save] FAILED to persist club in clubs table:', clubErr);
-      // Not returning here as game_saves was successful, but warning is good
+      console.log('[club-save] Error details:', clubErr.message, clubErr.details, clubErr.hint);
       toast.error(`Erro ao registrar metadados do clube: ${clubErr.message}`);
     }
 
