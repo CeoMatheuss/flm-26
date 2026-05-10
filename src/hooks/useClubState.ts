@@ -645,6 +645,49 @@ export function useClubState(initialState: any, userId?: string) {
     setClub(prev => ({ ...prev, budget: prev.budget + amount }));
     return { amount, description };
   }, []);
+  // ── Stamina V4: Recuperação gradual em tempo real ──
+  useEffect(() => {
+    const STAMINA_TICK = 60 * 1000; // 1 minuto
+    const interval = setInterval(() => {
+      setClub(prev => {
+        const now = new Date();
+        let changed = false;
+        const nextPlayers = prev.players.map(p => {
+          const lastUpdate = p.staminaLastUpdatedAt ? new Date(p.staminaLastUpdatedAt) : now;
+          const diffMs = now.getTime() - lastUpdate.getTime();
+          const diffMinutes = Math.floor(diffMs / (60 * 1000));
+          
+          if (diffMinutes >= 5) { // Atualiza a cada 5 min de diferença acumulada
+            changed = true;
+            const physioLevel = (prev as any).infrastructure?.physiotherapy?.level || 1;
+            const recoveryPerHour = 4 + (physioLevel * 0.5); 
+            const recoveryPerMinute = recoveryPerHour / 60;
+            const newStamina = Math.min(100, p.stamina + (recoveryPerMinute * diffMinutes));
+            
+            const getStatus = (s: number): PhysicalStatus => {
+              if (s >= 95) return 'Descansado';
+              if (s >= 80) return 'Em forma';
+              if (s >= 60) return 'Desgastado';
+              if (s >= 40) return 'Cansado';
+              if (s >= 20) return 'Exausto';
+              return 'Risco de Lesão';
+            };
+
+            return {
+              ...p,
+              stamina: Math.round(newStamina * 10) / 10,
+              physicalStatus: getStatus(newStamina),
+              staminaLastUpdatedAt: now.toISOString(),
+            };
+          }
+          return p;
+        });
+        if (changed) return { ...prev, players: nextPlayers };
+        return prev;
+      });
+    }, STAMINA_TICK);
+    return () => clearInterval(interval);
+  }, []);
 
   const totalSalaries = club.players.reduce((s, p) => s + p.salary, 0);
 
