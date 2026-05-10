@@ -182,7 +182,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
     : '⚽';
 
   const roundLabels: Record<number, string> = {
-    1: 'R32',
+    1: 'Fase 3',
     2: 'Oitavas',
     3: 'Quartas',
     4: 'Semi',
