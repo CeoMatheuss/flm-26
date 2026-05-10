@@ -195,6 +195,7 @@ function MatchDetailModal({ match, clubName, onClose }: {
 export function MatchCalendarTab({ userId, clubName }: Props) {
   const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [worldMatches, setWorldMatches] = useState<any[]>([]);
+  const [cupMatches, setCupMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
