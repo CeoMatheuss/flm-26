@@ -218,6 +218,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             }
           }
         }
+      }
     } catch (e) {
       console.error('Error loading cup widget:', e);
     } finally {
