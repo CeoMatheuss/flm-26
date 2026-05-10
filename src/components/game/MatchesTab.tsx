@@ -97,6 +97,8 @@ export function MatchesTab({
             ...m,
             homeName: m.home_team?.name || '???',
             awayName: m.away_team?.name || '???',
+            homeLogo: m.home_team?.logo,
+            awayLogo: m.away_team?.logo,
             homeStrength: m.home_team?.strength || 60,
             awayStrength: m.away_team?.strength || 60,
             isHome: m.home_team_id === teamData.id,
