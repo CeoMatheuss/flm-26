@@ -440,14 +440,32 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const saveGame = useCallback(async (silent = false) => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
-    const { error } = await supabase
+    const { error: saveErr } = await supabase
       .from('game_saves')
       .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
-    if (error) {
-      console.error('[auto-save] failed:', error);
-      if (!silent) toast.error(`Falha ao salvar: ${error.message}`);
+    
+    if (saveErr) {
+      console.error('[auto-save] failed in game_saves:', saveErr);
+      if (!silent) toast.error(`Falha ao salvar jogo: ${saveErr.message}`);
       return;
     }
+
+    // Also sync key stats to clubs table for ranking/visibility
+    if (state.club) {
+      const { error: syncErr } = await supabase
+        .from('clubs')
+        .update({
+          fans: state.club.fans ?? 1000,
+          reputation: state.club.reputation ?? 50,
+          budget: state.club.budget ?? 1000000,
+        })
+        .eq('user_id', userId);
+      
+      if (syncErr) {
+        console.warn('[auto-save] metadata sync failed:', syncErr.message);
+      }
+    }
+
     if (!silent) toast.success('Jogo salvo!');
   }, [game, userId]);
 
