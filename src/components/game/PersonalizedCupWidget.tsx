@@ -16,6 +16,7 @@ interface CupCompetition {
   total_rounds: number;
   continent?: string;
   country?: string;
+  current_phase?: string;
 }
 
 interface CupMatch {
