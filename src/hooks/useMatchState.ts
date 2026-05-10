@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Club, Match, Player } from '@/types/game';
+import { Club, Match, Player, PhysicalStatus } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
 import { GameEvent } from '@/types/events';
 import { getStadiumCapacity } from '@/types/infrastructure';
