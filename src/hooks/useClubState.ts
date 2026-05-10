@@ -426,6 +426,34 @@ export function useClubState(initialState: any, userId?: string) {
     });
   }, []);
 
+  const restAllPlayers = useCallback(() => {
+    setClub(prev => {
+      const getStatus = (s: number): PhysicalStatus => {
+        if (s >= 95) return 'Descansado';
+        if (s >= 80) return 'Em forma';
+        if (s >= 60) return 'Desgastado';
+        if (s >= 40) return 'Cansado';
+        if (s >= 20) return 'Exausto';
+        return 'Risco de Lesão';
+      };
+      
+      return {
+        ...prev,
+        players: prev.players.map(p => {
+          const newStamina = Math.min(100, p.stamina + 15);
+          return {
+            ...p,
+            stamina: newStamina,
+            physicalStatus: getStatus(newStamina),
+            staminaLastUpdatedAt: new Date().toISOString()
+          };
+        })
+      };
+    });
+    toast.success('Todo o elenco foi colocado em descanso moderado.');
+  }, []);
+
+
   const buyPlayer = useCallback((player: Player) => {
     const value = getPlayerValue(player);
     setClub(prev => {
