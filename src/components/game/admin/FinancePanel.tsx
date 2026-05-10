@@ -15,13 +15,16 @@ type ClubOption = { user_id: string; club_name: string; club_logo: string };
  * Trava de execução dupla via flag local `busy`.
  */
 export function FinancePanel() {
-  const [allClubs, setAllClubs] = useState<ClubOption[]>([]);
+  const [allClubs, setAllClubs] = useState<any[]>([]);
   const [loadingClubs, setLoadingClubs] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<ClubOption | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [amount, setAmount] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState<{ club: string; newBudget: number; delta: number } | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Carrega clubes uma vez para autocomplete
   useEffect(() => {
