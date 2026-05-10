@@ -119,7 +119,7 @@ function getPlayerGroup(idx: number): Group {
   return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract: _onRenewContract, onListForSale: _onListForSale, onLoanOut: _onLoanOut, onAuction: _onAuction, onChangeNumber: _onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer: _onRescindPlayer, onReorderPlayers, tactics }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract: _onRenewContract, onListForSale: _onListForSale, onLoanOut: _onLoanOut, onAuction: _onAuction, onChangeNumber: _onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer: _onRescindPlayer, onReorderPlayers, tactics, onRotateSquad }: Props) {
   const { guard } = useLiveMatchGuard();
   const onRenewContract = guard(_onRenewContract);
   const onListForSale = guard(_onListForSale);
