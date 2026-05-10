@@ -5002,6 +5002,10 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
+      process_cup_match_results: {
+        Args: { v_away_goals: number; v_home_goals: number; v_match_id: string }
+        Returns: undefined
+      }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_season_transition:
         | { Args: never; Returns: undefined }
