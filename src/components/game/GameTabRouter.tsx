@@ -33,6 +33,7 @@ import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
 import { CopasTab } from './CopasTab';
+import { WorldLeagues } from './WorldLeagues';
 
 // StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
@@ -252,6 +253,15 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="copas">
         <CopasTab userId={userId} onOpenTournament={(id) => { setActiveTournamentId(id); setActiveTab('tournament'); }} />
+      </TabsContent>
+      <TabsContent value="world">
+        <WorldLeagues 
+          rating={game.ranking} 
+          rankingHistory={game.rankingHistory} 
+          clubName={game.club.name} 
+          stats={game.club.stats} 
+          season={game.season?.currentSeason ?? 1} 
+        />
       </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
