@@ -503,6 +503,23 @@ export function AdminTournamentTab({ userId }: Props) {
       }
       onlineTeams = fetchedTeams;
 
+      // Prioritize: Online -> Recently Active -> Human Offline
+      onlineTeams.sort((a, b) => {
+        // 1. Online first
+        if (a.is_online && !b.is_online) return -1;
+        if (!a.is_online && b.is_online) return 1;
+
+        // 2. Then by last_seen (if available)
+        const dateA = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+        const dateB = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+        if (dateA !== dateB) return dateB - dateA;
+
+        // 3. Then by updated_at
+        const updA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const updB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return updB - updA;
+      });
+
       if (teamSource === 'online_only' && onlineTeams.length < 2) {
         toast.error('Não há clubes suficientes para criar campeonato apenas com times online.');
         setLoading(false);
