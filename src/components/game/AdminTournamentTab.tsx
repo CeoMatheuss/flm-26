@@ -487,14 +487,19 @@ export function AdminTournamentTab({ userId }: Props) {
 
     setLoading(true);
 
-    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string; last_active?: string }> = [];
     if (teamSource !== 'bots_only') {
       const fetchedTeams = await fetchOnlineTeams(scope);
       if (fetchedTeams === null) {
         setLoading(false);
         return;
       }
-      onlineTeams = fetchedTeams;
+      // Prioritize online/active humans
+      onlineTeams = (fetchedTeams as any[]).sort((a, b) => {
+        const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return dateB - dateA;
+      });
 
       if (teamSource === 'online_only' && onlineTeams.length < 2) {
         toast.error('Não há clubes suficientes para criar campeonato apenas com times online.');
