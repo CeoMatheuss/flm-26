@@ -279,20 +279,21 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <BarChart3 className="h-3 w-3" /> Ver Chaveamento
+            <BarChart3 className="h-3 w-3" /> Chaveamento
           </Button>
           <Button 
             variant="outline" 
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <Trophy className="h-3 w-3" /> Ver Estatísticas
+            <Trophy className="h-3 w-3" /> Premiações
           </Button>
           <Button 
-            className="h-8 text-[9px] gap-1 px-2 bg-primary hover:bg-primary/90 text-white font-bold"
+            variant="outline" 
+            className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <ChevronRight className="h-3 w-3" /> ABRIR COPA
+            <Users className="h-3 w-3" /> Artilheiros
           </Button>
         </div>
       </CardContent>
