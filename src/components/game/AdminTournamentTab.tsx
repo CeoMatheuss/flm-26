@@ -487,14 +487,19 @@ export function AdminTournamentTab({ userId }: Props) {
 
     setLoading(true);
 
-    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string; last_active?: string }> = [];
     if (teamSource !== 'bots_only') {
       const fetchedTeams = await fetchOnlineTeams(scope);
       if (fetchedTeams === null) {
         setLoading(false);
         return;
       }
-      onlineTeams = fetchedTeams;
+      // Prioritize online/active humans
+      onlineTeams = (fetchedTeams as any[]).sort((a, b) => {
+        const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return dateB - dateA;
+      });
 
       if (teamSource === 'online_only' && onlineTeams.length < 2) {
         toast.error('Não há clubes suficientes para criar campeonato apenas com times online.');
@@ -970,12 +975,20 @@ export function AdminTournamentTab({ userId }: Props) {
               </div>
 
               {/* Team source compact */}
-              <div className="flex gap-1">
-                {(['online_plus_bots', 'online_only', 'bots_only'] as const).map(src => (
-                  <Button key={src} size="sm" variant={teamSource === src ? 'default' : 'outline'} className="h-6 text-[8px] flex-1" onClick={() => setTeamSource(src)}>
-                    {src === 'online_plus_bots' ? '👤+🤖' : src === 'online_only' ? '👤 Online' : '🤖 Bots'}
-                  </Button>
-                ))}
+              <div className="space-y-1">
+                <label className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Prioridade de Inscrição</label>
+                <div className="flex gap-1">
+                  {(['online_plus_bots', 'online_only', 'bots_only'] as const).map(src => (
+                    <Button key={src} size="sm" variant={teamSource === src ? 'default' : 'outline'} className="h-7 text-[9px] flex-1 font-semibold" onClick={() => setTeamSource(src)}>
+                      {src === 'online_plus_bots' ? '👤 Ativos + 🤖' : src === 'online_only' ? '👤 Apenas Ativos' : '🤖 Apenas Bots'}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[8px] text-muted-foreground leading-tight px-1">
+                  {teamSource === 'online_plus_bots' && "Prioriza clubes online e ativos recentemente antes de completar com BOTs."}
+                  {teamSource === 'online_only' && "Inscreve apenas clubes humanos reais que estiveram ativos."}
+                  {teamSource === 'bots_only' && "Gera uma competição composta exclusivamente por times controlados por IA."}
+                </p>
               </div>
 
               {/* Teams + OVR + Format in grid */}

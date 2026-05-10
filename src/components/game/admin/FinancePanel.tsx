@@ -98,11 +98,13 @@ export function FinancePanel() {
   };
 
   return (
-    <Card className="border-emerald-500/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <span className="text-emerald-400">💰</span>
-          Adicionar Dinheiro ao Clube
+    <Card className="border-emerald-500/20 shadow-lg overflow-hidden">
+      <CardHeader className="pb-3 bg-emerald-500/5 border-b border-emerald-500/10">
+        <CardTitle className="text-sm font-bold flex items-center gap-2">
+          <div className="p-1.5 rounded-full bg-emerald-500/20">
+            <span className="text-emerald-400">💰</span>
+          </div>
+          DAR DINHEIRO (ADM)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
