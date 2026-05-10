@@ -164,10 +164,10 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   Recomenda-se descanso para evitar lesões graves e queda drástica de rendimento físico.
                 </p>
                 <div className="flex items-center gap-2 pt-1">
-                  <Button size="sm" variant="outline" className="h-8 text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg">
-                    Ignorar
+                  <Button size="sm" variant="outline" className="h-8 text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg" onClick={onRestAll}>
+                    Descansar Elenco
                   </Button>
-                  <Button size="sm" className="h-8 text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20">
+                  <Button size="sm" className="h-8 text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20" onClick={onGoToSquad}>
                     Ir para Elenco
                   </Button>
                 </div>
