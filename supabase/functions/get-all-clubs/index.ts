@@ -9,6 +9,8 @@ type SaveRow = {
   user_id: string;
   club_data: Record<string, unknown> | null;
   updated_at: string | null;
+  is_online?: boolean;
+  last_seen?: string | null;
 };
 
 const normalizeCountry = (raw: unknown): string => {
