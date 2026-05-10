@@ -4,7 +4,7 @@
 // 2. Regenera calendário (round-robin duplo, 1 rodada/dia, kickoff 19:30 BRT)
 // 3. Simula automaticamente as rodadas com scheduled_at <= agora
 // 4. Recalcula a classificação com forma recente e estatísticas
-// 5. Gera notícias e estatísticas de jogadores
+// 5. Gera notícias e estatísticas de jogadores usando world_players
 // 6. Notifica todos os usuários sobre o reset
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -56,10 +56,10 @@ function poisson(lambda: number): number {
 }
 
 function simulateMatch(homeStr: number, awayStr: number) {
-  const hs = Math.max(40, homeStr) * 1.15; // Home advantage
+  const hs = Math.max(40, homeStr) * 1.15;
   const as = Math.max(40, awayStr);
   const total = hs + as;
-  const base = 2.6; // Average goals per game
+  const base = 2.6;
   return {
     home: Math.min(7, poisson(base * (hs / total))),
     away: Math.min(7, poisson(base * (as / total))),
@@ -76,16 +76,12 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({} as any));
-    const adminUserId: string | null = body?.admin_user_id ?? null;
-    const notify: boolean = body?.notify !== false;
-
     const now = new Date();
     const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     const seasonYear = brt.getUTCFullYear();
     const seasonMonth = brt.getUTCMonth() + 1;
 
-    // Dia 1 do mês BRT como base de calendário
-    const monthStartUtc = new Date(Date.UTC(seasonYear, seasonMonth - 1, 1, 22, 30, 0)); // 19:30 BRT = 22:30 UTC
+    const monthStartUtc = new Date(Date.UTC(seasonYear, seasonMonth - 1, 1, 22, 30, 0));
 
     const { data: leagues, error: lErr } = await sb
       .from("world_leagues")
@@ -112,14 +108,18 @@ Deno.serve(async (req) => {
       
       if (!teams || teams.length < 2) continue;
       
-      // Ensure even number of teams for round robin
+      const { data: allPlayers } = await sb.from("world_players")
+        .select("id, name, position, team_id, overall")
+        .in("team_id", teams.map(t => t.id));
+
+      const teamPlayersMap = new Map();
+      allPlayers?.forEach(p => {
+        if (!teamPlayersMap.has(p.team_id)) teamPlayersMap.set(p.team_id, []);
+        teamPlayersMap.get(p.team_id).push(p);
+      });
+
       let leagueTeams = [...teams];
-      if (leagueTeams.length % 2 !== 0) {
-        // Add a ghost team or just skip one team? 
-        // For now, let's just use an even subset if needed, but ideally we have even teams.
-        // Actually, the system should ensure even teams.
-        leagueTeams = leagueTeams.slice(0, leagueTeams.length - 1);
-      }
+      if (leagueTeams.length % 2 !== 0) leagueTeams = leagueTeams.slice(0, leagueTeams.length - 1);
 
       const strengthMap = new Map(leagueTeams.map((t: any) => [t.id, t.strength ?? 65]));
       const teamMap = new Map(leagueTeams.map((t: any) => [t.id, t]));
@@ -145,15 +145,14 @@ Deno.serve(async (req) => {
       // 4. Gera matches e simula passado
       const matchInserts: any[] = [];
       const newsInserts: any[] = [];
-      const playerStatsMap = new Map<string, any>(); // team_id -> player_stats
+      const statsMap = new Map(); // player_id -> stats
       const standings = new Map<string, any>(tableRows.map((r) => [r.team_id, r]));
       const teamLastGames = new Map<string, string[]>(leagueTeams.map(t => [t.id, []]));
 
       let leagueSimulated = 0;
 
       for (let r = 0; r < allRounds.length; r++) {
-        const dayOffset = r;
-        const scheduled = new Date(monthStartUtc.getTime() + dayOffset * 86400000);
+        const scheduled = new Date(monthStartUtc.getTime() + r * 86400000);
         const isPast = scheduled.getTime() <= now.getTime();
 
         for (const [homeId, awayId] of allRounds[r]) {
@@ -168,6 +167,7 @@ Deno.serve(async (req) => {
             status: "scheduled",
             home_goals: 0,
             away_goals: 0,
+            match_data: { events: [] }
           };
 
           if (isPast) {
@@ -179,21 +179,68 @@ Deno.serve(async (req) => {
             row.status = "finished";
             row.played_at = scheduled.toISOString();
             
-            // Update standings
+            // Assign goals to players
+            const events = [];
+            const assignGoals = (teamId: string, count: number, isHome: boolean) => {
+              const players = (teamPlayersMap.get(teamId) || []).filter((p: any) => p.position !== 'GK');
+              if (players.length === 0) return;
+              for (let i = 0; i < count; i++) {
+                const scorer = players[Math.floor(Math.random() * players.length)];
+                const assistant = players[Math.floor(Math.random() * players.length)];
+                
+                events.push({
+                  minute: Math.floor(Math.random() * 90) + 1,
+                  type: 'goal',
+                  team: isHome ? 'home' : 'away',
+                  playerName: scorer.name,
+                  player_id: scorer.id
+                });
+
+                // Update scorer stats
+                if (!statsMap.has(scorer.id)) {
+                  statsMap.set(scorer.id, { player_id: scorer.id, team_id: teamId, league_id: league.id, season_month: seasonMonth, season_year: seasonYear, goals: 0, assists: 0, matches_played: 0, avg_rating: 0 });
+                }
+                statsMap.get(scorer.id).goals++;
+
+                // Update assistant stats
+                if (assistant.id !== scorer.id && Math.random() > 0.4) {
+                   if (!statsMap.has(assistant.id)) {
+                    statsMap.set(assistant.id, { player_id: assistant.id, team_id: teamId, league_id: league.id, season_month: seasonMonth, season_year: seasonYear, goals: 0, assists: 0, matches_played: 0, avg_rating: 0 });
+                  }
+                  statsMap.get(assistant.id).assists++;
+                }
+              }
+            };
+            
+            assignGoals(homeId, hg, true);
+            assignGoals(awayId, ag, false);
+            row.match_data.events = events;
+
+            // Update matches_played and ratings for all players who "played"
+            [homeId, awayId].forEach(tid => {
+              const players = teamPlayersMap.get(tid) || [];
+              players.slice(0, 14).forEach((p: any) => { // Assume 11 + 3 subs
+                if (!statsMap.has(p.id)) {
+                  statsMap.set(p.id, { player_id: p.id, team_id: tid, league_id: league.id, season_month: seasonMonth, season_year: seasonYear, goals: 0, assists: 0, matches_played: 0, avg_rating: 0 });
+                }
+                const s = statsMap.get(p.id);
+                const rating = 5.5 + Math.random() * 4;
+                s.avg_rating = (s.avg_rating * s.matches_played + rating) / (s.matches_played + 1);
+                s.matches_played++;
+              });
+            });
+
+            // Standings update
             const sh = standings.get(homeId);
             const sa = standings.get(awayId);
             sh.played++; sa.played++;
             sh.goals_for += hg; sh.goals_against += ag;
             sa.goals_for += ag; sa.goals_against += hg;
-            
             const hRes = hg > ag ? 'W' : (hg < ag ? 'L' : 'D');
             const aRes = ag > hg ? 'W' : (ag < hg ? 'L' : 'D');
-            
             if (hRes === 'W') { sh.wins++; sh.points += 3; sa.losses++; }
             else if (hRes === 'L') { sa.wins++; sa.points += 3; sh.losses++; }
             else { sh.draws++; sa.draws++; sh.points++; sa.points++; }
-            
-            // Form
             const hForm = teamLastGames.get(homeId)!;
             const aForm = teamLastGames.get(awayId)!;
             hForm.push(hRes); if (hForm.length > 5) hForm.shift();
@@ -201,17 +248,26 @@ Deno.serve(async (req) => {
             
             leagueSimulated++;
 
-            // Generate News for important matches or every few matches
-            if (Math.random() > 0.7 || hg + ag >= 5 || Math.abs(hg - ag) >= 3) {
-              const title = hg > ag ? `${home.name} vence ${away.name} por ${hg}x${ag}!` : 
-                            (ag > hg ? `${away.name} derrota ${home.name} fora de casa!` :
-                            `Empate emocionante entre ${home.name} e ${away.name}: ${hg}x${ag}`);
+            // News
+            if (Math.random() > 0.6 || hg + ag >= 4) {
+              const title = hg > ag ? `${home.name} domina e vence!` : (ag > hg ? `Show de bola do ${away.name}!` : `Tudo igual: ${home.name} ${hg}x${ag} ${away.name}`);
               newsInserts.push({
                 league_id: league.id,
                 title,
-                content: `A rodada ${r+1} da ${league.name} trouxe um grande jogo. ${title} A torcida está ${hg+ag > 3 ? 'eufórica com tantos gols' : 'atenta aos próximos passos'}.`,
-                category: 'match_report',
-                importance: (hg + ag >= 5) ? 3 : 1
+                content: `Em um jogo de tirar o fôlego, o ${hg > ag ? home.name : away.name} mostrou superioridade. Destaque para os gols de ${events.filter(e => e.type === 'goal').map(e => e.playerName).slice(0, 2).join(', ')}.`,
+                category: 'match_report'
+              });
+              
+              // Fan reaction
+              const fanComments = [
+                "Que jogo meus amigos!", "Esse time me mata de orgulho!", "Precisamos de reforços pra ontem!",
+                "O craque do jogo foi absurdo!", "Essa vitória lava a alma!", "Técnico pardal, mexeu mal demais."
+              ];
+              newsInserts.push({
+                league_id: league.id,
+                title: "Voz da Torcida",
+                content: fanComments[Math.floor(Math.random() * fanComments.length)],
+                category: 'fan_reaction'
               });
             }
           }
@@ -219,86 +275,41 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Finalize table stats
+      // Finalize table
       for (const [tId, s] of standings.entries()) {
         const form = teamLastGames.get(tId) || [];
         s.last_5_games = form.join('').padEnd(5, '-');
         let seq = 0;
         if (form.length > 0) {
           const last = form[form.length - 1];
-          for (let i = form.length - 1; i >= 0; i--) {
-            if (form[i] === last) seq++; else break;
-          }
+          for (let i = form.length - 1; i >= 0; i--) if (form[i] === last) seq++; else break;
           s.sequence = `${seq}${last}`;
         }
         s.win_rate = s.played > 0 ? (s.wins / s.played) * 100 : 0;
       }
 
-      // Insert Matches
-      for (let i = 0; i < matchInserts.length; i += 200) {
-        await sb.from("world_matches").insert(matchInserts.slice(i, i + 200));
-      }
-
-      // Update Table
+      // Inserts
+      for (let i = 0; i < matchInserts.length; i += 200) await sb.from("world_matches").insert(matchInserts.slice(i, i + 200));
       for (const s of standings.values()) {
-        await sb.from("world_league_table")
-          .update({
-            played: s.played, wins: s.wins, draws: s.draws, losses: s.losses,
-            goals_for: s.goals_for, goals_against: s.goals_against, points: s.points,
-            last_5_games: s.last_5_games, sequence: s.sequence, win_rate: s.win_rate
-          })
-          .eq("league_id", league.id)
-          .eq("team_id", s.team_id)
-          .eq("season_month", seasonMonth)
-          .eq("season_year", seasonYear);
+        await sb.from("world_league_table").update({
+          played: s.played, wins: s.wins, draws: s.draws, losses: s.losses,
+          goals_for: s.goals_for, goals_against: s.goals_against, points: s.points,
+          last_5_games: s.last_5_games, sequence: s.sequence, win_rate: s.win_rate
+        }).eq("league_id", league.id).eq("team_id", s.team_id).eq("season_month", seasonMonth).eq("season_year", seasonYear);
       }
+      
+      const statsList = Array.from(statsMap.values());
+      for (let i = 0; i < statsList.length; i += 200) await sb.from("world_player_stats").insert(statsList.slice(i, i + 200));
+      if (newsInserts.length > 0) await sb.from("world_league_news").insert(newsInserts.slice(0, 50));
 
-      // Insert News
-      if (newsInserts.length > 0) {
-        await sb.from("world_league_news").insert(newsInserts.slice(0, 50));
-      }
-
-      perLeague.push({
-        name: league.name,
-        teams: leagueTeams.length,
-        matches: matchInserts.length,
-        simulated: leagueSimulated,
-      });
+      perLeague.push({ name: league.name, teams: leagueTeams.length, simulated: leagueSimulated });
       totalCreated += matchInserts.length;
       totalSimulated += leagueSimulated;
     }
 
-    // Notifica todos
-    let notified = 0;
-    if (notify) {
-      const { data: users } = await sb.from("profiles").select("id");
-      if (users && users.length > 0) {
-        const notifs = users.map((u: any) => ({
-          user_id: u.id,
-          type: "info",
-          icon: "🏆",
-          title: "Novo Calendário de Ligas",
-          message: `As ligas mundiais foram atualizadas para ${seasonMonth}/${seasonYear}. Confira a tabela e os novos artilheiros!`,
-        }));
-        for (let i = 0; i < notifs.length; i += 200) {
-          await sb.from("user_notifications").insert(notifs.slice(i, i + 200));
-        }
-        notified = notifs.length;
-      }
-    }
-
-    return new Response(JSON.stringify({
-      ok: true,
-      season: `${seasonMonth}/${seasonYear}`,
-      leagues_reset: perLeague.length,
-      total_matches: totalCreated,
-      total_simulated: totalSimulated,
-      per_league: perLeague
-    }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, season: `${seasonMonth}/${seasonYear}`, leagues_reset: perLeague.length, total_simulated: totalSimulated, per_league: perLeague }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
