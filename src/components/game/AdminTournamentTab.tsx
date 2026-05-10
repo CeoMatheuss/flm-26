@@ -1313,9 +1313,7 @@ export function AdminTournamentTab({ userId }: Props) {
             </div>
           </div>
 
-          </div>
-
-          {selectedTournament.is_national_cup && (
+          {selectedTournament && (selectedTournament as any).is_national_cup && (
             <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20 mb-2">
               <p className="text-[10px] font-bold text-blue-400 flex items-center gap-1">
                 <Globe className="h-3 w-3" /> Sistema de Copa Nacional
