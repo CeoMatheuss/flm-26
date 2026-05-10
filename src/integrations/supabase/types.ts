@@ -581,6 +581,57 @@ export type Database = {
         }
         Relationships: []
       }
+      clubs: {
+        Row: {
+          budget: number | null
+          country: string
+          created_at: string
+          detail_color: string | null
+          fans: number | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          reputation: number | null
+          secondary_color: string | null
+          stadium_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          budget?: number | null
+          country?: string
+          created_at?: string
+          detail_color?: string | null
+          fans?: number | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          reputation?: number | null
+          secondary_color?: string | null
+          stadium_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          budget?: number | null
+          country?: string
+          created_at?: string
+          detail_color?: string | null
+          fans?: number | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          reputation?: number | null
+          secondary_color?: string | null
+          stadium_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       continental_competitions: {
         Row: {
           champion_team_id: string | null
@@ -2029,6 +2080,7 @@ export type Database = {
           budget: number
           club_logo: string
           club_name: string
+          country: string | null
           draws: number
           goals_against: number
           goals_for: number
@@ -2048,6 +2100,7 @@ export type Database = {
           budget?: number
           club_logo?: string
           club_name?: string
+          country?: string | null
           draws?: number
           goals_against?: number
           goals_for?: number
@@ -2067,6 +2120,7 @@ export type Database = {
           budget?: number
           club_logo?: string
           club_name?: string
+          country?: string | null
           draws?: number
           goals_against?: number
           goals_for?: number
@@ -4373,6 +4427,7 @@ export type Database = {
       }
       world_teams: {
         Row: {
+          country: string | null
           created_at: string | null
           id: string
           is_bot: boolean | null
@@ -4384,6 +4439,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string | null
           id?: string
           is_bot?: boolean | null
@@ -4395,6 +4451,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string | null
           id?: string
           is_bot?: boolean | null
@@ -4747,6 +4804,15 @@ export type Database = {
           }
         | {
             Args: { _logo: string; _team_name: string; _user_id: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _country?: string
+              _logo: string
+              _team_name: string
+              _user_id: string
+            }
             Returns: string
           }
       reset_league_structure: {

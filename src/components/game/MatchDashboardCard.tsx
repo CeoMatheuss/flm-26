@@ -383,7 +383,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
           await supabase.rpc('replace_bot_with_player', { 
             _user_id: userId, 
             _team_name: club.name, 
-            _logo: '⚽' 
+            _logo: '⚽',
+            _country: (club as any).country || 'Brasil'
           });
         }
         // Always sync cup status to ensure fixtures are generated/simulated

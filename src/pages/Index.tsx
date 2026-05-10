@@ -124,15 +124,43 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     };
     const jsonState = JSON.parse(JSON.stringify(newState));
     console.log('[club-save] creating club for user', userId, 'name:', config.name);
+    
+    // Save to game_saves (full state)
     const { error: insertErr } = await supabase
       .from('game_saves')
       .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+    
     if (insertErr) {
-      console.error('[club-save] FAILED to persist club:', insertErr);
-      toast.error(`Erro ao salvar clube: ${insertErr.message}. Tente novamente.`);
+      console.error('[club-save] FAILED to persist club in game_saves:', insertErr);
+      toast.error(`Erro ao salvar save do jogo: ${insertErr.message}`);
       return;
     }
+
+    // Save to clubs table (metadata/searchable)
+    const { error: clubErr } = await supabase
+      .from('clubs')
+      .upsert({
+        user_id: userId,
+        name: config.name,
+        country: config.country,
+        stadium_name: config.stadiumName || 'Estádio Municipal',
+        primary_color: config.primaryColor,
+        secondary_color: config.secondaryColor,
+        detail_color: config.detailColor,
+        logo_url: config.logoUrl,
+        fans: 1000,
+        reputation: 65,
+        budget: 1000000,
+      }, { onConflict: 'user_id' });
+
+    if (clubErr) {
+      console.error('[club-save] FAILED to persist club in clubs table:', clubErr);
+      // Not returning here as game_saves was successful, but warning is good
+      toast.error(`Erro ao registrar metadados do clube: ${clubErr.message}`);
+    }
+
     console.log('[club-save] club persisted successfully');
+    
     // Welcome notification
     await supabase.from('user_notifications').insert([{
       user_id: userId,
@@ -141,6 +169,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       message: `Parabéns pela criação do ${config.name}! Dicas: treine seus jogadores diariamente, melhore o CT e entre em ligas para competir online. Boa sorte, Manager!`,
       type: 'success',
     }]);
+
     setLoadedState(newState);
     setHasSave(true);
     setIsNewClub(true);
@@ -411,14 +440,32 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const saveGame = useCallback(async (silent = false) => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
-    const { error } = await supabase
+    const { error: saveErr } = await supabase
       .from('game_saves')
       .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
-    if (error) {
-      console.error('[auto-save] failed:', error);
-      if (!silent) toast.error(`Falha ao salvar: ${error.message}`);
+    
+    if (saveErr) {
+      console.error('[auto-save] failed in game_saves:', saveErr);
+      if (!silent) toast.error(`Falha ao salvar jogo: ${saveErr.message}`);
       return;
     }
+
+    // Also sync key stats to clubs table for ranking/visibility
+    if (state.club) {
+      const { error: syncErr } = await supabase
+        .from('clubs')
+        .update({
+          fans: state.club.fans ?? 1000,
+          reputation: state.club.reputation ?? 50,
+          budget: state.club.budget ?? 1000000,
+        })
+        .eq('user_id', userId);
+      
+      if (syncErr) {
+        console.warn('[auto-save] metadata sync failed:', syncErr.message);
+      }
+    }
+
     if (!silent) toast.success('Jogo salvo!');
   }, [game, userId]);
 
