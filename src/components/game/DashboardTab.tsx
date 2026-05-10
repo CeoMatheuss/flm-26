@@ -91,26 +91,27 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
 
   const playedMatchesCount = club.stats.wins + club.stats.draws + club.stats.losses;
-  const winRate = totalGames > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (totalGames * 3)) * 100) : 0;
+  const winRate = playedMatchesCount > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (playedMatchesCount * 3)) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
-  const recentWins = last5.filter(m => m.result && m.result.home > m.result.away).length;
-  const recentLosses = last5.filter(m => m.result && m.result.home < m.result.away).length;
+  const recentWins = last5.filter(m => m.result && (m.isHome ? m.result.home > m.result.away : m.result.away > m.result.home)).length;
+  const recentLosses = last5.filter(m => m.result && (m.isHome ? m.result.home < m.result.away : m.result.away < m.result.home)).length;
   const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentWins >= 2 ? 'Animada 🙂' : recentLosses >= 5 ? 'Revoltada 😡' : recentLosses >= 4 ? 'Insatisfeita 😤' : recentLosses >= 3 ? 'Preocupada 😟' : 'Estável 😐';
   const fanMoodColor = recentWins >= 3 ? 'text-success' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
 
   const playedMatches = club.matches.filter(m => m.played);
   let streak = 0;
-  let streakType: 'W' | 'D' | 'L' | '' = '';
+  let streakType: 'V' | 'E' | 'D' | '' = '';
   for (let i = playedMatches.length - 1; i >= 0; i--) {
     const r = playedMatches[i].result;
     if (!r) break;
-    const t = r.home > r.away ? 'W' : r.home < r.away ? 'L' : 'D';
+    const isHome = playedMatches[i].isHome;
+    const t = (isHome ? r.home > r.away : r.away > r.home) ? 'V' : (r.home === r.away ? 'E' : 'D');
     if (streakType === '') streakType = t;
     if (t === streakType) streak++;
     else break;
   }
-  const streakLabel = streak > 0 ? `${streak}${streakType === 'W' ? 'V' : streakType === 'L' ? 'D' : 'E'} seguidas` : 'Nenhuma';
+  const streakLabel = streak > 0 ? `${streak}${streakType} seguidas` : 'Nenhuma';
 
   const recentEvents = events.slice(0, 5);
   const eventColors: Record<string, string> = {
