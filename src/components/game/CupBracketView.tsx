@@ -25,6 +25,7 @@ interface CupMatch {
   home_goals: number | null;
   away_goals: number | null;
   status: string;
+  round_name?: string;
 }
 
 interface CupTeam {
