@@ -1181,6 +1181,36 @@ export function AdminTournamentTab({ userId }: Props) {
           </Card>
         )}
 
+        <Card className="mb-4 border-primary/20 bg-primary/5">
+          <CardHeader className="py-3">
+            <CardTitle className="text-xs uppercase flex items-center gap-2">
+              <Globe className="h-4 w-4" /> Global National Cups
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pb-4">
+            <p className="text-[10px] text-muted-foreground">
+              Gerencie as Copas Nacionais automáticas de todos os países (Brasil, Inglaterra, etc).
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                className="flex-1 h-8 text-[10px] gap-1"
+                onClick={async () => {
+                  if(!confirm('Isso irá gerar novas copas para todos os países. Continuar?')) return;
+                  setLoading(true);
+                  const { data, error } = await supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all' } });
+                  setLoading(false);
+                  if (error) toast.error('Erro ao gerar copas: ' + error.message);
+                  else toast.success('Copas Globais geradas com sucesso!');
+                }}
+                disabled={loading}
+              >
+                <Zap className="h-3 w-3" /> Gerar Todas Copas (Dia 10)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Tournament List */}
         {tournaments.length === 0 ? (
           <Card>
