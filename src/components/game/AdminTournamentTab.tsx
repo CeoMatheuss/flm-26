@@ -1191,7 +1191,7 @@ export function AdminTournamentTab({ userId }: Props) {
             <p className="text-[10px] text-muted-foreground">
               Gerencie as Copas Nacionais automáticas de todos os países (Brasil, Inglaterra, etc).
             </p>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button 
                 size="sm" 
                 className="flex-1 h-8 text-[10px] gap-1"
@@ -1206,6 +1206,30 @@ export function AdminTournamentTab({ userId }: Props) {
                 disabled={loading}
               >
                 <Zap className="h-3 w-3" /> Gerar Todas Copas (Dia 10)
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="flex-1 h-8 text-[10px] gap-1 border-red-500/20 text-red-400"
+                onClick={async () => {
+                  if(!confirm('AVISO: Isso irá apagar TODAS as Copas Nacionais e seus históricos. Deseja prosseguir?')) return;
+                  setLoading(true);
+                  // Using an RPC or direct delete if permitted, or we can add a reset action to the edge function
+                  await supabase.from('cup_matches').delete().filter('cup_id', 'in', 
+                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
+                  );
+                  await supabase.from('cup_teams').delete().filter('cup_id', 'in', 
+                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
+                  );
+                  await supabase.from('cup_competitions').delete().eq('is_national_cup', true);
+                  
+                  setLoading(false);
+                  toast.success('Sistema de Copas Nacionais reiniciado!');
+                  loadTournaments();
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className="h-3 w-3" /> Reiniciar Copas
               </Button>
             </div>
           </CardContent>
