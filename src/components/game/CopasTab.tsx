@@ -20,46 +20,59 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
   const [matches, setMatches] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
 
+  const [competition, setCompetition] = useState<any>(null);
+
   const loadMyCup = async () => {
     setLoading(true);
-    const { data: national } = await supabase
-      .from('cup_teams')
-      .select('cup_id, cup_competitions(status)')
-      .eq('user_id', userId)
-      .neq('cup_competitions.status', 'finished')
-      .maybeSingle();
-    
-    if (national) {
-      setMyCupId(national.cup_id);
-      setMyCupType('national');
-      
-      // Load current matches for this cup
-      const { data: cupMatches } = await supabase
-        .from('cup_matches')
-        .select(`
-          *,
-          home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo),
-          away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)
-        `)
-        .eq('cup_id', national.cup_id)
-        .order('round', { ascending: true });
-      if (cupMatches) setMatches(cupMatches);
-    } else {
-      const { data: continental } = await supabase
-        .from('continental_teams')
-        .select('competition_id, continental_competitions(status)')
+    try {
+      // 1. National Cups
+      const { data: national } = await supabase
+        .from('cup_teams')
+        .select('cup_id, cup_competitions(*)')
         .eq('user_id', userId)
-        .neq('continental_competitions.status', 'finished')
+        .neq('cup_competitions.status', 'finished')
         .maybeSingle();
       
-      if (continental) {
-        setMyCupId(continental.competition_id);
-        setMyCupType('continental');
+      if (national && national.cup_competitions) {
+        setMyCupId(national.cup_id);
+        setMyCupType('national');
+        setCompetition(national.cup_competitions);
+        
+        const { data: cupMatches } = await supabase
+          .from('cup_matches')
+          .select(`
+            *,
+            home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo),
+            away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)
+          `)
+          .eq('cup_id', national.cup_id)
+          .order('round', { ascending: true });
+        if (cupMatches) setMatches(cupMatches);
       } else {
-        setActiveTab('world');
+        // 2. Continental Cups
+        const { data: continental } = await supabase
+          .from('continental_teams')
+          .select('competition_id, continental_competitions(*)')
+          .eq('user_id', userId)
+          .neq('continental_competitions.status', 'finished')
+          .maybeSingle();
+        
+        if (continental && continental.continental_competitions) {
+          setMyCupId(continental.competition_id);
+          setMyCupType('continental');
+          setCompetition({
+            ...continental.continental_competitions,
+            name: `Continental ${continental.continental_competitions.continent}`
+          });
+        } else {
+          setActiveTab('world');
+        }
       }
+    } catch (e) {
+      console.error('Error loading cups:', e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
