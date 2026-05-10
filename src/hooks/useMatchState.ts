@@ -46,8 +46,12 @@ export function useMatchState(initialState: any, userId?: string) {
 
     if (userId) {
       supabase.from('game_saves')
-        .update({ last_match_timestamp: nowIso } as any)
+        .update({ 
+          last_match_timestamp: nowIso,
+          last_processed_match_id: matchId // Trava de persistência no DB
+        } as any)
         .eq('user_id', userId)
+        .neq('last_processed_match_id', matchId) // Só atualiza se ainda não processou
         .then(() => {});
     }
 
