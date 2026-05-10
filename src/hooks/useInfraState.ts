@@ -5,6 +5,7 @@ import {
   getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
+  getYouthMinOverall, getYouthMaxOverall,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
