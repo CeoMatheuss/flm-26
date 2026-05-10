@@ -156,7 +156,7 @@ export function useMatchState(initialState: any, userId?: string) {
 
       return {
         ...prev,
-        matches: prev.matches.filter(m => m.id !== matchId),
+        matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
           const drain = Math.floor(Math.random() * 15 + 10); 
           const newStamina = Math.max(0, p.stamina - drain);
