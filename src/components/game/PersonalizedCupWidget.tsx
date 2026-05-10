@@ -95,6 +95,11 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             away_team_logo: m.away_team?.club_logo,
           } as any);
         }
+
+        // Verificar se é campeão (se a competição acabou e ele não foi eliminado)
+        if (nationalTeam.cup_competitions.status === 'finished' && !nationalTeam.eliminated) {
+          setIsChampion(true);
+        }
       } else {
         // 2. Procurar em Continentais
         const { data: continentalTeam } = await supabase
@@ -142,6 +147,11 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
               home_team_logo: m.home_team?.club_logo,
               away_team_logo: m.away_team?.club_logo,
             } as any);
+          }
+
+          // Verificar se é campeão
+          if (continentalTeam.continental_competitions.status === 'finished' && !continentalTeam.eliminated) {
+            setIsChampion(true);
           }
         }
       }
