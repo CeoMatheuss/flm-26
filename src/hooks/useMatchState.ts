@@ -131,12 +131,23 @@ export function useMatchState(initialState: any, userId?: string) {
       });
 
       if (userId) {
+        // Obter destaques e artilheiros (simulado para a notificação)
+        const highlights = isWin ? "Ataque eficiente e defesa sólida." : isDraw ? "Equilíbrio em campo." : "Erros individuais custaram caro.";
+        const scorer = (isHome ? homeGoals : awayGoals) > 0 ? "Artilheiro da rodada" : "Nenhum gol";
+        
         supabase.from('user_notifications').insert({
           user_id: userId,
           type: 'match_result',
-          icon: isWin ? '🏆' : '⚽',
+          icon: isWin ? '🏆' : isDraw ? '🟡' : '🔴',
           title: `Fim de Jogo: ${isWin ? 'Vitória!' : isDraw ? 'Empate' : 'Derrota'}`,
-          message: `${prev.name} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. Posição: Ver tabela.`,
+          message: `${prev.name} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. \n🎯 Destaques: ${highlights} \n⚽ Artilheiro: ${scorer} \n⚠️ Verifique lesões no elenco.`,
+          data: { 
+            match_id: matchId, 
+            score: `${homeGoals}x${awayGoals}`,
+            competition,
+            is_win: isWin,
+            is_draw: isDraw
+          }
         }).then(() => {});
       }
 
