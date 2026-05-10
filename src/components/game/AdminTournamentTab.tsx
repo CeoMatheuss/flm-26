@@ -494,7 +494,14 @@ export function AdminTournamentTab({ userId }: Props) {
 
     setLoading(true);
 
-    let onlineTeams: Array<{ user_id: string; club_name: string; club_logo: string }> = [];
+    let onlineTeams: Array<{ 
+      user_id: string; 
+      club_name: string; 
+      club_logo: string;
+      is_online?: boolean;
+      last_seen?: string | null;
+      updated_at?: string | null;
+    }> = [];
     if (teamSource !== 'bots_only') {
       const fetchedTeams = await fetchOnlineTeams(scope);
       if (fetchedTeams === null) {
