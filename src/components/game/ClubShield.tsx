@@ -21,7 +21,10 @@ export function ClubShield({ club, size = 32, className, fallbackText }: ClubShi
   
   // Custom logo URL (must be a valid URL, not a string like "solid")
   const logoUrl = club?.shieldConfig?.logoUrl || club?.logoUrl;
-  const isRealUrl = logoUrl && (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('/'));
+  const FORBIDDEN_PATTERN_NAMES = ['solid', 'outline', 'stripes', 'halves', 'diagonal', 'split', 'chevron', 'cross', 'waves', 'quarters', 'triband', 'sash', 'hoop'];
+  const isRealUrl = logoUrl && 
+    (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('/')) &&
+    !FORBIDDEN_PATTERN_NAMES.includes(logoUrl.toLowerCase());
 
   if (hasRenderableShield) {
     return (
