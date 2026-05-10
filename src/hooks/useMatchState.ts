@@ -129,7 +129,7 @@ export function useMatchState(initialState: any, userId?: string) {
           type: 'match_result',
           icon: isWin ? '🏆' : '⚽',
           title: `Fim de Jogo: ${isWin ? 'Vitória!' : isDraw ? 'Empate' : 'Derrota'}`,
-          message: `${clubName} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. Posição: Ver tabela.`,
+          message: `${prev.name} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. Posição: Ver tabela.`,
         }).then(() => {});
       }
 
