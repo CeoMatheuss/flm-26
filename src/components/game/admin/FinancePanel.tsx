@@ -83,6 +83,7 @@ export function FinancePanel() {
     const { data, error } = await supabase.rpc('admin_add_money_to_club', {
       p_target_user_id: targetUserId,
       p_amount: value,
+      p_reason: reason || 'Ajuste administrativo'
     });
     if (error) {
       throw new Error(error.message || 'Falha ao ajustar saldo');
