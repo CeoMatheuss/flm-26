@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -93,13 +94,34 @@ export function CupsOverviewTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <Trophy className="h-4 w-4 text-yellow-400" /> Copas & Torneios
         </h3>
-        <Button size="sm" onClick={load} disabled={loading} className="h-7 text-xs">
-          <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline"
+            className="h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10"
+            onClick={async () => {
+              if (!confirm("Isso irá apagar TODAS as competições mata-mata, confrontos e inscrições. Deseja continuar?")) return;
+              setLoading(true);
+              const { error } = await supabase.functions.invoke('world-cup-advancer', { body: { force_reset_all: true } });
+              if (error) toast.error('Erro ao reiniciar copas');
+              else {
+                toast.success('Todas as copas foram reiniciadas com sucesso!');
+                load();
+              }
+              setLoading(false);
+            }}
+            disabled={loading}
+          >
+            <RefreshCw className="h-3 w-3" /> RECOMEÇAR COPAS
+          </Button>
+          <Button size="sm" onClick={load} disabled={loading} className="h-7 text-xs">
+            <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Featured: Continental international cups */}

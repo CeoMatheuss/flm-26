@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Globe, Loader2, Star } from 'lucide-react';
+import { Trophy, Globe, Loader2, Star, BarChart3, Newspaper, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { CupBracketView } from './CupBracketView';
@@ -101,45 +101,42 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                       🏆
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black">Copa Nacional</h3>
+                      <h3 className="text-2xl font-black">{matches[0]?.competition || 'Copa Ativa'}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary">Temporada Atual</Badge>
-                        <Badge variant="outline">Eliminatórias</Badge>
+                        <Badge variant="outline">Mata-Mata</Badge>
                       </div>
                     </div>
                   </div>
                   <div className="text-right hidden sm:block">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Próximo Desafio</p>
-                    <p className="text-lg font-black text-primary">Oitavas de Final</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Fase Atual</p>
+                    <p className="text-lg font-black text-primary">{matches[0]?.stage || 'Oitavas'}</p>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Current matches in the cup */}
+              {/* Chaveamento Mata-Mata */}
               <div className="space-y-4">
                 <h4 className="text-sm font-bold flex items-center gap-2">
-                  <Star className="h-4 w-4 text-primary" /> Jogos Recentes & Agendados
+                  <BarChart3 className="h-4 w-4 text-primary" /> Árvore do Torneio
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {matches.filter(m => m.round === 1).map(match => (
-                    <Card key={match.id} className="hover:border-primary/50 transition-colors">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className="text-lg">{match.home_team?.club_logo}</span>
-                          <span className="text-sm font-bold truncate">{match.home_team?.club_name}</span>
-                        </div>
-                        <div className="flex flex-col items-center px-4">
-                          <span className="text-lg font-black">{match.home_goals ?? '-'} x {match.away_goals ?? '-'}</span>
-                          <Badge variant="outline" className="text-[8px] uppercase">{match.status === 'finished' ? 'Final' : 'Agendado'}</Badge>
-                        </div>
-                        <div className="flex items-center gap-3 flex-1 justify-end">
-                          <span className="text-sm font-bold truncate text-right">{match.away_team?.club_name}</span>
-                          <span className="text-lg">{match.away_team?.club_logo}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <CupBracketView cupId={myCupId} cupType={myCupType} />
+              </div>
+
+              {/* Stats & News & History placeholders */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader><CardTitle className="text-xs flex items-center gap-2"><Newspaper className="h-3.5 w-3.5" /> Últimas Notícias</CardTitle></CardHeader>
+                  <CardContent className="text-[10px] text-muted-foreground italic">
+                    Nenhuma notícia recente para esta competição.
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-xs flex items-center gap-2"><Award className="h-3.5 w-3.5" /> Histórico de Campeões</CardTitle></CardHeader>
+                  <CardContent className="text-[10px] text-muted-foreground italic">
+                    Esta é a primeira edição desta competição.
+                  </CardContent>
+                </Card>
               </div>
             </div>
           ) : (
@@ -149,7 +146,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold">Nenhuma Copa Ativa</h3>
                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    Seu clube não está inscrito em nenhuma copa nacional ou continental no momento.
+                    Seu clube não está inscrito em nenhuma copa no momento. Use o painel ADM para recomeçar as copas mundiais se necessário.
                   </p>
                 </div>
               </CardContent>

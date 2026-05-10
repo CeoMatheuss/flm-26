@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const TOLERANCE_MS = 1 * 60_000; // 1 minute after scheduled time
+const TOLERANCE_MS = 5 * 60_000; // 5 minutes after scheduled time
 
 function poisson(lambda: number): number {
   if (lambda <= 0) return 0;
