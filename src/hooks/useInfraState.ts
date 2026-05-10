@@ -429,6 +429,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
   return {
     infrastructure, setInfrastructure, youthProspects, setYouthProspects,
+    lastYouthGenAt, setLastYouthGenAt,
     youthInvestment, setYouthInvestment,
     trainingInvestment, setTrainingInvestment,
     season, setSeason,
