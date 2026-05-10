@@ -291,16 +291,24 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 <p className="text-center text-xs text-muted-foreground py-10">Nenhum jogo nesta rodada.</p>
               ) : filteredMatches.map(m => (
                 <Card key={m.id} className="border-border/40">
-                  <CardContent className="p-3 flex items-center gap-2">
-                    <div className="flex-1 text-right min-w-0">
-                      <p className="text-xs font-bold truncate">{m.home_team?.club_name}</p>
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 text-right min-w-0">
+                        <p className="text-xs font-bold truncate">{m.home_team?.club_name}</p>
+                      </div>
+                      <div className="bg-muted/30 px-3 py-1 rounded text-xs font-mono font-bold">
+                        {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : '19:30'}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-xs font-bold truncate">{m.away_team?.club_name}</p>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 px-3 py-1 rounded text-xs font-mono font-bold">
-                      {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : formatTime(m.scheduled_at)}
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-xs font-bold truncate">{m.away_team?.club_name}</p>
-                    </div>
+                    {m.status !== 'finished' && (
+                      <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{m.is_home ? clubName : 'Estádio Adversário'}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
