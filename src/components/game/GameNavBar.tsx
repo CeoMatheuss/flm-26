@@ -1,5 +1,11 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, Users, Target, Trophy, MoreHorizontal } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { 
+  LayoutDashboard, Users, Target, Trophy, 
+  Newspaper, Calendar, DollarSign, Building2, 
+  Settings, Globe, Shield, Star, ShoppingBag,
+  MoreHorizontal
+} from 'lucide-react';
 import { GameMenu } from './GameMenu';
 
 interface GameNavBarProps {
@@ -10,78 +16,55 @@ interface GameNavBarProps {
 }
 
 export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }: GameNavBarProps) {
+  const mainTabs = [
+    { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
+    { id: 'squad', label: 'Elenco', icon: Users },
+    { id: 'tactics', label: 'Táticas', icon: Target },
+    { id: 'league', label: 'Liga', icon: Trophy },
+    { id: 'copas', label: 'Copas', icon: Shield },
+    { id: 'journal', label: 'Jornal', icon: Newspaper },
+    { id: 'market', label: 'Mercado', icon: ShoppingBag },
+    { id: 'calendar', label: 'Calendário', icon: Calendar },
+    { id: 'finance', label: 'Finanças', icon: DollarSign },
+    { id: 'stadium', label: 'Estádio', icon: Building2 },
+    { id: 'world', label: 'Mundo', icon: Globe },
+    { id: 'ranking', label: 'Ranking', icon: Star },
+  ];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-2xl border-t border-border/40 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
-      <div className="max-w-[1920px] mx-auto h-16 sm:h-20">
-        <TabsList className="grid grid-cols-5 h-full w-full bg-transparent p-0 gap-0">
-          <TabsTrigger 
-            value="dashboard" 
-            className="nav-tab data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none group"
-          >
-            <div className="flex flex-col items-center justify-center gap-1 transition-transform group-active:scale-90">
-              <div className="p-1.5 rounded-xl group-data-[state=active]:bg-primary/20 transition-colors">
-                <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold">Início</span>
-            </div>
-          </TabsTrigger>
-
-          <TabsTrigger 
-            value="squad" 
-            className="nav-tab data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none group"
-          >
-            <div className="flex flex-col items-center justify-center gap-1 transition-transform group-active:scale-90">
-              <div className="p-1.5 rounded-xl group-data-[state=active]:bg-primary/20 transition-colors">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold">Elenco</span>
-            </div>
-          </TabsTrigger>
-
-          <TabsTrigger 
-            value="tactics" 
-            className="nav-tab data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none group"
-          >
-            <div className="flex flex-col items-center justify-center gap-1 transition-transform group-active:scale-90">
-              <div className="p-1.5 rounded-xl group-data-[state=active]:bg-primary/20 transition-colors">
-                <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold">Táticas</span>
-            </div>
-          </TabsTrigger>
-
-          <TabsTrigger 
-            value="league" 
-            className="nav-tab data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none group"
-          >
-            <div className="flex flex-col items-center justify-center gap-1 transition-transform group-active:scale-90">
-              <div className="p-1.5 rounded-xl group-data-[state=active]:bg-primary/20 transition-colors">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold">Liga</span>
-            </div>
-          </TabsTrigger>
-
-          {/* Special Menu Trigger */}
-          <div className="flex items-center justify-center">
+    <div className="w-full bg-card/80 backdrop-blur-xl border-b border-border/40 sticky top-14 sm:top-16 z-40">
+      <ScrollArea className="w-full whitespace-nowrap">
+        <TabsList className="inline-flex h-12 sm:h-14 items-center justify-start bg-transparent p-1 gap-1">
+          {mainTabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="px-4 h-full rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all flex items-center gap-2"
+            >
+              <tab.icon className="h-4 w-4 shrink-0" />
+              <span className="text-xs font-bold">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+          
+          <div className="flex items-center ml-2 border-l border-border/40 pl-2">
             <GameMenu 
               onTabChange={onTabChange} 
               activeTab={activeTab} 
               showAdmin={showAdmin}
               onShowTutorial={onShowTutorial}
               trigger={
-                <button className="nav-tab w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-all active:scale-95">
-                  <div className="p-1.5 rounded-xl transition-colors">
-                    <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </div>
-                  <span className="text-[10px] sm:text-xs font-bold">Menu</span>
+                <button className="h-9 px-3 flex items-center gap-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="text-xs font-bold">Mais</span>
                 </button>
               } 
             />
           </div>
         </TabsList>
-      </div>
-    </nav>
+        <ScrollBar orientation="horizontal" className="hidden" />
+      </ScrollArea>
+    </div>
   );
 }
+
 
