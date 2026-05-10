@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight, HeartPulse, LifeBuoy, FileText, Crown } from 'lucide-react';
+import { MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight, HeartPulse, LifeBuoy, FileText, Crown, Target } from 'lucide-react';
 
 interface GameMenuProps {
   showAdmin: boolean;
