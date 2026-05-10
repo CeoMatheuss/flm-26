@@ -163,7 +163,7 @@ export function useMatchState(initialState: any, userId?: string) {
         },
       };
     });
-  }, [userId, clubName]);
+  }, [userId]);
 
   const generateFriendly = useCallback(async (
     club: Club,
