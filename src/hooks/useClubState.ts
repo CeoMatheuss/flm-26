@@ -993,7 +993,7 @@ export function useClubState(initialState: any, userId?: string) {
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
     totalSalaries, loansOut, loansIn,
     transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
-    trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, rotateSquad, buyPlayer, signFreeAgent, renewContract,
+    trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, restAllPlayers, rotateSquad, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
