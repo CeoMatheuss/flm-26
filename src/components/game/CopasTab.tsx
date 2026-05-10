@@ -115,7 +115,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                       🏆
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black">{matches[0]?.competition || matches[0]?.round_name || 'Copa Ativa'}</h3>
+                      <h3 className="text-2xl font-black">{competition?.name || 'Copa Ativa'}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary">Temporada {new Date().getFullYear()}</Badge>
                         <Badge variant="outline">Mata-Mata Oficial</Badge>
