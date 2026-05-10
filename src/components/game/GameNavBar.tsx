@@ -10,7 +10,7 @@ export function GameNavBar() {
         <TabsTrigger value="squad" className="nav-tab flex flex-col items-center gap-0.5 py-2 sm:py-2.5"><Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" /><span className="text-[9px] sm:text-xs leading-tight font-medium">Elenco</span></TabsTrigger>
         <TabsTrigger value="tactics" className="nav-tab flex flex-col items-center gap-0.5 py-2 sm:py-2.5"><Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" /><span className="text-[9px] sm:text-xs leading-tight font-medium">Táticas</span></TabsTrigger>
         <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-2 sm:py-2.5"><Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" /><span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span></TabsTrigger>
-        <TabsTrigger value="championships" className="nav-tab flex flex-col items-center gap-0.5 py-2 sm:py-2.5"><Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" /><span className="text-[9px] sm:text-xs leading-tight font-medium">Mundo</span></TabsTrigger>
+        <TabsTrigger value="copas" className="nav-tab flex flex-col items-center gap-0.5 py-2 sm:py-2.5"><Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" /><span className="text-[9px] sm:text-xs leading-tight font-medium">Copas</span></TabsTrigger>
       </TabsList>
     </div>
   );

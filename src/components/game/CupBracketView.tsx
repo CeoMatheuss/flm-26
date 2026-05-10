@@ -39,10 +39,11 @@ interface CupTeam {
 
 interface Props {
   cupId: string;
+  cupType?: 'national' | 'continental' | 'world_cup';
   onBack?: () => void;
 }
 
-export function CupBracketView({ cupId, onBack }: Props) {
+export function CupBracketView({ cupId, cupType = 'national', onBack }: Props) {
   const [cup, setCup] = useState<CupCompetition | null>(null);
   const [matches, setMatches] = useState<CupMatch[]>([]);
   const [teams, setTeams] = useState<CupTeam[]>([]);
@@ -54,11 +55,27 @@ export function CupBracketView({ cupId, onBack }: Props) {
 
   const loadCupData = async () => {
     setLoading(true);
-    const [cupRes, matchesRes, teamsRes] = await Promise.all([
-      supabase.from('cup_competitions').select('*').eq('id', cupId).single(),
-      supabase.from('cup_matches').select('*').eq('cup_id', cupId).order('round', { ascending: true }),
-      supabase.from('cup_teams').select('*').eq('cup_id', cupId),
-    ]);
+    let cupRes, matchesRes, teamsRes;
+
+    if (cupType === 'continental') {
+      [cupRes, matchesRes, teamsRes] = await Promise.all([
+        supabase.from('continental_competitions').select('*').eq('id', cupId).single(),
+        supabase.from('continental_matches').select('*').eq('competition_id', cupId).order('round', { ascending: true }),
+        supabase.from('continental_teams').select('*').eq('competition_id', cupId),
+      ]);
+    } else if (cupType === 'world_cup') {
+      [cupRes, matchesRes, teamsRes] = await Promise.all([
+        supabase.from('club_world_cups').select('*').eq('id', cupId).single(),
+        supabase.from('club_world_cup_matches').select('*').eq('cup_id', cupId).order('round', { ascending: true }),
+        supabase.from('club_world_cup_teams').select('*').eq('cup_id', cupId),
+      ]);
+    } else {
+      [cupRes, matchesRes, teamsRes] = await Promise.all([
+        supabase.from('cup_competitions').select('*').eq('id', cupId).single(),
+        supabase.from('cup_matches').select('*').eq('cup_id', cupId).order('round', { ascending: true }),
+        supabase.from('cup_teams').select('*').eq('cup_id', cupId),
+      ]);
+    }
 
     if (cupRes.data) setCup(cupRes.data as unknown as CupCompetition);
     if (matchesRes.data) setMatches(matchesRes.data as unknown as CupMatch[]);
