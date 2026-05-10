@@ -62,30 +62,42 @@ export function computeLiveStamina({
 
   const initial = Math.max(0, Math.min(100, player.stamina ?? 100));
   const physical = player.attributes?.physical ?? 60;
+  const initialStamina = Math.max(0, Math.min(100, player.stamina ?? 100));
 
-  // Minutes actually played in this match (capped at 90)
-  const playedMinutes = Math.max(0, Math.min(90, minute) - Math.max(0, enteredAt));
+  // Minutes actually played in this match (capped at 120 for overtime support)
+  const playedMinutes = Math.max(0, minute - Math.max(0, enteredAt));
   if (playedMinutes <= 0) return initial;
 
-  // Base loss per minute: ~0.40/min for 60 phys → ~36 over 90'
-  // Scales 0.55 (phys 30) → 0.25 (phys 95)
-  const physFactor = 1.4 - (physical / 100); // 0.45 → 1.10
-  const baseLossPerMin = 0.40 * physFactor;
+  // Base loss per minute: 0.45/min for 60 phys
+  // Scales 0.65 (phys 30) → 0.30 (phys 95)
+  const physFactor = 1.35 - (physical / 100); 
+  const baseLossPerMin = 0.45 * physFactor;
 
   // Tactics modifier
   const intensity = tacticIntensity(tactics);
 
   let loss = playedMinutes * baseLossPerMin * intensity;
 
-  // Halftime micro-recovery (between minute 45-46): +6 stamina back
-  if (minute >= 46) loss -= 6;
+  // Halftime micro-recovery (between minute 45-46): +8 stamina back
+  if (minute >= 46) loss -= 8;
 
-  // Personality adjustments (small)
-  if ((player as any).personality === 'dedicado') loss *= 0.92;
-  if ((player as any).personality === 'festeiro') loss *= 1.10;
+  // Personality adjustments
+  if ((player as any).personality === 'dedicado') loss *= 0.90;
+  if ((player as any).personality === 'festeiro') loss *= 1.15;
+  if ((player as any).personality === 'preguicoso') loss *= 1.10;
 
-  const result = Math.round(initial - loss);
+  const result = Math.round(initialStamina - loss);
   return Math.max(0, Math.min(100, result));
+}
+
+/**
+ * Risco de lesão baseado na stamina (V4)
+ */
+export function getStaminaInjuryRisk(stamina: number): 'baixo' | 'moderado' | 'alto' | 'critico' {
+  if (stamina >= 50) return 'baixo';
+  if (stamina >= 35) return 'moderado';
+  if (stamina >= 15) return 'alto';
+  return 'critico';
 }
 
 /**
