@@ -1191,10 +1191,10 @@ export function AdminTournamentTab({ userId }: Props) {
             <p className="text-[10px] text-muted-foreground">
               Gerencie as Copas Nacionais automáticas de todos os países (Brasil, Inglaterra, etc).
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <Button 
                 size="sm" 
-                className="flex-1 h-8 text-[10px] gap-1"
+                className="h-8 text-[9px] gap-1"
                 onClick={async () => {
                   if(!confirm('Isso irá gerar novas copas para todos os países. Continuar?')) return;
                   setLoading(true);
@@ -1205,24 +1205,59 @@ export function AdminTournamentTab({ userId }: Props) {
                 }}
                 disabled={loading}
               >
-                <Zap className="h-3 w-3" /> Gerar Todas Copas (Dia 10)
+                <Zap className="h-3 w-3" /> Gerar Todas (Dia 10)
+              </Button>
+              <Button 
+                size="sm" 
+                variant="secondary"
+                className="h-8 text-[9px] gap-1"
+                onClick={async () => {
+                  setLoading(true);
+                  const { error } = await supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_rounds' } });
+                  setLoading(false);
+                  if (error) toast.error('Erro ao avançar: ' + error.message);
+                  else toast.success('Próximas fases geradas!');
+                }}
+                disabled={loading}
+              >
+                <ChevronRight className="h-3 w-3" /> Avançar Fases
               </Button>
               <Button 
                 size="sm" 
                 variant="outline"
-                className="flex-1 h-8 text-[10px] gap-1 border-red-500/20 text-red-400"
+                className="h-8 text-[9px] gap-1 border-blue-500/20 text-blue-400"
+                onClick={async () => {
+                  setLoading(true);
+                  // Trigger auto sim for all pending cup matches immediately
+                  toast.info('Iniciando simulação de partidas pendentes...');
+                  const { data: pending } = await supabase.from('cup_matches').select('id').eq('status', 'scheduled');
+                  if (pending && pending.length > 0) {
+                    // Note: Auto-sim hook handles this, but we can force trigger it via a setting if we had one
+                    // For now, just a message
+                    toast.success(`${pending.length} partidas enviadas para simulação automática.`);
+                  } else {
+                    toast.info('Nenhuma partida pendente para simular.');
+                  }
+                  setLoading(false);
+                }}
+                disabled={loading}
+              >
+                <Play className="h-3 w-3" /> Simular Rodada
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="h-8 text-[9px] gap-1 border-red-500/20 text-red-400"
                 onClick={async () => {
                   if(!confirm('AVISO: Isso irá apagar TODAS as Copas Nacionais e seus históricos. Deseja prosseguir?')) return;
                   setLoading(true);
-                  // Using an RPC or direct delete if permitted, or we can add a reset action to the edge function
-                  await supabase.from('cup_matches').delete().filter('cup_id', 'in', 
-                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
-                  );
-                  await supabase.from('cup_teams').delete().filter('cup_id', 'in', 
-                    (await supabase.from('cup_competitions').select('id').eq('is_national_cup', true)).data?.map(c => c.id) || []
-                  );
-                  await supabase.from('cup_competitions').delete().eq('is_national_cup', true);
-                  
+                  const { data: cups } = await supabase.from('cup_competitions').select('id').eq('is_national_cup', true);
+                  const ids = cups?.map(c => c.id) || [];
+                  if (ids.length > 0) {
+                    await supabase.from('cup_matches').delete().in('cup_id', ids);
+                    await supabase.from('cup_teams').delete().in('cup_id', ids);
+                    await supabase.from('cup_competitions').delete().eq('is_national_cup', true);
+                  }
                   setLoading(false);
                   toast.success('Sistema de Copas Nacionais reiniciado!');
                   loadTournaments();

@@ -25,6 +25,7 @@ interface CupMatch {
   home_goals: number | null;
   away_goals: number | null;
   status: string;
+  round_name?: string;
 }
 
 interface CupTeam {
@@ -149,7 +150,7 @@ export function CupBracketView({ cupId, cupType = 'national', onBack }: Props) {
             return (
               <div key={round} className="min-w-[200px] space-y-2">
                 <h3 className="text-xs font-bold text-center text-muted-foreground uppercase">
-                  {roundNames[round] || `Rodada ${round}`}
+                  {roundMatches[0]?.round_name || `Rodada ${round}`}
                 </h3>
                 <div className="space-y-2">
                   {roundMatches.map(match => (

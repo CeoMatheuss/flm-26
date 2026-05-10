@@ -64,11 +64,12 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
   const loadCompetition = async () => {
     setLoading(true);
     try {
-      // 1. Procurar em Copas Nacionais
+      // 1. Procurar em Copas Nacionais (Oficiais)
       const { data: nationalTeam } = await supabase
         .from('cup_teams')
         .select('*, cup_competitions(*)')
         .eq('user_id', userId)
+        .eq('cup_competitions.is_national_cup', true)
         .neq('cup_competitions.status', 'finished')
         .maybeSingle();
 

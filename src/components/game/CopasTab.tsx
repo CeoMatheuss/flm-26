@@ -20,46 +20,59 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
   const [matches, setMatches] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
 
+  const [competition, setCompetition] = useState<any>(null);
+
   const loadMyCup = async () => {
     setLoading(true);
-    const { data: national } = await supabase
-      .from('cup_teams')
-      .select('cup_id, cup_competitions(status)')
-      .eq('user_id', userId)
-      .neq('cup_competitions.status', 'finished')
-      .maybeSingle();
-    
-    if (national) {
-      setMyCupId(national.cup_id);
-      setMyCupType('national');
-      
-      // Load current matches for this cup
-      const { data: cupMatches } = await supabase
-        .from('cup_matches')
-        .select(`
-          *,
-          home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo),
-          away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)
-        `)
-        .eq('cup_id', national.cup_id)
-        .order('round', { ascending: true });
-      if (cupMatches) setMatches(cupMatches);
-    } else {
-      const { data: continental } = await supabase
-        .from('continental_teams')
-        .select('competition_id, continental_competitions(status)')
+    try {
+      // 1. National Cups
+      const { data: national } = await supabase
+        .from('cup_teams')
+        .select('cup_id, cup_competitions(*)')
         .eq('user_id', userId)
-        .neq('continental_competitions.status', 'finished')
+        .neq('cup_competitions.status', 'finished')
         .maybeSingle();
       
-      if (continental) {
-        setMyCupId(continental.competition_id);
-        setMyCupType('continental');
+      if (national && national.cup_competitions) {
+        setMyCupId(national.cup_id);
+        setMyCupType('national');
+        setCompetition(national.cup_competitions);
+        
+        const { data: cupMatches } = await supabase
+          .from('cup_matches')
+          .select(`
+            *,
+            home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo),
+            away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)
+          `)
+          .eq('cup_id', national.cup_id)
+          .order('round', { ascending: true });
+        if (cupMatches) setMatches(cupMatches);
       } else {
-        setActiveTab('world');
+        // 2. Continental Cups
+        const { data: continental } = await supabase
+          .from('continental_teams')
+          .select('competition_id, continental_competitions(*)')
+          .eq('user_id', userId)
+          .neq('continental_competitions.status', 'finished')
+          .maybeSingle();
+        
+        if (continental && continental.continental_competitions) {
+          setMyCupId(continental.competition_id);
+          setMyCupType('continental');
+          setCompetition({
+            ...continental.continental_competitions,
+            name: `Continental ${continental.continental_competitions.continent}`
+          });
+        } else {
+          setActiveTab('world');
+        }
       }
+    } catch (e) {
+      console.error('Error loading cups:', e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -86,7 +99,8 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
             <TabsTrigger value="world" className="text-[10px] sm:text-xs px-2 sm:px-4">Mundo</TabsTrigger>
             <TabsTrigger value="matches" className="text-[10px] sm:text-xs px-2 sm:px-4">Jogos</TabsTrigger>
             <TabsTrigger value="bracket" className="text-[10px] sm:text-xs px-2 sm:px-4">Chaveamento</TabsTrigger>
-            <TabsTrigger value="stats" className="text-[10px] sm:text-xs px-2 sm:px-4">Artilheiros</TabsTrigger>
+            <TabsTrigger value="stats" className="text-[10px] sm:text-xs px-2 sm:px-4">Estatísticas</TabsTrigger>
+            <TabsTrigger value="news" className="text-[10px] sm:text-xs px-2 sm:px-4">Notícias</TabsTrigger>
           </TabsList>
         </div>
 
@@ -101,7 +115,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                       🏆
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black">{matches[0]?.competition || matches[0]?.round_name || 'Copa Ativa'}</h3>
+                      <h3 className="text-2xl font-black">{competition?.name || 'Copa Ativa'}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary">Temporada {new Date().getFullYear()}</Badge>
                         <Badge variant="outline">Mata-Mata Oficial</Badge>
@@ -110,7 +124,7 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                   </div>
                   <div className="text-right hidden sm:block">
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Fase Atual</p>
-                    <p className="text-lg font-black text-primary">{matches.find(m => m.status === 'scheduled')?.round_name || matches[0]?.round_name || 'Oitavas'}</p>
+                    <p className="text-lg font-black text-primary">{competition?.current_phase || matches.find(m => m.status === 'scheduled')?.round_name || 'Oitavas'}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -244,6 +258,33 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="news" className="mt-0">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-primary" /> Jornal da Copa
+            </h3>
+            <div className="space-y-3">
+              {(matches.filter(m => m.status === 'finished').length === 0) ? (
+                <p className="text-sm text-muted-foreground text-center py-10">Aguardando o início dos jogos para as primeiras notícias...</p>
+              ) : (
+                matches.filter(m => m.status === 'finished').map(m => (
+                  <Card key={`news-${m.id}`}>
+                    <CardContent className="p-4">
+                      <p className="text-[10px] text-primary uppercase font-bold mb-1">{m.round_name}</p>
+                      <h4 className="text-sm font-bold mb-2">
+                        {m.home_goals > m.away_goals ? m.home_team?.club_name : m.away_team?.club_name} avança!
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Em partida disputada no {m.stadium_name || 'estádio oficial'}, o {m.home_team?.club_name} {m.home_goals} x {m.away_goals} {m.away_team?.club_name} protagonizaram um grande espetáculo pela {m.competition || 'Copa Nacional'}.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>
