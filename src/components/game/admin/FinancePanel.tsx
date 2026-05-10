@@ -50,6 +50,26 @@ export function FinancePanel() {
     return () => { mounted = false; };
   }, []);
 
+  const loadLogs = useCallback(async () => {
+    setLoadingLogs(true);
+    const { data } = await supabase
+      .from('admin_logs')
+      .select(`
+        *,
+        admin:user_id(display_name),
+        target:target_user_id(display_name)
+      `)
+      .eq('action', 'add_money')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setLogs(data);
+    setLoadingLogs(false);
+  }, []);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
+
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q || selected?.club_name.toLowerCase() === q) return [];
