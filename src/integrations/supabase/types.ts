@@ -4749,6 +4749,7 @@ export type Database = {
         Args: { p_amount: number; p_target_user_id: string }
         Returns: Json
       }
+      advance_cup_round: { Args: { _cup_id: string }; Returns: undefined }
       advance_cup_winners: {
         Args: { _cup_id: string; _current_phase: string }
         Returns: undefined
