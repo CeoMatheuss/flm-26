@@ -15,6 +15,7 @@ import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
+import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 
 // Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
@@ -271,8 +272,18 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {/* Active Tournaments */}
-      <TournamentDashboardCard onExpand={onOpenTournament} />
+      {/* Personalized Cup Widget */}
+      {userId && (
+        <PersonalizedCupWidget 
+          userId={userId} 
+          onOpenCompetition={(id) => onOpenTournament?.(id)}
+          onGoToMatches={onGoToFriendly}
+        />
+      )}
+
+      {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
+          unless they are also considered part of "World" */}
+      {/* <TournamentDashboardCard onExpand={onOpenTournament} /> */}
 
       {/* Próximos Jogos Oficiais removidos */}
 
