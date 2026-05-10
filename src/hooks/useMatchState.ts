@@ -44,6 +44,13 @@ export function useMatchState(initialState: any, userId?: string) {
     setLastFriendlyDate(nowIso);
     setFriendliesPlayedToday(1);
 
+    if (userId) {
+      supabase.from('game_saves')
+        .update({ last_match_timestamp: nowIso } as any)
+        .eq('user_id', userId)
+        .then(() => {});
+    }
+
     const isWin = isHome ? homeGoals > awayGoals : awayGoals > homeGoals;
     const isDraw = homeGoals === awayGoals;
 
