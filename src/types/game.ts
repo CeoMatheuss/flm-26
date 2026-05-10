@@ -66,6 +66,8 @@ export interface PlayerHistoryEntry {
   avgRating: number;
 }
 
+export type PhysicalStatus = 'Descansado' | 'Em forma' | 'Desgastado' | 'Cansado' | 'Exausto' | 'Risco de Lesão';
+
 export interface Player {
   id: string;
   name: string;
@@ -110,6 +112,9 @@ export interface Player {
     passing?: number;
     expiresAt?: number; // timestamp
   };
+  /** Stamina V4 — Status físico e controle de tempo */
+  physicalStatus?: PhysicalStatus;
+  staminaLastUpdatedAt?: string; // ISO string
 }
 
 export interface Scout {

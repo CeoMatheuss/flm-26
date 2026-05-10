@@ -6,6 +6,7 @@ import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
@@ -78,13 +79,16 @@ interface Props {
   currentWeek?: number;
   totalWeeks?: number;
   onViewClub?: (clubName: string) => void;
+  onGoToSquad?: () => void;
+  onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub }: Props) {
-  // Liga synchronization via mini-widget
-
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
+  const tiredPlayers = club.players.filter(p => p.stamina < 45);
+  const showFatigueWarning = tiredPlayers.length >= 3;
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
+
   const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
@@ -140,6 +144,39 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Fatigue Warning V4 */}
+      {showFatigueWarning && (
+        <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                <Activity className="h-6 w-6 animate-pulse" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black text-orange-400 uppercase tracking-wider">Aviso de Fadiga</h3>
+                  <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-400 bg-orange-500/10">
+                    {tiredPlayers.length} Jogadores
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Atenção: <span className="text-foreground font-bold">{tiredPlayers.length} jogadores</span> estão com fadiga elevada. 
+                  Recomenda-se descanso para evitar lesões graves e queda drástica de rendimento físico.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <Button size="sm" variant="outline" className="h-8 text-[10px] border-orange-500/30 text-orange-400 hover:bg-orange-500/20 bg-transparent rounded-lg" onClick={onRestAll}>
+                    Descansar Elenco
+                  </Button>
+                  <Button size="sm" className="h-8 text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20" onClick={onGoToSquad}>
+                    Ir para Elenco
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Club Info Widget */}
       <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <CardContent className="p-3 sm:p-4">

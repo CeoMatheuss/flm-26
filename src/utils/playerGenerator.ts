@@ -141,7 +141,7 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     attributes,
     age,
     salary: 500,
-    stamina: Math.floor(Math.random() * 30 + 70),
+    stamina: 100, // Inicia sempre com 100
     morale: Math.floor(Math.random() * 30 + 60),
     goals: 0,
     assists: 0,
@@ -150,6 +150,8 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     trainingProgress: 0,
     history,
     personality: randomPersonality(),
+    physicalStatus: 'Descansado',
+    staminaLastUpdatedAt: new Date().toISOString(),
   };
 }
 

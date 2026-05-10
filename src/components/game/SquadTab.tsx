@@ -31,6 +31,7 @@ interface Props {
   transferBudget?: number;
   onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
   onReorderPlayers?: (newOrder: Player[]) => void;
+  onRotateSquad?: () => void;
   tactics?: TacticsConfig;
 }
 
@@ -118,7 +119,7 @@ function getPlayerGroup(idx: number): Group {
   return 'out';
 }
 
-export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract: _onRenewContract, onListForSale: _onListForSale, onLoanOut: _onLoanOut, onAuction: _onAuction, onChangeNumber: _onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer: _onRescindPlayer, onReorderPlayers, tactics }: Props) {
+export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onRenewContract: _onRenewContract, onListForSale: _onListForSale, onLoanOut: _onLoanOut, onAuction: _onAuction, onChangeNumber: _onChangeNumber, canLoanOut, userId, transferBudget, onRescindPlayer: _onRescindPlayer, onReorderPlayers, tactics, onRotateSquad }: Props) {
   const { guard } = useLiveMatchGuard();
   const onRenewContract = guard(_onRenewContract);
   const onListForSale = guard(_onListForSale);
@@ -585,18 +586,30 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
-                <span className="text-[8px] text-muted-foreground">⚡</span>
-                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full ${getStaminaColor(player.stamina)}`} style={{ width: `${player.stamina}%` }} />
-                </div>
+            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+              {/* Stamina Badge V4 */}
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                  player.stamina >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                  player.stamina >= 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  player.stamina >= 40 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                  'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse'
+                }`}>
+                  {Math.round(player.stamina)}%
+                </span>
+                {player.physicalStatus && (
+                  <span className={`text-[9px] font-bold uppercase tracking-tighter ${
+                    player.stamina < 30 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {player.physicalStatus}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1 flex-1 max-w-[110px]">
-                <span className="text-[8px]">{getMoraleEmoji(player.morale)}</span>
-                <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full ${getMoraleColor(player.morale)}`} style={{ width: `${player.morale}%` }} />
-                </div>
+              
+              {/* Morale Badge */}
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-muted/30 border border-border/20">
+                <span className="text-[10px]">{getMoraleEmoji(player.morale)}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">{player.morale}%</span>
               </div>
             </div>
           </button>
@@ -816,6 +829,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </TabsList>
 
             <TabsContent value="starters" className="mt-3 space-y-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <Shirt className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time Titular</span>
+                </div>
+                {onRotateSquad && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-[10px] gap-1.5 border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10"
+                    onClick={onRotateSquad}
+                  >
+                    <Repeat className="h-3 w-3" /> Rotacionar por Stamina
+                  </Button>
+                )}
+              </div>
               <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
                 <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
