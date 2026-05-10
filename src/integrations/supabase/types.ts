@@ -1647,7 +1647,9 @@ export type Database = {
       game_saves: {
         Row: {
           club_data: Json
+          country: string | null
           created_at: string
+          game_state: Json | null
           id: string
           last_match_timestamp: string | null
           last_youth_gen_at: string | null
@@ -1657,7 +1659,9 @@ export type Database = {
         }
         Insert: {
           club_data: Json
+          country?: string | null
           created_at?: string
+          game_state?: Json | null
           id?: string
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
@@ -1667,7 +1671,9 @@ export type Database = {
         }
         Update: {
           club_data?: Json
+          country?: string | null
           created_at?: string
+          game_state?: Json | null
           id?: string
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
