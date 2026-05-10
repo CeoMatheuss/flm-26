@@ -7,6 +7,7 @@ import {
   TrendingUp, Users, Star, Newspaper, MessageSquare, 
   ChevronLeft, ChevronRight, Activity, Zap
 } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
