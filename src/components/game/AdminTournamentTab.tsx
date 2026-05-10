@@ -975,12 +975,20 @@ export function AdminTournamentTab({ userId }: Props) {
               </div>
 
               {/* Team source compact */}
-              <div className="flex gap-1">
-                {(['online_plus_bots', 'online_only', 'bots_only'] as const).map(src => (
-                  <Button key={src} size="sm" variant={teamSource === src ? 'default' : 'outline'} className="h-6 text-[8px] flex-1" onClick={() => setTeamSource(src)}>
-                    {src === 'online_plus_bots' ? '👤+🤖' : src === 'online_only' ? '👤 Online' : '🤖 Bots'}
-                  </Button>
-                ))}
+              <div className="space-y-1">
+                <label className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Prioridade de Inscrição</label>
+                <div className="flex gap-1">
+                  {(['online_plus_bots', 'online_only', 'bots_only'] as const).map(src => (
+                    <Button key={src} size="sm" variant={teamSource === src ? 'default' : 'outline'} className="h-7 text-[9px] flex-1 font-semibold" onClick={() => setTeamSource(src)}>
+                      {src === 'online_plus_bots' ? '👤 Ativos + 🤖' : src === 'online_only' ? '👤 Apenas Ativos' : '🤖 Apenas Bots'}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[8px] text-muted-foreground leading-tight px-1">
+                  {teamSource === 'online_plus_bots' && "Prioriza clubes online e ativos recentemente antes de completar com BOTs."}
+                  {teamSource === 'online_only' && "Inscreve apenas clubes humanos reais que estiveram ativos."}
+                  {teamSource === 'bots_only' && "Gera uma competição composta exclusivamente por times controlados por IA."}
+                </p>
               </div>
 
               {/* Teams + OVR + Format in grid */}
