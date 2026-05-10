@@ -31,6 +31,7 @@ interface Props {
   transferBudget?: number;
   onRescindPlayer?: (player: Player, fee: number) => Promise<void> | void;
   onReorderPlayers?: (newOrder: Player[]) => void;
+  onRotateSquad?: () => void;
   tactics?: TacticsConfig;
 }
 
