@@ -67,6 +67,8 @@ export function GameNavBar({ onTabChange, activeTab, showAdmin, onShowTutorial }
             <GameMenu 
               onTabChange={onTabChange} 
               activeTab={activeTab} 
+              showAdmin={showAdmin}
+              onShowTutorial={onShowTutorial}
               trigger={
                 <button className="nav-tab w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-all active:scale-95">
                   <div className="p-1.5 rounded-xl transition-colors">
