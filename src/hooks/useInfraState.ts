@@ -17,9 +17,9 @@ import { useEffect } from 'react';
 
 export function useInfraState(initialState: any, userId?: string, isPremium: boolean = false) {
   const [infrastructure, setInfrastructure] = useState<Infrastructure>(initialState?.infrastructure ?? defaultInfrastructure);
+  const [lastYouthGenAt, setLastYouthGenAt] = useState<string>(initialState?.lastYouthGenAt ?? new Date().toISOString());
   const [youthProspects, setYouthProspects] = useState<YouthProspect[]>(() => {
     const list: YouthProspect[] = initialState?.youthProspects ?? [];
-    // Backfill new V2 fields for old saves
     return list.map(p => ({
       ...p,
       potentialTier: p.potentialTier ?? getPotentialTier(p.potential ?? 60),
