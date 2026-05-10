@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Upload, Shield, ChevronDown, ChevronUp, Globe, ArrowLeft, ArrowRight, Check, Lock, Users, Gift, Trophy, Sparkles, Lightbulb, Building2, Coins, Target, Eye, Swords } from 'lucide-react';
 import { ShieldCrest, ShieldPattern, ShieldShape, ShieldIcon, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
+import { validateAndCleanClubName } from '@/utils/clubUtils';
 import flmLogo from '@/assets/flm26-logo.png';
 import { cn } from '@/lib/utils';
 
