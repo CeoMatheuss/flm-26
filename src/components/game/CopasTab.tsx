@@ -247,6 +247,33 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
             </Card>
           </div>
         </TabsContent>
+
+        <TabsContent value="news" className="mt-0">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-primary" /> Jornal da Copa
+            </h3>
+            <div className="space-y-3">
+              {(matches.filter(m => m.status === 'finished').length === 0) ? (
+                <p className="text-sm text-muted-foreground text-center py-10">Aguardando o início dos jogos para as primeiras notícias...</p>
+              ) : (
+                matches.filter(m => m.status === 'finished').map(m => (
+                  <Card key={`news-${m.id}`}>
+                    <CardContent className="p-4">
+                      <p className="text-[10px] text-primary uppercase font-bold mb-1">{m.round_name}</p>
+                      <h4 className="text-sm font-bold mb-2">
+                        {m.home_goals > m.away_goals ? m.home_team?.club_name : m.away_team?.club_name} avança!
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Em partida disputada no {m.stadium_name || 'estádio oficial'}, o {m.home_team?.club_name} {m.home_goals} x {m.away_goals} {m.away_team?.club_name} protagonizaram um grande espetáculo pela {m.competition || 'Copa Nacional'}.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
