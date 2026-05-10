@@ -59,6 +59,8 @@ export function ChampionshipsTab({ onBack }: Props) {
           .from('world_league_table')
           .select('*, world_teams(name, logo)')
           .eq('league_id', selectedLeagueId)
+          .eq('season_month', new Date().getMonth() + 1)
+          .eq('season_year', new Date().getFullYear())
           .order('points', { ascending: false })
           .order('goals_for', { ascending: false }),
         supabase
@@ -66,6 +68,8 @@ export function ChampionshipsTab({ onBack }: Props) {
           .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name), away_team:world_teams!world_matches_away_team_id_fkey(name)')
           .eq('league_id', selectedLeagueId)
           .eq('round', currentRound)
+          .eq('season_month', new Date().getMonth() + 1)
+          .eq('season_year', new Date().getFullYear())
           .order('scheduled_at', { ascending: true }),
       ]);
       if (standingsData) setStandings(standingsData);
