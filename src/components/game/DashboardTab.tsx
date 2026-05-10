@@ -90,7 +90,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   const totalGames = club.stats.wins + club.stats.draws + club.stats.losses;
 
-  const winRate = totalGames > 0 ? Math.round((club.stats.wins / totalGames) * 100) : 0;
+  const playedMatchesCount = club.stats.wins + club.stats.draws + club.stats.losses;
+  const winRate = totalGames > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (totalGames * 3)) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
   const recentWins = last5.filter(m => m.result && m.result.home > m.result.away).length;
