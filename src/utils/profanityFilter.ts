@@ -19,5 +19,9 @@ export function containsProfanity(text: string): boolean {
 }
 
 export function sanitizeMessage(text: string): string {
-  return text.trim().slice(0, 500);
+  // Hardened sanitization: trim, slice and strip common HTML tags to prevent injection if rendered insecurely
+  return text
+    .trim()
+    .slice(0, 500)
+    .replace(/<[^>]*>?/gm, ''); // Simple tag stripper
 }

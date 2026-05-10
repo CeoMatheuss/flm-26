@@ -3418,6 +3418,30 @@ export type Database = {
           },
         ]
       }
+      security_rate_limits: {
+        Row: {
+          action_type: string
+          attempt_count: number | null
+          id: string
+          last_attempt: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          attempt_count?: number | null
+          id?: string
+          last_attempt?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          attempt_count?: number | null
+          id?: string
+          last_attempt?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_response: string | null
