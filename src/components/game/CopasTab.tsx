@@ -175,22 +175,22 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
 
         <TabsContent value="matches" className="mt-0">
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">Todos os Jogos das Copas</h3>
+            <h3 className="text-lg font-bold">Calendário Geral</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {matches.map(match => (
                 <Card key={match.id} className="hover:border-primary/50 transition-colors">
                   <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-lg">{match.home_team?.club_logo}</span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-lg shrink-0">{match.home_team?.club_logo}</span>
                       <span className="text-sm font-bold truncate">{match.home_team?.club_name}</span>
                     </div>
-                    <div className="flex flex-col items-center px-4">
+                    <div className="flex flex-col items-center px-4 shrink-0">
                       <span className="text-lg font-black">{match.home_goals ?? '-'} x {match.away_goals ?? '-'}</span>
                       <Badge variant="outline" className="text-[8px] uppercase">12:00</Badge>
                     </div>
-                    <div className="flex items-center gap-3 flex-1 justify-end">
+                    <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
                       <span className="text-sm font-bold truncate text-right">{match.away_team?.club_name}</span>
-                      <span className="text-lg">{match.away_team?.club_logo}</span>
+                      <span className="text-lg shrink-0">{match.away_team?.club_logo}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -200,8 +200,53 @@ export function CopasTab({ userId, onOpenTournament }: Props) {
         </TabsContent>
 
         <TabsContent value="stats" className="mt-0">
-          <div className="py-12 text-center text-muted-foreground">
-            Estatísticas detalhadas estarão disponíveis ao fim da primeira fase.
+          <div className="space-y-6">
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-400" /> Prêmios Individuais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-background/50 p-3 rounded-lg border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black">Artilheiro</p>
+                  <p className="text-sm font-black mt-1">Nenhum</p>
+                  <p className="text-[10px] text-primary">0 Gols</p>
+                </div>
+                <div className="bg-background/50 p-3 rounded-lg border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black">Assistências</p>
+                  <p className="text-sm font-black mt-1">Nenhum</p>
+                  <p className="text-[10px] text-blue-400">0 Assist.</p>
+                </div>
+                <div className="bg-background/50 p-3 rounded-lg border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black">Melhor Nota</p>
+                  <p className="text-sm font-black mt-1">Nenhum</p>
+                  <p className="text-[10px] text-emerald-400">Nota 0.0</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Tabela de Premiação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-muted/30 rounded border border-border/30">
+                    <span className="text-xs font-bold">Campeão</span>
+                    <span className="text-xs font-black text-emerald-400">R$ 5.000.000</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/30 rounded border border-border/30">
+                    <span className="text-xs font-bold">Vice-Campeão</span>
+                    <span className="text-xs font-black text-emerald-400">R$ 2.500.000</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/30 rounded border border-border/30">
+                    <span className="text-xs font-bold">Semifinalista</span>
+                    <span className="text-xs font-black text-emerald-400">R$ 1.200.000</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
