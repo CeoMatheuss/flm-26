@@ -698,6 +698,7 @@ export type Database = {
           away_team_id: string | null
           competition_id: string
           created_at: string
+          game_state: Json | null
           group_label: string | null
           home_goals: number | null
           home_goals_pen: number | null
@@ -719,6 +720,7 @@ export type Database = {
           away_team_id?: string | null
           competition_id: string
           created_at?: string
+          game_state?: Json | null
           group_label?: string | null
           home_goals?: number | null
           home_goals_pen?: number | null
@@ -740,6 +742,7 @@ export type Database = {
           away_team_id?: string | null
           competition_id?: string
           created_at?: string
+          game_state?: Json | null
           group_label?: string | null
           home_goals?: number | null
           home_goals_pen?: number | null
@@ -1015,6 +1018,7 @@ export type Database = {
           away_team_id: string | null
           created_at: string | null
           cup_id: string
+          game_state: Json | null
           home_goals: number | null
           home_team_id: string | null
           id: string
@@ -1030,6 +1034,7 @@ export type Database = {
           away_team_id?: string | null
           created_at?: string | null
           cup_id: string
+          game_state?: Json | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
@@ -1045,6 +1050,7 @@ export type Database = {
           away_team_id?: string | null
           created_at?: string | null
           cup_id?: string
+          game_state?: Json | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
@@ -1641,7 +1647,9 @@ export type Database = {
       game_saves: {
         Row: {
           club_data: Json
+          country: string | null
           created_at: string
+          game_state: Json | null
           id: string
           last_match_timestamp: string | null
           last_youth_gen_at: string | null
@@ -1651,7 +1659,9 @@ export type Database = {
         }
         Insert: {
           club_data: Json
+          country?: string | null
           created_at?: string
+          game_state?: Json | null
           id?: string
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
@@ -1661,7 +1671,9 @@ export type Database = {
         }
         Update: {
           club_data?: Json
+          country?: string | null
           created_at?: string
+          game_state?: Json | null
           id?: string
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
@@ -2056,6 +2068,7 @@ export type Database = {
           away_team_id: string | null
           away_user_id: string
           created_at: string
+          game_state: Json | null
           home_goals: number | null
           home_joined: boolean
           home_team_id: string | null
@@ -2076,6 +2089,7 @@ export type Database = {
           away_team_id?: string | null
           away_user_id: string
           created_at?: string
+          game_state?: Json | null
           home_goals?: number | null
           home_joined?: boolean
           home_team_id?: string | null
@@ -2096,6 +2110,7 @@ export type Database = {
           away_team_id?: string | null
           away_user_id?: string
           created_at?: string
+          game_state?: Json | null
           home_goals?: number | null
           home_joined?: boolean
           home_team_id?: string | null
@@ -2371,6 +2386,7 @@ export type Database = {
           duration_seconds: number
           events: Json
           finished_at: string | null
+          game_state: Json | null
           home_goals: number
           home_players: Json
           home_strength: number
@@ -2401,6 +2417,7 @@ export type Database = {
           duration_seconds?: number
           events?: Json
           finished_at?: string | null
+          game_state?: Json | null
           home_goals?: number
           home_players?: Json
           home_strength?: number
@@ -2431,6 +2448,7 @@ export type Database = {
           duration_seconds?: number
           events?: Json
           finished_at?: string | null
+          game_state?: Json | null
           home_goals?: number
           home_players?: Json
           home_strength?: number
@@ -4465,6 +4483,7 @@ export type Database = {
           away_goals: number | null
           away_team_id: string | null
           created_at: string | null
+          game_state: Json | null
           home_goals: number | null
           home_team_id: string | null
           id: string
@@ -4481,6 +4500,7 @@ export type Database = {
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
+          game_state?: Json | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
@@ -4497,6 +4517,7 @@ export type Database = {
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
+          game_state?: Json | null
           home_goals?: number | null
           home_team_id?: string | null
           id?: string
