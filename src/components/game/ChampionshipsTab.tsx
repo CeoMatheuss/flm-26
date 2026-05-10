@@ -39,9 +39,9 @@ export function ChampionshipsTab({ onBack }: Props) {
           id: d.id,
           name: d.name,
           level: d.division_level,
-          country_name: d.country?.name || 'Internacional',
-          country_code: d.country?.code || 'GL',
-          match_time: d.match_time
+          country_name: 'Brasil', // Default for now
+          country_code: 'BR',
+          match_time: '19:30:00'
         })));
       }
       setLoading(false);
