@@ -17,7 +17,13 @@ export function ChampionshipsTab({ onBack }: Props) {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [currentRound, setCurrentRound] = useState(new Date().getDate());
+  const [currentRound, setCurrentRound] = useState(1);
+
+  // Sincroniza rodada inicial com a data atual (considerando que cada dia é uma rodada)
+  useEffect(() => {
+    const day = new Date().getDate();
+    setCurrentRound(day);
+  }, []);
 
   useEffect(() => {
     const loadLeagues = async () => {
