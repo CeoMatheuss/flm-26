@@ -113,7 +113,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   }
   const streakLabel = streak > 0 ? `${streak}${streakType} seguidas` : 'Nenhuma';
 
-  const recentEvents = events.slice(0, 5);
+  const recentEvents = [...events].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()).slice(0, 8);
   const eventColors: Record<string, string> = {
     injury: 'border-l-warning bg-warning/5',
     offer: 'border-l-primary bg-primary/5',
