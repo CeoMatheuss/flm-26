@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Swords, Calendar, BarChart3, ChevronRight, Loader2, Globe, Star } from 'lucide-react';
+import { Trophy, Swords, Calendar, BarChart3, ChevronRight, Loader2, Globe, Star, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
