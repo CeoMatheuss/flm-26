@@ -44,7 +44,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock, Globe } from 'lucide-react';
+import { Lock, Globe, Star } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
