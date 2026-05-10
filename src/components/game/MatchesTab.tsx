@@ -9,6 +9,7 @@ import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { ClubShield } from './ClubShield';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchCalendarTab } from './MatchCalendarTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
