@@ -175,7 +175,7 @@
 
   /* Stat mini card */
   .stat-card {
-    @apply bg-accent/40 border border-border/20 rounded-lg p-3 transition-all duration-300 hover:bg-accent/60 hover:border-primary/30;
+    @apply bg-card/40 border border-border/20 rounded-xl p-3 transition-all duration-300 hover:bg-accent/60;
     @apply flex items-center gap-3 min-w-0;
   }
 

@@ -181,14 +181,14 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
         <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {stats.map(item => (
-            <div key={item.label} className="stat-card p-4">
-              <div className="p-2 rounded-lg bg-primary/10 mb-2 w-fit">
-                <item.icon className={`h-4 w-4 ${item.color}`} />
+            <div key={item.label} className="bg-card/40 border border-border/20 rounded-xl p-3 flex flex-col items-center text-center transition-all hover:bg-accent/20">
+              <div className="p-1.5 rounded-lg bg-primary/10 mb-1">
+                <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
               </div>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">{item.label}</p>
-              <p className="text-lg font-black">{item.value}</p>
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-tight">{item.label}</p>
+              <p className="text-base font-black leading-none">{item.value}</p>
             </div>
           ))}
         </div>
