@@ -215,10 +215,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   usePendingMatchFlush(userId);
   useAutoSimulator(userId);
 
-  // Auto-fix and Initialize league for current month (CRITICAL SYNC)
+  // Auto-fix and Initialize league + NATIONAL CUPS for current month (CRITICAL SYNC)
   useEffect(() => {
     if (!userId) return;
-    const initLeague = async () => {
+    const initCompetitions = async () => {
       try {
         const { data: team } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
         if (team) {
@@ -231,11 +231,26 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           }
           await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
         }
+
+        // NATIONAL CUP AUTOMATION (DAY 10 DRAW / DAILY SIM)
+        const today = new Date();
+        const day = today.getDate();
+        const isOfficialDrawDay = day === 10;
+        
+        if (isOfficialDrawDay) {
+          // Check if already drawn today to avoid loops
+          const lastDraw = localStorage.getItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`);
+          if (!lastDraw) {
+            console.log('[CupManager] Official Draw Day detected (10th). Running Global Draw...');
+            supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all' } });
+            localStorage.setItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`, 'done');
+          }
+        }
       } catch (e) {
-        console.error('Failed to sync league:', e);
+        console.error('Failed to sync competitions:', e);
       }
     };
-    initLeague();
+    initCompetitions();
   }, [userId, game.enrollWorldLeague]);
 
   // Check maintenance mode + tutorial status
