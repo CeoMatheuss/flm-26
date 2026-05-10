@@ -105,29 +105,31 @@ export function MatchesTab({
         }
       }
 
-      // 2. National Cup Matches
-      const { data: cupTeam } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId).maybeSingle();
-      if (cupTeam) {
-        const { data: cm } = await supabase
-          .from('cup_matches')
-          .select('*, home_team:cup_teams!cup_matches_home_team_id_fkey(club_name), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name)')
-          .eq('cup_id', cupTeam.cup_id)
-          .or(`home_team_id.eq.${cupTeam.id},away_team_id.eq.${cupTeam.id}`)
-          .order('scheduled_at', { ascending: true })
-          .limit(10);
-        
-        if (cm) {
-          const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
-          allCompetitionsMatches.push(...cm.map(m => ({
-            ...m,
-            homeName: m.home_team?.club_name,
-            awayName: m.away_team?.club_name,
-            homeStrength: 70, // Fallback
-            awayStrength: 70, // Fallback
-            isHome: m.home_team_id === cupTeam.id,
-            competition: 'Copa do Brasil',
-            stage: roundNames[m.round] || `Fase ${m.round}`
-          })));
+      // 2. All Cup Matches where user participates
+      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId);
+      if (cupTeams && cupTeams.length > 0) {
+        for (const ct of cupTeams) {
+          const { data: cm } = await supabase
+            .from('cup_matches')
+            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name)')
+            .eq('cup_id', ct.cup_id)
+            .or(`home_team_id.eq.${ct.id},away_team_id.eq.${ct.id}`)
+            .order('scheduled_at', { ascending: true })
+            .limit(5);
+          
+          if (cm) {
+            const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
+            allCompetitionsMatches.push(...cm.map(m => ({
+              ...m,
+              homeName: m.home_team?.club_name,
+              awayName: m.away_team?.club_name,
+              homeStrength: 70, 
+              awayStrength: 70, 
+              isHome: m.home_team_id === ct.id,
+              competition: (m.cup_competitions as any)?.name || 'Copa',
+              stage: roundNames[m.round] || `Fase ${m.round}`
+            })));
+          }
         }
       }
 
