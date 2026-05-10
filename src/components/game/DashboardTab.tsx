@@ -16,6 +16,7 @@ import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
 import { PersonalizedCupWidget } from './PersonalizedCupWidget';
+import { WorldLeagues } from './WorldLeagues';
 
 // Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
