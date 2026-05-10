@@ -1325,6 +1325,9 @@ export function AdminTournamentTab({ userId }: Props) {
             <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1" onClick={regenerateFixtures} disabled={loading}>
               <Zap className="h-3 w-3" /> Regerar Jogos
             </Button>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 text-orange-400 border-orange-500/30" onClick={resetTournament} disabled={loading}>
+              <RefreshCw className="h-3 w-3" /> Reiniciar Total
+            </Button>
             {selectedTournament.status !== 'cancelled' && selectedTournament.status !== 'finished' && (
               <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 text-red-400 border-red-500/30" onClick={() => updateTournamentStatus('cancelled')}>
                 <XCircle className="h-3 w-3" /> Cancelar
