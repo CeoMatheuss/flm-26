@@ -357,9 +357,11 @@ export function MatchesTab({
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-xs">
+                            <ClubShield club={{ logoUrl: tm.homeLogo } as any} size={16} />
                             <span className={`font-medium truncate ${tm.isHome ? 'text-primary' : ''}`}>{tm.homeName}</span>
                             <span className="text-muted-foreground">vs</span>
                             <span className={`font-medium truncate ${!tm.isHome ? 'text-primary' : ''}`}>{tm.awayName}</span>
+                            <ClubShield club={{ logoUrl: tm.awayLogo } as any} size={16} />
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[8px] text-muted-foreground">
