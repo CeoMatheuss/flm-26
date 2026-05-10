@@ -410,6 +410,26 @@ async function fetchNextEligibleMatch(): Promise<
     .limit(1);
   if (tournament && tournament.length > 0) return { kind: 'tournament', row: tournament[0] };
 
+  // 4) Cup Matches
+  const { data: cup } = await supabase
+    .from('cup_matches')
+    .select('id, cup_id, home_team_id, away_team_id, round, status, scheduled_at')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(1);
+  if (cup && cup.length > 0) return { kind: 'cup' as any, row: cup[0] };
+
+  // 5) Continental Matches
+  const { data: continental } = await supabase
+    .from('continental_matches')
+    .select('id, competition_id, home_team_id, away_team_id, round, status, scheduled_at')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(1);
+  if (continental && continental.length > 0) return { kind: 'continental' as any, row: continental[0] };
+
   return null;
 }
 
