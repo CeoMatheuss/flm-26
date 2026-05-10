@@ -143,9 +143,16 @@ function poissonSample(lambda: number): number {
 function drainStamina(players: SimPlayer[], minute: number, pressingMod: number, tempoMod: number) {
   for (const p of players) {
     if (!p.isOnPitch || p.injured) continue;
-    const physicalFactor = 1 - (p.physical / 100) * 0.3;
-    const baseRate = 0.3 + rng() * 0.2;
-    const drain = baseRate * physicalFactor * pressingMod * tempoMod;
+    // Physical attribute reduces drain (0.5x at 100, 0.8x at 50)
+    const physicalFactor = 1.1 - (p.physical / 100) * 0.4;
+    const baseRate = 0.35 + rng() * 0.25;
+    
+    // Tactic multipliers (more severe)
+    let drain = baseRate * physicalFactor * pressingMod * tempoMod;
+    
+    // Extra drain in the end of the match if already tired
+    if (minute > 70 && p.stamina < 40) drain *= 1.25;
+    
     p.stamina = Math.max(0, p.stamina - drain);
   }
 }
