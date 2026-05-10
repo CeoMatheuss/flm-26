@@ -176,10 +176,11 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             setCompetition({
               id: comp.id,
               name: comp.name,
-              cup_type: 'national', // Treating as national for widget logic
+              cup_type: 'national',
               status: comp.status,
               current_round: comp.current_round,
               total_rounds: comp.total_rounds,
+              current_phase: (comp as any).current_phase,
             } as any);
             setIsEliminated(customTeam.eliminated);
 
