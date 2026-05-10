@@ -29,7 +29,7 @@ import { resolveKnockout, isKnockoutStage } from '@/match/knockoutTieBreaker';
 const SCAN_INTERVAL_MS = 2_000;       // 2s between scans (faster)
 const POST_SIM_DELAY_MS = 1_000;      // 1s cooldown
 const LOCK_TTL_MS = 30_000;           // 30s lock
-const TOLERANCE_MS = 10_000;          // 10s tolerance (very fast)
+const TOLERANCE_MS = 300_000;         // 5 minutos de tolerância antes da simulação automática
 const STUCK_AFTER_MS = 15 * 60_000;   // 15min forced sim
 const WATCHDOG_INTERVAL_MS = 60_000;  // 60s: watchdog cadence
 
