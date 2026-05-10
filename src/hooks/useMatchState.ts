@@ -46,7 +46,9 @@ export function useMatchState(initialState: any, userId?: string) {
 
     if (userId) {
       supabase.from('game_saves')
-        .update({ last_match_timestamp: nowIso } as any)
+        .update({ 
+          last_match_timestamp: nowIso
+        } as any)
         .eq('user_id', userId)
         .then(() => {});
     }
@@ -56,6 +58,7 @@ export function useMatchState(initialState: any, userId?: string) {
 
     deps.setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
+      if (match?.played) return prev; // Trava para evitar processamento duplo
       
       const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, prev.players.length);
       const strengthDiff = 65 - teamStrength;
@@ -131,20 +134,31 @@ export function useMatchState(initialState: any, userId?: string) {
       });
 
       if (userId) {
+        // Obter destaques e artilheiros (simulado para a notificação)
+        const highlights = isWin ? "Ataque eficiente e defesa sólida." : isDraw ? "Equilíbrio em campo." : "Erros individuais custaram caro.";
+        const scorer = (isHome ? homeGoals : awayGoals) > 0 ? "Artilheiro da rodada" : "Nenhum gol";
+        
         supabase.from('user_notifications').insert({
           user_id: userId,
           type: 'match_result',
-          icon: isWin ? '🏆' : '⚽',
+          icon: isWin ? '🏆' : isDraw ? '🟡' : '🔴',
           title: `Fim de Jogo: ${isWin ? 'Vitória!' : isDraw ? 'Empate' : 'Derrota'}`,
-          message: `${prev.name} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. Posição: Ver tabela.`,
+          message: `${prev.name} ${homeGoals} x ${awayGoals} vs ${match?.opponent || 'Adversário'}. \n🎯 Destaques: ${highlights} \n⚽ Artilheiro: ${scorer} \n⚠️ Verifique lesões no elenco.`,
+          data: { 
+            match_id: matchId, 
+            score: `${homeGoals}x${awayGoals}`,
+            competition,
+            is_win: isWin,
+            is_draw: isDraw
+          }
         }).then(() => {});
       }
 
-      deps.setSeason((s: any) => ({ ...s, currentWeek: s.currentWeek + 1 }));
+      deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
 
       return {
         ...prev,
-        matches: prev.matches.filter(m => m.id !== matchId),
+        matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
           const drain = Math.floor(Math.random() * 15 + 10); 
           const newStamina = Math.max(0, p.stamina - drain);
@@ -177,9 +191,9 @@ export function useMatchState(initialState: any, userId?: string) {
     infrastructureLevel: number,
     setClub: React.Dispatch<React.SetStateAction<Club>>,
   ) => {
-    const hasUnplayed = club.matches.some(m => !m.played);
+    const hasUnplayed = club.matches.some(m => !m.played && (!m.date || new Date(m.date).getTime() > Date.now()));
     if (hasUnplayed) {
-      toast.error('Você já tem um amistoso agendado! Jogue-o primeiro.');
+      toast.error('Você já tem uma partida oficial ou amistosa pendente!');
       return;
     }
 

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { getStadiumCapacity } from '@/types/infrastructure';
 import { Club, Player, Scout, ScoutReport, PlayerAttributes, PhysicalStatus } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingFocus } from '@/components/game/TrainingTab';
@@ -138,6 +139,20 @@ export function useClubState(initialState: any, userId?: string) {
           recentLog: [...ops.recentLog],
           financeLog: [...(ops.financeLog ?? [])],
         };
+
+        // Correção de sincronização do estádio: Atualizar locais e mando de campo se o nome mudou
+        const currentStadiumName = prev.stadiumName || 'Arena';
+        nextOps.proposals = nextOps.proposals.map(p => ({ ...p })); // Ensure clone
+        nextOps.acceptedEvents = nextOps.acceptedEvents.map(e => ({ ...e })); // Ensure clone
+        
+        // Sincronizar mando de campo em amistosos pendentes
+        const updatedMatches = prev.matches.map(m => {
+          if (!m.played && m.isHome) {
+            return { ...m, stadium: currentStadiumName, stadiumCapacity: getStadiumCapacity(stadiumLevel) };
+          }
+          return m;
+        });
+        next.matches = updatedMatches;
         const pushFin = (entry: StadiumFinanceEntry) => {
           nextOps.financeLog = [entry, ...(nextOps.financeLog ?? [])].slice(0, 200);
         };

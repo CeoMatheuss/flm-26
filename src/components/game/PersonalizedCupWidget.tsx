@@ -272,7 +272,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={onGoToMatches}
           >
-            <Calendar className="h-3 w-3" /> Ver Calendário
+            <Calendar className="h-3 w-3" /> Calendário
           </Button>
           <Button 
             variant="outline" 
@@ -293,7 +293,7 @@ export function PersonalizedCupWidget({ userId, onOpenCompetition, onGoToMatches
             className="h-8 text-[9px] gap-1 px-2 border-border/40 bg-muted/20 hover:bg-primary/10"
             onClick={() => onOpenCompetition(competition.id, competition.cup_type)}
           >
-            <Users className="h-3 w-3" /> Artilheiros
+            <Users className="h-3 w-3" /> Estatísticas
           </Button>
         </div>
       </CardContent>
