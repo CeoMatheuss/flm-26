@@ -447,29 +447,40 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const saveGame = useCallback(async (silent = false) => {
     const state = game.getFullState();
     const jsonState = JSON.parse(JSON.stringify(state));
+    
+    if (!silent) console.log('[auto-save] Saving table: game_saves');
+    const payload = { user_id: userId, club_data: jsonState };
+    if (!silent) console.log('[auto-save] Payload:', payload);
+
     const { error: saveErr } = await supabase
       .from('game_saves')
-      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+      .upsert(payload, { onConflict: 'user_id' });
     
     if (saveErr) {
       console.error('[auto-save] failed in game_saves:', saveErr);
+      console.log('[auto-save] Error details:', saveErr.message, saveErr.details, saveErr.hint);
       if (!silent) toast.error(`Falha ao salvar jogo: ${saveErr.message}`);
       return;
     }
 
     // Also sync key stats to clubs table for ranking/visibility
     if (state.club) {
+      const syncPayload = {
+        fans: state.club.fans ?? 1000,
+        reputation: state.club.reputation ?? 50,
+        budget: state.club.budget ?? 1000000,
+      };
+      if (!silent) console.log('[auto-save] Syncing to table: clubs');
+      if (!silent) console.log('[auto-save] Sync Payload:', syncPayload);
+
       const { error: syncErr } = await supabase
         .from('clubs')
-        .update({
-          fans: state.club.fans ?? 1000,
-          reputation: state.club.reputation ?? 50,
-          budget: state.club.budget ?? 1000000,
-        })
+        .update(syncPayload)
         .eq('user_id', userId);
       
       if (syncErr) {
         console.warn('[auto-save] metadata sync failed:', syncErr.message);
+        console.log('[auto-save] Sync error details:', syncErr.details, syncErr.hint);
       }
     }
 
