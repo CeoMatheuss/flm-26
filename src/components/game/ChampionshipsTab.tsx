@@ -3,207 +3,121 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Trophy, Loader2, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, Globe, Trophy, Loader2, Users, Calendar, Star, MapPin, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { CupBracketView } from './CupBracketView';
 
-interface Props {
-  onBack?: () => void;
+interface Cup {
+  id: string;
+  name: string;
+  cup_type: string;
+  country: string | null;
+  continent: string | null;
+  status: string;
+  current_round: number;
+  total_rounds: number;
+  tier: string;
 }
 
-export function ChampionshipsTab({ onBack }: Props) {
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
-  const [leagues, setLeagues] = useState<any[]>([]);
-  const [standings, setStandings] = useState<any[]>([]);
-  const [fixtures, setFixtures] = useState<any[]>([]);
+export function ChampionshipsTab() {
+  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
+  const [cups, setCups] = useState<Cup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [currentRound, setCurrentRound] = useState(1);
-
-  // Sincroniza rodada inicial com a data atual (considerando que cada dia é uma rodada)
-  useEffect(() => {
-    const day = new Date().getDate();
-    setCurrentRound(day);
-  }, []);
 
   useEffect(() => {
-    const loadLeagues = async () => {
+    const loadCups = async () => {
       setLoading(true);
       const { data } = await supabase
-        .from('world_leagues')
+        .from('cup_competitions')
         .select('*')
-        .eq('active', true)
-        .order('division_level', { ascending: true });
+        .order('cup_type', { ascending: false })
+        .order('tier', { ascending: true });
       
       if (data) {
-        setLeagues(data.map((d: any) => ({
-          id: d.id,
-          name: d.name,
-          level: d.division_level,
-          country_name: 'Brasil', // Default for now
-          country_code: 'BR',
-          match_time: '19:30:00'
-        })));
+        setCups(data as Cup[]);
       }
       setLoading(false);
     };
-    loadLeagues();
+    loadCups();
   }, []);
 
-  useEffect(() => {
-    if (!selectedLeagueId) return;
-
-    const loadDetails = async () => {
-      setLoadingDetails(true);
-      const [{ data: standingsData }, { data: fixturesData }] = await Promise.all([
-        supabase
-          .from('world_league_table')
-          .select('*, world_teams(name, logo)')
-          .eq('league_id', selectedLeagueId)
-          .eq('season_month', new Date().getMonth() + 1)
-          .eq('season_year', new Date().getFullYear())
-          .order('points', { ascending: false })
-          .order('goals_for', { ascending: false }),
-        supabase
-          .from('world_matches')
-          .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name), away_team:world_teams!world_matches_away_team_id_fkey(name)')
-          .eq('league_id', selectedLeagueId)
-          .eq('round', currentRound)
-          .eq('season_month', new Date().getMonth() + 1)
-          .eq('season_year', new Date().getFullYear())
-          .order('scheduled_at', { ascending: true }),
-      ]);
-      if (standingsData) setStandings(standingsData);
-      if (fixturesData) setFixtures(fixturesData);
-      setLoadingDetails(false);
-    };
-    loadDetails();
-
-    // 🔴 Realtime: refresh standings + fixtures on any change in this league
-    const channel = supabase
-      .channel(`championship-${selectedLeagueId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches', filter: `league_id=eq.${selectedLeagueId}` }, () => loadDetails())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table', filter: `league_id=eq.${selectedLeagueId}` }, () => loadDetails())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedLeagueId, currentRound]);
-
-  if (selectedLeagueId) {
-    const league = leagues.find(l => l.id === selectedLeagueId);
-    return (
-      <div className="space-y-4 animate-in slide-in-from-right duration-300">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedLeagueId(null)} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </Button>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" /> {league?.name} - {league?.country_name}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2 border-b">
-              <CardTitle className="text-sm">Classificação</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loadingDetails ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8">#</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead className="text-center w-10">P</TableHead>
-                      <TableHead className="text-center w-10">J</TableHead>
-                      <TableHead className="text-center w-10">SG</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {standings.map((row, i) => (
-                      <TableRow key={row.team_id}>
-                        <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                        <TableCell className="text-sm font-medium">{row.world_teams?.name || 'Time'}</TableCell>
-                        <TableCell className="text-center font-bold">{row.points}</TableCell>
-                        <TableCell className="text-center text-xs">{row.played}</TableCell>
-                        <TableCell className="text-center text-xs">{row.goals_for - row.goals_against}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2 border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Rodada {currentRound}</CardTitle>
-                <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentRound(r => Math.max(1, r - 1))}>◀</Button>
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentRound(r => Math.min(30, r + 1))}>▶</Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-border/50">
-                {fixtures.map((match) => (
-                  <div key={match.id} className="p-2 text-[11px] grid grid-cols-7 items-center text-center">
-                    <div className="col-span-3 truncate text-right font-medium">{match.home_team?.name}</div>
-                    <div className="col-span-1 font-bold text-primary px-1">
-                      {match.status === 'finished' ? `${match.home_goals}x${match.away_goals}` : 'vs'}
-                    </div>
-                    <div className="col-span-3 truncate text-left font-medium">{match.away_team?.name}</div>
-                  </div>
-                ))}
-                {fixtures.length === 0 && !loadingDetails && (
-                  <p className="p-4 text-center text-xs text-muted-foreground italic">Nenhum jogo nesta rodada</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+  if (selectedCupId) {
+    return <CupBracketView cupId={selectedCupId} onBack={() => setSelectedCupId(null)} />;
   }
+
+  const getCupIcon = (type: string) => {
+    if (type === 'world_cup') return '🌍';
+    if (type === 'continental') return '🌟';
+    return '🏆';
+  };
+
+  const getPhaseName = (round: number) => {
+    const labels: Record<number, string> = { 1: 'R32', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
+    return labels[round] || `Fase ${round}`;
+  };
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <Globe className="h-5 w-5 text-primary" /> Campeonatos Globais
-        </h2>
-        {onBack && <Button variant="ghost" size="sm" onClick={onBack}>Voltar</Button>}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="animate-pulse h-24 bg-muted/20" />
+            <Card key={i} className="animate-pulse h-32 bg-muted/20" />
           ))
-        ) : leagues.map(league => (
+        ) : cups.map(cup => (
           <Card
-            key={league.id}
-            className="cursor-pointer hover:border-primary/50 transition-all hover:scale-[1.02]"
-            onClick={() => setSelectedLeagueId(league.id)}
+            key={cup.id}
+            className="group relative overflow-hidden border-border/40 hover:border-primary/50 transition-all hover:scale-[1.02] cursor-pointer bg-gradient-to-br from-card to-accent/5"
+            onClick={() => setSelectedCupId(cup.id)}
           >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
-                  🏆
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl shadow-inner group-hover:bg-primary/20 transition-colors">
+                    {getCupIcon(cup.cup_type)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-sm leading-tight truncate">{cup.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <MapPin className="h-2.5 w-2.5 text-muted-foreground" />
+                      <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">
+                        {cup.continent || cup.country || 'Mundial'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-sm">{league.name}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">{league.country_name}</p>
+                <Badge variant={cup.status === 'in_progress' ? 'default' : 'secondary'} className="text-[8px] h-5 px-1.5 shrink-0">
+                  {cup.status === 'in_progress' ? '🟢 Ativa' : cup.status === 'pending' ? '📋 Breve' : '🏁 Fim'}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="bg-muted/40 rounded-lg p-2 flex flex-col items-center justify-center text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-tighter">Fase</p>
+                  <p className="text-xs font-black text-primary">{getPhaseName(cup.current_round)}</p>
+                </div>
+                <div className="bg-muted/40 rounded-lg p-2 flex flex-col items-center justify-center text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-tighter">Status</p>
+                  <p className="text-xs font-black text-foreground capitalize">{cup.status === 'in_progress' ? 'Jogando' : 'Sorteio'}</p>
                 </div>
               </div>
-              <Badge variant="outline" className="text-[9px]">{league.match_time.slice(0, 5)}</Badge>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 px-1 border-t border-border/10">
+                <span className="flex items-center gap-1 font-medium">
+                  <Play className="h-2.5 w-2.5" /> Ver Chaveamento
+                </span>
+                <span className="font-black text-primary group-hover:translate-x-1 transition-transform">
+                  Detalhes →
+                </span>
+              </div>
             </CardContent>
           </Card>
         ))}
+        {cups.length === 0 && !loading && (
+          <div className="col-span-full py-20 text-center border-2 border-dashed rounded-xl">
+             <Globe className="h-10 w-10 text-muted-foreground/20 mx-auto" />
+             <p className="text-sm text-muted-foreground mt-2">Nenhuma copa global encontrada no sistema.</p>
+          </div>
+        )}
       </div>
     </div>
   );
