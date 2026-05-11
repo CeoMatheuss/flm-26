@@ -182,25 +182,33 @@ export function useMatchSimulation() {
 
   const getAtmosphereDescription = (event: SimEvent, attendance: number, capacity: number): string => {
     const occupancy = capacity > 0 ? attendance / capacity : 0;
-    const isBigCrowd = attendance > 15000 || occupancy > 0.8;
-    const isEmpty = occupancy < 0.2 && capacity > 5000;
+    const isBigCrowd = attendance > 15000 || occupancy > 0.85;
+    const isGoodCrowd = attendance > 5000 || occupancy > 0.6;
+    const isEmpty = occupancy < 0.25 && capacity > 3000;
     
-    const crowdMood = isBigCrowd ? "A multidão ruge" : isEmpty ? "Ouvem-se apenas alguns gritos isolados" : "A torcida acompanha atentamente";
-    
+    // Frases de clima geral baseadas na lotação real (conforme dados de torcida)
+    if (event.type === 'kickoff') {
+      if (isBigCrowd) return `${event.description} O estádio está lotado! Clima de decisão com ${attendance.toLocaleString()} torcedores presentes.`;
+      if (isEmpty) return `${event.description} Público reduzido hoje no estádio. Pouco mais de ${attendance.toLocaleString()} presentes.`;
+      return `${event.description} Bom público presente para acompanhar o espetáculo.`;
+    }
+
     if (event.isGoal) {
-      if (isBigCrowd) return `${event.description} O estádio explode em alegria! A vibração é ensurdecedora!`;
-      if (isEmpty) return `${event.description} Comemoração ecoa pelas arquibancadas vazias.`;
-      return `${event.description} A torcida celebra muito o gol!`;
+      if (isBigCrowd) return `${event.description} O estádio VEM ABAIXO! A vibração de ${attendance.toLocaleString()} torcedores é absoluta!`;
+      if (isEmpty) return `${event.description} Comemoração ecoa nas arquibancadas com grandes espaços vazios.`;
+      if (isGoodCrowd) return `${event.description} A torcida faz a festa e comemora muito o gol!`;
+      return `${event.description} Celebração contida dos poucos torcedores presentes.`;
     }
     
     if (event.type === 'great_save') {
-      if (isBigCrowd) return `${event.description} As arquibancadas tremem com o susto e o alívio!`;
-      return `${event.description} Aplausos reconhecem o esforço do goleiro.`;
+      if (isBigCrowd) return `${event.description} Um suspiro coletivo toma o estádio lotado! Que defesa!`;
+      return `${event.description} Aplausos da torcida reconhecem a intervenção do goleiro.`;
     }
     
-    if (event.type === 'miss' || event.type === 'woodwork') {
-      if (isBigCrowd) return `${event.description} Um lamento coletivo toma conta do estádio. Quase!`;
-      return `${event.description} A torcida não acredita na chance perdida.`;
+    if (event.type === 'woodwork' || event.type === 'miss') {
+      if (isBigCrowd) return `${event.description} O estádio quase explode! Muita pressão da torcida!`;
+      if (isGoodCrowd) return `${event.description} Lamento nas arquibancadas. Passou muito perto!`;
+      return `${event.description} A chance perdida não empolga os presentes.`;
     }
     
     return event.description;
