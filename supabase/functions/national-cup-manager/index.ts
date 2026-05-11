@@ -237,7 +237,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     if (!cup) return;
 
     const { data: teams } = await supabase.from('national_cup_teams')
-        .select('*, club:world_teams(stadium_name)')
+        .select('*')
         .eq('cup_id', cupId)
         .eq('eliminated', false);
 
