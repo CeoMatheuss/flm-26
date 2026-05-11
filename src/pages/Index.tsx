@@ -30,10 +30,15 @@ import { useAutoSimulator } from '@/hooks/useAutoSimulator';
 import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 import { toast } from 'sonner';
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { X, Loader2 } from 'lucide-react';
+import { ClubProfilePage } from '@/components/game/ClubProfilePage';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
