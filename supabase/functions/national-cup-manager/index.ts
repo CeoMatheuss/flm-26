@@ -183,11 +183,13 @@ serve(async (req) => {
                 await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_id);
 
                 // Sistema de Premiação V3
-                let prize = 100000; // Fase 1 padrão
-                const { total_rounds } = cup;
+                let prize = 100000; 
+                const totalRounds = cup.total_rounds;
+                const currentMatchRound = match.round;
                 
                 // Premiação baseada na distância para a final
-                const roundsRemaining = total_rounds - match.round;
+                const roundsRemaining = totalRounds - currentMatchRound;
+
                 
                 if (roundsRemaining === 0) prize = 3000000; // Final
                 else if (roundsRemaining === 1) prize = 1000000; // Semifinal
