@@ -485,6 +485,7 @@ export type Database = {
       cup_player_stats: {
         Row: {
           assists: number | null
+          avg_rating: number | null
           created_at: string | null
           cup_id: string | null
           goals: number | null
@@ -495,6 +496,7 @@ export type Database = {
         }
         Insert: {
           assists?: number | null
+          avg_rating?: number | null
           created_at?: string | null
           cup_id?: string | null
           goals?: number | null
@@ -505,6 +507,7 @@ export type Database = {
         }
         Update: {
           assists?: number | null
+          avg_rating?: number | null
           created_at?: string | null
           cup_id?: string | null
           goals?: number | null
