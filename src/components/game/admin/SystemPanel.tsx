@@ -22,7 +22,7 @@ const ALL_SECTIONS: { id: SystemSection; label: string; icon: any }[] = [
   { id: 'beta',    label: 'BETA',                  icon: ShieldCheck },
   { id: 'preview', label: 'Prévia Ligas',          icon: Sparkles },
   { id: 'pyramid', label: 'Países & Pirâmide',     icon: Globe },
-  { id: 'cups',    label: 'Copas Nacionais',       icon: Trophy },
+  
   { id: 'season',  label: 'Temporada',             icon: Calendar },
   { id: 'sim',     label: 'Simulação & Validação', icon: FlaskConical },
   { id: 'how',     label: 'Como Funciona',         icon: BookOpen },
