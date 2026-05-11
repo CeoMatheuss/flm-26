@@ -237,14 +237,31 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     const shuffled = [...teams].sort(() => Math.random() - 0.5);
     const matches = [];
     const now = new Date();
-    const { data: lastMatch } = await supabase.from('national_cup_matches').select('scheduled_at').eq('cup_id', cupId).order('scheduled_at', { ascending: false }).limit(1).maybeSingle();
-    let startDate: Date;
-    if (lastMatch) {
-        startDate = new Date(lastMatch.scheduled_at);
+    
+    // Todos os jogos da copa começam às 12:00 BRT (15:00 UTC)
+    let startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
+    
+    // Se hoje já passou das 12:00, agenda para amanhã
+    if (startDate.getTime() <= now.getTime()) {
         startDate.setUTCDate(startDate.getUTCDate() + 1);
-    } else {
-        startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 11, 15, 0, 0)); 
     }
+    
+    // Para rodadas futuras, garantir que não encavale com a anterior
+    const { data: lastMatch } = await supabase.from('national_cup_matches')
+        .select('scheduled_at')
+        .eq('cup_id', cupId)
+        .order('scheduled_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (lastMatch) {
+        const lastDate = new Date(lastMatch.scheduled_at);
+        if (startDate.getTime() <= lastDate.getTime()) {
+            startDate = new Date(lastDate.getTime());
+            startDate.setUTCDate(startDate.getUTCDate() + 1);
+        }
+    }
+
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
             matches.push({
