@@ -45,11 +45,42 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Coleta candidatos (Liga) e escolhe o de menor scheduled_at
       const candidates: any[] = [];
 
-      // 1. Próxima partida da Copa Nacional - REMOVIDO
+      // 1. Próxima partida da Copa Nacional
+      const { data: cupMatches } = await supabase
+        .from('national_cup_matches')
+        .select(`
+          id, round, status, scheduled_at, home_team_id, away_team_id,
+          cup:national_cups (name),
+          home:national_cup_teams!home_team_id (club_name, strength, user_id),
+          away:national_cup_teams!away_team_id (club_name, strength, user_id)
+        `)
+        .or(`home_team_id.in.(select id from national_cup_teams where club_id='${teamData.id}'),away_team_id.in.(select id from national_cup_teams where club_id='${teamData.id}')`)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
 
+      if (cupMatches && cupMatches.length > 0) {
+        const m: any = cupMatches[0];
+        const isHome = m.home?.user_id === userId;
+        candidates.push({
+          home: m.home.club_name,
+          away: m.away.club_name,
+          date: m.scheduled_at,
+          tournament: m.cup?.name || 'Copa Nacional',
+          matchId: m.id,
+          homeTeamId: m.home_team_id,
+          awayTeamId: m.away_team_id,
+          opponentStrength: isHome ? m.away.strength : m.home.strength,
+          isHome,
+          tournamentName: m.cup?.name || 'Copa Nacional',
+          status: m.status,
+          round: m.round,
+          kind: 'tournament',
+          stage: `Fase ${m.round}`,
+        });
+      }
 
       // 2. Próxima partida da Liga
       const { data: matches, error } = await supabase
@@ -97,7 +128,6 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         if (candidates.length === 0) {
           setNextMatch(null);
         } else {
-          // Escolhe o de menor scheduled_at — se a copa for hoje 12h e a liga 19:30, mostra a copa primeiro
           candidates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setNextMatch(candidates[0]);
         }
@@ -177,7 +207,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           opponentStrength: nextMatch.opponentStrength,
           isHome: nextMatch.isHome,
           competition: nextMatch.tournamentName,
-          tieBreaker: isKnockout ? 'both' : 'none',
+          tieBreaker: nextMatch.kind === 'tournament' ? 'both' : (isKnockout ? 'both' : 'none'),
+          isNationalCup: nextMatch.kind === 'tournament'
         },
       },
     });
