@@ -5,6 +5,7 @@ import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRi
 import { Badge } from '@/components/ui/badge';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
+import { countryNames } from '@/types/league';
 import { toast } from 'sonner';
 
 interface Props {
@@ -16,32 +17,68 @@ export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('matches');
   const [cup, setCup] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
+  const [userClubName, setUserClubName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: teamEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id, national_cups(*)')
+      // 1. Descobrir país do usuário
+      const { data: save } = await supabase
+        .from('game_saves')
+        .select('country, club_data')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (teamEntry && teamEntry.national_cups) {
-        setCup(teamEntry.national_cups);
-        
+      const clubCountryCode: string | undefined =
+        (save as any)?.club_data?.club?.country || (save as any)?.country;
+      const clubName: string | undefined = (save as any)?.club_data?.club?.name;
+      setUserClubName(clubName || null);
+
+      const countryFull = clubCountryCode
+        ? (countryNames[clubCountryCode] || clubCountryCode)
+        : null;
+
+      let cupRow: any = null;
+
+      // 2. Buscar copa do país
+      if (countryFull) {
+        const { data: byCountry } = await supabase
+          .from('national_cups')
+          .select('*')
+          .eq('country_code', countryFull)
+          .order('season', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        cupRow = byCountry;
+      }
+
+      // 3. Fallback: copa em que o usuário está inscrito
+      if (!cupRow) {
+        const { data: teamEntry } = await supabase
+          .from('national_cup_teams')
+          .select('cup_id, national_cups(*)')
+          .eq('user_id', userId)
+          .maybeSingle();
+        cupRow = teamEntry?.national_cups || null;
+      }
+
+      if (cupRow) {
+        setCup(cupRow);
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
           .select(`
             *,
-            home:national_cup_teams!home_team_id(club_name, club_logo),
-            away:national_cup_teams!away_team_id(club_name, club_logo)
+            home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
+            away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
-          .eq('cup_id', teamEntry.cup_id)
+          .eq('cup_id', cupRow.id)
           .order('round', { ascending: true })
           .order('bracket_pos', { ascending: true });
-        
         if (cupMatches) setMatches(cupMatches);
+      } else {
+        setCup(null);
+        setMatches([]);
       }
     } catch (e) {
       console.error(e);
