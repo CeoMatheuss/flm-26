@@ -6,12 +6,14 @@ import { Globe, Trophy } from 'lucide-react';
 
 
 interface Props {
+  userId: string;
   rating?: number;
   rankingHistory?: any[];
   clubName?: string;
   stats?: { wins: number; draws: number; losses: number };
   season?: number;
 }
+
 
 export function WorldLeagues({ rating = 0, rankingHistory = [], clubName = 'Manager', stats = { wins: 0, draws: 0, losses: 0 }, season = 1 }: Props) {
   const [activeTab, setActiveTab] = useState('overview');
