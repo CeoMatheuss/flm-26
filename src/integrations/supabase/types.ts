@@ -4710,6 +4710,17 @@ export type Database = {
         Args: { p_amount: number; p_description: string; p_user_id: string }
         Returns: undefined
       }
+      update_cup_player_stats: {
+        Args: {
+          p_assists?: number
+          p_cup_id: string
+          p_goals?: number
+          p_player_id: string
+          p_rating?: number
+          p_team_id: string
+        }
+        Returns: undefined
+      }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
