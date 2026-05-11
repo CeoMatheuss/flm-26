@@ -229,6 +229,10 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (teamData) {
+        setMyTeamId(teamData.id);
+      }
+
       if (teamData?.league) {
         const league = teamData.league as any;
         setSelectedMatchday(league.current_round || 1);
