@@ -847,10 +847,10 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
               navigate('/match', {
                 state: {
                   liveMatchDbId: liveMatch.id,
-                  liveMatchSnapshot: liveMatch,
+                  liveMatchSnapshot: { ...liveMatch, is_home: homeTeamName === club.name },
                   homeTeam: liveMatch.home_team,
                   awayTeam: liveMatch.away_team,
-                  isHome: liveMatch.is_home,
+                  isHome: homeTeamName === club.name,
                   competition: liveMatch.competition
                 }
               });
