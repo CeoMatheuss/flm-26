@@ -207,7 +207,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           opponentStrength: nextMatch.opponentStrength,
           isHome: nextMatch.isHome,
           competition: nextMatch.tournamentName,
-          tieBreaker: isKnockout ? 'both' : 'none',
+          tieBreaker: nextMatch.kind === 'tournament' ? 'both' : (isKnockout ? 'both' : 'none'),
+          isNationalCup: nextMatch.kind === 'tournament'
         },
       },
     });
