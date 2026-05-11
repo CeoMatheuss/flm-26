@@ -16,6 +16,8 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
 
   const load = async () => {
     if (!userId) return;
+    
+    // 1) Primeiro busca se o usuário está em uma Copa ativa
     const { data: teamEntry } = await supabase
       .from('national_cup_teams')
       .select('cup_id')
@@ -38,11 +40,28 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
         .limit(1)
         .maybeSingle();
       
-      if (match) setNextMatch(match);
-      else setNextMatch(null);
-    } else {
-      setNextMatch(null);
+      if (match) {
+        setNextMatch(match);
+        setLoading(false);
+        return;
+      }
     }
+
+    // 2) Caso não esteja em uma copa ou não tenha jogo agendado, busca o destaque global (Copa do país do usuário ou maior ID)
+    const { data: globalMatch } = await supabase
+      .from('national_cup_matches')
+      .select(`
+        *,
+        cup:national_cups(name),
+        home:national_cup_teams!home_team_id(club_name, club_logo),
+        away:national_cup_teams!away_team_id(club_name, club_logo)
+      `)
+      .in('status', ['scheduled', 'live'])
+      .order('scheduled_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    setNextMatch(globalMatch);
     setLoading(false);
   };
 
