@@ -131,129 +131,132 @@ export function SupportTab({ userId, displayName, userEmail }: Props) {
   const categoryEmoji: Record<string, string> = { geral: '📨', bug: '🐛', sugestao: '💡', conta: '👤', premium: '👑' };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
-        <CardContent className="p-4 flex items-start gap-3 flex-wrap">
-          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-            <LifeBuoy className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold flex items-center gap-2 flex-wrap">
-              Central de Suporte
-              <Badge variant="outline" className="text-[9px]">v{GAME_VERSION}</Badge>
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              Antes de enviar, dê uma olhada nas perguntas frequentes abaixo — a maioria das dúvidas tem resposta lá.
-            </p>
-          </div>
-          <div className="flex gap-1.5">
-            <Badge variant="outline" className="text-[10px]"><Mail className="h-2.5 w-2.5 mr-1" />{tickets.length} tickets</Badge>
-            {pendingCount > 0 && (
-              <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30">
-                <Clock className="h-2.5 w-2.5 mr-1" />{pendingCount} aguardando
-              </Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      {/* Quick Help Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Button variant="outline" className="flex-col h-20 gap-2 border-primary/20 hover:bg-primary/5" onClick={() => setCategory('geral')}>
+          <MessageCircle className="h-5 w-5 text-primary" />
+          <span className="text-[10px] font-bold uppercase">Dúvida Geral</span>
+        </Button>
+        <Button variant="outline" className="flex-col h-20 gap-2 border-destructive/20 hover:bg-destructive/5" onClick={() => { setCategory('bug'); setSubject('BUG: '); }}>
+          <Bug className="h-5 w-5 text-destructive" />
+          <span className="text-[10px] font-bold uppercase">Reportar Bug</span>
+        </Button>
+        <Button variant="outline" className="flex-col h-20 gap-2 border-amber-500/20 hover:bg-amber-500/5" onClick={() => { setCategory('conta'); setSubject('CONTA: '); }}>
+          <Mail className="h-5 w-5 text-amber-500" />
+          <span className="text-[10px] font-bold uppercase">Acesso/Conta</span>
+        </Button>
+        <Button variant="outline" className="flex-col h-20 gap-2 border-purple-500/20 hover:bg-purple-500/5" onClick={() => { setCategory('sugestao'); setSubject('SUGESTÃO: '); }}>
+          <Sparkles className="h-5 w-5 text-purple-400" />
+          <span className="text-[10px] font-bold uppercase">Sugestão</span>
+        </Button>
+      </div>
 
-      {/* FAQ */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <HelpCircle className="h-4 w-4 text-primary" /> Perguntas frequentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="relative">
-            <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
-            <Input
-              value={faqSearch}
-              onChange={e => setFaqSearch(e.target.value)}
-              placeholder="Buscar na FAQ..."
-              className="h-8 text-xs pl-8"
-            />
-          </div>
-          {filteredFaq.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-3">
-              Nada encontrado. Envie sua dúvida abaixo!
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* FAQ Section */}
+        <Card className="game-card h-fit">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <HelpCircle className="h-4 w-4 text-primary" /> Perguntas Frequentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="relative">
+              <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
+              <Input
+                value={faqSearch}
+                onChange={e => setFaqSearch(e.target.value)}
+                placeholder="Ex: Senha, Leilão, Premium..."
+                className="h-9 text-xs pl-9 bg-muted/20"
+              />
             </div>
-          ) : (
-            <div className="space-y-1.5">
-              {filteredFaq.map((f, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => toggleFaq(idx)}
-                  className="w-full text-left bg-muted/30 hover:bg-muted/50 transition rounded-lg p-2.5 border border-border/30"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Badge variant="outline" className="text-[9px] shrink-0">{f.tag}</Badge>
-                      <span className="text-xs font-medium truncate">{f.q}</span>
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-2">
+                {filteredFaq.map((f, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => toggleFaq(idx)}
+                    className="w-full text-left bg-muted/10 hover:bg-muted/30 transition rounded-xl p-3 border border-border/20"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge variant="secondary" className="text-[8px] uppercase">{f.tag}</Badge>
+                        <span className="text-xs font-bold truncate leading-none">{f.q}</span>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${openFaqs.has(idx) ? 'rotate-180' : ''}`} />
                     </div>
-                    <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${openFaqs.has(idx) ? 'rotate-180' : ''}`} />
-                  </div>
-                  {openFaqs.has(idx) && (
-                    <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">{f.a}</p>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    {openFaqs.has(idx) && (
+                      <div className="mt-2.5 pt-2.5 border-t border-border/10">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed italic">{f.a}</p>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-      {/* Compose */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Send className="h-4 w-4 text-primary" /> Nova mensagem
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-3 gap-2">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-9 text-xs col-span-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="geral">📨 Geral</SelectItem>
-                <SelectItem value="bug">🐛 Bug</SelectItem>
-                <SelectItem value="sugestao">💡 Sugestão</SelectItem>
-                <SelectItem value="conta">👤 Conta</SelectItem>
-                <SelectItem value="premium">👑 Premium</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              placeholder="Assunto"
-              maxLength={200}
-              className="h-9 text-xs col-span-2"
-            />
-          </div>
-          <Textarea
-            value={message}
-            onChange={e => setMessage(e.target.value)}
-            placeholder="Descreva com detalhes. Para bugs, inclua passos para reproduzir..."
-            maxLength={2000}
-            rows={5}
-            className="text-xs"
-          />
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Info className="h-3 w-3" /> {message.length}/2000 — sua versão do jogo será anexada automaticamente em bugs
-            </span>
-            <div className="flex gap-1.5">
-              <Button size="sm" variant="outline" onClick={reportBug} disabled={sending} className="h-8 gap-1.5">
-                <Bug className="h-3.5 w-3.5" /> Reportar bug
-              </Button>
-              <Button size="sm" onClick={() => send()} disabled={sending} className="h-8 gap-1.5">
-                <Send className="h-3.5 w-3.5" /> {sending ? 'Enviando...' : 'Enviar'}
+        {/* Compose Section */}
+        <Card className="game-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Send className="h-4 w-4 text-primary" /> Abrir Ticket de Suporte
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Categoria & Assunto</label>
+              <div className="flex gap-2">
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="h-10 text-xs w-32 shrink-0 bg-muted/20 border-border/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geral">📨 Geral</SelectItem>
+                    <SelectItem value="bug">🐛 Bug</SelectItem>
+                    <SelectItem value="sugestao">💡 Sugestão</SelectItem>
+                    <SelectItem value="conta">👤 Conta</SelectItem>
+                    <SelectItem value="premium">👑 Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  placeholder="Resumo do problema..."
+                  maxLength={150}
+                  className="h-10 text-xs bg-muted/20 border-border/30"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Descrição Detalhada</label>
+              <Textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Quanto mais detalhes você der, mais rápido poderemos te ajudar..."
+                maxLength={2000}
+                rows={6}
+                className="text-xs bg-muted/20 border-border/30 resize-none focus-visible:ring-primary/30"
+              />
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground italic px-1">
+                <span>{message.length}/2000 caracteres</span>
+                {category === 'bug' && <span className="text-amber-400">Versão e logs técnicos serão anexados</span>}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button 
+                className="flex-1 font-bold h-11 shadow-lg shadow-primary/10" 
+                onClick={() => send()} 
+                disabled={sending}
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                {sending ? 'ENVIANDO...' : 'ENVIAR SOLICITAÇÃO'}
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Tickets list */}
       <Card>
