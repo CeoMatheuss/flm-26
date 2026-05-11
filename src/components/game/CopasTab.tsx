@@ -82,17 +82,35 @@ export function CopasTab({ userId }: Props) {
 
       const [matchesRes, statsRes] = await Promise.all([
         supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
-        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(*)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(*)').eq('cup_id', id).order('goals', { ascending: false }).limit(20)
       ]);
 
-      if (matchesRes.data) setMatches(matchesRes.data);
-      
-      if (statsRes.data) {
-        // Enhance stats teams with real club metadata (shields/colors)
-        const teamNames = statsRes.data.map(s => s.team?.name).filter(Boolean);
-        const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
-        const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+      let enhancedMatches = matchesRes.data || [];
 
+      // Sincronizar escudos para todos os times envolvidos
+      const teamNames = new Set<string>();
+      enhancedMatches.forEach(m => {
+        if (m.home?.club_name) teamNames.add(m.home.club_name);
+        if (m.away?.club_name) teamNames.add(m.away.club_name);
+      });
+      if (statsRes.data) {
+        statsRes.data.forEach(s => {
+          if (s.team?.name) teamNames.add(s.team.name);
+        });
+      }
+
+      const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: Array.from(teamNames) });
+      const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
+      // Aplicar escudos nos matches
+      enhancedMatches = enhancedMatches.map(m => ({
+        ...m,
+        home: m.home ? { ...m.home, shield_config: shieldByName.get(m.home.club_name) || m.home.shield_config } : null,
+        away: m.away ? { ...m.away, shield_config: shieldByName.get(m.away.club_name) || m.away.shield_config } : null
+      }));
+      setMatches(enhancedMatches);
+
+      if (statsRes.data) {
         const enhancedStats = statsRes.data.map(s => ({
           ...s,
           team: {
@@ -100,7 +118,10 @@ export function CopasTab({ userId }: Props) {
             ...shieldByName.get(s.team?.name)
           }
         }));
-        setStats(enhancedStats);
+        
+        setGoalStats(enhancedStats.sort((a, b) => (b.goals || 0) - (a.goals || 0)).slice(0, 10));
+        setAssistStats(enhancedStats.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10));
+        setRatingStats(enhancedStats.filter(s => (s.matches_played || 0) > 0).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10));
       }
     } catch (e) {
       console.error(e);
