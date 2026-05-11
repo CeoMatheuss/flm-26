@@ -63,9 +63,6 @@ export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
         {visible.some(s => s.id === 'pyramid') && (
           <TabsContent value="pyramid" className="mt-3"><CountriesPyramidTab /></TabsContent>
         )}
-        {visible.some(s => s.id === 'cups') && (
-          <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
-        )}
         {visible.some(s => s.id === 'season') && (
           <TabsContent value="season" className="mt-3"><SeasonControlTab adminUserId={adminUserId} /></TabsContent>
         )}
