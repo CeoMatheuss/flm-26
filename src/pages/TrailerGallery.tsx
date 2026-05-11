@@ -74,12 +74,17 @@ export default function TrailerGallery() {
     { name: 'Copas', component: <CopasTab userId="mock-user" /> },
     { name: 'Scouts', component: <ScoutsTab userId="mock-user" budget={mockGame.club.budget} /> },
     { name: 'Match', component: (
-      <div className="h-[600px] overflow-y-auto">
+      <div className="h-[600px] overflow-y-auto bg-slate-900">
         <MatchViewer 
-          matchState={mockMatchState} 
+          matchState={{
+            ...mockMatchState,
+            visibleEvents: mockMatchState.visibleEvents,
+            stats: mockMatchState.stats
+          }} 
           onExit={() => {}} 
-          homePlayers={initialClub.players} 
+          homePlayers={initialClub.players || []} 
           tactics={defaultTactics} 
+          awayStrength={70}
         />
       </div>
     ) },
