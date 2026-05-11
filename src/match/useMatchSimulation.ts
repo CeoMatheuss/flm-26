@@ -180,6 +180,32 @@ export function useMatchSimulation() {
     return s;
   }, []);
 
+  const getAtmosphereDescription = (event: SimEvent, attendance: number, capacity: number): string => {
+    const occupancy = capacity > 0 ? attendance / capacity : 0;
+    const isBigCrowd = attendance > 15000 || occupancy > 0.8;
+    const isEmpty = occupancy < 0.2 && capacity > 5000;
+    
+    const crowdMood = isBigCrowd ? "A multidão ruge" : isEmpty ? "Ouvem-se apenas alguns gritos isolados" : "A torcida acompanha atentamente";
+    
+    if (event.isGoal) {
+      if (isBigCrowd) return `${event.description} O estádio explode em alegria! A vibração é ensurdecedora!`;
+      if (isEmpty) return `${event.description} Comemoração ecoa pelas arquibancadas vazias.`;
+      return `${event.description} A torcida celebra muito o gol!`;
+    }
+    
+    if (event.type === 'great_save') {
+      if (isBigCrowd) return `${event.description} As arquibancadas tremem com o susto e o alívio!`;
+      return `${event.description} Aplausos reconhecem o esforço do goleiro.`;
+    }
+    
+    if (event.type === 'miss' || event.type === 'woodwork') {
+      if (isBigCrowd) return `${event.description} Um lamento coletivo toma conta do estádio. Quase!`;
+      return `${event.description} A torcida não acredita na chance perdida.`;
+    }
+    
+    return event.description;
+  };
+
   const tick = useCallback(() => {
     const data = dataRef.current;
     if (!data || isAnimatingRef.current) return;
@@ -203,15 +229,8 @@ export function useMatchSimulation() {
       const stamina = visibleEvents.filter(e => e.staminaData).pop()?.staminaData || {};
       const moment = visibleEvents.filter(e => e.momentPhase).pop()?.momentPhase || 'equilíbrio';
 
-      // --- Sincronização de Narração com Economia do Estádio ---
-      // Se for um evento de gol ou grande defesa, podemos injetar contexto de público
-      if (nextEvent.isGoal || nextEvent.type === 'great_save' || nextEvent.type === 'miss') {
-        const attendance = dataRef.current?.stats?.possession ? Math.floor(dataRef.current.maxMinute * 100) : 10000; // Mock se não tivermos
-        // Aqui poderíamos injetar frases dinâmicas baseadas na lotação real
-        if (nextEvent.type === 'great_save') {
-          nextEvent.description = `${nextEvent.description} A torcida vai ao delírio no estádio!`;
-        }
-      }
+      // --- Sincronização de Narração com Dados Oficiais ---
+      nextEvent.description = getAtmosphereDescription(nextEvent, data.attendance, data.stadiumCapacity);
 
       setState(prev => ({
         ...prev,
@@ -222,6 +241,9 @@ export function useMatchSimulation() {
         visibleEvents,
         latestEvent: nextEvent,
         stats,
+        stadiumName: data.stadiumName,
+        stadiumCapacity: data.stadiumCapacity,
+        attendance: data.attendance,
         currentMoment: moment,
         playerStamina: stamina,
         assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
@@ -243,6 +265,9 @@ export function useMatchSimulation() {
       progress, 
       homeGoals: hG, 
       awayGoals: aG, 
+      stadiumName: data.stadiumName,
+      stadiumCapacity: data.stadiumCapacity,
+      attendance: data.attendance,
       simulationSpeed,
       onAnimationComplete: () => { isAnimatingRef.current = false; },
       setSpeed: (s: number) => { setSimulationSpeed(s); },
