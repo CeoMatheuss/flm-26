@@ -82,15 +82,45 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
             </div>
           </div>
 
-          {/* Streak indicator */}
-          <div className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg">
-            {winStreak >= 2 ? (
-              <><TrendingUp className="h-4 w-4 text-emerald-400" /><span className="text-xs text-emerald-400 font-semibold">{winStreak} vitórias seguidas — Torcida crescendo!</span></>
-            ) : loseStreak >= 2 ? (
-              <><TrendingDown className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive font-semibold">{loseStreak} derrotas seguidas — Torcida abandonando...</span></>
-            ) : (
-              <><Heart className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground">Sem sequência definida</span></>
-            )}
+          {/* Streak indicator & Sequence Display */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-white/5">
+              {winStreak >= 2 ? (
+                <><TrendingUp className="h-5 w-5 text-emerald-400" /><span className="text-sm text-emerald-400 font-bold uppercase italic">{winStreak} vitórias seguidas — Torcida em êxtase! 🔥</span></>
+              ) : loseStreak >= 2 ? (
+                <><TrendingDown className="h-5 w-5 text-destructive" /><span className="text-sm text-destructive font-bold uppercase italic">{loseStreak} derrotas seguidas — Torcida abandonando... 😟</span></>
+              ) : (
+                <><Heart className="h-5 w-5 text-primary" /><span className="text-sm text-muted-foreground font-bold uppercase italic">Sem sequência definida — Clima estável 😊</span></>
+              )}
+            </div>
+
+            {/* Visual Sequence for Fans */}
+            <div className="flex flex-col gap-2 p-3 bg-black/20 rounded-lg border border-white/5">
+              <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest italic">Sequência de Resultados</span>
+              <div className="flex gap-2">
+                {Array.from({ length: 5 }).map((_, idx) => {
+                  // Determine result based on streaks for visual consistency
+                  let res = '';
+                  if (idx < winStreak) res = 'V';
+                  else if (idx < winStreak + (loseStreak > 0 ? 0 : 0)) res = ''; // Simplified
+                  else if (idx < loseStreak) res = 'D';
+
+                  // We actually want to show the real last 5 if possible, but streaks are provided as numbers
+                  // For now, let's use the streaks to simulate the start of the sequence
+                  const displayRes = idx < winStreak ? 'V' : (idx < loseStreak ? 'D' : '-');
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`w-8 h-8 rounded flex items-center justify-center text-xs font-black text-white shadow-md border border-black/20
+                        ${displayRes === 'V' ? 'bg-[#22c55e]' : displayRes === 'D' ? 'bg-[#ef4444]' : 'bg-[#94a3b8]'}`}
+                    >
+                      {displayRes !== '-' ? displayRes : ''}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
