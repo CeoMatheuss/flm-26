@@ -157,15 +157,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       
       if (statsData) setPlayerStats(statsData);
 
-      // 4. Load News
-      const { data: newsData } = await supabase
-        .from('world_league_news')
-        .select('*')
-        .eq('league_id', teamData.league_id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      
-      if (newsData) setNews(newsData);
     }
     setLoading(false);
   };
