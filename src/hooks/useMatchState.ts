@@ -106,11 +106,18 @@ export function useMatchState(initialState: any, userId?: string) {
         }
       }
 
-      if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios');
-      deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match?.opponent || 'Adversário'}`);
-      if (leaguePrize > 0) {
-        deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match?.opponent || 'Adversário'}`);
+      // 🛡️ Registro Financeiro: Somente se NÃO for amistoso (onde o budget não muda)
+      // Usamos uma verificação interna para garantir que o log condiz com o saldo.
+      const shouldCredit = !deps.isFriendly && !isFriendly;
+
+      if (shouldCredit) {
+        if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios (Semanal)');
+        deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match?.opponent || 'Adversário'}`);
+        if (leaguePrize > 0) {
+          deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match?.opponent || 'Adversário'}`);
+        }
       }
+
       if (stadiumPenaltyFine > 0) {
         deps.addFinance('despesa', 'Multa Estádio', stadiumPenaltyFine, stadiumPenaltyMsg);
       }
