@@ -163,6 +163,14 @@ export function CopasTab({ userId }: Props) {
           <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 font-black text-[10px] py-1 px-3 uppercase tracking-widest">
             {cup.status === 'in_progress' ? `RODADA ${cup.current_round}` : 'FINALIZADA'}
           </Badge>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => selectedCupId && loadCupData(selectedCupId)}
+            className="h-8 w-8 text-zinc-500 hover:text-primary transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
