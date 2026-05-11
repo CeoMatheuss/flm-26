@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface Props {
   userId?: string;
   onGoToMatches?: () => void;
+  onOpenTournament?: (id: string) => void;
 }
 
 export function PersonalizedCupWidget({ userId }: Props) {

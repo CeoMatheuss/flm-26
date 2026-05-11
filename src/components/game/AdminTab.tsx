@@ -809,15 +809,15 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="simulation_panel" className="space-y-3 mt-3">
-            <AdminSystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
+            <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
           </TabsContent>
 
           <TabsContent value="beta_access" className="space-y-3 mt-3">
-            <AdminSystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
+            <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
           </TabsContent>
 
           <TabsContent value="how_it_works" className="space-y-3 mt-3">
-            <AdminSystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
+            <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-3 mt-3">
