@@ -196,12 +196,17 @@ function MatchDetailModal({ match, clubName, onClose }: {
 export function MatchCalendarTab({ userId, clubName }: Props) {
   const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [worldMatches, setWorldMatches] = useState<any[]>([]);
+  const [cupMatches, setCupMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
   const [selectedMatchday, setSelectedMatchday] = useState<number>(1);
   const [maxMatchdays, setMaxMatchdays] = useState<number>(30);
   const [leagueDivision, setLeagueDivision] = useState<number>(1);
+  const [leagueName, setLeagueName] = useState<string>('Liga');
+  const [cupName, setCupName] = useState<string>('Copa');
+  const [cupCurrentRound, setCupCurrentRound] = useState<number>(1);
+  const [scope, setScope] = useState<'all' | 'league' | 'cup'>('all');
 
   useEffect(() => {
     const load = async () => {
@@ -209,7 +214,6 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // 1. Carrega Histórico Real de Partidas
       const { data: historyData } = await supabase
         .from('match_history')
         .select('*')
@@ -218,10 +222,9 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .limit(50);
       setHistory((historyData as MatchHistoryItem[]) || []);
 
-      // 2. Carrega Informações da Liga e Próximos Jogos
       const { data: teamData } = await supabase
         .from('world_teams')
-        .select('*, league:world_leagues(id, current_round, total_rounds, division)')
+        .select('*, league:world_leagues(id, name, current_round, total_rounds, division)')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -230,8 +233,8 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         setSelectedMatchday(league.current_round || 1);
         setMaxMatchdays(league.total_rounds || 30);
         setLeagueDivision(league.division || 1);
+        setLeagueName(league.name || 'Liga');
 
-        // 3. Carrega TODOS os jogos da liga do usuário (atualizado para Engine V3)
         const { data: wm } = await supabase
           .from('world_matches')
           .select(`
@@ -244,18 +247,59 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           .order('scheduled_at', { ascending: true });
         
         if (wm) {
-          // Busca metadados dos clubes reais para os escudos
           const userIds = [...wm.map(m => m.home_team?.user_id), ...wm.map(m => m.away_team?.user_id)].filter(Boolean);
           const { data: clubsData } = await supabase.from('clubs').select('*').in('user_id', userIds);
 
           const enhanced = wm.map(m => ({
             ...m,
+            competition_kind: 'league' as const,
+            competition_name: league.name || 'Liga',
             home_full: { ...m.home_team, ...clubsData?.find(c => c.user_id === m.home_team?.user_id) },
             away_full: { ...m.away_team, ...clubsData?.find(c => c.user_id === m.away_team?.user_id) }
           }));
           setWorldMatches(enhanced);
         }
       }
+
+      // Carrega Copa atual do usuário
+      const { data: myCupTeam } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (myCupTeam?.cup_id) {
+        const { data: cupInfo } = await supabase
+          .from('national_cups')
+          .select('id, name, current_round')
+          .eq('id', myCupTeam.cup_id)
+          .maybeSingle();
+        if (cupInfo) {
+          setCupName(cupInfo.name);
+          setCupCurrentRound(cupInfo.current_round || 1);
+        }
+
+        const { data: cm } = await supabase
+          .from('national_cup_matches')
+          .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
+          .eq('cup_id', myCupTeam.cup_id)
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
+
+        if (cm) {
+          const enhanced = cm.map(m => ({
+            ...m,
+            competition_kind: 'cup' as const,
+            competition_name: cupInfo?.name || 'Copa',
+            home_team: { name: m.home?.club_name, logo: m.home?.club_logo, user_id: m.home?.user_id },
+            away_team: { name: m.away?.club_name, logo: m.away?.club_logo, user_id: m.away?.user_id },
+            home_full: { name: m.home?.club_name, logoUrl: m.home?.club_logo },
+            away_full: { name: m.away?.club_name, logoUrl: m.away?.club_logo },
+          }));
+          setCupMatches(enhanced);
+        }
+      }
+
       setLoading(false);
     };
     load();
