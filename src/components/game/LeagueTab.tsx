@@ -235,9 +235,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <ClubShield 
-                                club={row.world_teams?.is_bot ? null : row.world_teams as any} 
-                                size={24} 
-                                className="shrink-0" 
+                                club={row.world_teams as any} 
+                                size={28} 
+                                className="shrink-0 drop-shadow-sm" 
                               />
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
