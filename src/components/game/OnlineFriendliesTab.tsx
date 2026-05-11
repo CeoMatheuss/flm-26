@@ -95,6 +95,58 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
 
   useEffect(() => { loadInvites(); loadOpenSlots(); }, [loadInvites]);
 
+  // Auto-entrada no lobby: ao montar, se houver um amistoso 'accepted' onde o usuário
+  // participa e o oponente está online (visto há <2min), abre o lobby imediatamente.
+  useEffect(() => {
+    if (lobbyInvite) return;
+    const acceptedMine = invites.find(i =>
+      i.status === 'accepted' &&
+      (i.sender_id === userId || i.receiver_id === userId)
+    );
+    if (!acceptedMine) return;
+
+    const oppId = acceptedMine.sender_id === userId ? acceptedMine.receiver_id : acceptedMine.sender_id;
+    let cancelled = false;
+    (async () => {
+      const { data: pres } = await supabase
+        .from('user_presence')
+        .select('is_online, last_seen')
+        .eq('user_id', oppId)
+        .maybeSingle();
+      if (cancelled) return;
+      const lastSeen = pres?.last_seen ? new Date(pres.last_seen).getTime() : 0;
+      const isOppOnline = pres?.is_online && (Date.now() - lastSeen) < 2 * 60_000;
+      if (isOppOnline) {
+        toast.success('🎮 Adversário online! Entrando no lobby...');
+        setLobbyInvite(acceptedMine);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [invites, userId, lobbyInvite]);
+
+  // Realtime de presença: quando o oponente entra online, abrir o lobby do amistoso aceito
+  useEffect(() => {
+    if (lobbyInvite) return;
+    const acceptedMine = invites.find(i =>
+      i.status === 'accepted' &&
+      (i.sender_id === userId || i.receiver_id === userId)
+    );
+    if (!acceptedMine) return;
+    const oppId = acceptedMine.sender_id === userId ? acceptedMine.receiver_id : acceptedMine.sender_id;
+
+    const ch = supabase
+      .channel(`friendly-presence-${acceptedMine.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_presence', filter: `user_id=eq.${oppId}` }, (payload: any) => {
+        const row = payload?.new;
+        if (row?.is_online) {
+          toast.success('🎮 Adversário acabou de entrar! Indo para o lobby...');
+          setLobbyInvite(acceptedMine);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [invites, userId, lobbyInvite]);
+
   const loadOpenSlots = async () => {
     const { data } = await supabase
       .from('open_friendly_slots')
