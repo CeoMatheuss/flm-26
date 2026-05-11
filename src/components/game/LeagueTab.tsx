@@ -20,6 +20,7 @@ interface Props {
 }
 
 export function LeagueTab({ clubName, clubPlayers }: Props) {
+  const navigate = useNavigate();
   const [standings, setStandings] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [leagueInfo, setLeagueInfo] = useState<any | null>(null);
