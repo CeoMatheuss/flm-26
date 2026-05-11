@@ -99,25 +99,22 @@ serve(async (req) => {
 
         for (const match of matches) {
           const result = simulateMatch(match.home.strength, match.away.strength);
+          const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
+          const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;
+
           await supabase.from('national_cup_matches').update({
             home_score: result.homeGoals, away_score: result.awayGoals,
             home_penalties: result.homePen, away_penalties: result.awayPen,
-            status: 'finished', winner_team_id: result.winnerId === 'home' ? match.home_team_id : match.away_team_id,
+            status: 'finished', winner_team_id: winnerId,
           }).eq('id', match.id);
 
-          // Update real-time sync (trigger next round if matches finish)
-          await supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' }, headers: { 'x-internal-call': 'true' } });
-
-          const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
-          const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;
           await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
-          
+
           const prize = getPrizeForRound(match.round, cup.total_rounds);
           await grantPrize(supabase, winnerId, prize, `Prêmio Rodada ${match.round}`, cup.id);
-          
-          // Add goals to players (simple logic: assign goals to top players of team)
-          await assignGoalsToPlayers(supabase, winnerId, result.homeId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
-          await assignGoalsToPlayers(supabase, loserId, result.homeId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
+
+          await assignGoalsToPlayers(supabase, winnerId, result.winnerId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
+          await assignGoalsToPlayers(supabase, loserId, result.winnerId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
         }
       }
       return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
@@ -147,8 +144,16 @@ function simulateMatch(homeS: number, awayS: number) {
 }
 
 async function drawNextRound(supabase: any, cupId: string, round: number, total: number) {
+  // Idempotency: don't draw if matches already exist for this round
+  const { count: existing } = await supabase.from('national_cup_matches')
+    .select('*', { count: 'exact', head: true }).eq('cup_id', cupId).eq('round', round);
+  if ((existing ?? 0) > 0) {
+    await supabase.from('national_cups').update({ current_round: round, status: 'in_progress' }).eq('id', cupId);
+    return;
+  }
   const { data: teams } = await supabase.from('national_cup_teams').select('*').eq('cup_id', cupId).eq('eliminated', false);
   if (!teams || teams.length < 2) return;
+  // Cap to expected size for this round (handles legacy duplicates): expected = total_teams / 2^(round-1)
 
   const shuffled = teams.sort(() => Math.random() - 0.5);
   const matches = [];
