@@ -83,14 +83,29 @@ export function FinancePanel() {
     loadLogs();
   }, [loadClubs, loadLogs]);
 
-  // Filtragem em tempo real
+  // Filtragem em tempo real com sugestões iniciais
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
-    if (selected && selected.name.toLowerCase() === q) return [];
-    return clubs
-      .filter(c => c.name?.toLowerCase().includes(q) || c.user_id.toLowerCase().includes(q))
-      .slice(0, 10);
+    
+    // Se não houver busca e nenhum clube selecionado, mostra todos como sugestão (limitado a 10)
+    if (!q && !selected) {
+      return clubs.slice(0, 10);
+    }
+    
+    // Se houver busca, filtra por nome ou user_id
+    if (q) {
+      // Se houver um clube selecionado e o texto da busca for exatamente o nome dele, não mostra dropdown
+      if (selected && selected.name.toLowerCase() === q) return [];
+      
+      return clubs
+        .filter(c => 
+          c.name?.toLowerCase().includes(q) || 
+          c.user_id.toLowerCase().includes(q)
+        )
+        .slice(0, 10);
+    }
+
+    return [];
   }, [search, clubs, selected]);
 
   const handleSelect = (club: Club) => {
@@ -190,8 +205,13 @@ export function FinancePanel() {
               </Button>
             )}
 
-            {filtered.length > 0 && (
+            {filtered.length > 0 && !selected && (
               <div className="absolute z-50 mt-2 w-full max-h-72 overflow-y-auto rounded-lg border border-border bg-popover shadow-2xl">
+                <div className="px-3 py-1.5 border-b border-border bg-muted/30">
+                  <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">
+                    {search ? 'Resultados da busca' : 'Sugestões de times'}
+                  </span>
+                </div>
                 {filtered.map((c) => (
                   <button
                     key={c.user_id}
@@ -216,9 +236,9 @@ export function FinancePanel() {
             )}
           </div>
 
-          {!search && !selected && (
+          {!search && !selected && filtered.length === 0 && (
             <p className="text-[10px] text-muted-foreground italic px-1">
-              Digite ao menos 1 caractere para iniciar a busca.
+              Digite ao menos 1 caractere para filtrar ou selecione uma sugestão abaixo.
             </p>
           )}
         </CardContent>
