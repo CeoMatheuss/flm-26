@@ -353,11 +353,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => {
-            setLoading(true);
-            const load = (window as any).refreshCalendarData;
-            if (load) load();
-          }}
+          onClick={load}
           className="h-10 w-10 text-zinc-500 hover:text-primary transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
