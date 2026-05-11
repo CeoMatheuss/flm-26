@@ -1,208 +1,171 @@
-import { Match, Player } from '@/types/game';
-import { TacticsConfig } from '@/types/tactics';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn, Shuffle, Scale, Users, DollarSign } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
+import { Swords, Users, Play, Loader2, Trophy, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { ClubShield } from './ClubShield';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
-import { MatchCalendarTab } from './MatchCalendarTab';
-import { MatchLobbyScreen } from './MatchLobbyScreen';
-import { simulateInstantFriendly, type InstantFriendlyResult } from '@/match/instantFriendly';
-import { updateGlobalRanking } from '@/match/rankingUpdater';
-import { toast } from 'sonner';
 
 interface Props {
-  matches: Match[];
+  userId: string;
   clubName: string;
   stadiumName: string;
-  alreadyPlayedToday: boolean;
-  lastFriendlyDate: string;
-  players: Player[];
-  teamStrength: number;
-  tactics: TacticsConfig;
-  onGenerateFriendly: () => void;
-  userId: string;
   stadiumCapacity: number;
+  players: any[];
+  teamStrength: number;
+  tactics: any;
   fans: number;
-  applyFanChange: (delta: number, sourceLabel?: string) => void;
 }
 
 export function MatchesTab({
-  clubName, stadiumName,
-  players, teamStrength, tactics, userId, stadiumCapacity, fans, applyFanChange,
+  userId, clubName, stadiumName, stadiumCapacity, players, teamStrength, tactics, fans
 }: Props) {
   const navigate = useNavigate();
-  const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
-  const [lobbyMatch, setLobbyMatch] = useState<any | null>(null);
-  const [simulating, setSimulating] = useState<null | 'bot_balanced' | 'bot_random'>(null);
-  const [lastResult, setLastResult] = useState<(InstantFriendlyResult & { mode: 'bot_balanced' | 'bot_random'; moneyReward?: number }) | null>(null);
+  const [activeTab, setActiveTab] = useState('bot');
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    if (!userId) return;
-    const loadMatches = async () => {
-      const allCompetitionsMatches: any[] = [];
-
-      // 1. National Cup Matches (New System)
-      const { data: cupEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id')
-        .eq('user_id', userId)
-        .eq('eliminated', false)
-        .maybeSingle();
-
-      if (cupEntry) {
-        const { data: cupMatches } = await supabase
-          .from('national_cup_matches')
-          .select(`
-            *,
-            cup:national_cups(name),
-            home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
-            away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
-          `)
-          .eq('cup_id', cupEntry.cup_id)
-          .in('status', ['scheduled', 'live'])
-          .order('scheduled_at', { ascending: true })
-          .limit(5);
-
-        if (cupMatches) {
-          allCompetitionsMatches.push(...cupMatches.map(m => ({
-            ...m,
-            homeName: m.home?.club_name,
-            awayName: m.away?.club_name,
-            homeLogo: m.home?.club_logo,
-            awayLogo: m.away?.club_logo,
-            isHome: m.home?.user_id === userId,
-            competition: m.cup?.name || 'Copa Nacional',
-            stage: `Fase ${m.round}`
-          })));
-        }
-      }
-
-      setTournamentMatches(allCompetitionsMatches);
-    };
-    loadMatches();
-    const channel = supabase.channel('cup-matches-tab')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadMatches())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [userId]);
-
-  const runInstantBot = async (mode: 'bot_balanced' | 'bot_random') => {
-    if (simulating) return;
-    setSimulating(mode);
-    await new Promise(r => setTimeout(r, 800));
-    const result = simulateInstantFriendly({
-      mode,
-      myClubName: clubName,
-      myPlayers: players,
-      currentFans: fans,
-      isHome: Math.random() > 0.4,
-    });
-
-    applyFanChange(result.fanChange, `Amistoso vs BOT (${mode})`);
-    const moneyReward = mode === 'bot_balanced' ? 10000 : (Math.floor(Math.random() * 20000) + 5000);
+  const startFriendlyMatch = (opponent: { name: string, logo?: string, strength: number }, isOnline = false) => {
+    const isHome = Math.random() > 0.5;
     
-    setLastResult({ ...result, mode, moneyReward: result.outcome === 'win' ? moneyReward : (result.outcome === 'draw' ? Math.floor(moneyReward/2) : 0) });
-    setSimulating(null);
+    navigate('/match', {
+      state: {
+        homeTeam: isHome ? clubName : opponent.name,
+        awayTeam: isHome ? opponent.name : clubName,
+        homePlayers: isHome ? players : [],
+        homeStrength: isHome ? teamStrength : opponent.strength,
+        awayStrength: isHome ? opponent.strength : teamStrength,
+        matchId: `friendly-${Math.random().toString(36).substr(2, 9)}`,
+        tactics: tactics || { formation: '4-4-2' },
+        stadiumName: isHome ? stadiumName : `Estádio ${opponent.name}`,
+        stadiumCapacity: isHome ? stadiumCapacity : 15000,
+        isHome,
+        competition: isOnline ? 'Amistoso Online' : 'Amistoso vs BOT',
+        fans: fans || 1000,
+        isFriendly: true
+      }
+    });
+  };
+
+  const generateBotFriendly = async (level: 'easy' | 'balanced' | 'hard') => {
+    setGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    let oppStrength = teamStrength;
+    if (level === 'easy') oppStrength -= 10;
+    if (level === 'hard') oppStrength += 10;
+    
+    const botOpponent = {
+      name: `BOT ${level.toUpperCase()} FC`,
+      logo: '🤖',
+      strength: Math.max(40, Math.min(99, oppStrength))
+    };
+
+    startFriendlyMatch(botOpponent);
+    setGenerating(false);
   };
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="bot" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="bot">Amistosos vs BOT</TabsTrigger>
-          <TabsTrigger value="tournaments">Copas & Torneios</TabsTrigger>
-        </TabsList>
+    <div className="space-y-4 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xl font-black flex items-center gap-2">
+          <Swords className="h-6 w-6 text-primary" /> Amistosos!
+        </h2>
+        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+          Treino Livre
+        </Badge>
+      </div>
 
-        <TabsContent value="bot" className="space-y-4 mt-4">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <Swords className="h-5 w-5 text-primary" />
-                <h3 className="font-bold">Treino de Luxo (vs BOT)</h3>
-              </div>
-              <p className="text-xs text-muted-foreground">Jogue instantaneamente para ganhar torcida e bônus financeiros.</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button onClick={() => runInstantBot('bot_balanced')} disabled={!!simulating} className="h-16 flex flex-col gap-1">
-                  <span className="font-bold">Modo Equilibrado</span>
-                  <span className="text-[10px] opacity-70">BOT de nível similar</span>
-                </Button>
-                <Button onClick={() => runInstantBot('bot_random')} disabled={!!simulating} variant="secondary" className="h-16 flex flex-col gap-1">
-                  <span className="font-bold">Modo Aleatório</span>
-                  <span className="text-[10px] opacity-70">BOT de nível variado</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+      <Card className="bg-gradient-to-br from-primary/5 via-card to-background border-primary/20 overflow-hidden">
+        <CardContent className="p-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
+              <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
+                <Users className="h-4 w-4" /> Desafiar BOT
+              </TabsTrigger>
+              <TabsTrigger value="online" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
+                <Shield className="h-4 w-4" /> Matchmaking Online
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="tournaments" className="mt-4">
-          <div className="space-y-3">
-            {tournamentMatches.length > 0 ? tournamentMatches.map(m => (
-              <Card key={m.id} className="bg-card/40 border-border/50">
-                <CardContent className="p-3 flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0 text-center space-y-1">
-                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
-                      {m.homeLogo || '🛡️'}
-                    </div>
-                    <div className="text-[10px] font-bold truncate">{m.homeName}</div>
-                  </div>
-                  <div className="flex flex-col items-center px-2 shrink-0">
-                     <Badge variant="outline" className="text-[7px] mb-1">{m.competition}</Badge>
-                     {m.status === 'live' ? (
-                       <Badge variant="default" className="bg-red-500 animate-pulse text-[8px] h-4 mb-1">AO VIVO</Badge>
-                     ) : (
-                       <div className="text-xs font-black">VS</div>
-                     )}
-                     <span className="text-[7px] text-muted-foreground uppercase">{m.stage}</span>
-                     <span className="text-[7px] text-muted-foreground font-bold mt-0.5">{new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="flex-1 min-w-0 text-center space-y-1">
-                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
-                      {m.awayLogo || '🛡️'}
-                    </div>
-                    <div className="text-[10px] font-bold truncate">{m.awayName}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            )) : (
-              <div className="py-10 text-center text-xs text-muted-foreground italic border border-dashed rounded-lg">
-                Nenhum jogo oficial de copa agendado no momento.
+            <TabsContent value="bot" className="p-4 space-y-4 mt-0">
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Play className="h-4 w-4 text-primary" /> Partida Rápida
+                </h3>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  Jogue contra o sistema para testar táticas e ganhar torcida. 
+                  <span className="text-primary font-bold ml-1">Sem impacto na fadiga dos jogadores.</span>
+                </p>
               </div>
-            )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col gap-1 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10"
+                  onClick={() => generateBotFriendly('easy')}
+                  disabled={generating}
+                >
+                  <span className="text-xs font-black text-emerald-500">NÍVEL FÁCIL</span>
+                  <span className="text-[9px] opacity-60">Ideal para goleadas</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col gap-1 border-primary/20 bg-primary/5 hover:bg-primary/10"
+                  onClick={() => generateBotFriendly('balanced')}
+                  disabled={generating}
+                >
+                  <span className="text-xs font-black text-primary">EQUILIBRADO</span>
+                  <span className="text-[9px] opacity-60">Nível similar ao seu</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col gap-1 border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
+                  onClick={() => generateBotFriendly('hard')}
+                  disabled={generating}
+                >
+                  <span className="text-xs font-black text-red-500">NÍVEL DIFÍCIL</span>
+                  <span className="text-[9px] opacity-60">Desafio real de treino</span>
+                </Button>
+              </div>
+
+              {generating && (
+                <div className="flex flex-col items-center justify-center py-4 gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="text-[10px] text-muted-foreground animate-pulse">Sorteando adversário...</span>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="online" className="p-0 mt-0">
+              <OnlineFriendliesTab 
+                userId={userId}
+                clubName={clubName}
+                stadiumName={stadiumName}
+                stadiumCapacity={stadiumCapacity}
+                players={players}
+                teamStrength={teamStrength}
+                tactics={tactics}
+                fans={fans}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-muted/20 border-dashed">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Trophy className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sistema de Torcida</h4>
+              <p className="text-[10px] text-muted-foreground">
+                Vitórias em amistosos atraem novos torcedores para o clube. Empates mantêm a estabilidade, enquanto derrotas podem afastar os mais exigentes.
+              </p>
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Modal de Resultado Simples */}
-      <Dialog open={!!lastResult} onOpenChange={() => setLastResult(null)}>
-        <DialogContent className="sm:max-w-md">
-           {lastResult && (
-             <div className="text-center space-y-4 py-4">
-               <h2 className="text-2xl font-black">{lastResult.myGoals} x {lastResult.oppGoals}</h2>
-               <p className="text-xs uppercase font-bold text-primary">{lastResult.headline}</p>
-               <div className="grid grid-cols-2 gap-2">
-                 <div className="bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
-                    <p className="text-[10px] text-muted-foreground uppercase">Torcida</p>
-                    <p className="text-lg font-bold text-emerald-400">+{lastResult.fanChange}</p>
-                 </div>
-                 <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
-                    <p className="text-[10px] text-muted-foreground uppercase">Prêmio</p>
-                    <p className="text-lg font-bold text-primary">R$ {((lastResult.moneyReward || 0)/1000).toFixed(0)}k</p>
-                 </div>
-               </div>
-               <Button onClick={() => setLastResult(null)} className="w-full">Fechar</Button>
-             </div>
-           )}
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }

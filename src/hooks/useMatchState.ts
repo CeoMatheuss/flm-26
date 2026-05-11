@@ -40,6 +40,7 @@ export function useMatchState(initialState: any, userId?: string) {
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
     isCup?: boolean;
+    isFriendly?: boolean;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
@@ -168,6 +169,7 @@ export function useMatchState(initialState: any, userId?: string) {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
+          if (deps.isFriendly) return p;
           const drain = Math.floor(Math.random() * 15 + 10); 
           const newStamina = Math.max(0, p.stamina - drain);
           return {
@@ -179,7 +181,7 @@ export function useMatchState(initialState: any, userId?: string) {
             gamesPlayed: p.gamesPlayed + 1,
           };
         }),
-        budget: prev.budget + prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine,
+        budget: prev.budget + (deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine)),
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {

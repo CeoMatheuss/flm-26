@@ -138,11 +138,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           userId={userId}
           stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
           fans={game.club.fans}
-          applyFanChange={game.addBonus}
-          matches={game.club.matches}
-          alreadyPlayedToday={false}
-          lastFriendlyDate={""}
-          onGenerateFriendly={() => {}}
         />
       </TabsContent>
 

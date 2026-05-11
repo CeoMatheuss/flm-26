@@ -95,17 +95,17 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const winRate = playedMatchesCount > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (playedMatchesCount * 3)) * 100) : 0;
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
-  const recentWins = last5.filter(m => m.result && (m.isHome ? m.result.home > m.result.away : m.result.away > m.result.home)).length;
-  const recentLosses = last5.filter(m => m.result && (m.isHome ? m.result.home < m.result.away : m.result.away < m.result.home)).length;
+  const recentWins = last5.filter(m => m.result && (m.isHome ? m.result.home > m.result.away : m.result.away > m.result.home) && !(m as any).isFriendly).length;
+  const recentLosses = last5.filter(m => m.result && (m.isHome ? m.result.home < m.result.away : m.result.away < m.result.home) && !(m as any).isFriendly).length;
   const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentWins >= 2 ? 'Animada 🙂' : recentLosses >= 5 ? 'Revoltada 😡' : recentLosses >= 4 ? 'Insatisfeita 😤' : recentLosses >= 3 ? 'Preocupada 😟' : 'Estável 😐';
   const fanMoodColor = recentWins >= 3 ? 'text-success' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
 
-  const playedMatches = club.matches.filter(m => m.played);
+  const playedMatches = club.matches.filter(m => m.played && !(m as any).isFriendly);
   let streak = 0;
   let streakType: 'V' | 'E' | 'D' | '' = '';
   for (let i = playedMatches.length - 1; i >= 0; i--) {
     const r = playedMatches[i].result;
-    if (!r) break;
+    if (!r) continue;
     const isHome = playedMatches[i].isHome;
     const outcome = (isHome ? r.home > r.away : r.away > r.home) ? 'V' : (r.home === r.away ? 'E' : 'D');
     if (streakType === '') streakType = outcome;
