@@ -147,6 +147,14 @@ serve(async (req) => {
   }
 })
 
+// Próximo horário fixo de Copa: 15:00 BRT (18:00 UTC) do próximo dia
+function nextCupKickoff(): Date {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  d.setUTCHours(18, 0, 0, 0);
+  return d;
+}
+
 function simulateMatch(homeS: number, awayS: number) {
   const prob = homeS / (homeS + awayS);
   let hG = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
