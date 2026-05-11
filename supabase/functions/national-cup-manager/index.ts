@@ -17,6 +17,16 @@ serve(async (req) => {
 
     const { action, cupId, countryCode, password } = await req.json()
 
+    // Validação de senha para ações administrativas
+    const adminPassword = "ADM112828"
+    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups'].includes(action)
+    
+    if (requiresAdmin && password !== adminPassword) {
+      return new Response(JSON.stringify({ error: 'Senha administrativa inválida' }), { 
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+
     // 1. GERAR TODAS AS COPAS (DIA 10 - PRÉ-PRODUÇÃO)
     if (action === 'generate_all_national_cups') {
       const { data: leagues } = await supabase.from('world_leagues').select('country, name')
