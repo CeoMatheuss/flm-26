@@ -87,9 +87,9 @@ export function FinancePanel() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     
-    // Se não houver busca e nenhum clube selecionado, mostra todos como sugestão (limitado a 10)
+    // Se não houver busca e nenhum clube selecionado, mostra todos como sugestão
     if (!q && !selected) {
-      return clubs.slice(0, 10);
+      return clubs;
     }
     
     // Se houver busca, filtra por nome ou user_id
