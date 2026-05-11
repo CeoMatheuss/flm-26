@@ -108,7 +108,9 @@ serve(async (req) => {
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString());
+            // DEBUG: Ignorando trava de horário para teste inicial
+            // .lte('scheduled_at', now.toISOString());
+
 
             if (!matches || matches.length === 0) continue;
 
