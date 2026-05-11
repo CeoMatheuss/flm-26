@@ -265,7 +265,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {userId && (
         <PersonalizedCupWidget 
           userId={userId} 
-          onOpenTournament={(tab) => (window as any).setActiveTab?.(tab)}
+          onOpenTournament={(tab) => {
+            // Se o router estiver disponível via props ou window, troca para a aba 'copas'
+            if (typeof (window as any).setActiveTab === 'function') {
+              (window as any).setActiveTab('copas');
+            }
+          }}
         />
       )}
 
