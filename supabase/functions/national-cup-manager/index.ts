@@ -48,9 +48,8 @@ serve(async (req) => {
         // Buscar times (Priorizar humanos ativos, depois bots da liga)
         const { data: teams } = await supabase.from('world_teams')
             .select('id, name, logo, strength, user_id')
-            .eq('country_code', league.country_code)
+            .eq('country', league.country)
             .order('user_id', { ascending: false })
-            .limit(32)
 
         if (!teams || teams.length < 2) continue
 
