@@ -435,9 +435,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                 const w = r.home > r.away;
                 const d = r.home === r.away;
                 return (
-                  <div key={i} className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold transition-all ${w ? 'bg-success/15 text-success border border-success/20 shadow-sm shadow-success/10' : d ? 'bg-primary/15 text-primary border border-primary/20' : 'bg-destructive/15 text-destructive border border-destructive/20'}`}>
-                    <span className="text-[7px] text-muted-foreground">{w ? 'V' : d ? 'E' : 'D'}</span>
-                    {r.home}-{r.away}
+                  <div key={i} className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold transition-all ${w ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shadow-sm shadow-emerald-500/10' : d ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' : 'bg-rose-500/15 text-rose-400 border border-rose-500/20'}`}>
+                    <span className="text-[7px] opacity-70 mb-0.5">{w ? 'V' : d ? 'E' : 'D'}</span>
+                    <span className="text-xs">{r.home}-{r.away}</span>
                   </div>
                 );
               })}
