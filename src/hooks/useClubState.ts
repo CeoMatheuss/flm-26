@@ -509,6 +509,8 @@ export function useClubState(initialState: any, userId?: string) {
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
     setClub(prev => {
+      // 🛡️ Anti-Duplicação
+      if (prev.players.find(p => p.id === player.id)) return prev;
       const signed = { ...player, salary, contract: Math.floor(Math.random() * 3 + 2) };
       return { ...prev, budget: prev.budget - salary * 3, players: [...prev.players, signed] };
     });
