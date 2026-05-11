@@ -34,13 +34,17 @@ export function FinancePanel() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-all-clubs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-          body: JSON.stringify({ scope: 'Mundial' }),
-        });
-        const result = await res.json();
-        if (mounted && Array.isArray(result.clubs)) setAllClubs(result.clubs);
+        const res = await supabase.from('profiles').select('user_id, display_name');
+        const { data: clubs } = await supabase.from('clubs').select('user_id, name');
+        
+        if (mounted && clubs) {
+          const formatted = clubs.map(c => ({
+            user_id: c.user_id,
+            club_name: c.name,
+            club_logo: '⚽'
+          }));
+          setAllClubs(formatted);
+        }
       } catch {
         // autocomplete é opcional
       } finally {
