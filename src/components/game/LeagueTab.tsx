@@ -90,15 +90,42 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         setStandings(enhancedStandings);
       }
 
-      // 2. Load Fixtures
+      // 2. Load Fixtures with Club metadata
       const { data: fixturesData } = await supabase
         .from('world_matches')
-        .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name, logo), away_team:world_teams!world_matches_away_team_id_fkey(name, logo)')
+        .select(`
+          *, 
+          home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id), 
+          away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id)
+        `)
         .eq('league_id', teamData.league_id)
         .order('round', { ascending: true })
         .order('scheduled_at', { ascending: true });
       
-      if (fixturesData) setFixtures(fixturesData);
+      if (fixturesData) {
+        const userIds = [
+          ...fixturesData.map(f => f.home_team?.user_id),
+          ...fixturesData.map(f => f.away_team?.user_id)
+        ].filter(Boolean);
+
+        const { data: clubsData } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('user_id', userIds);
+
+        const enhancedFixtures = fixturesData.map(match => ({
+          ...match,
+          home_team: {
+            ...match.home_team,
+            ...clubsData?.find(c => c.user_id === match.home_team?.user_id)
+          },
+          away_team: {
+            ...match.away_team,
+            ...clubsData?.find(c => c.user_id === match.away_team?.user_id)
+          }
+        }));
+        setFixtures(enhancedFixtures);
+      }
 
       // 3. Load Player Stats
       const { data: statsData } = await supabase
