@@ -114,6 +114,11 @@ serve(async (req) => {
         if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
         for (const cup of activeCups) {
+            // Tolerância de 5 minutos após o horário agendado (12:00 BRT = 15:00 UTC)
+            // Se agora >= 12:05 BRT, simula
+            const toleranceMinutes = 5;
+            const cutoff = new Date(now.getTime() - (toleranceMinutes * 60 * 1000));
+
             const { data: matches } = await supabase
                 .from('national_cup_matches')
                 .select(`
@@ -123,7 +128,7 @@ serve(async (req) => {
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString());
+                .lte('scheduled_at', cutoff.toISOString());
 
             if (!matches || matches.length === 0) continue;
 
