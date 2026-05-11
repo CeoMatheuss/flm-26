@@ -136,7 +136,7 @@ export function useMatchReplay() {
       homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals: data.finalHomeGoals, awayGoals: data.finalAwayGoals,
       visibleEvents: data.allEvents, latestEvent: data.allEvents[data.allEvents.length - 1] || null,
-      stats: data.stats, stadiumName: 'Campeonato', matchDbId: null, errorMsg: null,
+      stats: data.stats, stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
       competition: 'Campeonato', isHome: true,
       currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
