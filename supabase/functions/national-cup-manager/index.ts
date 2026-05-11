@@ -48,7 +48,8 @@ serve(async (req) => {
 
         const cupTeams = selectedTeams.map((t, idx) => ({
           cup_id: cup.id, club_id: t.id, club_name: t.name, club_logo: t.logo,
-          user_id: t.user_id, strength: t.strength, is_bot: !t.user_id, seed: idx
+          user_id: t.user_id, strength: t.strength, is_bot: !t.user_id, seed: idx,
+          shield_config: t.shield_config, primary_color: t.primary_color, secondary_color: t.secondary_color, detail_color: t.detail_color, shield_pattern: t.shield_pattern, shield_shape: t.shield_shape, shield_icon: t.shield_icon
         }));
 
         await supabase.from('national_cup_teams').delete().eq('cup_id', cup.id);
@@ -103,6 +104,9 @@ serve(async (req) => {
             home_penalties: result.homePen, away_penalties: result.awayPen,
             status: 'finished', winner_team_id: result.winnerId === 'home' ? match.home_team_id : match.away_team_id,
           }).eq('id', match.id);
+
+          // Update real-time sync (trigger next round if matches finish)
+          await supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' }, headers: { 'x-internal-call': 'true' } });
 
           const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
           const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;

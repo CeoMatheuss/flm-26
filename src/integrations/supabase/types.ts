@@ -2406,13 +2406,20 @@ export type Database = {
           club_name: string
           created_at: string | null
           cup_id: string
+          detail_color: string | null
           division_level: number | null
           eliminated: boolean | null
           id: string
           is_bot: boolean | null
           league_id: string | null
+          primary_color: string | null
           prize_money_earned: number | null
+          secondary_color: string | null
           seed: number | null
+          shield_config: Json | null
+          shield_icon: string | null
+          shield_pattern: string | null
+          shield_shape: string | null
           strength: number | null
           user_id: string | null
         }
@@ -2422,13 +2429,20 @@ export type Database = {
           club_name: string
           created_at?: string | null
           cup_id: string
+          detail_color?: string | null
           division_level?: number | null
           eliminated?: boolean | null
           id?: string
           is_bot?: boolean | null
           league_id?: string | null
+          primary_color?: string | null
           prize_money_earned?: number | null
+          secondary_color?: string | null
           seed?: number | null
+          shield_config?: Json | null
+          shield_icon?: string | null
+          shield_pattern?: string | null
+          shield_shape?: string | null
           strength?: number | null
           user_id?: string | null
         }
@@ -2438,13 +2452,20 @@ export type Database = {
           club_name?: string
           created_at?: string | null
           cup_id?: string
+          detail_color?: string | null
           division_level?: number | null
           eliminated?: boolean | null
           id?: string
           is_bot?: boolean | null
           league_id?: string | null
+          primary_color?: string | null
           prize_money_earned?: number | null
+          secondary_color?: string | null
           seed?: number | null
+          shield_config?: Json | null
+          shield_icon?: string | null
+          shield_pattern?: string | null
+          shield_shape?: string | null
           strength?: number | null
           user_id?: string | null
         }

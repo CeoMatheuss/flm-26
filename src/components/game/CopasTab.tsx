@@ -29,11 +29,29 @@ export function CopasTab({ userId }: Props) {
       const { data: cups } = await supabase.from('national_cups').select('*').order('name', { ascending: true });
       if (cups && cups.length > 0) {
         setAllCups(cups);
+        
+        // Find user's cup by country first
         const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
         const clubData = save?.club_data as any;
         const userCountry = clubData?.club?.country || 'Brasil';
-        const userCup = cups.find(c => c.country_code === userCountry) || cups[0];
-        setSelectedCupId(userCup.id);
+        
+        // Priority 1: Cup where user is participating
+        const { data: userParticipation } = await supabase
+          .from('national_cup_teams')
+          .select('cup_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        let initialCupId = null;
+        if (userParticipation) {
+          initialCupId = userParticipation.cup_id;
+        } else {
+          // Priority 2: Cup of user's country
+          const countryCup = cups.find(c => c.country_code === userCountry);
+          initialCupId = countryCup ? countryCup.id : cups[0].id;
+        }
+
+        setSelectedCupId(initialCupId);
       }
     } catch (e) {
       console.error(e);
@@ -48,7 +66,7 @@ export function CopasTab({ userId }: Props) {
       setCup(currentCup);
 
       const [matchesRes, statsRes, newsRes] = await Promise.all([
-        supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(club_name, club_logo, user_id, strength), away:national_cup_teams!away_team_id(club_name, club_logo, user_id, strength)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
+        supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
         supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10),
         supabase.from('cup_news').select('*').eq('cup_id', id).order('created_at', { ascending: false }).limit(5)
       ]);
@@ -191,27 +209,29 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="bracket" className="outline-none">
-          <ScrollArea className="w-full rounded-3xl border border-border/50 bg-card/20 pb-8">
-            <div className="flex gap-12 p-8 min-w-max">
-              {[...Array(cup.total_rounds)].map((_, i) => {
-                const r = i + 1;
-                const rMatches = matches.filter(match => match.round === r);
-                return (
-                  <div key={r} className="w-64 space-y-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{getPhaseName(r, cup.total_rounds)}</span>
-                      <div className="h-1.5 w-12 bg-primary/20 rounded-full" />
+          <div className="w-full rounded-3xl border border-border/50 bg-card/20 overflow-hidden">
+            <ScrollArea className="w-full">
+              <div className="flex gap-4 md:gap-12 p-4 md:p-8 min-w-max">
+                {[...Array(cup.total_rounds)].map((_, i) => {
+                  const r = i + 1;
+                  const rMatches = matches.filter(match => match.round === r);
+                  return (
+                    <div key={r} className="w-48 md:w-64 space-y-4 md:y-8">
+                      <div className="flex flex-col items-center gap-1 md:gap-2">
+                        <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.1em] md:tracking-[0.2em]">{getPhaseName(r, cup.total_rounds)}</span>
+                        <div className="h-1 w-8 md:h-1.5 md:w-12 bg-primary/20 rounded-full" />
+                      </div>
+                      <div className="space-y-3 md:space-y-6 flex flex-col justify-around h-full py-2 md:py-4">
+                        {rMatches.map(m => (
+                          <BracketMatch key={m.id} match={m} userId={userId} />
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-6 flex flex-col justify-around h-full py-4">
-                      {rMatches.map(m => (
-                        <BracketMatch key={m.id} match={m} userId={userId} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
         </TabsContent>
 
         <TabsContent value="stats" className="outline-none space-y-6">
