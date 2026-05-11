@@ -58,6 +58,11 @@ serve(async (req) => {
           total_teams: participantsCount, total_rounds: Math.log2(participantsCount) 
         }).eq('id', cup.id);
         
+        // Grant participation prize (100K) to all selected teams
+        for (const ct of cupTeams) {
+          await grantPrize(supabase, ct.club_id, 100000, "Participação na Copa", cup.id);
+        }
+
         await drawNextRound(supabase, cup.id, 1, Math.log2(participantsCount));
         await createCupNews(supabase, cup.id, `Copa de ${country} Iniciada!`, `O sorteio foi realizado e ${participantsCount} times começam a busca pelo troféu.`);
       }
