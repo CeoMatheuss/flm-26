@@ -36,11 +36,11 @@ serve(async (req) => {
         // Criar a Copa
         const { data: cup, error: cupError } = await supabase.from('national_cups').insert({
             name: `Copa de ${league.name}`,
-            country_code: league.country_code,
+            country_code: league.country,
             season: 1,
             status: 'scheduled',
             current_round: 1,
-            total_rounds: 5 // 32 times
+            total_rounds: 0 // Will update later
         }).select().single()
 
         if (cupError || !cup) continue
