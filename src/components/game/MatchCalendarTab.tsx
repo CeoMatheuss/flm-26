@@ -9,6 +9,7 @@ import {
   Calendar, Trophy, ArrowLeft, Star, BarChart3, Play,
   Clock, Loader2, ChevronLeft, ChevronRight, MapPin
 } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 
 interface MatchHistoryItem {
   id: string;
