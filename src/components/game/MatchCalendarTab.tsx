@@ -313,7 +313,9 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
     </div>
   );
 
-  const filteredMatches = worldMatches.filter(m => m.round === selectedMatchday);
+  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => m.round === selectedMatchday);
+  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => m.round === cupCurrentRound);
+  const filteredMatches = [...leagueRoundMatches, ...cupRoundMatches];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
