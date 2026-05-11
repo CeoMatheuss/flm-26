@@ -13,48 +13,36 @@ interface Props {
 }
 
 export function CopasTab({ userId }: Props) {
-  const [activeTab, setActiveTab] = useState('my-cup');
-  const [cup, setCup] = useState<any>(null);
-  const [matches, setMatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // 1. Buscar se o usuário está em alguma copa ativa
-      const { data: teamEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id, national_cups(*)')
-        .eq('user_id', userId)
-        .maybeSingle();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-      if (teamEntry && teamEntry.national_cups) {
-        setCup(teamEntry.national_cups);
-        
-        // 2. Buscar confrontos desta copa
-        const { data: cupMatches } = await supabase
-          .from('national_cup_matches')
-          .select(`
-            *,
-            home:national_cup_teams!home_team_id(club_name, club_logo),
-            away:national_cup_teams!away_team_id(club_name, club_logo)
-          `)
-          .eq('cup_id', teamEntry.cup_id)
-          .order('round', { ascending: true })
-          .order('bracket_pos', { ascending: true });
-        
-        if (cupMatches) setMatches(cupMatches);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  return (
+    <Card className="border-dashed bg-muted/20">
+      <CardContent className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+        <Trophy className="h-12 w-12 text-muted-foreground/20" />
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold">Copas Nacionais Desativadas</h3>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            O sistema de copas nacionais foi removido para focar na experiência da Liga e Amistosos.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  useEffect(() => {
-    loadData();
-  }, [userId]);
+// Keep the rest of the file commented out or remove if not needed, 
+// but for a clean fix we'll just return early.
+const oldLoadData = async () => {
+  // logic removed
+};
 
   if (loading) {
     return (
