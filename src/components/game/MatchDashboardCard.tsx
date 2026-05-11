@@ -847,6 +847,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
               navigate('/match', {
                 state: {
                   liveMatchDbId: liveMatch.id,
+                  liveMatchSnapshot: liveMatch,
                   homeTeam: liveMatch.home_team,
                   awayTeam: liveMatch.away_team,
                   isHome: liveMatch.is_home,
