@@ -1,1 +1,1 @@
-export function PersonalizedCupWidget() { return null; }
+export function PersonalizedCupWidget(props: any) { return null; }

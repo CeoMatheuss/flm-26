@@ -1,1 +1,1 @@
-export function ActiveLeaguesPanel() { return null; }
+export function ActiveLeaguesPanel(props: any) { return null; }

@@ -1,1 +1,1 @@
-export function CupsOverviewTab() { return null; }
+export function CupsOverviewTab(props: any) { return null; }

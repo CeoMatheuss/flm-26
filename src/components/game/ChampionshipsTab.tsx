@@ -1,1 +1,1 @@
-export function ChampionshipsTab() { return null; }
+export function ChampionshipsTab(props: any) { return null; }

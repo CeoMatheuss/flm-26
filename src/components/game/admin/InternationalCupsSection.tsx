@@ -1,1 +1,1 @@
-export function InternationalCupsSection() { return null; }
+export function InternationalCupsSection(props: any) { return null; }

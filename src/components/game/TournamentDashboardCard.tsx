@@ -1,2 +1,2 @@
-export function TournamentDashboardCard() { return null; }
-export function TournamentExpandedView() { return null; }
+export function TournamentDashboardCard(props: any) { return null; }
+export function TournamentExpandedView(props: any) { return null; }

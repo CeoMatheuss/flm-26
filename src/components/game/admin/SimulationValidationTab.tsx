@@ -1,3 +1,1 @@
-export function SimulationValidationTab() {
-  return null;
-}
+export function SimulationValidationTab(props: any) { return null; }

@@ -1,1 +1,1 @@
-export function AdminTournamentTab() { return null; }
+export function AdminTournamentTab(props: any) { return null; }

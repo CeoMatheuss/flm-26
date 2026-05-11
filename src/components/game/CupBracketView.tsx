@@ -1,1 +1,1 @@
-export function CupBracketView() { return null; }
+export function CupBracketView(props: any) { return null; }
