@@ -194,23 +194,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
 
         {/* TAB: STANDINGS */}
         <TabsContent value="standings" className="mt-4">
-          <Card className="overflow-hidden border-white/5 bg-black/40 shadow-2xl">
+          <Card className="overflow-hidden border-none shadow-md">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-black/60">
-                    <TableRow className="hover:bg-transparent border-b border-white/10">
-                      <TableHead className="w-12 text-center font-black text-white italic text-[10px] uppercase">Pos</TableHead>
-                      <TableHead className="min-w-[180px] font-black text-white italic text-[10px] uppercase">Clube</TableHead>
-                      <TableHead className="text-center w-14 font-black text-primary italic text-[10px] uppercase">Pts</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">J</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">V</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">E</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">D</TableHead>
-                      <TableHead className="text-center w-12 hidden md:table-cell font-black text-white/40 text-[10px] uppercase">GP</TableHead>
-                      <TableHead className="text-center w-12 hidden md:table-cell font-black text-white/40 text-[10px] uppercase">GC</TableHead>
-                      <TableHead className="text-center w-14 font-black text-white/40 text-[10px] uppercase italic">SG</TableHead>
-                      <TableHead className="text-center w-36 font-black text-white/60 italic text-[10px] uppercase">Sequência</TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-10 text-center font-bold">#</TableHead>
+                      <TableHead className="min-w-[180px]">Clube</TableHead>
+                      <TableHead className="text-center w-12">P</TableHead>
+                      <TableHead className="text-center w-10">J</TableHead>
+                      <TableHead className="text-center w-10">V</TableHead>
+                      <TableHead className="text-center w-10">E</TableHead>
+                      <TableHead className="text-center w-10">D</TableHead>
+                      <TableHead className="text-center w-12 hidden md:table-cell">GP</TableHead>
+                      <TableHead className="text-center w-12 hidden md:table-cell">GC</TableHead>
+                      <TableHead className="text-center w-12">SG</TableHead>
+                      <TableHead className="text-center w-32">Últimos 5</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -228,38 +228,33 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       else if (i >= standings.length - 4) posColor = "text-red-500 font-bold"; // Rebaixamento
 
                       return (
-                        <TableRow key={row.id} className={`${rowBg} transition-all border-b border-white/5 group`}>
-                          <TableCell className={`text-center text-xs font-black italic ${posColor} p-4`}>
+                        <TableRow key={row.id} className={`${rowBg} transition-colors border-b border-border/40`}>
+                          <TableCell className={`text-center text-xs ${posColor}`}>
                             {i + 1}
                           </TableCell>
-                          <TableCell className="py-4">
+                          <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className="relative">
-                                <ClubShield 
-                                  club={{ logoUrl: row.world_teams?.logo } as any} 
-                                  size={28} 
-                                  className="shrink-0 drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]" 
-                                />
-                                {row.world_teams?.is_bot && (
-                                  <div className="absolute -top-1 -left-1 w-2 h-2 bg-zinc-500 rounded-full border border-black" title="BOT" />
-                                )}
-                              </div>
+                              <ClubShield 
+                                club={{ logoUrl: row.world_teams?.logo } as any} 
+                                size={24} 
+                                className="shrink-0" 
+                              />
                               <div className="flex flex-col">
-                                <span className={`text-sm font-black uppercase italic tracking-tight truncate max-w-[120px] md:max-w-none transition-colors ${isPlayerTeam ? 'text-primary' : 'text-zinc-100 group-hover:text-white'}`}>
+                                <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
                                 </span>
-                                {isPlayerTeam && <span className="text-[7px] uppercase font-black tracking-widest text-primary/80">Seu Clube</span>}
+                                {isPlayerTeam && <span className="text-[8px] uppercase tracking-tighter text-primary font-bold">Seu Clube</span>}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center font-black text-sm text-primary italic bg-white/5">{row.points}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400">{row.played}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400">{row.wins}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400">{row.draws}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400">{row.losses}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400 hidden md:table-cell">{row.goals_for}</TableCell>
-                          <TableCell className="text-center text-[11px] font-bold text-zinc-400 hidden md:table-cell">{row.goals_against}</TableCell>
-                          <TableCell className={`text-center text-[11px] font-black italic ${diff > 0 ? 'text-emerald-500' : diff < 0 ? 'text-red-500' : 'text-zinc-500'}`}>
+                          <TableCell className="text-center font-black text-sm">{row.points}</TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">{row.played}</TableCell>
+                          <TableCell className="text-center text-xs">{row.wins}</TableCell>
+                          <TableCell className="text-center text-xs">{row.draws}</TableCell>
+                          <TableCell className="text-center text-xs">{row.losses}</TableCell>
+                          <TableCell className="text-center text-xs hidden md:table-cell">{row.goals_for}</TableCell>
+                          <TableCell className="text-center text-xs hidden md:table-cell">{row.goals_against}</TableCell>
+                          <TableCell className={`text-center text-xs font-bold ${diff > 0 ? 'text-emerald-500' : diff < 0 ? 'text-red-500' : ''}`}>
                             {diff > 0 ? `+${diff}` : diff}
                           </TableCell>
                           
