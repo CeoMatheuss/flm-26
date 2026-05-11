@@ -31,7 +31,7 @@ import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthPage from './Auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -205,12 +205,35 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [marketSubTab, setMarketSubTab] = useState('browse');
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
-  const [viewingClubName, setViewedClubName] = useState<string | null>(null);
+  const [viewingClubName, setViewedClubName] = useState<string | null>(searchParams.get('name'));
+
+  // Sync URL with viewingClubName
+  useEffect(() => {
+    const nameFromUrl = searchParams.get('name');
+    if (nameFromUrl && nameFromUrl !== viewingClubName) {
+      setViewedClubName(nameFromUrl);
+    } else if (!nameFromUrl && viewingClubName) {
+      // If no name in URL but we have a viewed club, it might be from a local state change
+      // or we just closed it.
+    }
+  }, [searchParams]);
+
+  const handleSetViewedClubName = useCallback((name: string | null) => {
+    setViewedClubName(name);
+    if (name) {
+      setSearchParams({ name });
+    } else {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('name');
+      setSearchParams(newParams);
+    }
+  }, [searchParams, setSearchParams]);
 
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
