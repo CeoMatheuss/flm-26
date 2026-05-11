@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock } from 'lucide-react';
+import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 
 export function UpcomingLeagueMatchesWidget() {
