@@ -235,7 +235,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <ClubShield 
-                                club={{ logoUrl: row.world_teams?.logo } as any} 
+                                club={row.world_teams?.is_bot ? null : { logoUrl: row.world_teams?.logo } as any} 
                                 size={24} 
                                 className="shrink-0" 
                               />
