@@ -123,7 +123,7 @@ serve(async (req) => {
                 // Jornal
                 await supabase.from('newspaper_entries').insert({
                     category: 'COPA',
-                    text: `[COPA] ${cup.name}: O ${homeScore >= awayScore ? 'Mandante' : 'Visitante'} avançou para a próxima fase!`,
+                    text: `[COPA] ${cup.name}: O ${winner_team_id === match.home_team_id ? 'Mandante' : 'Visitante'} avançou! Placar: ${homeScore}x${awayScore}.`,
                 })
             }
 
