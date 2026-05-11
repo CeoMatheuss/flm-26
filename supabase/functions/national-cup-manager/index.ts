@@ -130,7 +130,9 @@ serve(async (req) => {
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString());
+                // DEBUG: Removendo trava de horário para simulação imediata de teste
+                // .lte('scheduled_at', now.toISOString());
+
 
 
 
