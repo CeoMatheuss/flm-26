@@ -22,6 +22,7 @@ const ALL_SECTIONS: { id: SystemSection; label: string; icon: any }[] = [
   { id: 'beta',    label: 'BETA',                  icon: ShieldCheck },
   { id: 'preview', label: 'Prévia Ligas',          icon: Sparkles },
   { id: 'pyramid', label: 'Países & Pirâmide',     icon: Globe },
+  { id: 'cups',    label: 'Copas Nacionais',       icon: Trophy },
   { id: 'season',  label: 'Temporada',             icon: Calendar },
   { id: 'sim',     label: 'Simulação & Validação', icon: FlaskConical },
   { id: 'how',     label: 'Como Funciona',         icon: BookOpen },
@@ -65,7 +66,9 @@ export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
         {visible.some(s => s.id === 'season') && (
           <TabsContent value="season" className="mt-3"><SeasonControlTab adminUserId={adminUserId} /></TabsContent>
         )}
-        {/* Seção de copas removida */}
+        {visible.some(s => s.id === 'cups') && (
+          <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
+        )}
         {visible.some(s => s.id === 'sim') && (
           <TabsContent value="sim" className="mt-3"><SimulationValidationTab adminUserId={adminUserId} /></TabsContent>
         )}
