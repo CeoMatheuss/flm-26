@@ -369,16 +369,16 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   // Handle club profile viewing via events
   useEffect(() => {
     const handler = (e: any) => {
-      if (e.detail?.club_name) setViewedClubName(e.detail.club_name);
+      if (e.detail?.club_name) handleSetViewedClubName(e.detail.club_name);
     };
     window.addEventListener('flm:open-club-profile', handler);
     return () => window.removeEventListener('flm:open-club-profile', handler);
-  }, []);
+  }, [handleSetViewedClubName]);
 
   // Sync state between saves
   const handleClubViewClose = useCallback(() => {
-    setViewedClubName(null);
-  }, []);
+    handleSetViewedClubName(null);
+  }, [handleSetViewedClubName]);
 
   useEffect(() => {
     const st = location.state as {
