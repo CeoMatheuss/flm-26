@@ -15,7 +15,7 @@ export function GameNavBar() {
         </TabsTrigger>
         <TabsTrigger value="matches" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
           <Swords className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span className="text-[9px] sm:text-xs leading-tight font-medium">Partidas</span>
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Copa</span>
         </TabsTrigger>
         <TabsTrigger value="journal" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
           <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
