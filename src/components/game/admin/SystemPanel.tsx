@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Globe, Trophy, Calendar, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react';
 import { HowItWorksTab } from './HowItWorksTab';
 import { CountriesPyramidTab } from './CountriesPyramidTab';
-import { CupsOverviewTab } from './CupsOverviewTab';
+
 import { SeasonControlTab } from './SeasonControlTab';
 import { SimulationValidationTab } from './SimulationValidationTab';
 import { BetaAccessPanel } from './BetaAccessPanel';
