@@ -566,7 +566,14 @@ export function useClubState(initialState: any, userId?: string) {
   const sellPlayer = useCallback((player: Player) => {
     const value = Math.floor(getPlayerValue(player) * 0.8);
     setClub(prev => {
-      if (prev.players.length <= 11) return prev;
+      // 🛡️ Anti-Exploit: Verifica se o jogador REALMENTE está no elenco antes de pagar
+      const exists = prev.players.find(p => p.id === player.id);
+      if (!exists) return prev;
+      
+      if (prev.players.length <= 11) {
+        toast.error('Elenco muito pequeno para vender jogadores!');
+        return prev;
+      }
       return { ...prev, budget: prev.budget + value, players: prev.players.filter(p => p.id !== player.id) };
     });
     setListedForSale(l => l.filter(id => id !== player.id));
