@@ -285,26 +285,6 @@ export function CopasTab({ userId }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="news" className="outline-none space-y-4">
-          {news.length > 0 ? news.map(n => (
-            <Card key={n.id} className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer">
-              <CardContent className="p-6 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                  <Newspaper className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-black uppercase tracking-tight">{n.title}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{n.content}</p>
-                  <span className="text-[9px] font-mono text-muted-foreground/50 block pt-2">
-                    {new Date(n.created_at).toLocaleDateString()} • {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="py-20 text-center text-xs text-muted-foreground">Nenhuma notícia recente.</div>
-          )}
-        </TabsContent>
 
         <TabsContent value="prizes" className="outline-none">
           <div className="space-y-6">
