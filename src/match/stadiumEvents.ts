@@ -396,6 +396,8 @@ export function emptyStadiumOps(): StadiumOpsState {
     sponsorContracts: [],
     achievements: { unlocked: [], progress: {} },
     phase6: { membership: { activeTiers: [], membersByTier: {} }, upgrades: { owned: [], purchasedAt: {} } },
+    lastMembershipBilledAt: undefined,
+    processedEventIds: [],
   };
 }
 
