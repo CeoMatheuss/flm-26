@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
