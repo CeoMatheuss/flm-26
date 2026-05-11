@@ -407,7 +407,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           {scope === 'cup' && cupRoundMatches.length > 0 && (
             <div className="bg-zinc-900/60 border border-amber-500/20 p-4 rounded-xl text-center">
               <span className="text-[10px] text-amber-400 font-black uppercase tracking-tighter italic">{cupName}</span>
-              <h3 className="text-xl font-black text-white italic leading-tight">FASE {cupCurrentRound}</h3>
+              <h3 className="text-xl font-black text-white italic leading-tight uppercase">{getPhaseName(cupCurrentRound, cupMatches[0]?.total_rounds || 4)}</h3>
             </div>
           )}
 
