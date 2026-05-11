@@ -216,7 +216,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                             <span className="text-muted-foreground">{pos}</span>
                           )}
                         </td>
-                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px]">
+                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px] cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: entry.club_name } }))}>
                           {entry.club_name || 'Sem nome'}
                           {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
                         </td>
