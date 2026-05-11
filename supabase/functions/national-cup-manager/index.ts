@@ -17,7 +17,6 @@ serve(async (req) => {
 
     const { action, password } = await req.json()
 
-    // Validação de senha para ações administrativas
     const adminPassword = "ADM112828"
     const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups', 'reconcile_sync'].includes(action)
     
@@ -27,90 +26,95 @@ serve(async (req) => {
       })
     }
 
-    // 1. GERAR TODAS AS COPAS (DIA 10 - PRÉ-PRODUÇÃO)
+    // 1. GERAR TODAS AS COPAS INTEGRADAS ÀS LIGAS
     if (action === 'generate_all_national_cups') {
-      const { data: leagues } = await supabase.from('world_leagues').select('country, name')
-      if (!leagues) throw new Error("Nenhuma liga encontrada")
+      // Pega todos os países únicos que possuem ligas ativas
+      const { data: countries } = await supabase.from('world_leagues').select('country').neq('status', 'inactive');
+      const uniqueCountries = [...new Set(countries?.map(c => c.country))];
 
-      for (const league of leagues) {
-        const { data: existingCup } = await supabase
-          .from('national_cups')
-          .select('id')
-          .eq('country_code', league.country)
-          .eq('season', 1) 
-          .maybeSingle();
-        
-        if (existingCup) continue;
+      if (!uniqueCountries.length) throw new Error("Nenhuma liga encontrada");
 
-        const { data: cup, error: cupError } = await supabase.from('national_cups').insert({
-            name: `Copa de ${league.name}`,
-            country_code: league.country,
-            season: 1,
+      for (const countryName of uniqueCountries) {
+        // Busca a Copa existente ou cria uma nova
+        const { data: cup, error: cupError } = await supabase.from('national_cups').upsert({
+            name: `Copa de ${countryName}`,
+            country_code: countryName,
+            season: 1, 
             status: 'scheduled',
-            current_round: 1,
-            total_rounds: 0 
-        }).select().single()
+            current_round: 1
+        }, { onConflict: 'country_code, season' }).select().single();
 
-        if (cupError || !cup) continue
+        if (cupError || !cup) continue;
 
+        // Detecta AUTOMATICAMENTE todos os times das ligas desse país
         const { data: teams } = await supabase.from('world_teams')
-            .select('id, name, logo, strength, user_id')
-            .eq('country', league.country)
-            .order('user_id', { ascending: false })
+            .select('id, name, logo, strength, user_id, league_id')
+            .eq('country', countryName);
 
-        if (!teams || teams.length < 2) continue
+        if (!teams || teams.length < 2) continue;
 
-        const participantsCount = Math.pow(2, Math.floor(Math.log2(teams.length)));
+        // Se a copa já tem times, pula a inscrição mas garante o total_teams atualizado
+        const { count } = await supabase.from('national_cup_teams').select('*', { count: 'exact', head: true }).eq('cup_id', cup.id);
+        
+        if (!count || count === 0) {
+            const cupTeams = teams.map((t, idx) => ({
+              cup_id: cup.id,
+              club_id: t.id,
+              club_name: t.name,
+              club_logo: t.logo,
+              user_id: t.user_id,
+              strength: t.strength,
+              league_id: t.league_id,
+              is_bot: !t.user_id,
+              seed: idx
+            }));
+
+            await supabase.from('national_cup_teams').insert(cupTeams);
+        }
+
+        // Determina total de fases baseado no número de times (Potência de 2)
+        const totalTeams = teams.length;
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(totalTeams)));
         const totalRounds = Math.log2(participantsCount);
 
-        await supabase.from('national_cups').update({ total_rounds: totalRounds }).eq('id', cup.id);
-
-        const participatingTeams = teams.slice(0, participantsCount);
-
-        const cupTeams = participatingTeams.map((t, idx) => ({
-          cup_id: cup.id,
-          club_id: t.id,
-          club_name: t.name,
-          club_logo: t.logo,
-          user_id: t.user_id,
-          strength: t.strength,
-          is_bot: !t.user_id,
-          seed: idx
-        }))
-
-        await supabase.from('national_cup_teams').insert(cupTeams)
-        await drawNextRound(supabase, cup.id, 1)
+        await supabase.from('national_cups').update({ 
+            total_teams: totalTeams,
+            total_rounds: Math.max(totalRounds, 1)
+        }).eq('id', cup.id);
+        
+        // Sorteio inicial (Round 1)
+        await drawNextRound(supabase, cup.id, 1);
       }
 
-      return new Response(JSON.stringify({ success: true, message: "Copas geradas com agendamento diário." }), { 
+      return new Response(JSON.stringify({ success: true, message: "Copas geradas e integradas às ligas nacionais." }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
+      });
     }
 
-    // 2. AVANÇAR FASE / SIMULAR JOGOS DO DIA
+    // 2. SIMULAR E AVANÇAR (Mantendo a lógica diária do passo anterior)
     if (action === 'advance_phase') {
         const now = new Date();
-        const { data: activeCups } = await supabase
-            .from('national_cups')
-            .select('*')
-            .eq('status', 'in_progress')
+        const { data: activeCups } = await supabase.from('national_cups').select('*').eq('status', 'in_progress');
 
-        if (!activeCups) return new Response(JSON.stringify({ success: true, message: "Nenhuma copa ativa" }), { headers: corsHeaders })
+        if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
         for (const cup of activeCups) {
-            // Simula jogos agendados para hoje ou antes que ainda não foram finalizados
             const { data: matches } = await supabase
                 .from('national_cup_matches')
-                .select('*')
+                .select(`
+                    *,
+                    home:national_cup_teams!home_team_id(strength, club_name, user_id),
+                    away:national_cup_teams!away_team_id(strength, club_name, user_id)
+                `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString())
+                .lte('scheduled_at', now.toISOString());
 
             if (!matches || matches.length === 0) continue;
 
             for (const match of matches) {
-                const homeS = match.home_strength || 50;
-                const awayS = match.away_strength || 50;
+                const homeS = match.home?.strength || 50;
+                const awayS = match.away?.strength || 50;
                 const prob = homeS / (homeS + awayS);
                 
                 const homeScore = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
@@ -125,7 +129,13 @@ serve(async (req) => {
                     home_score: homeScore,
                     away_score: awayScore,
                     status: 'finished',
-                    winner_team_id: winner_id
+                    winner_team_id: winner_id,
+                    match_data: {
+                        stats: {
+                            possession: [Math.floor(prob * 100), 100 - Math.floor(prob * 100)],
+                            shots: [Math.floor(Math.random() * 15), Math.floor(Math.random() * 15)]
+                        }
+                    }
                 }).eq('id', match.id);
 
                 const loser_id = winner_id === match.home_team_id ? match.away_team_id : match.home_team_id;
@@ -140,7 +150,6 @@ serve(async (req) => {
                 });
             }
 
-            // Verifica se a rodada atual acabou para sortear a próxima
             const { count: pendingInRound } = await supabase
                 .from('national_cup_matches')
                 .select('*', { count: 'exact', head: true })
@@ -150,36 +159,23 @@ serve(async (req) => {
 
             if (pendingInRound === 0) {
                 if (cup.current_round < cup.total_rounds) {
-                    await drawNextRound(supabase, cup.id, cup.current_round + 1)
+                    await drawNextRound(supabase, cup.id, cup.current_round + 1);
                 } else {
-                    await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+                    await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
                 }
             }
         }
 
-        return new Response(JSON.stringify({ success: true, message: "Jogos do dia simulados." }), { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        })
+        return new Response(JSON.stringify({ success: true, message: "Simulação diária concluída." }), { headers: corsHeaders });
     }
 
     if (action === 'reset_cups') {
-        await supabase.from('national_cups').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
-    }
-
-    if (action === 'reconcile_sync') {
-        const now = new Date();
-        const day = now.getUTCDate();
-        if (day >= 11) {
-            await supabase.from('national_cups').update({ status: 'in_progress' }).eq('status', 'scheduled');
-        }
-        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
+        await supabase.from('national_cups').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
 })
 
@@ -199,8 +195,6 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth();
     
-    // Regra: Começa dia 11. Se for rodada posterior, começa no dia seguinte ao fim da anterior.
-    // Mas para simplificar e garantir 1 jogo/dia, vamos usar a data da última partida da copa + 1 dia.
     const { data: lastMatch } = await supabase
         .from('national_cup_matches')
         .select('scheduled_at')
@@ -214,12 +208,9 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
         startDate = new Date(lastMatch.scheduled_at);
         startDate.setUTCDate(startDate.getUTCDate() + 1);
     } else {
-        startDate = new Date(Date.UTC(year, month, 11, 15, 0, 0)); // Dia 11 às 12:00 BRT (15:00 UTC)
+        startDate = new Date(Date.UTC(year, month, 11, 15, 0, 0)); 
     }
 
-    // Distribuir jogos: se temos muitos jogos, podemos colocar vários no mesmo dia, 
-    // DESDE QUE os times sejam diferentes. Como é knockout e cada time joga 1x por rodada, 
-    // todos os jogos de uma rodada PODEM ocorrer no mesmo dia sem violar a regra de "1 jogo por time por dia".
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
             matches.push({
@@ -237,8 +228,6 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
 
     if (matches.length > 0) {
         await supabase.from('national_cup_matches').insert(matches);
-        await supabase.from('national_cups').update({ 
-            current_round: round
-        }).eq('id', cupId);
+        await supabase.from('national_cups').update({ current_round: round, status: 'in_progress' }).eq('id', cupId);
     }
 }
