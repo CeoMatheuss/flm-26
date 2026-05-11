@@ -224,8 +224,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string
   }, [nextMatch, club.stadiumName, club.stadiumOps]);
 
   const stadiumCapacity = useMemo(() => {
-    return getStadiumCapacity(club.infrastructure.stadium.level);
-  }, [club.infrastructure.stadium.level]);
+    return getStadiumCapacity(stadiumLevel || 1);
+  }, [stadiumLevel]);
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
