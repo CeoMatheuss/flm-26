@@ -14,35 +14,44 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
   const [nextMatch, setNextMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = async () => {
     if (!userId) return;
-    const load = async () => {
-      const { data: teamEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id')
-        .eq('user_id', userId)
-        .maybeSingle();
+    const { data: teamEntry } = await supabase
+      .from('national_cup_teams')
+      .select('cup_id')
+      .eq('user_id', userId)
+      .eq('eliminated', false)
+      .maybeSingle();
 
-      if (teamEntry) {
-        const { data: match } = await supabase
-          .from('national_cup_matches')
-          .select(`
-            *,
-            cup:national_cups(name),
-            home:national_cup_teams!home_team_id(club_name, club_logo),
-            away:national_cup_teams!away_team_id(club_name, club_logo)
-          `)
-          .eq('cup_id', teamEntry.cup_id)
-          .eq('status', 'scheduled')
-          .order('scheduled_at', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        
-        if (match) setNextMatch(match);
-      }
-      setLoading(false);
-    };
+    if (teamEntry) {
+      const { data: match } = await supabase
+        .from('national_cup_matches')
+        .select(`
+          *,
+          cup:national_cups(name),
+          home:national_cup_teams!home_team_id(club_name, club_logo),
+          away:national_cup_teams!away_team_id(club_name, club_logo)
+        `)
+        .eq('cup_id', teamEntry.cup_id)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (match) setNextMatch(match);
+      else setNextMatch(null);
+    } else {
+      setNextMatch(null);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     load();
+    const channel = supabase.channel('cup-widget-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   if (loading || !nextMatch) return null;

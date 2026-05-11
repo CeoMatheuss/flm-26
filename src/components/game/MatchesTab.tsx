@@ -49,7 +49,13 @@ export function MatchesTab({
       const allCompetitionsMatches: any[] = [];
 
       // 1. National Cup Matches (New System)
-      const { data: cupEntry } = await supabase.from('national_cup_teams').select('cup_id').eq('user_id', userId).maybeSingle();
+      const { data: cupEntry } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', userId)
+        .eq('eliminated', false)
+        .maybeSingle();
+
       if (cupEntry) {
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
@@ -60,7 +66,7 @@ export function MatchesTab({
             away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
           .eq('cup_id', cupEntry.cup_id)
-          .eq('status', 'scheduled')
+          .in('status', ['scheduled', 'live'])
           .order('scheduled_at', { ascending: true })
           .limit(5);
 
@@ -73,7 +79,7 @@ export function MatchesTab({
             awayLogo: m.away?.club_logo,
             isHome: m.home?.user_id === userId,
             competition: m.cup?.name || 'Copa Nacional',
-            stage: `Rodada ${m.round}`
+            stage: `Fase ${m.round}`
           })));
         }
       }
@@ -81,6 +87,10 @@ export function MatchesTab({
       setTournamentMatches(allCompetitionsMatches);
     };
     loadMatches();
+    const channel = supabase.channel('cup-matches-tab')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadMatches())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const runInstantBot = async (mode: 'bot_balanced' | 'bot_random') => {
@@ -137,14 +147,29 @@ export function MatchesTab({
           <div className="space-y-3">
             {tournamentMatches.length > 0 ? tournamentMatches.map(m => (
               <Card key={m.id} className="bg-card/40 border-border/50">
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div className="flex-1 text-xs font-bold truncate">{m.homeName}</div>
-                  <div className="flex flex-col items-center px-4">
-                     <Badge variant="outline" className="text-[8px] mb-1">{m.competition}</Badge>
-                     <div className="text-sm font-black">VS</div>
-                     <span className="text-[8px] text-muted-foreground uppercase">{m.stage}</span>
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0 text-center space-y-1">
+                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
+                      {m.homeLogo || '🛡️'}
+                    </div>
+                    <div className="text-[10px] font-bold truncate">{m.homeName}</div>
                   </div>
-                  <div className="flex-1 text-xs font-bold text-right truncate">{m.awayName}</div>
+                  <div className="flex flex-col items-center px-2 shrink-0">
+                     <Badge variant="outline" className="text-[7px] mb-1">{m.competition}</Badge>
+                     {m.status === 'live' ? (
+                       <Badge variant="default" className="bg-red-500 animate-pulse text-[8px] h-4 mb-1">AO VIVO</Badge>
+                     ) : (
+                       <div className="text-xs font-black">VS</div>
+                     )}
+                     <span className="text-[7px] text-muted-foreground uppercase">{m.stage}</span>
+                     <span className="text-[7px] text-muted-foreground font-bold mt-0.5">{new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="flex-1 min-w-0 text-center space-y-1">
+                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
+                      {m.awayLogo || '🛡️'}
+                    </div>
+                    <div className="text-[10px] font-bold truncate">{m.awayName}</div>
+                  </div>
                 </CardContent>
               </Card>
             )) : (

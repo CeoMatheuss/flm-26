@@ -39,6 +39,7 @@ export function useMatchState(initialState: any, userId?: string) {
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
+    isCup?: boolean;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
@@ -80,6 +81,11 @@ export function useMatchState(initialState: any, userId?: string) {
         const stadiumLeagueScale = 1 + ((deps.infrastructure?.stadium?.level || 1) - 1) * 0.05;
         const resultMult = isWin ? 1.5 : isDraw ? 1.0 : 0.75;
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
+      }
+      if (deps.isCup) {
+        // Prêmio fixo de 50k por vitória em copa, 20k empate, 10k derrota
+        const cupBase = isWin ? 50000 : isDraw ? 20000 : 10000;
+        leaguePrize = cupBase; // Reutilizando a variável de premiação extra
       }
 
       let stadiumPenaltyFine = 0;
@@ -154,7 +160,9 @@ export function useMatchState(initialState: any, userId?: string) {
         }).then(() => {});
       }
 
-      deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
+      if (!deps.isCup) {
+        deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
+      }
 
       return {
         ...prev,
