@@ -10,7 +10,6 @@ import { MatchViewer } from '@/pages/MatchPage';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
 import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
-import { Player } from '@/types/game';
 
 const mockGame: any = {
   club: {
@@ -30,7 +29,9 @@ const mockGame: any = {
   freeAgents: [],
   sponsors: [],
   sponsorOffers: [],
-  events: [],
+  events: [
+    { id: '1', type: 'bonus', icon: '💰', title: 'Bônus de Vitória', description: 'A torcida está feliz!', date: new Date().toISOString() }
+  ],
   ranking: 1,
   rankingHistory: [],
   setTactics: () => {},
@@ -67,11 +68,11 @@ export default function TrailerGallery() {
   const [scene, setScene] = useState(0);
 
   const scenes = [
-    { name: 'Dashboard', component: <DashboardTab game={mockGame} /> },
-    { name: 'Tactics', component: <TacticsTab game={mockGame} /> },
-    { name: 'League', component: <LeagueTab game={mockGame} /> },
+    { name: 'Dashboard', component: <DashboardTab club={mockGame.club} events={mockGame.events} infrastructure={mockGame.infrastructure} userId="mock-user" /> },
+    { name: 'Tactics', component: <TacticsTab tactics={mockGame.tactics} players={mockGame.club.players} onUpdate={() => {}} userId="mock-user" /> },
+    { name: 'League', component: <LeagueTab clubName={mockGame.club.name} clubPlayers={mockGame.club.players} /> },
     { name: 'Copas', component: <CopasTab game={mockGame} userId="mock-user" /> },
-    { name: 'Scouts', component: <ScoutsTab game={mockGame} /> },
+    { name: 'Scouts', component: <ScoutsTab userId="mock-user" budget={mockGame.club.budget} /> },
     { name: 'Match', component: (
       <div className="h-[600px] overflow-y-auto">
         <MatchViewer 
