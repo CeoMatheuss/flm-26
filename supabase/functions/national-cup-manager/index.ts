@@ -150,40 +150,47 @@ serve(async (req) => {
         }
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
     }
+    // 3. REINICIAR COPAS
+    if (action === 'reset_cups') {
+        await supabase.from('national_cups').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+        return new Response(JSON.stringify({ success: true, message: "Todas as copas foram removidas" }), { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+    }
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
-  }
-})
-
-async function drawNextRound(supabase: any, cupId: string, round: number) {
-    const { data: teams } = await supabase.from('national_cup_teams')
-        .select('id, strength, club_name')
-        .eq('cup_id', cupId)
-        .eq('eliminated', false)
-
-    if (!teams || teams.length < 2) return
-
-    // Embaralhar
-    teams.sort(() => Math.random() - 0.5)
-
-    const matches = []
-    const scheduledAt = new Date()
-    scheduledAt.setHours(12, 0, 0, 0) // Sempre às 12:00
-
-    for (let i = 0; i < teams.length; i += 2) {
-        if (teams[i+1]) {
-            matches.push({
-                cup_id: cupId,
-                round: round,
-                bracket_pos: Math.floor(i / 2),
-                home_team_id: teams[i].id,
-                away_team_id: teams[i+1].id,
-                status: 'scheduled',
-                scheduled_at: scheduledAt.toISOString(),
-                stadium: `Estádio ${teams[i].club_name}`
-            })
+    // 4. RECONCILIAR / SINCRONIZAR / ATIVAR
+    if (action === 'reconcile_sync') {
+        const now = new Date();
+        const day = now.getUTCDate(); // Usar UTC para consistência
+        
+        // Ativação automática no dia 11
+        if (day >= 11) {
+            await supabase
+                .from('national_cups')
+                .update({ status: 'in_progress' })
+                .eq('status', 'scheduled');
         }
+
+        const { data: cups } = await supabase.from('national_cups').select('*').neq('status', 'finished')
+        if (cups) {
+            for (const cup of cups) {
+                const { count: pending } = await supabase.from('national_cup_matches')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('cup_id', cup.id)
+                    .eq('round', cup.current_round)
+                    .eq('status', 'scheduled')
+                
+                // Se não há mais jogos agendados na rodada atual e a copa está em progresso
+                if (pending === 0 && cup.status === 'in_progress') {
+                    if (cup.current_round < cup.total_rounds) {
+                        await drawNextRound(supabase, cup.id, cup.current_round + 1)
+                    } else {
+                        await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+                    }
+                }
+            }
+        }
+        return new Response(JSON.stringify({ success: true, message: "Sincronização e ativação concluídas" }), { headers: corsHeaders })
     }
 
     if (matches.length > 0) {
