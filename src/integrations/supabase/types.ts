@@ -4245,6 +4245,7 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      generate_random_scout: { Args: never; Returns: undefined }
       get_club_shields_by_names: {
         Args: { _names: string[] }
         Returns: {
