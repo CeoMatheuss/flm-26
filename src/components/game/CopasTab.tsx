@@ -15,52 +15,63 @@ interface Props {
 export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('bracket');
   const [cup, setCup] = useState<any>(null);
+  const [allCups, setAllCups] = useState<any[]>([]);
+  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [prizes, setPrizes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadInitial = async () => {
     try {
-      // 1. Buscar copa do país do usuário (fallback para a primeira encontrada)
-      const { data: save } = await supabase.from('game_saves').select('country').eq('user_id', userId).maybeSingle();
-      const country = save?.country || 'Brasil';
-
-      const { data: cupRow } = await supabase
+      const { data: cups } = await supabase
         .from('national_cups')
         .select('*')
-        .eq('country_code', country)
-        .order('season', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('country_code', { ascending: true });
+      
+      if (cups) {
+        setAllCups(cups);
+        
+        // Prioridade: Copa do país do usuário
+        const { data: save } = await supabase.from('game_saves').select('country').eq('user_id', userId).maybeSingle();
+        const userCountry = save?.country || 'Brasil';
+        const userCup = cups.find(c => c.country_code === userCountry) || cups[0];
+        
+        if (userCup) {
+          setSelectedCupId(userCup.id);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
+  const loadCupData = async (id: string) => {
+    setLoading(true);
+    try {
+      const cupRow = allCups.find(c => c.id === id);
       if (cupRow) {
         setCup(cupRow);
         
-        // 2. Buscar partidas
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
           .select(`
-            id, round, bracket_pos, home_score, away_score, status, winner_team_id, scheduled_at, stadium,
+            id, round, bracket_pos, home_score, away_score, home_penalties, away_penalties, status, winner_team_id, scheduled_at, stadium,
             home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
             away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
-          .eq('cup_id', cupRow.id)
+          .eq('cup_id', id)
           .order('round', { ascending: true })
           .order('bracket_pos', { ascending: true });
         
         if (cupMatches) setMatches(cupMatches);
 
-        // 3. Buscar premiações do usuário
         const { data: cupPrizes } = await supabase
           .from('national_cup_prizes')
           .select('id, cup_id, team_id, amount, description, team:national_cup_teams!team_id(club_name, user_id)')
-          .eq('cup_id', cupRow.id);
+          .eq('cup_id', id);
         
         const filteredPrizes = (cupPrizes || []).filter((p: any) => p.team?.user_id === userId);
-        if (filteredPrizes) setPrizes(filteredPrizes);
-        
-        if (cupPrizes) setPrizes(cupPrizes);
+        setPrizes(filteredPrizes);
       }
     } catch (e) {
       console.error(e);
@@ -70,12 +81,25 @@ export function CopasTab({ userId }: Props) {
   };
 
   useEffect(() => {
-    loadData();
-    const channel = supabase.channel('copas-v3-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadData())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    loadInitial();
   }, [userId]);
+
+  useEffect(() => {
+    if (selectedCupId) {
+      loadCupData(selectedCupId);
+      
+      const channel = supabase.channel(`cup-sync-${selectedCupId}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'national_cup_matches',
+          filter: `cup_id=eq.${selectedCupId}`
+        }, () => loadCupData(selectedCupId))
+        .subscribe();
+        
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [selectedCupId]);
 
   if (loading) {
     return (
