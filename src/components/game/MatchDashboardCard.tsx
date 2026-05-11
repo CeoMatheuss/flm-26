@@ -213,6 +213,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string
     return () => clearInterval(interval);
   }, [nextMatch?.date, nextMatch?.status]);
 
+  const resolvedStadium = useMemo(() => {
+    if (!nextMatch) return { name: '', isShifted: false };
+    return resolveMatchStadium(
+      nextMatch.date,
+      { stadiumName: club.stadiumName, stadiumOps: club.stadiumOps },
+      nextMatch.isHome ? nextMatch.away : nextMatch.home,
+      nextMatch.isHome
+    );
+  }, [nextMatch, club.stadiumName, club.stadiumOps]);
+
+  const stadiumCapacity = useMemo(() => {
+    return getStadiumCapacity(club.infrastructure.stadium.level);
+  }, [club.infrastructure.stadium.level]);
+
   const handleGoToMatch = () => {
     if (!nextMatch) return;
     // Amistoso → manda usuário pra aba de amistosos onde o lobby abre
@@ -233,7 +247,9 @@ function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string
           isHome: nextMatch.isHome,
           competition: nextMatch.tournamentName,
           tieBreaker: nextMatch.kind === 'tournament' ? 'both' : (isKnockout ? 'both' : 'none'),
-          isNationalCup: nextMatch.kind === 'tournament'
+          isNationalCup: nextMatch.kind === 'tournament',
+          stadiumName: resolvedStadium.name,
+          stadiumCapacity: stadiumCapacity
         },
       },
     });
