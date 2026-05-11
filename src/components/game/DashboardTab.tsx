@@ -275,12 +275,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenTournament={onOpenTournament}
-        />
-      )}
+      {/* PersonalizedCupWidget removido */}
 
 
       {/* TournamentDashboardCard Removido */}
