@@ -156,9 +156,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   ];
 
   function formatMoneyShort(val: number) {
-    if (val >= 1000000) return `R$${(val / 1000000).toFixed(1)}M`;
-    if (val >= 1000) return `R$${(val / 1000).toFixed(0)}k`;
-    return `R$${val}`;
+    return `R$ ${val.toLocaleString('pt-BR')}`;
   }
 
   const stadiumLevel = infrastructure?.stadium?.level || 1;
