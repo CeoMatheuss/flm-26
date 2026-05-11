@@ -461,7 +461,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                     }}
                   >
                     <span className={`h-2 w-2 rounded-full shrink-0 ${u.is_online ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
-                    <span className="truncate">{u.display_name || 'Jogador'}</span>
+                    <span className="truncate">{u.display_name || 'Time'}</span>
                     <span className={`text-[8px] ml-auto ${u.is_online ? 'text-emerald-400' : 'text-muted-foreground'}`}>
                       {u.is_online ? 'Online' : 'Offline'}
                     </span>
