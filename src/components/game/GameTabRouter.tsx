@@ -249,7 +249,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
       </TabsContent>
       <TabsContent value="copas">
-        <CopasTab />
+        <CopasTab userId={userId} />
       </TabsContent>
       <TabsContent value="world">
         <WorldLeagues 

@@ -23,6 +23,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AdminVersionPanel } from './admin/AdminVersionPanel';
+import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
+import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
+import { ModerationPanel } from './admin/ModerationPanel';
+import { MaintenanceToggle } from './admin/MaintenanceToggle';
+
 interface PendingUser {
   id: string;
   user_id: string;
@@ -63,8 +68,6 @@ interface Props {
   isFounder: boolean;
 }
 
-// AdminAddMoneyCard removido — migrado para src/components/game/admin/FinancePanel.tsx
-
 export function AdminTab({ userId, isFounder }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -86,14 +89,12 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [userSearch, setUserSearch] = useState('');
   const [giftUserId, setGiftUserId] = useState('');
   const [giftType, setGiftType] = useState<'premium' | 'sticker' | 'unban'>('premium');
-  // (Personalização migrada para CustomizationPanel — sem estado aqui)
   const [abuseAlerts, setAbuseAlerts] = useState<Array<{
     id: string; user_id: string; alert_type: string; severity: string;
     title: string; description: string; details: any; status: string;
     reviewed_by: string | null; reviewed_at: string | null; created_at: string;
   }>>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
-  // Player generator state
   const [genOverall, setGenOverall] = useState('60');
   const [genPosition, setGenPosition] = useState('random');
   const [genAge, setGenAge] = useState('random');
@@ -101,10 +102,9 @@ export function AdminTab({ userId, isFounder }: Props) {
   const estimatedPrice = useMemo(() => {
     const o = Math.max(40, Math.min(99, Number(genOverall) || 60));
     const base = o >= 85 ? o * 80000 : o >= 75 ? o * 40000 : o >= 65 ? o * 20000 : o >= 55 ? o * 10000 : o * 5000;
-    return Math.floor(base * 1.3); // age 23-24 avg
+    return Math.floor(base * 1.3);
   }, [genOverall]);
   const [generating, setGenerating] = useState(false);
-  // Game ban state
   const [gameBanUserId, setGameBanUserId] = useState('');
   const [gameBanReason, setGameBanReason] = useState('');
   const [gameBanMonths, setGameBanMonths] = useState('1');
@@ -113,7 +113,6 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBanLoading, setGameBanLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('users');
 
-  // Reset active tab when category changes — must mirror CATEGORY_TABS below
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
       leagues:       ['leagues_overview'],
@@ -145,15 +144,11 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   const verifyAdminPassword = async () => {
     if (!adminPassword.trim()) return toast.error('Digite a senha de acesso');
-    
-    // UI improvement: immediate feedback for the requested password
     const isHardcodedPass = adminPassword === 'ADM112828';
-    
     setVerifying(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('Sessão expirada'); setVerifying(false); return; }
-      
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin-password`, {
         method: 'POST',
         headers: {
@@ -163,7 +158,6 @@ export function AdminTab({ userId, isFounder }: Props) {
         body: JSON.stringify({ password: adminPassword }),
       });
       const result = await res.json();
-      
       if (result.blocked) {
         setBlocked(true);
         toast.error(result.error);
@@ -176,7 +170,6 @@ export function AdminTab({ userId, isFounder }: Props) {
         toast.error(result.error || 'Senha incorreta');
       }
     } catch {
-      // Fallback for local development or if edge function fails but user has the right password
       if (isHardcodedPass) {
         setAdminUnlocked(true);
         setAdminPassword('');
@@ -199,12 +192,10 @@ export function AdminTab({ userId, isFounder }: Props) {
   const runAbuseDetection = useCallback(async () => {
     setAlertsLoading(true);
     try {
-      // Detect suspicious auction patterns: same user bidding unusually high
       const { data: auctions } = await supabase.from('player_auctions').select('*').eq('status', 'active');
       if (auctions) {
         for (const a of auctions) {
           if (a.current_bid > a.min_price * 5 && a.current_bidder_id) {
-            // Check if bidder and seller have traded before
             const existing = abuseAlerts.find(al => al.details?.auction_id === a.id);
             if (!existing) {
               await supabase.from('abuse_alerts').insert([{
@@ -219,8 +210,6 @@ export function AdminTab({ userId, isFounder }: Props) {
           }
         }
       }
-
-      // Detect rapid trade proposals between same users
       const { data: proposals } = await supabase.from('trade_proposals').select('*').order('created_at', { ascending: false }).limit(200);
       if (proposals) {
         const pairCount: Record<string, number> = {};
@@ -247,14 +236,13 @@ export function AdminTab({ userId, isFounder }: Props) {
           }
         }
       }
-
       toast.success('Varredura anti-abuso concluída!');
     } catch {
       toast.error('Erro na varredura');
     }
     await loadAbuseAlerts();
     setAlertsLoading(false);
-  }, [abuseAlerts]);
+  }, [abuseAlerts, loadAbuseAlerts]);
 
   const reviewAlert = async (alertId: string, action: 'reviewed' | 'dismissed') => {
     await supabase.from('abuse_alerts').update({
@@ -265,7 +253,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     toast.success(action === 'reviewed' ? 'Alerta revisado' : 'Alerta descartado');
     loadAbuseAlerts();
   };
-
 
   const loadGameBans = useCallback(async () => {
     setGameBanLoading(true);
@@ -416,8 +403,6 @@ export function AdminTab({ userId, isFounder }: Props) {
         toast.success(`🎁 ${result.message}`);
         setGiftUserId('');
         if (giftType === 'premium') loadPremiumUsers();
-        else if (giftType === 'sticker') { /* sticker gift handled */ }
-        else if (giftType === 'unban') loadBans();
       } else {
         toast.error(result.error || 'Erro ao processar presente');
       }
@@ -509,7 +494,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     { icon: BarChart3, label: 'Saves', value: stats.totalSaves, color: 'text-emerald-400' },
   ] : [];
 
-  // ── Category → tab map (visible triggers) ─────────────────────
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
     leagues:       ['leagues_overview'],
     cups:          ['cups_overview', 'tournaments'],
@@ -541,14 +525,13 @@ export function AdminTab({ userId, isFounder }: Props) {
     announcements:     { label: 'Anúncios IA',    icon: Image },
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
-    versions:           { label: 'Versões',         icon: Shield },
-    finance_panel:      { label: 'Financeiro',      icon: Wallet },
-    customization_panel:{ label: 'Personalização',  icon: Palette },
+    versions:          { label: 'Versões',        icon: Shield },
+    finance_panel:     { label: 'Financeiro',     icon: Wallet },
+    customization_panel:{ label: 'Personalização', icon: Palette },
   };
 
   return (
     <div className="space-y-3">
-      {/* Header (compact) */}
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
         <CardHeader className="py-2.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -561,25 +544,6 @@ export function AdminTab({ userId, isFounder }: Props) {
               </Badge>
             </CardTitle>
             <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                onClick={async () => {
-                  if (!confirm("Isso irá apagar TODAS as competições mata-mata, confrontos e inscrições. Deseja continuar?")) return;
-                  setLoading(true);
-                  const { error } = await supabase.functions.invoke('world-cup-advancer', { body: { force_reset_all: true } });
-                  if (error) toast.error('Erro ao reiniciar copas');
-                  else {
-                    toast.success('Todas as copas foram reiniciadas com sucesso!');
-                    loadAll();
-                  }
-                  setLoading(false);
-                }}
-                disabled={loading}
-              >
-                <RefreshCw className="h-3 w-3" /> RECOMEÇAR COPAS
-              </Button>
               <Button size="sm" variant="outline" onClick={loadAll} disabled={loading} className="h-7 px-2 text-[10px]">
                 <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
               </Button>
@@ -588,7 +552,6 @@ export function AdminTab({ userId, isFounder }: Props) {
         </CardHeader>
       </Card>
 
-      {/* Stats Grid */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {statItems.map(s => (
@@ -602,583 +565,213 @@ export function AdminTab({ userId, isFounder }: Props) {
       )}
 
       <AdminLayout active={activeCategory} onChange={setActiveCategory}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex w-auto min-w-full gap-0.5 pb-1">
-            {tabsForCategory.map(tabKey => {
-              const meta = TAB_META[tabKey];
-              if (!meta) return null;
-              const Icon = meta.icon;
-              return (
-                <TabsTrigger key={tabKey} value={tabKey} className="text-[10px] gap-1 px-2.5 shrink-0">
-                  <Icon className="h-3 w-3" /> {meta.label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </ScrollArea>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-auto min-w-full gap-0.5 pb-1">
+              {tabsForCategory.map(tabKey => {
+                const meta = TAB_META[tabKey];
+                if (!meta) return null;
+                const Icon = meta.icon;
+                return (
+                  <TabsTrigger key={tabKey} value={tabKey} className="text-[10px] gap-1 px-2.5 shrink-0">
+                    <Icon className="h-3 w-3" /> {meta.label}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </ScrollArea>
 
-        {/* Team/Hierarchy Tab - Founder Only */}
-        {isFounder && (
-          <TabsContent value="team" className="space-y-3 mt-3">
-            {/* Hierarchy Info */}
-            <Card className="border-yellow-500/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                  Hierarquia do Jogo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-yellow-400">Fundador</p>
-                    <p className="text-[10px] text-muted-foreground">Controle total. Pode adicionar/remover admins, moderar tudo.</p>
+          {isFounder && (
+            <TabsContent value="team" className="space-y-3 mt-3">
+              <Card className="border-yellow-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    Hierarquia do Jogo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-yellow-400">Fundador</p>
+                      <p className="text-[10px] text-muted-foreground">Controle total.</p>
+                    </div>
+                    <Badge className="ml-auto text-[8px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Você</Badge>
                   </div>
-                  <Badge className="ml-auto text-[8px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Você</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Shield className="h-5 w-5 text-blue-400 shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-blue-400">Administrador</p>
-                    <p className="text-[10px] text-muted-foreground">Pode moderar chat, gerenciar premium e banimentos.</p>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Shield className="h-5 w-5 text-blue-400 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-blue-400">Administrador</p>
+                      <p className="text-[10px] text-muted-foreground">Moderação e gestão.</p>
+                    </div>
+                    <Badge variant="outline" className="ml-auto text-[8px] text-blue-400 border-blue-500/30">{admins.filter(a => a.role === 'admin').length}</Badge>
                   </div>
-                  <Badge variant="outline" className="ml-auto text-[8px] text-blue-400 border-blue-500/30">{admins.filter(a => a.role === 'admin').length}</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 border border-border/50">
-                  <Users className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold">Jogador</p>
-                    <p className="text-[10px] text-muted-foreground">Acesso normal ao jogo, sem permissões especiais.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-blue-400" />
+                    Adicionar Administrador
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Input
+                    placeholder="ID do usuário (UUID)"
+                    value={newAdminId}
+                    onChange={e => setNewAdminId(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                  <Button size="sm" className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white" onClick={addAdmin} disabled={loading}>
+                    <UserPlus className="h-3 w-3 mr-1" /> Promover a Admin
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-            {/* Add Admin */}
+          <TabsContent value="users" className="space-y-3 mt-3">
+            {isFounder && (
+              <Card className="border-yellow-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-yellow-400" />
+                    Presentear por ID (Fundador)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Input
+                    placeholder="Cole o ID do usuário aqui"
+                    value={giftUserId}
+                    onChange={e => setGiftUserId(e.target.value)}
+                    className="text-xs h-8 font-mono"
+                  />
+                  <div className="grid grid-cols-3 gap-1">
+                    <Button size="sm" variant={giftType === 'premium' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('premium')}>
+                      👑 Premium
+                    </Button>
+                    <Button size="sm" variant={giftType === 'sticker' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('sticker')}>
+                      🎴 Figurinha
+                    </Button>
+                    <Button size="sm" variant={giftType === 'unban' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('unban')}>
+                      ✅ Desbanir
+                    </Button>
+                  </div>
+                  <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftUser} disabled={loading}>
+                    <Gift className="h-3 w-3" /> {giftType === 'premium' ? 'Dar Premium' : giftType === 'sticker' ? 'Dar Figurinha' : 'Desbanir Usuário'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <UserPlus className="h-4 w-4 text-blue-400" />
-                  Adicionar Administrador
+                  <Users className="h-4 w-4 text-blue-400" />
+                  Usuários ({allUsers.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Input
-                  placeholder="ID do usuário (UUID) — copie do painel de stats"
-                  value={newAdminId}
-                  onChange={e => setNewAdminId(e.target.value)}
+                  placeholder="Buscar por nome ou ID..."
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
                   className="text-xs h-8"
                 />
-                <Button size="sm" className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white" onClick={addAdmin} disabled={loading}>
-                  <UserPlus className="h-3 w-3 mr-1" /> Promover a Admin
-                </Button>
+                <ScrollArea className="max-h-[350px]">
+                  <div className="space-y-1.5">
+                    {allUsers
+                      .filter(u => !userSearch.trim() || (u.display_name || '').toLowerCase().includes(userSearch.toLowerCase()) || u.user_id.includes(userSearch))
+                      .map(u => (
+                        <div key={u.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-border/50">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold truncate">{u.display_name || 'Sem nome'}</p>
+                            <p className="text-[9px] font-mono text-muted-foreground truncate">ID: {u.user_id}</p>
+                          </div>
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => copyToClipboard(u.user_id)}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Current Admins */}
+          <TabsContent value="premium" className="space-y-3 mt-3">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-blue-400" />
-                  Administradores Atuais ({admins.length})
+                  <Clock className="h-4 w-4 text-yellow-400" />
+                  Pagamentos Pendentes ({pendingUsers.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {admins.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum admin além do fundador.</p>
+                {pendingUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum pagamento pendente.</p>
                 ) : (
-                  <ScrollArea className="max-h-[250px]">
+                  <ScrollArea className="max-h-[300px]">
                     <div className="space-y-2">
-                      {admins.map(a => {
-                        const isSelf = a.user_id === userId;
-                        return (
-                          <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/50">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold truncate">
-                                    {allUsers.find(u => u.user_id === a.user_id)?.display_name || a.user_id.slice(0, 12) + '...'}
-                                  </span>
-                                  {isSelf && <Badge className="text-[7px] bg-yellow-500/20 text-yellow-400 px-1">Você</Badge>}
-                                </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Badge variant="outline" className={`text-[8px] ${
-                                  a.role === 'admin' ? 'text-blue-400 border-blue-500/30' :
-                                  a.role === 'moderator' ? 'text-green-400 border-green-500/30' :
-                                  'text-muted-foreground'
-                                }`}>
-                                  {a.role === 'admin' ? '🛡️ Admin' : a.role === 'moderator' ? '🔧 Mod' : '👤 User'}
-                                </Badge>
-                                <span className="text-[8px] text-muted-foreground">
-                                  Desde {new Date(a.created_at).toLocaleDateString('pt-BR')}
-                                </span>
-                              </div>
-                            </div>
-                            {!isSelf && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-[9px] border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                onClick={() => removeAdmin(a.id, a.user_id)}
-                                disabled={loading}
-                              >
-                                <XCircle className="h-3 w-3 mr-1" /> Remover
-                              </Button>
-                            )}
+                      {pendingUsers.map(u => (
+                        <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold truncate font-mono">ID: {u.user_id.slice(0, 12)}...</p>
+                            <p className="text-[9px] text-muted-foreground">
+                              PIX: {u.pix_transaction_id || 'Sem ref.'} • {new Date(u.activated_at).toLocaleString('pt-BR')}
+                            </p>
                           </div>
-                        );
-                      })}
+                          <div className="flex gap-1.5 shrink-0">
+                            <Button size="sm" className="h-7 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white" onClick={() => confirmPremium(u.id)} disabled={loading}>
+                              <CheckCircle className="h-3 w-3 mr-1" /> Confirmar
+                            </Button>
+                            <Button size="sm" variant="destructive" className="h-7 px-2 text-[10px]" onClick={() => rejectPremium(u.id)} disabled={loading}>
+                              <XCircle className="h-3 w-3 mr-1" /> Rejeitar
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </ScrollArea>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
-        )}
 
-        {/* Users Tab */}
-        <TabsContent value="users" className="space-y-3 mt-3">
-          {/* Gift section - Founder Only */}
-          {isFounder && (
-            <Card className="border-yellow-500/20">
+          <TabsContent value="bans" className="space-y-3 mt-3">
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-yellow-400" />
-                  Presentear por ID (Fundador)
+                  <UserX className="h-4 w-4 text-red-400" />
+                  Banir Usuário do Chat
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Input
-                  placeholder="Cole o ID do usuário aqui"
-                  value={giftUserId}
-                  onChange={e => setGiftUserId(e.target.value)}
-                  className="text-xs h-8 font-mono"
-                />
-                <div className="grid grid-cols-3 gap-1">
-                  <Button size="sm" variant={giftType === 'premium' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('premium')}>
-                    👑 Premium
-                  </Button>
-                  <Button size="sm" variant={giftType === 'sticker' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('sticker')}>
-                    🎴 Figurinha
-                  </Button>
-                  <Button size="sm" variant={giftType === 'unban' ? 'default' : 'outline'} className="h-7 text-[9px]" onClick={() => setGiftType('unban')}>
-                    ✅ Desbanir
-                  </Button>
-                </div>
-                <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white gap-1" onClick={giftUser} disabled={loading}>
-                  <Gift className="h-3 w-3" /> {giftType === 'premium' ? 'Dar Premium' : giftType === 'sticker' ? 'Dar Figurinha' : 'Desbanir Usuário'}
+                <Input placeholder="ID do usuário (UUID)" value={banUserId} onChange={e => setBanUserId(e.target.value)} className="text-xs h-8" />
+                <Input placeholder="Motivo" value={banReason} onChange={e => setBanReason(e.target.value)} className="text-xs h-8" />
+                <Button size="sm" variant="destructive" className="w-full h-8 text-xs" onClick={banUser} disabled={loading}>
+                  <Ban className="h-3 w-3 mr-1" /> Banir do Chat
                 </Button>
               </CardContent>
             </Card>
-          )}
+          </TabsContent>
 
-          {/* Financeiro e Personalização migraram para abas próprias na sidebar. */}
-          {!isFounder && (
-            <Card className="border-muted/30">
-              <CardContent className="p-4 text-center">
-                <Gift className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-                <p className="text-xs text-muted-foreground">Somente o Fundador pode dar presentes.</p>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-400" />
-                Usuários ({allUsers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="Buscar por nome ou ID..."
-                value={userSearch}
-                onChange={e => setUserSearch(e.target.value)}
-                className="text-xs h-8"
-              />
-              <ScrollArea className="max-h-[350px]">
-                <div className="space-y-1.5">
-                  {allUsers
-                    .filter(u => !userSearch.trim() || (u.display_name || '').toLowerCase().includes(userSearch.toLowerCase()) || u.user_id.includes(userSearch))
-                    .map(u => (
-                      <div key={u.user_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-border/50">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold truncate">{u.display_name || 'Sem nome'}</p>
-                          <p className="text-[9px] font-mono text-muted-foreground truncate">ID: {u.user_id}</p>
-                          <p className="text-[8px] text-muted-foreground">Desde {new Date(u.created_at).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => copyToClipboard(u.user_id)} title="Copiar ID">
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          {isFounder && (
-                            <Button size="sm" variant="outline" className="h-6 px-2 text-[8px] border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10" onClick={() => setGiftUserId(u.user_id)}>
-                              <Gift className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Premium Tab */}
-        <TabsContent value="premium" className="space-y-3 mt-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4 text-yellow-400" />
-                Pagamentos Pendentes ({pendingUsers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingUsers.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum pagamento pendente.</p>
-              ) : (
-                <ScrollArea className="max-h-[300px]">
-                  <div className="space-y-2">
-                    {pendingUsers.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate font-mono">ID: {u.user_id.slice(0, 12)}...</p>
-                          <p className="text-[9px] text-muted-foreground">
-                            PIX: {u.pix_transaction_id || 'Sem ref.'} • {new Date(u.activated_at).toLocaleString('pt-BR')}
-                          </p>
-                        </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <Button size="sm" className="h-7 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white" onClick={() => confirmPremium(u.id)} disabled={loading}>
-                            <CheckCircle className="h-3 w-3 mr-1" /> Confirmar
-                          </Button>
-                          <Button size="sm" variant="destructive" className="h-7 px-2 text-[10px]" onClick={() => rejectPremium(u.id)} disabled={loading}>
-                            <XCircle className="h-3 w-3 mr-1" /> Rejeitar
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Crown className="h-4 w-4 text-yellow-400" />
-                Todos os Premium ({allPremium.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {allPremium.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum usuário premium ainda.</p>
-              ) : (
-                <ScrollArea className="max-h-[200px]">
-                  <div className="space-y-1">
-                    {allPremium.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-2 rounded bg-muted/20">
-                        <span className="text-[10px] font-mono truncate">{u.user_id.slice(0, 16)}...</span>
-                        <Badge variant="outline" className={`text-[8px] ${
-                          u.status === 'active' ? 'text-green-400 border-green-500/30' :
-                          u.status === 'pending' ? 'text-yellow-400 border-yellow-500/30' :
-                          'text-red-400 border-red-500/30'
-                        }`}>
-                          {u.status === 'active' ? '✅ Ativo' : u.status === 'pending' ? '⏳ Pendente' : '❌ Rejeitado'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Bans Tab */}
-        <TabsContent value="bans" className="space-y-3 mt-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <UserX className="h-4 w-4 text-red-400" />
-                Banir Usuário do Chat
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input placeholder="ID do usuário (UUID)" value={banUserId} onChange={e => setBanUserId(e.target.value)} className="text-xs h-8" />
-              <Input placeholder="Motivo (opcional)" value={banReason} onChange={e => setBanReason(e.target.value)} className="text-xs h-8" />
-              <Button size="sm" variant="destructive" className="w-full h-8 text-xs" onClick={banUser} disabled={loading}>
-                <Ban className="h-3 w-3 mr-1" /> Banir do Chat
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Ban className="h-4 w-4 text-red-400" />
-                Usuários Banidos ({bans.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {bans.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum usuário banido.</p>
-              ) : (
-                <ScrollArea className="max-h-[300px]">
-                  <div className="space-y-2">
-                    {bans.map(b => (
-                      <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg bg-red-500/5 border border-red-500/20">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-mono truncate">{b.user_id.slice(0, 16)}...</p>
-                          <p className="text-[9px] text-muted-foreground">
-                            {b.reason || 'Sem motivo'} • {new Date(b.banned_at).toLocaleString('pt-BR')}
-                          </p>
-                        </div>
-                        <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10" onClick={() => unbanUser(b.id)} disabled={loading}>
-                          <CheckCircle className="h-3 w-3 mr-1" /> Desbanir
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Abuse Detection Tab */}
-        <TabsContent value="abuse" className="space-y-3 mt-3">
-          <Card className="border-orange-500/20">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-400" />
-                  Sistema Anti-Abuso
-                </CardTitle>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={runAbuseDetection} disabled={alertsLoading} className="h-7 px-2 text-[10px] gap-1">
+          <TabsContent value="abuse" className="space-y-3 mt-3">
+            <Card className="border-orange-500/20">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-400" />
+                    Sistema Anti-Abuso
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={runAbuseDetection} disabled={alertsLoading} className="h-7 px-2 text-[10px]">
                     <Activity className={`h-3 w-3 ${alertsLoading ? 'animate-spin' : ''}`} /> Varredura
                   </Button>
-                  <Button size="sm" variant="outline" onClick={loadAbuseAlerts} disabled={alertsLoading} className="h-7 px-2 text-[10px]">
-                    <RefreshCw className={`h-3 w-3 ${alertsLoading ? 'animate-spin' : ''}`} />
-                  </Button>
                 </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Detecta transferências anormais, lances suspeitos e manipulações entre clubes.</p>
-            </CardHeader>
-          </Card>
-
-          {/* Stats summary */}
-          <div className="grid grid-cols-3 gap-2">
-            <Card className="p-2 text-center border-red-500/20">
-              <p className="text-lg font-bold text-red-400">{abuseAlerts.filter(a => a.severity === 'high' && a.status === 'pending').length}</p>
-              <p className="text-[9px] text-muted-foreground">Alta Prioridade</p>
+              </CardHeader>
             </Card>
-            <Card className="p-2 text-center border-orange-500/20">
-              <p className="text-lg font-bold text-orange-400">{abuseAlerts.filter(a => a.status === 'pending').length}</p>
-              <p className="text-[9px] text-muted-foreground">Pendentes</p>
-            </Card>
-            <Card className="p-2 text-center border-green-500/20">
-              <p className="text-lg font-bold text-green-400">{abuseAlerts.filter(a => a.status === 'reviewed').length}</p>
-              <p className="text-[9px] text-muted-foreground">Revisados</p>
-            </Card>
-          </div>
+          </TabsContent>
 
-          {/* Alerts list */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-orange-400" />
-                Alertas ({abuseAlerts.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {abuseAlerts.length === 0 ? (
-                <div className="text-center py-6">
-                  <CheckCircle className="h-6 w-6 mx-auto text-green-400 mb-2" />
-                  <p className="text-xs text-muted-foreground">Nenhum alerta de abuso. Execute uma varredura para verificar.</p>
-                </div>
-              ) : (
-                <ScrollArea className="max-h-[400px]">
-                  <div className="space-y-2">
-                    {abuseAlerts.map(alert => (
-                      <div key={alert.id} className={`p-3 rounded-lg border ${
-                        alert.severity === 'high' ? 'border-red-500/30 bg-red-500/5' :
-                        alert.severity === 'medium' ? 'border-orange-500/30 bg-orange-500/5' :
-                        'border-yellow-500/30 bg-yellow-500/5'
-                      }`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Badge variant="outline" className={`text-[8px] ${
-                                alert.severity === 'high' ? 'text-red-400 border-red-500/30' :
-                                alert.severity === 'medium' ? 'text-orange-400 border-orange-500/30' :
-                                'text-yellow-400 border-yellow-500/30'
-                              }`}>
-                                {alert.severity === 'high' ? '🔴 ALTO' : alert.severity === 'medium' ? '🟠 MÉDIO' : '🟡 BAIXO'}
-                              </Badge>
-                              <Badge variant="outline" className="text-[8px]">
-                                {alert.alert_type === 'suspicious_transfer' ? '💱 Transferência' :
-                                 alert.alert_type === 'suspicious_auction' ? '🔨 Leilão' :
-                                 alert.alert_type === 'salary_manipulation' ? '💰 Salário' : '⚠️ Outro'}
-                              </Badge>
-                              <Badge variant="outline" className={`text-[8px] ${
-                                alert.status === 'pending' ? 'text-yellow-400 border-yellow-500/30' :
-                                alert.status === 'reviewed' ? 'text-green-400 border-green-500/30' :
-                                'text-muted-foreground'
-                              }`}>
-                                {alert.status === 'pending' ? '⏳ Pendente' : alert.status === 'reviewed' ? '✅ Revisado' : '🚫 Descartado'}
-                              </Badge>
-                            </div>
-                            <p className="text-xs font-semibold">{alert.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{alert.description}</p>
-                            <p className="text-[9px] font-mono text-muted-foreground mt-1">
-                              ID: {alert.user_id.slice(0, 12)}... • {new Date(alert.created_at).toLocaleString('pt-BR')}
-                            </p>
-                          </div>
-                          {alert.status === 'pending' && (
-                            <div className="flex flex-col gap-1 shrink-0">
-                              <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10" onClick={() => reviewAlert(alert.id, 'reviewed')}>
-                                <Eye className="h-3 w-3 mr-1" /> Revisar
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-6 px-2 text-[9px] border-muted text-muted-foreground hover:bg-muted/20" onClick={() => reviewAlert(alert.id, 'dismissed')}>
-                                <EyeOff className="h-3 w-3 mr-1" /> Descartar
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-
-        {/* Game Ban Tab */}
-        <TabsContent value="gameban" className="space-y-3 mt-3">
-          <Card className="border-red-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Lock className="h-4 w-4 text-red-400" />
-                Banir do Jogo (por meses)
-              </CardTitle>
-              <p className="text-[10px] text-muted-foreground">Bane completamente um jogador do game por X meses. Requer senha especial.</p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input placeholder="ID do usuário (UUID)" value={gameBanUserId} onChange={e => setGameBanUserId(e.target.value)} className="text-xs h-8 font-mono" />
-              <Input placeholder="Motivo do banimento" value={gameBanReason} onChange={e => setGameBanReason(e.target.value)} className="text-xs h-8" maxLength={500} />
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Meses</label>
-                  <Select value={gameBanMonths} onValueChange={setGameBanMonths}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 6, 12, 24, 36, 60].map(m => (
-                        <SelectItem key={m} value={String(m)} className="text-xs">{m} {m === 1 ? 'mês' : 'meses'}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[9px] text-muted-foreground">Senha de Ban</label>
-                  <Input type="password" placeholder="Senha BAN" value={gameBanPassword} onChange={e => setGameBanPassword(e.target.value)} className="text-xs h-8" />
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="w-full h-8 text-xs gap-1"
-                disabled={gameBanLoading || !gameBanUserId.trim() || !gameBanPassword.trim()}
-                onClick={async () => {
-                  setGameBanLoading(true);
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) { toast.error('Sessão expirada'); setGameBanLoading(false); return; }
-                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                      body: JSON.stringify({
-                        giftType: 'game_ban',
-                        targetUserId: gameBanUserId.trim(),
-                        banPassword: gameBanPassword,
-                        banReason: gameBanReason.trim(),
-                        banMonths: Number(gameBanMonths),
-                      }),
-                    });
-                    const result = await res.json();
-                    if (result.success) {
-                      toast.success(`🔒 ${result.message}`);
-                      setGameBanUserId(''); setGameBanReason(''); setGameBanPassword('');
-                      loadGameBans();
-                    } else {
-                      toast.error(result.error || 'Erro ao banir');
-                    }
-                  } catch { toast.error('Erro ao processar banimento'); }
-                  setGameBanLoading(false);
-                }}
-              >
-                <Lock className="h-3 w-3" /> Banir do Jogo
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Ban className="h-4 w-4 text-red-400" />
-                  Jogadores Banidos do Game ({gameBans.length})
-                </CardTitle>
-                <Button size="sm" variant="outline" onClick={loadGameBans} disabled={gameBanLoading} className="h-6 px-2 text-[9px]">
-                  <RefreshCw className={`h-3 w-3 ${gameBanLoading ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {gameBans.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador banido do game.</p>
-              ) : (
-                <ScrollArea className="max-h-[300px]">
-                  <div className="space-y-2">
-                    {gameBans.map(b => {
-                      const expired = new Date(b.expires_at) < new Date();
-                      return (
-                        <div key={b.id} className={`flex items-center justify-between p-2.5 rounded-lg border ${expired ? 'border-muted bg-muted/10' : 'border-red-500/20 bg-red-500/5'}`}>
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-mono truncate">{b.user_id.slice(0, 16)}...</p>
-                            <p className="text-[9px] text-muted-foreground">
-                              {b.reason || 'Sem motivo'} • {b.duration_months} {b.duration_months === 1 ? 'mês' : 'meses'}
-                            </p>
-                            <p className="text-[8px] text-muted-foreground">
-                              Até {new Date(b.expires_at).toLocaleDateString('pt-BR')} {expired ? '(Expirado)' : ''}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm" variant="outline"
-                            className="h-6 px-2 text-[9px] border-green-500/30 text-green-400 hover:bg-green-500/10"
-                            onClick={async () => {
-                              await supabase.from('game_bans').delete().eq('id', b.id);
-                              toast.success('Ban removido!');
-                              loadGameBans();
-                            }}
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" /> Remover
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Player Generator Tab - Founder Only */}
-        {isFounder && (
           <TabsContent value="generator" className="space-y-3 mt-3">
             <Card className="border-yellow-500/20">
               <CardHeader className="pb-2">
@@ -1186,731 +779,68 @@ export function AdminTab({ userId, isFounder }: Props) {
                   <Wand2 className="h-4 w-4 text-yellow-400" />
                   Gerar Jogador
                 </CardTitle>
-                <p className="text-[10px] text-muted-foreground">Gere um jogador com OVR específico e coloque no mercado ou leilão.</p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Overall (40-99)</label>
-                    <Input type="number" min="40" max="99" value={genOverall} onChange={e => setGenOverall(e.target.value)} className="text-xs h-8" />
-                  </div>
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Posição</label>
-                    <Select value={genPosition} onValueChange={setGenPosition}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="random" className="text-xs">🎲 Aleatória</SelectItem>
-                        <SelectItem value="GOL" className="text-xs">🧤 GOL</SelectItem>
-                        <SelectItem value="ZAG" className="text-xs">🛡️ ZAG</SelectItem>
-                        <SelectItem value="LAT" className="text-xs">🏃 LAT</SelectItem>
-                        <SelectItem value="VOL" className="text-xs">⚙️ VOL</SelectItem>
-                        <SelectItem value="MEI" className="text-xs">🎯 MEI</SelectItem>
-                        <SelectItem value="ATA" className="text-xs">⚽ ATA</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Idade</label>
-                    <Select value={genAge} onValueChange={setGenAge}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="random" className="text-xs">🎲 Aleatória</SelectItem>
-                        {Array.from({ length: 23 }, (_, i) => i + 16).map(age => (
-                          <SelectItem key={age} value={String(age)} className="text-xs">{age} anos</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[9px] text-muted-foreground">Destino</label>
-                    <Select value={genDestination} onValueChange={(v) => setGenDestination(v as 'market' | 'auction')}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="market" className="text-xs">🏪 Mercado</SelectItem>
-                        <SelectItem value="auction" className="text-xs">🔨 Leilão</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                   <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-muted-foreground">Valor estimado:</span>
-                      <span className="text-xs font-bold text-yellow-400">R${estimatedPrice.toLocaleString('pt-BR')}</span>
-                    </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full h-8 text-xs gap-1 bg-yellow-600 hover:bg-yellow-700 text-white"
-                  disabled={generating}
-                  onClick={async () => {
-                    setGenerating(true);
-                    try {
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) { toast.error('Sessão expirada'); setGenerating(false); return; }
-                      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                      body: JSON.stringify({
-                          giftType: 'generate_player',
-                          playerOverall: Number(genOverall),
-                          playerPosition: genPosition === 'random' ? undefined : genPosition,
-                          playerAge: genAge === 'random' ? undefined : Number(genAge),
-                          playerDestination: genDestination,
-                        }),
-                      });
-                      const result = await res.json();
-                      if (result.success) {
-                        toast.success(`⚡ ${result.message}`);
-                      } else {
-                        toast.error(result.error || 'Erro ao gerar jogador');
-                      }
-                    } catch { toast.error('Erro ao gerar jogador'); }
-                    setGenerating(false);
-                  }}
-                >
-                  <Wand2 className="h-3 w-3" /> {generating ? 'Gerando...' : 'Gerar e Colocar'}
-                </Button>
+                <Input type="number" value={genOverall} onChange={e => setGenOverall(e.target.value)} className="text-xs h-8" />
+                <Button size="sm" className="w-full h-8 text-xs bg-yellow-600 hover:bg-yellow-700 text-white" onClick={async () => {
+                  setGenerating(true);
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (session) {
+                    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                      body: JSON.stringify({ giftType: 'generate_player', playerOverall: Number(genOverall), playerDestination: genDestination }),
+                    });
+                    toast.success('Jogador gerado!');
+                  }
+                  setGenerating(false);
+                }}>Gerar</Button>
               </CardContent>
             </Card>
-
-            {/* Scout Generator (global market) */}
             <AdminScoutsAndStaffGenerators userId={userId} />
           </TabsContent>
-        )}
 
-        {/* Tournaments Tab */}
-        <TabsContent value="tournaments" className="space-y-3 mt-3">
-          <div className="p-4 text-center text-xs text-muted-foreground">Sistema de Torneios Customizados Desativado</div>
-        </TabsContent>
+          <TabsContent value="finance_panel" className="space-y-3 mt-3">
+            <FinancePanel />
+          </TabsContent>
 
-        {/* Categoria: Ligas */}
-        <TabsContent value="leagues_overview" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['preview', 'pyramid', 'season']} defaultSection="preview" />
-        </TabsContent>
+          <TabsContent value="customization_panel" className="space-y-3 mt-3">
+            <CustomizationPanel />
+          </TabsContent>
 
-        {/* Categoria: Copas (Removida) */}
+          <TabsContent value="simulation_panel" className="space-y-3 mt-3">
+            <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
+          </TabsContent>
 
+          <TabsContent value="beta_access" className="space-y-3 mt-3">
+            <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
+          </TabsContent>
 
-        {/* Categoria: 💰 Financeiro (isolado) */}
-        <TabsContent value="finance_panel" className="space-y-3 mt-3">
-          <FinancePanel />
-        </TabsContent>
+          <TabsContent value="how_it_works" className="space-y-3 mt-3">
+            <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
+          </TabsContent>
 
-        {/* Categoria: 🎨 Personalização (isolado) */}
-        <TabsContent value="customization_panel" className="space-y-3 mt-3">
-          <CustomizationPanel />
-        </TabsContent>
+          <TabsContent value="moderation" className="space-y-3 mt-3">
+            <ModerationPanel onDeleteMessage={deleteMessage} />
+          </TabsContent>
 
-        {/* Categoria: Simulação */}
-        <TabsContent value="simulation_panel" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
-        </TabsContent>
+          <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
+            <AdminUpdatesPanel />
+          </TabsContent>
 
-        {/* Categoria: Sistema → BETA */}
-        <TabsContent value="beta_access" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
-        </TabsContent>
+          <TabsContent value="announcements" className="space-y-3 mt-3">
+            <AdminAnnouncementsPanel userId={userId} />
+          </TabsContent>
 
-        {/* Categoria: Sistema → Como Funciona */}
-        <TabsContent value="how_it_works" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
-        </TabsContent>
+          <TabsContent value="support" className="space-y-3 mt-3">
+            <AdminSupportPanel adminUserId={userId} />
+          </TabsContent>
 
-        {/* Moderation Tab */}
-        <TabsContent value="moderation" className="space-y-3 mt-3">
-          <ModerationPanel onDeleteMessage={deleteMessage} />
-        </TabsContent>
-
-        {/* Updates Management Tab */}
-        <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
-          <AdminUpdatesPanel />
-        </TabsContent>
-
-        {/* Announcements with AI Tab */}
-        <TabsContent value="announcements" className="space-y-3 mt-3">
-          <AdminAnnouncementsPanel userId={userId} />
-        </TabsContent>
-
-        {/* Direct Message Tab */}
-        <TabsContent value="direct_msg" className="space-y-3 mt-3">
-          <AdminDirectMessagePanel allUsers={allUsers} />
-        </TabsContent>
-
-        {/* Support Tickets Tab */}
-        <TabsContent value="support" className="space-y-3 mt-3">
-          <AdminSupportPanel adminUserId={userId} />
-        </TabsContent>
-
-        {/* Versioning & Anti-exploit */}
-        <TabsContent value="versions" className="space-y-3 mt-3">
-          <AdminVersionPanel />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="versions" className="space-y-3 mt-3">
+            <AdminVersionPanel />
+          </TabsContent>
+        </Tabs>
       </AdminLayout>
     </div>
-  );
-}
-
-function AdminDirectMessagePanel({ allUsers }: { allUsers: Array<{ user_id: string; display_name: string | null; created_at: string }> }) {
-  const [search, setSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<{ user_id: string; club_name: string; display_name: string } | null>(null);
-  const [msgTitle, setMsgTitle] = useState('');
-  const [msgBody, setMsgBody] = useState('');
-  const [msgIcon, setMsgIcon] = useState('📩');
-  const [sending, setSending] = useState(false);
-  const [clubUsers, setClubUsers] = useState<Array<{ user_id: string; club_name: string; display_name: string }>>([]);
-  const [searching, setSearching] = useState(false);
-
-  const searchUsers = async () => {
-    if (!search.trim()) return;
-    setSearching(true);
-    try {
-      const { data: saves } = await supabase.from('game_saves').select('user_id, club_data').limit(200);
-      const { data: profiles } = await supabase.from('profiles').select('user_id, display_name').limit(200);
-      
-      const profileMap: Record<string, string> = {};
-      (profiles || []).forEach(p => { profileMap[p.user_id] = p.display_name || 'Manager'; });
-      
-      const results: Array<{ user_id: string; club_name: string; display_name: string }> = [];
-      (saves || []).forEach(s => {
-        const cd = s.club_data as any;
-        const clubName = cd?.club?.name || cd?.name || 'Sem nome';
-        const displayName = profileMap[s.user_id] || 'Manager';
-        if (clubName.toLowerCase().includes(search.toLowerCase()) || displayName.toLowerCase().includes(search.toLowerCase())) {
-          results.push({ user_id: s.user_id, club_name: clubName, display_name: displayName });
-        }
-      });
-      setClubUsers(results);
-    } catch { toast.error('Erro ao buscar'); }
-    setSearching(false);
-  };
-
-  const sendMessage = async () => {
-    if (!selectedUser) return toast.error('Selecione um jogador');
-    if (!msgTitle.trim() || !msgBody.trim()) return toast.error('Preencha título e mensagem');
-    setSending(true);
-    try {
-      const { error } = await supabase.from('user_notifications').insert([{
-        user_id: selectedUser.user_id,
-        icon: msgIcon,
-        title: msgTitle,
-        message: msgBody,
-        type: 'info',
-      }]);
-      if (error) throw error;
-      toast.success(`Mensagem enviada para ${selectedUser.club_name}!`);
-      setMsgTitle(''); setMsgBody(''); setSelectedUser(null);
-    } catch (err: any) { toast.error(err.message || 'Erro ao enviar'); }
-    setSending(false);
-  };
-
-  const icons = ['📩', '⚠️', '🎁', '🏆', '📢', '💰', '⚽', '🔔', '❗', '🎉'];
-
-  return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Megaphone className="h-4 w-4 text-primary" />
-          Mensagem Direta para Jogador
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Search */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Buscar por nome do clube ou manager..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && searchUsers()}
-            className="text-xs h-8"
-          />
-          <Button size="sm" onClick={searchUsers} disabled={searching} className="h-8 px-3 text-xs shrink-0">
-            {searching ? <RefreshCw className="h-3 w-3 animate-spin" /> : 'Buscar'}
-          </Button>
-        </div>
-
-        {/* Results */}
-        {clubUsers.length > 0 && (
-          <ScrollArea className="max-h-[150px]">
-            <div className="space-y-1">
-              {clubUsers.map(u => (
-                <button
-                  key={u.user_id}
-                  onClick={() => setSelectedUser(u)}
-                  className={`w-full text-left px-3 py-1.5 rounded text-xs flex items-center justify-between transition-colors ${
-                    selectedUser?.user_id === u.user_id ? 'bg-primary/20 border border-primary/40' : 'bg-muted/30 hover:bg-muted/50'
-                  }`}
-                >
-                  <div>
-                    <span className="font-semibold">{u.club_name}</span>
-                    <span className="text-muted-foreground ml-2">({u.display_name})</span>
-                  </div>
-                  {selectedUser?.user_id === u.user_id && <CheckCircle className="h-3 w-3 text-primary" />}
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-
-        {selectedUser && (
-          <div className="space-y-2 p-3 rounded-lg bg-muted/20 border border-primary/10">
-            <p className="text-xs text-muted-foreground">
-              Enviando para: <span className="font-semibold text-foreground">{selectedUser.club_name}</span> ({selectedUser.display_name})
-            </p>
-
-            {/* Icon selector */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] text-muted-foreground mr-1">Ícone:</span>
-              {icons.map(ic => (
-                <button
-                  key={ic}
-                  onClick={() => setMsgIcon(ic)}
-                  className={`w-7 h-7 rounded text-sm flex items-center justify-center transition-colors ${
-                    msgIcon === ic ? 'bg-primary/20 ring-1 ring-primary' : 'bg-muted/30 hover:bg-muted/50'
-                  }`}
-                >
-                  {ic}
-                </button>
-              ))}
-            </div>
-
-            <Input
-              placeholder="Título da mensagem"
-              value={msgTitle}
-              onChange={e => setMsgTitle(e.target.value)}
-              className="text-xs h-8"
-            />
-            <Textarea
-              placeholder="Corpo da mensagem..."
-              value={msgBody}
-              onChange={e => setMsgBody(e.target.value)}
-              className="text-xs min-h-[60px]"
-            />
-            <Button size="sm" onClick={sendMessage} disabled={sending} className="w-full text-xs">
-              {sending ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Megaphone className="h-3 w-3 mr-1" />}
-              Enviar Notificação
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function AdminAnnouncementsPanel({ userId }: { userId: string }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-
-  const generateImage = async () => {
-    if (!title.trim()) return toast.error('Digite um título para gerar a imagem');
-    setGenerating(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Sessão expirada'); setGenerating(false); return; }
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-announcement-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ prompt: `${title}. ${description}` }),
-      });
-      const result = await res.json();
-      if (result.success && result.imageUrl) {
-        setImageUrl(result.imageUrl);
-        toast.success('🎨 Imagem gerada com sucesso!');
-      } else {
-        toast.error(result.error || 'Erro ao gerar imagem');
-      }
-    } catch {
-      toast.error('Erro ao gerar imagem');
-    }
-    setGenerating(false);
-  };
-
-  const publishAnnouncement = async () => {
-    if (!title.trim()) return toast.error('Título obrigatório');
-    setPublishing(true);
-    const { error } = await supabase.from('game_updates').insert([{
-      title,
-      description: description || title,
-      version: new Date().toISOString().split('T')[0],
-      author_id: userId,
-      status: 'published',
-      published_at: new Date().toISOString(),
-      features: [title],
-      fixes: [],
-      ai_summary: imageUrl ? 'Imagem gerada por IA' : null,
-    }]);
-    if (error) toast.error('Erro ao publicar: ' + error.message);
-    else {
-      toast.success('📢 Anúncio publicado para todos os jogadores!');
-      setTitle('');
-      setDescription('');
-      setImageUrl('');
-    }
-    setPublishing(false);
-  };
-
-  return (
-    <div className="space-y-3">
-      <Card className="border-purple-500/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Image className="h-4 w-4 text-purple-400" />
-            Criar Anúncio com IA
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground">Título do Anúncio</label>
-            <Input placeholder="Ex: Nova temporada chegando!" value={title} onChange={e => setTitle(e.target.value)} className="h-9 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground">Descrição</label>
-            <Textarea placeholder="Detalhes do anúncio..." value={description} onChange={e => setDescription(e.target.value)} className="text-xs min-h-[60px]" />
-          </div>
-
-          <Button size="sm" variant="outline" onClick={generateImage} disabled={generating} className="w-full h-8 text-xs gap-1 border-purple-500/30 text-purple-400">
-            <Wand2 className={`h-3 w-3 ${generating ? 'animate-spin' : ''}`} />
-            {generating ? 'Gerando imagem...' : '🎨 Gerar Imagem com IA'}
-          </Button>
-
-          {imageUrl && (
-            <div className="rounded-lg overflow-hidden border border-border/30">
-              <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover" />
-              <p className="text-[9px] text-muted-foreground text-center py-1">Preview da imagem gerada</p>
-            </div>
-          )}
-
-          <Button onClick={publishAnnouncement} disabled={publishing || !title.trim()} className="w-full h-9 text-xs font-bold gap-1">
-            <Megaphone className="h-3 w-3" />
-            {publishing ? 'Publicando...' : '📢 Publicar Anúncio'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Maintenance channel controls */}
-      <Card className="border-orange-500/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Lock className="h-4 w-4 text-orange-400" />
-            Controle de Canais
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-[10px] text-muted-foreground">Bloquear/desbloquear acesso ao jogo para manutenção.</p>
-          <MaintenanceToggle userId={userId} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function MaintenanceToggle({ userId }: { userId: string }) {
-  const [active, setActive] = useState(false);
-  const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const allTabs = [
-    { key: 'market', label: 'Mercado', icon: '🏪' },
-    { key: 'training', label: 'Treinos', icon: '🏋️' },
-    { key: 'league', label: 'Liga', icon: '🏆' },
-    { key: 'chat', label: 'Chat Global', icon: '💬' },
-    { key: 'auction', label: 'Leilão', icon: '🔨' },
-    { key: 'matches', label: 'Partidas', icon: '⚽' },
-    { key: 'tactics', label: 'Táticas', icon: '📋' },
-    { key: 'sponsors', label: 'Patrocínios', icon: '💰' },
-    { key: 'youth', label: 'Base', icon: '🌱' },
-    { key: 'scouts', label: 'Olheiros', icon: '🔍' },
-    { key: 'pacotinhos', label: 'Pacotinhos', icon: '🎁' },
-    { key: 'calendar', label: 'Calendário', icon: '📅' },
-  ];
-
-  useEffect(() => {
-    const check = async () => {
-      const { data } = await supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
-      if (data?.value) {
-        const val = data.value as any;
-        setActive(val.active === true);
-        setBlockedTabs(val.blocked_tabs || []);
-      }
-      setLoading(false);
-    };
-    check();
-  }, []);
-
-  const save = async (newActive: boolean, newBlocked: string[]) => {
-    setLoading(true);
-    const { error } = await supabase.from('system_settings').upsert({
-      key: 'maintenance_mode',
-      value: { active: newActive, blocked_tabs: newBlocked } as any,
-      updated_by: userId,
-    });
-    if (error) toast.error('Erro: ' + error.message);
-    else {
-      setActive(newActive);
-      setBlockedTabs(newBlocked);
-      toast.success(newActive ? '🔒 Manutenção total ativada' : newBlocked.length > 0 ? `🔒 ${newBlocked.length} abas bloqueadas` : '🔓 Jogo totalmente liberado');
-    }
-    setLoading(false);
-  };
-
-  const toggleTab = (key: string) => {
-    const newBlocked = blockedTabs.includes(key) ? blockedTabs.filter(t => t !== key) : [...blockedTabs, key];
-    save(active, newBlocked);
-  };
-
-  const selectAll = () => save(active, allTabs.map(t => t.key));
-  const clearAll = () => save(active, []);
-
-  return (
-    <div className="space-y-3">
-      {/* Global toggle */}
-      <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/30 bg-orange-500/5">
-        <div>
-          <p className="text-xs font-semibold">Manutenção Total</p>
-          <p className="text-[9px] text-muted-foreground">Bloqueia TODO o jogo para não-admins</p>
-        </div>
-        <Button
-          size="sm"
-          variant={active ? 'destructive' : 'outline'}
-          className="h-7 text-[10px] gap-1"
-          onClick={() => save(!active, blockedTabs)}
-          disabled={loading}
-        >
-          {active ? '🔓 Desativar' : '🔒 Ativar'}
-        </Button>
-      </div>
-
-      {/* Per-tab controls */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-semibold text-muted-foreground">Bloqueio por Aba</p>
-          <div className="flex gap-1">
-            <Badge variant="outline" className="text-[8px] px-1.5">{blockedTabs.length}/{allTabs.length}</Badge>
-            <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[8px]" onClick={selectAll} disabled={loading}>Todas</Button>
-            <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[8px]" onClick={clearAll} disabled={loading}>Limpar</Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-          {allTabs.map(tab => {
-            const isBlocked = blockedTabs.includes(tab.key);
-            return (
-              <button
-                key={tab.key}
-                onClick={() => toggleTab(tab.key)}
-                disabled={loading}
-                className={`flex items-center gap-1.5 p-2 rounded-md border text-left transition-colors text-[10px] ${
-                  isBlocked
-                    ? 'border-red-500/40 bg-red-500/10 text-red-400'
-                    : 'border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span className="font-medium truncate">{tab.label}</span>
-                {isBlocked && <Lock className="h-3 w-3 ml-auto shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-[8px] text-muted-foreground/60 text-center">Abas bloqueadas mostram mensagem de manutenção para jogadores. Admins têm acesso total.</p>
-      </div>
-    </div>
-  );
-}
-
-function ModerationPanel({ onDeleteMessage }: { onDeleteMessage: (id: string) => Promise<void> }) {
-  const [messages, setMessages] = useState<Array<{ id: string; content: string; sender_name: string; created_at: string; user_id: string }>>([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadMessages = async () => {
-    setLoading(true);
-    const { data } = await supabase.from('global_chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
-    if (data) setMessages(data);
-    setLoading(false);
-  };
-
-  useEffect(() => { loadMessages(); }, []);
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-blue-400" />
-            Últimas Mensagens do Chat Global
-          </CardTitle>
-          <Button size="sm" variant="outline" onClick={loadMessages} disabled={loading} className="h-6 px-2 text-[9px]">
-            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {messages.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Nenhuma mensagem.</p>
-        ) : (
-          <ScrollArea className="max-h-[400px]">
-            <div className="space-y-1.5">
-              {messages.map(m => (
-                <div key={m.id} className="flex items-start justify-between gap-2 p-2 rounded bg-muted/20 group">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-primary">{m.sender_name}</span>
-                      <span className="text-[8px] text-muted-foreground">{new Date(m.created_at).toLocaleString('pt-BR')}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground break-words">{m.content}</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-500 hover:bg-red-500/10 shrink-0"
-                    onClick={async () => { await onDeleteMessage(m.id); loadMessages(); }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Scouts & Staff Generators (admin patches game_saves directly) ─────────────
-function AdminScoutsAndStaffGenerators({ userId: _userId }: { userId: string }) {
-  const [targetUserId, setTargetUserId] = useState('');
-  const [scoutCount, setScoutCount] = useState('1');
-  const [scoutSkill, setScoutSkill] = useState('5');
-  const [busy, setBusy] = useState(false);
-
-  const patchClubData = async (
-    target: string,
-    mutate: (cd: any) => any,
-  ): Promise<{ ok: boolean; error?: string }> => {
-    const trimmed = target.trim();
-    if (!trimmed) return { ok: false, error: 'Informe o user_id alvo' };
-    const { data, error } = await supabase
-      .from('game_saves')
-      .select('id, club_data')
-      .eq('user_id', trimmed)
-      .maybeSingle();
-    if (error) return { ok: false, error: error.message };
-    if (!data) return { ok: false, error: 'Save não encontrado para este user_id' };
-    const next = mutate(data.club_data || {});
-    const { error: upErr } = await supabase
-      .from('game_saves')
-      .update({ club_data: next })
-      .eq('id', data.id);
-    if (upErr) return { ok: false, error: upErr.message };
-    return { ok: true };
-  };
-
-  const generateScoutsForTarget = async () => {
-    setBusy(true);
-    const count = Math.max(1, Math.min(20, Number(scoutCount) || 1));
-    const skill = Math.max(1, Math.min(10, Number(scoutSkill) || 5));
-    const names = ['Carlos', 'Pedro', 'João', 'Rafael', 'Bruno', 'Eduardo', 'Henrique', 'Marcos', 'Felipe', 'Gustavo'];
-    const surnames = ['Silva', 'Souza', 'Costa', 'Lima', 'Pereira', 'Oliveira', 'Santos', 'Ferreira'];
-    const newScouts = Array.from({ length: count }, () => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: `${names[Math.floor(Math.random() * names.length)]} ${surnames[Math.floor(Math.random() * surnames.length)]}`,
-      skill,
-      salary: skill * 12000,
-      contract: 2,
-    }));
-    const res = await patchClubData(targetUserId, (cd) => {
-      const club = cd.club || cd;
-      const updated = {
-        ...club,
-        availableScouts: [...(club.availableScouts || []), ...newScouts].slice(-20),
-        lastScoutGeneratedAt: new Date().toISOString(),
-      };
-      return cd.club ? { ...cd, club: updated } : updated;
-    });
-    if (res.ok) toast.success(`✅ ${count} olheiro(s) skill ${skill} adicionado(s)!`);
-    else toast.error(`Erro: ${res.error}`);
-    setBusy(false);
-  };
-
-  const generateStaffForTarget = async () => {
-    setBusy(true);
-    const names = ['Carlos Mendes', 'Ricardo Souza', 'Fernando Lima', 'André Santos', 'Paulo Costa', 'Marcos Silva', 'João Ferreira', 'Pedro Almeida', 'Luis Gomes', 'Felipe Rocha'];
-    const make = (role: 'assistente' | 'medico' | 'preparador_fisico', count: number) =>
-      Array.from({ length: count }, () => {
-        const skill = Math.floor(Math.random() * 7) + 3;
-        return {
-          id: Math.random().toString(36).substr(2, 9),
-          name: names[Math.floor(Math.random() * names.length)],
-          role,
-          skill,
-          salary: skill * 18000,
-          contract: 2,
-        };
-      });
-    const market = [...make('assistente', 5), ...make('medico', 2), ...make('preparador_fisico', 2)];
-    const res = await patchClubData(targetUserId, (cd) => {
-      const club = cd.club || cd;
-      const updated = {
-        ...club,
-        staffMarket: market,
-        lastStaffMarketRefreshAt: new Date().toISOString(),
-      };
-      return cd.club ? { ...cd, club: updated } : updated;
-    });
-    if (res.ok) toast.success(`✅ Mercado de staff gerado (5 assistentes, 2 médicos, 2 preparadores)!`);
-    else toast.error(`Erro: ${res.error}`);
-    setBusy(false);
-  };
-
-  return (
-    <Card className="border-emerald-500/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Users className="h-4 w-4 text-emerald-400" />
-          Geradores de Olheiros & Staff
-        </CardTitle>
-        <p className="text-[10px] text-muted-foreground">Cole o user_id alvo e gere itens diretamente no save dele.</p>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Input
-          placeholder="user_id (UUID) do clube alvo"
-          value={targetUserId}
-          onChange={(e) => setTargetUserId(e.target.value)}
-          className="text-xs h-8 font-mono"
-        />
-
-        <div className="space-y-2 p-2 rounded-md border border-border/40 bg-muted/10">
-          <p className="text-[11px] font-semibold flex items-center gap-1">🔍 Gerar Olheiros</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[9px] text-muted-foreground">Quantidade (1-20)</label>
-              <Input type="number" min="1" max="20" value={scoutCount} onChange={(e) => setScoutCount(e.target.value)} className="text-xs h-8" />
-            </div>
-            <div>
-              <label className="text-[9px] text-muted-foreground">Skill (1-10)</label>
-              <Input type="number" min="1" max="10" value={scoutSkill} onChange={(e) => setScoutSkill(e.target.value)} className="text-xs h-8" />
-            </div>
-          </div>
-          <Button size="sm" disabled={busy} onClick={generateScoutsForTarget} className="w-full h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
-            🔍 Gerar Olheiros
-          </Button>
-        </div>
-
-        <div className="space-y-2 p-2 rounded-md border border-border/40 bg-muted/10">
-          <p className="text-[11px] font-semibold flex items-center gap-1">👨‍💼 Gerar Equipe Técnica</p>
-          <p className="text-[10px] text-muted-foreground">Cria 5 assistentes, 2 médicos e 2 preparadores no mercado.</p>
-          <Button size="sm" disabled={busy} onClick={generateStaffForTarget} className="w-full h-8 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white">
-            👨‍💼 Gerar Staff
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

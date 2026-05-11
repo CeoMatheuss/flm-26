@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Zap, RefreshCw, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AdminUpdatesPanel() {
+  const [loading, setLoading] = useState(false);
   return (
     <Card className="border-border/30 bg-card/60">
       <CardHeader className="pb-2">
