@@ -80,7 +80,7 @@ export function MatchesTab({
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-2 w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
-              <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background"> // Centralizando amistosos em GERAIS
+              <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
                 <Users className="h-4 w-4" /> Desafiar BOT
               </TabsTrigger>
               <TabsTrigger value="online" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
