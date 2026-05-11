@@ -19,7 +19,6 @@ export type RankingOutcome = 'win' | 'draw' | 'loss';
 const WEIGHT: Record<RankingCompetition, number> = {
   friendly: 0.5,
   league: 1.0,
-  cup: 1.2,
   continental: 1.6,
   world: 2.0,
 };
