@@ -95,7 +95,10 @@ serve(async (req) => {
               if (winnerMatch) {
                 await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
                 await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
-                await grantPrize(supabase, winnerMatch.winner_team_id, 25000000, "Campeão da Copa", cup.id);
+                await grantPrize(supabase, winnerMatch.winner_team_id, 10000000, "Campeão da Copa", cup.id);
+
+                // Bonus logic: Best Attack / Best Defense
+                await processEndOfCupBonuses(supabase, cup.id);
               }
             }
           }
