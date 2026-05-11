@@ -56,7 +56,7 @@ export function CupsOverviewTab() {
         .order('country_code');
       
       if (error) throw error;
-      setCups(data || []);
+      setCups((data || []) as any);
     } catch (e: any) {
       toast.error("Erro ao carregar copas");
     } finally {
