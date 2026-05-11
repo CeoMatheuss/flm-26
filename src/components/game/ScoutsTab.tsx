@@ -136,89 +136,129 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
       {/* Header Estilizado */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tighter flex items-center gap-2">
-            <Search className="h-6 w-6 text-primary" /> DEPARTAMENTO DE SCOUTING
+          <h1 className="text-2xl font-black tracking-tighter flex items-center gap-2 text-white">
+            <Search className="h-6 w-6 text-primary" /> SCOUTING ENGINE V3
           </h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Descubra os próximos craques do {scouts.length > 0 ? 'clube' : 'mercado'}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
+            {activeTab === 'scouts' ? 'Gerencie seu departamento de olheiros' : 
+             activeTab === 'market' ? 'Contrate novos talentos para sua equipe' :
+             'Relatórios de campo detalhados'}
+          </p>
         </div>
-        {scouts.length < 5 && (
-          <Button onClick={handleHireInitialScout} className="gap-2 font-bold shadow-lg shadow-primary/20">
-            <UserPlus className="h-4 w-4" /> CONTRATAR OLHEIRO
-          </Button>
-        )}
       </div>
 
-      <Tabs defaultValue="scouts" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full max-w-md mb-6">
-          <TabsTrigger value="scouts" className="font-bold">Olheiros ({scouts.length})</TabsTrigger>
-          <TabsTrigger value="reports" className="font-bold">Relatórios ({reports.length})</TabsTrigger>
+      <Tabs defaultValue="scouts" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-6 bg-black/40 border border-white/5 p-1 h-12">
+          <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
+            MEUS OLHEIROS ({myScouts.length}/5)
+          </TabsTrigger>
+          <TabsTrigger value="market" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
+            MERCADO ({marketScouts.length})
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
+            RELATÓRIOS ({reports.length})
+          </TabsTrigger>
         </TabsList>
 
+        {/* ABA: MEUS OLHEIROS */}
         <TabsContent value="scouts" className="space-y-4">
-          {scouts.length === 0 ? (
-            <Card className="border-dashed border-2 bg-muted/5">
-              <CardContent className="py-12 text-center">
-                <User className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="font-bold">Nenhum olheiro na equipe</h3>
-                <p className="text-sm text-muted-foreground mb-6">Contrate seu primeiro olheiro para começar a descobrir talentos.</p>
-                <Button onClick={handleHireInitialScout} variant="outline" className="font-bold">Iniciar Departamento</Button>
+          {myScouts.length === 0 ? (
+            <Card className="border-dashed border-2 bg-black/20 border-white/10">
+              <CardContent className="py-16 text-center">
+                <div className="w-20 h-20 bg-muted/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <User className="h-10 w-10 text-muted-foreground/30" />
+                </div>
+                <h3 className="font-black text-xl text-white uppercase italic">Nenhum olheiro vinculado</h3>
+                <p className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto">Vá ao mercado para contratar profissionais e começar a mapear o mundo.</p>
+                <Button onClick={() => setActiveTab('market')} className="font-black uppercase tracking-tighter h-12 px-8">Explorar Mercado</Button>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {scouts.map(scout => {
+              {myScouts.map(scout => {
                 const activeMission = missions.find(m => m.scout_id === scout.id);
                 return (
-                  <Card key={scout.id} className={`overflow-hidden transition-all hover:border-primary/40 ${scout.is_busy ? 'opacity-90 grayscale-[0.3]' : ''}`}>
+                  <Card key={scout.id} className={`overflow-hidden border-white/5 bg-black/40 transition-all hover:border-primary/40 ${scout.is_busy ? 'opacity-90' : ''}`}>
                     <CardContent className="p-0">
                       <div className="flex items-stretch">
-                        {/* Avatar/Icone do Olheiro */}
-                        <div className={`w-24 sm:w-32 bg-gradient-to-b from-muted to-muted/30 flex flex-col items-center justify-center p-4 border-r ${scout.is_busy ? 'bg-primary/5' : ''}`}>
-                          <div className="w-16 h-16 rounded-full bg-background border-2 border-primary/20 flex items-center justify-center mb-2 shadow-inner">
-                            <User className="h-8 w-8 text-primary/50" />
+                        <div className={`w-28 sm:w-36 bg-gradient-to-b from-zinc-900 to-black flex flex-col items-center justify-center p-4 border-r border-white/5`}>
+                          <div className="relative mb-3">
+                            <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-primary/20 flex items-center justify-center shadow-2xl">
+                              <User className="h-10 w-10 text-primary/40" />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-black border border-white/10 px-1.5 py-0.5 rounded text-[10px] font-black text-primary">
+                              {scout.seasons_remaining}T
+                            </div>
                           </div>
-                          <Badge variant="outline" className={`text-[10px] uppercase font-black ${LEVEL_COLORS[scout.level]}`}>
+                          <Badge variant="outline" className={`text-[9px] uppercase font-black px-2 py-0.5 ${LEVEL_COLORS[scout.level]}`}>
                             {scout.level}
                           </Badge>
                         </div>
 
-                        {/* Info do Olheiro */}
-                        <div className="flex-1 p-4 space-y-3">
+                        <div className="flex-1 p-5 space-y-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-bold text-sm sm:text-base">{scout.name}</h3>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">🌍 {scout.country}</p>
+                              <h3 className="font-black text-base text-white uppercase italic leading-tight">{scout.name}</h3>
+                              <p className="text-[10px] text-muted-foreground uppercase font-bold flex items-center gap-1 mt-1">
+                                <Globe className="h-3 w-3" /> {scout.country}
+                              </p>
                             </div>
-                            <Badge variant="secondary" className="text-[9px] font-bold">
-                              {SPEC_LABELS[scout.specialization]}
-                            </Badge>
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge variant="secondary" className="text-[9px] font-black bg-white/5 text-zinc-300 border-white/5">
+                                {SPEC_LABELS[scout.specialization]}
+                              </Badge>
+                              {scout.seasons_remaining <= 1 && (
+                                <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[8px] font-black uppercase">Expirando</Badge>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
-                              <span>Eficiência</span>
-                              <span>{Math.round(scout.efficiency * 100)}%</span>
-                            </div>
-                            <Progress value={scout.efficiency * 100} className="h-1" />
-                          </div>
-
-                          {scout.is_busy && activeMission ? (
-                            <div className="bg-primary/5 rounded-lg p-2 space-y-1.5 border border-primary/10">
-                              <div className="flex justify-between items-center text-[9px] font-black uppercase text-primary">
-                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Missão {activeMission.type}</span>
-                                <span>Finaliza em {formatDistanceToNow(new Date(activeMission.ends_at), { locale: ptBR })}</span>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] uppercase font-black text-muted-foreground">
+                                <span>Expertise</span>
+                                <span className="text-white">{Math.round(scout.efficiency * 100)}%</span>
                               </div>
-                              <Progress value={50} className="h-1.5 bg-primary/10" />
+                              <Progress value={scout.efficiency * 100} className="h-1 bg-white/5" />
                             </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              onClick={() => setShowMissionModal(scout)}
-                              className="w-full h-8 text-[11px] font-black uppercase tracking-tighter gap-2"
-                            >
-                              <Play className="h-3 w-3" /> Enviar em Missão
-                            </Button>
-                          )}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] uppercase font-black text-muted-foreground">
+                                <span>Contrato</span>
+                                <span className="text-white">{scout.seasons_remaining}/5</span>
+                              </div>
+                              <Progress value={(scout.seasons_remaining / 5) * 100} className="h-1 bg-white/5" />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {scout.is_busy && activeMission ? (
+                              <div className="flex-1 bg-primary/5 rounded border border-primary/20 p-2 space-y-1.5">
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase text-primary italic">
+                                  <span className="flex items-center gap-1"><Clock className="h-3 w-3 animate-pulse" /> {activeMission.type}</span>
+                                  <span>{formatDistanceToNow(new Date(activeMission.ends_at), { locale: ptBR })}</span>
+                                </div>
+                                <Progress value={50} className="h-1 bg-primary/20" />
+                              </div>
+                            ) : (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => setShowMissionModal(scout)}
+                                  className="flex-1 h-9 text-[10px] font-black uppercase tracking-tighter gap-2 shadow-lg shadow-primary/10"
+                                >
+                                  <Play className="h-3 w-3" /> Iniciar Missão
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-red-500/50 hover:text-red-500 hover:bg-red-500/10"
+                                  onClick={() => handleFireScout(scout.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -229,50 +269,104 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
           )}
         </TabsContent>
 
+        {/* ABA: MERCADO */}
+        <TabsContent value="market" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {marketScouts.length === 0 ? (
+              <div className="col-span-full py-20 text-center text-muted-foreground border-2 border-dashed border-white/5 rounded-xl">
+                Nenhum olheiro disponível no mercado no momento.
+              </div>
+            ) : (
+              marketScouts.map(scout => (
+                <Card key={scout.id} className="bg-zinc-900/40 border-white/5 hover:border-primary/20 transition-all overflow-hidden">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
+                        <User className="h-6 w-6 text-zinc-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white uppercase italic text-sm">{scout.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`text-[8px] font-black uppercase ${LEVEL_COLORS[scout.level]}`}>
+                            {scout.level}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground font-bold">{scout.country}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3 mb-5">
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-muted-foreground uppercase">Especialidade</span>
+                        <span className="text-zinc-300">{SPEC_LABELS[scout.specialization]}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-muted-foreground uppercase">Precisão</span>
+                        <span className="text-primary">{Math.round(scout.efficiency * 100)}%</span>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full h-10 font-black uppercase text-[10px] gap-2"
+                      onClick={() => handleHireScout(scout)}
+                      disabled={myScouts.length >= 5}
+                    >
+                      <UserPlus className="h-3 w-3" /> Contratar (5 Temp.)
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ABA: RELATÓRIOS */}
         <TabsContent value="reports" className="space-y-4">
           {reports.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="text-sm">Nenhum relatório disponível ainda. Envie seus olheiros em missões!</p>
+            <div className="text-center py-20 text-muted-foreground bg-black/20 border-2 border-dashed border-white/5 rounded-xl">
+              <FileText className="h-16 w-16 mx-auto mb-6 opacity-10" />
+              <p className="text-sm font-bold uppercase tracking-widest opacity-50">Aguardando relatórios de campo</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {reports.map(report => (
-                <Card key={report.id} className="group hover:border-emerald-500/50 transition-all cursor-pointer">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <Badge className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-black text-[10px]">
-                        {report.player_data.position}
-                      </Badge>
-                      <div className="text-right">
-                        <div className="text-[10px] text-muted-foreground uppercase font-bold">OVR Estimado</div>
-                        <div className="text-lg font-black text-primary">~{report.player_data.overall}</div>
-                      </div>
+                <Card key={report.id} className="group hover:border-primary/40 transition-all cursor-pointer bg-zinc-900/40 border-white/5 overflow-hidden">
+                  <div className="bg-primary/5 p-4 border-b border-white/5 flex justify-between items-center">
+                    <Badge className="bg-primary text-black font-black text-[9px] px-2">
+                      {report.player_data.position}
+                    </Badge>
+                    <div className="text-right">
+                      <div className="text-[8px] text-muted-foreground uppercase font-black">Média Estimada</div>
+                      <div className="text-lg font-black text-white italic">~{report.player_data.overall}</div>
                     </div>
-
+                  </div>
+                  <CardContent className="p-4 space-y-4">
                     <div>
-                      <h4 className="font-bold text-sm truncate">{report.player_data.name}</h4>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold">
+                      <h4 className="font-black text-white uppercase italic truncate text-sm">{report.player_data.name}</h4>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-black mt-1">
                         <span>{report.player_data.age} ANOS</span>
                         <span>•</span>
-                        <span>🌍 {report.player_data.nationality}</span>
+                        <span>{report.player_data.nationality}</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-muted/50">
+                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
                       <div>
-                        <div className="text-[9px] text-muted-foreground uppercase font-black">Potencial</div>
-                        <div className="text-xs font-bold text-blue-400">~{report.player_data.potential}</div>
+                        <div className="text-[8px] text-muted-foreground uppercase font-black">Potencial</div>
+                        <div className="text-xs font-black text-blue-400 italic">~{report.player_data.potential}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black">Precisão</div>
-                        <div className="text-xs font-bold">{report.accuracy}%</div>
+                        <div className="text-[8px] text-muted-foreground uppercase font-black">Status</div>
+                        <div className="text-xs font-black text-zinc-300 uppercase">{report.player_data.status || 'Disponível'}</div>
                       </div>
                     </div>
 
-                    <Button variant="secondary" size="sm" className="w-full h-7 text-[10px] font-black group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      VER DETALHES
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1 h-8 text-[9px] font-black uppercase border-white/10 hover:bg-white/5">
+                        Relatório
+                      </Button>
+                      <Button className="flex-1 h-8 text-[9px] font-black uppercase">
+                        Contratar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
