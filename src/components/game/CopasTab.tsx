@@ -52,9 +52,11 @@ export function CopasTab({ userId }: Props) {
         // 3. Buscar premiações do usuário
         const { data: cupPrizes } = await supabase
           .from('national_cup_prizes')
-          .select('*, team:national_cup_teams!team_id(club_name)')
-          .eq('cup_id', cupRow.id)
-          .eq('team:national_cup_teams(user_id)', userId);
+          .select('id, cup_id, team_id, amount, description, team:national_cup_teams!team_id(club_name, user_id)')
+          .eq('cup_id', cupRow.id);
+        
+        const filteredPrizes = (cupPrizes || []).filter((p: any) => p.team?.user_id === userId);
+        if (filteredPrizes) setPrizes(filteredPrizes);
         
         if (cupPrizes) setPrizes(cupPrizes);
       }
