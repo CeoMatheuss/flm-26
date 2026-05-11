@@ -244,6 +244,11 @@ export function CopasTab({ userId }: Props) {
 
               <div className="flex flex-col items-center gap-1">
                 <div className="px-4 py-1 rounded-full bg-muted font-black text-xs italic tracking-tighter">VS</div>
+                {myNextMatch && (
+                  <Button size="sm" className="h-8 px-4 font-black text-[10px] animate-pulse" onClick={handlePlay2D}>
+                    <Play className="h-3 w-3 mr-1" /> JOGAR 2D
+                  </Button>
+                )}
                 <div className="h-px w-8 bg-border"></div>
               </div>
 
