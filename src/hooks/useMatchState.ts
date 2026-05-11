@@ -39,6 +39,7 @@ export function useMatchState(initialState: any, userId?: string) {
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
+    isCup?: boolean;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
