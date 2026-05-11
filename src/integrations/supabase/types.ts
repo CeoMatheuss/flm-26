@@ -4448,6 +4448,7 @@ export type Database = {
         Returns: string
       }
       seed_initial_world_leagues: { Args: never; Returns: undefined }
+      seed_league_data: { Args: { p_league_id: string }; Returns: undefined }
       simulate_cup_match: { Args: { _match_id: string }; Returns: undefined }
       simulate_league_matchday: {
         Args: { p_league_id: string; p_matchday: number }
