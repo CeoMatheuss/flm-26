@@ -87,5 +87,5 @@ export function shieldPropsFromClub(source: ShieldSourceLike | null | undefined)
 /** Returns true if the source has a renderable shield (legacy or V2). */
 export function hasShield(source: ShieldSourceLike | null | undefined): boolean {
   if (!source) return false;
-  return !!(source.shieldConfig?.pattern || source.shieldPattern);
+  return !!(source.shield_config?.pattern || source.shieldConfig?.pattern || source.shieldPattern);
 }
