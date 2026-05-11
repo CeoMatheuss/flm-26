@@ -85,8 +85,21 @@ export function CopasTab({ userId }: Props) {
   const navigate = useNavigate();
   const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
 
+  // Janela de horário: só permite entrar 5 min antes até 60 min depois do scheduled_at
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const matchTimeMs = myMatch?.scheduled_at ? new Date(myMatch.scheduled_at).getTime() : 0;
+  const minutesUntilMatch = matchTimeMs ? Math.round((matchTimeMs - now) / 60000) : 0;
+  const canPlayNow = !!myMatch && matchTimeMs > 0 && now >= matchTimeMs - 5 * 60_000 && now <= matchTimeMs + 60 * 60_000;
+
   const handlePlayMatch = () => {
     if (!myMatch) return;
+    if (!canPlayNow) {
+      return;
+    }
     navigate('/', {
       replace: true,
       state: {
