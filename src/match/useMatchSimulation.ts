@@ -252,7 +252,10 @@ export function useMatchSimulation() {
   const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
     const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
-    if (error || !data) return false;
+    if (error || !data) {
+      setState(s => ({ ...s, phase: 'error', errorMsg: error?.message || 'Partida não encontrada ou já encerrada.' }));
+      return false;
+    }
     const events = (data.events as any as SimEvent[]) || [];
     dataRef.current = {
       allEvents: events,
