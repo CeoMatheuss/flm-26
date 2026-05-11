@@ -171,15 +171,17 @@ Deno.serve(async (req: Request) => {
           const minute = league.division === 1 ? 30 : (league.kickoff_minute ?? 0);
           
           const kickoffUtc = brtDateTimeToUtcIso(dateStr, hour, minute);
-          for (const [home, away] of round) {
+          for (const [homeId, awayId] of round) {
+            const homeTeam = teams.find(t => t.id === homeId);
             inserts.push({
               league_id: league.id,
               season: league.season,
               matchday,
-              home_team_id: home,
-              away_team_id: away,
+              home_team_id: homeId,
+              away_team_id: awayId,
               kickoff_at: kickoffUtc,
               status: "scheduled",
+              stadium: `Estádio ${homeTeam?.club_name || 'Mandante'}`
             });
           }
         });
