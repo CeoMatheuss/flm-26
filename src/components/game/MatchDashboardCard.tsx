@@ -303,8 +303,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     }
 
     const isHome = nextMatch.isHome;
-    const stadiumName = isHome ? club.stadiumName : `Estádio ${nextMatch.home}`;
-    const blockCheck = isHome && club.stadiumOps?.acceptedEvents ? isDateBlockedByEvents(nextMatch.date, club.stadiumOps.acceptedEvents) : { blocked: false };
+    const stadiumName = resolvedStadium.name;
+    const isShifted = resolvedStadium.isShifted;
 
     return (
       <div className="text-center py-3 space-y-2">
