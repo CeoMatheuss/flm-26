@@ -217,7 +217,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                   <TableBody>
                     {standings.map((row, i) => {
                       const isPlayerTeam = row.team_id === leagueInfo.playerTeamId;
-                      const diff = row.goals_for - row.goals_against;
+                      const diff = (row.goals_for || 0) - (row.goals_against || 0);
                       const form = (row.last_5_games || '-----').split('');
                       
                       // Decoration colors
