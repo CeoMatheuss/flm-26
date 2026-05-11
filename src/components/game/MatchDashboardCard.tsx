@@ -490,16 +490,17 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
   // Poll DB for active live match
   useEffect(() => {
     const fetchLive = async () => {
-      // Busca a partida ativa do usuário LOGADO
+      // Busca qualquer partida ao vivo que o usuário logado pode ler por RLS:
+      // própria linha OU linha compartilhada do oponente. Assim o visitante entra
+      // direto na mesma partida sem depender de criar outra simulação.
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data } = await supabase.
       from('live_matches').
       select('*').
-      eq('user_id', user.id).
       eq('status', 'live').
-      order('created_at', { ascending: false }).
+      order('started_at', { ascending: false }).
       limit(1).
       maybeSingle();
 
@@ -526,45 +527,11 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
         setCurrentHomeGoals(liveHomeGoals);
         setCurrentAwayGoals(liveAwayGoals);
 
-        // If match time has elapsed, we keep it visible for a while as "finishing"
-        // But if it's way past (30s), we stop polling
-        if (now >= startTime + (data.duration_seconds + 30) * 1000) {
-          setLiveMatch(null);
-        }
+        // Mesmo depois dos 12 minutos reais, mantém o widget aberto enquanto a
+        // linha estiver live: se um oponente iniciou a partida, o outro ainda
+        // consegue entrar direto e ver a timeline atualizada.
       } else {
-        // Se não há live_match ativa do usuário, tentamos ver se há alguma live_match
-        // de campeonato onde o usuário é o visitante (home_team ou away_team)
-        // Isso resolve o problema de "oponentes acessando"
-        const { data: teamData } = await supabase.from('world_teams').select('name').eq('user_id', user.id).maybeSingle();
-        if (teamData) {
-          const { data: opponentMatch } = await supabase
-            .from('live_matches')
-            .select('*')
-            .eq('status', 'live')
-            .or(`home_team.eq."${teamData.name}",away_team.eq."${teamData.name}"`)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          if (opponentMatch) {
-            setLiveMatch(opponentMatch as any);
-            const startTime = new Date(opponentMatch.started_at).getTime();
-            const now = Date.now();
-            const elapsed = now - startTime;
-            const progress = Math.min(1, elapsed / (opponentMatch.duration_seconds * 1000));
-            const events = opponentMatch.events as any[] || [];
-            const maxMin = events.length > 0 ? Math.max(...events.map((e: any) => e.minute)) : 90;
-            const gameMin = Math.floor(progress * maxMin);
-            setCurrentMinute(gameMin);
-            const visibleGoals = events.filter((e: any) => e.minute <= gameMin && (e.isGoal || e.type === 'goal'));
-            setCurrentHomeGoals(visibleGoals.filter((e: any) => e.team === 'home').length);
-            setCurrentAwayGoals(visibleGoals.filter((e: any) => e.team === 'away').length);
-          } else {
-            setLiveMatch(null);
-          }
-        } else {
-          setLiveMatch(null);
-        }
+        setLiveMatch(null);
       }
     };
 
@@ -880,9 +847,10 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
               navigate('/match', {
                 state: {
                   liveMatchDbId: liveMatch.id,
+                  liveMatchSnapshot: { ...liveMatch, is_home: homeTeamName === club.name },
                   homeTeam: liveMatch.home_team,
                   awayTeam: liveMatch.away_team,
-                  isHome: liveMatch.is_home,
+                  isHome: homeTeamName === club.name,
                   competition: liveMatch.competition
                 }
               });

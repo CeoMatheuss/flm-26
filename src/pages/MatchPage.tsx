@@ -43,6 +43,7 @@ interface MatchPageState {
   tournamentMatchId?: string;
   fans?: number;
   awayFans?: number;
+  liveMatchSnapshot?: any;
   tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both';
   /** V1 Stadium — passados pelo Dashboard/MatchesTab para calcular público real */
   reputation?: number;
@@ -95,7 +96,7 @@ export default function MatchPage() {
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
 
-  const { state, startMatch, loadMatch, findActiveMatch, destroy } = useMatchSimulation();
+  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, destroy } = useMatchSimulation();
 
   const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
@@ -181,7 +182,16 @@ export default function MatchPage() {
     }, 25000);
 
     const init = async () => {
-      if (locState?.liveMatchDbId) {
+      if (locState?.liveMatchSnapshot) {
+        setPreMatchDone(true);
+        const ok = loadMatchSnapshot(locState.liveMatchSnapshot);
+        if (!ok) {
+          toast.error('Não foi possível abrir a partida ao vivo.');
+          navigate('/', { replace: true });
+          return;
+        }
+        setInitDone(true);
+      } else if (locState?.liveMatchDbId) {
         setLoadingMsg('Reconectando à partida');
         setPreMatchDone(true);
         const ok = await loadMatch(locState.liveMatchDbId);
