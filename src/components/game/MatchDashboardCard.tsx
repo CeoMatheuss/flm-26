@@ -296,11 +296,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string
             {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
           </p>
         </div>
-        <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
-          {isReady ? '🔴 AO VIVO' :
+        <Badge variant={blockCheck.blocked ? 'destructive' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady && !blockCheck.blocked ? 'animate-pulse' : ''}`}>
+          {blockCheck.blocked ? '🚫 BLOQUEADO' :
+            isReady ? '🔴 AO VIVO' :
             isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
+
         
         <div className="flex flex-col items-center gap-0.5 my-1">
           <div className="flex items-center justify-center gap-3">
