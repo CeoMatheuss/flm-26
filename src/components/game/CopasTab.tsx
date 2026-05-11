@@ -5,6 +5,7 @@ import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRi
 import { Badge } from '@/components/ui/badge';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
+import { countryNames } from '@/types/league';
 import { toast } from 'sonner';
 
 interface Props {
@@ -16,32 +17,68 @@ export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('matches');
   const [cup, setCup] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
+  const [userClubName, setUserClubName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: teamEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id, national_cups(*)')
+      // 1. Descobrir país do usuário
+      const { data: save } = await supabase
+        .from('game_saves')
+        .select('country, club_data')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (teamEntry && teamEntry.national_cups) {
-        setCup(teamEntry.national_cups);
-        
+      const clubCountryCode: string | undefined =
+        (save as any)?.club_data?.club?.country || (save as any)?.country;
+      const clubName: string | undefined = (save as any)?.club_data?.club?.name;
+      setUserClubName(clubName || null);
+
+      const countryFull = clubCountryCode
+        ? (countryNames[clubCountryCode] || clubCountryCode)
+        : null;
+
+      let cupRow: any = null;
+
+      // 2. Buscar copa do país
+      if (countryFull) {
+        const { data: byCountry } = await supabase
+          .from('national_cups')
+          .select('*')
+          .eq('country_code', countryFull)
+          .order('season', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        cupRow = byCountry;
+      }
+
+      // 3. Fallback: copa em que o usuário está inscrito
+      if (!cupRow) {
+        const { data: teamEntry } = await supabase
+          .from('national_cup_teams')
+          .select('cup_id, national_cups(*)')
+          .eq('user_id', userId)
+          .maybeSingle();
+        cupRow = teamEntry?.national_cups || null;
+      }
+
+      if (cupRow) {
+        setCup(cupRow);
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
           .select(`
             *,
-            home:national_cup_teams!home_team_id(club_name, club_logo),
-            away:national_cup_teams!away_team_id(club_name, club_logo)
+            home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
+            away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
-          .eq('cup_id', teamEntry.cup_id)
+          .eq('cup_id', cupRow.id)
           .order('round', { ascending: true })
           .order('bracket_pos', { ascending: true });
-        
         if (cupMatches) setMatches(cupMatches);
+      } else {
+        setCup(null);
+        setMatches([]);
       }
     } catch (e) {
       console.error(e);
@@ -131,13 +168,18 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="matches" className="mt-0 space-y-3">
-          {matches.map(m => (
-            <Card key={m.id} className="bg-card/50 overflow-hidden group hover:border-primary/40 transition-all">
+          {matches.map(m => {
+            const isMine = m.home?.user_id === userId || m.away?.user_id === userId;
+            return (
+            <Card key={m.id} className={`bg-card/50 overflow-hidden group transition-all ${isMine ? 'border-primary/70 ring-1 ring-primary/40' : 'hover:border-primary/40'}`}>
               <CardContent className="p-4">
+                {isMine && (
+                  <Badge className="mb-2 text-[9px] h-4">SEU JOGO</Badge>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                    <span className="text-sm font-bold truncate">{m.home?.club_name}</span>
+                    <span className={`text-sm font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>{m.home?.club_name}</span>
                   </div>
                   <div className="flex flex-col items-center px-4">
                     <div className="flex items-center gap-2">
@@ -157,7 +199,7 @@ export function CopasTab({ userId }: Props) {
                     <Badge variant="outline" className="text-[8px] h-4 px-1 mt-1 bg-muted/30">12:00</Badge>
                   </div>
                   <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                    <span className="text-sm font-bold truncate text-right">{m.away?.club_name}</span>
+                    <span className={`text-sm font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>{m.away?.club_name}</span>
                     <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
                   </div>
                 </div>
@@ -171,7 +213,8 @@ export function CopasTab({ userId }: Props) {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="info" className="mt-0">
