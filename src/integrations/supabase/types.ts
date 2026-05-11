@@ -2124,6 +2124,7 @@ export type Database = {
           match_data: Json | null
           round: number
           scheduled_at: string
+          stadium: string | null
           status: string
           winner_team_id: string | null
         }
@@ -2141,6 +2142,7 @@ export type Database = {
           match_data?: Json | null
           round: number
           scheduled_at: string
+          stadium?: string | null
           status?: string
           winner_team_id?: string | null
         }
@@ -2158,6 +2160,7 @@ export type Database = {
           match_data?: Json | null
           round?: number
           scheduled_at?: string
+          stadium?: string | null
           status?: string
           winner_team_id?: string | null
         }
@@ -3670,6 +3673,7 @@ export type Database = {
           scheduled_at: string
           season_month: number
           season_year: number
+          stadium: string | null
           status: string | null
         }
         Insert: {
@@ -3687,6 +3691,7 @@ export type Database = {
           scheduled_at: string
           season_month: number
           season_year: number
+          stadium?: string | null
           status?: string | null
         }
         Update: {
@@ -3704,6 +3709,7 @@ export type Database = {
           scheduled_at?: string
           season_month?: number
           season_year?: number
+          stadium?: string | null
           status?: string | null
         }
         Relationships: [

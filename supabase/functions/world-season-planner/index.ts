@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
         // Buscar 20 times
         const { data: teams, error: tErr } = await supabase
           .from("world_league_teams")
-          .select("id")
+          .select("id, club_name")
           .eq("league_id", league.id);
         if (tErr) throw tErr;
         if (!teams || teams.length !== 20) {
@@ -165,16 +165,23 @@ Deno.serve(async (req: Request) => {
         rounds.forEach((round, idx) => {
           const matchday = idx + 1;
           const dateStr = addDaysBrt(startDate, idx);
-          const kickoffUtc = brtDateTimeToUtcIso(dateStr, league.kickoff_hour, league.kickoff_minute ?? 0);
-          for (const [home, away] of round) {
+          
+          // Enforce 19:30 for Division 1, otherwise use league settings
+          const hour = league.division === 1 ? 19 : league.kickoff_hour;
+          const minute = league.division === 1 ? 30 : (league.kickoff_minute ?? 0);
+          
+          const kickoffUtc = brtDateTimeToUtcIso(dateStr, hour, minute);
+          for (const [homeId, awayId] of round) {
+            const homeTeam = teams.find(t => t.id === homeId);
             inserts.push({
               league_id: league.id,
               season: league.season,
               matchday,
-              home_team_id: home,
-              away_team_id: away,
+              home_team_id: homeId,
+              away_team_id: awayId,
               kickoff_at: kickoffUtc,
               status: "scheduled",
+              stadium: `Estádio ${homeTeam?.club_name || 'Mandante'}`
             });
           }
         });

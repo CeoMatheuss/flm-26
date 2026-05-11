@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRight } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRight, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -131,24 +132,43 @@ export function CopasTab({ userId }: Props) {
 
         <TabsContent value="matches" className="mt-0 space-y-3">
           {matches.map(m => (
-            <Card key={m.id} className="bg-card/50">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.home?.club_logo || '🛡️'}</span>
-                  <span className="text-xs font-bold truncate">{m.home?.club_name}</span>
-                </div>
-                <div className="flex flex-col items-center px-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black">{m.home_score ?? 0}</span>
-                    <span className="text-xs text-muted-foreground">x</span>
-                    <span className="text-sm font-black">{m.away_score ?? 0}</span>
+            <Card key={m.id} className="bg-card/50 overflow-hidden group hover:border-primary/40 transition-all">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
+                    <span className="text-sm font-bold truncate">{m.home?.club_name}</span>
                   </div>
-                  <span className="text-[8px] text-muted-foreground uppercase">{new Date(m.scheduled_at).toLocaleDateString()} 12:00</span>
+                  <div className="flex flex-col items-center px-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg font-black ${m.home_score > m.away_score ? 'text-primary' : 'text-foreground/70'}`}>
+                        {m.home_score ?? 0}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-bold">X</span>
+                      <span className={`text-lg font-black ${m.away_score > m.home_score ? 'text-primary' : 'text-foreground/70'}`}>
+                        {m.away_score ?? 0}
+                      </span>
+                    </div>
+                    {m.home_penalties !== null && (
+                      <span className="text-[8px] text-muted-foreground font-mono">
+                        ({m.home_penalties}-{m.away_penalties} pen)
+                      </span>
+                    )}
+                    <Badge variant="outline" className="text-[8px] h-4 px-1 mt-1 bg-muted/30">12:00</Badge>
+                  </div>
+                  <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+                    <span className="text-sm font-bold truncate text-right">{m.away?.club_name}</span>
+                    <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-1 justify-end">
-                  <span className="text-xs font-bold truncate">{m.away?.club_name}</span>
-                  <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.away?.club_logo || '🛡️'}</span>
-                </div>
+                {m.stadium && (
+                  <div className="mt-2 pt-2 border-t border-dashed flex items-center justify-center gap-1.5">
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
+                      {m.stadium}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

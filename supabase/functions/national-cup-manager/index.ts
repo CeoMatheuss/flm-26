@@ -29,18 +29,18 @@ serve(async (req) => {
 
     // 1. GERAR TODAS AS COPAS (DIA 10)
     if (action === 'generate_all_national_cups') {
-      const { data: leagues } = await supabase.from('world_leagues').select('country_code, name')
+      const { data: leagues } = await supabase.from('world_leagues').select('country, name')
       if (!leagues) throw new Error("Nenhuma liga encontrada")
 
       for (const league of leagues) {
         // Criar a Copa
         const { data: cup, error: cupError } = await supabase.from('national_cups').insert({
             name: `Copa de ${league.name}`,
-            country_code: league.country_code,
+            country_code: league.country,
             season: 1,
             status: 'scheduled',
             current_round: 1,
-            total_rounds: 5 // 32 times
+            total_rounds: 0 // Will update later
         }).select().single()
 
         if (cupError || !cup) continue
@@ -48,14 +48,21 @@ serve(async (req) => {
         // Buscar times (Priorizar humanos ativos, depois bots da liga)
         const { data: teams } = await supabase.from('world_teams')
             .select('id, name, logo, strength, user_id')
-            .eq('country_code', league.country_code)
+            .eq('country', league.country)
             .order('user_id', { ascending: false })
-            .limit(32)
 
         if (!teams || teams.length < 2) continue
 
+        // Power of 2 for brackets (32, 64, 128...)
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(teams.length)));
+        const totalRounds = Math.log2(participantsCount);
+
+        await supabase.from('national_cups').update({ total_rounds: totalRounds }).eq('id', cup.id);
+
+        const participatingTeams = teams.slice(0, participantsCount);
+
         // Inscrever times
-        const cupTeams = teams.map((t, idx) => ({
+        const cupTeams = participatingTeams.map((t, idx) => ({
           cup_id: cup.id,
           club_id: t.id,
           club_name: t.name,
@@ -182,7 +189,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     if (!cup) return;
 
     const { data: teams } = await supabase.from('national_cup_teams')
-        .select('*')
+        .select('*, club:world_teams(stadium_name)')
         .eq('cup_id', cupId)
         .eq('eliminated', false);
 
@@ -202,18 +209,20 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     
     // Dia 11 às 12:00 BRT = 15:00 UTC
     const baseDay = 11 + (round - 1);
-    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0));
+    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0)); // 15:00 UTC is 12:00 BRT (UTC-3)
 
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
+            const homeTeam = shuffled[i];
             matches.push({
                 cup_id: cupId,
                 round: round,
                 bracket_pos: Math.floor(i / 2),
-                home_team_id: shuffled[i].id,
+                home_team_id: homeTeam.id,
                 away_team_id: shuffled[i+1].id,
                 scheduled_at: scheduledAt.toISOString(),
-                status: 'scheduled'
+                status: 'scheduled',
+                stadium: `Estádio ${homeTeam.club_name}`
             });
         }
     }
