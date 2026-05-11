@@ -759,18 +759,18 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
                 <MapPin className="h-2.5 w-2.5" /> {venueName}
               </Badge>
               {venueCapacity &&
-            <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
                   <Building2 className="h-2.5 w-2.5" /> {venueCapacity.toLocaleString()} lugares
                 </Badge>
-            }
+              }
+              {status === 'live' && liveMatch?.attendance && (
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1 text-primary border-primary/30">
+                  <Users className="h-2.5 w-2.5" /> {liveMatch.attendance.toLocaleString()} presentes
+                </Badge>
+              )}
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">
                 {isHome ? '🏠 Casa' : '✈️ Fora'}
               </Badge>
-              {status === 'live' &&
-            <Badge variant="outline" className="text-[9px] sm:text-[10px] text-emerald-500 border-emerald-500/30">
-                  🖥️ Servidor
-                </Badge>
-            }
             </div>
 
             {/* Date & Status row */}
