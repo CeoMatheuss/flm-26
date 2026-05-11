@@ -45,7 +45,54 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Verificação de copas removida
+      // 1. Check for next National Cup match
+      const { data: cupEntry } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', userId)
+        .eq('eliminated', false)
+        .maybeSingle();
+
+      if (cupEntry) {
+        const { data: cupMatches } = await supabase
+          .from('national_cup_matches')
+          .select(`
+            id, round, status, scheduled_at, home_team_id, away_team_id,
+            cup:national_cups(name),
+            home:national_cup_teams!home_team_id(club_name, strength),
+            away:national_cup_teams!away_team_id(club_name, strength)
+          `)
+          .eq('cup_id', cupEntry.cup_id)
+          .in('status', ['scheduled', 'live'])
+          .order('scheduled_at', { ascending: true })
+          .limit(1);
+
+        if (cupMatches && cupMatches.length > 0) {
+          const match: any = cupMatches[0];
+          const isHome = match.home?.club_name === clubName;
+          
+          if (!cancelled) {
+            setNextMatch({
+              home: match.home.club_name,
+              away: match.away.club_name,
+              date: match.scheduled_at,
+              tournament: match.cup?.name || 'Copa',
+              matchId: match.id,
+              homeTeamId: match.home_team_id,
+              awayTeamId: match.away_team_id,
+              opponentStrength: isHome ? match.away.strength : match.home.strength,
+              isHome,
+              tournamentName: match.cup?.name || 'Copa',
+              status: match.status,
+              round: match.round,
+              kind: 'tournament',
+              stage: `Fase ${match.round}`,
+            });
+            setLoading(false);
+            return;
+          }
+        }
+      }
 
 
       // 2. Check for next league match
