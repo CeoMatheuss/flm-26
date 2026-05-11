@@ -187,8 +187,10 @@ serve(async (req) => {
                         stats: {
                             possession: [Math.floor(prob * 100), 100 - Math.floor(prob * 100)],
                             shots: [Math.floor(Math.random() * 15), Math.floor(Math.random() * 15)]
-                        }
+                        },
+                        finished_by_timeout: true
                     }
+
                 }).eq('id', match.id);
 
                 const loser_id = winner_id === match.home_team_id ? match.away_team_id : match.home_team_id;
