@@ -75,6 +75,8 @@ const INITIAL: MatchState = {
   latestEvent: null,
   stats: { ...EMPTY_STATS },
   stadiumName: '',
+  stadiumCapacity: 0,
+  attendance: 0,
   matchDbId: null,
   errorMsg: null,
   competition: '',
@@ -96,6 +98,8 @@ interface MatchData {
   homeTeam: string;
   awayTeam: string;
   stadiumName: string;
+  stadiumCapacity: number;
+  attendance: number;
   matchDbId: string;
   competition: string;
   isHome: boolean;
