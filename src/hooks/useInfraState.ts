@@ -47,7 +47,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     clubBudget: number,
     clubName: string,
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
-    const deductBudget: (cost: number) => void,
+    deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
