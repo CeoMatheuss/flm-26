@@ -30,7 +30,8 @@ export function CopasTab({ userId }: Props) {
       if (cups && cups.length > 0) {
         setAllCups(cups);
         const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
-        const userCountry = save?.club_data?.club?.country || 'Brasil';
+        const clubData = save?.club_data as any;
+        const userCountry = clubData?.club?.country || 'Brasil';
         const userCup = cups.find(c => c.country_code === userCountry) || cups[0];
         setSelectedCupId(userCup.id);
       }
