@@ -53,8 +53,16 @@ serve(async (req) => {
 
         if (!teams || teams.length < 2) continue
 
+        // Power of 2 for brackets (32, 64, 128...)
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(teams.length)));
+        const totalRounds = Math.log2(participantsCount);
+
+        await supabase.from('national_cups').update({ total_rounds: totalRounds }).eq('id', cup.id);
+
+        const participatingTeams = teams.slice(0, participantsCount);
+
         // Inscrever times
-        const cupTeams = teams.map((t, idx) => ({
+        const cupTeams = participatingTeams.map((t, idx) => ({
           cup_id: cup.id,
           club_id: t.id,
           club_name: t.name,
