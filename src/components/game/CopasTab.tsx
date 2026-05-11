@@ -106,6 +106,29 @@ export function CopasTab({ userId }: Props) {
     }
   }, [selectedCupId]);
 
+  const navigate = useNavigate();
+  const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
+  const myNextMatch = matches.find(
+    m => (m.status === 'scheduled' || m.status === 'live') &&
+         (m.home?.user_id === userId || m.away?.user_id === userId)
+  );
+  const highlight = myNextMatch || nextMatch;
+
+  // Auto-simulação após 5 minutos do horário
+  useEffect(() => {
+    if (myNextMatch?.status === 'scheduled') {
+      const kickoff = new Date(myNextMatch.scheduled_at).getTime();
+      const timeoutTime = kickoff + (5 * 60 * 1000);
+      const now = Date.now();
+      
+      if (now >= timeoutTime) {
+        supabase.functions.invoke('national-cup-manager', {
+          body: { action: 'advance_phase', password: 'ADM112828' }
+        });
+      }
+    }
+  }, [myNextMatch]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -125,30 +148,6 @@ export function CopasTab({ userId }: Props) {
       </Card>
     );
   }
-
-  const navigate = useNavigate();
-  const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
-  const myNextMatch = matches.find(
-    m => (m.status === 'scheduled' || m.status === 'live') &&
-         (m.home?.user_id === userId || m.away?.user_id === userId)
-  );
-  const highlight = myNextMatch || nextMatch;
-
-  // Auto-simulação após 5 minutos do horário
-  useEffect(() => {
-    if (myNextMatch?.status === 'scheduled') {
-      const kickoff = new Date(myNextMatch.scheduled_at).getTime();
-      const timeoutTime = kickoff + (5 * 60 * 1000);
-      const now = Date.now();
-      
-      if (now >= timeoutTime) {
-        // Se o usuário não entrou na partida em 2D após 5 minutos, o servidor simula
-        supabase.functions.invoke('national-cup-manager', {
-          body: { action: 'advance_phase', password: 'ADM112828' }
-        });
-      }
-    }
-  }, [myNextMatch]);
 
   const handlePlay2D = () => {
     if (!myNextMatch) return;
