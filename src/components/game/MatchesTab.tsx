@@ -3,11 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Swords, Users, Play, Loader2, Trophy, Shield, Home, Plane } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Swords, Users, Play, Loader2, Trophy, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { ClubShield } from './ClubShield';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 
 interface Props {
@@ -35,7 +32,7 @@ export function MatchesTab({
       state: {
         homeTeam: isHome ? clubName : opponent.name,
         awayTeam: isHome ? opponent.name : clubName,
-        homePlayers: isHome ? players : [], // In real app, bot players would be generated
+        homePlayers: isHome ? players : [],
         homeStrength: isHome ? teamStrength : opponent.strength,
         awayStrength: isHome ? opponent.strength : teamStrength,
         matchId: `friendly-${Math.random().toString(36).substr(2, 9)}`,
@@ -45,7 +42,7 @@ export function MatchesTab({
         isHome,
         competition: isOnline ? 'Amistoso Online' : 'Amistoso vs BOT',
         fans: fans || 1000,
-        isFriendly: true // Flag crucial to not affect stamina/fatigue
+        isFriendly: true
       }
     });
   };
