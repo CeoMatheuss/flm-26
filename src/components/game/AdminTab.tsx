@@ -1288,10 +1288,8 @@ export function AdminTab({ userId, isFounder }: Props) {
           <SystemPanel adminUserId={userId} sections={['preview', 'pyramid', 'season']} defaultSection="preview" />
         </TabsContent>
 
-        {/* Categoria: Copas (visão geral) */}
-        <TabsContent value="cups_overview" className="space-y-3 mt-3">
-          <SystemPanel adminUserId={userId} sections={['cups']} defaultSection="cups" />
-        </TabsContent>
+        {/* Categoria: Copas (Removida) */}
+
 
         {/* Categoria: 💰 Financeiro (isolado) */}
         <TabsContent value="finance_panel" className="space-y-3 mt-3">

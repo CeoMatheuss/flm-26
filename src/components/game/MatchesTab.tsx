@@ -108,35 +108,8 @@ export function MatchesTab({
         }
       }
 
-      // 2. All Cup Matches where user participates
-      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id, club_name, club_logo').eq('user_id', userId);
-      if (cupTeams && cupTeams.length > 0) {
-        for (const ct of cupTeams) {
-          const { data: cm } = await supabase
-            .from('cup_matches')
-            .select('*, cup_competitions(name), home_team:cup_teams!cup_matches_home_team_id_fkey(club_name, club_logo), away_team:cup_teams!cup_matches_away_team_id_fkey(club_name, club_logo)')
-            .eq('cup_id', ct.cup_id)
-            .or(`home_team_id.eq.${ct.id},away_team_id.eq.${ct.id}`)
-            .order('scheduled_at', { ascending: true })
-            .limit(5);
-          
-          if (cm) {
-            const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
-            allCompetitionsMatches.push(...cm.map(m => ({
-              ...m,
-              homeName: m.home_team?.club_name || (m.home_team_id === ct.id ? ct.club_name : '???'),
-              awayName: m.away_team?.club_name || (m.away_team_id === ct.id ? ct.club_name : '???'),
-              homeLogo: m.home_team?.club_logo || (m.home_team_id === ct.id ? ct.club_logo : null),
-              awayLogo: m.away_team?.club_logo || (m.away_team_id === ct.id ? ct.club_logo : null),
-              homeStrength: 70, 
-              awayStrength: 70,
-              isHome: m.home_team_id === ct.id,
-              competition: (m.cup_competitions as any)?.name || 'Copa',
-              stage: roundNames[m.round] || `Fase ${m.round}`
-            })));
-          }
-        }
-      }
+      // Jogos de Copa removidos
+
 
       const uniqueMatches = Array.from(new Map(allCompetitionsMatches.map(m => [m.id, m])).values());
       setTournamentMatches(uniqueMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));

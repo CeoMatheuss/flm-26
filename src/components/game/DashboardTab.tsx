@@ -278,9 +278,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Personalized Cup Widget Removido */}
 
 
-      {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
-          unless they are also considered part of "World" */}
-      {/* <TournamentDashboardCard onExpand={onOpenTournament} /> */}
+      {/* TournamentDashboardCard Removido */}
+
 
       {/* Próximos Jogos Oficiais removidos */}
 
