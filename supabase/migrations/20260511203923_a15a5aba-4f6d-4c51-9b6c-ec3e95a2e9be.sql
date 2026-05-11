@@ -1,0 +1,8 @@
+ALTER TABLE public.national_cup_teams
+ADD COLUMN IF NOT EXISTS shield_config JSONB,
+ADD COLUMN IF NOT EXISTS primary_color TEXT,
+ADD COLUMN IF NOT EXISTS secondary_color TEXT,
+ADD COLUMN IF NOT EXISTS detail_color TEXT,
+ADD COLUMN IF NOT EXISTS shield_pattern TEXT,
+ADD COLUMN IF NOT EXISTS shield_shape TEXT,
+ADD COLUMN IF NOT EXISTS shield_icon TEXT;
