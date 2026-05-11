@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
+import { ClubShield } from './ClubShield';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
 import flmLogo from '@/assets/flm26-logo.png';
 import { useState, useEffect, useMemo } from 'react';
@@ -11,7 +12,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
-function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: { userId?: string; clubName: string; onGoToFriendly?: () => void; onViewClub?: (name: string) => void }) {
+function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+  const handleOpenProfile = (name?: string) => {
+    if (!name) return;
+    (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: name } }));
+  };
+
   const navigate = useNavigate();
   const [nextMatch, setNextMatch] = useState<{
     home: string; away: string; date: string; tournament: string;
@@ -254,9 +260,9 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           </div>
           <Badge variant="secondary" className="text-[9px]">Final</Badge>
           <div className="flex items-center justify-center gap-3">
-            <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[90px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
+            <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-xs font-bold truncate max-w-[90px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
             <span className="text-xl font-black tabular-nums">{nextMatch.homeGoals ?? 0} <span className="text-muted-foreground">-</span> {nextMatch.awayGoals ?? 0}</span>
-            <button onClick={() => onViewClub?.(nextMatch.away)} className="text-xs font-bold truncate max-w-[90px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+            <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-xs font-bold truncate max-w-[90px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
           </div>
           <div className="flex flex-col gap-1.5 pt-1">
             <Button
@@ -286,9 +292,9 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
-          <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
+          <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
           <span className="text-base font-black text-muted-foreground">VS</span>
-          <button onClick={() => onViewClub?.(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+          <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
         </div>
         <div className="flex items-center justify-center gap-1.5">
           <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
@@ -660,7 +666,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
         {status === 'none' ?
-        <NextTournamentMatch userId={userId} clubName={club.name} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} /> :
+        <NextTournamentMatch userId={userId || ''} clubName={club.name} onGoToFriendly={onGoToFriendly} /> :
 
         <div className="space-y-3">
             {/* Info bar */}

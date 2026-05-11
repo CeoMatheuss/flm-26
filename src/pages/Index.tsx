@@ -30,10 +30,15 @@ import { useAutoSimulator } from '@/hooks/useAutoSimulator';
 import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
 import { toast } from 'sonner';
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthPage from './Auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { X, Loader2 } from 'lucide-react';
+import { ClubProfilePage } from '@/components/game/ClubProfilePage';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -204,6 +209,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
+  const [viewingClubName, setViewedClubName] = useState<string | null>(null);
 
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
@@ -336,7 +342,20 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => window.removeEventListener('flm:open-tutorial', handler);
   }, [tutorialCompleted]);
 
-  // Handle match/tournament navigation state
+  // Handle club profile viewing via events
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail?.club_name) setViewedClubName(e.detail.club_name);
+    };
+    window.addEventListener('flm:open-club-profile', handler);
+    return () => window.removeEventListener('flm:open-club-profile', handler);
+  }, []);
+
+  // Sync state between saves
+  const handleClubViewClose = useCallback(() => {
+    setViewedClubName(null);
+  }, []);
+
   useEffect(() => {
     const st = location.state as {
       serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number; competition?: string };
@@ -592,8 +611,55 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   const showAdmin = isAdminRole;
 
+  const viewedMember = useMemo(() => {
+    if (!viewingClubName) return null;
+    return mp.members.find(m => m.club_name === viewingClubName);
+  }, [viewingClubName, mp.members]);
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Club Profile Detail Modal */}
+      <Dialog open={!!viewingClubName} onOpenChange={(open) => !open && handleClubViewClose()}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background border-border max-h-[90vh] flex flex-col">
+          <div className="p-4 border-b bg-muted/20 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+            <DialogTitle className="text-lg font-black flex items-center gap-2">
+              ⚽ Perfil do Clube
+            </DialogTitle>
+            <Button variant="ghost" size="icon" onClick={handleClubViewClose} className="h-8 w-8 rounded-full">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-4 sm:p-6 pb-20">
+              {viewedMember ? (
+                <ClubProfilePage
+                  member={viewedMember}
+                  members={mp.members}
+                  userId={userId}
+                  leagueMatches={mp.leagueMatches}
+                  leagueSquads={mp.leagueSquads}
+                  onBack={handleClubViewClose}
+                  budget={game.club.budget}
+                  clubName={game.club.name}
+                  onPlayerBought={(p, price, sal, dur) => {
+                    game.buyPlayer({ ...p, salary: sal, contract: dur });
+                    setSigningPlayer({ name: p.name, position: p.position, overall: p.overall, age: p.age });
+                    saveSigningNews(p.name, p.position, p.overall, p.age, 'signing');
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center animate-pulse">
+                    <Loader2 className="h-8 w-8 text-muted-foreground/30 animate-spin" />
+                  </div>
+                  <p className="text-muted-foreground italic">Sincronizando dados do clube no servidor...</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />

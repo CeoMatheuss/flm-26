@@ -115,6 +115,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   }
   const streakLabel = streak > 0 ? `${streak}${streakType} seguidas` : 'Nenhuma';
 
+  const handleOpenProfile = (name?: string) => {
+    if (!name) return;
+    (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: name } }));
+  };
+
+
   const recentEvents = [...events].slice(0, 8);
   const eventColors: Record<string, string> = {
     injury: 'border-l-warning bg-warning/5',
@@ -192,11 +198,11 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-3">
-            <div className="shrink-0">
+            <div className="shrink-0 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleOpenProfile(club.name)}>
               <ClubShield club={club as any} size={64} className="sm:w-16 sm:h-16" />
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
-              <h2 className="text-sm sm:text-base font-black truncate">{club.name}</h2>
+              <h2 className="text-sm sm:text-base font-black truncate cursor-pointer hover:text-primary transition-colors" onClick={() => handleOpenProfile(club.name)}>{club.name}</h2>
               {clubProfile?.motto && <p className="text-[9px] text-muted-foreground italic">"{clubProfile.motto}"</p>}
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                 <div className="flex items-center gap-1">
