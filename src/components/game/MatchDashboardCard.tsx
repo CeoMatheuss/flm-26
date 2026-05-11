@@ -109,16 +109,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         }
       }
 
-      // 2. Próxima partida da Liga
+      // 2. Próxima partida da Liga Mundial
       const { data: matches, error } = await supabase
         .from('world_matches')
         .select(`
-          id,
-          round,
-          status,
-          scheduled_at,
-          home_team_id,
-          away_team_id,
+          id, round, status, scheduled_at, home_team_id, away_team_id,
           world_leagues (name),
           home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
           away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
@@ -128,27 +123,66 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
-      if (error) console.error('Error fetching next match:', error);
-
       if (matches && matches.length > 0) {
         const m: any = matches[0];
         const isHome = m.home_team_id === teamData.id;
         candidates.push({
-          home: m.home_team.name,
-          away: m.away_team.name,
-          date: m.scheduled_at,
-          tournament: m.world_leagues?.name || 'Liga',
-          matchId: m.id,
-          homeTeamId: m.home_team_id,
-          awayTeamId: m.away_team_id,
+          home: m.home_team.name, away: m.away_team.name, date: m.scheduled_at,
+          tournament: m.world_leagues?.name || 'Liga Mundial',
+          matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
           opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
-          isHome,
-          tournamentName: m.world_leagues?.name || 'Liga',
-          status: m.status,
-          round: m.round,
-          kind: 'league',
-          stage: 'Liga',
+          isHome, tournamentName: m.world_leagues?.name || 'Liga Mundial',
+          status: m.status, round: m.round, kind: 'league', stage: 'Liga',
         });
+      }
+
+      // 3. Próxima partida da Liga Regional/Multiplayer
+      const { data: leagueMatches } = await supabase
+        .from('league_matches')
+        .select(`
+          id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id,
+          leagues:league_id (name)
+        `)
+        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
+
+      if (leagueMatches && leagueMatches.length > 0) {
+        const m: any = leagueMatches[0];
+        const isHome = m.home_user_id === userId;
+        candidates.push({
+          home: 'Seu Time', away: 'Oponente', // fallback names if needed, resolved by useMatchShields
+          date: m.scheduled_at, tournament: m.leagues?.name || 'Liga Regional',
+          matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
+          opponentStrength: 75, isHome, tournamentName: m.leagues?.name || 'Liga Regional',
+          status: m.status, round: m.round, kind: 'league', stage: 'Liga',
+        });
+      }
+
+      // 4. Copas Personalizadas
+      const { data: cupTeamRowsV2 } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId);
+      if (cupTeamRowsV2 && cupTeamRowsV2.length > 0) {
+        const cupIds = cupTeamRowsV2.map(r => r.id).join(',');
+        const { data: cupMatchesV2 } = await supabase
+          .from('cup_matches')
+          .select('id, round, status, scheduled_at, home_team_id, away_team_id, cup:cup_id(name)')
+          .or(`home_team_id.in.(${cupIds}),away_team_id.in.(${cupIds})`)
+          .in('status', ['scheduled', 'live'])
+          .order('scheduled_at', { ascending: true })
+          .limit(1);
+
+        if (cupMatchesV2 && cupMatchesV2.length > 0) {
+          const m: any = cupMatchesV2[0];
+          candidates.push({
+            home: 'Home', away: 'Away', date: m.scheduled_at,
+            tournament: m.cup?.name || 'Copa', matchId: m.id,
+            homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
+            opponentStrength: 70, isHome: cupTeamRowsV2.some(r => r.id === m.home_team_id),
+            tournamentName: m.cup?.name || 'Copa', status: m.status,
+            round: m.round, kind: 'tournament', stage: `Fase ${m.round}`,
+          });
+        }
       }
 
       if (!cancelled) {
