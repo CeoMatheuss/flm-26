@@ -141,8 +141,13 @@ export function MatchesTab({
                   <div className="flex-1 text-xs font-bold truncate">{m.homeName}</div>
                   <div className="flex flex-col items-center px-4">
                      <Badge variant="outline" className="text-[8px] mb-1">{m.competition}</Badge>
-                     <div className="text-sm font-black">VS</div>
+                     {m.status === 'live' ? (
+                       <Badge variant="default" className="bg-red-500 animate-pulse text-[8px] h-4 mb-1">AO VIVO</Badge>
+                     ) : (
+                       <div className="text-sm font-black">VS</div>
+                     )}
                      <span className="text-[8px] text-muted-foreground uppercase">{m.stage}</span>
+                     <span className="text-[7px] text-muted-foreground font-bold mt-0.5">{new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <div className="flex-1 text-xs font-bold text-right truncate">{m.awayName}</div>
                 </CardContent>
