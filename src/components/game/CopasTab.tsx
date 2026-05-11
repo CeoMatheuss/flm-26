@@ -240,7 +240,10 @@ export function CopasTab({ userId }: Props) {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                        <span className={`text-xs font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>{m.home?.club_name}</span>
+                        <span className={`text-xs font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>
+                          {m.home?.club_name}
+                        </span>
+
                       </div>
                       
                       <div className="flex flex-col items-center justify-center min-w-[60px]">
