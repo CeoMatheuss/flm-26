@@ -434,7 +434,6 @@ export function CopasTab({ userId }: Props) {
               </div>
             </Card>
           </div>
-          </div>
         </TabsContent>
 
 
