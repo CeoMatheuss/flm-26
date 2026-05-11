@@ -2864,7 +2864,7 @@ export type Database = {
           seasons_remaining: number | null
           specialization: Database["public"]["Enums"]["scout_specialization"]
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -2879,7 +2879,7 @@ export type Database = {
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -2894,7 +2894,7 @@ export type Database = {
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

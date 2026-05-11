@@ -1,0 +1,1 @@
+ALTER TABLE public.scouts ALTER COLUMN user_id DROP NOT NULL;
