@@ -51,6 +51,10 @@ export function CopasTab({ userId }: Props) {
 
   useEffect(() => {
     loadData();
+    const channel = supabase.channel('copas-tab-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   if (loading) {
