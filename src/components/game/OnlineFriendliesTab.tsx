@@ -461,7 +461,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                     }}
                   >
                     <span className={`h-2 w-2 rounded-full shrink-0 ${u.is_online ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
-                    <span className="truncate">{u.display_name || 'Time'}</span>
+                    <span className="truncate hover:text-primary transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: u.display_name } })); }}>{u.display_name || 'Time'}</span>
                     <span className={`text-[8px] ml-auto ${u.is_online ? 'text-emerald-400' : 'text-muted-foreground'}`}>
                       {u.is_online ? 'Online' : 'Offline'}
                     </span>
@@ -577,7 +577,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                     <div key={invite.id} className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs font-bold">{oppClub} quer jogar!</p>
+                          <p className="text-xs font-bold hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: oppClub } }))}>{oppClub} quer jogar!</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Badge variant="outline" className="text-[8px] gap-1">
                               {isHome ? <Home className="h-2.5 w-2.5" /> : <Plane className="h-2.5 w-2.5" />}
@@ -628,7 +628,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                   return (
                     <div key={invite.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/50">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate">vs {oppClub}</p>
+                        <p className="text-xs font-semibold truncate hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: oppClub } }))}>vs {oppClub}</p>
                         <p className="text-[9px] text-muted-foreground">
                           🏟️ {homeStadium} ({homeCapacity.toLocaleString()}) • {new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>
@@ -684,7 +684,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                         {isHome ? <Home className="h-3.5 w-3.5 text-emerald-400 shrink-0" /> : <Plane className="h-3.5 w-3.5 text-blue-400 shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold truncate">
-                            {homeClub} (Mandante) vs {homeClub === clubName ? oppClub : clubName}
+                            <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: homeClub } }))}>{homeClub}</span> (Mandante) vs <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: homeClub === clubName ? oppClub : clubName } }))}>{homeClub === clubName ? oppClub : clubName}</span>
                           </p>
                           <p className="text-[9px] text-muted-foreground">
                             🏟️ {homeStadium} • {homeCapacity.toLocaleString()} lugares
@@ -742,7 +742,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                     <div key={invite.id} className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/20 text-xs">
                       {isHome ? <Home className="h-3 w-3 text-emerald-400 shrink-0" /> : <Plane className="h-3 w-3 text-blue-400 shrink-0" />}
                       <div className="flex-1 min-w-0">
-                        <span className="truncate block font-medium">vs {oppClub}</span>
+                        <span className="truncate block font-medium hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: oppClub } }))}>vs {oppClub}</span>
                         <span className="text-[8px] text-muted-foreground">🏟️ {homeStadium} ({homeCapacity.toLocaleString()})</span>
                       </div>
                       {result && (
@@ -774,7 +774,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
               {openSlots.filter(s => s.user_id !== userId).map(slot => (
                 <div key={slot.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{slot.club_name}</p>
+                    <p className="text-xs font-bold truncate hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: slot.club_name } }))}>{slot.club_name}</p>
                     <p className="text-[9px] text-muted-foreground">🏟️ {slot.stadium_name} ({slot.stadium_capacity.toLocaleString()})</p>
                   </div>
                   <Button size="sm" className="h-7 text-[10px] gap-1" onClick={() => acceptOpenSlot(slot)} disabled={loading}>
