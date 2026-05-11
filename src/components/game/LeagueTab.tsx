@@ -52,15 +52,43 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       });
       setCurrentRound(league?.current_round || 1);
 
-      // 1. Load Standings
+      // 1. Load Standings with Club metadata for shields
       const { data: standingsData } = await supabase
         .from('world_league_table')
-        .select('*, world_teams(name, logo, is_bot)')
+        .select(`
+          *, 
+          world_teams (
+            id,
+            name, 
+            logo, 
+            is_bot,
+            user_id
+          )
+        `)
         .eq('league_id', teamData.league_id)
         .order('points', { ascending: false })
         .order('goals_for', { ascending: false });
       
-      if (standingsData) setStandings(standingsData);
+      if (standingsData) {
+        // Enhance with real club metadata for shields
+        const teamIds = standingsData.map(r => r.world_teams?.user_id).filter(Boolean);
+        const { data: clubsData } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('user_id', teamIds);
+
+        const enhancedStandings = standingsData.map(row => {
+          const club = clubsData?.find(c => c.user_id === row.world_teams?.user_id);
+          return {
+            ...row,
+            world_teams: {
+              ...row.world_teams,
+              ...club // Spread club metadata (primaryColor, shield_config, etc) into team
+            }
+          };
+        });
+        setStandings(enhancedStandings);
+      }
 
       // 2. Load Fixtures
       const { data: fixturesData } = await supabase
