@@ -38,6 +38,7 @@ import { WorldLeagues } from './WorldLeagues';
 // StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
+import { ShopTab } from '@/components/game/ShopTab';
 import { SupportTab } from '@/components/game/SupportTab';
 import { TermsTab } from '@/components/game/TermsTab';
 import { getStadiumCapacity } from '@/types/infrastructure';
@@ -484,6 +485,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="auction">{isTabBlocked('auction') ? <BlockedMessage /> : <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />}</TabsContent>
       <TabsContent value="pacotinhos">
         {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
+      </TabsContent>
+      <TabsContent value="shop">
+        <ShopTab />
       </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       <TabsContent value="clubprofile">
