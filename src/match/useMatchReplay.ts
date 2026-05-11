@@ -17,7 +17,7 @@ const INITIAL: MatchState = {
   phase: 'idle', currentMinute: 0, progress: 0,
   homeTeam: '', awayTeam: '', homeGoals: 0, awayGoals: 0,
   visibleEvents: [], latestEvent: null, stats: { ...EMPTY_STATS },
-  stadiumName: '', matchDbId: null, errorMsg: null,
+  stadiumName: '', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
   simulationSpeed: 1,
