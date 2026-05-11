@@ -876,11 +876,21 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
           <Button
             className="w-full gap-2 font-bold"
             variant="destructive"
-            onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id, homeTeam: homeTeamName, awayTeam: awayTeamName, competition } })}>
-            
-                <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
-              </Button>
-          }
+            onClick={() => {
+              navigate('/match', {
+                state: {
+                  liveMatchDbId: liveMatch.id,
+                  homeTeam: liveMatch.home_team,
+                  awayTeam: liveMatch.away_team,
+                  isHome: liveMatch.is_home,
+                  competition: liveMatch.competition
+                }
+              });
+            }}
+          >
+            <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
+          </Button>
+            }
             {status === 'finished' &&
           <Button
             className="w-full gap-2 font-bold"
