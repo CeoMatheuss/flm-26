@@ -32,7 +32,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
-// CopasTab removido permanentemente
+import { CopasTab } from './CopasTab';
 import { WorldLeagues } from './WorldLeagues';
 
 // StaffTab removido (sistema de equipe técnica desativado)
