@@ -798,7 +798,7 @@ export function AdminTab({ userId, isFounder }: Props) {
                 }}>Gerar</Button>
               </CardContent>
             </Card>
-            <AdminScoutsAndStaffGenerators userId={userId} />
+            {/* <AdminScoutsAndStaffGenerators userId={userId} /> */}
           </TabsContent>
 
           <TabsContent value="finance_panel" className="space-y-3 mt-3">
