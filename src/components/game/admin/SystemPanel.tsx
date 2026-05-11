@@ -55,6 +55,9 @@ export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
             })}
           </TabsList>
         </ScrollArea>
+        {visible.some(s => s.id === 'cups') && (
+          <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
+        )}
 
         {visible.some(s => s.id === 'beta') && (
           <TabsContent value="beta" className="mt-3"><BetaAccessPanel /></TabsContent>
