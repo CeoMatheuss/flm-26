@@ -143,7 +143,7 @@ export default function MatchPage() {
       }
     }
 
-    await startMatch({
+    const result = await startMatch({
       homeTeam: locState.homeTeam,
       awayTeam: locState.awayTeam,
       homePlayers: players,
@@ -160,8 +160,13 @@ export default function MatchPage() {
       awayFans: locState.awayFans || 500,
       tieBreaker: locState.tieBreaker || 'none',
     });
+    if (!result?.success) {
+      toast.error(`Erro ao iniciar partida: ${(result as any)?.error || 'tente novamente'}`);
+      navigate('/', { replace: true });
+      return;
+    }
     setInitDone(true);
-  }, [locState, startMatch]);
+  }, [locState, startMatch, navigate]);
 
   // Auto-start or reconnect
   useEffect(() => {
@@ -204,10 +209,7 @@ export default function MatchPage() {
     return () => { cancelled = true; window.clearTimeout(safetyTimer); destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!initDone || state.phase === 'loading') {
-    return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
-  }
-
+  // Erro tem prioridade sobre loading para evitar travas em 99%
   if (state.phase === 'error') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -220,6 +222,12 @@ export default function MatchPage() {
       </div>
     );
   }
+
+  if (!initDone || state.phase === 'loading') {
+    return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
+  }
+
+  // (bloco de erro duplicado removido — agora prioritário no topo)
 
   if (state.phase === 'idle') {
     return <GameLoadingScreen message="Preparando campo" showProgress={false} />;

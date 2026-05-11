@@ -293,10 +293,25 @@ export function useMatchSimulation() {
 
   const startMatch = useCallback(async (params: any) => {
     setState(s => ({ ...s, phase: 'loading' }));
-    const { data, error } = await supabase.functions.invoke('start-match', { body: params });
-    if (error || !data?.success) return { success: false };
-    await loadMatch(data.matchDbId);
-    return { success: true };
+    try {
+      const { data, error } = await supabase.functions.invoke('start-match', { body: params });
+      if (error || !data?.success) {
+        const msg = error?.message || data?.error || 'Erro ao iniciar partida no servidor.';
+        console.error('[startMatch] failed', { error, data });
+        setState(s => ({ ...s, phase: 'error', errorMsg: msg }));
+        return { success: false, error: msg };
+      }
+      const ok = await loadMatch(data.matchDbId);
+      if (!ok) {
+        // loadMatch já setou phase='error' internamente
+        return { success: false, error: 'Falha ao carregar partida criada.' };
+      }
+      return { success: true };
+    } catch (e: any) {
+      console.error('[startMatch] exception', e);
+      setState(s => ({ ...s, phase: 'error', errorMsg: e?.message || 'Erro inesperado ao iniciar partida.' }));
+      return { success: false, error: e?.message };
+    }
   }, [loadMatch]);
 
   const findActiveMatch = useCallback(async () => {
