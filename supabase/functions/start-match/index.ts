@@ -1492,7 +1492,8 @@ Deno.serve(async (req) => {
       competition || 'Amistoso', resolvedStadiumCapacity, resolvedHomeFans,
       staff, resolvedAwayFans, validTieBreaker,
       effAwayPlayers,
-      effAwayTactics
+      effAwayTactics,
+      ticketPrice || 25
     );
 
     // Fallback: ensure minimum events so UI never hangs
