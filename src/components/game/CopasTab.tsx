@@ -65,15 +65,13 @@ export function CopasTab({ userId }: Props) {
       if (!currentCup) return;
       setCup(currentCup);
 
-      const [matchesRes, statsRes, newsRes] = await Promise.all([
+      const [matchesRes, statsRes] = await Promise.all([
         supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
-        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10),
-        supabase.from('cup_news').select('*').eq('cup_id', id).order('created_at', { ascending: false }).limit(5)
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
       ]);
 
       if (matchesRes.data) setMatches(matchesRes.data);
       if (statsRes.data) setStats(statsRes.data);
-      if (newsRes.data) setNews(newsRes.data);
     } catch (e) {
       console.error(e);
     } finally {
