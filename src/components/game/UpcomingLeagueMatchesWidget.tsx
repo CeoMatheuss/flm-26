@@ -48,19 +48,27 @@ export function UpcomingLeagueMatchesWidget() {
           <span>Rodada {match.round}</span>
         </div>
         <div className="flex items-center justify-center gap-4 py-2">
-          <div className="text-center flex-1">
-            <p className="text-xs font-bold truncate">{match.home_team_name}</p>
+          <div className="text-center flex-1 flex flex-col items-center gap-1">
+            <ClubShield club={{ logoUrl: match.home_team_logo } as any} size={32} />
+            <p className="text-[10px] font-bold truncate max-w-[80px]">{match.home_team_name}</p>
           </div>
-          <Badge variant="outline" className="text-[10px] font-black">VS</Badge>
-          <div className="text-center flex-1">
-            <p className="text-xs font-bold truncate">{match.away_team_name}</p>
+          <Badge variant="outline" className="text-[10px] font-black shrink-0">VS</Badge>
+          <div className="text-center flex-1 flex flex-col items-center gap-1">
+            <ClubShield club={{ logoUrl: match.away_team_logo } as any} size={32} />
+            <p className="text-[10px] font-bold truncate max-w-[80px]">{match.away_team_name}</p>
           </div>
         </div>
-        <div className="flex items-center justify-center gap-2 text-[10px] bg-background/50 rounded-full py-1">
-          <Clock className="w-3 h-3" />
-          <span className="font-bold">
-            {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-          </span>
+        <div className="flex flex-col items-center justify-center gap-1 text-[9px] bg-background/50 rounded-lg py-2">
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-primary" />
+            <span className="font-bold">
+              {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às 19:30
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <MapPin className="w-2.5 h-2.5" />
+            <span>{match.stadium_name || (match.is_home ? 'Sua Arena' : 'Estádio Local')}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
