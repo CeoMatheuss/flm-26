@@ -318,8 +318,13 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
     </div>
   );
 
-  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => m.round === selectedMatchday);
-  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => m.round === cupCurrentRound);
+  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => 
+    m.round === selectedMatchday && 
+    (myTeamId ? (m.home_team_id === myTeamId || m.away_team_id === myTeamId) : true)
+  );
+  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => 
+    (myTeamId ? (m.home_team_id === myTeamId || m.away_team_id === myTeamId) : true)
+  );
   const filteredMatches = [...leagueRoundMatches, ...cupRoundMatches];
 
   return (
