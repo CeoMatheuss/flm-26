@@ -113,36 +113,61 @@ serve(async (req) => {
                 .eq('status', 'scheduled')
 
             for (const match of matches) {
-                // Simulação rápida (integrar com simulador 2D no futuro)
-                const homeScore = Math.floor(Math.random() * 4)
-                const awayScore = Math.floor(Math.random() * 4)
-                const winner_team_id = homeScore >= awayScore ? match.home_team_id : match.away_team_id
+                // Simulação balanceada por força (RPC shared_match_id e simulate_match seriam ideais aqui)
+                const homeStrength = match.home_strength || 50;
+                const awayStrength = match.away_strength || 50;
+                const probHome = homeStrength / (homeStrength + awayStrength);
+                
+                const homeScore = Math.floor(Math.random() * 3) + (Math.random() < probHome ? 1 : 0);
+                const awayScore = Math.floor(Math.random() * 3) + (Math.random() < (1-probHome) ? 1 : 0);
+                
+                let winner_team_id;
+                if (homeScore > awayScore) {
+                    winner_team_id = match.home_team_id;
+                } else if (awayScore > homeScore) {
+                    winner_team_id = match.away_team_id;
+                } else {
+                    // Empate em Copa = Pênaltis
+                    winner_team_id = Math.random() < probHome ? match.home_team_id : match.away_team_id;
+                }
                 
                 await supabase.from('national_cup_matches').update({
                     home_score: homeScore,
                     away_score: awayScore,
                     status: 'finished',
                     winner_team_id: winner_team_id
-                }).eq('id', match.id)
+                }).eq('id', match.id);
 
-                const loser_team_id = winner_team_id === match.home_team_id ? match.away_team_id : match.home_team_id
+                const loser_team_id = winner_team_id === match.home_team_id ? match.away_team_id : match.home_team_id;
                 if (loser_team_id) {
-                    await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_team_id)
+                    await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_team_id);
                 }
 
-                // Premiação por fase (exemplo: 50k por vitória)
+                // Premiação progressiva: Rodada 1 = 50k, 2 = 100k, 3 = 200k...
+                const prizeAmount = 50000 * Math.pow(2, cup.current_round - 1);
                 await supabase.from('national_cup_prizes').insert({
                     cup_id: cup.id,
                     team_id: winner_team_id,
-                    amount: 50000,
+                    amount: prizeAmount,
                     description: `Prêmio Rodada ${cup.current_round}`
-                })
+                });
+
+                // Notificar usuário se o time dele avançou
+                const { data: winnerTeam } = await supabase.from('national_cup_teams').select('user_id, club_name').eq('id', winner_team_id).single();
+                if (winnerTeam?.user_id) {
+                    await supabase.from('user_notifications').insert({
+                        user_id: winnerTeam.user_id,
+                        title: '🏆 Avançou na Copa!',
+                        message: `O ${winnerTeam.club_name} venceu por ${homeScore}x${awayScore} e avançou para a próxima fase! Prêmio: R$ ${(prizeAmount/1000).toFixed(0)}k`,
+                        type: 'success'
+                    });
+                }
 
                 // Jornal
                 await supabase.from('newspaper_entries').insert({
                     category: 'COPA',
-                    text: `[COPA] ${cup.name}: O ${winner_team_id === match.home_team_id ? 'Mandante' : 'Visitante'} avançou! Placar: ${homeScore}x${awayScore}.`,
-                })
+                    text: `[COPA] ${cup.name}: O ${winnerTeam?.club_name || 'Vencedor'} avançou! Placar: ${homeScore}x${awayScore}.`,
+                });
             }
 
             if (cup.current_round < cup.total_rounds) {

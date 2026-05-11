@@ -9,9 +9,12 @@ export function useAutoSimulator(userId: string | undefined) {
     const interval = setInterval(async () => {
       console.log('[AutoSim] Verificando partidas pendentes...');
       try {
-        await supabase.functions.invoke('world-match-simulator');
+        await Promise.all([
+          supabase.functions.invoke('world-match-simulator'),
+          supabase.functions.invoke('national-cup-manager', { body: { action: 'reconcile_sync' } })
+        ]);
       } catch (err) {
-        console.error('[AutoSim] Erro ao invocar simulador:', err);
+        console.error('[AutoSim] Erro ao invocar simuladores:', err);
       }
     }, 120000); // 2 minutes
 
