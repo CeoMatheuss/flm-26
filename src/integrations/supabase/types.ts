@@ -4418,6 +4418,10 @@ export type Database = {
         Returns: undefined
       }
       rebuild_league_v6: { Args: never; Returns: undefined }
+      recalculate_league_table_from_matches: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player:
