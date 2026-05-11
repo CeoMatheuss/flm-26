@@ -308,16 +308,19 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-1 flex flex-col items-center gap-1">
                          {match.status === 'finished' ? (
                            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded-md">
-                             <span className="text-lg font-black text-primary">{match.home_goals}</span>
-                             <span className="text-[10px] text-muted-foreground">x</span>
-                             <span className="text-lg font-black text-primary">{match.away_goals}</span>
-                           </div>
-                         ) : (
-                           <div className="text-[10px] font-bold bg-muted px-2 py-1 rounded text-muted-foreground uppercase">
-                             {new Date(match.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                           </div>
-                         )}
-                         {match.status === 'finished' && <Badge variant="outline" className="text-[7px] py-0 px-1 border-emerald-500/20 text-emerald-500">Encerrado</Badge>}
+                              <span className="text-lg font-black text-primary">{match.home_goals}</span>
+                              <span className="text-[10px] text-muted-foreground">x</span>
+                              <span className="text-lg font-black text-primary">{match.away_goals}</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <div className="text-[10px] font-bold bg-muted px-2 py-1 rounded text-muted-foreground uppercase">
+                                19:30
+                              </div>
+                            </div>
+                          )}
+                          {match.status === 'finished' && <Badge variant="outline" className="text-[7px] py-0 px-1 border-emerald-500/20 text-emerald-500">Encerrado</Badge>}
+                          {match.stadium && <span className="text-[8px] text-muted-foreground truncate max-w-[80px] mt-1">🏟️ {match.stadium}</span>}
                        </div>
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
