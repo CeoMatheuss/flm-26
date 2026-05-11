@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -347,39 +347,117 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Performance + Infrastructure */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Performance */}
-        <Card className="game-card">
-          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Shield className="h-3.5 w-3.5 text-primary" /> Desempenho
+        {/* Performance & Win Streak */}
+        <Card className="game-card overflow-hidden">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3 border-b border-border/10 bg-muted/5">
+            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-primary" /> Desempenho
+              </div>
+              <Badge variant="outline" className="text-[9px] font-mono border-primary/20 bg-primary/5">
+                {totalGames} JOGOS
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2.5 px-3 sm:px-4 pb-3">
+          <CardContent className="p-3 sm:p-4 space-y-4">
             {totalGames > 0 ? (
               <>
-                <div className="flex gap-3 text-xs font-mono">
-                  <span className="game-badge bg-success/15 text-success">{club.stats.wins}V</span>
-                  <span className="game-badge bg-primary/15 text-primary">{club.stats.draws}E</span>
-                  <span className="game-badge bg-destructive/15 text-destructive">{club.stats.losses}D</span>
-                  <span className="text-muted-foreground ml-auto text-[10px] self-center">{totalGames} jogos</span>
-                </div>
-                <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
-                  {club.stats.wins > 0 && <div className="bg-success transition-all" style={{ flex: club.stats.wins }} />}
-                  {club.stats.draws > 0 && <div className="bg-primary transition-all" style={{ flex: club.stats.draws }} />}
-                  {club.stats.losses > 0 && <div className="bg-destructive transition-all" style={{ flex: club.stats.losses }} />}
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="stat-card text-center">
-                    <p className="text-lg font-bold text-success">{club.stats.goalsFor}</p>
-                    <p className="text-[8px] text-muted-foreground uppercase">Gols Pró</p>
+                {/* Win/Draw/Loss Indicators */}
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-success/5 border border-success/10">
+                    <span className="text-lg font-black text-success tabular-nums">{club.stats.wins}</span>
+                    <span className="text-[8px] uppercase tracking-tighter text-muted-foreground">Vitórias</span>
                   </div>
-                  <div className="stat-card text-center">
-                    <p className="text-lg font-bold text-destructive">{club.stats.goalsAgainst}</p>
-                    <p className="text-[8px] text-muted-foreground uppercase">Gols Contra</p>
+                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-primary/5 border border-primary/10">
+                    <span className="text-lg font-black text-primary tabular-nums">{club.stats.draws}</span>
+                    <span className="text-[8px] uppercase tracking-tighter text-muted-foreground">Empates</span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-destructive/5 border border-destructive/10">
+                    <span className="text-lg font-black text-destructive tabular-nums">{club.stats.losses}</span>
+                    <span className="text-[8px] uppercase tracking-tighter text-muted-foreground">Derrotas</span>
+                  </div>
+                </div>
+
+                {/* Progress Bar with Tooltip-like Info */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Aproveitamento</span>
+                    <span className="text-xs font-black text-primary">{winRate}%</span>
+                  </div>
+                  <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-muted/20 p-0.5">
+                    {club.stats.wins > 0 && (
+                      <div 
+                        className="bg-success rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)] transition-all duration-1000" 
+                        style={{ width: `${(club.stats.wins / totalGames) * 100}%` }} 
+                      />
+                    )}
+                    {club.stats.draws > 0 && (
+                      <div 
+                        className="bg-primary rounded-full shadow-[0_0_8px_rgba(59,130,246,0.4)] transition-all duration-1000" 
+                        style={{ width: `${(club.stats.draws / totalGames) * 100}%` }} 
+                      />
+                    )}
+                    {club.stats.losses > 0 && (
+                      <div 
+                        className="bg-destructive rounded-full shadow-[0_0_8px_rgba(239,68,68,0.4)] transition-all duration-1000" 
+                        style={{ width: `${(club.stats.losses / totalGames) * 100}%` }} 
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Last Results Icons Sincronizados */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Forma Recente</span>
+                    <div className="flex gap-1">
+                      {last5.map((m, i) => {
+                        const r = m.result!;
+                        const isWin = m.isHome ? r.home > r.away : r.away > r.home;
+                        const isDraw = r.home === r.away;
+                        return (
+                          <div key={i} title={`${r.home} x ${r.away}`}>
+                            {isWin ? (
+                              <CheckCircle2 className="h-3 w-3 text-success fill-success/10" />
+                            ) : isDraw ? (
+                              <MinusCircle className="h-3 w-3 text-primary fill-primary/10" />
+                            ) : (
+                              <XCircle className="h-3 w-3 text-destructive fill-destructive/10" />
+                            )}
+                          </div>
+                        );
+                      })}
+                      {Array.from({ length: 5 - last5.length }).map((_, i) => (
+                        <div key={`empty-${i}`} className="h-3 w-3 rounded-full border border-dashed border-muted-foreground/30" />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-accent/20 border border-border/50">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-muted-foreground uppercase">Gols Pró</span>
+                        <span className="text-sm font-bold text-success">{club.stats.goalsFor}</span>
+                      </div>
+                      <TrendingUp className="h-3 w-3 text-success/50" />
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-accent/20 border border-border/50">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-muted-foreground uppercase">Gols Contra</span>
+                        <span className="text-sm font-bold text-destructive">{club.stats.goalsAgainst}</span>
+                      </div>
+                      <TrendingUp className="h-3 w-3 text-destructive/50 rotate-180" />
+                    </div>
                   </div>
                 </div>
               </>
             ) : (
-              <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogo disputado ainda</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+                <div className="w-10 h-10 rounded-full bg-muted/10 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-muted-foreground/50" />
+                </div>
+                <p className="text-xs text-muted-foreground font-medium italic">Aguardando estreia na temporada...</p>
+              </div>
             )}
           </CardContent>
         </Card>
