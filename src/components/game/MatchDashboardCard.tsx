@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X, Landmark, AlertTriangle, Info } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X, Landmark, AlertTriangle, Info, Users } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { ClubShield } from './ClubShield';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
@@ -394,6 +394,7 @@ interface LiveMatchFromDB {
   away_team: string;
   stadium_name: string;
   stadium_capacity: number;
+  attendance: number;
   match_id: string;
   home_goals: number;
   away_goals: number;
@@ -647,7 +648,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
 
   const venueName = isHome
     ? (club.stadiumName || (status === 'live' ? liveMatch!.stadium_name : status === 'finished' ? lastFinished!.stadium : undefined))
-    : (status === 'live' ? (liveMatch!.stadium_name || `Estádio ${awayTeamName}`) : (lastFinished?.stadium || `Estádio ${awayTeamName}`));
+    : (status === 'live' ? (liveMatch!.stadium_name || `Estádio do ${homeTeamName}`) : (lastFinished?.stadium || `Estádio do ${homeTeamName}`));
 
   const venueCapacity = isHome
     ? (realCapacity || (status === 'live' ? liveMatch!.stadium_capacity : status === 'finished' ? lastFinished!.stadiumCapacity : null) || null)
@@ -758,18 +759,18 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
                 <MapPin className="h-2.5 w-2.5" /> {venueName}
               </Badge>
               {venueCapacity &&
-            <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
                   <Building2 className="h-2.5 w-2.5" /> {venueCapacity.toLocaleString()} lugares
                 </Badge>
-            }
+              }
+              {status === 'live' && liveMatch?.attendance && (
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1 text-primary border-primary/30">
+                  <Users className="h-2.5 w-2.5" /> {liveMatch.attendance.toLocaleString()} presentes
+                </Badge>
+              )}
               <Badge variant="outline" className="text-[9px] sm:text-[10px]">
                 {isHome ? '🏠 Casa' : '✈️ Fora'}
               </Badge>
-              {status === 'live' &&
-            <Badge variant="outline" className="text-[9px] sm:text-[10px] text-emerald-500 border-emerald-500/30">
-                  🖥️ Servidor
-                </Badge>
-            }
             </div>
 
             {/* Date & Status row */}

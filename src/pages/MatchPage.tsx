@@ -1153,7 +1153,9 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
           </Button>
           <div className="flex items-center gap-1.5">
             <Badge variant="outline" className="text-[10px] sm:text-xs font-medium h-6">{competition || 'Amistoso'}</Badge>
-            <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[160px]">🏟️ {stadiumName}</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[200px]">
+              🏟️ {stadiumName} {matchState.attendance > 0 ? `(${matchState.attendance.toLocaleString()} / ${matchState.stadiumCapacity.toLocaleString()})` : ''}
+            </span>
           </div>
         </div>
 

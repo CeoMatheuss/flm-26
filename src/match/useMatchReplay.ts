@@ -17,7 +17,7 @@ const INITIAL: MatchState = {
   phase: 'idle', currentMinute: 0, progress: 0,
   homeTeam: '', awayTeam: '', homeGoals: 0, awayGoals: 0,
   visibleEvents: [], latestEvent: null, stats: { ...EMPTY_STATS },
-  stadiumName: '', matchDbId: null, errorMsg: null,
+  stadiumName: '', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
   simulationSpeed: 1,
@@ -100,7 +100,7 @@ export function useMatchReplay() {
     setState({
       phase, currentMinute, progress, homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals, awayGoals, visibleEvents, latestEvent, stats: liveStats,
-      stadiumName: 'Campeonato', matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
+      stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
       currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
 
@@ -136,7 +136,7 @@ export function useMatchReplay() {
       homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals: data.finalHomeGoals, awayGoals: data.finalAwayGoals,
       visibleEvents: data.allEvents, latestEvent: data.allEvents[data.allEvents.length - 1] || null,
-      stats: data.stats, stadiumName: 'Campeonato', matchDbId: null, errorMsg: null,
+      stats: data.stats, stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
       competition: 'Campeonato', isHome: true,
       currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
