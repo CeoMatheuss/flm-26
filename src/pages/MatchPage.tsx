@@ -1403,97 +1403,101 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
 
         {/* ═══ COMPACT WIDGETS WITH EXPANDABLE MENU ═══ */}
         {!isFinished && (
-          <div className="space-y-1.5">
-            {/* Menu Toggle Bar */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1">
-              <span className="text-[10px] text-muted-foreground shrink-0">Widgets:</span>
+          <div className="space-y-2">
+            {/* Menu Toggle Bar — Professional Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2">
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'stats' ? null : 'stats')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <BarChart3 className="h-3 w-3 inline mr-1" />Stats
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Estat.</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'lineup' ? null : 'lineup')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'lineup' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'lineup' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <Users className="h-3 w-3 inline mr-1" />Escalação
+                <Users className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Time</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'tactics' ? null : 'tactics')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'tactics' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'tactics' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <Settings2 className="h-3 w-3 inline mr-1" />Tática
+                <Settings2 className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Tática</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'subs' ? null : 'subs')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'subs' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'subs' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <ArrowUpDown className="h-3 w-3 inline mr-1" />Subs {maxSubs-subsUsed}/{maxSubs}
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Subs</span>
               </button>
               {hasAssistant && (
                 <button 
                   onClick={() => setExpandedWidget(expandedWidget === 'assistant' ? null : 'assistant')}
-                  className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'assistant' ? 'bg-amber-500 text-white' : 'bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'}`}
+                  className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'assistant' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 scale-105' : 'bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20'}`}
                 >
-                  <MessageSquare className="h-3 w-3 inline mr-1" />Técnico
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-tight">Dicas</span>
                 </button>
               )}
             </div>
 
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
-              <Card className="border-border/20" ref={statsSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3 text-yellow-400" /> Estatísticas
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5 text-primary" /> Estatísticas Detalhadas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'lineup' && (
-              <Card className="border-border/20" ref={lineupSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <Users className="h-3 w-3 text-blue-400" /> Escalação
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-primary" /> Escalação Atual
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <LineupView starters={currentStarters} bench={currentBench} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} substitutedPlayerIds={substitutedPlayerIds} enteredInIds={enteredInIds} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'tactics' && (
-              <Card className="border-border/20" ref={tacticsSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <Settings2 className="h-3 w-3 text-emerald-400" /> Estilo de Jogo
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Settings2 className="h-3.5 w-3.5 text-primary" /> Estilo de Jogo
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'subs' && (
-              <Card className="border-border/20">
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <ArrowUpDown className="h-3 w-3 text-orange-400" /> Substituições
-                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{maxSubs-subsUsed}/{maxSubs}</Badge>
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-primary" /> Substituições
+                    <Badge variant="outline" className="ml-auto text-[10px] h-5">{maxSubs-subsUsed}/{maxSubs}</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   {subBlocked && subBlockedReason && (
-                    <div className="bg-muted/30 border border-border/30 rounded px-2 py-1 flex items-start gap-1.5 mb-1.5">
+                    <div className="bg-muted/30 border border-border/30 rounded-lg px-3 py-2 flex items-start gap-2 mb-3">
                       <span className="text-xs">⛔</span>
-                      <p className="text-[10px] text-muted-foreground flex-1">{subBlockedReason}</p>
+                      <p className="text-[11px] text-muted-foreground flex-1">{subBlockedReason}</p>
                     </div>
                   )}
                   <ManagerSubstitutionView
@@ -1520,22 +1524,22 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
             )}
 
             {expandedWidget === 'assistant' && hasAssistant && (
-              <Card className="border-border/20" ref={assistantSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3 text-amber-400" /> Auxiliar Técnico
-                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{matchState.assistantTips.length}</Badge>
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-amber-500" /> Auxiliar Técnico
+                    <Badge variant="outline" className="ml-auto text-[10px] h-5">{matchState.assistantTips.length}</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
-                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {[...matchState.assistantTips].reverse().slice(0, 5).map((tip, i) => (
-                      <div key={i} className="flex items-start gap-1.5 bg-card/60 border border-border/20 rounded px-1.5 py-1">
-                        <Badge variant="outline" className="text-[8px] font-mono shrink-0 h-4">{tip.minute}'</Badge>
+                      <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-2.5 py-2">
+                        <Badge variant="outline" className="text-[9px] font-mono shrink-0 h-5">{tip.minute}'</Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] leading-tight">{tip.description}</p>
+                          <p className="text-[11px] leading-snug">{tip.description}</p>
                           {tip.priority === 'high' && (
-                            <Badge variant="destructive" className="text-[8px] mt-0.5 h-3 px-1">Urgente</Badge>
+                            <Badge variant="destructive" className="text-[9px] mt-1 h-4 px-1.5">Urgente</Badge>
                           )}
                         </div>
                       </div>
