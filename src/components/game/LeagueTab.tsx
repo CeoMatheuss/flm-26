@@ -291,6 +291,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                             <div className="flex items-center gap-3">
                               <ClubShield 
                                 club={row.world_teams as any} 
+                                fallbackText={row.world_teams?.name} 
                                 size={28} 
                                 className="shrink-0 drop-shadow-sm" 
                               />
