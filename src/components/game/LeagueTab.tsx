@@ -265,7 +265,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                                 <div 
                                   key={idx} 
                                   className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white
-                                    ${res === 'W' ? 'bg-emerald-500' : res === 'D' ? 'bg-amber-500' : res === 'L' ? 'bg-red-500' : 'bg-muted text-muted-foreground'}`}
+                                    ${res === 'V' ? 'bg-emerald-500' : res === 'E' ? 'bg-amber-500' : res === 'D' ? 'bg-red-500' : 'bg-muted text-muted-foreground'}`}
                                 >
                                   {res !== '-' ? res : ''}
                                 </div>

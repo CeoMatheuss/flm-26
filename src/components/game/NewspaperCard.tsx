@@ -26,12 +26,13 @@ const categoryColors: Record<string, string> = {
   CONTRATAÇÃO: 'bg-emerald-600/80',
   EMPRÉSTIMO: 'bg-amber-500/80',
   RENOVAÇÃO: 'bg-blue-600/80',
-  LESÃO: 'bg-orange-500/80',
+  LESÃO: 'bg-red-500/80',
   ATUALIZAÇÃO: 'bg-primary/80',
   FUNDAÇÃO: 'bg-emerald-600/80',
   CANTEIRA: 'bg-purple-500/80',
   FINANÇAS: 'bg-emerald-500/80',
-  EVOLUÇÃO: 'bg-green-500/80',
+  EVOLUÇÃO: 'bg-emerald-500/80',
+  COPA: 'bg-orange-500/80',
 };
 
 export function NewspaperCard({ onOpenFullPage, userId }: Props) {
