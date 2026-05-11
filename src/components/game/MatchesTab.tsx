@@ -161,10 +161,15 @@ export function MatchesTab({
                      ) : (
                        <div className="text-xs font-black">VS</div>
                      )}
-                     <span className="text-[8px] text-muted-foreground uppercase">{m.stage}</span>
+                     <span className="text-[7px] text-muted-foreground uppercase">{m.stage}</span>
                      <span className="text-[7px] text-muted-foreground font-bold mt-0.5">{new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <div className="flex-1 text-xs font-bold text-right truncate">{m.awayName}</div>
+                  <div className="flex-1 min-w-0 text-center space-y-1">
+                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
+                      {m.awayLogo || '🛡️'}
+                    </div>
+                    <div className="text-[10px] font-bold truncate">{m.awayName}</div>
+                  </div>
                 </CardContent>
               </Card>
             )) : (
