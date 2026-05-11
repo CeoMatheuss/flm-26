@@ -12,13 +12,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Maps a national_cup_teams row (or world_teams row) to a ClubShield-compatible object.
 const toShieldClub = (t: any) => t ? ({
-  logoUrl: t.club_logo || t.logo,
+  logoUrl: t.club_logo || t.logo || t.logo_url,
   shield_config: t.shield_config,
   shieldConfig: t.shield_config,
-  shieldPattern: t.shield_pattern,
-  shieldShape: t.shield_shape,
-  primaryColor: t.primary_color,
-  secondaryColor: t.secondary_color,
+  shieldPattern: t.shield_pattern || t.pattern,
+  shieldShape: t.shield_shape || t.shape,
+  shieldIcon: t.shield_icon || t.icon,
+  primaryColor: t.primary_color || t.primaryColor,
+  secondaryColor: t.secondary_color || t.secondaryColor,
+  detailColor: t.detail_color || t.detailColor,
 }) : null;
 
 interface Props {
@@ -78,11 +80,26 @@ export function CopasTab({ userId }: Props) {
 
       const [matchesRes, statsRes] = await Promise.all([
         supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
-        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(*)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
       ]);
 
       if (matchesRes.data) setMatches(matchesRes.data);
-      if (statsRes.data) setStats(statsRes.data);
+      
+      if (statsRes.data) {
+        // Enhance stats teams with real club metadata (shields/colors)
+        const teamNames = statsRes.data.map(s => s.team?.name).filter(Boolean);
+        const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
+        const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
+        const enhancedStats = statsRes.data.map(s => ({
+          ...s,
+          team: {
+            ...s.team,
+            ...shieldByName.get(s.team?.name)
+          }
+        }));
+        setStats(enhancedStats);
+      }
     } catch (e) {
       console.error(e);
     } finally {
