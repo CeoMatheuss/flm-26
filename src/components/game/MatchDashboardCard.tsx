@@ -216,7 +216,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     return (
       <div className="text-center py-3 space-y-2">
         <div className="flex items-center justify-center gap-1.5">
-          <Trophy className="h-4 w-4 text-primary" />
+          <Swords className="h-4 w-4 text-primary" />
           <p className="text-[10px] font-bold text-primary uppercase">
             {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
           </p>
