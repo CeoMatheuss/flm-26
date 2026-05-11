@@ -495,6 +495,11 @@ export function useClubState(initialState: any, userId?: string) {
     const value = getPlayerValue(player);
     setClub(prev => {
       if (prev.budget < value) return prev;
+      // 🛡️ Anti-Duplicação: Verifica se o jogador já está no elenco
+      if (prev.players.find(p => p.id === player.id)) {
+        toast.error('Este jogador já faz parte do seu elenco!');
+        return prev;
+      }
       return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
