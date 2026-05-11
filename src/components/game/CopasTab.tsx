@@ -247,6 +247,11 @@ export function CopasTab({ userId }: Props) {
                         <span className="text-lg font-black tracking-tight tabular-nums">
                           {m.status === 'finished' ? `${m.home_score} - ${m.away_score}` : 'vs'}
                         </span>
+                        {m.status === 'finished' && (m.home_penalties !== null || m.away_penalties !== null) && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            ({m.home_penalties}-{m.away_penalties} pen)
+                          </span>
+                        )}
                         {m.status === 'scheduled' && <span className="text-[8px] font-bold text-muted-foreground">12:00</span>}
                       </div>
 
