@@ -312,7 +312,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell className={`text-center text-xs ${posColor}`}>
                             {i + 1}
                           </TableCell>
-                          <TableCell className="cursor-pointer group/row" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: row.world_teams?.name } }))}>
+                          <TableCell className="cursor-pointer group/row" onClick={() => navigate(`/club?name=${encodeURIComponent(row.world_teams?.name)}`)}>
                             <div className="flex items-center gap-3">
                               <div className="shrink-0 flex items-center justify-center">
                                 <ClubShield 
@@ -405,7 +405,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                  <Card key={match.id} className="hover:border-primary/30 transition-all cursor-pointer overflow-hidden group">
                    <CardContent className="p-4">
                      <div className="grid grid-cols-7 items-center gap-2">
-                        <div className="col-span-3 text-right space-y-1 cursor-pointer group/home" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home_team?.name } }))}>
+                        <div className="col-span-3 text-right space-y-1 cursor-pointer group/home" onClick={() => navigate(`/club?name=${encodeURIComponent(match.home_team?.name)}`)}>
                           <p className="text-sm font-bold truncate group-hover/home:text-primary transition-colors">{match.home_team?.name}</p>
                            <div className="flex justify-end gap-1">
                               <ClubShield 
@@ -439,7 +439,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           {match.status === 'finished' && <Badge variant="outline" className="text-[7px] py-0 px-1 border-emerald-500/20 text-emerald-500">Encerrado</Badge>}
                           {match.stadium && <span className="text-[8px] text-muted-foreground truncate max-w-[80px] mt-1">🏟️ {match.stadium}</span>}
                        </div>
-                        <div className="col-span-3 text-left space-y-1 cursor-pointer group/away" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away_team?.name } }))}>
+                        <div className="col-span-3 text-left space-y-1 cursor-pointer group/away" onClick={() => navigate(`/club?name=${encodeURIComponent(match.away_team?.name)}`)}>
                           <p className="text-sm font-bold truncate group-hover/away:text-primary transition-colors">{match.away_team?.name}</p>
                            <div className="flex justify-start gap-1">
                               <ClubShield 
@@ -500,7 +500,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className={`text-xs font-bold w-4 ${i === 0 ? 'text-yellow-500' : ''}`}>{i + 1}</span>
-                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/club?name=${encodeURIComponent(s.team?.name)}`)}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
@@ -530,7 +530,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold w-4 text-muted-foreground">{i + 1}</span>
-                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/club?name=${encodeURIComponent(s.team?.name)}`)}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
@@ -560,7 +560,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold w-4 text-muted-foreground">{i + 1}</span>
-                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/club?name=${encodeURIComponent(s.team?.name)}`)}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
@@ -642,7 +642,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                               <div key={m.id} className="flex items-center justify-between text-[10px] p-2 bg-muted/30 rounded border border-transparent hover:border-border transition-colors">
                                 <div 
                                   className="flex items-center gap-1.5 w-24 justify-end cursor-pointer hover:text-primary transition-colors"
-                                  onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home_team?.name } }))}
+                                  onClick={() => navigate(`/club?name=${encodeURIComponent(m.home_team?.name)}`)}
                                 >
                                   <span className="truncate">{m.home_team?.name}</span>
                                   <ClubShield club={m.home_team ? { logoUrl: m.home_team.logo } : null} size={14} />
@@ -652,7 +652,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                                 </span>
                                 <div 
                                   className="flex items-center gap-1.5 w-24 justify-start cursor-pointer hover:text-primary transition-colors"
-                                  onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away_team?.name } }))}
+                                  onClick={() => navigate(`/club?name=${encodeURIComponent(m.away_team?.name)}`)}
                                 >
                                   <ClubShield club={m.away_team ? { logoUrl: m.away_team.logo } : null} size={14} />
                                   <span className="truncate">{m.away_team?.name}</span>
