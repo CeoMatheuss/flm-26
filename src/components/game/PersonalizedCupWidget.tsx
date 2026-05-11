@@ -31,8 +31,8 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
       .select(`
         id, round, status, scheduled_at, cup_id,
         cup:national_cups(name),
-        home:national_cup_teams!home_team_id(club_name, club_logo),
-        away:national_cup_teams!away_team_id(club_name, club_logo)
+        home:national_cup_teams!home_team_id(*),
+        away:national_cup_teams!away_team_id(*)
       `)
       .in('status', ['scheduled', 'live'])
       .order('scheduled_at', { ascending: true })
@@ -45,7 +45,17 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
     const { data: match } = await query.maybeSingle();
     
     if (match) {
-      setNextMatch(match);
+      // Enhance with real player shields via RPC if they exist
+      const teamNames = [match.home?.club_name, match.away?.club_name].filter(Boolean);
+      const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
+      const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
+      const enhancedMatch = {
+        ...match,
+        home: { ...match.home, ...(shieldByName.get(match.home?.club_name) || {}) },
+        away: { ...match.away, ...(shieldByName.get(match.away?.club_name) || {}) }
+      };
+      setNextMatch(enhancedMatch);
     }
     setLoading(false);
   };
@@ -71,14 +81,14 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
       <CardContent className="p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-center flex-1 min-w-0 space-y-1">
-            <ClubShield club={{ logoUrl: nextMatch.home?.club_logo } as any} size={32} />
+            <ClubShield club={nextMatch.home} size={32} />
             <p className="text-[9px] font-black truncate">{nextMatch.home?.club_name}</p>
           </div>
           <div className="px-3 flex flex-col items-center">
             <span className="text-[10px] font-black text-muted-foreground italic">vs</span>
           </div>
           <div className="text-center flex-1 min-w-0 space-y-1">
-            <ClubShield club={{ logoUrl: nextMatch.away?.club_logo } as any} size={32} />
+            <ClubShield club={nextMatch.away} size={32} />
             <p className="text-[9px] font-black truncate">{nextMatch.away?.club_name}</p>
           </div>
         </div>
