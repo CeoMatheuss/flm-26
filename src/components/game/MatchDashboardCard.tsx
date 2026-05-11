@@ -314,8 +314,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
           </p>
         </div>
-        <Badge variant={blockCheck.blocked ? 'destructive' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady && !blockCheck.blocked ? 'animate-pulse' : ''}`}>
-          {blockCheck.blocked ? '🚫 BLOQUEADO' :
+        <Badge variant={isShifted ? 'secondary' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
+          {isShifted ? '🔄 LOCAL ALTERADO' :
             isReady ? '🔴 AO VIVO' :
             isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
