@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LifeBuoy, Send, MessageCircle, CheckCircle, Clock, Bug, HelpCircle, Sparkles, Mail, Search, Info, ChevronDown } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { LifeBuoy, Send, MessageCircle, CheckCircle, Clock, Bug, HelpCircle, Sparkles, Mail, Search, Info, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GAME_VERSION } from './UpdateAnnouncementModal';
 
