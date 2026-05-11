@@ -436,7 +436,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             ) : (
               <div className="flex gap-1">
                 <Input
-                  placeholder="Digite parte do nome (ex: Pal → Palmeiras)"
+                  placeholder="Digite o NOME DO TIME (ex: Palmeiras)"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && searchPlayers(searchTerm)}
