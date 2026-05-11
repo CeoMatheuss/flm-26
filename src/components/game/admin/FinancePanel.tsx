@@ -224,18 +224,18 @@ export function FinancePanel() {
               logs.map(log => (
                 <div key={log.id} className="p-1.5 rounded bg-white/5 border border-white/5 flex flex-col gap-0.5">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-medium text-emerald-400">
-                      {log.details?.amount > 0 ? '+' : ''}R$ {log.details?.amount?.toLocaleString()}
+                    <span className={`text-[10px] font-bold ${log.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {log.amount > 0 ? '+' : ''}R$ {log.amount?.toLocaleString('pt-BR')}
                     </span>
                     <span className="text-[8px] text-muted-foreground font-mono">
                       {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <p className="text-[9px] truncate">
-                    Para: <span className="text-white">{log.details?.club_name || log.target?.display_name || 'Desconhecido'}</span>
+                    Para: <span className="text-white">{log.target?.display_name || 'Clube ID ' + log.target_user_id.slice(0,8)}</span>
                   </p>
                   <p className="text-[9px] text-muted-foreground italic truncate">
-                    Motivo: {log.details?.reason || 'Sem motivo'}
+                    Motivo: {log.reason || 'Sem motivo'}
                   </p>
                 </div>
               ))
