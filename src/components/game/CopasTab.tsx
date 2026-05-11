@@ -1,11 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Globe, Loader2, Star, BarChart3, Newspaper, Award, Calendar, Swords } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { CupBracketView } from './CupBracketView';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Trophy, Loader2 } from 'lucide-react';
 
 interface Props {
   userId: string;
@@ -13,7 +8,7 @@ interface Props {
 }
 
 export function CopasTab({ userId }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   if (loading) {
     return (
@@ -35,94 +30,5 @@ export function CopasTab({ userId }: Props) {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-// Keep the rest of the file commented out or remove if not needed, 
-// but for a clean fix we'll just return early.
-const oldLoadData = async () => {
-  // logic removed
-};
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!cup) {
-    return (
-      <Card className="border-dashed bg-muted/20">
-        <CardContent className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <Trophy className="h-12 w-12 text-muted-foreground/20" />
-          <div className="space-y-1">
-            <h3 className="text-lg font-bold">Nenhuma Copa Encontrada</h3>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              As copas nacionais são geradas automaticamente no dia 10 de cada temporada.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-4 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xl font-black flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-primary" /> {cup.name}
-        </h2>
-        <Badge variant="secondary">Temporada {cup.season}</Badge>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-muted/50 p-1 mb-4">
-          <TabsTrigger value="my-cup" className="text-xs">Chaveamento</TabsTrigger>
-          <TabsTrigger value="matches" className="text-xs">Jogos</TabsTrigger>
-          <TabsTrigger value="stats" className="text-xs">Estatísticas</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="my-cup" className="mt-0">
-          <CupBracketView cupId={cup.id} matches={matches} />
-        </TabsContent>
-
-        <TabsContent value="matches" className="mt-0">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {matches.map(m => (
-                <Card key={m.id} className="bg-card/50">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.home?.club_logo || '🛡️'}</span>
-                      <span className="text-xs font-bold truncate">{m.home?.club_name}</span>
-                    </div>
-                    <div className="flex flex-col items-center px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black">{m.home_score ?? 0}</span>
-                        <span className="text-xs text-muted-foreground">x</span>
-                        <span className="text-sm font-black">{m.away_score ?? 0}</span>
-                      </div>
-                      <span className="text-[8px] text-muted-foreground uppercase">{new Date(m.scheduled_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-1 justify-end">
-                      <span className="text-xs font-bold truncate">{m.away?.club_name}</span>
-                      <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.away?.club_logo || '🛡️'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-           </div>
-        </TabsContent>
-
-        <TabsContent value="stats" className="mt-0">
-          <Card>
-            <CardContent className="p-10 text-center text-muted-foreground text-sm italic">
-              Estatísticas da Copa em processamento...
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
   );
 }
