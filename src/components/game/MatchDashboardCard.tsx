@@ -15,7 +15,8 @@ import { isDateBlockedByEvents } from '@/match/stadiumEvents';
 
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
-function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string; club: Club; onGoToFriendly?: () => void }) {
+  const clubName = club.name;
   const handleOpenProfile = (name?: string) => {
     if (!name) return;
     (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: name } }));
@@ -30,7 +31,9 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
     round?: number;
     kind?: 'friendly' | 'tournament' | 'league';
     stage?: string | null;
+    stadium?: string;
   } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
