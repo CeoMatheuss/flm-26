@@ -16,6 +16,8 @@ export interface ScoutV3 {
   is_busy: boolean;
   is_free_agent: boolean;
   seasons_remaining: number;
+  market_available_at?: string;
+  last_mission_completed_at?: string;
   avatar_url?: string;
   created_at?: string;
 }
