@@ -234,16 +234,16 @@ export function CopasTab({ userId }: Props) {
                     <div className="space-y-4">
                       {rMatches.length > 0 ? rMatches.map(m => (
                         <div key={m.id} className="relative group">
-                          <Card className={`p-3 text-[10px] bg-card/60 border-l-4 transition-all hover:scale-105 hover:shadow-xl ${m.winner_team_id ? 'border-l-emerald-500' : 'border-l-primary/30'}`}>
+                          <Card className={`p-3 text-[10px] bg-card/60 border-l-4 transition-all hover:scale-105 hover:shadow-xl ${m.winner_team_id ? 'border-l-emerald-500' : 'border-l-primary/30'} ${m.home?.user_id === userId || m.away?.user_id === userId ? 'ring-1 ring-primary' : ''}`}>
                             <div className="flex justify-between items-center mb-2">
-                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.home_team_id ? 'text-primary' : 'text-muted-foreground'}`}>
+                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.home?.club_name || 'TBD'}
                               </span>
                               <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
                             </div>
                             <div className="h-px w-full bg-border/50 my-1"></div>
                             <div className="flex justify-between items-center">
-                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.away_team_id ? 'text-primary' : 'text-muted-foreground'}`}>
+                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.away?.club_name || 'TBD'}
                               </span>
                               <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
