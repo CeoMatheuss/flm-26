@@ -68,8 +68,8 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   }, [userId]);
 
   const handleHireScout = async (scout: ScoutV3) => {
-    if (myScouts.length >= 5) {
-      toast.error('Limite de olheiros atingido (Máx: 5)');
+    if (myScouts.length >= SCOUT_LIMIT) {
+      toast.error(`Limite de olheiros atingido (Máx: ${SCOUT_LIMIT})`);
       return;
     }
 
