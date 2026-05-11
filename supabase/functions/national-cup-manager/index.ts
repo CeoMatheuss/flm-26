@@ -79,66 +79,68 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
-    if (action === 'advance_phase') {
+    if (action === 'advance_phase' || action === 'check_overdue_cups') {
       const { data: activeCups } = await supabase.from('national_cups').select('*').eq('status', 'in_progress');
       if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
+      // 12h overdue threshold: só auto-simula se a partida NÃO começou no horário marcado há mais de 12h
+      const OVERDUE_MS = 12 * 60 * 60 * 1000;
+      const overdueIso = new Date(Date.now() - OVERDUE_MS).toISOString();
+      let autoSimulated = 0;
+
       for (const cup of activeCups) {
-        const nowIso = new Date().toISOString();
+        // Pega TODAS as fases pendentes da copa (não apenas a current_round) para evitar travas
         const { data: matches } = await supabase.from('national_cup_matches')
           .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
-          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled')
-          .lte('scheduled_at', nowIso);
+          .eq('cup_id', cup.id).eq('status', 'scheduled')
+          .lte('scheduled_at', overdueIso);
 
-        if (!matches || matches.length === 0) {
-          // Only advance to next phase when ALL matches of this round are finished
-          // (matches with future scheduled_at are still 'scheduled' and count as pending)
-          const { count: pending } = await supabase.from('national_cup_matches')
-            .select('*', { count: 'exact', head: true })
-            .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
+        if (matches && matches.length > 0) {
+          for (const match of matches) {
+            if (!match.home || !match.away) continue;
+            const result = simulateMatch(match.home.strength, match.away.strength);
+            const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
+            const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;
 
-          if (pending === 0) {
-            if (cup.current_round < cup.total_rounds) {
-              await drawNextRound(supabase, cup.id, cup.current_round + 1, cup.total_rounds);
-              await createCupNews(supabase, cup.id, `Próxima Fase Sorteada!`, `Os classificados já conhecem seus adversários na próxima fase.`);
-            } else {
-              await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
-              const { data: winnerMatch } = await supabase.from('national_cup_matches')
-                .select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
-              if (winnerMatch) {
-                await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
-                await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
-                await grantPrize(supabase, winnerMatch.winner_team_id, 10000000, "Campeão da Copa", cup.id);
+            await supabase.from('national_cup_matches').update({
+              home_score: result.homeGoals, away_score: result.awayGoals,
+              home_penalties: result.homePen, away_penalties: result.awayPen,
+              status: 'finished', winner_team_id: winnerId,
+            }).eq('id', match.id);
 
-                // Bonus logic: Best Attack / Best Defense
-                await processEndOfCupBonuses(supabase, cup.id);
-              }
+            await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
+
+            const prize = getPrizeForRound(match.round, cup.total_rounds);
+            await grantPrize(supabase, winnerId, prize, `Prêmio Rodada ${match.round} (auto)`, cup.id);
+            await assignGoalsToPlayers(supabase, winnerId, result.winnerId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
+            await assignGoalsToPlayers(supabase, loserId, result.winnerId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
+            autoSimulated++;
+          }
+        }
+
+        // Após simular vencidos, verifica se a fase atual terminou para sortear a próxima
+        const { count: pending } = await supabase.from('national_cup_matches')
+          .select('*', { count: 'exact', head: true })
+          .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
+
+        if (pending === 0) {
+          if (cup.current_round < cup.total_rounds) {
+            await drawNextRound(supabase, cup.id, cup.current_round + 1, cup.total_rounds);
+            await createCupNews(supabase, cup.id, `Próxima Fase Sorteada!`, `Os classificados já conhecem seus adversários na próxima fase.`);
+          } else {
+            await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
+            const { data: winnerMatch } = await supabase.from('national_cup_matches')
+              .select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
+            if (winnerMatch) {
+              await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
+              await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
+              await grantPrize(supabase, winnerMatch.winner_team_id, 10000000, "Campeão da Copa", cup.id);
+              await processEndOfCupBonuses(supabase, cup.id);
             }
           }
-          continue;
-        }
-
-        for (const match of matches) {
-          const result = simulateMatch(match.home.strength, match.away.strength);
-          const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
-          const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;
-
-          await supabase.from('national_cup_matches').update({
-            home_score: result.homeGoals, away_score: result.awayGoals,
-            home_penalties: result.homePen, away_penalties: result.awayPen,
-            status: 'finished', winner_team_id: winnerId,
-          }).eq('id', match.id);
-
-          await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
-
-          const prize = getPrizeForRound(match.round, cup.total_rounds);
-          await grantPrize(supabase, winnerId, prize, `Prêmio Rodada ${match.round}`, cup.id);
-
-          await assignGoalsToPlayers(supabase, winnerId, result.winnerId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
-          await assignGoalsToPlayers(supabase, loserId, result.winnerId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
         }
       }
-      return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ success: true, auto_simulated: autoSimulated, cups_checked: activeCups.length }), { headers: corsHeaders });
     }
 
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
