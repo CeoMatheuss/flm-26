@@ -9,7 +9,7 @@ import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
 
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
-// MatchesTab removido
+import { MatchesTab } from '@/components/game/MatchesTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
@@ -127,6 +127,24 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
+
+      <TabsContent value="matches">
+        <MatchesTab
+          clubName={game.club.name}
+          stadiumName={game.club.stadiumName}
+          players={game.club.players}
+          teamStrength={game.club.reputation}
+          tactics={game.tactics}
+          userId={userId}
+          stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
+          fans={game.club.fans}
+          applyFanChange={game.addBonus}
+          matches={game.club.matches}
+          alreadyPlayedToday={false}
+          lastFriendlyDate={""}
+          onGenerateFriendly={() => {}}
+        />
+      </TabsContent>
 
       <TabsContent value="squad">
         <SquadTab

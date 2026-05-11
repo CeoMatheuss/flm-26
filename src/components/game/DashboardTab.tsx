@@ -137,12 +137,18 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
 
   const stats = [
-    { label: 'Orçamento', value: `R$${(club.budget / 1000000).toFixed(1)}M`, icon: DollarSign, color: 'text-primary' },
+    { label: 'Saldo', value: formatMoneyShort(club.budget), icon: DollarSign, color: 'text-emerald-400' },
     { label: 'Torcida', value: club.fans >= 1000 ? `${(club.fans / 1000).toFixed(0)}k` : club.fans.toLocaleString(), icon: Users, color: 'text-foreground' },
     { label: 'Pontos', value: club.stats.points.toString(), icon: Trophy, color: 'text-foreground' },
     { label: 'Reputação', value: `${club.reputation}`, icon: Star, color: 'text-primary' },
     { label: 'Aproveit.', value: `${winRate}%`, icon: TrendingUp, color: 'text-foreground' },
   ];
+
+  function formatMoneyShort(val: number) {
+    if (val >= 1000000) return `R$${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `R$${(val / 1000).toFixed(0)}k`;
+    return `R$${val}`;
+  }
 
   const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
 
