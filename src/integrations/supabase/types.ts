@@ -2109,6 +2109,196 @@ export type Database = {
         }
         Relationships: []
       }
+      national_cup_matches: {
+        Row: {
+          away_goals: number | null
+          away_team_id: string | null
+          bracket_pos: number
+          created_at: string | null
+          cup_id: string | null
+          home_goals: number | null
+          home_team_id: string | null
+          id: string
+          match_data: Json | null
+          played_at: string | null
+          round: number
+          scheduled_at: string
+          status: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          away_goals?: number | null
+          away_team_id?: string | null
+          bracket_pos: number
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round: number
+          scheduled_at: string
+          status?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          away_goals?: number | null
+          away_team_id?: string | null
+          bracket_pos?: number
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          match_data?: Json | null
+          played_at?: string | null
+          round?: number
+          scheduled_at?: string
+          status?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "national_cup_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "national_cup_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "national_cup_matches_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "national_cups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "national_cup_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "national_cup_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "national_cup_matches_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "national_cup_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      national_cup_prizes: {
+        Row: {
+          cup_type: string
+          description: string | null
+          id: string
+          money_prize: number
+          reputation_bonus: number
+          round: number
+        }
+        Insert: {
+          cup_type?: string
+          description?: string | null
+          id?: string
+          money_prize: number
+          reputation_bonus: number
+          round: number
+        }
+        Update: {
+          cup_type?: string
+          description?: string | null
+          id?: string
+          money_prize?: number
+          reputation_bonus?: number
+          round?: number
+        }
+        Relationships: []
+      }
+      national_cup_teams: {
+        Row: {
+          club_logo: string | null
+          club_name: string
+          created_at: string | null
+          cup_id: string | null
+          eliminated: boolean | null
+          id: string
+          seed: number | null
+          strength: number | null
+          user_id: string | null
+        }
+        Insert: {
+          club_logo?: string | null
+          club_name: string
+          created_at?: string | null
+          cup_id?: string | null
+          eliminated?: boolean | null
+          id?: string
+          seed?: number | null
+          strength?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          club_logo?: string | null
+          club_name?: string
+          created_at?: string | null
+          cup_id?: string | null
+          eliminated?: boolean | null
+          id?: string
+          seed?: number | null
+          strength?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "national_cup_teams_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "national_cups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      national_cups: {
+        Row: {
+          country_code: string
+          created_at: string | null
+          current_round: number
+          id: string
+          name: string
+          season: number
+          status: string
+          total_rounds: number
+          updated_at: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          country_code: string
+          created_at?: string | null
+          current_round?: number
+          id?: string
+          name: string
+          season?: number
+          status?: string
+          total_rounds?: number
+          updated_at?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          country_code?: string
+          created_at?: string | null
+          current_round?: number
+          id?: string
+          name?: string
+          season?: number
+          status?: string
+          total_rounds?: number
+          updated_at?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: []
+      }
       newspaper_entries: {
         Row: {
           category: string
