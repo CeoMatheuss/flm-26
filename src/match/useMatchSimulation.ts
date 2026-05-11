@@ -298,26 +298,26 @@ export function useMatchSimulation() {
     if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
   }, []);
 
-  const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
-    setState(s => ({ ...s, phase: 'loading' }));
-    const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
-    
-    if (error || !data) {
-      setState(s => ({ ...s, phase: 'error', errorMsg: error?.message || 'Partida não encontrada ou já encerrada.' }));
-      return false;
-    }
-
-    // Se a partida pertence a outro usuário, devemos permitir visualizar se for uma partida de campeonato (oponente)
-    // Mas para simplicidade e segurança, o loadMatch deve focar no estado da partida.
-    // O erro 99% costuma ser aqui se o maybeSingle retornar nulo por RLS ou ID errado.
+  const hydrateMatchRow = useCallback((data: any): boolean => {
+    if (!data) return false;
     const events = (data.events as any as SimEvent[]) || [];
+    const startTime = new Date(data.started_at || data.created_at || Date.now()).getTime();
+    const durationMs = (data.duration_seconds || 720) * 1000;
+    const maxMinute = events.length > 0 ? Math.max(90, ...events.map(e => Number(e.minute) || 0)) : 90;
+    const elapsed = Math.max(0, Date.now() - startTime);
+    const progress = Math.min(1, elapsed / durationMs);
+    const currentMinute = data.status === 'finished' ? maxMinute : Math.floor(progress * maxMinute);
+    const visibleEvents = events.filter(e => (Number(e.minute) || 0) <= currentMinute);
+    const homeGoals = visibleEvents.filter(e => e.isGoal && e.type !== 'penalty_shootout' && e.team === 'home').length;
+    const awayGoals = visibleEvents.filter(e => e.isGoal && e.type !== 'penalty_shootout' && e.team === 'away').length;
+
     dataRef.current = {
       allEvents: events,
-      startTime: new Date(data.started_at).getTime(),
-      durationMs: (data.duration_seconds || 720) * 1000,
-      maxMinute: events.length > 0 ? Math.max(...events.map(e => e.minute)) : 90,
-      finalHomeGoals: data.home_goals,
-      finalAwayGoals: data.away_goals,
+      startTime,
+      durationMs,
+      maxMinute,
+      finalHomeGoals: data.home_goals || 0,
+      finalAwayGoals: data.away_goals || 0,
       stats: (data.stats as any) || EMPTY_STATS,
       homeTeam: data.home_team,
       awayTeam: data.away_team,
@@ -328,24 +328,44 @@ export function useMatchSimulation() {
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
     };
-    if (data.status === 'finished') {
-      persistedRef.current = true;
-      setState(s => ({ 
-        ...s, 
-        phase: 'finished', 
-        currentMinute: 90, 
-        progress: 1, 
-        visibleEvents: events, 
-        latestEvent: events[events.length-1],
-        stadiumName: data.stadium_name,
-        stadiumCapacity: data.stadium_capacity || 0,
-        attendance: data.attendance || 0,
-      }));
-      return true;
-    }
-    startTick();
+
+    persistedRef.current = data.status === 'finished';
+    nextVisibleEventIdxRef.current = visibleEvents.length;
+    setState(s => ({
+      ...s,
+      phase: data.status === 'finished' || progress >= 1 ? 'finished' : currentMinute >= 45 && currentMinute <= 46 ? 'halftime' : 'live',
+      currentMinute,
+      progress,
+      homeTeam: data.home_team || '',
+      awayTeam: data.away_team || '',
+      homeGoals: data.status === 'finished' ? (data.home_goals || homeGoals) : homeGoals,
+      awayGoals: data.status === 'finished' ? (data.away_goals || awayGoals) : awayGoals,
+      visibleEvents,
+      latestEvent: visibleEvents[visibleEvents.length - 1] || null,
+      stats: visibleEvents.length ? computeStatsFromEvents(visibleEvents) : ((data.stats as any) || EMPTY_STATS),
+      stadiumName: data.stadium_name || '',
+      stadiumCapacity: data.stadium_capacity || 0,
+      attendance: data.attendance || 0,
+      matchDbId: data.id,
+      errorMsg: null,
+      competition: data.competition || 'Amistoso',
+      isHome: data.is_home,
+    }));
+    if (data.status !== 'finished' && progress < 1) startTick();
     return true;
-  }, [startTick]);
+  }, [computeStatsFromEvents, startTick]);
+
+  const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
+    setState(s => ({ ...s, phase: 'loading' }));
+    const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
+    
+    if (error || !data) {
+      setState(s => ({ ...s, phase: 'error', errorMsg: error?.message || 'Partida não encontrada ou já encerrada.' }));
+      return false;
+    }
+
+    return hydrateMatchRow(data);
+  }, [hydrateMatchRow]);
 
   const startMatch = useCallback(async (params: any) => {
     setState(s => ({ ...s, phase: 'loading' }));
@@ -373,7 +393,7 @@ export function useMatchSimulation() {
   const findActiveMatch = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
-    const { data } = await supabase.from('live_matches').select('id').eq('user_id', user.id).eq('status', 'live').order('started_at', { ascending: false }).limit(1).maybeSingle();
+    const { data } = await supabase.from('live_matches').select('id').eq('status', 'live').order('started_at', { ascending: false }).limit(1).maybeSingle();
     if (data) return loadMatch(data.id);
     return false;
   }, [loadMatch]);
@@ -383,5 +403,5 @@ export function useMatchSimulation() {
   const onAnimationComplete = useCallback(() => { isAnimatingRef.current = false; }, []);
   const setSpeed = useCallback((s: number) => { setSimulationSpeed(s); }, []);
 
-  return { state, startMatch, loadMatch, findActiveMatch, destroy, onAnimationComplete, setSpeed };
+  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, destroy, onAnimationComplete, setSpeed };
 }
