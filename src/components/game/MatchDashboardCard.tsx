@@ -401,6 +401,7 @@ interface Props {
   userId?: string;
   onGoToFriendly?: () => void;
   onViewClub?: (clubName: string) => void;
+  stadiumLevel?: number;
 }
 
 type MatchStatus = 'live' | 'finished' | 'none';
