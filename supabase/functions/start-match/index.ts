@@ -806,35 +806,36 @@ function simulateFullMatch(
     const defender = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'defending', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
     const buildupVariants = [
       `🏃 Jogada perigosa do ${tName}! ${attacker?.name || 'Atacante'} entra na área driblando, ${defender?.name || 'defensor'} do ${opp} chega atrasado e derruba dentro da área!`,
-      `⚡ ${attacker?.name || 'Atacante'} do ${tName} avança na área, gira o corpo e ${defender?.name || 'zagueiro'} do ${opp} comete a falta na disputa!`,
-      `🎯 Cruzamento na área do ${opp}! ${attacker?.name || 'Atacante'} se antecipa para cabecear e é segurado por ${defender?.name || 'defensor'}! O árbitro não tem dúvidas!`,
-      `🔥 ${attacker?.name || 'Atacante'} do ${tName} recebe na pequena área, prepara o chute e ${defender?.name || 'defensor'} do ${opp} chega com o pé alto!`,
+      `🔥 Contra-ataque mortal! ${attacker?.name || 'O atacante'} ganha na velocidade, invade a área e é derrubado por trás pelo ${defender?.name || 'zagueiro'}!`,
+      `📦 Bola na área! ${attacker?.name || 'O atacante'} tenta o giro, mas é agarrado pelo ${defender?.name || 'defensor'}. O juiz aponta a marca da cal!`,
     ];
-    allPlanned.push({
-      minute: pen.minute, type: 'penalty_won', team, animType: 'chance',
-      playerName: attacker?.name,
-      description: pick(buildupVariants),
-    } as SimEvent);
+    const buildup = pick(buildupVariants);
+    const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
 
     if (pen.isGoal) {
       if (team === 'home') penaltyHomeGoals++; else penaltyAwayGoals++;
-      const [scoreH, scoreA] = getScoreAtMinute(pen.minute, true);
-      if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.0); }
-      stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++;
+      if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.2); }
+      if (gk) gk.rating = Math.max(3, gk.rating - 0.8);
+      
       allPlanned.push({
-        minute: pen.minute, type: 'penalty_goal', team, isGoal: true,
-        playerName: kicker?.name, goalType: 'pênalti',
-        animType: 'penalty', ballX: team === 'home' ? 0.88 : 0.12, ballY: 0.5,
-        description: `🔴 PÊNALTI! ⚽ ${kicker?.name || 'Cobrador'} converte com frieza! ${scoreH}x${scoreA}!`,
+        minute: pen.minute, type: 'penalty', team, isGoal: true,
+        playerName: kicker?.name, animType: 'penalty',
+        ballX: team === 'home' ? 0.95 : 0.05, ballY: 0.5,
+        description: `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} se concentra... ⚽ GOOOOL!!! Cobrança perfeita no canto! [${scoreH}x${scoreA}]`,
       });
     } else {
-      stats.shots[teamIdx]++; stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++;
-      if (gk) gk.rating = Math.min(10, gk.rating + 0.8);
+      if (kicker) kicker.rating = Math.max(3, kicker.rating - 1.0);
+      if (gk) {
+        gk.rating = Math.min(10, gk.rating + 1.5);
+        stats.saves[team === 'home' ? 1 : 0]++;
+      }
+      
       allPlanned.push({
-        minute: pen.minute, type: 'penalty_miss', team,
-        playerName: kicker?.name,
-        animType: 'penalty', ballX: team === 'home' ? 0.88 : 0.12, ballY: 0.5,
-        description: `🔴 PÊNALTI! 🧤 ${gk?.name || 'Goleiro'} do ${opp} defende o chute de ${kicker?.name || 'cobrador'}!`,
+        minute: pen.minute, type: 'penalty_miss', team, isGoal: false,
+        playerName: kicker?.name, animType: 'penalty',
+        // For a save, we set ballX slightly away from the net in HighlightMiniCanvas logic
+        ballX: team === 'home' ? 0.90 : 0.10, ballY: 0.5 + (rng() - 0.5) * 0.2,
+        description: `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} parte para a bola... 🧤 DEFENDE O GOLEIRO!!! Sensacional intervenção de ${gk?.name || 'Goleiro'}! [${scoreH}x${scoreA}]`,
       });
     }
   }
