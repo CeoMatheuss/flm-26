@@ -154,8 +154,17 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadNextMatch())
       .subscribe();
 
+    // Listen for custom league update events from other components
+    const handleSync = () => loadNextMatch();
+    window.addEventListener('league_match_updated', handleSync);
+
     const interval = setInterval(loadNextMatch, 60000);
-    return () => { cancelled = true; clearInterval(interval); supabase.removeChannel(channel); };
+    return () => { 
+      cancelled = true; 
+      clearInterval(interval); 
+      supabase.removeChannel(channel); 
+      window.removeEventListener('league_match_updated', handleSync);
+    };
   }, [userId]);
 
 
