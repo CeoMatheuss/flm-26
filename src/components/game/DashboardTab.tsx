@@ -161,7 +161,15 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     return `R$${val}`;
   }
 
-  const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
+  const stadiumLevel = infrastructure?.stadium?.level || 1;
+  const stadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel) : null;
+  const nextStadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel + 1) : null;
+  const isMaxStadium = stadiumLevel >= (infrastructure?.stadium?.maxLevel || 15);
+  const avgOvr = club.players.length > 0 ? Math.round(club.players.reduce((s, p) => s + (p.overall || 0), 0) / club.players.length) : 0;
+  const lastHomeMatch = [...club.matches].reverse().find((m: any) => m.played && m.isHome && (m as any).attendance);
+  const lastAttendance = (lastHomeMatch as any)?.attendance as number | undefined;
+  const occupancyPct = lastAttendance && stadiumCapacity ? Math.min(100, Math.round((lastAttendance / stadiumCapacity) * 100)) : null;
+  const estMatchRevenue = stadiumCapacity ? Math.round(stadiumCapacity * (club.ticketPrice || 0) * 0.85) : 0;
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">
