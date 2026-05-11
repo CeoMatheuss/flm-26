@@ -364,7 +364,17 @@ export function useMatchSimulation() {
       return false;
     }
 
-    return hydrateMatchRow(data);
+    let patchedData: any = data;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const sharedId = (data as any).shared_match_id || (data as any).match_id;
+      if (user && sharedId) {
+        const { data: homeUserId } = await supabase.rpc('resolve_home_user_for_match' as any, { _match_id: String(sharedId) });
+        if (homeUserId) patchedData = { ...data, is_home: homeUserId === user.id };
+      }
+    } catch { /* fallback: keep stored perspective */ }
+
+    return hydrateMatchRow(patchedData);
   }, [hydrateMatchRow]);
 
   const startMatch = useCallback(async (params: any) => {
