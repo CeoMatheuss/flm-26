@@ -109,7 +109,7 @@ export function MatchesTab({
       }
 
       // 2. All Cup Matches where user participates
-      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId);
+      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id, club_name, club_logo').eq('user_id', userId);
       if (cupTeams && cupTeams.length > 0) {
         for (const ct of cupTeams) {
           const { data: cm } = await supabase
@@ -124,10 +124,10 @@ export function MatchesTab({
             const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
             allCompetitionsMatches.push(...cm.map(m => ({
               ...m,
-              homeName: m.home_team?.club_name,
-              awayName: m.away_team?.club_name,
-              homeLogo: m.home_team?.club_logo,
-              awayLogo: m.away_team?.club_logo,
+              homeName: m.home_team?.club_name || (m.home_team_id === ct.id ? ct.club_name : '???'),
+              awayName: m.away_team?.club_name || (m.away_team_id === ct.id ? ct.club_name : '???'),
+              homeLogo: m.home_team?.club_logo || (m.home_team_id === ct.id ? ct.club_logo : null),
+              awayLogo: m.away_team?.club_logo || (m.away_team_id === ct.id ? ct.club_logo : null),
               homeStrength: 70, 
               awayStrength: 70,
               isHome: m.home_team_id === ct.id,
@@ -138,7 +138,8 @@ export function MatchesTab({
         }
       }
 
-      setTournamentMatches(allCompetitionsMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));
+      const uniqueMatches = Array.from(new Map(allCompetitionsMatches.map(m => [m.id, m])).values());
+      setTournamentMatches(uniqueMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));
     };
     loadMatches();
     const interval = setInterval(loadMatches, 30000);
@@ -375,7 +376,7 @@ export function MatchesTab({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[8px] text-muted-foreground">
-                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </span>
                             <Badge variant={timeInfo.isExpired ? 'secondary' : timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
                               {timeInfo.isExpired ? '⚙️ Simulada' : timeInfo.isNow ? `🔴 ${timeInfo.text}` : `⏳ ${timeInfo.text}`}
