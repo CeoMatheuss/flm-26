@@ -42,6 +42,15 @@ function formatDate(iso: string) {
   } catch { return iso; }
 }
 
+function getPhaseName(round: number, total: number) {
+  const rem = total - round;
+  if (rem === 0) return "Grande Final";
+  if (rem === 1) return "Semifinal";
+  if (rem === 2) return "Quartas de Final";
+  if (rem === 3) return "Oitavas de Final";
+  return `Fase ${round}`;
+}
+
 function formatTime(iso: string) {
   try {
     return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
