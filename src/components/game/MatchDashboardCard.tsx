@@ -634,23 +634,32 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
   lastFinished!.date :
   '—';
 
-  const venueName = status === 'live' ?
-  liveMatch!.stadium_name || club.stadiumName :
-  status === 'finished' ?
-  lastFinished!.stadium || club.stadiumName :
-  club.stadiumName;
-
-  const venueCapacity = status === 'live' ?
-  liveMatch!.stadium_capacity || null :
-  status === 'finished' ?
-  lastFinished!.stadiumCapacity || null :
-  null;
-
+  // Quando o usuário é o mandante, sempre usa o estádio/capacidade reais do clube
+  // (alinhado com o nível atual da infraestrutura) para evitar dados desatualizados
+  // vindos de live_matches/lastFinished.
   const isHome = status === 'live' ?
   liveMatch!.is_home :
   status === 'finished' ?
   lastFinished!.isHome !== false :
   true;
+
+  const realCapacity = stadiumLevel ? getStadiumCapacity(stadiumLevel) : null;
+
+  const venueName = isHome
+    ? (club.stadiumName || (status === 'live' ? liveMatch!.stadium_name : status === 'finished' ? lastFinished!.stadium : undefined))
+    : status === 'live'
+      ? (liveMatch!.stadium_name || club.stadiumName)
+      : status === 'finished'
+        ? (lastFinished!.stadium || club.stadiumName)
+        : club.stadiumName;
+
+  const venueCapacity = isHome
+    ? (realCapacity || (status === 'live' ? liveMatch!.stadium_capacity : status === 'finished' ? lastFinished!.stadiumCapacity : null) || null)
+    : status === 'live'
+      ? (liveMatch!.stadium_capacity || null)
+      : status === 'finished'
+        ? (lastFinished!.stadiumCapacity || null)
+        : null;
 
   // Border color based on status
   const borderClass = status === 'live' ?
