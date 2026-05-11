@@ -16,22 +16,18 @@ serve(async (req) => {
     )
 
     const { action, password } = await req.json()
-
     const adminPassword = "ADM112828"
-    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups', 'reconcile_sync'].includes(action)
+    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups', 'generate_continental_cup'].includes(action)
     
-    if (requiresAdmin && password !== adminPassword) {
-      return new Response(JSON.stringify({ error: 'Senha administrativa inválida' }), { 
+    if (requiresAdmin && password !== adminPassword && req.headers.get('x-internal-call') !== 'true') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
-    // 1. GERAR TODAS AS COPAS INTEGRADAS ÀS LIGAS
     if (action === 'generate_all_national_cups') {
-      const { data: countries } = await supabase.from('world_leagues').select('country').eq('active', true);
-      const uniqueCountries = [...new Set(countries?.map(c => c.country))];
-
-      if (!uniqueCountries.length) throw new Error("Nenhuma liga encontrada");
+      const { data: leagues } = await supabase.from('world_leagues').select('country').eq('active', true);
+      const uniqueCountries = [...new Set(leagues?.map(c => c.country))];
 
       const cupNamesMap: Record<string, string> = {
         'Brasil': 'Copa do Brasil',
@@ -41,248 +37,192 @@ serve(async (req) => {
         'Itália': 'Coppa Italia',
         'França': 'Coupe de France',
         'Portugal': 'Taça de Portugal',
-        'Argentina': 'Copa Argentina',
-        'Holanda': 'KNVB Beker',
-        'Bélgica': 'Belgian Cup',
-        'Turquia': 'Türkiye Kupası',
-        'Escócia': 'Scottish Cup',
-        'Estados Unidos': 'U.S. Open Cup',
-        'México': 'Copa MX',
-        'Japão': 'Emperor\'s Cup',
-        'Arábia Saudita': 'King Cup'
+        'Argentina': 'Copa Argentina'
       };
 
-      for (const countryName of uniqueCountries) {
-        const officialName = cupNamesMap[countryName] || `Copa de ${countryName}`;
-
-        const { data: cup, error: cupError } = await supabase.from('national_cups').upsert({
-            name: officialName,
-            country_code: countryName,
-            season: 1, 
-            status: 'scheduled',
-            current_round: 1
+      for (const country of uniqueCountries) {
+        const name = cupNamesMap[country] || `Copa de ${country}`;
+        const { data: cup } = await supabase.from('national_cups').upsert({
+          name, country_code: country, season: 1, status: 'scheduled', current_round: 1
         }, { onConflict: 'country_code, season' }).select().single();
 
-        if (cupError || !cup) continue;
+        if (!cup) continue;
 
-        const { data: teams } = await supabase.from('world_teams')
-            .select('id, name, logo, strength, user_id, league_id')
-            .eq('country', countryName)
-            .order('user_id', { ascending: false }); 
-
+        const { data: teams } = await supabase.from('world_teams').select('*').eq('country', country);
         if (!teams || teams.length < 2) continue;
 
-        const participantsCount = Math.pow(2, Math.floor(Math.log2(Math.min(teams.length, 64))));
-        const totalRounds = Math.log2(participantsCount);
-        const selectedTeams = teams.slice(0, participantsCount);
+        // Round to nearest power of 2 for a clean bracket
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(Math.min(teams.length, 128))));
+        const selectedTeams = teams.sort(() => Math.random() - 0.5).slice(0, participantsCount);
 
-        const { count } = await supabase.from('national_cup_teams').select('*', { count: 'exact', head: true }).eq('cup_id', cup.id);
-        
-        if (!count || count === 0) {
-            const cupTeams = selectedTeams.map((t, idx) => ({
-              cup_id: cup.id,
-              club_id: t.id,
-              club_name: t.name,
-              club_logo: t.logo,
-              user_id: t.user_id,
-              strength: t.strength,
-              league_id: t.league_id,
-              is_bot: !t.user_id,
-              seed: idx
-            }));
-            await supabase.from('national_cup_teams').insert(cupTeams);
-        }
+        const cupTeams = selectedTeams.map((t, idx) => ({
+          cup_id: cup.id, club_id: t.id, club_name: t.name, club_logo: t.logo,
+          user_id: t.user_id, strength: t.strength, is_bot: !t.user_id, seed: idx
+        }));
 
+        await supabase.from('national_cup_teams').delete().eq('cup_id', cup.id);
+        await supabase.from('national_cup_teams').insert(cupTeams);
         await supabase.from('national_cups').update({ 
-            total_teams: participantsCount,
-            total_rounds: Math.max(totalRounds, 1)
+          total_teams: participantsCount, total_rounds: Math.log2(participantsCount) 
         }).eq('id', cup.id);
         
         await drawNextRound(supabase, cup.id, 1);
+        await createCupNews(supabase, cup.id, `Sorteio Realizado!`, `A ${name} começou! ${participantsCount} times disputam o título.`);
       }
 
-      return new Response(JSON.stringify({ success: true, message: "Copas geradas e integradas às ligas nacionais." }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
+      return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
-    // 2. SIMULAR E AVANÇAR
     if (action === 'advance_phase') {
-        const now = new Date();
-        const { data: activeCups } = await supabase.from('national_cups').select('*').eq('status', 'in_progress');
+      const { data: activeCups } = await supabase.from('national_cups').select('*').eq('status', 'in_progress');
+      if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
-        if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+      for (const cup of activeCups) {
+        const { data: matches } = await supabase.from('national_cup_matches')
+          .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
+          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled');
 
-        for (const cup of activeCups) {
-            // Tolerância de 5 minutos após o horário agendado (12:00 BRT = 15:00 UTC)
-            // Se agora >= 12:05 BRT, simula
-            const toleranceMinutes = 5;
-            const cutoff = new Date(now.getTime() - (toleranceMinutes * 60 * 1000));
+        if (!matches || matches.length === 0) {
+          // Check if all finished
+          const { count: pending } = await supabase.from('national_cup_matches')
+            .select('*', { count: 'exact', head: true })
+            .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
 
-            const { data: matches } = await supabase
-                .from('national_cup_matches')
-                .select(`
-                    id, round, cup_id, home_team_id, away_team_id,
-                    home:national_cup_teams!home_team_id(strength, club_name, user_id),
-                    away:national_cup_teams!away_team_id(strength, club_name, user_id)
-                `)
-                .eq('cup_id', cup.id)
-                .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', cutoff.toISOString());
-
-            if (!matches || matches.length === 0) continue;
-
-            for (const match of matches) {
-                const homeS = match.home?.strength || 50;
-                const awayS = match.away?.strength || 50;
-                const prob = homeS / (homeS + awayS);
-                
-                const homeGoals = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
-                const awayGoals = Math.floor(Math.random() * 3) + (Math.random() < (1-prob) ? 1 : 0);
-                
-                let winner_id;
-                let homePen = null;
-                let awayPen = null;
-
-                if (homeGoals > awayGoals) {
-                    winner_id = match.home_team_id;
-                } else if (awayGoals > homeGoals) {
-                    winner_id = match.away_team_id;
-                } else {
-                    homePen = Math.floor(Math.random() * 5) + 3;
-                    awayPen = Math.floor(Math.random() * 5) + 3;
-                    if (homePen === awayPen) {
-                      if (Math.random() > 0.5) homePen++; else awayPen++;
-                    }
-                    winner_id = homePen > awayPen ? match.home_team_id : match.away_team_id;
-                }
-
-                await supabase.from('national_cup_matches').update({
-                    home_score: homeGoals,
-                    away_score: awayGoals,
-                    home_penalties: homePen,
-                    away_penalties: awayPen,
-                    status: 'finished',
-                    winner_team_id: winner_id,
-                    match_data: {
-                        stats: {
-                            possession: [Math.floor(prob * 100), 100 - Math.floor(prob * 100)],
-                            shots: [Math.floor(Math.random() * 15), Math.floor(Math.random() * 15)]
-                        },
-                        finished_by_timeout: true
-                    }
-                }).eq('id', match.id);
-
-                const loser_id = winner_id === match.home_team_id ? match.away_team_id : match.home_team_id;
-                await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_id);
-
-                let prize = 100000; 
-                const roundsRemaining = cup.total_rounds - match.round;
-                if (roundsRemaining === 0) prize = 3000000;
-                else if (roundsRemaining === 1) prize = 1000000;
-                else if (roundsRemaining === 2) prize = 500000;
-                else if (roundsRemaining === 3) prize = 250000;
-
-                await supabase.from('national_cup_prizes').insert({
-                    cup_id: cup.id,
-                    team_id: winner_id,
-                    amount: prize,
-                    description: `Prêmio Rodada ${match.round} (${prize/1000}k)`
-                });
-
-                const notifyUserId = winner_id === match.home_team_id ? match.home?.user_id : match.away?.user_id;
-                if (notifyUserId) {
-                    await supabase.from('user_notifications').insert({
-                        user_id: notifyUserId,
-                        title: '🏆 Avançou na Copa!',
-                        message: `Seu time venceu e avançou para a próxima fase! Prêmio de R$ ${prize/1000}k creditado.`,
-                        type: 'success'
-                    });
-
-                    const { data: currentSave } = await supabase.from('game_saves').select('club_data').eq('user_id', notifyUserId).single();
-                    if (currentSave?.club_data) {
-                        const clubData = currentSave.club_data;
-                        if (!clubData.club) clubData.club = {};
-                        clubData.club.budget = (clubData.club.budget || 0) + prize;
-                        await supabase.from('game_saves').update({ club_data: clubData }).eq('user_id', notifyUserId);
-                    }
-                }
+          if (pending === 0) {
+            if (cup.current_round < cup.total_rounds) {
+              await drawNextRound(supabase, cup.id, cup.current_round + 1);
+              await createCupNews(supabase, cup.id, `Fase Concluída!`, `Os confrontos da próxima fase foram gerados automaticamente.`);
+            } else {
+              await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
+              const { data: winner } = await supabase.from('national_cup_matches')
+                .select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
+              if (winner) {
+                await supabase.from('national_cups').update({ winner_team_id: winner.winner_team_id }).eq('id', cup.id);
+                await createCupNews(supabase, cup.id, `🏆 Grande Campeão!`, `Parabéns ao vencedor da ${cup.name}!`);
+                // Final prize for winner
+                await grantPrize(supabase, winner.winner_team_id, 25000000, "Campeão da Copa", cup.id);
+              }
             }
-
-            const { count: pendingInRound } = await supabase.from('national_cup_matches')
-                .select('*', { count: 'exact', head: true })
-                .eq('cup_id', cup.id)
-                .eq('round', cup.current_round)
-                .neq('status', 'finished');
-
-            if (pendingInRound === 0) {
-                if (cup.current_round < cup.total_rounds) {
-                    await drawNextRound(supabase, cup.id, cup.current_round + 1);
-                } else {
-                    await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
-                }
-            }
+          }
+          continue;
         }
-        return new Response(JSON.stringify({ success: true, message: "Simulação diária concluída." }), { headers: corsHeaders });
+
+        for (const match of matches) {
+          const result = simulateMatch(match.home.strength, match.away.strength);
+          await supabase.from('national_cup_matches').update({
+            home_score: result.homeGoals, away_score: result.awayGoals,
+            home_penalties: result.homePen, away_penalties: result.awayPen,
+            status: 'finished', winner_team_id: result.winnerId === 'home' ? match.home_team_id : match.away_team_id,
+            match_data: { simulated: true, date: new Date().toISOString() }
+          }).eq('id', match.id);
+
+          const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
+          const loserId = result.winnerId === 'home' ? match.away_team_id : match.home_team_id;
+          await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
+          
+          const prize = getPrizeForRound(match.round, cup.total_rounds);
+          await grantPrize(supabase, winnerId, prize, `Prêmio Fase ${match.round}`, cup.id);
+        }
+      }
+      return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
-    if (action === 'reset_cups') {
-        await supabase.from('national_cups').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
-    }
-
+    return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: corsHeaders });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
 })
 
+function simulateMatch(homeS: number, awayS: number) {
+  const prob = homeS / (homeS + awayS);
+  let homeGoals = Math.floor(Math.random() * 4);
+  let awayGoals = Math.floor(Math.random() * 4);
+  if (Math.random() < prob) homeGoals += 1; else awayGoals += 1;
+
+  let winnerId: 'home' | 'away' = homeGoals > awayGoals ? 'home' : 'away';
+  let homePen = null, awayPen = null;
+
+  if (homeGoals === awayGoals) {
+    homePen = Math.floor(Math.random() * 5) + 3;
+    awayPen = Math.floor(Math.random() * 5) + 3;
+    while (homePen === awayPen) {
+      if (Math.random() > 0.5) homePen++; else awayPen++;
+    }
+    winnerId = homePen > awayPen ? 'home' : 'away';
+  }
+  return { homeGoals, awayGoals, homePen, awayPen, winnerId };
+}
+
 async function drawNextRound(supabase: any, cupId: string, round: number) {
-    const { data: teams } = await supabase.from('national_cup_teams').select('*').eq('cup_id', cupId).eq('eliminated', false);
-    if (!teams || teams.length < 2) return;
-    const shuffled = [...teams].sort(() => Math.random() - 0.5);
-    const matches = [];
-    const now = new Date();
-    
-    // Todos os jogos da copa começam às 12:00 BRT (15:00 UTC)
-    let startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
-    
-    // Se hoje já passou das 12:00, agenda para amanhã
-    if (startDate.getTime() <= now.getTime()) {
-        startDate.setUTCDate(startDate.getUTCDate() + 1);
-    }
-    
-    // Para rodadas futuras, garantir que não encavale com a anterior
-    const { data: lastMatch } = await supabase.from('national_cup_matches')
-        .select('scheduled_at')
-        .eq('cup_id', cupId)
-        .order('scheduled_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  const { data: teams } = await supabase.from('national_cup_teams').select('*').eq('cup_id', cupId).eq('eliminated', false);
+  if (!teams || teams.length < 2) return;
 
-    if (lastMatch) {
-        const lastDate = new Date(lastMatch.scheduled_at);
-        if (startDate.getTime() <= lastDate.getTime()) {
-            startDate = new Date(lastDate.getTime());
-            startDate.setUTCDate(startDate.getUTCDate() + 1);
-        }
-    }
+  const shuffled = teams.sort(() => Math.random() - 0.5);
+  const matches = [];
+  const phaseName = getPhaseName(round, Math.log2(teams.length + (teams.length % 2 === 0 ? 0 : 1)) + round - 1); // Approximation
 
-    for (let i = 0; i < shuffled.length; i += 2) {
-        if (shuffled[i + 1]) {
-            matches.push({
-                cup_id: cupId,
-                round: round,
-                bracket_pos: Math.floor(i / 2),
-                home_team_id: shuffled[i].id,
-                away_team_id: shuffled[i+1].id,
-                scheduled_at: startDate.toISOString(),
-                status: 'scheduled',
-                stadium: `Estádio ${shuffled[i].club_name}`
-            });
-        }
+  for (let i = 0; i < shuffled.length; i += 2) {
+    if (shuffled[i + 1]) {
+      matches.push({
+        cup_id: cupId, round, bracket_pos: i / 2,
+        home_team_id: shuffled[i].id, away_team_id: shuffled[i+1].id,
+        status: 'scheduled', phase_name: phaseName,
+        scheduled_at: new Date(Date.now() + 86400000).toISOString() // Tomorrow
+      });
     }
-    if (matches.length > 0) {
-        await supabase.from('national_cup_matches').insert(matches);
-        await supabase.from('national_cups').update({ current_round: round, status: 'in_progress' }).eq('id', cupId);
+  }
+  if (matches.length) {
+    await supabase.from('national_cup_matches').insert(matches);
+    await supabase.from('national_cups').update({ current_round: round, status: 'in_progress' }).eq('id', cupId);
+  }
+}
+
+function getPhaseName(round: number, total: number) {
+  const remaining = total - round;
+  if (remaining === 0) return "Final";
+  if (remaining === 1) return "Semifinal";
+  if (remaining === 2) return "Quartas de Final";
+  if (remaining === 3) return "Oitavas de Final";
+  return `Fase ${round}`;
+}
+
+function getPrizeForRound(round: number, total: number) {
+  const remaining = total - round;
+  if (remaining === 0) return 10000000; // Vice gets 10M, winner handled separately
+  if (remaining === 1) return 5000000;
+  if (remaining === 2) return 2000000;
+  if (remaining === 3) return 1000000;
+  if (round === 3) return 500000;
+  if (round === 2) return 250000;
+  return 100000;
+}
+
+async function grantPrize(supabase: any, teamId: string, amount: number, desc: string, cupId: string) {
+  const { data: team } = await supabase.from('national_cup_teams').select('user_id, club_id').eq('id', teamId).single();
+  if (!team) return;
+
+  await supabase.from('national_cup_prizes').insert({
+    cup_id: cupId, team_id: teamId, amount, description: desc
+  });
+
+  if (team.user_id) {
+    const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', team.user_id).single();
+    if (save?.club_data) {
+      save.club_data.club.budget = (save.club_data.club.budget || 0) + amount;
+      await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', team.user_id);
     }
+    await supabase.from('user_notifications').insert({
+      user_id: team.user_id, title: '🏆 Prêmio da Copa!',
+      message: `${desc}: R$ ${amount.toLocaleString()} creditados.`, type: 'success'
+    });
+  }
+}
+
+async function createCupNews(supabase: any, cupId: string, title: string, content: string) {
+  await supabase.from('cup_news').insert({ cup_id: cupId, title, content });
+  // Also add to global news
+  await supabase.from('newspaper_entries').insert({
+    title, content, category: 'competitions', priority: 1, 
+    published_at: new Date().toISOString()
+  });
 }
