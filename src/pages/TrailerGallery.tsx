@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
 import { LeagueTab } from '@/components/game/LeagueTab';
-import { CopasTab } from '@/components/game/CopasTab';
+
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { MatchViewer } from '@/pages/MatchPage';
 import { initialClub } from '@/data/initialData';
