@@ -330,7 +330,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       {/* Header com Tabs Estilizadas */}
-      <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl">
+      <div className="flex items-center gap-2 bg-black/40 border border-white/5 p-1 rounded-xl">
         <button 
           onClick={() => setActiveView('scheduled')} 
           className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
@@ -345,6 +345,18 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         >
           <Trophy className="h-4 w-4" /> Histórico Real
         </button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => {
+            setLoading(true);
+            const load = (window as any).refreshCalendarData;
+            if (load) load();
+          }}
+          className="h-10 w-10 text-zinc-500 hover:text-primary transition-colors"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {activeView === 'scheduled' ? (
