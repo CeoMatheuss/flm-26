@@ -45,16 +45,27 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   const fetchRankings = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: rankingData, error } = await supabase
       .from('global_ranking')
-      .select('*, clubs(shield_config, logo_url)')
+      .select('*')
       .order('ranking_points', { ascending: false })
       .limit(200);
 
-    if (!error && data) {
-      setRankings(data as RankingEntry[]);
+    if (!error && rankingData) {
+      const userIds = rankingData.map(r => r.user_id);
+      const { data: clubsData } = await supabase
+        .from('clubs')
+        .select('user_id, shield_config, logo_url')
+        .in('user_id', userIds);
+
+      const enhanced = rankingData.map(r => ({
+        ...r,
+        clubs: clubsData?.find(c => c.user_id === r.user_id)
+      }));
+
+      setRankings(enhanced as any[]);
       if (userId) {
-        const pos = data.findIndex((r: any) => r.user_id === userId);
+        const pos = rankingData.findIndex((r: any) => r.user_id === userId);
         setMyPosition(pos >= 0 ? pos + 1 : null);
       }
     }
