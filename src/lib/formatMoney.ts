@@ -9,7 +9,7 @@
  */
 export function formatMoney(value: number, opts?: { showSign?: boolean; compact?: boolean }): string {
   const showSign = opts?.showSign ?? false;
-  const compact = opts?.compact ?? true;
+  const compact = opts?.compact ?? false; // Default to false as requested by user
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : showSign && value > 0 ? '+' : '';
 
