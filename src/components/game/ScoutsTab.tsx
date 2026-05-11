@@ -423,16 +423,16 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
               <div className="grid grid-cols-1 gap-3">
                 {[
-                  { id: 'local', icon: MapPin, label: 'Busca Local', time: '2h', reward: 'Relatório Regional', color: 'text-blue-400' },
-                  { id: 'global', icon: Globe, label: 'Busca Global', time: '6h', reward: 'Mapeamento Mundial', color: 'text-emerald-400' },
-                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4h', reward: 'Necessidade do Elenco', color: 'text-amber-400' },
-                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8h', reward: 'Foco no Futuro', color: 'text-purple-400' }
+                  { id: 'local', icon: MapPin, label: 'Busca Local', time: '5 Dias', reward: 'Relatório Regional', color: 'text-blue-400' },
+                  { id: 'global', icon: Globe, label: 'Busca Global', time: '6 Dias', reward: 'Mapeamento Mundial', color: 'text-emerald-400' },
+                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4 Dias', reward: 'Necessidade do Elenco', color: 'text-amber-400' },
+                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8 Dias', reward: 'Foco no Futuro', color: 'text-purple-400' }
                 ].map(type => (
                   <Button 
                     key={type.id} 
                     variant="outline" 
                     className="group justify-between h-16 px-5 border-white/5 bg-black/20 hover:border-primary/50 hover:bg-primary/5 transition-all"
-                    onClick={() => startMission(showMissionModal.id, type.id as MissionType)}
+                    onClick={() => startMission(showMissionModal.id, type.id as MissionType, showMissionModal.level)}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg bg-zinc-900 border border-white/5 group-hover:border-primary/20 ${type.color}`}>
@@ -444,7 +444,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-black text-white italic">{type.time}</div>
+                      <div className="text-[10px] font-black text-white italic">Auto</div>
                       <div className="text-[8px] text-muted-foreground uppercase font-bold">Duração</div>
                     </div>
                   </Button>
