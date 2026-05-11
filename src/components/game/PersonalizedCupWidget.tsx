@@ -11,7 +11,7 @@ interface Props {
   onOpenTournament?: (id: string) => void;
 }
 
-export function PersonalizedCupWidget({ userId }: Props) {
+export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
   const [nextMatch, setNextMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
