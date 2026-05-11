@@ -335,7 +335,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
           await supabase.rpc('replace_bot_with_player', { 
             _user_id: userId, 
             _team_name: club.name, 
-            _logo: '⚽',
+            _logo: club.logoUrl || '⚽',
             _country: (club as any).country || 'Brasil'
           });
         }
