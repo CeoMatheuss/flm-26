@@ -53,9 +53,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
     if (!error && rankingData) {
       const userIds = rankingData.map(r => r.user_id);
-      const { data: clubsData } = await supabase
+      const { data: clubsData } = await (supabase
         .from('clubs')
-        .select('user_id, shield_config, logo_url')
+        .select('user_id, shield_config, logo_url') as any)
         .in('user_id', userIds);
 
       const enhanced = rankingData.map(r => ({
