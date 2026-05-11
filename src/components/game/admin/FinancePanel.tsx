@@ -83,14 +83,29 @@ export function FinancePanel() {
     loadLogs();
   }, [loadClubs, loadLogs]);
 
-  // Filtragem em tempo real
+  // Filtragem em tempo real com sugestões iniciais
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
-    if (selected && selected.name.toLowerCase() === q) return [];
-    return clubs
-      .filter(c => c.name?.toLowerCase().includes(q) || c.user_id.toLowerCase().includes(q))
-      .slice(0, 10);
+    
+    // Se não houver busca e nenhum clube selecionado, mostra todos como sugestão (limitado a 10)
+    if (!q && !selected) {
+      return clubs.slice(0, 10);
+    }
+    
+    // Se houver busca, filtra por nome ou user_id
+    if (q) {
+      // Se houver um clube selecionado e o texto da busca for exatamente o nome dele, não mostra dropdown
+      if (selected && selected.name.toLowerCase() === q) return [];
+      
+      return clubs
+        .filter(c => 
+          c.name?.toLowerCase().includes(q) || 
+          c.user_id.toLowerCase().includes(q)
+        )
+        .slice(0, 10);
+    }
+
+    return [];
   }, [search, clubs, selected]);
 
   const handleSelect = (club: Club) => {
