@@ -17,9 +17,12 @@ serve(async (req) => {
 
     const { action, password } = await req.json()
     const adminPassword = "ADM112828"
-    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups', 'generate_continental_cup'].includes(action)
     
-    if (requiresAdmin && password !== adminPassword && req.headers.get('x-internal-call') !== 'true') {
+    // For automatic calls, we might want to skip password but keep it for manual
+    const isInternal = req.headers.get('x-internal-call') === 'true'
+    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups'].includes(action)
+    
+    if (requiresAdmin && !isInternal && password !== adminPassword) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
@@ -29,19 +32,8 @@ serve(async (req) => {
       const { data: leagues } = await supabase.from('world_leagues').select('country').eq('active', true);
       const uniqueCountries = [...new Set(leagues?.map(c => c.country))];
 
-      const cupNamesMap: Record<string, string> = {
-        'Brasil': 'Copa do Brasil',
-        'Espanha': 'Copa del Rey',
-        'Inglaterra': 'FA Cup',
-        'Alemanha': 'DFB-Pokal',
-        'Itália': 'Coppa Italia',
-        'França': 'Coupe de France',
-        'Portugal': 'Taça de Portugal',
-        'Argentina': 'Copa Argentina'
-      };
-
       for (const country of uniqueCountries) {
-        const name = cupNamesMap[country] || `Copa de ${country}`;
+        const name = `Copa de ${country}`;
         const { data: cup } = await supabase.from('national_cups').upsert({
           name, country_code: country, season: 1, status: 'scheduled', current_round: 1
         }, { onConflict: 'country_code, season' }).select().single();
@@ -51,7 +43,6 @@ serve(async (req) => {
         const { data: teams } = await supabase.from('world_teams').select('*').eq('country', country);
         if (!teams || teams.length < 2) continue;
 
-        // Round to nearest power of 2 for a clean bracket
         const participantsCount = Math.pow(2, Math.floor(Math.log2(Math.min(teams.length, 128))));
         const selectedTeams = teams.sort(() => Math.random() - 0.5).slice(0, participantsCount);
 
@@ -66,8 +57,8 @@ serve(async (req) => {
           total_teams: participantsCount, total_rounds: Math.log2(participantsCount) 
         }).eq('id', cup.id);
         
-        await drawNextRound(supabase, cup.id, 1);
-        await createCupNews(supabase, cup.id, `Sorteio Realizado!`, `A ${name} começou! ${participantsCount} times disputam o título.`);
+        await drawNextRound(supabase, cup.id, 1, Math.log2(participantsCount));
+        await createCupNews(supabase, cup.id, `Copa de ${country} Iniciada!`, `O sorteio foi realizado e ${participantsCount} times começam a busca pelo troféu.`);
       }
 
       return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
@@ -83,24 +74,22 @@ serve(async (req) => {
           .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled');
 
         if (!matches || matches.length === 0) {
-          // Check if all finished
           const { count: pending } = await supabase.from('national_cup_matches')
             .select('*', { count: 'exact', head: true })
             .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
 
           if (pending === 0) {
             if (cup.current_round < cup.total_rounds) {
-              await drawNextRound(supabase, cup.id, cup.current_round + 1);
-              await createCupNews(supabase, cup.id, `Fase Concluída!`, `Os confrontos da próxima fase foram gerados automaticamente.`);
+              await drawNextRound(supabase, cup.id, cup.current_round + 1, cup.total_rounds);
+              await createCupNews(supabase, cup.id, `Próxima Fase Sorteada!`, `Os classificados já conhecem seus adversários na próxima fase.`);
             } else {
               await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
-              const { data: winner } = await supabase.from('national_cup_matches')
+              const { data: winnerMatch } = await supabase.from('national_cup_matches')
                 .select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
-              if (winner) {
-                await supabase.from('national_cups').update({ winner_team_id: winner.winner_team_id }).eq('id', cup.id);
-                await createCupNews(supabase, cup.id, `🏆 Grande Campeão!`, `Parabéns ao vencedor da ${cup.name}!`);
-                // Final prize for winner
-                await grantPrize(supabase, winner.winner_team_id, 25000000, "Campeão da Copa", cup.id);
+              if (winnerMatch) {
+                await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
+                await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
+                await grantPrize(supabase, winnerMatch.winner_team_id, 25000000, "Campeão da Copa", cup.id);
               }
             }
           }
@@ -113,7 +102,6 @@ serve(async (req) => {
             home_score: result.homeGoals, away_score: result.awayGoals,
             home_penalties: result.homePen, away_penalties: result.awayPen,
             status: 'finished', winner_team_id: result.winnerId === 'home' ? match.home_team_id : match.away_team_id,
-            match_data: { simulated: true, date: new Date().toISOString() }
           }).eq('id', match.id);
 
           const winnerId = result.winnerId === 'home' ? match.home_team_id : match.away_team_id;
@@ -121,13 +109,17 @@ serve(async (req) => {
           await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
           
           const prize = getPrizeForRound(match.round, cup.total_rounds);
-          await grantPrize(supabase, winnerId, prize, `Prêmio Fase ${match.round}`, cup.id);
+          await grantPrize(supabase, winnerId, prize, `Prêmio Rodada ${match.round}`, cup.id);
+          
+          // Add goals to players (simple logic: assign goals to top players of team)
+          await assignGoalsToPlayers(supabase, winnerId, result.homeId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
+          await assignGoalsToPlayers(supabase, loserId, result.homeId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
         }
       }
       return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
@@ -135,31 +127,28 @@ serve(async (req) => {
 
 function simulateMatch(homeS: number, awayS: number) {
   const prob = homeS / (homeS + awayS);
-  let homeGoals = Math.floor(Math.random() * 4);
-  let awayGoals = Math.floor(Math.random() * 4);
-  if (Math.random() < prob) homeGoals += 1; else awayGoals += 1;
+  let hG = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
+  let aG = Math.floor(Math.random() * 3) + (Math.random() < (1-prob) ? 1 : 0);
+  
+  let winnerId: 'home' | 'away' = hG > aG ? 'home' : 'away';
+  let hP = null, aP = null;
 
-  let winnerId: 'home' | 'away' = homeGoals > awayGoals ? 'home' : 'away';
-  let homePen = null, awayPen = null;
-
-  if (homeGoals === awayGoals) {
-    homePen = Math.floor(Math.random() * 5) + 3;
-    awayPen = Math.floor(Math.random() * 5) + 3;
-    while (homePen === awayPen) {
-      if (Math.random() > 0.5) homePen++; else awayPen++;
-    }
-    winnerId = homePen > awayPen ? 'home' : 'away';
+  if (hG === aG) {
+    hP = Math.floor(Math.random() * 5) + 3;
+    aP = Math.floor(Math.random() * 5) + 3;
+    while (hP === aP) if (Math.random() > 0.5) hP++; else aP++;
+    winnerId = hP > aP ? 'home' : 'away';
   }
-  return { homeGoals, awayGoals, homePen, awayPen, winnerId };
+  return { homeGoals: hG, awayGoals: aG, homePen: hP, awayPen: aP, winnerId };
 }
 
-async function drawNextRound(supabase: any, cupId: string, round: number) {
+async function drawNextRound(supabase: any, cupId: string, round: number, total: number) {
   const { data: teams } = await supabase.from('national_cup_teams').select('*').eq('cup_id', cupId).eq('eliminated', false);
   if (!teams || teams.length < 2) return;
 
   const shuffled = teams.sort(() => Math.random() - 0.5);
   const matches = [];
-  const phaseName = getPhaseName(round, Math.log2(teams.length + (teams.length % 2 === 0 ? 0 : 1)) + round - 1); // Approximation
+  const phaseName = getPhaseName(round, total);
 
   for (let i = 0; i < shuffled.length; i += 2) {
     if (shuffled[i + 1]) {
@@ -167,7 +156,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
         cup_id: cupId, round, bracket_pos: i / 2,
         home_team_id: shuffled[i].id, away_team_id: shuffled[i+1].id,
         status: 'scheduled', phase_name: phaseName,
-        scheduled_at: new Date(Date.now() + 86400000).toISOString() // Tomorrow
+        scheduled_at: new Date(Date.now() + 86400000).toISOString()
       });
     }
   }
@@ -178,23 +167,21 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
 }
 
 function getPhaseName(round: number, total: number) {
-  const remaining = total - round;
-  if (remaining === 0) return "Final";
-  if (remaining === 1) return "Semifinal";
-  if (remaining === 2) return "Quartas de Final";
-  if (remaining === 3) return "Oitavas de Final";
+  const rem = total - round;
+  if (rem === 0) return "Final";
+  if (rem === 1) return "Semifinal";
+  if (rem === 2) return "Quartas de Final";
+  if (rem === 3) return "Oitavas de Final";
   return `Fase ${round}`;
 }
 
 function getPrizeForRound(round: number, total: number) {
-  const remaining = total - round;
-  if (remaining === 0) return 10000000; // Vice gets 10M, winner handled separately
-  if (remaining === 1) return 5000000;
-  if (remaining === 2) return 2000000;
-  if (remaining === 3) return 1000000;
-  if (round === 3) return 500000;
-  if (round === 2) return 250000;
-  return 100000;
+  const rem = total - round;
+  if (rem === 0) return 10000000;
+  if (rem === 1) return 5000000;
+  if (rem === 2) return 2000000;
+  if (rem === 3) return 1000000;
+  return 100000 * Math.pow(2, round - 1);
 }
 
 async function grantPrize(supabase: any, teamId: string, amount: number, desc: string, cupId: string) {
@@ -211,18 +198,24 @@ async function grantPrize(supabase: any, teamId: string, amount: number, desc: s
       save.club_data.club.budget = (save.club_data.club.budget || 0) + amount;
       await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', team.user_id);
     }
-    await supabase.from('user_notifications').insert({
-      user_id: team.user_id, title: '🏆 Prêmio da Copa!',
-      message: `${desc}: R$ ${amount.toLocaleString()} creditados.`, type: 'success'
-    });
+  }
+}
+
+async function assignGoalsToPlayers(supabase: any, teamId: string, goals: number, cupId: string) {
+  if (goals <= 0) return;
+  const { data: cupTeam } = await supabase.from('national_cup_teams').select('club_id').eq('id', teamId).single();
+  if (!cupTeam) return;
+
+  const { data: players } = await supabase.from('world_players').select('id').eq('team_id', cupTeam.club_id).order('overall', { ascending: false }).limit(5);
+  if (!players || players.length === 0) return;
+
+  for (let i = 0; i < goals; i++) {
+    const p = players[Math.floor(Math.random() * players.length)];
+    await supabase.rpc('increment_cup_goals', { p_cup_id: cupId, p_player_id: p.id, p_team_id: cupTeam.club_id });
   }
 }
 
 async function createCupNews(supabase: any, cupId: string, title: string, content: string) {
   await supabase.from('cup_news').insert({ cup_id: cupId, title, content });
-  // Also add to global news
-  await supabase.from('newspaper_entries').insert({
-    title, content, category: 'competitions', priority: 1, 
-    published_at: new Date().toISOString()
-  });
+  await supabase.from('world_league_news').insert({ title, content, category: 'cup', created_at: new Date().toISOString() });
 }
