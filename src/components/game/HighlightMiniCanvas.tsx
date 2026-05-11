@@ -527,6 +527,12 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawPenaltyLineup(1);
           drawPlayer(penSpotX + (isHome ? 5 : -5), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
+          const isSave = !type.includes('goal') && type !== 'penalty_shootout' && type !== 'penalty'; 
+          // Check if current event is actually a goal from the props or parent state would be better, 
+          // but HighlightMiniCanvas uses the 'type' prop. 
+          // If type is 'penalty', it assumes goal in the original code.
+          // Let's refine the logic: we need to know if it's a goal or save.
+          
           const diveDir = ballEndY > goalY ? 1 : -1;
           const gkDiveY = goalY + diveDir * 25 * easeOut(shotT);
           const gkDiveX = gkX + (isHome ? -12 : 12) * easeOut(shotT);
@@ -538,41 +544,71 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(shotT, '⚡ CHUTOU!');
         } else {
           const afterT = (t - 0.75) / 0.25;
+          const isGoal = ballEndX === goalX; // Simple heuristic: if ball is at goalX, it's a goal
           drawAllPlayers(drift * 0.15);
-          // Lineup players rush in on goal
+          
           penLineupPositions.forEach((pos, i) => {
             const isAttacker = i % 2 === 0;
-            if (isAttacker) {
+            if (isGoal && isAttacker) {
               const rushX = pos.x + (shooterPos.x - pos.x) * easeOut(afterT) * 0.4;
               const rushY = pos.y + (shooterPos.y - pos.y) * easeOut(afterT) * 0.3;
               drawPlayer(rushX, rushY, teamColor, teamLight, String(6 + Math.floor(i / 2)), 7);
+            } else if (!isGoal && !isAttacker) {
+              const rushX = pos.x + (goalX - pos.x) * easeOut(afterT) * 0.4;
+              const rushY = pos.y + (goalY - pos.y) * easeOut(afterT) * 0.3;
+              drawPlayer(rushX, rushY, gkColor, gkLight, String(2 + Math.floor(i / 2)), 7);
             }
           });
+          
           drawPlayer(penSpotX + (isHome ? 8 : -8), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
           const diveDir = ballEndY > goalY ? 1 : -1;
-          drawPlayer(gkX + (isHome ? -12 : 12), goalY + diveDir * 25, gkColor, gkLight, 'GK', 9);
-          drawBall(ballEndX, ballEndY, 0.9);
-          const flash = Math.sin(afterT * 20) * 0.12 * Math.max(0, 1 - afterT);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+          const gkFinalY = goalY + diveDir * 25;
+          const gkFinalX = gkX + (isHome ? -12 : 12);
+          drawPlayer(gkFinalX, gkFinalY, gkColor, gkLight, 'GK', 9);
+          
+          const ballPosX = isGoal ? ballEndX : ballEndX + (isHome ? -20 : 20) * easeOut(afterT);
+          const ballPosY = isGoal ? ballEndY : ballEndY + (ballEndY > goalY ? 15 : -15) * easeOut(afterT);
+          drawBall(ballPosX, ballPosY, 0.9);
+          
+          if (isGoal) {
+            const flash = Math.sin(afterT * 20) * 0.12 * Math.max(0, 1 - afterT);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
+            if (afterT > 0.2) {
+              const bigAlpha = Math.min(1, (afterT - 0.2) * 3) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
+              ctx.save();
+              ctx.globalAlpha = bigAlpha;
+              ctx.font = `bold 26px Arial`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = '#fbbf24';
+              ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+              ctx.lineWidth = 3;
+              ctx.strokeText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
+              ctx.fillText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
+              ctx.restore();
+            }
+            drawEventLabel(1, '⚽ GOL DE PÊNALTI!', playerName);
+          } else {
+            if (afterT > 0.2) {
+              const bigAlpha = Math.min(1, (afterT - 0.2) * 3) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
+              ctx.save();
+              ctx.globalAlpha = bigAlpha;
+              ctx.font = `bold 26px Arial`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = '#22c55e';
+              ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+              ctx.lineWidth = 3;
+              ctx.strokeText('DEFENDEU!', W / 2, H / 2 - 10);
+              ctx.fillText('DEFENDEU!', W / 2, H / 2 - 10);
+              ctx.restore();
+            }
+            drawEventLabel(1, '🧤 GOLEIRO SALVOU O PÊNALTI!', playerName);
           }
-          if (afterT > 0.2) {
-            const bigAlpha = Math.min(1, (afterT - 0.2) * 3) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
-            ctx.save();
-            ctx.globalAlpha = bigAlpha;
-            ctx.font = `bold 26px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
-            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = 3;
-            ctx.strokeText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
-            ctx.fillText('GOL DE PÊNALTI!', W / 2, H / 2 - 10);
-            ctx.restore();
-          }
-          drawEventLabel(1, '⚽ GOL DE PÊNALTI!', playerName);
         }
 
       // ══════════════════════════════════════════════
