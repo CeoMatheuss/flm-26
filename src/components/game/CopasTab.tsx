@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,18 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Maps a national_cup_teams row (or world_teams row) to a ClubShield-compatible object.
-const toShieldClub = (t: any) => t ? ({
-  logoUrl: t.club_logo || t.logo || t.logo_url,
-  shield_config: t.shield_config,
-  shieldConfig: t.shield_config,
-  shieldPattern: t.shield_pattern || t.pattern,
-  shieldShape: t.shield_shape || t.shape,
-  shieldIcon: t.shield_icon || t.icon,
-  primaryColor: t.primary_color || t.primaryColor,
-  secondaryColor: t.secondary_color || t.secondaryColor,
-  detailColor: t.detail_color || t.detailColor,
-}) : null;
+// Maps a team row to a ClubShield-compatible object, ensuring the latest shield data is used.
+const toShieldClub = (t: any) => {
+  if (!t) return null;
+  
+  // Se t.shield_config for um objeto (vindo do RPC), extraímos as propriedades dele
+  const shield = typeof t.shield_config === 'object' && t.shield_config !== null ? t.shield_config : {};
+  
+  return {
+    ...t,
+    logoUrl: t.club_logo || t.logo || t.logo_url || shield.logoUrl,
+    shield_config: t.shield_config,
+    shieldConfig: t.shield_config,
+    shieldPattern: shield.pattern || shield.shieldPattern || t.shield_pattern || t.pattern,
+    shieldShape: shield.shape || shield.shieldShape || t.shield_shape || t.shape,
+    shieldIcon: shield.icon || shield.shieldIcon || t.shield_icon || t.icon,
+    primaryColor: shield.primaryColor || t.primary_color || t.primaryColor,
+    secondaryColor: shield.secondaryColor || t.secondary_color || t.secondaryColor,
+    detailColor: shield.detailColor || t.detail_color || t.detailColor,
+  };
+};
 
 interface Props {
   userId: string;
@@ -33,7 +41,9 @@ export function CopasTab({ userId }: Props) {
   const [allCups, setAllCups] = useState<any[]>([]);
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
-  const [stats, setStats] = useState<any[]>([]);
+  const [goalStats, setGoalStats] = useState<any[]>([]);
+  const [assistStats, setAssistStats] = useState<any[]>([]);
+  const [ratingStats, setRatingStats] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
 
@@ -80,17 +90,35 @@ export function CopasTab({ userId }: Props) {
 
       const [matchesRes, statsRes] = await Promise.all([
         supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
-        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(*)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(*)').eq('cup_id', id).order('goals', { ascending: false }).limit(20)
       ]);
 
-      if (matchesRes.data) setMatches(matchesRes.data);
-      
-      if (statsRes.data) {
-        // Enhance stats teams with real club metadata (shields/colors)
-        const teamNames = statsRes.data.map(s => s.team?.name).filter(Boolean);
-        const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
-        const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+      let enhancedMatches = matchesRes.data || [];
 
+      // Sincronizar escudos para todos os times envolvidos
+      const teamNames = new Set<string>();
+      enhancedMatches.forEach(m => {
+        if (m.home?.club_name) teamNames.add(m.home.club_name);
+        if (m.away?.club_name) teamNames.add(m.away.club_name);
+      });
+      if (statsRes.data) {
+        statsRes.data.forEach(s => {
+          if (s.team?.name) teamNames.add(s.team.name);
+        });
+      }
+
+      const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: Array.from(teamNames) });
+      const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
+      // Aplicar escudos nos matches
+      enhancedMatches = enhancedMatches.map(m => ({
+        ...m,
+        home: m.home ? { ...m.home, shield_config: shieldByName.get(m.home.club_name) || m.home.shield_config } : null,
+        away: m.away ? { ...m.away, shield_config: shieldByName.get(m.away.club_name) || m.away.shield_config } : null
+      }));
+      setMatches(enhancedMatches);
+
+      if (statsRes.data) {
         const enhancedStats = statsRes.data.map(s => ({
           ...s,
           team: {
@@ -98,7 +126,10 @@ export function CopasTab({ userId }: Props) {
             ...shieldByName.get(s.team?.name)
           }
         }));
-        setStats(enhancedStats);
+        
+        setGoalStats(enhancedStats.sort((a, b) => (b.goals || 0) - (a.goals || 0)).slice(0, 10));
+        setAssistStats(enhancedStats.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10));
+        setRatingStats(enhancedStats.filter(s => (s.matches_played || 0) > 0).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10));
       }
     } catch (e) {
       console.error(e);
@@ -297,17 +328,18 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="stats" className="outline-none space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Artilheiros */}
             <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
                 <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros da Copa
+                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {stats.length > 0 ? (
+                {goalStats.length > 0 ? (
                   <div className="divide-y divide-border/30">
-                    {stats.map((s, idx) => (
+                    {goalStats.map((s, idx) => (
                       <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
                         <div className="flex items-center gap-4">
                           <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
@@ -317,34 +349,98 @@ export function CopasTab({ userId }: Props) {
                             <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <span className="text-sm font-black text-white">{s.goals}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
-                          </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{s.goals}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado nesta fase.</div>
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
                 )}
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <Card className="bg-primary/10 border-primary/20 rounded-3xl p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                    <Info className="h-6 w-6" />
+            {/* Assistências */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-blue-400" /> Assistências
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {assistStats.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {assistStats.map((s, idx) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{s.assists || 0}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">AST</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black uppercase">Regulamento</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium mt-1">Partidas de mata-mata em jogo único com prorrogação e pênaltis em caso de empate.</p>
+                ) : (
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notas Médias */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+                  <Star className="h-4 w-4 text-orange-400" /> Notas Médias
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {ratingStats.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {ratingStats.map((s, idx) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{Number(s.avg_rating || 0).toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">NOTA</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <Card className="bg-primary/10 border-primary/20 rounded-3xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                  <Info className="h-6 w-6" />
                 </div>
-              </Card>
-            </div>
+                <div>
+                  <h4 className="text-sm font-black uppercase">Regulamento da Copa</h4>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-1">Partidas de mata-mata em jogo único. Em caso de empate no tempo normal, a decisão será nos pênaltis.</p>
+                </div>
+              </div>
+            </Card>
           </div>
         </TabsContent>
 
