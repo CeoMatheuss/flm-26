@@ -23,10 +23,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AdminVersionPanel } from './admin/AdminVersionPanel';
-import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
-import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
-import { ModerationPanel } from './admin/ModerationPanel';
-import { MaintenanceToggle } from './admin/MaintenanceToggle';
+// Componentes de administração comentados por erro de importação
+// import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
+// import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
+// import { ModerationPanel } from './admin/ModerationPanel';
+// import { MaintenanceToggle } from './admin/MaintenanceToggle';
 
 interface PendingUser {
   id: string;
