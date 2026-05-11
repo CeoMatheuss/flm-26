@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, MapPin, DollarSign } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, MapPin, DollarSign, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { ClubShield } from './ClubShield';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface Props {
   userId: string;
@@ -13,52 +15,64 @@ interface Props {
 export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('bracket');
   const [cup, setCup] = useState<any>(null);
+  const [allCups, setAllCups] = useState<any[]>([]);
+  const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [prizes, setPrizes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // 1. Buscar copa do país do usuário (fallback para a primeira encontrada)
-      const { data: save } = await supabase.from('game_saves').select('country').eq('user_id', userId).maybeSingle();
-      const country = save?.country || 'Brasil';
 
-      const { data: cupRow } = await supabase
+  const loadInitial = async () => {
+    try {
+      const { data: cups } = await supabase
         .from('national_cups')
         .select('*')
-        .eq('country_code', country)
-        .order('season', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('country_code', { ascending: true });
+      
+      if (cups) {
+        setAllCups(cups);
+        
+        // Prioridade: Copa do país do usuário
+        const { data: save } = await supabase.from('game_saves').select('country').eq('user_id', userId).maybeSingle();
+        const userCountry = save?.country || 'Brasil';
+        const userCup = cups.find(c => c.country_code === userCountry) || cups[0];
+        
+        if (userCup) {
+          setSelectedCupId(userCup.id);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
+  const loadCupData = async (id: string) => {
+    setLoading(true);
+    try {
+      const cupRow = allCups.find(c => c.id === id);
       if (cupRow) {
         setCup(cupRow);
         
-        // 2. Buscar partidas
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
           .select(`
-            id, round, bracket_pos, home_score, away_score, status, winner_team_id, scheduled_at, stadium,
+            id, round, bracket_pos, home_score, away_score, home_penalties, away_penalties, status, winner_team_id, scheduled_at, stadium,
             home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
             away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
-          .eq('cup_id', cupRow.id)
+          .eq('cup_id', id)
           .order('round', { ascending: true })
           .order('bracket_pos', { ascending: true });
         
         if (cupMatches) setMatches(cupMatches);
 
-        // 3. Buscar premiações do usuário
         const { data: cupPrizes } = await supabase
           .from('national_cup_prizes')
           .select('id, cup_id, team_id, amount, description, team:national_cup_teams!team_id(club_name, user_id)')
-          .eq('cup_id', cupRow.id);
+          .eq('cup_id', id);
         
         const filteredPrizes = (cupPrizes || []).filter((p: any) => p.team?.user_id === userId);
-        if (filteredPrizes) setPrizes(filteredPrizes);
-        
-        if (cupPrizes) setPrizes(cupPrizes);
+        setPrizes(filteredPrizes);
       }
     } catch (e) {
       console.error(e);
@@ -68,12 +82,25 @@ export function CopasTab({ userId }: Props) {
   };
 
   useEffect(() => {
-    loadData();
-    const channel = supabase.channel('copas-v3-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadData())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    loadInitial();
   }, [userId]);
+
+  useEffect(() => {
+    if (selectedCupId) {
+      loadCupData(selectedCupId);
+      
+      const channel = supabase.channel(`cup-sync-${selectedCupId}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'national_cup_matches',
+          filter: `cup_id=eq.${selectedCupId}`
+        }, () => loadCupData(selectedCupId))
+        .subscribe();
+        
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [selectedCupId]);
 
   if (loading) {
     return (
@@ -104,6 +131,23 @@ export function CopasTab({ userId }: Props) {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl mx-auto pb-10">
+      {/* Seletor de Copas */}
+      <div className="flex items-center gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
+        <Globe className="h-4 w-4 text-primary" />
+        <Select value={selectedCupId || ''} onValueChange={setSelectedCupId}>
+          <SelectTrigger className="bg-transparent border-none font-bold text-xs h-8">
+            <SelectValue placeholder="Selecione uma Copa" />
+          </SelectTrigger>
+          <SelectContent>
+            {allCups.map(c => (
+              <SelectItem key={c.id} value={c.id} className="text-xs font-bold">
+                {c.name} ({c.country_code})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Header Estilizado */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-background to-background border border-primary/20 p-6">
         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -119,6 +163,7 @@ export function CopasTab({ userId }: Props) {
               Temporada {cup.season} • {cup.total_rounds ? `${cup.total_rounds} Fases` : 'Mata-Mata Global'}
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-wider">
               Fase {cup.current_round}
@@ -196,19 +241,30 @@ export function CopasTab({ userId }: Props) {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                        <span className={`text-xs font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>{m.home?.club_name}</span>
+                        <span className={`text-xs font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>
+                          {m.home?.club_name}
+                        </span>
+
                       </div>
                       
                       <div className="flex flex-col items-center justify-center min-w-[60px]">
                         <span className="text-lg font-black tracking-tight tabular-nums">
                           {m.status === 'finished' ? `${m.home_score} - ${m.away_score}` : 'vs'}
                         </span>
+                        {m.status === 'finished' && (m.home_penalties !== null || m.away_penalties !== null) && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            ({m.home_penalties}-{m.away_penalties} pen)
+                          </span>
+                        )}
                         {m.status === 'scheduled' && <span className="text-[8px] font-bold text-muted-foreground">12:00</span>}
                       </div>
 
                       <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className={`text-xs font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>{m.away?.club_name}</span>
+                        <span className={`text-xs font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>
+                          {m.away?.club_name}
+                        </span>
                         <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
+
                       </div>
                     </div>
                   </CardContent>
@@ -239,14 +295,20 @@ export function CopasTab({ userId }: Props) {
                               <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.home?.club_name || 'TBD'}
                               </span>
-                              <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
+                              <div className="flex flex-col items-end leading-none">
+                                <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
+                                {m.home_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.home_penalties})</span>}
+                              </div>
                             </div>
                             <div className="h-px w-full bg-border/50 my-1"></div>
                             <div className="flex justify-between items-center">
                               <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.away?.club_name || 'TBD'}
                               </span>
-                              <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
+                              <div className="flex flex-col items-end leading-none">
+                                <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
+                                {m.away_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.away_penalties})</span>}
+                              </div>
                             </div>
                           </Card>
                         </div>
