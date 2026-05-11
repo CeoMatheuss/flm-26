@@ -10,6 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Maps a national_cup_teams row (or world_teams row) to a ClubShield-compatible object.
+const toShieldClub = (t: any) => t ? ({
+  logoUrl: t.club_logo || t.logo,
+  shield_config: t.shield_config,
+  shieldConfig: t.shield_config,
+  shieldPattern: t.shield_pattern,
+  shieldShape: t.shield_shape,
+  primaryColor: t.primary_color,
+  secondaryColor: t.secondary_color,
+}) : null;
+
 interface Props {
   userId: string;
 }
