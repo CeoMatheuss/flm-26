@@ -47,9 +47,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
     setLoading(true);
     const { data, error } = await supabase
       .from('global_ranking')
-      .select('*')
+      .select('*, clubs(shield_config, logo_url)')
       .order('ranking_points', { ascending: false })
-      .limit(500);
+      .limit(200);
 
     if (!error && data) {
       setRankings(data as RankingEntry[]);
