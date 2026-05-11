@@ -1,49 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, MapPin, DollarSign, Globe, Play } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ClubShield } from './ClubShield';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Props {
   userId: string;
 }
 
 export function CopasTab({ userId }: Props) {
-  const [activeTab, setActiveTab] = useState('bracket');
+  const [activeTab, setActiveTab] = useState('matches');
   const [cup, setCup] = useState<any>(null);
   const [allCups, setAllCups] = useState<any[]>([]);
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
-  const [prizes, setPrizes] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
 
   const loadInitial = async () => {
     try {
-      const { data: cups } = await supabase
-        .from('national_cups')
-        .select('*')
-        .order('country_code', { ascending: true });
-      
-      if (cups) {
+      const { data: cups } = await supabase.from('national_cups').select('*').order('name', { ascending: true });
+      if (cups && cups.length > 0) {
         setAllCups(cups);
-        
-        // Prioridade: Copa do país do usuário
-        const { data: save } = await supabase.from('game_saves').select('country').eq('user_id', userId).maybeSingle();
-        const userCountry = save?.country || 'Brasil';
+        const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
+        const clubData = save?.club_data as any;
+        const userCountry = clubData?.club?.country || 'Brasil';
         const userCup = cups.find(c => c.country_code === userCountry) || cups[0];
-        
-        if (userCup) {
-          setSelectedCupId(userCup.id);
-        }
+        setSelectedCupId(userCup.id);
       }
     } catch (e) {
       console.error(e);
@@ -53,31 +43,19 @@ export function CopasTab({ userId }: Props) {
   const loadCupData = async (id: string) => {
     setLoading(true);
     try {
-      const cupRow = allCups.find(c => c.id === id);
-      if (cupRow) {
-        setCup(cupRow);
-        
-        const { data: cupMatches } = await supabase
-          .from('national_cup_matches')
-          .select(`
-            id, round, bracket_pos, home_score, away_score, home_penalties, away_penalties, status, winner_team_id, scheduled_at, stadium,
-            home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
-            away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
-          `)
-          .eq('cup_id', id)
-          .order('round', { ascending: true })
-          .order('bracket_pos', { ascending: true });
-        
-        if (cupMatches) setMatches(cupMatches);
+      const currentCup = allCups.find(c => c.id === id);
+      if (!currentCup) return;
+      setCup(currentCup);
 
-        const { data: cupPrizes } = await supabase
-          .from('national_cup_prizes')
-          .select('id, cup_id, team_id, amount, description, team:national_cup_teams!team_id(club_name, user_id)')
-          .eq('cup_id', id);
-        
-        const filteredPrizes = (cupPrizes || []).filter((p: any) => p.team?.user_id === userId);
-        setPrizes(filteredPrizes);
-      }
+      const [matchesRes, statsRes, newsRes] = await Promise.all([
+        supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(club_name, club_logo, user_id, strength), away:national_cup_teams!away_team_id(club_name, club_logo, user_id, strength)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10),
+        supabase.from('cup_news').select('*').eq('cup_id', id).order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      if (matchesRes.data) setMatches(matchesRes.data);
+      if (statsRes.data) setStats(statsRes.data);
+      if (newsRes.data) setNews(newsRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -85,81 +63,23 @@ export function CopasTab({ userId }: Props) {
     }
   };
 
-  useEffect(() => {
-    loadInitial();
-  }, [userId]);
-
-  useEffect(() => {
-    if (selectedCupId) {
-      loadCupData(selectedCupId);
-      
-      const channel = supabase.channel(`cup-sync-${selectedCupId}`)
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'national_cup_matches',
-          filter: `cup_id=eq.${selectedCupId}`
-        }, () => loadCupData(selectedCupId))
-        .subscribe();
-        
-      return () => { supabase.removeChannel(channel); };
-    }
-  }, [selectedCupId]);
+  useEffect(() => { loadInitial(); }, [userId]);
+  useEffect(() => { if (selectedCupId) loadCupData(selectedCupId); }, [selectedCupId, allCups]);
 
   const navigate = useNavigate();
-  const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
-  const myNextMatch = matches.find(
-    m => (m.status === 'scheduled' || m.status === 'live') &&
-         (m.home?.user_id === userId || m.away?.user_id === userId)
-  );
-  const highlight = myNextMatch || nextMatch;
+  const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
 
-  // Auto-simulação após 5 minutos do horário
-  useEffect(() => {
-    if (myNextMatch?.status === 'scheduled') {
-      const kickoff = new Date(myNextMatch.scheduled_at).getTime();
-      const timeoutTime = kickoff + (5 * 60 * 1000);
-      const now = Date.now();
-      
-      if (now >= timeoutTime) {
-        supabase.functions.invoke('national-cup-manager', {
-          body: { action: 'advance_phase', password: 'ADM112828' }
-        });
-      }
-    }
-  }, [myNextMatch]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!cup) {
-    return (
-      <Card className="border-dashed bg-muted/20">
-        <CardContent className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <Trophy className="h-12 w-12 text-muted-foreground/20" />
-          <h3 className="text-lg font-bold">Nenhuma Copa Ativa</h3>
-          <p className="text-sm text-muted-foreground">Aguardando início da temporada.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const handlePlay2D = () => {
-    if (!myNextMatch) return;
+  const handlePlayMatch = () => {
+    if (!myMatch) return;
     navigate('/', {
       replace: true,
       state: {
         playTournamentMatch: {
-          matchId: myNextMatch.id,
-          tournamentMatchId: myNextMatch.id,
-          opponentName: myNextMatch.home?.user_id === userId ? myNextMatch.away?.club_name : myNextMatch.home?.club_name,
-          opponentStrength: myNextMatch.home?.user_id === userId ? myNextMatch.away?.strength : myNextMatch.home?.strength,
-          isHome: myNextMatch.home?.user_id === userId,
+          matchId: myMatch.id,
+          tournamentMatchId: myMatch.id,
+          opponentName: myMatch.home?.user_id === userId ? myMatch.away?.club_name : myMatch.home?.club_name,
+          opponentStrength: myMatch.home?.user_id === userId ? myMatch.away?.strength : myMatch.home?.strength,
+          isHome: myMatch.home?.user_id === userId,
           competition: cup.name,
           tieBreaker: 'both',
           isNationalCup: true
@@ -168,257 +88,331 @@ export function CopasTab({ userId }: Props) {
     });
   };
 
+  if (loading && !cup) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!cup) return <div className="py-20 text-center text-muted-foreground">Nenhuma copa disponível.</div>;
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl mx-auto pb-10">
-      {/* Seletor de Copas */}
-      <div className="flex items-center gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
-        <Globe className="h-4 w-4 text-primary" />
-        <Select value={selectedCupId || ''} onValueChange={setSelectedCupId}>
-          <SelectTrigger className="bg-transparent border-none font-bold text-xs h-8">
-            <SelectValue placeholder="Selecione uma Copa" />
-          </SelectTrigger>
-          <SelectContent>
-            {allCups.map(c => (
-              <SelectItem key={c.id} value={c.id} className="text-xs font-bold">
-                {c.name} ({c.country_code})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-4 animate-in fade-in duration-500 max-w-5xl mx-auto pb-20 px-2">
+      {/* Header Select */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 bg-card/40 p-1.5 pr-4 rounded-full border border-border/50 backdrop-blur-sm">
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            <Globe className="h-4 w-4" />
+          </div>
+          <Select value={selectedCupId || ''} onValueChange={setSelectedCupId}>
+            <SelectTrigger className="bg-transparent border-none font-black text-xs h-7 w-[180px] focus:ring-0">
+              <SelectValue placeholder="Escolher Competição" />
+            </SelectTrigger>
+            <SelectContent className="bg-card/95 border-border/50 backdrop-blur-md">
+              {allCups.map(c => (
+                <SelectItem key={c.id} value={c.id} className="text-xs font-bold focus:bg-primary/10">
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black text-[10px] py-1 px-3 uppercase tracking-widest">
+            TEMPORADA {cup.season}
+          </Badge>
+          <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 font-black text-[10px] py-1 px-3 uppercase tracking-widest">
+            {cup.status === 'in_progress' ? `RODADA ${cup.current_round}` : 'FINALIZADA'}
+          </Badge>
+        </div>
       </div>
 
-      {/* Header Estilizado */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-background to-background border border-primary/20 p-6">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Trophy className="h-32 w-32" />
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a0a1a] via-[#12122b] to-[#0a0a1a] border border-primary/30 p-8 shadow-2xl shadow-primary/10 group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
+          <Trophy className="h-48 w-48 text-primary rotate-12" />
         </div>
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-primary animate-pulse" />
-              <h2 className="text-2xl font-black tracking-tight">{cup.name}</h2>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-4 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/30">
+              <Sparkles className="h-3 w-3" /> Competição de Elite
             </div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Temporada {cup.season} • {cup.total_rounds ? `${cup.total_rounds} Fases` : 'Mata-Mata Global'}
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white drop-shadow-sm uppercase">
+              {cup.name}
+            </h1>
+            <p className="text-muted-foreground font-medium text-sm max-w-md">
+              A glória eterna aguarda. {cup.total_teams} clubes disputam fase a fase o troféu mais desejado do país.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-              Fase {cup.current_round}
-            </Badge>
-            {cup.status === 'finished' && (
-              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-                Finalizada
-              </Badge>
-            )}
-          </div>
+          {myMatch && (
+            <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match">
+              <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO HOJE</span>
+                <span className="text-[9px] font-mono text-white/50">12:00</span>
+              </div>
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center justify-around gap-2">
+                  <div className="flex flex-col items-center gap-2">
+                    <ClubShield club={{ logoUrl: myMatch.home?.club_logo } as any} size={48} />
+                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.home?.club_name}</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-black text-white/40 italic">VS</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <ClubShield club={{ logoUrl: myMatch.away?.club_logo } as any} size={48} />
+                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.away?.club_name}</span>
+                  </div>
+                </div>
+                <Button onClick={handlePlayMatch} className="w-full h-9 bg-primary hover:bg-primary/80 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20">
+                  <Play className="h-3 w-3 mr-2" /> ENTRAR EM CAMPO
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      {/* Destaque do Próximo Jogo */}
-      {highlight && (
-        <Card className="game-card border-primary/30 shadow-lg shadow-primary/5">
-          <CardHeader className="py-2 px-4 border-b border-border/50 bg-muted/30">
-            <div className="flex items-center justify-between">
-               <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                <Swords className="h-3 w-3" /> {myNextMatch ? 'SEU PRÓXIMO DESAFIO' : 'PRÓXIMO JOGO DA RODADA'}
-              </span>
-              <Badge variant="outline" className="text-[9px] h-5 bg-background font-mono">
-                {new Date(highlight.scheduled_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} • {new Date(highlight.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                <div className={`p-1 rounded-full ${highlight.home?.user_id === userId ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
-                  <ClubShield club={{ logoUrl: highlight.home?.club_logo } as any} size={56} />
-                </div>
-                <span className={`text-xs sm:text-sm font-black truncate w-full text-center cursor-pointer hover:text-primary transition-colors ${highlight.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: highlight.home?.club_name } }))}>
-                  {highlight.home?.club_name}
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1">
-                <div className="px-4 py-1 rounded-full bg-muted font-black text-xs italic tracking-tighter">VS</div>
-                {myNextMatch && (() => {
-                  const kickoff = new Date(myNextMatch.scheduled_at).getTime();
-                  const now = Date.now();
-                  const isReady = now >= kickoff && now <= kickoff + (5 * 60 * 1000);
-                  const minsLeft = Math.max(0, Math.ceil((kickoff - now) / 60000));
-                  return isReady ? (
-                    <Button size="sm" className="h-8 px-4 font-black text-[10px] animate-pulse" onClick={handlePlay2D}>
-                      <Play className="h-3 w-3 mr-1" /> JOGAR 2D
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" disabled className="h-8 px-4 font-black text-[10px]">
-                      {minsLeft > 60 ? `${Math.floor(minsLeft/60)}h ${minsLeft%60}m` : `${minsLeft}min`}
-                    </Button>
-                  );
-                })()}
-                <div className="h-px w-8 bg-border"></div>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                <div className={`p-1 rounded-full ${highlight.away?.user_id === userId ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
-                  <ClubShield club={{ logoUrl: highlight.away?.club_logo } as any} size={56} />
-                </div>
-                <span className={`text-xs sm:text-sm font-black truncate w-full text-center cursor-pointer hover:text-primary transition-colors ${highlight.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: highlight.away?.club_name } }))}>
-                  {highlight.away?.club_name}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 p-1 bg-muted/50 rounded-xl mb-6">
-          <TabsTrigger value="matches" className="rounded-lg font-bold text-xs uppercase tracking-tight">Jogos</TabsTrigger>
-          <TabsTrigger value="bracket" className="rounded-lg font-bold text-xs uppercase tracking-tight">Chaveamento</TabsTrigger>
-          <TabsTrigger value="prizes" className="rounded-lg font-bold text-xs uppercase tracking-tight">Prêmios</TabsTrigger>
+        <TabsList className="flex items-center justify-start gap-1 p-1 bg-card/40 backdrop-blur-md border border-border/50 rounded-2xl mb-6 overflow-x-auto no-scrollbar">
+          <TabsTrigger value="matches" className="tab-trigger-modern"><Calendar className="h-3.5 w-3.5" /> Jogos</TabsTrigger>
+          <TabsTrigger value="bracket" className="tab-trigger-modern"><TrendingUp className="h-3.5 w-3.5" /> Chaveamento</TabsTrigger>
+          <TabsTrigger value="stats" className="tab-trigger-modern"><BarChart3 className="h-3.5 w-3.5" /> Estatísticas</TabsTrigger>
+          <TabsTrigger value="news" className="tab-trigger-modern"><Newspaper className="h-3.5 w-3.5" /> Notícias</TabsTrigger>
+          <TabsTrigger value="prizes" className="tab-trigger-modern"><DollarSign className="h-3.5 w-3.5" /> Premiação</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="matches" className="space-y-4 outline-none">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-black uppercase text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Partidas da Rodada {cup.current_round}
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {matches.filter(m => m.round === cup.current_round).map(m => {
-              const isMine = m.home?.user_id === userId || m.away?.user_id === userId;
-              return (
-                <Card key={m.id} className={`bg-card/40 transition-all hover:border-primary/30 ${isMine ? 'ring-1 ring-primary border-primary/50 bg-primary/5' : ''}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                        <span className={`text-xs font-bold truncate cursor-pointer hover:text-primary transition-colors ${m.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home?.club_name } }))}>
-                          {m.home?.club_name}
-                        </span>
-
-                      </div>
-                      
-                      <div className="flex flex-col items-center justify-center min-w-[60px]">
-                        <span className="text-lg font-black tracking-tight tabular-nums">
-                          {m.status === 'finished' ? `${m.home_score} - ${m.away_score}` : 'vs'}
-                        </span>
-                        {m.status === 'finished' && (m.home_penalties !== null || m.away_penalties !== null) && (
-                          <span className="text-[10px] text-muted-foreground font-mono">
-                            ({m.home_penalties}-{m.away_penalties} pen)
-                          </span>
-                        )}
-                        {m.status === 'scheduled' && <span className="text-[8px] font-bold text-muted-foreground">12:00</span>}
-                      </div>
-
-                      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className={`text-xs font-bold truncate text-right cursor-pointer hover:text-primary transition-colors ${m.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away?.club_name } }))}>
-                          {m.away?.club_name}
-                        </span>
-                        <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
-
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+        <TabsContent value="matches" className="animate-in slide-in-from-bottom-2 duration-500 outline-none">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {matches.filter(m => m.round === cup.current_round).map(m => (
+              <MatchRow key={m.id} match={m} userId={userId} />
+            ))}
           </div>
         </TabsContent>
 
         <TabsContent value="bracket" className="outline-none">
-          <div className="relative overflow-x-auto rounded-xl border bg-card/20 pb-4">
-            <div className="flex gap-6 p-6 min-w-max">
-              {[...Array(cup.total_rounds || 6)].map((_, i) => {
+          <ScrollArea className="w-full rounded-3xl border border-border/50 bg-card/20 pb-8">
+            <div className="flex gap-12 p-8 min-w-max">
+              {[...Array(cup.total_rounds)].map((_, i) => {
                 const r = i + 1;
-                const rMatches = matches.filter(m => m.round === r);
-                if (rMatches.length === 0 && r > cup.current_round + 1) return null;
+                const rMatches = matches.filter(match => match.round === r);
                 return (
-                  <div key={r} className="w-56 space-y-6">
-                    <div className="text-center space-y-1">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Fase {r}</h4>
-                      <div className="h-1 w-8 bg-primary/20 mx-auto rounded-full"></div>
+                  <div key={r} className="w-64 space-y-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{getPhaseName(r, cup.total_rounds)}</span>
+                      <div className="h-1.5 w-12 bg-primary/20 rounded-full" />
                     </div>
-                    <div className="space-y-4">
-                      {rMatches.length > 0 ? rMatches.map(m => (
-                        <div key={m.id} className="relative group">
-                          <Card className={`p-3 text-[10px] bg-card/60 border-l-4 transition-all hover:scale-105 hover:shadow-xl ${m.winner_team_id ? 'border-l-emerald-500' : 'border-l-primary/30'} ${m.home?.user_id === userId || m.away?.user_id === userId ? 'ring-1 ring-primary' : ''}`}>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className={`font-bold truncate max-w-[80px] cursor-pointer hover:text-primary transition-colors ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home?.club_name } }))}>
-                                {m.home?.club_name || 'TBD'}
-                              </span>
-                              <div className="flex flex-col items-end leading-none">
-                                <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
-                                {m.home_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.home_penalties})</span>}
-                              </div>
-                            </div>
-                            <div className="h-px w-full bg-border/50 my-1"></div>
-                            <div className="flex justify-between items-center">
-                              <span className={`font-bold truncate max-w-[80px] cursor-pointer hover:text-primary transition-colors ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away?.club_name } }))}>
-                                {m.away?.club_name || 'TBD'}
-                              </span>
-                              <div className="flex flex-col items-end leading-none">
-                                <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
-                                {m.away_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.away_penalties})</span>}
-                              </div>
-                            </div>
-                          </Card>
-                        </div>
-                      )) : (
-                        <div className="h-20 border-2 border-dashed border-border/30 rounded-xl flex items-center justify-center">
-                          <span className="text-[10px] text-muted-foreground/50 font-bold uppercase tracking-tighter italic">Aguardando</span>
-                        </div>
-                      )}
+                    <div className="space-y-6 flex flex-col justify-around h-full py-4">
+                      {rMatches.map(m => (
+                        <BracketMatch key={m.id} match={m} userId={userId} />
+                      ))}
                     </div>
                   </div>
                 );
               })}
             </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="stats" className="outline-none space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20">
+                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros da Copa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {stats.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {stats.map((s, idx) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                          <ClubShield club={{ logoUrl: s.team?.logo } as any} size={32} />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <span className="text-sm font-black text-white">{s.goals}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado nesta fase.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <Card className="bg-primary/10 border-primary/20 rounded-3xl p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                    <Info className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black uppercase">Regulamento</h4>
+                    <p className="text-[10px] text-muted-foreground font-medium mt-1">Partidas de mata-mata em jogo único com prorrogação e pênaltis em caso de empate.</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
+        <TabsContent value="news" className="outline-none space-y-4">
+          {news.length > 0 ? news.map(n => (
+            <Card key={n.id} className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer">
+              <CardContent className="p-6 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
+                  <Newspaper className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black uppercase tracking-tight">{n.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{n.content}</p>
+                  <span className="text-[9px] font-mono text-muted-foreground/50 block pt-2">
+                    {new Date(n.created_at).toLocaleDateString()} • {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )) : (
+            <div className="py-20 text-center text-xs text-muted-foreground">Nenhuma notícia recente.</div>
+          )}
+        </TabsContent>
+
         <TabsContent value="prizes" className="outline-none">
-          <Card className="border-emerald-500/20 bg-emerald-500/5">
-            <CardHeader className="py-4 border-b border-emerald-500/10">
-              <CardTitle className="text-sm font-black flex items-center gap-2 text-emerald-500 uppercase tracking-tight">
-                <DollarSign className="h-5 w-5" /> Saldo de Premiações
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {prizes.length === 0 ? (
-                <div className="p-12 text-center space-y-3">
-                  <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto opacity-20">
-                    <DollarSign className="h-6 w-6" />
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium italic">Aumente sua força e avance de fase para receber prêmios.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-emerald-500/10">
-                  {prizes.map(p => (
-                    <div key={p.id} className="p-4 flex justify-between items-center bg-background/40">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold uppercase tracking-tight">{p.description}</span>
-                        <p className="text-[10px] text-muted-foreground">Pago via Federação Nacional</p>
-                      </div>
-                      <span className="font-black text-emerald-500 text-sm">+ R$ {(p.amount/1000).toFixed(0)}k</span>
-                    </div>
-                  ))}
-                  <div className="p-6 bg-emerald-500/10 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                       <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                       <span className="text-xs font-black uppercase tracking-wider text-emerald-600">Total Acumulado</span>
-                    </div>
-                    <span className="font-black text-xl text-emerald-600 tabular-nums">R$ {(prizes.reduce((s, p) => s + p.amount, 0) / 1000).toFixed(0)}k</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <PrizeCard label="Fase 1" amount="100.000" />
+            <PrizeCard label="Fase 2" amount="250.000" />
+            <PrizeCard label="Fase 3" amount="500.000" />
+            <PrizeCard label="Oitavas" amount="1.000.000" />
+            <PrizeCard label="Quartas" amount="2.000.000" />
+            <PrizeCard label="Semifinal" amount="5.000.000" />
+            <PrizeCard label="Vice" amount="10.000.000" highlight="silver" />
+            <PrizeCard label="Campeão" amount="25.000.000" highlight="gold" />
+          </div>
         </TabsContent>
       </Tabs>
+      
+      <style>{`
+        .tab-trigger-modern {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          font-size: 0.7rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-radius: 1rem;
+          transition: all 0.3s;
+        }
+        .tab-trigger-modern[data-state='active'] {
+          background-color: var(--primary);
+          color: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
     </div>
   );
+}
+
+function MatchRow({ match, userId }: { match: any; userId: string }) {
+  const isMine = match.home?.user_id === userId || match.away?.user_id === userId;
+  return (
+    <Card className={`bg-card/40 backdrop-blur-sm transition-all hover:scale-[1.01] overflow-hidden group border-border/50 ${isMine ? 'ring-1 ring-primary border-primary/40 bg-primary/5' : ''}`}>
+      <CardContent className="p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <ClubShield club={{ logoUrl: match.home?.club_logo } as any} size={32} />
+          <span className={`text-xs font-black truncate group-hover:text-primary transition-colors cursor-pointer ${match.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home?.club_name } }))}>
+            {match.home?.club_name}
+          </span>
+        </div>
+
+        <div className="flex flex-col items-center justify-center min-w-[70px]">
+          {match.status === 'finished' ? (
+            <div className="flex flex-col items-center">
+              <span className="text-base font-black tracking-tighter tabular-nums">
+                {match.home_score} - {match.away_score}
+              </span>
+              {(match.home_penalties !== null || match.away_penalties !== null) && (
+                <span className="text-[8px] font-bold text-muted-foreground uppercase">({match.home_penalties}-{match.away_penalties} PEN)</span>
+              )}
+            </div>
+          ) : (
+            <div className="px-3 py-0.5 rounded-full bg-muted font-black text-[9px] uppercase tracking-wider text-muted-foreground">vs</div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+          <span className={`text-xs font-black truncate text-right group-hover:text-primary transition-colors cursor-pointer ${match.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away?.club_name } }))}>
+            {match.away?.club_name}
+          </span>
+          <ClubShield club={{ logoUrl: match.away?.club_logo } as any} size={32} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BracketMatch({ match, userId }: { match: any; userId: string }) {
+  const isHomeWinner = match.winner_team_id === match.home_team_id;
+  const isAwayWinner = match.winner_team_id === match.away_team_id;
+  const isMine = match.home?.user_id === userId || match.away?.user_id === userId;
+
+  return (
+    <div className={`relative w-full rounded-2xl bg-card/60 border border-border/50 p-3 space-y-2 transition-all hover:scale-105 shadow-xl ${isMine ? 'ring-1 ring-primary' : ''}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <ClubShield club={{ logoUrl: match.home?.club_logo } as any} size={20} />
+          <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isHomeWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home?.club_name } }))}>
+            {match.home?.club_name || 'TBD'}
+          </span>
+        </div>
+        <span className="text-[10px] font-black tabular-nums">{match.home_score ?? ''}</span>
+      </div>
+      <div className="h-px w-full bg-border/20" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <ClubShield club={{ logoUrl: match.away?.club_logo } as any} size={20} />
+          <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isAwayWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away?.club_name } }))}>
+            {match.away?.club_name || 'TBD'}
+          </span>
+        </div>
+        <span className="text-[10px] font-black tabular-nums">{match.away_score ?? ''}</span>
+      </div>
+    </div>
+  );
+}
+
+function PrizeCard({ label, amount, highlight }: { label: string; amount: string; highlight?: 'gold' | 'silver' }) {
+  return (
+    <div className={`p-4 rounded-3xl border flex flex-col items-center justify-center gap-1 transition-all hover:scale-105 ${
+      highlight === 'gold' ? 'bg-yellow-500/10 border-yellow-500/30' : 
+      highlight === 'silver' ? 'bg-slate-400/10 border-slate-400/30' : 
+      'bg-card/40 border-border/50'
+    }`}>
+      <span className="text-[10px] font-black uppercase text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">
+        <DollarSign className={`h-3 w-3 ${highlight === 'gold' ? 'text-yellow-500' : 'text-primary'}`} />
+        <span className={`text-sm font-black tracking-tight ${highlight === 'gold' ? 'text-yellow-500' : 'text-white'}`}>{amount}</span>
+      </div>
+    </div>
+  );
+}
+
+function getPhaseName(round: number, total: number) {
+  const rem = total - round;
+  if (rem === 0) return "Final";
+  if (rem === 1) return "Semifinal";
+  if (rem === 2) return "Quartas de Final";
+  if (rem === 3) return "Oitavas de Final";
+  return `Fase ${round}`;
 }

@@ -423,6 +423,117 @@ export type Database = {
         }
         Relationships: []
       }
+      cup_config: {
+        Row: {
+          created_at: string | null
+          cup_type: string | null
+          id: string
+          prizes: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          cup_type?: string | null
+          id?: string
+          prizes?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          cup_type?: string | null
+          id?: string
+          prizes?: Json | null
+        }
+        Relationships: []
+      }
+      cup_news: {
+        Row: {
+          content: string
+          created_at: string | null
+          cup_id: string | null
+          id: string
+          image_url: string | null
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          cup_id?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          cup_id?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cup_news_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "national_cups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cup_player_stats: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          cup_id: string | null
+          goals: number | null
+          id: string
+          matches_played: number | null
+          player_id: string | null
+          team_id: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          cup_id?: string | null
+          goals?: number | null
+          id?: string
+          matches_played?: number | null
+          player_id?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          cup_id?: string | null
+          goals?: number | null
+          id?: string
+          matches_played?: number | null
+          player_id?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cup_player_stats_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "national_cups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_player_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_tournament_matches: {
         Row: {
           away_goals: number | null
@@ -1166,6 +1277,7 @@ export type Database = {
         Row: {
           away_goals: number | null
           away_team_id: string
+          bracket_pos: number | null
           competition_id: string
           created_at: string
           home_goals: number | null
@@ -1173,6 +1285,7 @@ export type Database = {
           id: string
           kickoff_at: string
           match_data: Json | null
+          phase_name: string | null
           played_at: string | null
           round: number
           stage: string | null
@@ -1181,6 +1294,7 @@ export type Database = {
         Insert: {
           away_goals?: number | null
           away_team_id: string
+          bracket_pos?: number | null
           competition_id: string
           created_at?: string
           home_goals?: number | null
@@ -1188,6 +1302,7 @@ export type Database = {
           id?: string
           kickoff_at: string
           match_data?: Json | null
+          phase_name?: string | null
           played_at?: string | null
           round: number
           stage?: string | null
@@ -1196,6 +1311,7 @@ export type Database = {
         Update: {
           away_goals?: number | null
           away_team_id?: string
+          bracket_pos?: number | null
           competition_id?: string
           created_at?: string
           home_goals?: number | null
@@ -1203,6 +1319,7 @@ export type Database = {
           id?: string
           kickoff_at?: string
           match_data?: Json | null
+          phase_name?: string | null
           played_at?: string | null
           round?: number
           stage?: string | null
@@ -2138,6 +2255,8 @@ export type Database = {
       }
       national_cup_matches: {
         Row: {
+          aggregate_away_score: number | null
+          aggregate_home_score: number | null
           away_penalties: number | null
           away_score: number | null
           away_team_id: string | null
@@ -2148,7 +2267,9 @@ export type Database = {
           home_score: number | null
           home_team_id: string | null
           id: string
+          is_second_leg: boolean | null
           match_data: Json | null
+          phase_name: string | null
           round: number
           scheduled_at: string
           stadium: string | null
@@ -2157,6 +2278,8 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
+          aggregate_away_score?: number | null
+          aggregate_home_score?: number | null
           away_penalties?: number | null
           away_score?: number | null
           away_team_id?: string | null
@@ -2167,7 +2290,9 @@ export type Database = {
           home_score?: number | null
           home_team_id?: string | null
           id?: string
+          is_second_leg?: boolean | null
           match_data?: Json | null
+          phase_name?: string | null
           round: number
           scheduled_at: string
           stadium?: string | null
@@ -2176,6 +2301,8 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
+          aggregate_away_score?: number | null
+          aggregate_home_score?: number | null
           away_penalties?: number | null
           away_score?: number | null
           away_team_id?: string | null
@@ -2186,7 +2313,9 @@ export type Database = {
           home_score?: number | null
           home_team_id?: string | null
           id?: string
+          is_second_leg?: boolean | null
           match_data?: Json | null
+          phase_name?: string | null
           round?: number
           scheduled_at?: string
           stadium?: string | null
@@ -2282,6 +2411,7 @@ export type Database = {
           id: string
           is_bot: boolean | null
           league_id: string | null
+          prize_money_earned: number | null
           seed: number | null
           strength: number | null
           user_id: string | null
@@ -2297,6 +2427,7 @@ export type Database = {
           id?: string
           is_bot?: boolean | null
           league_id?: string | null
+          prize_money_earned?: number | null
           seed?: number | null
           strength?: number | null
           user_id?: string | null
@@ -2312,6 +2443,7 @@ export type Database = {
           id?: string
           is_bot?: boolean | null
           league_id?: string | null
+          prize_money_earned?: number | null
           seed?: number | null
           strength?: number | null
           user_id?: string | null
@@ -2334,7 +2466,9 @@ export type Database = {
           id: string
           kickoff_time: string | null
           name: string
+          prize_pool: Json | null
           season: number
+          season_start_date: string | null
           status: string
           total_rounds: number
           total_teams: number | null
@@ -2348,7 +2482,9 @@ export type Database = {
           id?: string
           kickoff_time?: string | null
           name: string
+          prize_pool?: Json | null
           season?: number
+          season_start_date?: string | null
           status?: string
           total_rounds?: number
           total_teams?: number | null
@@ -2362,7 +2498,9 @@ export type Database = {
           id?: string
           kickoff_time?: string | null
           name?: string
+          prize_pool?: Json | null
           season?: number
+          season_start_date?: string | null
           status?: string
           total_rounds?: number
           total_teams?: number | null
@@ -4408,6 +4546,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_cup_goals: {
+        Args: { p_cup_id: string; p_player_id: string; p_team_id: string }
+        Returns: undefined
       }
       initialize_player_league: {
         Args: { p_player_team_id: string }

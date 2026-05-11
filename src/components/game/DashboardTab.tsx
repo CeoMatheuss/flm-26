@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { ClubShield } from './ClubShield';
+import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,6 @@ import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
-import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 
 
 
@@ -164,7 +164,10 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const stadiumCapacity = infrastructure ? getStadiumCapacity(infrastructure.stadium?.level || 1) : null;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 pb-10">
+      {/* Personalized Cup Widget */}
+      <PersonalizedCupWidget userId={userId} onOpenTournament={onOpenTournament} />
+
       {/* Fatigue Warning V4 */}
       {showFatigueWarning && (
         <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
