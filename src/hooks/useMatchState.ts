@@ -40,6 +40,7 @@ export function useMatchState(initialState: any, userId?: string) {
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
     isCup?: boolean;
+    isFriendly?: boolean;
   }) => {
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
