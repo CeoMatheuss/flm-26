@@ -126,6 +126,10 @@ Deno.serve(async (req: Request) => {
 
     if (!cErr && cMatches) {
       for (const match of cMatches) {
+        // Only simulate if status is 'in_progress' (starts on day 11)
+        const { data: cupStatus } = await sb.from('national_cups').select('status').eq('id', match.cup_id).single();
+        if (cupStatus?.status !== 'in_progress') continue;
+
         const homeStr = match.home_team?.strength || 65;
         const awayStr = match.away_team?.strength || 65;
         const { home: hg, away: ag } = simulate(homeStr, awayStr);

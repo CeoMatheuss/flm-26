@@ -27,20 +27,30 @@ serve(async (req) => {
       })
     }
 
-    // 1. GERAR TODAS AS COPAS (DIA 10)
+    // 1. GERAR TODAS AS COPAS (DIA 10 - PRÉ-PRODUÇÃO)
     if (action === 'generate_all_national_cups') {
       const { data: leagues } = await supabase.from('world_leagues').select('country, name')
       if (!leagues) throw new Error("Nenhuma liga encontrada")
 
       for (const league of leagues) {
-        // Criar a Copa
+        // Verificar se já existe copa para este país nesta temporada
+        const { data: existingCup } = await supabase
+          .from('national_cups')
+          .select('id')
+          .eq('country_code', league.country)
+          .eq('season', 1) // TODO: Pegar season dinâmica
+          .maybeSingle();
+        
+        if (existingCup) continue;
+
+        // Criar a Copa em status 'scheduled' (Pronta para o dia 11)
         const { data: cup, error: cupError } = await supabase.from('national_cups').insert({
             name: `Copa de ${league.name}`,
             country_code: league.country,
             season: 1,
             status: 'scheduled',
             current_round: 1,
-            total_rounds: 0 // Will update later
+            total_rounds: 0 
         }).select().single()
 
         if (cupError || !cup) continue
@@ -75,11 +85,12 @@ serve(async (req) => {
 
         await supabase.from('national_cup_teams').insert(cupTeams)
         
-        // Sorteio inicial (Round 1) - Jogos começam dia 11
+        // Sorteio inicial (Round 1) - Jogos agendados para começar dia 11
+        // drawNextRound já cuida de colocar status 'scheduled' nas partidas
         await drawNextRound(supabase, cup.id, 1)
       }
 
-      return new Response(JSON.stringify({ success: true, message: "Copas geradas e sorteios realizados para o dia 11." }), { 
+      return new Response(JSON.stringify({ success: true, message: "Copas pré-produzidas no dia 10. Início automático dia 11." }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
@@ -154,27 +165,39 @@ serve(async (req) => {
         })
     }
 
-    // 4. RECONCILIAR / SINCRONIZAR
+    // 4. RECONCILIAR / SINCRONIZAR / ATIVAR
     if (action === 'reconcile_sync') {
-        // Valida se há partidas órfãs ou chaveamento quebrado
-        // Exemplo: se uma fase terminou e não sorteou a próxima
+        const now = new Date();
+        const day = now.getUTCDate(); // Usar UTC para consistência
+        
+        // Ativação automática no dia 11
+        if (day >= 11) {
+            await supabase
+                .from('national_cups')
+                .update({ status: 'in_progress' })
+                .eq('status', 'scheduled');
+        }
+
         const { data: cups } = await supabase.from('national_cups').select('*').neq('status', 'finished')
-        for (const cup of cups) {
-            const { count: pending } = await supabase.from('national_cup_matches')
-                .select('*', { count: 'exact', head: true })
-                .eq('cup_id', cup.id)
-                .eq('round', cup.current_round)
-                .eq('status', 'scheduled')
-            
-            if (pending === 0 && cup.status === 'in_progress') {
-                if (cup.current_round < cup.total_rounds) {
-                    await drawNextRound(supabase, cup.id, cup.current_round + 1)
-                } else {
-                    await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+        if (cups) {
+            for (const cup of cups) {
+                const { count: pending } = await supabase.from('national_cup_matches')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('cup_id', cup.id)
+                    .eq('round', cup.current_round)
+                    .eq('status', 'scheduled')
+                
+                // Se não há mais jogos agendados na rodada atual e a copa está em progresso
+                if (pending === 0 && cup.status === 'in_progress') {
+                    if (cup.current_round < cup.total_rounds) {
+                        await drawNextRound(supabase, cup.id, cup.current_round + 1)
+                    } else {
+                        await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+                    }
                 }
             }
         }
-        return new Response(JSON.stringify({ success: true, message: "Sincronização concluída" }), { headers: corsHeaders })
+        return new Response(JSON.stringify({ success: true, message: "Sincronização e ativação concluídas" }), { headers: corsHeaders })
     }
 
   } catch (error) {
