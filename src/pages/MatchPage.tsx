@@ -615,7 +615,7 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 60 }: {
+export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 60 }: {
   matchState: MatchState; onExit: () => void;
   homePlayers?: Player[]; tactics?: TacticsConfig;
   awayStrength?: number;
