@@ -320,17 +320,18 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="stats" className="outline-none space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Artilheiros */}
             <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
                 <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros da Copa
+                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {stats.length > 0 ? (
+                {goalStats.length > 0 ? (
                   <div className="divide-y divide-border/30">
-                    {stats.map((s, idx) => (
+                    {goalStats.map((s, idx) => (
                       <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
                         <div className="flex items-center gap-4">
                           <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
@@ -340,34 +341,99 @@ export function CopasTab({ userId }: Props) {
                             <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <span className="text-sm font-black text-white">{s.goals}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
-                          </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{s.goals}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado nesta fase.</div>
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
                 )}
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <Card className="bg-primary/10 border-primary/20 rounded-3xl p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                    <Info className="h-6 w-6" />
+            {/* Assistências */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-blue-400" /> Assistências
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {assistStats.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {assistStats.map((s, idx) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{s.assists || 0}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">AST</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black uppercase">Regulamento</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium mt-1">Partidas de mata-mata em jogo único com prorrogação e pênaltis em caso de empate.</p>
+                ) : (
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notas Médias */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+                  <Star className="h-4 w-4 text-orange-400" /> Notas Médias
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {ratingStats.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {ratingStats.map((s, idx) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-white">{Number(s.avg_rating || 0).toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground ml-1">NOTA</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <Card className="bg-primary/10 border-primary/20 rounded-3xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                  <Info className="h-6 w-6" />
                 </div>
-              </Card>
-            </div>
+                <div>
+                  <h4 className="text-sm font-black uppercase">Regulamento da Copa</h4>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-1">Partidas de mata-mata em jogo único. Em caso de empate no tempo normal, a decisão será nos pênaltis.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
           </div>
         </TabsContent>
 
