@@ -1353,23 +1353,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
               </Card>
             )}
 
-            {/* Quick Stats Row — only mobile (sidebar shows on desktop) */}
-            {!isFinished && (
-              <div className="lg:hidden grid grid-cols-4 gap-1">
-                {[
-                  ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
-                  ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
-                  ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
-                  ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
-                ].map(([icon, label, h, a]) => (
-                  <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5">
-                    <p className="text-[9px] text-muted-foreground">{icon} {label}</p>
-                    <p className="text-xs font-black font-mono">{h as number} - {a as number}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Match content */}
             {!isFinished ? (
               /* Chat-style narration feed — compact */
