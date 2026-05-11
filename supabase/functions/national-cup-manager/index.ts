@@ -283,6 +283,46 @@ async function assignGoalsToPlayers(supabase: any, teamId: string, goals: number
   }
 }
 
+async function processEndOfCupBonuses(supabase: any, cupId: string) {
+  const { data: matches } = await supabase.from('national_cup_matches').select('*').eq('cup_id', cupId).eq('status', 'finished');
+  if (!matches) return;
+
+  const teamStats: Record<string, { goalsScored: number, goalsConceded: number }> = {};
+  
+  matches.forEach((m: any) => {
+    if (!teamStats[m.home_team_id]) teamStats[m.home_team_id] = { goalsScored: 0, goalsConceded: 0 };
+    if (!teamStats[m.away_team_id]) teamStats[m.away_team_id] = { goalsScored: 0, goalsConceded: 0 };
+    
+    teamStats[m.home_team_id].goalsScored += m.home_score || 0;
+    teamStats[m.home_team_id].goalsConceded += m.away_score || 0;
+    teamStats[m.away_team_id].goalsScored += m.away_score || 0;
+    teamStats[m.away_team_id].goalsConceded += m.home_score || 0;
+  });
+
+  let bestAttackTeam = null;
+  let maxGoals = -1;
+  let bestDefenseTeam = null;
+  let minConceded = Infinity;
+
+  for (const [teamId, stats] of Object.entries(teamStats)) {
+    if (stats.goalsScored > maxGoals) {
+      maxGoals = stats.goalsScored;
+      bestAttackTeam = teamId;
+    }
+    if (stats.goalsConceded < minConceded) {
+      minConceded = stats.goalsConceded;
+      bestDefenseTeam = teamId;
+    }
+  }
+
+  if (bestAttackTeam) {
+    await grantPrize(supabase, bestAttackTeam, 500000, "Melhor Ataque da Copa", cupId);
+  }
+  if (bestDefenseTeam) {
+    await grantPrize(supabase, bestDefenseTeam, 500000, "Melhor Defesa da Copa", cupId);
+  }
+}
+
 async function createCupNews(supabase: any, cupId: string, title: string, content: string) {
   await supabase.from('cup_news').insert({ cup_id: cupId, title, content });
   await supabase.from('world_league_news').insert({ title, content, category: 'cup', created_at: new Date().toISOString() });
