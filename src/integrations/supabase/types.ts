@@ -2859,7 +2859,9 @@ export type Database = {
           id: string
           is_busy: boolean
           is_free_agent: boolean | null
+          last_mission_completed_at: string | null
           level: Database["public"]["Enums"]["scout_level"]
+          market_available_at: string | null
           name: string
           seasons_remaining: number | null
           specialization: Database["public"]["Enums"]["scout_specialization"]
@@ -2874,7 +2876,9 @@ export type Database = {
           id?: string
           is_busy?: boolean
           is_free_agent?: boolean | null
+          last_mission_completed_at?: string | null
           level?: Database["public"]["Enums"]["scout_level"]
+          market_available_at?: string | null
           name: string
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
@@ -2889,7 +2893,9 @@ export type Database = {
           id?: string
           is_busy?: boolean
           is_free_agent?: boolean | null
+          last_mission_completed_at?: string | null
           level?: Database["public"]["Enums"]["scout_level"]
+          market_available_at?: string | null
           name?: string
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
@@ -4246,6 +4252,7 @@ export type Database = {
         Returns: undefined
       }
       generate_random_scout: { Args: never; Returns: undefined }
+      generate_weekly_scout: { Args: never; Returns: undefined }
       get_club_shields_by_names: {
         Args: { _names: string[] }
         Returns: {

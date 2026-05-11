@@ -107,8 +107,18 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
     }
   };
 
-  const startMission = async (scoutId: string, type: MissionType) => {
-    const durationHours = type === 'local' ? 2 : type === 'global' ? 6 : type === 'posição' ? 4 : 8;
+  const startMission = async (scoutId: string, type: MissionType, level: ScoutLevel) => {
+    // Duração baseada na habilidade (em horas para teste, mas sistema pede dias)
+    // Para Engine V3 real: Baixo (120h), Médio (72-96h), Alto (48-72h), Elite (24-48h)
+    // Para visualização no preview vamos usar horas reduzidas:
+    const durationMap: Record<ScoutLevel, number> = {
+      'baixo': 120,
+      'médio': 84,
+      'alto': 60,
+      'elite': 36
+    };
+    
+    const durationHours = durationMap[level];
     const endsAt = new Date();
     endsAt.setHours(endsAt.getHours() + durationHours);
 
@@ -123,7 +133,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
     if (error) toast.error('Erro ao iniciar missão');
     else {
-      toast.success('Missão iniciada!');
+      toast.success('Olheiro enviado para campo!');
       setShowMissionModal(null);
       fetchScoutingData();
     }
@@ -137,23 +147,23 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tighter flex items-center gap-2 text-white">
-            <Search className="h-6 w-6 text-primary" /> SCOUTING ENGINE V3
+            <Search className="h-6 w-6 text-primary" /> MEUS OLHEIROS
           </h1>
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-            {activeTab === 'scouts' ? 'Gerencie seu departamento de olheiros' : 
-             activeTab === 'market' ? 'Contrate novos talentos para sua equipe' :
-             'Relatórios de campo detalhados'}
+            {activeTab === 'scouts' ? 'Departamento de recrutamento ativo' : 
+             activeTab === 'market' ? 'Olheiro semanal disponível para contratação' :
+             'Resultados e descobertas recentes'}
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="scouts" className="w-full" onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-6 bg-black/40 border border-white/5 p-1 h-12">
           <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MEUS OLHEIROS ({myScouts.length}/5)
+            MEUS OLHEIROS ({myScouts.length})
           </TabsTrigger>
           <TabsTrigger value="market" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MERCADO ({marketScouts.length})
+            MERCADO SEMANAL
           </TabsTrigger>
           <TabsTrigger value="reports" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
             RELATÓRIOS ({reports.length})
@@ -269,18 +279,22 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
           )}
         </TabsContent>
 
-        {/* ABA: MERCADO */}
         <TabsContent value="market" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {marketScouts.length === 0 ? (
-              <div className="col-span-full py-20 text-center text-muted-foreground border-2 border-dashed border-white/5 rounded-xl">
-                Nenhum olheiro disponível no mercado no momento.
+              <div className="col-span-full py-20 text-center text-muted-foreground border-2 border-dashed border-white/5 rounded-xl bg-black/20">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <h3 className="text-white font-black italic uppercase">Aguardando Novo Olheiro</h3>
+                <p className="text-[10px] uppercase font-bold tracking-widest mt-2">Novos profissionais aparecem semanalmente no mercado.</p>
               </div>
             ) : (
               marketScouts.map(scout => (
-                <Card key={scout.id} className="bg-zinc-900/40 border-white/5 hover:border-primary/20 transition-all overflow-hidden">
+                <Card key={scout.id} className="bg-zinc-900/40 border-primary/20 hover:border-primary/40 transition-all overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-2">
+                    <Badge className="bg-primary text-black font-black text-[8px] uppercase">Disponível esta semana</Badge>
+                  </div>
                   <CardContent className="p-5">
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-4 mb-4 mt-2">
                       <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
                         <User className="h-6 w-6 text-zinc-500" />
                       </div>
@@ -300,16 +314,16 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                         <span className="text-zinc-300">{SPEC_LABELS[scout.specialization]}</span>
                       </div>
                       <div className="flex justify-between items-center text-[10px] font-bold">
-                        <span className="text-muted-foreground uppercase">Precisão</span>
+                        <span className="text-muted-foreground uppercase">Precisão Técnica</span>
                         <span className="text-primary">{Math.round(scout.efficiency * 100)}%</span>
                       </div>
                     </div>
                     <Button 
-                      className="w-full h-10 font-black uppercase text-[10px] gap-2"
+                      className="w-full h-10 font-black uppercase text-[10px] gap-2 shadow-lg shadow-primary/10"
                       onClick={() => handleHireScout(scout)}
                       disabled={myScouts.length >= 5}
                     >
-                      <UserPlus className="h-3 w-3" /> Contratar (5 Temp.)
+                      <UserPlus className="h-3 w-3" /> Contratar por 5 Temp.
                     </Button>
                   </CardContent>
                 </Card>
@@ -409,16 +423,16 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
               <div className="grid grid-cols-1 gap-3">
                 {[
-                  { id: 'local', icon: MapPin, label: 'Busca Local', time: '2h', reward: 'Relatório Regional', color: 'text-blue-400' },
-                  { id: 'global', icon: Globe, label: 'Busca Global', time: '6h', reward: 'Mapeamento Mundial', color: 'text-emerald-400' },
-                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4h', reward: 'Necessidade do Elenco', color: 'text-amber-400' },
-                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8h', reward: 'Foco no Futuro', color: 'text-purple-400' }
+                  { id: 'local', icon: MapPin, label: 'Busca Local', time: '5 Dias', reward: 'Relatório Regional', color: 'text-blue-400' },
+                  { id: 'global', icon: Globe, label: 'Busca Global', time: '6 Dias', reward: 'Mapeamento Mundial', color: 'text-emerald-400' },
+                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4 Dias', reward: 'Necessidade do Elenco', color: 'text-amber-400' },
+                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8 Dias', reward: 'Foco no Futuro', color: 'text-purple-400' }
                 ].map(type => (
                   <Button 
                     key={type.id} 
                     variant="outline" 
                     className="group justify-between h-16 px-5 border-white/5 bg-black/20 hover:border-primary/50 hover:bg-primary/5 transition-all"
-                    onClick={() => startMission(showMissionModal.id, type.id as MissionType)}
+                    onClick={() => startMission(showMissionModal.id, type.id as MissionType, showMissionModal.level)}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg bg-zinc-900 border border-white/5 group-hover:border-primary/20 ${type.color}`}>
@@ -430,7 +444,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-black text-white italic">{type.time}</div>
+                      <div className="text-[10px] font-black text-white italic">Auto</div>
                       <div className="text-[8px] text-muted-foreground uppercase font-bold">Duração</div>
                     </div>
                   </Button>
