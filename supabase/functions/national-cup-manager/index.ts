@@ -29,7 +29,7 @@ serve(async (req) => {
 
     // 1. GERAR TODAS AS COPAS (DIA 10)
     if (action === 'generate_all_national_cups') {
-      const { data: leagues } = await supabase.from('world_leagues').select('country_code, name')
+      const { data: leagues } = await supabase.from('world_leagues').select('country, name')
       if (!leagues) throw new Error("Nenhuma liga encontrada")
 
       for (const league of leagues) {
