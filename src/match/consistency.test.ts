@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useMatchSimulation } from './useMatchSimulation';
-import { supabase } from '@/integrations/supabase/client';
+// removido import duplicado abaixo
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => {
