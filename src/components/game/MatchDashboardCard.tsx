@@ -10,6 +10,7 @@ import flmLogo from '@/assets/flm26-logo.png';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useMatchShields } from '@/hooks/useMatchShields';
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
 function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
@@ -611,6 +612,21 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   const isHomeTeamClub = homeTeamName === club.name;
   const isAwayTeamClub = awayTeamName === club.name;
 
+  // Resolve REAL shields for both teams (synced with player choices) — only when in live/finished
+  const { homeShield, awayShield } = useMatchShields(
+    status !== 'none' ? homeTeamName : undefined,
+    status !== 'none' ? awayTeamName : undefined,
+  );
+
+  // Render the appropriate shield for a side, prioritizing the player's own club shield
+  const renderTeamShield = (isClubSide: boolean, side: 'home' | 'away') => {
+    if (isClubSide && hasShield(club as any)) {
+      return <ShieldCrest {...shieldPropsFromClub(club as any)} size={40} className="mx-auto mb-1" />;
+    }
+    const props = side === 'home' ? homeShield : awayShield;
+    return <ShieldCrest {...props} size={40} className="mx-auto mb-1" />;
+  };
+
   return (
     <Card
       className={`border-2 ${borderClass} relative transition-opacity duration-500 ${
@@ -708,7 +724,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
             {/* Teams & Score */}
             <div className="flex items-center justify-between py-2">
               <div className="text-center flex-1 min-w-0">
-                <div className="w-10 h-10 mx-auto mb-1 flex items-center justify-center bg-muted/30 rounded-full text-lg">🛡️</div>
+                {renderTeamShield(isHomeTeamClub, 'home')}
                 <button onClick={() => onViewClub?.(homeTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{homeTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Mandante</p>
               </div>
@@ -737,7 +753,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
               </div>
 
               <div className="text-center flex-1 min-w-0">
-                <div className="w-10 h-10 mx-auto mb-1 flex items-center justify-center bg-muted/30 rounded-full text-lg">🛡️</div>
+                {renderTeamShield(isAwayTeamClub, 'away')}
                 <button onClick={() => onViewClub?.(awayTeamName)} className="font-bold text-xs sm:text-sm truncate hover:text-primary hover:underline transition-colors cursor-pointer">{awayTeamName}</button>
                 <p className="text-[8px] sm:text-[9px] text-muted-foreground">Visitante</p>
               </div>
