@@ -205,8 +205,13 @@ export function FinancePanel() {
               </Button>
             )}
 
-            {filtered.length > 0 && (
+            {filtered.length > 0 && !selected && (
               <div className="absolute z-50 mt-2 w-full max-h-72 overflow-y-auto rounded-lg border border-border bg-popover shadow-2xl">
+                <div className="px-3 py-1.5 border-b border-border bg-muted/30">
+                  <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">
+                    {search ? 'Resultados da busca' : 'Sugestões de times'}
+                  </span>
+                </div>
                 {filtered.map((c) => (
                   <button
                     key={c.user_id}
