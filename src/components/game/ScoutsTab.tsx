@@ -107,8 +107,18 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
     }
   };
 
-  const startMission = async (scoutId: string, type: MissionType) => {
-    const durationHours = type === 'local' ? 2 : type === 'global' ? 6 : type === 'posição' ? 4 : 8;
+  const startMission = async (scoutId: string, type: MissionType, level: ScoutLevel) => {
+    // Duração baseada na habilidade (em horas para teste, mas sistema pede dias)
+    // Para Engine V3 real: Baixo (120h), Médio (72-96h), Alto (48-72h), Elite (24-48h)
+    // Para visualização no preview vamos usar horas reduzidas:
+    const durationMap: Record<ScoutLevel, number> = {
+      'baixo': 120,
+      'médio': 84,
+      'alto': 60,
+      'elite': 36
+    };
+    
+    const durationHours = durationMap[level];
     const endsAt = new Date();
     endsAt.setHours(endsAt.getHours() + durationHours);
 
@@ -123,7 +133,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
     if (error) toast.error('Erro ao iniciar missão');
     else {
-      toast.success('Missão iniciada!');
+      toast.success('Olheiro enviado para campo!');
       setShowMissionModal(null);
       fetchScoutingData();
     }
