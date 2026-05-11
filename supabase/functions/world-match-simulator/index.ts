@@ -179,6 +179,30 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // --- 3. AUTO-UPDATE LEAGUE ROUNDS ---
+    const { data: activeLeagues } = await sb
+      .from("world_leagues")
+      .select("id, season_started_at, current_round")
+      .eq("status", "in_progress");
+
+    if (activeLeagues) {
+      for (const league of activeLeagues) {
+        if (!league.season_started_at) continue;
+        
+        const start = new Date(league.season_started_at);
+        // BRT offset consideration (start date is typically 00:00 BRT)
+        // We calculate days elapsed in UTC but the logic remains the same for daily rounds
+        const elapsedMs = now.getTime() - start.getTime();
+        const daysElapsed = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
+        const targetRound = Math.min(38, Math.max(1, daysElapsed + 1));
+
+        if (targetRound !== league.current_round) {
+          await sb.from("world_leagues").update({ current_round: targetRound }).eq("id", league.id);
+          console.log(`[LeagueRound] Updated League ${league.id} to round ${targetRound}`);
+        }
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, processed: totalProcessed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
