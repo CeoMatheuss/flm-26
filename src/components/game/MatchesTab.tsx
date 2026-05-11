@@ -25,9 +25,23 @@ export function MatchesTab({
   const [activeTab, setActiveTab] = useState('bot');
   const [generating, setGenerating] = useState(false);
 
-  const startFriendlyMatch = (opponent: { name: string, logo?: string, strength: number }, isOnline = false) => {
+  const startFriendlyMatch = async (opponent: { name: string, logo?: string, strength: number }, isOnline = false) => {
     const isHome = Math.random() > 0.5;
     
+    // Cálculo oficial de estádio para o adversário (BOT ou Visitante)
+    let oppStadium = `Estádio ${opponent.name}`;
+    let oppCapacity = 5000;
+    
+    if (!isHome) {
+      // Se não for em casa, estima um estádio baseado na força do BOT
+      const tiers = [5000, 12000, 25000, 45000, 65000, 85000];
+      const tierIdx = Math.min(tiers.length - 1, Math.floor(opponent.strength / 18));
+      oppCapacity = tiers[tierIdx];
+      
+      const stadiumNames = ["Arena Municipal", "Parque dos Esportes", "Estádio do Povo", "Coliseu da Vitória", "Memorial do Futebol"];
+      oppStadium = `${stadiumNames[Math.floor(Math.random() * stadiumNames.length)]} (${opponent.name})`;
+    }
+
     navigate('/match', {
       state: {
         homeTeam: isHome ? clubName : opponent.name,
@@ -37,12 +51,14 @@ export function MatchesTab({
         awayStrength: isHome ? opponent.strength : teamStrength,
         matchId: `friendly-${Math.random().toString(36).substr(2, 9)}`,
         tactics: tactics || { formation: '4-4-2' },
-        stadiumName: isHome ? stadiumName : `Estádio ${opponent.name}`,
-        stadiumCapacity: isHome ? stadiumCapacity : 15000,
+        stadiumName: isHome ? stadiumName : oppStadium,
+        stadiumCapacity: isHome ? stadiumCapacity : oppCapacity,
         isHome,
         competition: isOnline ? 'Amistoso Online' : 'Amistoso vs BOT',
         fans: fans || 1000,
-        isFriendly: true
+        isFriendly: true,
+        reputation: 50, // Default for friendlies
+        ticketPrice: 30,
       }
     });
   };
