@@ -1280,7 +1280,7 @@ export function AdminTab({ userId, isFounder }: Props) {
 
         {/* Tournaments Tab */}
         <TabsContent value="tournaments" className="space-y-3 mt-3">
-          <div className="p-4 text-center text-xs text-muted-foreground">Sistema de Torneios Customizados Desativado</div>
+          <AdminTournamentTab userId={userId} />
         </TabsContent>
 
         {/* Categoria: Ligas */}
