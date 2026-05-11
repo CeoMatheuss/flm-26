@@ -271,8 +271,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         </div>
         <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
           {isReady ? '🔴 AO VIVO' :
-            isToday ? `⏰ HOJE às ${nextMatch.kind === 'tournament' ? '12:00' : '19:30'}` :
-            fmt ? `📅 ${fmt.dateFormatted} às ${nextMatch.kind === 'tournament' ? '12:00' : '19:30'}` : 'Em breve'}
+            isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
+            fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
           <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
