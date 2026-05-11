@@ -82,9 +82,59 @@ serve(async (req) => {
 
     // 3. SIMULAR RODADA (AVANÇAR FASE)
     if (action === 'advance_phase') {
-        // Lógica para avançar todas as copas ou uma específica
-        // ...
-        return new Response(JSON.stringify({ success: true }), { 
+        const { data: activeCups } = await supabase
+            .from('national_cups')
+            .select('*')
+            .eq('status', 'in_progress')
+
+        if (!activeCups) return new Response(JSON.stringify({ success: true, message: "Nenhuma copa ativa" }), { headers: corsHeaders })
+
+        for (const cup of activeCups) {
+            // 1. Simular partidas da rodada atual que ainda não terminaram
+            const { data: matches } = await supabase
+                .from('national_cup_matches')
+                .select('*')
+                .eq('cup_id', cup.id)
+                .eq('round', cup.current_round)
+                .eq('status', 'scheduled')
+
+            for (const match of matches) {
+                // Simulação rápida para o exemplo (no futuro, chamar o simulador 2D)
+                const homeScore = Math.floor(Math.random() * 4)
+                const awayScore = Math.floor(Math.random() * 4)
+                let winner_team_id = homeScore >= awayScore ? match.home_team_id : match.away_team_id
+                
+                // Salvar resultado
+                await supabase.from('national_cup_matches').update({
+                    home_score: homeScore,
+                    away_score: awayScore,
+                    status: 'finished',
+                    winner_team_id: winner_team_id
+                }).eq('id', match.id)
+
+                // Eliminar o perdedor
+                const loser_team_id = winner_team_id === match.home_team_id ? match.away_team_id : match.home_team_id
+                if (loser_team_id) {
+                    await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_team_id)
+                }
+
+                // Gerar Notícia
+                await supabase.from('newspaper_entries').insert({
+                    category: 'RESULTADO',
+                    text: `[COPA] ${cup.name}: O time do vencedor avançou após vencer por ${homeScore}x${awayScore}!`,
+                })
+            }
+
+            // 2. Se não for a final, sortear próxima rodada
+            if (cup.current_round < cup.total_rounds) {
+                await drawNextRound(supabase, cup.id, cup.current_round + 1)
+            } else {
+                // Finalizar Copa
+                await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+            }
+        }
+
+        return new Response(JSON.stringify({ success: true, message: "Fases avançadas com sucesso" }), { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         })
     }
