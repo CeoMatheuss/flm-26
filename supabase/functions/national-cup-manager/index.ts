@@ -202,7 +202,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
     
     // Dia 11 às 12:00 BRT = 15:00 UTC
     const baseDay = 11 + (round - 1);
-    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0));
+    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0)); // 15:00 UTC is 12:00 BRT (UTC-3)
 
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
