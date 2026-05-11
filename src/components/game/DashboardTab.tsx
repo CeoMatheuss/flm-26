@@ -55,10 +55,14 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
       <CardContent className="p-0">
         <div className="divide-y divide-border/30">
           {standings.map((s, i) => (
-            <div key={s.id} className="flex items-center justify-between px-3 py-1.5 text-[10px]">
+            <div 
+              key={s.id} 
+              className="flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group"
+              onClick={() => handleOpenProfile(s.world_teams?.name)}
+            >
               <div className="flex items-center gap-2">
                 <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
-                <span className="truncate max-w-[100px]">{s.team_id === userId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}</span>
+                <span className="truncate max-w-[100px] group-hover:text-primary transition-colors">{s.team_id === userId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}</span>
               </div>
               <span className="font-bold text-primary">{s.points} pts</span>
             </div>
