@@ -23,17 +23,16 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [dots, setDots] = useState('');
 
-  // Animated progress
+  // Asymptotic progress — never visually stuck, approaches 99% smoothly
   useEffect(() => {
     if (!showProgress) return;
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 90) return prev + 0.2;
-        if (prev >= 70) return prev + 0.5;
-        if (prev >= 40) return prev + 1;
-        return prev + 2;
+        const remaining = 99 - prev;
+        if (remaining <= 0.1) return 99;
+        return prev + Math.max(0.2, remaining * 0.04);
       });
-    }, 100);
+    }, 80);
     return () => clearInterval(interval);
   }, [showProgress]);
 
@@ -45,7 +44,7 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
     return () => clearInterval(interval);
   }, []);
 
-  const clampedProgress = Math.min(progress, 95);
+  const clampedProgress = Math.min(progress, 99);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
