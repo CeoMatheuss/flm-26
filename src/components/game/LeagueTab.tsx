@@ -402,22 +402,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                  <Card key={match.id} className="hover:border-primary/30 transition-all cursor-pointer overflow-hidden group">
                    <CardContent className="p-4">
                      <div className="grid grid-cols-7 items-center gap-2">
-                       <div className="col-span-3 text-right space-y-1">
-                         <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
-                          <div className="flex justify-end gap-1">
-                             <ClubShield 
-                               club={{
-                                 ...match.home_team,
-                                 primaryColor: match.home_team?.primary_color || match.home_team?.primaryColor,
-                                 secondaryColor: match.home_team?.secondary_color || match.home_team?.secondaryColor,
-                                 shieldConfig: match.home_team?.shield_config || match.home_team?.shieldConfig,
-                                 logoUrl: match.home_team?.logo_url || match.home_team?.logoUrl || match.home_team?.logo
-                               }} 
-                               fallbackText={match.home_team?.name} 
-                               size={28} 
-                             />
-                          </div>
-                       </div>
+                        <div className="col-span-3 text-right space-y-1 cursor-pointer group/home" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home_team?.name } }))}>
+                          <p className="text-sm font-bold truncate group-hover/home:text-primary transition-colors">{match.home_team?.name}</p>
+                           <div className="flex justify-end gap-1">
+                              <ClubShield 
+                                club={{
+                                  ...match.home_team,
+                                  primaryColor: match.home_team?.primary_color || match.home_team?.primaryColor,
+                                  secondaryColor: match.home_team?.secondary_color || match.home_team?.secondaryColor,
+                                  shieldConfig: match.home_team?.shield_config || match.home_team?.shieldConfig,
+                                  logoUrl: match.home_team?.logo_url || match.home_team?.logoUrl || match.home_team?.logo
+                                }} 
+                                fallbackText={match.home_team?.name} 
+                                size={28} 
+                                className="group-hover/home:scale-110 transition-transform"
+                              />
+                           </div>
+                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
                          {match.status === 'finished' ? (
                            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded-md">
@@ -435,22 +436,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           {match.status === 'finished' && <Badge variant="outline" className="text-[7px] py-0 px-1 border-emerald-500/20 text-emerald-500">Encerrado</Badge>}
                           {match.stadium && <span className="text-[8px] text-muted-foreground truncate max-w-[80px] mt-1">🏟️ {match.stadium}</span>}
                        </div>
-                       <div className="col-span-3 text-left space-y-1">
-                         <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
-                          <div className="flex justify-start gap-1">
-                             <ClubShield 
-                               club={{
-                                 ...match.away_team,
-                                 primaryColor: match.away_team?.primary_color || match.away_team?.primaryColor,
-                                 secondaryColor: match.away_team?.secondary_color || match.away_team?.secondaryColor,
-                                 shieldConfig: match.away_team?.shield_config || match.away_team?.shieldConfig,
-                                 logoUrl: match.away_team?.logo_url || match.away_team?.logoUrl || match.away_team?.logo
-                               }} 
-                               fallbackText={match.away_team?.name} 
-                               size={28} 
-                             />
-                          </div>
-                       </div>
+                        <div className="col-span-3 text-left space-y-1 cursor-pointer group/away" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away_team?.name } }))}>
+                          <p className="text-sm font-bold truncate group-hover/away:text-primary transition-colors">{match.away_team?.name}</p>
+                           <div className="flex justify-start gap-1">
+                              <ClubShield 
+                                club={{
+                                  ...match.away_team,
+                                  primaryColor: match.away_team?.primary_color || match.away_team?.primaryColor,
+                                  secondaryColor: match.away_team?.secondary_color || match.away_team?.secondaryColor,
+                                  shieldConfig: match.away_team?.shield_config || match.away_team?.shieldConfig,
+                                  logoUrl: match.away_team?.logo_url || match.away_team?.logoUrl || match.away_team?.logo
+                                }} 
+                                fallbackText={match.away_team?.name} 
+                                size={28} 
+                                className="group-hover/away:scale-110 transition-transform"
+                              />
+                           </div>
+                        </div>
                      </div>
                      
                      {/* Match Events Mini */}
@@ -495,7 +497,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className={`text-xs font-bold w-4 ${i === 0 ? 'text-yellow-500' : ''}`}>{i + 1}</span>
-                        <div>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
@@ -525,7 +527,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold w-4 text-muted-foreground">{i + 1}</span>
-                        <div>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
