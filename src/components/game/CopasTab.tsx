@@ -195,14 +195,14 @@ export function CopasTab({ userId }: Props) {
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center justify-around gap-2">
                   <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={{ logoUrl: myMatch.home?.club_logo } as any} size={48} />
+                    <ClubShield club={toShieldClub(myMatch.home) as any} size={48} />
                     <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.home?.club_name}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-xs font-black text-white/40 italic">VS</span>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={{ logoUrl: myMatch.away?.club_logo } as any} size={48} />
+                    <ClubShield club={toShieldClub(myMatch.away) as any} size={48} />
                     <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.away?.club_name}</span>
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export function CopasTab({ userId }: Props) {
                       <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
                         <div className="flex items-center gap-4">
                           <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={{ logoUrl: s.team?.logo } as any} size={32} />
+                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
                           <div className="flex flex-col">
                             <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
                             <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
@@ -394,7 +394,7 @@ function MatchRow({ match, userId }: { match: any; userId: string }) {
     <Card className={`bg-card/40 backdrop-blur-sm transition-all hover:scale-[1.01] overflow-hidden group border-border/50 ${isMine ? 'ring-1 ring-primary border-primary/40 bg-primary/5' : ''}`}>
       <CardContent className="p-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <ClubShield club={{ logoUrl: match.home?.club_logo } as any} size={32} />
+          <ClubShield club={toShieldClub(match.home) as any} size={32} />
           <span className={`text-xs font-black truncate group-hover:text-primary transition-colors cursor-pointer ${match.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home?.club_name } }))}>
             {match.home?.club_name}
           </span>
@@ -419,7 +419,7 @@ function MatchRow({ match, userId }: { match: any; userId: string }) {
           <span className={`text-xs font-black truncate text-right group-hover:text-primary transition-colors cursor-pointer ${match.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away?.club_name } }))}>
             {match.away?.club_name}
           </span>
-          <ClubShield club={{ logoUrl: match.away?.club_logo } as any} size={32} />
+          <ClubShield club={toShieldClub(match.away) as any} size={32} />
         </div>
       </CardContent>
     </Card>
@@ -435,7 +435,7 @@ function BracketMatch({ match, userId }: { match: any; userId: string }) {
     <div className={`relative w-full rounded-2xl bg-card/60 border border-border/50 p-3 space-y-2 transition-all hover:scale-105 shadow-xl ${isMine ? 'ring-1 ring-primary' : ''}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <ClubShield club={{ logoUrl: match.home?.club_logo } as any} size={20} />
+          <ClubShield club={toShieldClub(match.home) as any} size={20} />
           <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isHomeWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home?.club_name } }))}>
             {match.home?.club_name || 'TBD'}
           </span>
@@ -445,7 +445,7 @@ function BracketMatch({ match, userId }: { match: any; userId: string }) {
       <div className="h-px w-full bg-border/20" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <ClubShield club={{ logoUrl: match.away?.club_logo } as any} size={20} />
+          <ClubShield club={toShieldClub(match.away) as any} size={20} />
           <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isAwayWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away?.club_name } }))}>
             {match.away?.club_name || 'TBD'}
           </span>
