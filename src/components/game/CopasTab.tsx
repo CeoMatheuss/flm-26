@@ -130,6 +130,23 @@ export function CopasTab({ userId }: Props) {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl mx-auto pb-10">
+      {/* Seletor de Copas */}
+      <div className="flex items-center gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
+        <Globe className="h-4 w-4 text-primary" />
+        <Select value={selectedCupId || ''} onValueChange={setSelectedCupId}>
+          <SelectTrigger className="bg-transparent border-none font-bold text-xs h-8">
+            <SelectValue placeholder="Selecione uma Copa" />
+          </SelectTrigger>
+          <SelectContent>
+            {allCups.map(c => (
+              <SelectItem key={c.id} value={c.id} className="text-xs font-bold">
+                {c.name} ({c.country_code})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Header Estilizado */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-background to-background border border-primary/20 p-6">
         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -145,6 +162,7 @@ export function CopasTab({ userId }: Props) {
               Temporada {cup.season} • {cup.total_rounds ? `${cup.total_rounds} Fases` : 'Mata-Mata Global'}
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-wider">
               Fase {cup.current_round}
