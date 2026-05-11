@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Infrastructure, getUpgradeCost, getPhysioBonuses, getDailyStaminaRecovery } from '@/types/infrastructure';
+import { Infrastructure, getPhysioUpgradeCost, getPhysioBonuses, getDailyStaminaRecovery } from '@/types/infrastructure';
 import type { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
