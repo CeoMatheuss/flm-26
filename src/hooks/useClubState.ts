@@ -590,7 +590,7 @@ export function useClubState(initialState: any, userId?: string) {
     toast.success(`Estádio renomeado para ${newName}!`);
   }, []);
 
-  const updateShield = useCallback((cfg: any) => {
+  const updateShield = useCallback(async (cfg: any) => {
     setClub(prev => ({
       ...prev,
       shieldConfig: cfg,
@@ -602,8 +602,23 @@ export function useClubState(initialState: any, userId?: string) {
       shieldShape: cfg?.shape ?? prev.shieldShape,
       shieldIcon: cfg?.icon ?? (prev as any).shieldIcon,
     } as any));
+
+    // Persist to clubs table so others can see it in Ranking, Copa, etc.
+    if (userId) {
+      const { error } = await supabase.from('clubs').update({
+        primary_color: cfg?.primaryColor,
+        secondary_color: cfg?.secondaryColor,
+        detail_color: cfg?.detailColor,
+        shield_config: cfg,
+      }).eq('user_id', userId);
+      
+      if (error) {
+        console.error('Error persisting shield metadata:', error);
+      }
+    }
+    
     toast.success('Escudo atualizado!');
-  }, []);
+  }, [userId]);
 
   const setTicketPrice = useCallback((price: number) => {
     setClub(prev => ({ ...prev, ticketPrice: Math.max(5, Math.min(200, price)) }));
