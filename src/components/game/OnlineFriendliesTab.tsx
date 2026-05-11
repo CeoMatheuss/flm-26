@@ -214,56 +214,21 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       return;
     }
     setSearching(true);
-    // 1) Busca direta por substring (case-insensitive)
-    const { data: directHits } = await supabase
-      .from('profiles')
-      .select('user_id, display_name')
+    
+    // Busca por NOME DO TIME na tabela world_teams
+    const { data: teamHits } = await supabase
+      .from('world_teams')
+      .select('user_id, name')
       .neq('user_id', userId)
-      .ilike('display_name', `%${term}%`)
-      .order('display_name', { ascending: true })
-      .limit(10);
+      .not('user_id', 'is', null)
+      .ilike('name', `%${term}%`)
+      .order('name', { ascending: true })
+      .limit(12);
 
-    let combined = (directHits || []) as Array<{ user_id: string; display_name: string | null }>;
-
-    // 2) Se vier pouco resultado, busca aproximada (prefixo de cada token + similaridade)
-    if (combined.length < 5 && term.length >= 2) {
-      const firstChar = term[0];
-      const { data: fuzzyHits } = await supabase
-        .from('profiles')
-        .select('user_id, display_name')
-        .neq('user_id', userId)
-        .ilike('display_name', `%${firstChar}%`)
-        .limit(40);
-      // Levenshtein simples para classificar
-      const dist = (a: string, b: string): number => {
-        const al = a.length, bl = b.length;
-        if (!al) return bl; if (!bl) return al;
-        const dp = Array.from({ length: al + 1 }, () => new Array(bl + 1).fill(0));
-        for (let i = 0; i <= al; i++) dp[i][0] = i;
-        for (let j = 0; j <= bl; j++) dp[0][j] = j;
-        for (let i = 1; i <= al; i++) for (let j = 1; j <= bl; j++) {
-          dp[i][j] = a[i - 1] === b[j - 1]
-            ? dp[i - 1][j - 1]
-            : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
-        }
-        return dp[al][bl];
-      };
-      const lower = term.toLowerCase();
-      const scored = (fuzzyHits || [])
-        .filter(p => p.display_name)
-        .map(p => {
-          const name = (p.display_name || '').toLowerCase();
-          const minScore = name.split(/\s+/).reduce((m, tok) => Math.min(m, dist(lower, tok.slice(0, lower.length + 1))), Infinity);
-          return { p, score: Math.min(dist(lower, name.slice(0, lower.length)), minScore) };
-        })
-        .filter(x => x.score <= Math.max(2, Math.floor(term.length / 3)))
-        .sort((a, b) => a.score - b.score)
-        .slice(0, 10)
-        .map(x => x.p);
-      // Mescla sem duplicar
-      const seen = new Set(combined.map(c => c.user_id));
-      for (const f of scored) if (!seen.has(f.user_id)) { combined.push(f); seen.add(f.user_id); }
-    }
+    let combined = (teamHits || []).map(t => ({
+      user_id: t.user_id!,
+      display_name: t.name // Exibimos o nome do TIME
+    }));
 
     // Fetch presence for found users
     const userIds = combined.map(p => p.user_id);
@@ -280,7 +245,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
       });
     }
 
-    setSearchResults(combined.slice(0, 12).map(p => ({
+    setSearchResults(combined.map(p => ({
       ...p,
       is_online: presenceMap[p.user_id] || false,
     })));
@@ -463,7 +428,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             {selectedOpponent ? (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
                 <Users className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold flex-1">{selectedOpponent.display_name || 'Jogador'}</span>
+                <span className="text-xs font-semibold flex-1">{selectedOpponent.display_name || 'Time'}</span>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[9px]" onClick={() => setSelectedOpponent(null)}>
                   <XCircle className="h-3 w-3" />
                 </Button>
@@ -471,7 +436,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             ) : (
               <div className="flex gap-1">
                 <Input
-                  placeholder="Digite parte do nome (ex: Pal → Palmeiras)"
+                  placeholder="Digite o NOME DO TIME (ex: Palmeiras)"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && searchPlayers(searchTerm)}
@@ -496,7 +461,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                     }}
                   >
                     <span className={`h-2 w-2 rounded-full shrink-0 ${u.is_online ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
-                    <span className="truncate">{u.display_name || 'Jogador'}</span>
+                    <span className="truncate">{u.display_name || 'Time'}</span>
                     <span className={`text-[8px] ml-auto ${u.is_online ? 'text-emerald-400' : 'text-muted-foreground'}`}>
                       {u.is_online ? 'Online' : 'Offline'}
                     </span>
@@ -506,7 +471,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             )}
             {!selectedOpponent && searchTerm.trim().length >= 1 && !searching && searchResults.length === 0 && (
               <p className="text-[10px] text-muted-foreground italic px-1 mt-1">
-                Nenhum jogador encontrado. Tente outras letras ou verifique a grafia.
+                Nenhum time encontrado com esse nome. Tente outros termos.
               </p>
             )}
           </div>
