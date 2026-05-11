@@ -124,13 +124,16 @@ serve(async (req) => {
             const { data: matches } = await supabase
                 .from('national_cup_matches')
                 .select(`
-                    *,
+                    id, round, cup_id, home_team_id, away_team_id,
                     home:national_cup_teams!home_team_id(strength, club_name, user_id),
                     away:national_cup_teams!away_team_id(strength, club_name, user_id)
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
                 .lte('scheduled_at', now.toISOString());
+
+
+
 
 
 
@@ -181,13 +184,47 @@ serve(async (req) => {
                 const loser_id = winner_id === match.home_team_id ? match.away_team_id : match.home_team_id;
                 await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_id);
 
-                const prize = 50000 * Math.pow(2, match.round - 1);
+                // Sistema de Premiação V3
+                let prize = 100000; 
+                const totalRounds = cup.total_rounds;
+                const currentMatchRound = match.round;
+                
+                // Premiação baseada na distância para a final
+                const roundsRemaining = totalRounds - currentMatchRound;
+
+                
+                if (roundsRemaining === 0) prize = 3000000; // Final
+                else if (roundsRemaining === 1) prize = 1000000; // Semifinal
+                else if (roundsRemaining === 2) prize = 500000; // Quartas
+                else if (roundsRemaining === 3) prize = 250000; // Oitavas
+                else prize = 100000; // Outras fases iniciais
+
                 await supabase.from('national_cup_prizes').insert({
                     cup_id: cup.id,
                     team_id: winner_id,
                     amount: prize,
-                    description: `Prêmio Rodada ${match.round}`
+                    description: `Prêmio Rodada ${match.round} (${prize/1000}k)`
                 });
+
+                // Crédito real para o usuário
+                if (match.winner?.user_id) {
+                    const { data: currentSave } = await supabase
+                        .from('game_saves')
+                        .select('club_data')
+                        .eq('user_id', match.winner.user_id)
+                        .single();
+                    
+                    if (currentSave?.club_data) {
+                        const clubData = currentSave.club_data;
+                        if (!clubData.club) clubData.club = {};
+                        clubData.club.budget = (clubData.club.budget || 0) + prize;
+                        
+                        await supabase.from('game_saves')
+                            .update({ club_data: clubData })
+                            .eq('user_id', match.winner.user_id);
+                    }
+                }
+
             }
 
             const { count: pendingInRound } = await supabase
