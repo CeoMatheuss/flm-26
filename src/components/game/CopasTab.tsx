@@ -39,7 +39,7 @@ export function CopasTab({ userId }: Props) {
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
           .select(`
-            *,
+            id, round, bracket_pos, home_score, away_score, status, winner_team_id, scheduled_at, stadium,
             home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
             away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
