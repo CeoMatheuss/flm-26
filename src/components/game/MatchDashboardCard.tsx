@@ -302,7 +302,6 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       );
     }
 
-    const isHome = nextMatch.isHome;
     const stadiumName = resolvedStadium.name;
     const isShifted = resolvedStadium.isShifted;
 
@@ -331,14 +330,26 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
             <Landmark className="h-2.5 w-2.5" />
             <span className="truncate max-w-[180px]">{stadiumName}</span>
+            {isShifted && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-amber-500 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px] max-w-[200px]">{resolvedStadium.shiftReason}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
 
-        {blockCheck.blocked ? (
+        {isShifted ? (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded p-1.5 flex items-center gap-2 justify-center mx-2">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <p className="text-[9px] text-amber-200 font-bold leading-tight">
-              ESTÁDIO BLOQUEADO: {blockCheck.eventLabel}
+              Transferido p/ {stadiumName} devido a evento.
             </p>
           </div>
         ) : (
@@ -351,14 +362,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         <div className="flex flex-col gap-1.5 pt-1">
           <Button
             size="sm"
-            variant={isReady && !blockCheck.blocked ? 'default' : 'outline'}
-            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady && !blockCheck.blocked ? 'animate-pulse' : ''}`}
+            variant={isReady ? 'default' : 'outline'}
+            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
             onClick={handleGoToMatch}
-            disabled={!isReady || blockCheck.blocked}
+            disabled={!isReady}
           >
-            {blockCheck.blocked ? (
-              <><X className="h-3.5 w-3.5" /> LOCAL INDISPONÍVEL</>
-            ) : isReady ? (
+            {isReady ? (
               <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
             ) : (
               <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
