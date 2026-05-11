@@ -479,6 +479,61 @@ export type Database = {
           },
         ]
       }
+      cup_player_stats: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          cup_id: string | null
+          goals: number | null
+          id: string
+          matches_played: number | null
+          player_id: string | null
+          team_id: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          cup_id?: string | null
+          goals?: number | null
+          id?: string
+          matches_played?: number | null
+          player_id?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          cup_id?: string | null
+          goals?: number | null
+          id?: string
+          matches_played?: number | null
+          player_id?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cup_player_stats_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "national_cups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cup_player_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_tournament_matches: {
         Row: {
           away_goals: number | null
