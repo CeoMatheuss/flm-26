@@ -188,6 +188,8 @@ export interface StadiumOpsState {
   phase6?: import('./stadiumPhase6').StadiumPhase6State;
   /** Fase 6 — última cobrança/recálculo do programa de sócios */
   lastMembershipBilledAt?: string;
+  /** 🛡️ Anti-Duplicação: Lista de IDs de propostas já processadas neste ciclo */
+  processedEventIds?: string[];
 }
 
 // ─── Insurance plans ──────────────────────────────────────────────────────
