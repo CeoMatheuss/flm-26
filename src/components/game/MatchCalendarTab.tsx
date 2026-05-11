@@ -339,32 +339,45 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
 
       {activeView === 'scheduled' ? (
         <div className="space-y-4">
-          {/* Navegador de Rodadas */}
-          <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 p-4 rounded-xl shadow-2xl">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-primary hover:bg-primary/10" 
-              onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} 
-              disabled={selectedMatchday === 1}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <div className="text-center">
-              <span className="text-[10px] text-primary font-black uppercase tracking-tighter italic">Temporada 2026</span>
-              <h3 className="text-xl font-black text-white italic leading-tight">RODADA {selectedMatchday}</h3>
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Total de {maxMatchdays} Jornadas</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-primary hover:bg-primary/10" 
-              onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} 
-              disabled={selectedMatchday === maxMatchdays}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
+          {/* Filtro de Competição */}
+          <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl text-[10px]">
+            {(['all', 'league', 'cup'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setScope(s)}
+                className={`flex-1 py-2 rounded-lg font-black uppercase tracking-widest transition-all
+                  ${scope === s ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+              >
+                {s === 'all' ? 'Tudo' : s === 'league' ? leagueName : cupName}
+              </button>
+            ))}
           </div>
+
+          {/* Navegador de Rodadas (apenas para Liga) */}
+          {scope !== 'cup' && (
+            <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 p-4 rounded-xl shadow-2xl">
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
+                onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} disabled={selectedMatchday === 1}>
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <div className="text-center">
+                <span className="text-[10px] text-primary font-black uppercase tracking-tighter italic">{leagueName}</span>
+                <h3 className="text-xl font-black text-white italic leading-tight">RODADA {selectedMatchday}</h3>
+                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Total de {maxMatchdays} Jornadas</p>
+              </div>
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
+                onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} disabled={selectedMatchday === maxMatchdays}>
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
+
+          {scope === 'cup' && cupRoundMatches.length > 0 && (
+            <div className="bg-zinc-900/60 border border-amber-500/20 p-4 rounded-xl text-center">
+              <span className="text-[10px] text-amber-400 font-black uppercase tracking-tighter italic">{cupName}</span>
+              <h3 className="text-xl font-black text-white italic leading-tight">FASE {cupCurrentRound}</h3>
+            </div>
+          )}
 
           <ScrollArea className="h-[480px] pr-4">
             <div className="space-y-3 pb-10">
