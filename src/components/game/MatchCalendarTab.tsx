@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calendar, Trophy, ArrowLeft, Star, BarChart3, Play,
-  Clock, Loader2, ChevronLeft, ChevronRight, MapPin
+  Clock, Loader2, ChevronLeft, ChevronRight, MapPin, RefreshCw
 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 
@@ -40,6 +40,15 @@ function formatDate(iso: string) {
     const d = new Date(iso);
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch { return iso; }
+}
+
+function getPhaseName(round: number, total: number) {
+  const rem = total - round;
+  if (rem === 0) return "Grande Final";
+  if (rem === 1) return "Semifinal";
+  if (rem === 2) return "Quartas de Final";
+  if (rem === 3) return "Oitavas de Final";
+  return `Fase ${round}`;
 }
 
 function formatTime(iso: string) {
@@ -207,10 +216,11 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [cupName, setCupName] = useState<string>('Copa');
   const [cupCurrentRound, setCupCurrentRound] = useState<number>(1);
   const [scope, setScope] = useState<'all' | 'league' | 'cup'>('all');
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+  const load = async () => {
+    setLoading(true);
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
@@ -227,6 +237,10 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .select('*, league:world_leagues(id, name, current_round, total_rounds, division)')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (teamData) {
+        setMyTeamId(teamData.id);
+      }
 
       if (teamData?.league) {
         const league = teamData.league as any;
@@ -299,9 +313,14 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           setCupMatches(enhanced);
         }
       }
-
+    } catch (error) {
+      console.error('Error loading calendar:', error);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+  
+  useEffect(() => {
     load();
   }, [userId]);
 
@@ -313,14 +332,19 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
     </div>
   );
 
-  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => m.round === selectedMatchday);
-  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => m.round === cupCurrentRound);
+  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => 
+    m.round === selectedMatchday && 
+    (myTeamId ? (m.home_team_id === myTeamId || m.away_team_id === myTeamId) : true)
+  );
+  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => 
+    (myTeamId ? (m.home_team_id === myTeamId || m.away_team_id === myTeamId) : true)
+  );
   const filteredMatches = [...leagueRoundMatches, ...cupRoundMatches];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       {/* Header com Tabs Estilizadas */}
-      <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl">
+      <div className="flex items-center gap-2 bg-black/40 border border-white/5 p-1 rounded-xl">
         <button 
           onClick={() => setActiveView('scheduled')} 
           className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
@@ -335,6 +359,14 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         >
           <Trophy className="h-4 w-4" /> Histórico Real
         </button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={load}
+          className="h-10 w-10 text-zinc-500 hover:text-primary transition-colors"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {activeView === 'scheduled' ? (
@@ -375,7 +407,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           {scope === 'cup' && cupRoundMatches.length > 0 && (
             <div className="bg-zinc-900/60 border border-amber-500/20 p-4 rounded-xl text-center">
               <span className="text-[10px] text-amber-400 font-black uppercase tracking-tighter italic">{cupName}</span>
-              <h3 className="text-xl font-black text-white italic leading-tight">FASE {cupCurrentRound}</h3>
+              <h3 className="text-xl font-black text-white italic leading-tight uppercase">{getPhaseName(cupCurrentRound, cupMatches[0]?.total_rounds || 4)}</h3>
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,6 +163,14 @@ export function CopasTab({ userId }: Props) {
           <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 font-black text-[10px] py-1 px-3 uppercase tracking-widest">
             {cup.status === 'in_progress' ? `RODADA ${cup.current_round}` : 'FINALIZADA'}
           </Badge>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => selectedCupId && loadCupData(selectedCupId)}
+            className="h-8 w-8 text-zinc-500 hover:text-primary transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
