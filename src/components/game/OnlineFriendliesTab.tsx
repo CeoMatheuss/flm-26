@@ -428,7 +428,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
             {selectedOpponent ? (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
                 <Users className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold flex-1">{selectedOpponent.display_name || 'Jogador'}</span>
+                <span className="text-xs font-semibold flex-1">{selectedOpponent.display_name || 'Time'}</span>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[9px]" onClick={() => setSelectedOpponent(null)}>
                   <XCircle className="h-3 w-3" />
                 </Button>
