@@ -309,25 +309,31 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
   }, [infrastructure.youthAcademy.level, userId]);
 
   const promoteYouth = useCallback((youthId: string, addPlayerToClub: (p: any) => void) => {
-    const prospect = youthProspects.find(p => p.id === youthId);
-    if (!prospect) return;
-    if (prospect.age < 18 && prospect.overall < 60) {
-      toast.warning('⚠️ Promovido muito cedo', {
-        description: `${prospect.name} pode ter dificuldade no profissional. Continue acompanhando.`,
-      });
-    }
-    const player = {
-      id: prospect.id, name: prospect.name, position: prospect.position,
-      overall: prospect.overall, attributes: prospect.attributes,
-      age: prospect.age, salary: prospect.salary,
-      stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
-      contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
-    };
-    addPlayerToClub(player);
-    setYouthProspects(prev => prev.filter(p => p.id !== youthId));
-    setYouthPromotedCount((c: number) => c + 1);
-    toast.success(`${prospect.name} promovido ao time principal!`);
-  }, [youthProspects]);
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === youthId);
+      if (!prospect) return prev;
+
+      if (prospect.age < 18 && prospect.overall < 60) {
+        toast.warning('⚠️ Promovido muito cedo', {
+          description: `${prospect.name} pode ter dificuldade no profissional. Continue acompanhando.`,
+        });
+      }
+      
+      const player = {
+        id: prospect.id, name: prospect.name, position: prospect.position,
+        overall: prospect.overall, attributes: prospect.attributes,
+        age: prospect.age, salary: prospect.salary,
+        stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
+        contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
+      };
+      
+      addPlayerToClub(player);
+      setYouthPromotedCount((c: number) => c + 1);
+      toast.success(`${prospect.name} promovido ao time principal!`);
+      
+      return prev.filter(p => p.id !== youthId);
+    });
+  }, []);
 
   const sellYouth = useCallback((
     youthId: string,
