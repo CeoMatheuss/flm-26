@@ -29,8 +29,8 @@ export function MatchesTab({
     const isHome = Math.random() > 0.5;
     
     // Cálculo oficial de estádio para o adversário (BOT ou Visitante)
-    let oppStadium = `Estádio ${opponent.name}`;
-    let oppCapacity = 5000;
+    let oppStadium = isHome ? stadiumName : `Estádio do ${opponent.name}`;
+    let oppCapacity = isHome ? stadiumCapacity : 5000;
     
     if (!isHome) {
       // Se não for em casa, estima um estádio baseado na força do BOT

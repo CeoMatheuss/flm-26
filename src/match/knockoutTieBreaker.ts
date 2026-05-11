@@ -142,9 +142,15 @@ export function resolveKnockout(args: {
 
   let sH = 0, sA = 0;
   let kickMin = 121;
+  const homeKicks: boolean[] = [];
+  const awayKicks: boolean[] = [];
+
   for (let i = 0; i < 5; i++) {
+    // FIFA: If one team leads by more than remaining kicks, they win.
     const homeScored = Math.random() < homeConv;
     if (homeScored) sH++;
+    homeKicks.push(homeScored);
+    
     events.push({
       minute: kickMin++,
       type: homeScored ? 'penalty_shootout' : 'penalty_shootout_miss',
@@ -154,8 +160,16 @@ export function resolveKnockout(args: {
         ? `🎯 ${homeName} converte (${sH}-${sA}).`
         : `❌ ${homeName} desperdiça (${sH}-${sA}).`,
     });
+
+    // Check if away team can still win/draw after home's i-th kick
+    const remainingHome = 4 - i;
+    const remainingAway = 5 - i;
+    if (sH > sA + remainingAway || sA > sH + remainingHome) break;
+
     const awayScored = Math.random() < awayConv;
     if (awayScored) sA++;
+    awayKicks.push(awayScored);
+
     events.push({
       minute: kickMin++,
       type: awayScored ? 'penalty_shootout' : 'penalty_shootout_miss',
@@ -165,12 +179,11 @@ export function resolveKnockout(args: {
         ? `🎯 ${awayName} converte (${sH}-${sA}).`
         : `❌ ${awayName} desperdiça (${sH}-${sA}).`,
     });
-    // Mathematical early stop (decided before all 5 kicks) — optional, but cleaner.
-    const remaining = 5 - (i + 1);
-    if (Math.abs(sH - sA) > remaining) break;
+
+    if (sH > sA + (4 - i) || sA > sH + (4 - i)) break;
   }
 
-  // Sudden death until decided.
+  // Sudden death until decided (FIFA style: each team takes one kick until one marks and the other misses).
   while (sH === sA) {
     const homeScored = Math.random() < homeConv;
     if (homeScored) sH++;

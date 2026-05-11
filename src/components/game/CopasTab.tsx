@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw, Star } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw, Star, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -170,7 +170,9 @@ export function CopasTab({ userId }: Props) {
           isHome: myMatch.home?.user_id === userId,
           competition: cup.name,
           tieBreaker: 'both',
-          isNationalCup: true
+          isNationalCup: true,
+          stadiumName: myMatch.home?.stadium_name || `Estádio do ${myMatch.home?.club_name}`,
+          stadiumCapacity: myMatch.home?.stadium_capacity || 5000,
         },
       },
     });
@@ -243,10 +245,21 @@ export function CopasTab({ userId }: Props) {
           {myMatch && (
             <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match">
               <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
-                <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
-                <span className="text-[9px] font-mono text-white/50">
-                  {matchTimeMs ? new Date(myMatch.scheduled_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
+                  <div className="flex items-center gap-1 text-[8px] text-white/60 font-medium">
+                    <MapPin className="h-2 w-2" />
+                    <span className="truncate max-w-[120px]">{myMatch.home?.stadium_name || `Estádio do ${myMatch.home?.club_name}`}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-mono text-white/50 block">
+                    {matchTimeMs ? new Date(myMatch.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '--/--'}
+                  </span>
+                  <span className="text-[9px] font-mono text-white/70 block">
+                    {matchTimeMs ? new Date(myMatch.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  </span>
+                </div>
               </div>
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center justify-around gap-2">
