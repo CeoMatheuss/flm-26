@@ -2858,8 +2858,10 @@ export type Database = {
           efficiency: number
           id: string
           is_busy: boolean
+          is_free_agent: boolean | null
           level: Database["public"]["Enums"]["scout_level"]
           name: string
+          seasons_remaining: number | null
           specialization: Database["public"]["Enums"]["scout_specialization"]
           updated_at: string | null
           user_id: string
@@ -2871,8 +2873,10 @@ export type Database = {
           efficiency?: number
           id?: string
           is_busy?: boolean
+          is_free_agent?: boolean | null
           level?: Database["public"]["Enums"]["scout_level"]
           name: string
+          seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
           updated_at?: string | null
           user_id: string
@@ -2884,8 +2888,10 @@ export type Database = {
           efficiency?: number
           id?: string
           is_busy?: boolean
+          is_free_agent?: boolean | null
           level?: Database["public"]["Enums"]["scout_level"]
           name?: string
+          seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
           updated_at?: string | null
           user_id?: string
@@ -4123,6 +4129,7 @@ export type Database = {
         Args: { _cup_id: string; _current_phase: string }
         Returns: undefined
       }
+      advance_scout_seasons: { Args: never; Returns: undefined }
       advance_world_system_day: { Args: never; Returns: undefined }
       approve_beta_request: {
         Args: { _request_id: string }
