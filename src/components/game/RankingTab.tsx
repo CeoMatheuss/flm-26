@@ -17,6 +17,10 @@ interface RankingEntry {
   losses: number;
   last_change: number;
   current_competition: string;
+  clubs?: {
+    shield_config: any;
+    logo_url: string | null;
+  };
 }
 
 interface Props {
