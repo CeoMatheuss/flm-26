@@ -838,7 +838,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
           <Button
             className="w-full gap-2 font-bold"
             variant="destructive"
-            onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id } })}>
+            onClick={() => navigate('/match', { state: { liveMatchDbId: liveMatch.id, homeTeam: homeTeamName, awayTeam: awayTeamName, competition } })}>
             
                 <Radio className="h-4 w-4 animate-pulse" /> IR PARA A PARTIDA
               </Button>
