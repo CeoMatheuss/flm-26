@@ -334,14 +334,18 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
     addBudget: (amount: number) => void,
   ) => {
-    const prospect = youthProspects.find(p => p.id === youthId);
-    if (!prospect) return;
-    const value = prospect.overall * 50_000;
-    addBudget(value);
-    addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
-    setYouthProspects(prev => prev.filter(p => p.id !== youthId));
-    toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
-  }, [youthProspects]);
+    // 🛡️ Anti-Exploit: Usamos o callback do estado para garantir atomicidade
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === youthId);
+      if (!prospect) return prev;
+      
+      const value = prospect.overall * 50_000;
+      addBudget(value);
+      addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
+      toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
+      return prev.filter(p => p.id !== youthId);
+    });
+  }, []); // youthProspects removed from deps to avoid stale closures in some patterns, but here we use functional update so it's fine.
 
   const enrollCopinha = useCallback((clubName: string, updateClubProfile: (fn: (prev: any) => any) => void) => {
     const eligible = youthProspects.filter(p => p.age <= 20 && (p.injuredCycles ?? 0) === 0);
