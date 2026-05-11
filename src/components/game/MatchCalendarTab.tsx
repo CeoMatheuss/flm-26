@@ -237,8 +237,28 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         
         if (wm) setWorldMatches(wm.map(m => ({ ...m, home_team: { club_name: (m as any).home_team?.name }, away_team: { club_name: (m as any).away_team?.name } })));
 
-        // Fetch National Cup Matches (Removed)
-        setCupMatches([]);
+        // Fetch National Cup Matches
+        const { data: cupEntry } = await supabase.from('national_cup_teams').select('cup_id').eq('user_id', user.id).maybeSingle();
+        if (cupEntry) {
+          const { data: cm } = await supabase
+            .from('national_cup_matches')
+            .select(`
+              *,
+              home:national_cup_teams!home_team_id(club_name, club_logo),
+              away:national_cup_teams!away_team_id(club_name, club_logo)
+            `)
+            .eq('cup_id', cupEntry.cup_id)
+            .order('scheduled_at', { ascending: true });
+          
+          if (cm) {
+            const formatted = cm.map(m => ({
+              ...m,
+              home_team: { club_name: m.home?.club_name },
+              away_team: { club_name: m.away?.club_name }
+            }));
+            setCupMatches(formatted);
+          }
+        }
 
       }
       setLoading(false);
