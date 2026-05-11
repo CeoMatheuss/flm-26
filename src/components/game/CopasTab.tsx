@@ -305,4 +305,3 @@ export function CopasTab({ userId }: Props) {
     </div>
   );
 }
-}
