@@ -394,6 +394,7 @@ interface LiveMatchFromDB {
   away_team: string;
   stadium_name: string;
   stadium_capacity: number;
+  attendance: number;
   match_id: string;
   home_goals: number;
   away_goals: number;
