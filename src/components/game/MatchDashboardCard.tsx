@@ -178,25 +178,6 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       .on('postgres_changes', { event: '*', schema: 'public', table: 'league_matches' }, () => loadNextMatch())
       .subscribe();
 
-      if (!cancelled) {
-        if (candidates.length === 0) {
-          setNextMatch(null);
-        } else {
-          candidates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          setNextMatch(candidates[0]);
-        }
-        setLoading(false);
-      }
-    };
-
-    loadNextMatch();
-
-    const channel = supabase
-      .channel(`dash-next-match-${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadNextMatch())
-      .subscribe();
-
     // Listen for custom league update events from other components
     const handleSync = () => loadNextMatch();
     window.addEventListener('league_match_updated', handleSync);
