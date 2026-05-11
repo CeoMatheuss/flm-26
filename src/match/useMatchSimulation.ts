@@ -197,6 +197,16 @@ export function useMatchSimulation() {
       const stamina = visibleEvents.filter(e => e.staminaData).pop()?.staminaData || {};
       const moment = visibleEvents.filter(e => e.momentPhase).pop()?.momentPhase || 'equilíbrio';
 
+      // --- Sincronização de Narração com Economia do Estádio ---
+      // Se for um evento de gol ou grande defesa, podemos injetar contexto de público
+      if (nextEvent.isGoal || nextEvent.type === 'great_save' || nextEvent.type === 'miss') {
+        const attendance = dataRef.current?.stats?.possession ? Math.floor(dataRef.current.maxMinute * 100) : 10000; // Mock se não tivermos
+        // Aqui poderíamos injetar frases dinâmicas baseadas na lotação real
+        if (nextEvent.type === 'great_save') {
+          nextEvent.description = `${nextEvent.description} A torcida vai ao delírio no estádio!`;
+        }
+      }
+
       setState(prev => ({
         ...prev,
         currentMinute: nextEvent.minute,
