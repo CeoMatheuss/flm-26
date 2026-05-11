@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Globe, Trophy, Calendar, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react';
 import { HowItWorksTab } from './HowItWorksTab';
 import { CountriesPyramidTab } from './CountriesPyramidTab';
+import { CupsOverviewTab } from './CupsOverviewTab';
 
 import { SeasonControlTab } from './SeasonControlTab';
 import { SimulationValidationTab } from './SimulationValidationTab';
@@ -22,7 +23,8 @@ const ALL_SECTIONS: { id: SystemSection; label: string; icon: any }[] = [
   { id: 'beta',    label: 'BETA',                  icon: ShieldCheck },
   { id: 'preview', label: 'Prévia Ligas',          icon: Sparkles },
   { id: 'pyramid', label: 'Países & Pirâmide',     icon: Globe },
-  
+  { id: 'cups',    label: 'Copas Nacionais',       icon: Trophy },
+
   { id: 'season',  label: 'Temporada',             icon: Calendar },
   { id: 'sim',     label: 'Simulação & Validação', icon: FlaskConical },
   { id: 'how',     label: 'Como Funciona',         icon: BookOpen },
@@ -53,6 +55,9 @@ export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
             })}
           </TabsList>
         </ScrollArea>
+        {visible.some(s => s.id === 'cups') && (
+          <TabsContent value="cups" className="mt-3"><CupsOverviewTab /></TabsContent>
+        )}
 
         {visible.some(s => s.id === 'beta') && (
           <TabsContent value="beta" className="mt-3"><BetaAccessPanel /></TabsContent>
