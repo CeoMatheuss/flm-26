@@ -46,8 +46,39 @@ export function MatchesTab({
   useEffect(() => {
     if (!userId) return;
     const loadMatches = async () => {
-      // 1. National Cup Matches (Removed)
-      setTournamentMatches([]);
+      const allCompetitionsMatches: any[] = [];
+
+      // 1. National Cup Matches (New System)
+      const { data: cupEntry } = await supabase.from('national_cup_teams').select('cup_id').eq('user_id', userId).maybeSingle();
+      if (cupEntry) {
+        const { data: cupMatches } = await supabase
+          .from('national_cup_matches')
+          .select(`
+            *,
+            cup:national_cups(name),
+            home:national_cup_teams!home_team_id(club_name, club_logo, user_id),
+            away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
+          `)
+          .eq('cup_id', cupEntry.cup_id)
+          .eq('status', 'scheduled')
+          .order('scheduled_at', { ascending: true })
+          .limit(5);
+
+        if (cupMatches) {
+          allCompetitionsMatches.push(...cupMatches.map(m => ({
+            ...m,
+            homeName: m.home?.club_name,
+            awayName: m.away?.club_name,
+            homeLogo: m.home?.club_logo,
+            awayLogo: m.away?.club_logo,
+            isHome: m.home?.user_id === userId,
+            competition: m.cup?.name || 'Copa Nacional',
+            stage: `Rodada ${m.round}`
+          })));
+        }
+      }
+
+      setTournamentMatches(allCompetitionsMatches);
     };
     loadMatches();
   }, [userId]);
