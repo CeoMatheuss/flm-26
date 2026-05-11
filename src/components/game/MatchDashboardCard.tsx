@@ -612,6 +612,21 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
   const isHomeTeamClub = homeTeamName === club.name;
   const isAwayTeamClub = awayTeamName === club.name;
 
+  // Resolve REAL shields for both teams (synced with player choices) — only when in live/finished
+  const { homeShield, awayShield } = useMatchShields(
+    status !== 'none' ? homeTeamName : undefined,
+    status !== 'none' ? awayTeamName : undefined,
+  );
+
+  // Render the appropriate shield for a side, prioritizing the player's own club shield
+  const renderTeamShield = (isClubSide: boolean, side: 'home' | 'away') => {
+    if (isClubSide && hasShield(club as any)) {
+      return <ShieldCrest {...shieldPropsFromClub(club as any)} size={40} className="mx-auto mb-1" />;
+    }
+    const props = side === 'home' ? homeShield : awayShield;
+    return <ShieldCrest {...props} size={40} className="mx-auto mb-1" />;
+  };
+
   return (
     <Card
       className={`border-2 ${borderClass} relative transition-opacity duration-500 ${
