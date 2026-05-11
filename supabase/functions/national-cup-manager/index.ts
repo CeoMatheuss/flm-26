@@ -17,36 +17,52 @@ serve(async (req) => {
 
     const { action, cupId, countryCode, password } = await req.json()
 
-    // 1. GERAR TODAS AS COPAS (Pode ser via Cron ou Botão Admin)
+    // 1. GERAR TODAS AS COPAS (DIA 10 - PRÉ-PRODUÇÃO)
     if (action === 'generate_all_national_cups') {
       const { data: leagues } = await supabase.from('world_leagues').select('country, name')
       if (!leagues) throw new Error("Nenhuma liga encontrada")
 
       for (const league of leagues) {
-        // Criar a Copa se não existir na season atual
-        const { data: cup, error: cupError } = await supabase.from('national_cups').upsert({
+        // Verificar se já existe copa para este país nesta temporada
+        const { data: existingCup } = await supabase
+          .from('national_cups')
+          .select('id')
+          .eq('country_code', league.country)
+          .eq('season', 1) // TODO: Pegar season dinâmica
+          .maybeSingle();
+        
+        if (existingCup) continue;
+
+        // Criar a Copa em status 'scheduled' (Pronta para o dia 11)
+        const { data: cup, error: cupError } = await supabase.from('national_cups').insert({
             name: `Copa de ${league.name}`,
             country_code: league.country,
-            season: 1, // TODO: Dynamic season
-            status: 'in_progress',
-            current_round: 1
-        }, { onConflict: 'country_code, season' }).select().single()
+            season: 1,
+            status: 'scheduled',
+            current_round: 1,
+            total_rounds: 0 
+        }).select().single()
 
         if (cupError || !cup) continue
 
-        // Buscar times do país (Prioriza humanos, preenche com bots)
+        // Buscar times (Priorizar humanos ativos, depois bots da liga)
         const { data: teams } = await supabase.from('world_teams')
             .select('id, name, logo, strength, user_id')
             .eq('country', league.country)
-            .limit(64) // Padrão 64 times (Round of 64)
+            .order('user_id', { ascending: false })
 
         if (!teams || teams.length < 2) continue
 
-        // Se já houver times na copa, não re-inscreve
-        const { count } = await supabase.from('national_cup_teams').select('*', { count: 'exact', head: true }).eq('cup_id', cup.id)
-        if (count && count > 0) continue
+        // Power of 2 for brackets (32, 64, 128...)
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(teams.length)));
+        const totalRounds = Math.log2(participantsCount);
 
-        const cupTeams = teams.map((t, idx) => ({
+        await supabase.from('national_cups').update({ total_rounds: totalRounds }).eq('id', cup.id);
+
+        const participatingTeams = teams.slice(0, participantsCount);
+
+        // Inscrever times
+        const cupTeams = participatingTeams.map((t, idx) => ({
           cup_id: cup.id,
           club_id: t.id,
           club_name: t.name,
@@ -59,11 +75,14 @@ serve(async (req) => {
 
         await supabase.from('national_cup_teams').insert(cupTeams)
         
-        // Sorteio inicial (Round 1)
+        // Sorteio inicial (Round 1) - Jogos agendados para começar dia 11
+        // drawNextRound já cuida de colocar status 'scheduled' nas partidas
         await drawNextRound(supabase, cup.id, 1)
       }
 
-      return new Response(JSON.stringify({ success: true, message: "Copas geradas" }), { headers: corsHeaders })
+      return new Response(JSON.stringify({ success: true, message: "Copas pré-produzidas no dia 10. Início automático dia 11." }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
     }
 
     // 2. SIMULAR RODADA E AVANÇAR
