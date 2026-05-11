@@ -106,7 +106,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           events={game.events} 
           infrastructure={game.infrastructure} 
           onOpenNewspaper={() => setActiveTab('journal')} 
-          onGoToFriendly={() => setActiveTab('copas')} 
+          onGoToFriendly={() => setActiveTab('matches')} 
           userId={userId} 
           onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} 
           clubProfile={game.clubProfile} 
@@ -120,7 +120,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="tournament">
         {activeTournamentId ? (
-          <TournamentExpandedView tournamentId={activeTournamentId} onClose={() => { setActiveTournamentId(null); setActiveTab('dashboard'); }} />
+          <div className="p-4 text-center text-xs text-muted-foreground">Torneio desativado</div>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
         )}
@@ -249,7 +249,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
       </TabsContent>
       <TabsContent value="copas">
-        <CopasTab userId={userId} onOpenTournament={(id) => { setActiveTournamentId(id); setActiveTab('tournament'); }} />
+        <CopasTab />
       </TabsContent>
       <TabsContent value="world">
         <WorldLeagues 

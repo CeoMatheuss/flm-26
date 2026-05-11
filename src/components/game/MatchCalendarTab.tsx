@@ -236,16 +236,8 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         
         if (wm) setWorldMatches(wm.map(m => ({ ...m, home_team: { club_name: (m as any).home_team?.name }, away_team: { club_name: (m as any).away_team?.name } })));
 
-        // Fetch Cup Matches
-        const { data: teamData } = await supabase.from('world_teams').select('id, country').eq('user_id', user.id).maybeSingle();
-        if (teamData) {
-          const { data: cm } = await supabase
-            .from('cup_matches')
-            .select('*, home_team:cup_teams!home_team_id(club_name, club_logo, user_id), away_team:cup_teams!away_team_id(club_name, club_logo, user_id)')
-            .eq('status', 'scheduled')
-            .or(`home_team.user_id.eq.${user.id},away_team.user_id.eq.${user.id}`);
-          if (cm) setCupMatches(cm);
-        }
+        // Jogos de Copa removidos do calendário
+
       }
       setLoading(false);
     };

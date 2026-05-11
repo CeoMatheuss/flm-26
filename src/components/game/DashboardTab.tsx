@@ -5,7 +5,7 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2 } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -275,18 +275,11 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {/* Personalized Cup Widget */}
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenCompetition={(id) => onOpenTournament?.(id)}
-          onGoToMatches={onGoToFriendly}
-        />
-      )}
+      {/* Personalized Cup Widget Removido */}
 
-      {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
-          unless they are also considered part of "World" */}
-      {/* <TournamentDashboardCard onExpand={onOpenTournament} /> */}
+
+      {/* TournamentDashboardCard Removido */}
+
 
       {/* Próximos Jogos Oficiais removidos */}
 
