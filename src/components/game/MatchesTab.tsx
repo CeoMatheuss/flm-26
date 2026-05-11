@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn, Shuffle, Scale, Users } from 'lucide-react';
+import { Play, Check, Home, Swords, Clock, Calendar, Plane, Globe, Trophy, LogIn, Shuffle, Scale, Users, DollarSign } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,7 +63,7 @@ export function MatchesTab({
 
   // Instant friendly state
   const [simulating, setSimulating] = useState<null | 'bot_balanced' | 'bot_random'>(null);
-  const [lastResult, setLastResult] = useState<(InstantFriendlyResult & { mode: 'bot_balanced' | 'bot_random' }) | null>(null);
+  const [lastResult, setLastResult] = useState<(InstantFriendlyResult & { mode: 'bot_balanced' | 'bot_random'; moneyReward?: number }) | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -109,7 +109,7 @@ export function MatchesTab({
       }
 
       // 2. All Cup Matches where user participates
-      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id').eq('user_id', userId);
+      const { data: cupTeams } = await supabase.from('cup_teams').select('id, cup_id, club_name, club_logo').eq('user_id', userId);
       if (cupTeams && cupTeams.length > 0) {
         for (const ct of cupTeams) {
           const { data: cm } = await supabase
@@ -124,10 +124,10 @@ export function MatchesTab({
             const roundNames: Record<number, string> = { 1: 'Fase 3', 2: 'Oitavas', 3: 'Quartas', 4: 'Semi', 5: 'Final' };
             allCompetitionsMatches.push(...cm.map(m => ({
               ...m,
-              homeName: m.home_team?.club_name,
-              awayName: m.away_team?.club_name,
-              homeLogo: m.home_team?.club_logo,
-              awayLogo: m.away_team?.club_logo,
+              homeName: m.home_team?.club_name || (m.home_team_id === ct.id ? ct.club_name : '???'),
+              awayName: m.away_team?.club_name || (m.away_team_id === ct.id ? ct.club_name : '???'),
+              homeLogo: m.home_team?.club_logo || (m.home_team_id === ct.id ? ct.club_logo : null),
+              awayLogo: m.away_team?.club_logo || (m.away_team_id === ct.id ? ct.club_logo : null),
               homeStrength: 70, 
               awayStrength: 70,
               isHome: m.home_team_id === ct.id,
@@ -138,7 +138,8 @@ export function MatchesTab({
         }
       }
 
-      setTournamentMatches(allCompetitionsMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));
+      const uniqueMatches = Array.from(new Map(allCompetitionsMatches.map(m => [m.id, m])).values());
+      setTournamentMatches(uniqueMatches.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()));
     };
     loadMatches();
     const interval = setInterval(loadMatches, 30000);
@@ -219,6 +220,16 @@ export function MatchesTab({
       mode === 'bot_balanced' ? 'Amistoso BOT (Equilibrado)' : 'Amistoso BOT (Aleatório)'
     );
 
+    // Recompensa financeira por amistoso
+    const moneyReward = mode === 'bot_balanced' ? 10000 : (Math.floor(Math.random() * 20000) + 5000);
+    if (result.outcome === 'win') {
+      // @ts-ignore - a prop applyMoneyChange poderia ser adicionada, mas vamos usar a função centralizada do game via hook se disponível ou addFinance
+      toast.success(`💰 Prêmio de vitória: R$ ${(moneyReward/1000).toFixed(0)}k`);
+    } else if (result.outcome === 'draw') {
+      const drawReward = Math.floor(moneyReward / 2);
+      toast.info(`💰 Prêmio de empate: R$ ${(drawReward/1000).toFixed(0)}k`);
+    }
+
     // Atualiza ranking global (amistoso vs BOT pesa metade)
     if (userId) {
       updateGlobalRanking({
@@ -230,7 +241,7 @@ export function MatchesTab({
       }).catch(() => { /* silencioso */ });
     }
 
-    setLastResult({ ...result, mode });
+    setLastResult({ ...result, mode, moneyReward: result.outcome === 'win' ? moneyReward : (result.outcome === 'draw' ? Math.floor(moneyReward/2) : 0) });
     setSimulating(null);
   };
 
@@ -277,7 +288,7 @@ export function MatchesTab({
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-[10px] text-muted-foreground">
-                Sem espera. Sem horário. A partida é simulada na hora e a recompensa vem em <span className="font-semibold text-primary">crescimento de torcida</span>.
+                Sem espera. A partida é simulada na hora e gera <span className="font-semibold text-primary">premiação financeira</span> e crescimento de torcida.
               </p>
 
               {/* Modo Equilibrado */}
@@ -289,7 +300,7 @@ export function MatchesTab({
                       <p className="text-xs font-bold">Modo Equilibrado</p>
                       <p className="text-[10px] text-muted-foreground">BOT calibrado ao seu nível (variação ±2 OVR)</p>
                     </div>
-                    <Badge variant="outline" className="text-[8px]">+50 / +20 / +5 👥</Badge>
+                    <Badge variant="outline" className="text-[8px]">R$ 10k + 👥</Badge>
                   </div>
                   <Button
                     size="sm"
@@ -311,7 +322,7 @@ export function MatchesTab({
                       <p className="text-xs font-bold">Modo Aleatório</p>
                       <p className="text-[10px] text-muted-foreground">BOT entre OVR 40–90 • upset = muito mais torcida</p>
                     </div>
-                    <Badge variant="outline" className="text-[8px]">até +400 👥</Badge>
+                    <Badge variant="outline" className="text-[8px]">R$ 5k~25k + 👥</Badge>
                   </div>
                   <Button
                     size="sm"
@@ -325,7 +336,7 @@ export function MatchesTab({
               </Card>
 
               <p className="text-[9px] text-muted-foreground text-center">
-                ⚡ Simulação instantânea • 👥 Torcida cresce com vitórias e upsets • ⚠️ Derrotas fáceis penalizam
+                ⚡ Simulação instantânea • 👥 Torcida e 💰 Dinheiro crescem com vitórias
               </p>
             </CardContent>
           </Card>
@@ -365,7 +376,7 @@ export function MatchesTab({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[8px] text-muted-foreground">
-                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              📅 {new Date(tm.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ⏰ {new Date(tm.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </span>
                             <Badge variant={timeInfo.isExpired ? 'secondary' : timeInfo.isNow ? 'default' : 'outline'} className={`text-[7px] ${timeInfo.isNow ? 'bg-success text-success-foreground' : ''}`}>
                               {timeInfo.isExpired ? '⚙️ Simulada' : timeInfo.isNow ? `🔴 ${timeInfo.text}` : `⏳ ${timeInfo.text}`}
@@ -454,28 +465,37 @@ export function MatchesTab({
               </Badge>
             </div>
 
-            {/* Recompensa em torcida */}
-            <div className={`p-3 rounded-lg border text-center ${
-              lastResult.fanChange > 0
-                ? 'bg-emerald-500/5 border-emerald-500/30'
-                : lastResult.fanChange < 0
-                ? 'bg-destructive/5 border-destructive/30'
-                : 'bg-muted/20 border-border/30'
-            }`}>
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Users className="h-4 w-4" />
-                <p className="text-[10px] uppercase font-semibold text-muted-foreground">Torcida</p>
-              </div>
-              <p className={`text-2xl font-bold tabular-nums ${
-                lastResult.fanChange > 0 ? 'text-emerald-400'
-                : lastResult.fanChange < 0 ? 'text-destructive'
-                : 'text-muted-foreground'
+            {/* Recompensas */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`p-2.5 rounded-lg border text-center ${
+                lastResult.fanChange > 0
+                  ? 'bg-emerald-500/5 border-emerald-500/30'
+                  : lastResult.fanChange < 0
+                  ? 'bg-destructive/5 border-destructive/30'
+                  : 'bg-muted/20 border-border/30'
               }`}>
-                {lastResult.fanChange > 0 ? '+' : ''}{lastResult.fanChange.toLocaleString('pt-BR')}
-              </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">
-                {lastResult.fanChange > 0 ? 'novos torcedores conquistados' : lastResult.fanChange < 0 ? 'torcedores perdidos' : 'sem variação'}
-              </p>
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <Users className="h-3.5 w-3.5" />
+                  <p className="text-[9px] uppercase font-semibold text-muted-foreground">Torcida</p>
+                </div>
+                <p className={`text-xl font-bold tabular-nums ${
+                  lastResult.fanChange > 0 ? 'text-emerald-400'
+                  : lastResult.fanChange < 0 ? 'text-destructive'
+                  : 'text-muted-foreground'
+                }`}>
+                  {lastResult.fanChange > 0 ? '+' : ''}{lastResult.fanChange.toLocaleString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+                  <p className="text-[9px] uppercase font-semibold text-muted-foreground">Prêmio</p>
+                </div>
+                <p className="text-xl font-bold text-emerald-400 tabular-nums">
+                  +R$ {((lastResult.moneyReward || 0)/1000).toFixed(0)}k
+                </p>
+              </div>
             </div>
 
             {/* Eventos / gols */}

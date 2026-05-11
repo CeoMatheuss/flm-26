@@ -49,28 +49,45 @@ function simulate(homeStr: number, awayStr: number) {
   const baseGoals = 2.6;
   const lambdaHome = baseGoals * (hs / total) * 1.05;
   const lambdaAway = baseGoals * (as / total) * 0.95;
+  
+  // Player performance generation
+  const homeGoals = Math.min(7, poisson(lambdaHome));
+  const awayGoals = Math.min(7, poisson(lambdaAway));
+  
   return {
-    home: Math.min(7, poisson(lambdaHome)),
-    away: Math.min(7, poisson(lambdaAway)),
+    home: homeGoals,
+    away: awayGoals,
   };
 }
 
 function genEvents(hg: number, ag: number, homeName: string, awayName: string) {
   const events: Array<{ minute: number; type: string; team: 'home' | 'away'; isGoal: boolean; playerName: string; description: string }> = [];
   const used = new Set<number>();
-  const add = (team: 'home' | 'away', name: string) => {
+  
+  // Real player names for events would be better, but we only have team names here
+  // A future improvement would be to fetch top players from the club
+  const playerPool = ["Atacante", "Meia", "Zagueiro", "Lateral", "Ponta"];
+
+  const add = (team: 'home' | 'away', teamName: string) => {
     let m = 1; let tries = 0;
     do { m = Math.floor(Math.random() * 90) + 1; tries++; } while (used.has(m) && tries < 20);
     used.add(m);
+    
+    const playerName = playerPool[Math.floor(Math.random() * playerPool.length)];
+    const assistName = Math.random() > 0.3 ? playerPool[Math.floor(Math.random() * playerPool.length)] : null;
+
     events.push({
       minute: m,
       type: 'goal',
       team,
       isGoal: true,
-      playerName: 'Atacante',
-      description: `⚽ GOOOL de ${name}!`,
+      playerName: playerName,
+      description: assistName 
+        ? `⚽ GOOOL de ${playerName}! Assistência de ${assistName}.` 
+        : `⚽ GOOOL de ${playerName}! Grande jogada individual.`,
     });
   };
+  
   for (let i = 0; i < hg; i++) add('home', homeName);
   for (let i = 0; i < ag; i++) add('away', awayName);
   events.sort((a, b) => a.minute - b.minute);
@@ -172,7 +189,7 @@ async function processLeagueMatch(m: any): Promise<boolean> {
         away_goals: ag,
         status: 'finished',
         played_at: new Date().toISOString(),
-        match_data: { ...(m.match_data || {}), events, auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName },
+        match_data: { ...(m.match_data || {}), events, auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName, match_time: '19:30' },
       })
       .eq('id', m.id)
       .eq('status', 'scheduled')
