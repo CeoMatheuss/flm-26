@@ -168,13 +168,18 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="matches" className="mt-0 space-y-3">
-          {matches.map(m => (
-            <Card key={m.id} className="bg-card/50 overflow-hidden group hover:border-primary/40 transition-all">
+          {matches.map(m => {
+            const isMine = m.home?.user_id === userId || m.away?.user_id === userId;
+            return (
+            <Card key={m.id} className={`bg-card/50 overflow-hidden group transition-all ${isMine ? 'border-primary/70 ring-1 ring-primary/40' : 'hover:border-primary/40'}`}>
               <CardContent className="p-4">
+                {isMine && (
+                  <Badge className="mb-2 text-[9px] h-4">SEU JOGO</Badge>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                    <span className="text-sm font-bold truncate">{m.home?.club_name}</span>
+                    <span className={`text-sm font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>{m.home?.club_name}</span>
                   </div>
                   <div className="flex flex-col items-center px-4">
                     <div className="flex items-center gap-2">
@@ -194,7 +199,7 @@ export function CopasTab({ userId }: Props) {
                     <Badge variant="outline" className="text-[8px] h-4 px-1 mt-1 bg-muted/30">12:00</Badge>
                   </div>
                   <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                    <span className="text-sm font-bold truncate text-right">{m.away?.club_name}</span>
+                    <span className={`text-sm font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>{m.away?.club_name}</span>
                     <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
                   </div>
                 </div>
@@ -208,7 +213,8 @@ export function CopasTab({ userId }: Props) {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="info" className="mt-0">
