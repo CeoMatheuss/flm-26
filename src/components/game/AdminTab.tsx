@@ -23,10 +23,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AdminVersionPanel } from './admin/AdminVersionPanel';
-import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
-import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
-import { ModerationPanel } from './admin/ModerationPanel';
-import { MaintenanceToggle } from './admin/MaintenanceToggle';
+// Componentes de administração comentados por erro de importação
+// import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
+// import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
+// import { ModerationPanel } from './admin/ModerationPanel';
+// import { MaintenanceToggle } from './admin/MaintenanceToggle';
 
 interface PendingUser {
   id: string;
@@ -797,7 +798,7 @@ export function AdminTab({ userId, isFounder }: Props) {
                 }}>Gerar</Button>
               </CardContent>
             </Card>
-            <AdminScoutsAndStaffGenerators userId={userId} />
+            {/* <AdminScoutsAndStaffGenerators userId={userId} /> */}
           </TabsContent>
 
           <TabsContent value="finance_panel" className="space-y-3 mt-3">
@@ -821,7 +822,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-3 mt-3">
-            <ModerationPanel onDeleteMessage={deleteMessage} />
+            {/* <ModerationPanel onDeleteMessage={deleteMessage} /> */}
           </TabsContent>
 
           <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
@@ -829,7 +830,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-3 mt-3">
-            <AdminAnnouncementsPanel userId={userId} />
+            {/* <AdminAnnouncementsPanel userId={userId} /> */}
           </TabsContent>
 
           <TabsContent value="support" className="space-y-3 mt-3">

@@ -9,6 +9,7 @@ import {
   Calendar, Trophy, ArrowLeft, Star, BarChart3, Play,
   Clock, Loader2, ChevronLeft, ChevronRight, MapPin
 } from 'lucide-react';
+import { ClubShield } from './ClubShield';
 
 interface MatchHistoryItem {
   id: string;
@@ -306,20 +307,25 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 <Card key={m.id} className="border-border/40">
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 text-right min-w-0">
+                      <div className="flex-1 text-right min-w-0 flex items-center justify-end gap-2">
                         <p className="text-xs font-bold truncate">{m.home_team?.club_name}</p>
+                        <ClubShield club={m.home_team_id === userId ? { logoUrl: (m as any).home_team?.logo } : { logoUrl: (m as any).home_team?.logo }} size={20} />
                       </div>
                       <div className="bg-muted/30 px-3 py-1 rounded text-xs font-mono font-bold">
                         {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : '19:30'}
                       </div>
-                      <div className="flex-1 text-left min-w-0">
+                      <div className="flex-1 text-left min-w-0 flex items-center justify-start gap-2">
+                        <ClubShield club={m.away_team_id === userId ? { logoUrl: (m as any).away_team?.logo } : { logoUrl: (m as any).away_team?.logo }} size={20} />
                         <p className="text-xs font-bold truncate">{m.away_team?.club_name}</p>
                       </div>
                     </div>
                     {m.status !== 'finished' && (
-                      <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span>{m.is_home ? clubName : 'Estádio Adversário'}</span>
+                      <div className="flex flex-col items-center justify-center gap-1 text-[9px] text-muted-foreground border-t border-dashed pt-2">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-2.5 w-2.5" />
+                          <span>{m.is_home ? clubName : 'Estádio Adversário'} • {m.stadium_name || (m.is_home ? 'Sua Arena' : 'Estádio Local')}</span>
+                        </div>
+                        <span className="text-[8px] uppercase tracking-tighter opacity-70">Campeonato Mundial • Rodada {m.round}</span>
                       </div>
                     )}
                   </CardContent>
