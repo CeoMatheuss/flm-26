@@ -80,6 +80,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   const applyServerResult = useCallback(({
     matchId, homeGoals, awayGoals, isHome = true, competition,
   }: { matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean; competition?: string }) => {
+    const isCup = /copa|cup/i.test(competition || '');
     matchState.applyServerResult({ matchId, homeGoals, awayGoals, isHome, competition }, {
       setClub: clubState.setClub,
       sponsors: financeState.sponsors,
@@ -87,6 +88,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
       addFinance: financeState.addFinance,
       setSeason: infraState.setSeason,
       stadiumOps: clubState.club.stadiumOps,
+      isCup,
     });
   }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason, clubState.club.stadiumOps]);
 
