@@ -210,19 +210,58 @@ function getPrizeForRound(round: number, total: number) {
   return 100000;
 }
 
-async function grantPrize(supabase: any, teamId: string, amount: number, desc: string, cupId: string) {
-  const { data: team } = await supabase.from('national_cup_teams').select('user_id, club_id').eq('id', teamId).single();
-  if (!team) return;
+async function grantPrize(supabase: any, target: string, amount: number, desc: string, cupId: string) {
+  // target can be club_id (legacy/internal) or national_cup_teams.id
+  let clubId = target;
+  let userId = null;
+  let teamId = null;
+
+  // Try to find if target is national_cup_teams.id first
+  const { data: cupTeam } = await supabase.from('national_cup_teams').select('user_id, club_id, id').eq('id', target).single();
+  if (cupTeam) {
+    clubId = cupTeam.club_id;
+    userId = cupTeam.user_id;
+    teamId = cupTeam.id;
+  } else {
+    // If not found, assume target is club_id and find the cup team record
+    const { data: ctByClub } = await supabase.from('national_cup_teams').select('user_id, id').eq('club_id', target).eq('cup_id', cupId).single();
+    if (ctByClub) {
+      userId = ctByClub.user_id;
+      teamId = ctByClub.id;
+    }
+  }
+
+  // Idempotency: avoid duplicate payments for the same phase/team
+  const { data: existing } = await supabase.from('national_cup_prizes')
+    .select('id').eq('cup_id', cupId).eq('team_id', teamId).eq('description', desc).single();
+  if (existing) return;
 
   await supabase.from('national_cup_prizes').insert({
     cup_id: cupId, team_id: teamId, amount, description: desc
   });
 
-  if (team.user_id) {
-    const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', team.user_id).single();
+  if (userId) {
+    const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).single();
     if (save?.club_data) {
       save.club_data.club.budget = (save.club_data.club.budget || 0) + amount;
-      await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', team.user_id);
+      await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', userId);
+      
+      // Register transaction in history
+      await supabase.from('club_transactions').insert({
+        user_id: userId,
+        amount: amount,
+        type: 'income',
+        description: `Copa: ${desc}`,
+        category: 'tournament'
+      });
+
+      // Send notification
+      await supabase.from('user_notifications').insert({
+        user_id: userId,
+        title: 'Premiação da Copa Recebida',
+        message: `Seu clube recebeu R$ ${(amount/1000000).toFixed(1)}M da ${desc}. Dinheiro adicionado ao caixa!`,
+        type: 'finance'
+      });
     }
   }
 }
