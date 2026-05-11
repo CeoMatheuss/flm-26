@@ -120,7 +120,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="tournament">
         {activeTournamentId ? (
-          <TournamentExpandedView tournamentId={activeTournamentId} onClose={() => { setActiveTournamentId(null); setActiveTab('dashboard'); }} />
+          <div className="p-4 text-center text-xs text-muted-foreground">Torneio desativado</div>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
         )}
