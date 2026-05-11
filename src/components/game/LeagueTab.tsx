@@ -156,7 +156,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
     
     // Set up realtime subscription for matches and table
     const channel = supabase.channel('league_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => {
+        loadData();
+        // Dispara evento global para o Widget (MatchDashboardCard) se atualizar
+        window.dispatchEvent(new CustomEvent('league_match_updated'));
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table' }, () => loadData())
       .subscribe();
 
