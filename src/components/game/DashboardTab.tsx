@@ -314,32 +314,77 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         )}
 
         {/* Fan Mood Card */}
-        <Card className="game-card-accent">
-          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
+        {/* Fan Mood Card - Sincronizado com Performance */}
+        <Card className="game-card-accent overflow-hidden">
+          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3 border-b border-border/10 bg-muted/5">
             <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Heart className="h-3.5 w-3.5 text-primary" /> Torcida & Moral
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2.5 px-3 sm:px-4 pb-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Humor</span>
-              <span className={`text-xs font-bold ${fanMoodColor}`}>{fanMood}</span>
+          <CardContent className="space-y-4 px-3 sm:px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${recentWins >= 3 ? 'bg-success/20 animate-pulse' : recentLosses >= 3 ? 'bg-destructive/20' : 'bg-primary/20'}`}>
+                {recentWins >= 4 ? '🔥' : recentWins >= 3 ? '😄' : recentWins >= 2 ? '🙂' : recentLosses >= 5 ? '😡' : recentLosses >= 4 ? '😤' : recentLosses >= 3 ? '😟' : '😐'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold">Status do Humor</span>
+                  <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 h-4 ${fanMoodColor} bg-transparent border-current/20`}>
+                    {fanMood}
+                  </Badge>
+                </div>
+                <p className="text-xs font-medium text-foreground leading-tight">
+                  {recentWins >= 3 ? 'A torcida está lotando o estádio e apoiando o time!' : recentLosses >= 3 ? 'Clima tenso! A torcida exige resultados imediatos.' : 'Apoio moderado. Resultados positivos trarão mais gente.'}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Sequência</span>
-              <span className="text-xs font-bold flex items-center gap-1">
-                {streak >= 3 && streakType === 'V' && <Flame className="h-3 w-3 text-warning" />}
-                {streakLabel}
-              </span>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 rounded-xl bg-background/50 border border-border/50 flex flex-col items-center">
+                <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                  <Flame className={`h-3 w-3 ${streak >= 3 && streakType === 'V' ? 'text-warning' : 'text-muted-foreground/50'}`} />
+                  <span className="text-[8px] uppercase font-bold">Sequência</span>
+                </div>
+                <span className="text-xs font-black">{streakLabel}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-background/50 border border-border/50 flex flex-col items-center">
+                <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                  <Users className="h-3 w-3 text-primary/70" />
+                  <span className="text-[8px] uppercase font-bold">Engajamento</span>
+                </div>
+                <span className="text-xs font-black">{(winRate * 0.8 + streak * 5).toFixed(0)}%</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Torcedores</span>
-              <span className="text-xs font-bold">{club.fans.toLocaleString()}</span>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-end">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase">Reputação do Clube</span>
+                <span className="text-[10px] font-mono font-bold">{club.reputation}/100</span>
+              </div>
+              <div className="relative">
+                <Progress value={Math.min(100, club.reputation)} className="h-2 progress-glow" />
+                {club.reputation > 80 && <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-ping" />}
+              </div>
             </div>
-            <Progress value={Math.min(100, club.reputation)} className="h-1.5 progress-glow" />
-            <p className="text-[9px] text-muted-foreground text-center">
-              {recentWins >= 3 ? '🔥 A torcida está lotando o estádio!' : recentLosses >= 3 ? '😤 Torcedores abandonando o clube...' : 'Mantenha bons resultados para crescer a torcida'}
-            </p>
+
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/10">
+              <Users className="h-4 w-4 text-primary" />
+              <div className="flex-1">
+                <p className="text-[10px] text-muted-foreground leading-none mb-1">Base de Fãs</p>
+                <p className="text-xs font-black tabular-nums">{club.fans.toLocaleString()} torcedores</p>
+              </div>
+              {recentWins > recentLosses ? (
+                <div className="flex items-center text-[10px] font-bold text-success">
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                  +{(recentWins * 1.5).toFixed(1)}%
+                </div>
+              ) : recentLosses > recentWins ? (
+                <div className="flex items-center text-[10px] font-bold text-destructive">
+                  <TrendingUp className="h-3 w-3 mr-0.5 rotate-180" />
+                  -{(recentLosses * 1.2).toFixed(1)}%
+                </div>
+              ) : null}
+            </div>
           </CardContent>
         </Card>
       </div>
