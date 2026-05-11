@@ -15,7 +15,7 @@ interface Props {
 }
 
 
-export function WorldLeagues({ rating = 0, rankingHistory = [], clubName = 'Manager', stats = { wins: 0, draws: 0, losses: 0 }, season = 1 }: Props) {
+export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName = 'Manager', stats = { wins: 0, draws: 0, losses: 0 }, season = 1 }: Props) {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
@@ -26,8 +26,12 @@ export function WorldLeagues({ rating = 0, rankingHistory = [], clubName = 'Mana
         </h2>
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="overview" onClick={() => setActiveTab('overview')} className="text-xs px-4">Ligas Mundiais</TabsTrigger>
+          <TabsTrigger value="copas" onClick={() => setActiveTab('copas')} className="text-xs px-4 flex items-center gap-1.5">
+            <Trophy className="h-3 w-3" /> Copas Nacionais
+          </TabsTrigger>
         </TabsList>
       </div>
+
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsContent value="overview" className="mt-0">
