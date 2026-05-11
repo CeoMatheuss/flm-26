@@ -262,7 +262,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell className={`text-center text-[11px] font-black italic ${diff > 0 ? 'text-emerald-500' : diff < 0 ? 'text-red-500' : 'text-zinc-500'}`}>
                             {diff > 0 ? `+${diff}` : diff}
                           </TableCell>
-                          <TableCell className="text-center text-xs hidden lg:table-cell">{Math.round(row.win_rate)}%</TableCell>
+                          
                           <TableCell>
                             <div className="flex items-center justify-center gap-1.5">
                               {form.map((res, idx) => {
