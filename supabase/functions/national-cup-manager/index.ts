@@ -69,17 +69,25 @@ serve(async (req) => {
         if (cupError || !cup) continue;
 
         // Detecta AUTOMATICAMENTE todos os times das ligas desse país
+        // Prioridade: Humanos ativos, depois Bots
         const { data: teams } = await supabase.from('world_teams')
             .select('id, name, logo, strength, user_id, league_id')
-            .eq('country', countryName);
+            .eq('country', countryName)
+            .order('user_id', { ascending: false }); // NULLS LAST - humanos no topo
 
         if (!teams || teams.length < 2) continue;
+
+        // Determina total de vagas baseada em potência de 2 (max 64)
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(Math.min(teams.length, 64))));
+        const totalRounds = Math.log2(participantsCount);
+        
+        const selectedTeams = teams.slice(0, participantsCount);
 
         // Se a copa já tem times, pula a inscrição mas garante o total_teams atualizado
         const { count } = await supabase.from('national_cup_teams').select('*', { count: 'exact', head: true }).eq('cup_id', cup.id);
         
         if (!count || count === 0) {
-            const cupTeams = teams.map((t, idx) => ({
+            const cupTeams = selectedTeams.map((t, idx) => ({
               cup_id: cup.id,
               club_id: t.id,
               club_name: t.name,
@@ -94,13 +102,8 @@ serve(async (req) => {
             await supabase.from('national_cup_teams').insert(cupTeams);
         }
 
-        // Determina total de fases baseado no número de times (Potência de 2)
-        const totalTeams = teams.length;
-        const participantsCount = Math.pow(2, Math.floor(Math.log2(totalTeams)));
-        const totalRounds = Math.log2(participantsCount);
-
         await supabase.from('national_cups').update({ 
-            total_teams: totalTeams,
+            total_teams: participantsCount,
             total_rounds: Math.max(totalRounds, 1)
         }).eq('id', cup.id);
         
@@ -131,6 +134,7 @@ serve(async (req) => {
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
                 .lte('scheduled_at', now.toISOString());
+
 
 
 
