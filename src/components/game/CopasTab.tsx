@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRight } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, BarChart3, Newspaper, Award, ArrowRight, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
