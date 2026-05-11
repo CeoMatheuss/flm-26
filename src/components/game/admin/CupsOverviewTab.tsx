@@ -295,10 +295,10 @@ export function CupsOverviewTab() {
                     </div>
                   </CollapsibleContent>
                 </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+              </Collapsible>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
