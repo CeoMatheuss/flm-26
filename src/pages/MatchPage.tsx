@@ -1157,39 +1157,21 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
       )}
 
       {/* ═══ FIXED TOP BAR with action buttons ═══ */}
-      <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-2 sm:px-3 py-2 space-y-2">
-        {/* Row 1: Exit + Competition + Stadium */}
+      <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-3 py-2">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
-            <LogOut className="h-3.5 w-3.5" /> {isFinished ? 'Sair' : 'Sair'}
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5" onClick={onExit}>
+            <LogOut className="h-3.5 w-3.5" /> Sair
           </Button>
-          <div className="flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[10px] sm:text-xs font-medium h-6">{competition || 'Amistoso'}</Badge>
-            <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[200px]">
-              🏟️ {stadiumName} {matchState.attendance > 0 ? `(${matchState.attendance.toLocaleString()} / ${matchState.stadiumCapacity.toLocaleString()})` : ''}
+          
+          <div className="flex flex-col items-end">
+            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest text-primary border-primary/20 bg-primary/5 mb-0.5">
+              {competition || 'Amistoso'}
+            </Badge>
+            <span className="text-[9px] text-muted-foreground truncate max-w-[150px] sm:max-w-none">
+              🏟️ {stadiumName}
             </span>
           </div>
         </div>
-
-        {/* Row 2: Compact stats nav (clean neutral chips) */}
-        {!isFinished && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <BarChart3 className="h-3.5 w-3.5" /> Stats
-            </button>
-            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <Users className="h-3.5 w-3.5" /> Escalação
-            </button>
-            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <Settings2 className="h-3.5 w-3.5" /> Tática
-            </button>
-            {hasAssistant && (
-              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-                <MessageSquare className="h-3.5 w-3.5" /> Técnico ({matchState.assistantTips.length})
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ═══ MATCH CONTENT ═══ */}
