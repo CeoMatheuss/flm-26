@@ -133,7 +133,8 @@ serve(async (req) => {
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString());
+                // .lte('scheduled_at', now.toISOString()); // Temporário para teste
+
 
 
 
