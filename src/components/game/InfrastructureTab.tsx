@@ -20,8 +20,8 @@ export function InfrastructureTab({ infrastructure, budget, players = [], onUpgr
   const onUpgrade = guard(_onUpgrade);
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const facility = infrastructure?.physiotherapy ?? { level: 1, maxLevel: 20 };
-  const cost = getUpgradeCost(facility.level, 'physiotherapy');
+  const facility = infrastructure?.physiotherapy ?? { level: 0, maxLevel: 20 };
+  const cost = getPhysioUpgradeCost(facility.level);
   const isMaxed = facility.level >= facility.maxLevel;
   const pct = (facility.level / facility.maxLevel) * 100;
   const bonuses = getPhysioBonuses(facility.level);
