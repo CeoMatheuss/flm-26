@@ -358,11 +358,11 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                   <span className="text-[10px] text-muted-foreground">Últimos {last5.length} jogos:</span>
                   <div className="flex gap-1">
                     {last5.map((r, ri) => (
-                      <span key={ri} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${
-                        r === 'V' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                        r === 'E' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                        'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                      }`}>{r}</span>
+                      <span key={ri} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border ${
+                        r === 'V' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                        r === 'E' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                        'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                      }`} title={r === 'V' ? 'Vitória' : r === 'E' ? 'Empate' : 'Derrota'}>{r}</span>
                     ))}
                   </div>
                 </div>
