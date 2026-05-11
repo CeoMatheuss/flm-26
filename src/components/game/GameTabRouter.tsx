@@ -486,6 +486,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="pacotinhos">
         {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
       </TabsContent>
+      <TabsContent value="shop">
+        <ShopTab />
+      </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       <TabsContent value="clubprofile">
         <ClubProfileTab
