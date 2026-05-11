@@ -79,19 +79,21 @@ export function FinancePanel() {
 
   /** Função única e isolada para adicionar/remover dinheiro. */
   const addMoneyToClub = async (targetUserId: string, value: number, clubLabel: string) => {
-    const { data, error } = await supabase.rpc('admin_add_money_to_club', {
-      p_target_user_id: targetUserId,
-      p_amount: value,
-      p_reason: reason || 'Ajuste administrativo'
+    const { data, error } = await supabase.rpc('execute_admin_money_transfer', {
+      p_target_id: targetUserId,
+      p_value: value,
+      p_description: reason || 'Ajuste administrativo direto'
     });
+    
     if (error) {
       throw new Error(error.message || 'Falha ao ajustar saldo');
     }
+    
     const result = (data as any) || {};
     return {
-      newBudget: Number(result.new_budget) || 0,
-      delta: Number(result.delta) || value,
-      clubName: result.club_name || clubLabel,
+      newBudget: Number(result.current_balance) || 0,
+      delta: Number(result.difference) || value,
+      clubName: result.club || clubLabel,
     };
   };
 
