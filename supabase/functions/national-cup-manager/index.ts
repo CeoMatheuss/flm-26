@@ -147,9 +147,28 @@ serve(async (req) => {
         })
     }
 
-    return new Response(JSON.stringify({ error: 'Ação inválida' }), { 
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    })
+    // 4. RECONCILIAR / SINCRONIZAR
+    if (action === 'reconcile_sync') {
+        // Valida se há partidas órfãs ou chaveamento quebrado
+        // Exemplo: se uma fase terminou e não sorteou a próxima
+        const { data: cups } = await supabase.from('national_cups').select('*').neq('status', 'finished')
+        for (const cup of cups) {
+            const { count: pending } = await supabase.from('national_cup_matches')
+                .select('*', { count: 'exact', head: true })
+                .eq('cup_id', cup.id)
+                .eq('round', cup.current_round)
+                .eq('status', 'scheduled')
+            
+            if (pending === 0 && cup.status === 'in_progress') {
+                if (cup.current_round < cup.total_rounds) {
+                    await drawNextRound(supabase, cup.id, cup.current_round + 1)
+                } else {
+                    await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
+                }
+            }
+        }
+        return new Response(JSON.stringify({ success: true, message: "Sincronização concluída" }), { headers: corsHeaders })
+    }
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { 
