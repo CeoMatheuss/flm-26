@@ -262,17 +262,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenTournament={(tab) => {
-            // Se o router estiver disponível via props ou window, troca para a aba 'copas'
-            if (typeof (window as any).setActiveTab === 'function') {
-              (window as any).setActiveTab('copas');
-            }
-          }}
-        />
-      )}
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
