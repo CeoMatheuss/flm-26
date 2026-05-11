@@ -106,7 +106,6 @@ serve(async (req) => {
               home_score: result.homeGoals, away_score: result.awayGoals,
               home_penalties: result.homePen, away_penalties: result.awayPen,
               status: 'finished', winner_team_id: winnerId,
-              auto_simulated: true,
             }).eq('id', match.id);
 
             await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
