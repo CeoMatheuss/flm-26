@@ -32,7 +32,7 @@ import { RankingTab } from '@/components/game/RankingTab';
 import { SettingsTab } from '@/components/game/SettingsTab';
 import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
 import { RulesTab } from '@/components/game/RulesTab';
-// CopasTab removido
+import { CopasTab } from './CopasTab';
 import { WorldLeagues } from './WorldLeagues';
 
 // StaffTab removido (sistema de equipe técnica desativado)
@@ -249,13 +249,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
       </TabsContent>
       <TabsContent value="copas">
-        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <Trophy className="h-12 w-12 text-muted-foreground/20" />
-          <h3 className="text-lg font-bold">Sistema de Copas Desativado</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            O sistema de copas foi removido. Foco total em Ligas e Amistosos.
-          </p>
-        </div>
+        <CopasTab />
       </TabsContent>
       <TabsContent value="world">
         <WorldLeagues 
