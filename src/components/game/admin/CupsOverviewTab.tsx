@@ -66,7 +66,6 @@ export function CupsOverviewTab() {
 
   const loadMatches = async (cupId: string) => {
     try {
-      // Primeiro buscamos os times para ter o mapeamento de nomes/logos
       const { data: teams } = await supabase
         .from('national_cup_teams')
         .select('id, club_name, club_logo')
@@ -102,7 +101,7 @@ export function CupsOverviewTab() {
   }, []);
 
   const handleAction = async (action: string) => {
-    const password = "ADM112828"; // Senha fixa do script
+    const password = "ADM112828";
     setProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('national-cup-manager', {
@@ -244,17 +243,16 @@ export function CupsOverviewTab() {
                   <CollapsibleContent>
                     <div className="px-3 pb-3 border-t border-border/40 bg-muted/5">
                       <div className="mt-3 space-y-4">
-                        {/* Render matches by round */}
                         {matches[cup.id] ? (
                           Array.from({ length: cup.total_rounds }).map((_, idx) => {
-                            const round = idx + 1;
-                            const roundMatches = matches[cup.id].filter(m => m.round === round);
+                            const roundNum = idx + 1;
+                            const roundMatches = matches[cup.id].filter(m => m.round === roundNum);
                             if (roundMatches.length === 0) return null;
 
                             return (
-                              <div key={round} className="space-y-2">
+                              <div key={roundNum} className="space-y-2">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2">
-                                  <Calendar className="h-3 w-3" /> Rodada {round}
+                                  <Calendar className="h-3 w-3" /> Rodada {roundNum}
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {roundMatches.map(m => (
