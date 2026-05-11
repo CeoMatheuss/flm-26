@@ -191,11 +191,23 @@ function getPhaseName(round: number, total: number) {
 
 function getPrizeForRound(round: number, total: number) {
   const rem = total - round;
+  // Based on user requirements:
+  // Final (Campeão) -> 10M (granted via winner logic)
+  // Semifinal -> 5M
+  // Quartas -> 2M
+  // Oitavas -> 1M
+  // Round 3 -> 500K
+  // Round 2 -> 500K
+  // Round 1 -> 250K
+  
   if (rem === 0) return 10000000;
   if (rem === 1) return 5000000;
   if (rem === 2) return 2000000;
   if (rem === 3) return 1000000;
-  return 100000 * Math.pow(2, round - 1);
+  if (round === 3) return 500000;
+  if (round === 2) return 500000;
+  if (round === 1) return 250000;
+  return 100000;
 }
 
 async function grantPrize(supabase: any, teamId: string, amount: number, desc: string, cupId: string) {
