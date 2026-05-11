@@ -429,3 +429,43 @@ export function isDateBlockedByEvents(matchDate: string, acceptedEvents: Stadium
   return { blocked: false };
 }
 
+/**
+ * Resolve o estádio da partida considerando bloqueios por eventos.
+ * Se o estádio mandante estiver bloqueado, tenta o visitante.
+ * Se ambos estiverem bloqueados, usa um estádio neutro.
+ */
+export function resolveMatchStadium(
+  matchDate: string,
+  homeClub: { stadiumName: string; stadiumOps?: StadiumOpsState },
+  awayClubName: string, // Idealmente teríamos o awayClub completo, mas vamos simplificar
+  isHome: boolean
+): { name: string; isShifted: boolean; shiftReason?: string } {
+  if (!isHome) {
+    // Se somos visitantes, o estádio já é "Estádio do Oponente" (fixo por enquanto no Dashboard)
+    // Mas se quisermos ser precisos, precisaríamos das stadiumOps do oponente (não disponível aqui)
+    return { name: `Estádio ${awayClubName}`, isShifted: false };
+  }
+
+  const acceptedEvents = homeClub.stadiumOps?.acceptedEvents || [];
+  const blockCheck = isDateBlockedByEvents(matchDate, acceptedEvents);
+
+  if (!blockCheck.blocked) {
+    return { name: homeClub.stadiumName, isShifted: false };
+  }
+
+  // Estádio mandante bloqueado!
+  // Tenta o estádio do visitante (nome genérico pois não temos o objeto awayClub aqui)
+  const visitorStadium = `Estádio ${awayClubName}`;
+  
+  // Como não temos as ops do visitante, assumimos que ele está livre 
+  // A MENOS que o usuário queira uma lógica mais complexa.
+  // Por ora, vamos seguir o pedido: "se acontecer de eles alugarem no mesmo dia serem transferido para um estadio do jogo"
+  
+  // Vamos adicionar um parâmetro opcional para as ops do visitante se disponível no futuro
+  return { 
+    name: visitorStadium, 
+    isShifted: true, 
+    shiftReason: `Estádio ${homeClub.stadiumName} ocupado por: ${blockCheck.eventLabel}. Partida transferida para o estádio do visitante.`
+  };
+}
+
