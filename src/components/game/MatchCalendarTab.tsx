@@ -388,21 +388,31 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 </div>
               ) : filteredMatches.map(m => {
                 const isFinished = m.status === 'finished';
-                // Regra de horário da Divisão 1 vs Outras
-                const displayTime = leagueDivision === 1 ? '19:30' : 
-                                   new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+                const isCup = m.competition_kind === 'cup';
+                const displayTime = m.scheduled_at
+                  ? new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+                  : '--:--';
+                const displayDate = m.scheduled_at
+                  ? new Date(m.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                  : '';
 
                 return (
-                  <Card key={m.id} className={`overflow-hidden border-white/5 bg-zinc-900/40 hover:border-primary/20 transition-all ${isFinished ? 'opacity-70' : ''}`}>
+                  <Card key={`${m.competition_kind}-${m.id}`} className={`overflow-hidden border-white/5 bg-zinc-900/40 hover:border-primary/20 transition-all ${isFinished ? 'opacity-70' : ''}`}>
                     <CardContent className="p-4">
+                      {/* Cabeçalho competição + data */}
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                        <Badge className={`text-[8px] uppercase font-black tracking-widest border-none ${isCup ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-primary'}`}>
+                          {m.competition_name}
+                        </Badge>
+                        <div className="text-[9px] font-mono text-white/50">{displayDate} • {displayTime}</div>
+                      </div>
+
                       <div className="grid grid-cols-7 items-center gap-4">
-                        {/* Casa */}
                         <div className="col-span-3 flex flex-col items-center gap-2">
                           <ClubShield club={m.home_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
                           <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.home_team?.name}</p>
                         </div>
 
-                        {/* Placar/Hora */}
                         <div className="col-span-1 flex flex-col items-center justify-center gap-1">
                           {isFinished ? (
                             <div className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg flex items-center gap-2">
@@ -419,20 +429,20 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                           {isFinished && <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[7px] py-0 px-1 uppercase font-black tracking-widest">Final</Badge>}
                         </div>
 
-                        {/* Fora */}
                         <div className="col-span-3 flex flex-col items-center gap-2">
                           <ClubShield club={m.away_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
                           <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.away_team?.name}</p>
                         </div>
                       </div>
 
-                      {/* Info Adicional */}
                       <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                          <div className="flex items-center gap-1.5 opacity-50">
                             <MapPin className="h-3 w-3 text-primary" />
-                            <span className="text-[9px] font-bold text-white truncate max-w-[120px] uppercase">{m.stadium_name || 'Estádio Municipal'}</span>
+                            <span className="text-[9px] font-bold text-white truncate max-w-[160px] uppercase">{m.stadium_name || (isCup ? 'Sede Definida' : 'Estádio Municipal')}</span>
                          </div>
-                         <div className="text-[9px] font-black text-primary/40 italic uppercase tracking-tighter">Campeonato Mundial V3</div>
+                         <div className={`text-[9px] font-black italic uppercase tracking-tighter ${isCup ? 'text-amber-400/40' : 'text-primary/40'}`}>
+                           {isCup ? `Fase ${m.round}` : `Rodada ${m.round}`}
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
