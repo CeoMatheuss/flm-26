@@ -179,6 +179,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         window.dispatchEvent(new CustomEvent('league_match_updated'));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_leagues' }, () => loadData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
