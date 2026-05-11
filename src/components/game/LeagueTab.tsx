@@ -289,12 +289,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <ClubShield 
-                                club={row.world_teams as any} 
-                                fallbackText={row.world_teams?.name} 
-                                size={28} 
-                                className="shrink-0 drop-shadow-sm" 
-                              />
+                              <div className="shrink-0 flex items-center justify-center">
+                                <ClubShield 
+                                  club={{
+                                    ...row.world_teams,
+                                    // Map possible DB field names to what ClubShield expects
+                                    primaryColor: row.world_teams?.primary_color || row.world_teams?.primaryColor,
+                                    secondaryColor: row.world_teams?.secondary_color || row.world_teams?.secondaryColor,
+                                    shieldPattern: row.world_teams?.shield_pattern || row.world_teams?.shieldPattern,
+                                    shieldShape: row.world_teams?.shield_shape || row.world_teams?.shieldShape,
+                                    shieldConfig: row.world_teams?.shield_config || row.world_teams?.shieldConfig,
+                                    logoUrl: row.world_teams?.logo_url || row.world_teams?.logoUrl || row.world_teams?.logo
+                                  }}
+                                  size={28}
+                                  className="drop-shadow-sm"
+                                  fallbackText={row.world_teams?.name}
+                                />
+                              </div>
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
