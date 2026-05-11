@@ -1179,114 +1179,124 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
         <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-3 space-y-2 sm:space-y-3 lg:space-y-0">
           {/* ═══ MAIN COLUMN ═══ */}
           <div className="space-y-2 sm:space-y-3 min-w-0">
-            {/* Professional Scoreboard — compact */}
-            <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 animate-goal-glow' : 'shadow-lg'}`}>
-              <div className="bg-primary/10 px-2.5 sm:px-3 py-1.5 flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
-                <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs sm:text-sm font-mono h-6 sm:h-7 px-2.5 sm:px-3">
-                  {currentMinute}'
-                </Badge>
+            {/* Professional Scoreboard — TV Broadcast Style */}
+            <Card className={`overflow-hidden transition-all duration-500 relative ${goalFlash ? 'ring-2 ring-yellow-400/60 animate-goal-glow shadow-2xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+              <div className="bg-muted/10 px-3 py-1 flex items-center justify-between border-b border-border/10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{phaseLabel()}</span>
+                <div className="flex items-center gap-1.5">
+                  {!isFinished && <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                  <span className="text-xs font-mono font-bold">{currentMinute}'</span>
+                </div>
               </div>
 
-              <CardContent className="p-2 sm:p-3 space-y-2">
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 {isHalftime ? (
-                  /* Halftime focus banner — compact */
-                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-xl p-3 sm:p-4 text-center space-y-1.5 animate-fade-in">
-                    <p className="text-2xl sm:text-3xl">⏸️</p>
-                    <p className="text-base sm:text-xl font-black text-primary tracking-wide">INTERVALO</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">Descanso · Use o tempo para ajustes</p>
-                    <div className={`inline-block text-xl sm:text-2xl font-black font-mono px-3 sm:px-4 py-1.5 rounded-lg mt-1 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                      <span className="text-foreground">{homeGoals}</span>
-                      <span className="text-muted-foreground/60 mx-2">x</span>
-                      <span className="text-foreground">{awayGoals}</span>
+                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-2 animate-fade-in">
+                    <p className="text-3xl">⏸️</p>
+                    <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                    <div className="flex items-center justify-center gap-6">
+                       <div className="text-center">
+                         <div className="mb-1 flex justify-center">{homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
+                         <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{homeTeam}</p>
+                       </div>
+                       <div className="text-4xl font-black font-mono flex items-center gap-3">
+                         <span>{homeGoals}</span>
+                         <span className="text-muted-foreground/30">-</span>
+                         <span>{awayGoals}</span>
+                       </div>
+                       <div className="text-center">
+                         <div className="mb-1 flex justify-center">{awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
+                         <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{awayTeam}</p>
+                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {/* Teams + Score — compact */}
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <div className="flex-1 text-right space-y-0.5 min-w-0">
-                        <p className="text-xs sm:text-base font-black truncate">{homeTeam}</p>
-                        <div className="flex items-center gap-1 justify-end flex-wrap">
-                          {goalEvents.filter(e => e.team === 'home').slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                    <div className="flex items-center justify-between gap-2 sm:gap-4">
+                      {/* Home Team */}
+                      <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right min-w-0">
+                        <div className="mb-2 hidden sm:block">
+                          {homeShield ? <ShieldCrest size={48} {...homeShield} /> : <div className="w-12 h-12 bg-muted rounded-full" />}
+                        </div>
+                        <div className="sm:hidden mb-1">
+                          {homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}
+                        </div>
+                        <p className="text-sm sm:text-xl font-black truncate w-full uppercase tracking-tight">{homeTeam}</p>
+                        <div className="mt-1 flex flex-wrap justify-center sm:justify-end gap-x-2 gap-y-0.5 max-h-12 overflow-y-auto">
+                          {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                            <span key={i} className="text-[9px] text-muted-foreground whitespace-nowrap">⚽ {g.playerName.split(' ').pop()} {g.minute}'</span>
                           ))}
                         </div>
                       </div>
 
-                      <div className={`text-2xl sm:text-4xl font-black font-mono px-2 sm:px-5 py-1 sm:py-1.5 rounded-lg min-w-[70px] sm:min-w-[110px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                        <span className="text-primary">{homeGoals}</span>
-                        <span className="text-muted-foreground/50 text-lg sm:text-2xl mx-0.5">:</span>
-                        <span className="text-primary">{awayGoals}</span>
+                      {/* Score Display */}
+                      <div className="flex flex-col items-center justify-center px-4">
+                        <div className={`text-4xl sm:text-6xl font-black font-mono tracking-tighter transition-all duration-300 ${goalFlash ? 'text-yellow-400 scale-110' : 'text-foreground'}`}>
+                          {homeGoals}<span className="text-muted-foreground/20 mx-1 sm:mx-2">:</span>{awayGoals}
+                        </div>
+                        {!isFinished && (
+                           <div className="w-full mt-2 h-1 bg-muted/20 rounded-full overflow-hidden">
+                             <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${(progress || 0) * 100}%` }} />
+                           </div>
+                        )}
                       </div>
 
-                      <div className="flex-1 text-left space-y-0.5 min-w-0">
-                        <p className="text-xs sm:text-base font-black truncate">{awayTeam}</p>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {goalEvents.filter(e => e.team === 'away').slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      {/* Away Team */}
+                      <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left min-w-0">
+                        <div className="mb-2 hidden sm:block">
+                          {awayShield ? <ShieldCrest size={48} {...awayShield} /> : <div className="w-12 h-12 bg-muted rounded-full" />}
+                        </div>
+                        <div className="sm:hidden mb-1">
+                          {awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}
+                        </div>
+                        <p className="text-sm sm:text-xl font-black truncate w-full uppercase tracking-tight">{awayTeam}</p>
+                        <div className="mt-1 flex flex-wrap justify-center sm:justify-start gap-x-2 gap-y-0.5 max-h-12 overflow-y-auto">
+                          {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                            <span key={i} className="text-[9px] text-muted-foreground whitespace-nowrap">⚽ {g.playerName.split(' ').pop()} {g.minute}'</span>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    {/* Goal flash banner — compact */}
-                    {goalFlash && latestEvent?.isGoal && (
-                      <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-1.5 sm:p-2 text-center animate-fade-in">
-                        <p className="text-sm sm:text-base font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-                        {latestEvent.assistName && (
-                          <p className="text-[10px] sm:text-xs text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
-                        )}
+                    {/* Possession bar */}
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <span>Posse: {possession[0]}%</span>
+                        <span>{possession[1]}%</span>
                       </div>
-                    )}
-
-                    {/* Possession bar — thinner */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] sm:text-xs font-bold text-blue-400 w-8 sm:w-10 text-right">{possession[0]}%</span>
-                      <div className="flex-1 flex h-2 rounded-full overflow-hidden bg-muted/10">
-                        <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-                        <div className="bg-red-500 flex-1 rounded-r-full" />
+                      <div className="flex h-1.5 rounded-full overflow-hidden bg-muted/10">
+                        <div className="bg-blue-500 transition-all duration-700" style={{ width: `${possession[0]}%` }} />
+                        <div className="bg-red-500 flex-1" />
                       </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-red-400 w-8 sm:w-10">{possession[1]}%</span>
                     </div>
                   </>
                 )}
-
-                {!isFinished && <Progress value={(progress || 0) * 100} className="h-1 sm:h-1.5" />}
               </CardContent>
-            </Card>
-
-            {/* Match Moment + Assistant Tip — only show inline on mobile (sidebar covers desktop) */}
-            {!isFinished && matchState.currentMoment && (
-              <div className="lg:hidden flex items-center justify-center">
-                <Badge variant="outline" className="text-[10px] sm:text-xs px-2.5 py-0.5 gap-1.5">
-                  {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
-                </Badge>
-              </div>
-            )}
-
-            {!isFinished && hasAssistant && latestTip && (
-              <div className="lg:hidden bg-amber-500/8 border border-amber-500/25 rounded-lg p-2 animate-fade-in">
-                <div className="flex items-start gap-2">
-                  <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                    <MessageSquare className="h-3 w-3 text-amber-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] text-amber-400 font-bold uppercase tracking-wider">Assistente • {latestTip.minute}'</p>
-                    <p className="text-[11px] sm:text-xs text-foreground mt-0.5">{latestTip.description}</p>
+              
+              {/* Goal Flash Overlay */}
+              {goalFlash && latestEvent?.isGoal && (
+                <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[2px] flex flex-col items-center justify-center animate-fade-in z-10">
+                  <div className="bg-background/80 border border-emerald-500/30 rounded-2xl px-8 py-4 shadow-2xl text-center transform scale-110">
+                    <p className="text-3xl sm:text-5xl font-black text-emerald-500 animate-bounce">GOOOL!</p>
+                    <p className="text-lg sm:text-2xl font-black text-foreground mt-1">{latestEvent.playerName}</p>
+                    {latestEvent.assistName && (
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Assistência: {latestEvent.assistName}</p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </Card>
 
-            {/* Halftime sub queue indicator */}
-            {isHalftime && subQueue.length > 0 && (
-              <div className="bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5 text-center animate-pulse">
-                <p className="text-[11px] sm:text-xs text-primary font-bold">
-                  🔄 {subQueue.length} substituição(ões) na fila
+            {/* Substitution queue indicator */}
+            {subQueue.length > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-2 flex items-center justify-center gap-2 animate-pulse">
+                <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                <p className="text-xs text-primary font-bold">
+                  {subQueue.length} substituição(ões) programada(s)
                 </p>
               </div>
             )}
+
 
             {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
