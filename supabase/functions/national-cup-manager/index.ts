@@ -130,7 +130,9 @@ serve(async (req) => {
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
-                .lte('scheduled_at', now.toISOString());
+            // DEBUG: Forçando simulação imediata para teste de nomes e calendário
+            // .lte('scheduled_at', now.toISOString());
+
 
 
 
