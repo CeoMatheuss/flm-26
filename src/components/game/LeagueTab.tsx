@@ -46,6 +46,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         id: teamData.league_id,
         name: league?.name || 'Liga Mundial',
         country: league?.country,
+        division: league?.division || 1, // Store division
         flag: (league as any)?.country_ref?.flag_emoji || '⚽',
         playerTeamId: teamData.id,
         currentRound: league?.current_round || 1
@@ -289,12 +290,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <ClubShield 
-                                club={row.world_teams as any} 
-                                fallbackText={row.world_teams?.name} 
-                                size={28} 
-                                className="shrink-0 drop-shadow-sm" 
-                              />
+                              <div className="shrink-0 flex items-center justify-center">
+                                <ClubShield 
+                                  club={{
+                                    ...row.world_teams,
+                                    // Map possible DB field names to what ClubShield expects
+                                    primaryColor: row.world_teams?.primary_color || row.world_teams?.primaryColor,
+                                    secondaryColor: row.world_teams?.secondary_color || row.world_teams?.secondaryColor,
+                                    shieldPattern: row.world_teams?.shield_pattern || row.world_teams?.shieldPattern,
+                                    shieldShape: row.world_teams?.shield_shape || row.world_teams?.shieldShape,
+                                    shieldConfig: row.world_teams?.shield_config || row.world_teams?.shieldConfig,
+                                    logoUrl: row.world_teams?.logo_url || row.world_teams?.logoUrl || row.world_teams?.logo
+                                  }}
+                                  size={28}
+                                  className="drop-shadow-sm"
+                                  fallbackText={row.world_teams?.name}
+                                />
+                              </div>
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
@@ -372,7 +384,17 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-right space-y-1">
                          <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
                           <div className="flex justify-end gap-1">
-                            <ClubShield club={match.home_team as any} fallbackText={match.home_team?.name} size={28} />
+                             <ClubShield 
+                               club={{
+                                 ...match.home_team,
+                                 primaryColor: match.home_team?.primary_color || match.home_team?.primaryColor,
+                                 secondaryColor: match.home_team?.secondary_color || match.home_team?.secondaryColor,
+                                 shieldConfig: match.home_team?.shield_config || match.home_team?.shieldConfig,
+                                 logoUrl: match.home_team?.logo_url || match.home_team?.logoUrl || match.home_team?.logo
+                               }} 
+                               fallbackText={match.home_team?.name} 
+                               size={28} 
+                             />
                           </div>
                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
@@ -385,7 +407,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           ) : (
                             <div className="flex flex-col items-center">
                               <div className="text-[10px] font-bold bg-muted px-2 py-1 rounded text-muted-foreground uppercase">
-                                19:30
+                                {leagueInfo.division === 1 ? '19:30' : 'A def.'}
                               </div>
                             </div>
                           )}
@@ -395,7 +417,17 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
                           <div className="flex justify-start gap-1">
-                            <ClubShield club={match.away_team as any} fallbackText={match.away_team?.name} size={28} />
+                             <ClubShield 
+                               club={{
+                                 ...match.away_team,
+                                 primaryColor: match.away_team?.primary_color || match.away_team?.primaryColor,
+                                 secondaryColor: match.away_team?.secondary_color || match.away_team?.secondaryColor,
+                                 shieldConfig: match.away_team?.shield_config || match.away_team?.shieldConfig,
+                                 logoUrl: match.away_team?.logo_url || match.away_team?.logoUrl || match.away_team?.logo
+                               }} 
+                               fallbackText={match.away_team?.name} 
+                               size={28} 
+                             />
                           </div>
                        </div>
                      </div>
