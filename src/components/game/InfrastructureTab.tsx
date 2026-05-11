@@ -144,9 +144,13 @@ export function InfrastructureTab({ infrastructure, budget, players = [], onUpgr
           </div>
 
           {!isMaxed ? (
-            <Button onClick={() => onUpgrade('physiotherapy')} disabled={budget < cost} className="w-full gap-2 h-11 text-sm font-semibold">
+            <Button 
+              onClick={() => onUpgrade('physiotherapy')} 
+              disabled={budget < cost} 
+              className="w-full gap-2 h-12 text-sm font-black uppercase tracking-tighter shadow-lg shadow-pink-500/10"
+            >
               <ArrowUp className="h-4 w-4" />
-              Melhorar para Nível {facility.level + 1} — {cost >= 1_000_000 ? `R$ ${(cost / 1_000_000).toFixed(cost >= 10_000_000 ? 0 : 1)}M` : `R$ ${(cost / 1000).toFixed(0)}k`}
+              Melhorar para Nível {facility.level + 1} — R$ {(cost / 1000).toLocaleString('pt-BR')}k
             </Button>
           ) : (
             <div className="text-center py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
