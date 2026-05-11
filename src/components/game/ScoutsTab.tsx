@@ -33,6 +33,7 @@ const SPEC_LABELS: Record<ScoutSpecialization, string> = {
 
 export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   const [myScouts, setMyScouts] = useState<ScoutV3[]>([]);
+  const SCOUT_LIMIT = 3;
   const [marketScouts, setMarketScouts] = useState<ScoutV3[]>([]);
   const [missions, setMissions] = useState<ScoutMissionV3[]>([]);
   const [reports, setReports] = useState<ScoutReportV3[]>([]);
@@ -67,8 +68,8 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   }, [userId]);
 
   const handleHireScout = async (scout: ScoutV3) => {
-    if (myScouts.length >= 5) {
-      toast.error('Limite de olheiros atingido (Máx: 5)');
+    if (myScouts.length >= SCOUT_LIMIT) {
+      toast.error(`Limite de olheiros atingido (Máx: ${SCOUT_LIMIT})`);
       return;
     }
 
@@ -159,8 +160,8 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-6 bg-black/40 border border-white/5 p-1 h-12">
-          <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MEUS OLHEIROS ({myScouts.length})
+          <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] sm:text-sm">
+            MEUS OLHEIROS ({myScouts.length}/{SCOUT_LIMIT})
           </TabsTrigger>
           <TabsTrigger value="market" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
             MERCADO SEMANAL
@@ -321,7 +322,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                     <Button 
                       className="w-full h-10 font-black uppercase text-[10px] gap-2 shadow-lg shadow-primary/10"
                       onClick={() => handleHireScout(scout)}
-                      disabled={myScouts.length >= 5}
+                      disabled={myScouts.length >= SCOUT_LIMIT}
                     >
                       <UserPlus className="h-3 w-3" /> Contratar por 5 Temp.
                     </Button>
