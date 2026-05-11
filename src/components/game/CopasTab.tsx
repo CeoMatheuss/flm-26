@@ -243,11 +243,21 @@ export function CopasTab({ userId }: Props) {
 
               <div className="flex flex-col items-center gap-1">
                 <div className="px-4 py-1 rounded-full bg-muted font-black text-xs italic tracking-tighter">VS</div>
-                {myNextMatch && (
-                  <Button size="sm" className="h-8 px-4 font-black text-[10px] animate-pulse" onClick={handlePlay2D}>
-                    <Play className="h-3 w-3 mr-1" /> JOGAR 2D
-                  </Button>
-                )}
+                {myNextMatch && (() => {
+                  const kickoff = new Date(myNextMatch.scheduled_at).getTime();
+                  const now = Date.now();
+                  const isReady = now >= kickoff && now <= kickoff + (5 * 60 * 1000);
+                  const minsLeft = Math.max(0, Math.ceil((kickoff - now) / 60000));
+                  return isReady ? (
+                    <Button size="sm" className="h-8 px-4 font-black text-[10px] animate-pulse" onClick={handlePlay2D}>
+                      <Play className="h-3 w-3 mr-1" /> JOGAR 2D
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" disabled className="h-8 px-4 font-black text-[10px]">
+                      {minsLeft > 60 ? `${Math.floor(minsLeft/60)}h ${minsLeft%60}m` : `${minsLeft}min`}
+                    </Button>
+                  );
+                })()}
                 <div className="h-px w-8 bg-border"></div>
               </div>
 
