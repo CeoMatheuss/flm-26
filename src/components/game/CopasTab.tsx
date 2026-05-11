@@ -119,14 +119,58 @@ export function CopasTab({ userId }: Props) {
     );
   }
 
+  const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
+  const myNextMatch = matches.find(
+    m => (m.status === 'scheduled' || m.status === 'live') &&
+         (m.home?.user_id === userId || m.away?.user_id === userId)
+  );
+  const highlight = myNextMatch || nextMatch;
+  const totalPrize = matches
+    .filter(m => m.status === 'finished').length * 50000;
+
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-xl font-black flex items-center gap-2">
           <Trophy className="h-6 w-6 text-primary" /> {cup.name}
         </h2>
-        <Badge variant="secondary">Temporada {cup.season}</Badge>
+        <Badge variant="secondary">Temporada {cup.season} • Fase {cup.current_round}/{cup.total_rounds}</Badge>
       </div>
+
+      {highlight && (
+        <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-transparent">
+          <CardHeader className="py-2 px-3 border-b border-border/50">
+            <CardTitle className="text-[10px] uppercase tracking-wider text-primary flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Trophy className="h-3 w-3" /> {myNextMatch ? 'SEU PRÓXIMO JOGO' : 'PRÓXIMO JOGO DA COPA'}
+              </span>
+              <Badge variant="outline" className="text-[8px] h-4">FASE {highlight.round}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <ClubShield club={{ logoUrl: highlight.home?.club_logo } as any} size={28} />
+                <span className={`text-xs font-bold truncate ${highlight.home?.user_id === userId ? 'text-primary' : ''}`}>
+                  {highlight.home?.club_name}
+                </span>
+              </div>
+              <div className="flex flex-col items-center px-2">
+                <span className="text-[10px] font-black text-muted-foreground">VS</span>
+                <span className="text-[9px] text-muted-foreground">
+                  {new Date(highlight.scheduled_at).toLocaleDateString()} • 12:00
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                <span className={`text-xs font-bold truncate text-right ${highlight.away?.user_id === userId ? 'text-primary' : ''}`}>
+                  {highlight.away?.club_name}
+                </span>
+                <ClubShield club={{ logoUrl: highlight.away?.club_logo } as any} size={28} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-muted/50 p-1 mb-4 grid grid-cols-3">

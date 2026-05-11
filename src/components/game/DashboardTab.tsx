@@ -16,7 +16,7 @@ import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { GlobalCompetitionsWidget } from './GlobalCompetitionsWidget';
-import { PersonalizedCupWidget } from './PersonalizedCupWidget';
+
 
 // Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
@@ -275,12 +275,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenTournament={onOpenTournament}
-        />
-      )}
+
+
 
 
       {/* TournamentDashboardCard Removido */}
