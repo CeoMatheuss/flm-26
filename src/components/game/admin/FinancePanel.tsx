@@ -53,15 +53,14 @@ export function FinancePanel() {
   const loadLogs = useCallback(async () => {
     setLoadingLogs(true);
     const { data } = await supabase
-      .from('admin_logs')
+      .from('admin_finance_logs')
       .select(`
         *,
-        admin:user_id(display_name),
+        admin:admin_id(display_name),
         target:target_user_id(display_name)
       `)
-      .eq('action', 'add_money')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(15);
     if (data) setLogs(data);
     setLoadingLogs(false);
   }, []);
