@@ -113,21 +113,35 @@ serve(async (req) => {
             if (!matches || matches.length === 0) continue;
 
             for (const match of matches) {
+                // Simulação ultra-rápida (autoritativa)
                 const homeS = match.home?.strength || 50;
                 const awayS = match.away?.strength || 50;
                 const prob = homeS / (homeS + awayS);
                 
-                const homeScore = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
-                const awayScore = Math.floor(Math.random() * 3) + (Math.random() < (1-prob) ? 1 : 0);
+                const homeGoals = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
+                const awayGoals = Math.floor(Math.random() * 3) + (Math.random() < (1-prob) ? 1 : 0);
                 
                 let winner_id;
-                if (homeScore > awayScore) winner_id = match.home_team_id;
-                else if (awayScore > homeScore) winner_id = match.away_team_id;
-                else winner_id = Math.random() < prob ? match.home_team_id : match.away_team_id;
+                let homePen = null;
+                let awayPen = null;
+
+                if (homeGoals > awayGoals) {
+                    winner_id = match.home_team_id;
+                } else if (awayGoals > homeGoals) {
+                    winner_id = match.away_team_id;
+                } else {
+                    // Empate em Copa = Pênaltis obrigatórios
+                    homePen = Math.floor(Math.random() * 5) + 3;
+                    awayPen = Math.floor(Math.random() * 5) + 3;
+                    if (homePen === awayPen) homePen++; // Desempate simples
+                    winner_id = homePen > awayPen ? match.home_team_id : match.away_team_id;
+                }
 
                 await supabase.from('national_cup_matches').update({
-                    home_score: homeScore,
-                    away_score: awayScore,
+                    home_score: homeGoals,
+                    away_score: awayGoals,
+                    home_penalties: homePen,
+                    away_penalties: awayPen,
                     status: 'finished',
                     winner_team_id: winner_id,
                     match_data: {
