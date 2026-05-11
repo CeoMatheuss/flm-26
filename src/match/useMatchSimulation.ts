@@ -49,6 +49,8 @@ export interface MatchState {
   latestEvent: SimEvent | null;
   stats: MatchStats;
   stadiumName: string;
+  stadiumCapacity: number;
+  attendance: number;
   matchDbId: string | null;
   errorMsg: string | null;
   competition: string;
