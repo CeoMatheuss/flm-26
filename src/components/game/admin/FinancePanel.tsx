@@ -231,9 +231,9 @@ export function FinancePanel() {
             )}
           </div>
 
-          {!search && !selected && (
+          {!search && !selected && filtered.length === 0 && (
             <p className="text-[10px] text-muted-foreground italic px-1">
-              Digite ao menos 1 caractere para iniciar a busca.
+              Digite ao menos 1 caractere para filtrar ou selecione uma sugestão abaixo.
             </p>
           )}
         </CardContent>
