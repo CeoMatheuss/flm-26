@@ -168,6 +168,7 @@ export function useMatchState(initialState: any, userId?: string) {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
+          if (deps.isFriendly) return p;
           const drain = Math.floor(Math.random() * 15 + 10); 
           const newStamina = Math.max(0, p.stamina - drain);
           return {
