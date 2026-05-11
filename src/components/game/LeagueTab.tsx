@@ -78,13 +78,20 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           .select('*')
           .in('user_id', teamIds);
 
+        // Buscar shield_config completo das save games via RPC pública
+        const teamNames = standingsData.map(r => r.world_teams?.name).filter(Boolean);
+        const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
+        const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
         const enhancedStandings = standingsData.map(row => {
           const club = clubsData?.find(c => c.user_id === row.world_teams?.user_id);
+          const shieldFromSave = shieldByName.get(row.world_teams?.name);
           return {
             ...row,
             world_teams: {
               ...row.world_teams,
-              ...club // Spread club metadata (primaryColor, shield_config, etc) into team
+              ...club, // Spread club metadata (primaryColor, shield_config, etc) into team
+              shield_config: shieldFromSave || (club as any)?.shield_config,
             }
           };
         });
@@ -114,16 +121,26 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           .select('*')
           .in('user_id', userIds);
 
+        const allNames = [
+          ...fixturesData.map(f => f.home_team?.name),
+          ...fixturesData.map(f => f.away_team?.name)
+        ].filter(Boolean);
+        const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: allNames });
+        const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
+
+        const enhanceTeam = (t: any) => {
+          const club = clubsData?.find(c => c.user_id === t?.user_id);
+          return {
+            ...t,
+            ...club,
+            shield_config: shieldByName.get(t?.name) || (club as any)?.shield_config,
+          };
+        };
+
         const enhancedFixtures = fixturesData.map(match => ({
           ...match,
-          home_team: {
-            ...match.home_team,
-            ...clubsData?.find(c => c.user_id === match.home_team?.user_id)
-          },
-          away_team: {
-            ...match.away_team,
-            ...clubsData?.find(c => c.user_id === match.away_team?.user_id)
-          }
+          home_team: enhanceTeam(match.home_team),
+          away_team: enhanceTeam(match.away_team),
         }));
         setFixtures(enhancedFixtures);
       }
