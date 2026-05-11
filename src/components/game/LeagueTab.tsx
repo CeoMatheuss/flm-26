@@ -416,7 +416,17 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
                           <div className="flex justify-start gap-1">
-                            <ClubShield club={match.away_team as any} fallbackText={match.away_team?.name} size={28} />
+                             <ClubShield 
+                               club={{
+                                 ...match.away_team,
+                                 primaryColor: match.away_team?.primary_color || match.away_team?.primaryColor,
+                                 secondaryColor: match.away_team?.secondary_color || match.away_team?.secondaryColor,
+                                 shieldConfig: match.away_team?.shield_config || match.away_team?.shieldConfig,
+                                 logoUrl: match.away_team?.logo_url || match.away_team?.logoUrl || match.away_team?.logo
+                               }} 
+                               fallbackText={match.away_team?.name} 
+                               size={28} 
+                             />
                           </div>
                        </div>
                      </div>
