@@ -309,13 +309,25 @@ export function useMatchSimulation() {
       homeTeam: data.home_team,
       awayTeam: data.away_team,
       stadiumName: data.stadium_name,
+      stadiumCapacity: data.stadium_capacity || 0,
+      attendance: data.attendance || 0,
       matchDbId: data.id,
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
     };
     if (data.status === 'finished') {
       persistedRef.current = true;
-      setState(s => ({ ...s, phase: 'finished', currentMinute: 90, progress: 1, visibleEvents: events, latestEvent: events[events.length-1] }));
+      setState(s => ({ 
+        ...s, 
+        phase: 'finished', 
+        currentMinute: 90, 
+        progress: 1, 
+        visibleEvents: events, 
+        latestEvent: events[events.length-1],
+        stadiumName: data.stadium_name,
+        stadiumCapacity: data.stadium_capacity || 0,
+        attendance: data.attendance || 0,
+      }));
       return true;
     }
     startTick();
