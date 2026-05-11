@@ -143,7 +143,7 @@ export default function MatchPage() {
       }
     }
 
-    await startMatch({
+    const result = await startMatch({
       homeTeam: locState.homeTeam,
       awayTeam: locState.awayTeam,
       homePlayers: players,
@@ -160,8 +160,13 @@ export default function MatchPage() {
       awayFans: locState.awayFans || 500,
       tieBreaker: locState.tieBreaker || 'none',
     });
+    if (!result?.success) {
+      toast.error(`Erro ao iniciar partida: ${(result as any)?.error || 'tente novamente'}`);
+      navigate('/', { replace: true });
+      return;
+    }
     setInitDone(true);
-  }, [locState, startMatch]);
+  }, [locState, startMatch, navigate]);
 
   // Auto-start or reconnect
   useEffect(() => {
