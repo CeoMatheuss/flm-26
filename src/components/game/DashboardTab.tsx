@@ -107,9 +107,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     const r = playedMatches[i].result;
     if (!r) break;
     const isHome = playedMatches[i].isHome;
-    const t = (isHome ? r.home > r.away : r.away > r.home) ? 'V' : (r.home === r.away ? 'E' : 'D');
-    if (streakType === '') streakType = t;
-    if (t === streakType) streak++;
+    const translated = t === 'V' ? 'V' : (t === 'E' ? 'E' : 'D');
+    if (streakType === '') streakType = translated;
+    if (translated === streakType) streak++;
     else break;
   }
   const streakLabel = streak > 0 ? `${streak}${streakType} seguidas` : 'Nenhuma';
