@@ -2762,6 +2762,136 @@ export type Database = {
           },
         ]
       }
+      scout_missions: {
+        Row: {
+          created_at: string | null
+          ends_at: string
+          id: string
+          reward_multiplier: number
+          risk: number
+          scout_id: string
+          starts_at: string | null
+          status: Database["public"]["Enums"]["mission_status"]
+          target_position: string | null
+          type: Database["public"]["Enums"]["mission_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          ends_at: string
+          id?: string
+          reward_multiplier?: number
+          risk?: number
+          scout_id: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["mission_status"]
+          target_position?: string | null
+          type: Database["public"]["Enums"]["mission_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          ends_at?: string
+          id?: string
+          reward_multiplier?: number
+          risk?: number
+          scout_id?: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["mission_status"]
+          target_position?: string | null
+          type?: Database["public"]["Enums"]["mission_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_missions_scout_id_fkey"
+            columns: ["scout_id"]
+            isOneToOne: false
+            referencedRelation: "scouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scout_reports: {
+        Row: {
+          accuracy: number
+          created_at: string | null
+          id: string
+          mission_id: string
+          player_data: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          accuracy: number
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          player_data: Json
+          status?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          player_data?: Json
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_reports_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "scout_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scouts: {
+        Row: {
+          avatar_url: string | null
+          country: string
+          created_at: string | null
+          efficiency: number
+          id: string
+          is_busy: boolean
+          level: Database["public"]["Enums"]["scout_level"]
+          name: string
+          specialization: Database["public"]["Enums"]["scout_specialization"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          country: string
+          created_at?: string | null
+          efficiency?: number
+          id?: string
+          is_busy?: boolean
+          level?: Database["public"]["Enums"]["scout_level"]
+          name: string
+          specialization?: Database["public"]["Enums"]["scout_specialization"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          country?: string
+          created_at?: string | null
+          efficiency?: number
+          id?: string
+          is_busy?: boolean
+          level?: Database["public"]["Enums"]["scout_level"]
+          name?: string
+          specialization?: Database["public"]["Enums"]["scout_specialization"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       season_awards: {
         Row: {
           ai_image_url: string | null
@@ -4350,6 +4480,10 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      mission_status: "em_andamento" | "concluída" | "cancelada"
+      mission_type: "local" | "global" | "posição" | "promessas"
+      scout_level: "baixo" | "médio" | "alto" | "elite"
+      scout_specialization: "ataque" | "defesa" | "meio" | "jovens" | "geral"
       world_competition_status:
         | "locked"
         | "pending"
@@ -4485,6 +4619,10 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      mission_status: ["em_andamento", "concluída", "cancelada"],
+      mission_type: ["local", "global", "posição", "promessas"],
+      scout_level: ["baixo", "médio", "alto", "elite"],
+      scout_specialization: ["ataque", "defesa", "meio", "jovens", "geral"],
       world_competition_status: [
         "locked",
         "pending",
