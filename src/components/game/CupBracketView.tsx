@@ -25,11 +25,11 @@ export function CupBracketView({ matches }: Props) {
                     <CardContent className="p-2 space-y-1">
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="font-bold truncate max-w-[80px]">{m.home?.club_name || 'TBD'}</span>
-                        <span className="font-black">{m.home_goals ?? '-'}</span>
+                        <span className="font-black">{m.home_score ?? 0}</span>
                       </div>
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="font-bold truncate max-w-[80px]">{m.away?.club_name || 'TBD'}</span>
-                        <span className="font-black">{m.away_goals ?? '-'}</span>
+                        <span className="font-black">{m.away_score ?? 0}</span>
                       </div>
                     </CardContent>
                   </Card>
