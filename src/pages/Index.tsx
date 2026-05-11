@@ -235,15 +235,28 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         // NATIONAL CUP AUTOMATION (DAY 10 DRAW / DAILY SIM)
         const today = new Date();
         const day = today.getDate();
-        const isOfficialDrawDay = day === 10;
         
-        if (isOfficialDrawDay) {
-          // Check if already drawn today to avoid loops
+        // 1. Geração automática no Dia 10
+        if (day === 10) {
           const lastDraw = localStorage.getItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`);
           if (!lastDraw) {
             console.log('[CupManager] Official Draw Day detected (10th). Running Global Draw...');
-            supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all' } });
+            supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all_national_cups' } });
             localStorage.setItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`, 'done');
+          }
+        }
+
+        // 2. Simulação diária automática (Dia 11 ao fim)
+        if (day >= 11) {
+          const lastSim = localStorage.getItem(`cup_sim_${day}_${today.getMonth()}_${today.getFullYear()}`);
+          if (!lastSim) {
+            const currentHour = today.getHours();
+            // Simular se passou das 12:05 (janela de 5 min para humanos entrarem)
+            if (currentHour >= 12) {
+              console.log('[CupManager] Daily Simulation window open. Checking for matches...');
+              supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } });
+              localStorage.setItem(`cup_sim_${day}_${today.getMonth()}_${today.getFullYear()}`, 'done');
+            }
           }
         }
       } catch (e) {
