@@ -147,23 +147,23 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tighter flex items-center gap-2 text-white">
-            <Search className="h-6 w-6 text-primary" /> SCOUTING ENGINE V3
+            <Search className="h-6 w-6 text-primary" /> MEUS OLHEIROS
           </h1>
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-            {activeTab === 'scouts' ? 'Gerencie seu departamento de olheiros' : 
-             activeTab === 'market' ? 'Contrate novos talentos para sua equipe' :
-             'Relatórios de campo detalhados'}
+            {activeTab === 'scouts' ? 'Departamento de recrutamento ativo' : 
+             activeTab === 'market' ? 'Olheiro semanal disponível para contratação' :
+             'Resultados e descobertas recentes'}
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="scouts" className="w-full" onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-6 bg-black/40 border border-white/5 p-1 h-12">
           <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MEUS OLHEIROS ({myScouts.length}/5)
+            MEUS OLHEIROS ({myScouts.length})
           </TabsTrigger>
           <TabsTrigger value="market" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MERCADO ({marketScouts.length})
+            MERCADO SEMANAL
           </TabsTrigger>
           <TabsTrigger value="reports" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
             RELATÓRIOS ({reports.length})
