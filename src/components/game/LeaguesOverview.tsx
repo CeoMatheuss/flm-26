@@ -112,7 +112,7 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                   {standings.map((row, i) => (
                     <TableRow key={row.id} className={row.world_teams?.name === clubName ? 'bg-primary/10' : ''}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="flex items-center gap-2 text-sm truncate">
+                      <TableCell className="flex items-center gap-2 text-sm truncate cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: row.world_teams?.name } }))}>
                         <ClubShield club={{ logoUrl: row.world_teams?.logo } as any} size={24} />
                         <span className="font-medium truncate">{row.world_teams?.name}</span>
                       </TableCell>
