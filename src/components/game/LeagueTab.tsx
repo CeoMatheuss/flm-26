@@ -235,9 +235,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <ClubShield 
-                                club={row.world_teams?.is_bot ? null : row.world_teams as any} 
-                                size={24} 
-                                className="shrink-0" 
+                                club={row.world_teams as any} 
+                                size={28} 
+                                className="shrink-0 drop-shadow-sm" 
                               />
                               <div className="flex flex-col">
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
@@ -316,7 +316,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-right space-y-1">
                          <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
                           <div className="flex justify-end gap-1">
-                            <ClubShield club={(match.home_team && !match.home_team.is_bot) ? match.home_team as any : null} size={24} />
+                            <ClubShield club={match.home_team as any} size={28} />
                           </div>
                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
@@ -339,7 +339,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
                           <div className="flex justify-start gap-1">
-                            <ClubShield club={(match.away_team && !match.away_team.is_bot) ? match.away_team as any : null} size={24} />
+                            <ClubShield club={match.away_team as any} size={28} />
                           </div>
                        </div>
                      </div>
