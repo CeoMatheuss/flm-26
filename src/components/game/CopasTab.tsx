@@ -21,6 +21,7 @@ export function CopasTab({ userId }: Props) {
   const [prizes, setPrizes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   const loadInitial = async () => {
     try {
       const { data: cups } = await supabase
