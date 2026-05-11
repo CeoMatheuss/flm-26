@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LeaguesOverview } from './LeaguesOverview';
-import { Globe } from 'lucide-react';
+import { CopasTab } from './CopasTab';
+import { Globe, Trophy } from 'lucide-react';
+
 
 interface Props {
   rating?: number;
