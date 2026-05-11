@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X, Landmark, AlertTriangle } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { ClubShield } from './ClubShield';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
@@ -11,6 +11,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMatchShields } from '@/hooks/useMatchShields';
+import { isDateBlockedByEvents } from '@/match/stadiumEvents';
+
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
 function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
