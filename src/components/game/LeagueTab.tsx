@@ -302,7 +302,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-right space-y-1">
                          <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
                           <div className="flex justify-end gap-1">
-                            <ClubShield club={{ logoUrl: match.home_team?.logo } as any} size={24} />
+                            <ClubShield club={match.home_team ? { logoUrl: match.home_team.logo } : null} size={24} />
                           </div>
                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
