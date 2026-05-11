@@ -39,6 +39,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 import { ClubProfilePage } from '@/components/game/ClubProfilePage';
+import { QuickClubProfile } from '@/components/game/QuickClubProfile';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
@@ -611,50 +612,22 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   const showAdmin = isAdminRole;
 
-  const viewedMember = useMemo(() => {
-    if (!viewingClubName) return null;
-    return mp.members.find(m => m.club_name === viewingClubName);
-  }, [viewingClubName, mp.members]);
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Club Profile Detail Modal */}
+      {/* Club Profile Detail Modal — instantâneo via QuickClubProfile (clubs + world_teams) */}
       <Dialog open={!!viewingClubName} onOpenChange={(open) => !open && handleClubViewClose()}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background border-border max-h-[90vh] flex flex-col">
-          <div className="p-4 border-b bg-muted/20 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
-            <DialogTitle className="text-lg font-black flex items-center gap-2">
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background border-border max-h-[90vh] flex flex-col">
+          <div className="p-3 border-b bg-muted/20 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+            <DialogTitle className="text-base font-black flex items-center gap-2">
               ⚽ Perfil do Clube
             </DialogTitle>
-            <Button variant="ghost" size="icon" onClick={handleClubViewClose} className="h-8 w-8 rounded-full">
+            <Button variant="ghost" size="icon" onClick={handleClubViewClose} className="h-7 w-7 rounded-full">
               <X className="h-4 w-4" />
             </Button>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-4 sm:p-6 pb-20">
-              {viewedMember ? (
-                <ClubProfilePage
-                  member={viewedMember}
-                  members={mp.members}
-                  userId={userId}
-                  leagueMatches={mp.leagueMatches}
-                  leagueSquads={mp.leagueSquads}
-                  onBack={handleClubViewClose}
-                  budget={game.club.budget}
-                  clubName={game.club.name}
-                  onPlayerBought={(p, price, sal, dur) => {
-                    game.buyPlayer({ ...p, salary: sal, contract: dur });
-                    setSigningPlayer({ name: p.name, position: p.position, overall: p.overall, age: p.age });
-                    saveSigningNews(p.name, p.position, p.overall, p.age, 'signing');
-                  }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center animate-pulse">
-                    <Loader2 className="h-8 w-8 text-muted-foreground/30 animate-spin" />
-                  </div>
-                  <p className="text-muted-foreground italic">Sincronizando dados do clube no servidor...</p>
-                </div>
-              )}
+            <div className="p-3 sm:p-4 pb-20">
+              {viewingClubName && <QuickClubProfile clubName={viewingClubName} />}
             </div>
           </ScrollArea>
         </DialogContent>
