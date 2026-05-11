@@ -260,16 +260,31 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </TableCell>
                           <TableCell className="text-center text-xs hidden lg:table-cell">{Math.round(row.win_rate)}%</TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-center gap-1">
-                              {form.map((res, idx) => (
-                                <div 
-                                  key={idx} 
-                                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white
-                                    ${res === 'V' ? 'bg-emerald-500' : res === 'E' ? 'bg-amber-500' : res === 'D' ? 'bg-red-500' : 'bg-muted text-muted-foreground'}`}
-                                >
-                                  {res !== '-' ? res : ''}
-                                </div>
-                              ))}
+                            <div className="flex items-center justify-center gap-1.5">
+                              {form.map((res, idx) => {
+                                const bgColor = 
+                                  res === 'V' ? 'bg-[#22c55e]' : // Green
+                                  res === 'E' ? 'bg-[#94a3b8]' : // Gray/Slate
+                                  res === 'D' ? 'bg-[#ef4444]' : // Red
+                                  'bg-muted/30';
+                                
+                                const label = 
+                                  res === 'V' ? 'V' : 
+                                  res === 'E' ? 'E' : 
+                                  res === 'D' ? 'D' : 
+                                  '';
+
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    className={`w-5 h-5 rounded-sm flex items-center justify-center text-[10px] font-black text-white shadow-sm border border-black/10
+                                      ${bgColor} transition-transform hover:scale-110 cursor-default`}
+                                    title={res === 'V' ? 'Vitória' : res === 'E' ? 'Empate' : res === 'D' ? 'Derrota' : 'Sem jogo'}
+                                  >
+                                    {label}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </TableCell>
                         </TableRow>
