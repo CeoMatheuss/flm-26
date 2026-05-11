@@ -199,6 +199,8 @@ export default function MatchPage() {
         setPreMatchDone(true);
         const found = await findActiveMatch();
         if (!found && !cancelled) {
+          // Se não achou por user_id, mas veio de um redirecionamento sem ID (ex: clique no widget de outro)
+          // Tenta carregar se houver algum indício, mas findActiveMatch já busca o mais recente.
           navigate('/', { replace: true });
           return;
         }

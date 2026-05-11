@@ -301,10 +301,15 @@ export function useMatchSimulation() {
   const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
     const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
+    
     if (error || !data) {
       setState(s => ({ ...s, phase: 'error', errorMsg: error?.message || 'Partida não encontrada ou já encerrada.' }));
       return false;
     }
+
+    // Se a partida pertence a outro usuário, devemos permitir visualizar se for uma partida de campeonato (oponente)
+    // Mas para simplicidade e segurança, o loadMatch deve focar no estado da partida.
+    // O erro 99% costuma ser aqui se o maybeSingle retornar nulo por RLS ou ID errado.
     const events = (data.events as any as SimEvent[]) || [];
     dataRef.current = {
       allEvents: events,
