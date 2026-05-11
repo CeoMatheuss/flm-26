@@ -37,6 +37,10 @@ export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName
         <TabsContent value="overview" className="mt-0">
           <LeaguesOverview onBack={() => {}} />
         </TabsContent>
+        <TabsContent value="copas" className="mt-0">
+          <CopasTab userId={userId} />
+        </TabsContent>
+
       </Tabs>
     </div>
   );
