@@ -309,7 +309,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <TableCell className={`text-center text-xs ${posColor}`}>
                             {i + 1}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="cursor-pointer group/row" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: row.world_teams?.name } }))}>
                             <div className="flex items-center gap-3">
                               <div className="shrink-0 flex items-center justify-center">
                                 <ClubShield 
@@ -324,12 +324,12 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                                     logoUrl: row.world_teams?.logo_url || row.world_teams?.logoUrl || row.world_teams?.logo
                                   }}
                                   size={28}
-                                  className="drop-shadow-sm"
+                                  className="drop-shadow-sm group-hover/row:scale-110 transition-transform"
                                   fallbackText={row.world_teams?.name}
                                 />
                               </div>
                               <div className="flex flex-col">
-                                <span className={`text-sm truncate max-w-[120px] md:max-w-none ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
+                                <span className={`text-sm truncate max-w-[120px] md:max-w-none group-hover/row:text-primary transition-colors ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
                                 </span>
                                 {isPlayerTeam && <span className="text-[8px] uppercase tracking-tighter text-primary font-bold">Seu Clube</span>}
