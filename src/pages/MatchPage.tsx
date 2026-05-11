@@ -878,15 +878,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
     return map;
   }, [homePlayers, currentMinute, liveTactics, isHalftime, enteredAtMap, substitutedPlayerIds, matchState.playerStamina]);
 
-  // ── Inline section refs (for scroll-to-section navigation) ──
-  const tacticsSectionRef = useRef<HTMLDivElement>(null);
-  const lineupSectionRef = useRef<HTMLDivElement>(null);
-  const statsSectionRef = useRef<HTMLDivElement>(null);
-  const assistantSectionRef = useRef<HTMLDivElement>(null);
-  const scrollToSection = useCallback((ref: React.RefObject<HTMLDivElement>) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
   // Process queued substitutions — rápido: aplica imediatamente após qualquer evento
   // Substituição agendada para minuto X aguarda o minuto chegar.
   // No intervalo, queue espera; assim que voltar (currentMinute >= 46) é processada.
@@ -1157,39 +1148,21 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
       )}
 
       {/* ═══ FIXED TOP BAR with action buttons ═══ */}
-      <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-2 sm:px-3 py-2 space-y-2">
-        {/* Row 1: Exit + Competition + Stadium */}
+      <div className="sticky top-0 z-40 bg-[hsl(var(--background))]/95 backdrop-blur-md border-b border-border/20 px-3 py-2">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1" onClick={onExit}>
-            <LogOut className="h-3.5 w-3.5" /> {isFinished ? 'Sair' : 'Sair'}
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5" onClick={onExit}>
+            <LogOut className="h-3.5 w-3.5" /> Sair
           </Button>
-          <div className="flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[10px] sm:text-xs font-medium h-6">{competition || 'Amistoso'}</Badge>
-            <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[200px]">
-              🏟️ {stadiumName} {matchState.attendance > 0 ? `(${matchState.attendance.toLocaleString()} / ${matchState.stadiumCapacity.toLocaleString()})` : ''}
+          
+          <div className="flex flex-col items-end">
+            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest text-primary border-primary/20 bg-primary/5 mb-0.5">
+              {competition || 'Amistoso'}
+            </Badge>
+            <span className="text-[9px] text-muted-foreground truncate max-w-[150px] sm:max-w-none">
+              🏟️ {stadiumName}
             </span>
           </div>
         </div>
-
-        {/* Row 2: Compact stats nav (clean neutral chips) */}
-        {!isFinished && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button onClick={() => scrollToSection(statsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <BarChart3 className="h-3.5 w-3.5" /> Stats
-            </button>
-            <button onClick={() => scrollToSection(lineupSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <Users className="h-3.5 w-3.5" /> Escalação
-            </button>
-            <button onClick={() => scrollToSection(tacticsSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <Settings2 className="h-3.5 w-3.5" /> Tática
-            </button>
-            {hasAssistant && (
-              <button onClick={() => scrollToSection(assistantSectionRef)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/30 bg-card/40 hover:bg-card/70 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-                <MessageSquare className="h-3.5 w-3.5" /> Técnico ({matchState.assistantTips.length})
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ═══ MATCH CONTENT ═══ */}
@@ -1197,114 +1170,124 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
         <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-3 space-y-2 sm:space-y-3 lg:space-y-0">
           {/* ═══ MAIN COLUMN ═══ */}
           <div className="space-y-2 sm:space-y-3 min-w-0">
-            {/* Professional Scoreboard — compact */}
-            <Card className={`overflow-hidden transition-all duration-500 ${goalFlash ? 'ring-2 ring-yellow-400/60 animate-goal-glow' : 'shadow-lg'}`}>
-              <div className="bg-primary/10 px-2.5 sm:px-3 py-1.5 flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary">{phaseLabel()}</span>
-                <Badge variant={isFinished ? 'default' : 'secondary'} className="text-xs sm:text-sm font-mono h-6 sm:h-7 px-2.5 sm:px-3">
-                  {currentMinute}'
-                </Badge>
+            {/* Professional Scoreboard — TV Broadcast Style */}
+            <Card className={`overflow-hidden transition-all duration-500 relative ${goalFlash ? 'ring-2 ring-yellow-400/60 animate-goal-glow shadow-2xl shadow-yellow-400/20' : 'shadow-lg'}`}>
+              <div className="bg-muted/10 px-3 py-1 flex items-center justify-between border-b border-border/10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{phaseLabel()}</span>
+                <div className="flex items-center gap-1.5">
+                  {!isFinished && <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                  <span className="text-xs font-mono font-bold">{currentMinute}'</span>
+                </div>
               </div>
 
-              <CardContent className="p-2 sm:p-3 space-y-2">
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 {isHalftime ? (
-                  /* Halftime focus banner — compact */
-                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-xl p-3 sm:p-4 text-center space-y-1.5 animate-fade-in">
-                    <p className="text-2xl sm:text-3xl">⏸️</p>
-                    <p className="text-base sm:text-xl font-black text-primary tracking-wide">INTERVALO</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">Descanso · Use o tempo para ajustes</p>
-                    <div className={`inline-block text-xl sm:text-2xl font-black font-mono px-3 sm:px-4 py-1.5 rounded-lg mt-1 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                      <span className="text-foreground">{homeGoals}</span>
-                      <span className="text-muted-foreground/60 mx-2">x</span>
-                      <span className="text-foreground">{awayGoals}</span>
+                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-2 animate-fade-in">
+                    <p className="text-3xl">⏸️</p>
+                    <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                    <div className="flex items-center justify-center gap-6">
+                       <div className="text-center">
+                         <div className="mb-1 flex justify-center">{homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
+                         <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{homeTeam}</p>
+                       </div>
+                       <div className="text-4xl font-black font-mono flex items-center gap-3">
+                         <span>{homeGoals}</span>
+                         <span className="text-muted-foreground/30">-</span>
+                         <span>{awayGoals}</span>
+                       </div>
+                       <div className="text-center">
+                         <div className="mb-1 flex justify-center">{awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
+                         <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{awayTeam}</p>
+                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {/* Teams + Score — compact */}
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <div className="flex-1 text-right space-y-0.5 min-w-0">
-                        <p className="text-xs sm:text-base font-black truncate">{homeTeam}</p>
-                        <div className="flex items-center gap-1 justify-end flex-wrap">
-                          {goalEvents.filter(e => e.team === 'home').slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                    <div className="flex items-center justify-between gap-2 sm:gap-4">
+                      {/* Home Team */}
+                      <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right min-w-0">
+                        <div className="mb-2 hidden sm:block">
+                          {homeShield ? <ShieldCrest size={48} {...homeShield} /> : <div className="w-12 h-12 bg-muted rounded-full" />}
+                        </div>
+                        <div className="sm:hidden mb-1">
+                          {homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}
+                        </div>
+                        <p className="text-sm sm:text-xl font-black truncate w-full uppercase tracking-tight">{homeTeam}</p>
+                        <div className="mt-1 flex flex-wrap justify-center sm:justify-end gap-x-2 gap-y-0.5 max-h-12 overflow-y-auto">
+                          {goalEvents.filter(e => e.team === 'home').map((g, i) => (
+                            <span key={i} className="text-[9px] text-muted-foreground whitespace-nowrap">⚽ {g.playerName.split(' ').pop()} {g.minute}'</span>
                           ))}
                         </div>
                       </div>
 
-                      <div className={`text-2xl sm:text-4xl font-black font-mono px-2 sm:px-5 py-1 sm:py-1.5 rounded-lg min-w-[70px] sm:min-w-[110px] text-center transition-all duration-300 ${goalFlash ? 'bg-yellow-400/20 scale-110' : 'bg-muted/20'}`}>
-                        <span className="text-primary">{homeGoals}</span>
-                        <span className="text-muted-foreground/50 text-lg sm:text-2xl mx-0.5">:</span>
-                        <span className="text-primary">{awayGoals}</span>
+                      {/* Score Display */}
+                      <div className="flex flex-col items-center justify-center px-4">
+                        <div className={`text-4xl sm:text-6xl font-black font-mono tracking-tighter transition-all duration-300 ${goalFlash ? 'text-yellow-400 scale-110' : 'text-foreground'}`}>
+                          {homeGoals}<span className="text-muted-foreground/20 mx-1 sm:mx-2">:</span>{awayGoals}
+                        </div>
+                        {!isFinished && (
+                           <div className="w-full mt-2 h-1 bg-muted/20 rounded-full overflow-hidden">
+                             <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${(progress || 0) * 100}%` }} />
+                           </div>
+                        )}
                       </div>
 
-                      <div className="flex-1 text-left space-y-0.5 min-w-0">
-                        <p className="text-xs sm:text-base font-black truncate">{awayTeam}</p>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {goalEvents.filter(e => e.team === 'away').slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[8px] sm:text-[10px] text-muted-foreground">⚽ {g.playerName} {g.minute}'</span>
+                      {/* Away Team */}
+                      <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left min-w-0">
+                        <div className="mb-2 hidden sm:block">
+                          {awayShield ? <ShieldCrest size={48} {...awayShield} /> : <div className="w-12 h-12 bg-muted rounded-full" />}
+                        </div>
+                        <div className="sm:hidden mb-1">
+                          {awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}
+                        </div>
+                        <p className="text-sm sm:text-xl font-black truncate w-full uppercase tracking-tight">{awayTeam}</p>
+                        <div className="mt-1 flex flex-wrap justify-center sm:justify-start gap-x-2 gap-y-0.5 max-h-12 overflow-y-auto">
+                          {goalEvents.filter(e => e.team === 'away').map((g, i) => (
+                            <span key={i} className="text-[9px] text-muted-foreground whitespace-nowrap">⚽ {g.playerName.split(' ').pop()} {g.minute}'</span>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    {/* Goal flash banner — compact */}
-                    {goalFlash && latestEvent?.isGoal && (
-                      <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-lg p-1.5 sm:p-2 text-center animate-fade-in">
-                        <p className="text-sm sm:text-base font-black text-emerald-400">⚽ GOOOL! {latestEvent.playerName || 'Jogador'}</p>
-                        {latestEvent.assistName && (
-                          <p className="text-[10px] sm:text-xs text-emerald-400/70">Assistência: {latestEvent.assistName}</p>
-                        )}
+                    {/* Possession bar */}
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <span>Posse: {possession[0]}%</span>
+                        <span>{possession[1]}%</span>
                       </div>
-                    )}
-
-                    {/* Possession bar — thinner */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] sm:text-xs font-bold text-blue-400 w-8 sm:w-10 text-right">{possession[0]}%</span>
-                      <div className="flex-1 flex h-2 rounded-full overflow-hidden bg-muted/10">
-                        <div className="bg-blue-500 transition-all duration-700 rounded-l-full" style={{ width: `${possession[0]}%` }} />
-                        <div className="bg-red-500 flex-1 rounded-r-full" />
+                      <div className="flex h-1.5 rounded-full overflow-hidden bg-muted/10">
+                        <div className="bg-blue-500 transition-all duration-700" style={{ width: `${possession[0]}%` }} />
+                        <div className="bg-red-500 flex-1" />
                       </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-red-400 w-8 sm:w-10">{possession[1]}%</span>
                     </div>
                   </>
                 )}
-
-                {!isFinished && <Progress value={(progress || 0) * 100} className="h-1 sm:h-1.5" />}
               </CardContent>
-            </Card>
-
-            {/* Match Moment + Assistant Tip — only show inline on mobile (sidebar covers desktop) */}
-            {!isFinished && matchState.currentMoment && (
-              <div className="lg:hidden flex items-center justify-center">
-                <Badge variant="outline" className="text-[10px] sm:text-xs px-2.5 py-0.5 gap-1.5">
-                  {getMomentIcon(matchState.currentMoment)} {getMomentLabel(matchState.currentMoment)}
-                </Badge>
-              </div>
-            )}
-
-            {!isFinished && hasAssistant && latestTip && (
-              <div className="lg:hidden bg-amber-500/8 border border-amber-500/25 rounded-lg p-2 animate-fade-in">
-                <div className="flex items-start gap-2">
-                  <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                    <MessageSquare className="h-3 w-3 text-amber-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] text-amber-400 font-bold uppercase tracking-wider">Assistente • {latestTip.minute}'</p>
-                    <p className="text-[11px] sm:text-xs text-foreground mt-0.5">{latestTip.description}</p>
+              
+              {/* Goal Flash Overlay */}
+              {goalFlash && latestEvent?.isGoal && (
+                <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[2px] flex flex-col items-center justify-center animate-fade-in z-10">
+                  <div className="bg-background/80 border border-emerald-500/30 rounded-2xl px-8 py-4 shadow-2xl text-center transform scale-110">
+                    <p className="text-3xl sm:text-5xl font-black text-emerald-500 animate-bounce">GOOOL!</p>
+                    <p className="text-lg sm:text-2xl font-black text-foreground mt-1">{latestEvent.playerName}</p>
+                    {latestEvent.assistName && (
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Assistência: {latestEvent.assistName}</p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </Card>
 
-            {/* Halftime sub queue indicator */}
-            {isHalftime && subQueue.length > 0 && (
-              <div className="bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5 text-center animate-pulse">
-                <p className="text-[11px] sm:text-xs text-primary font-bold">
-                  🔄 {subQueue.length} substituição(ões) na fila
+            {/* Substitution queue indicator */}
+            {subQueue.length > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-2 flex items-center justify-center gap-2 animate-pulse">
+                <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                <p className="text-xs text-primary font-bold">
+                  {subQueue.length} substituição(ões) programada(s)
                 </p>
               </div>
             )}
+
 
             {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
@@ -1361,23 +1344,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
               </Card>
             )}
 
-            {/* Quick Stats Row — only mobile (sidebar shows on desktop) */}
-            {!isFinished && (
-              <div className="lg:hidden grid grid-cols-4 gap-1">
-                {[
-                  ['⚡', 'Chutes', stats.shots[0], stats.shots[1]],
-                  ['🎯', 'No Gol', stats.shotsOnTarget[0], stats.shotsOnTarget[1]],
-                  ['🏳️', 'Escan.', stats.corners[0], stats.corners[1]],
-                  ['⚠️', 'Faltas', stats.fouls[0], stats.fouls[1]],
-                ].map(([icon, label, h, a]) => (
-                  <div key={label as string} className="text-center bg-card/50 border border-border/20 rounded-lg p-1.5">
-                    <p className="text-[9px] text-muted-foreground">{icon} {label}</p>
-                    <p className="text-xs font-black font-mono">{h as number} - {a as number}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Match content */}
             {!isFinished ? (
               /* Chat-style narration feed — compact */
@@ -1428,97 +1394,101 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
 
         {/* ═══ COMPACT WIDGETS WITH EXPANDABLE MENU ═══ */}
         {!isFinished && (
-          <div className="space-y-1.5">
-            {/* Menu Toggle Bar */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1">
-              <span className="text-[10px] text-muted-foreground shrink-0">Widgets:</span>
+          <div className="space-y-2">
+            {/* Menu Toggle Bar — Professional Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2">
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'stats' ? null : 'stats')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <BarChart3 className="h-3 w-3 inline mr-1" />Stats
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Estat.</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'lineup' ? null : 'lineup')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'lineup' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'lineup' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <Users className="h-3 w-3 inline mr-1" />Escalação
+                <Users className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Time</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'tactics' ? null : 'tactics')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'tactics' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'tactics' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <Settings2 className="h-3 w-3 inline mr-1" />Tática
+                <Settings2 className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Tática</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'subs' ? null : 'subs')}
-                className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'subs' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border border-border/30 hover:bg-card'}`}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'subs' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
-                <ArrowUpDown className="h-3 w-3 inline mr-1" />Subs {maxSubs-subsUsed}/{maxSubs}
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Subs</span>
               </button>
               {hasAssistant && (
                 <button 
                   onClick={() => setExpandedWidget(expandedWidget === 'assistant' ? null : 'assistant')}
-                  className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${expandedWidget === 'assistant' ? 'bg-amber-500 text-white' : 'bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'}`}
+                  className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'assistant' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 scale-105' : 'bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20'}`}
                 >
-                  <MessageSquare className="h-3 w-3 inline mr-1" />Técnico
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-tight">Dicas</span>
                 </button>
               )}
             </div>
 
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
-              <Card className="border-border/20" ref={statsSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3 text-yellow-400" /> Estatísticas
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5 text-primary" /> Estatísticas Detalhadas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'lineup' && (
-              <Card className="border-border/20" ref={lineupSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <Users className="h-3 w-3 text-blue-400" /> Escalação
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-primary" /> Escalação Atual
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <LineupView starters={currentStarters} bench={currentBench} tactics={liveTactics} homeTeam={homeTeam} liveStaminaMap={liveStaminaMap} substitutedPlayerIds={substitutedPlayerIds} enteredInIds={enteredInIds} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'tactics' && (
-              <Card className="border-border/20" ref={tacticsSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <Settings2 className="h-3 w-3 text-emerald-400" /> Estilo de Jogo
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Settings2 className="h-3.5 w-3.5 text-primary" /> Estilo de Jogo
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
                 </CardContent>
               </Card>
             )}
 
             {expandedWidget === 'subs' && (
-              <Card className="border-border/20">
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <ArrowUpDown className="h-3 w-3 text-orange-400" /> Substituições
-                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{maxSubs-subsUsed}/{maxSubs}</Badge>
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-primary" /> Substituições
+                    <Badge variant="outline" className="ml-auto text-[10px] h-5">{maxSubs-subsUsed}/{maxSubs}</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   {subBlocked && subBlockedReason && (
-                    <div className="bg-muted/30 border border-border/30 rounded px-2 py-1 flex items-start gap-1.5 mb-1.5">
+                    <div className="bg-muted/30 border border-border/30 rounded-lg px-3 py-2 flex items-start gap-2 mb-3">
                       <span className="text-xs">⛔</span>
-                      <p className="text-[10px] text-muted-foreground flex-1">{subBlockedReason}</p>
+                      <p className="text-[11px] text-muted-foreground flex-1">{subBlockedReason}</p>
                     </div>
                   )}
                   <ManagerSubstitutionView
@@ -1545,22 +1515,22 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
             )}
 
             {expandedWidget === 'assistant' && hasAssistant && (
-              <Card className="border-border/20" ref={assistantSectionRef}>
-                <CardHeader className="py-1.5 px-2">
-                  <CardTitle className="text-[11px] flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3 text-amber-400" /> Auxiliar Técnico
-                    <Badge variant="outline" className="ml-auto text-[9px] h-4">{matchState.assistantTips.length}</Badge>
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-amber-500" /> Auxiliar Técnico
+                    <Badge variant="outline" className="ml-auto text-[10px] h-5">{matchState.assistantTips.length}</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-2 pb-2 pt-0">
-                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {[...matchState.assistantTips].reverse().slice(0, 5).map((tip, i) => (
-                      <div key={i} className="flex items-start gap-1.5 bg-card/60 border border-border/20 rounded px-1.5 py-1">
-                        <Badge variant="outline" className="text-[8px] font-mono shrink-0 h-4">{tip.minute}'</Badge>
+                      <div key={i} className="flex items-start gap-2 bg-card/60 border border-border/20 rounded-xl px-2.5 py-2">
+                        <Badge variant="outline" className="text-[9px] font-mono shrink-0 h-5">{tip.minute}'</Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] leading-tight">{tip.description}</p>
+                          <p className="text-[11px] leading-snug">{tip.description}</p>
                           {tip.priority === 'high' && (
-                            <Badge variant="destructive" className="text-[8px] mt-0.5 h-3 px-1">Urgente</Badge>
+                            <Badge variant="destructive" className="text-[9px] mt-1 h-4 px-1.5">Urgente</Badge>
                           )}
                         </div>
                       </div>
@@ -1599,46 +1569,66 @@ function MatchMiniWidgets({
   currentMoment: string; homeGoals: number; awayGoals: number;
   homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps;
 }) {
-  // Estimate opponent attribute breakdown from awayStrength
-  const atk = Math.max(30, Math.min(99, awayStrength + 3));
-  const mid = Math.max(30, Math.min(99, awayStrength));
-  const def = Math.max(30, Math.min(99, awayStrength - 3));
-
   const xgHome = (stats.shotsOnTarget[0] * 0.35 + stats.shots[0] * 0.08).toFixed(1);
   const xgAway = (stats.shotsOnTarget[1] * 0.35 + stats.shots[1] * 0.08).toFixed(1);
 
-  const Bar = ({ value, color }: { value: number; color: string }) => (
-    <div className="h-1 flex-1 rounded-full bg-muted/20 overflow-hidden">
-      <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, value)}%` }} />
-    </div>
-  );
-
   return (
-    <div className="grid grid-cols-2 gap-1.5">
-      {/* Adversário — compacto */}
-      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-0.5">
-          {awayShield ? <ShieldCrest size={12} {...awayShield} /> : <span className="text-[10px]">🤖</span>}
-          <span className="text-[9px] font-bold truncate flex-1">{awayTeam}</span>
-          <Badge variant="outline" className="text-[8px] h-3 px-1">{awayStrength}</Badge>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Adversário Info */}
+      <Card className="border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden">
+        <div className="bg-muted/10 px-2 py-1 border-b border-border/10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <div className="w-3.5 h-3.5 bg-muted rounded-full" />}
+            <span className="text-[10px] font-black uppercase tracking-tight truncate max-w-[100px]">{awayTeam}</span>
+          </div>
+          <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5 border-primary/20 text-primary">OVR {awayStrength}</Badge>
         </div>
-        <div className="flex items-center gap-1 text-[8px]">
-          <span className="flex-1 text-center"><span className="text-red-400">A</span> {atk}</span>
-          <span className="flex-1 text-center"><span className="text-yellow-400">M</span> {mid}</span>
-          <span className="flex-1 text-center"><span className="text-blue-400">D</span> {def}</span>
+        <div className="p-2 grid grid-cols-3 gap-1 text-center">
+          <div className="bg-red-500/5 rounded p-1">
+            <p className="text-[8px] text-red-400 font-bold uppercase">ATA</p>
+            <p className="text-xs font-black">{Math.min(99, awayStrength + 3)}</p>
+          </div>
+          <div className="bg-yellow-500/5 rounded p-1">
+            <p className="text-[8px] text-yellow-400 font-bold uppercase">MEI</p>
+            <p className="text-xs font-black">{awayStrength}</p>
+          </div>
+          <div className="bg-blue-500/5 rounded p-1">
+            <p className="text-[8px] text-blue-400 font-bold uppercase">DEF</p>
+            <p className="text-xs font-black">{Math.max(30, awayStrength - 3)}</p>
+          </div>
         </div>
       </Card>
 
-      {/* Pulso da Partida — compacto */}
-      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-0.5">
-          <span className="text-[10px]">📊</span>
-          <span className="text-[9px] font-bold flex-1 truncate capitalize">{currentMoment.replace('_', ' ')}</span>
+      {/* Match Stats Pulse */}
+      <Card className="border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden">
+        <div className="bg-muted/10 px-2 py-1 border-b border-border/10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-primary">
+            <Activity className="h-3 w-3" />
+            <span className="text-[10px] font-black uppercase tracking-tight">Pulso da Partida</span>
+          </div>
+          <Badge variant="secondary" className="text-[9px] font-bold h-4 px-1.5 capitalize">{currentMoment.replace('_', ' ')}</Badge>
         </div>
-        <div className="flex items-center gap-1 text-[8px]">
-          <span className="flex-1 text-center font-mono">{stats.possession[0]}/{stats.possession[1]}%</span>
-          <span className="flex-1 text-center font-mono">xG {xgHome}-{xgAway}</span>
-          <span className="flex-1 text-center font-mono">⚡{stats.shots[0]}-{stats.shots[1]}</span>
+        <div className="p-2 flex flex-col justify-center h-full gap-2">
+          <div className="flex items-center justify-between gap-4">
+             <div className="flex-1 space-y-0.5">
+               <div className="flex justify-between text-[8px] font-bold text-muted-foreground uppercase">
+                 <span>Shots</span>
+                 <span>{stats.shots[0]} - {stats.shots[1]}</span>
+               </div>
+               <div className="h-1 bg-muted/20 rounded-full overflow-hidden flex">
+                 <div className="h-full bg-blue-500" style={{ width: `${(stats.shots[0] / (stats.shots[0] + stats.shots[1] || 1)) * 100}%` }} />
+               </div>
+             </div>
+             <div className="flex-1 space-y-0.5">
+               <div className="flex justify-between text-[8px] font-bold text-muted-foreground uppercase">
+                 <span>xG</span>
+                 <span>{xgHome} - {xgAway}</span>
+               </div>
+               <div className="h-1 bg-muted/20 rounded-full overflow-hidden flex">
+                 <div className="h-full bg-emerald-500" style={{ width: `${(Number(xgHome) / (Number(xgHome) + Number(xgAway) || 1)) * 100}%` }} />
+               </div>
+             </div>
+          </div>
         </div>
       </Card>
     </div>
