@@ -26,16 +26,6 @@ export function ClubShield({ club, size = 32, className, fallbackText }: ClubShi
     (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('/')) &&
     !FORBIDDEN_PATTERN_NAMES.includes(logoUrl.toLowerCase());
 
-  if (hasRenderableShield) {
-    return (
-      <ShieldCrest 
-        {...shieldPropsFromClub(club)} 
-        size={size} 
-        className={cn("shrink-0", className)} 
-      />
-    );
-  }
-
   if (isRealUrl) {
     return (
       <img 
@@ -44,9 +34,18 @@ export function ClubShield({ club, size = 32, className, fallbackText }: ClubShi
         className={cn("rounded-md object-cover shrink-0", className)}
         style={{ width: size, height: size }}
         onError={(e) => {
-          // If image fails, hide it to show fallback or use a placeholder
           (e.target as HTMLImageElement).style.display = 'none';
         }}
+      />
+    );
+  }
+
+  if (hasRenderableShield) {
+    return (
+      <ShieldCrest 
+        {...shieldPropsFromClub(club)} 
+        size={size} 
+        className={cn("shrink-0", className)} 
       />
     );
   }
