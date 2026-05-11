@@ -322,7 +322,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                     <Button 
                       className="w-full h-10 font-black uppercase text-[10px] gap-2 shadow-lg shadow-primary/10"
                       onClick={() => handleHireScout(scout)}
-                      disabled={myScouts.length >= 5}
+                      disabled={myScouts.length >= SCOUT_LIMIT}
                     >
                       <UserPlus className="h-3 w-3" /> Contratar por 5 Temp.
                     </Button>
