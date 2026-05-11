@@ -21,6 +21,7 @@ export function PersonalizedCupWidget({ userId, onOpenTournament }: Props) {
         .from('national_cup_teams')
         .select('cup_id')
         .eq('user_id', userId)
+        .eq('eliminated', false)
         .maybeSingle();
 
       if (teamEntry) {
