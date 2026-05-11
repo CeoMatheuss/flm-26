@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function CopasTab({ userId }: Props) {
-  const [activeTab, setActiveTab] = useState('matches');
+  const [activeTab, setActiveTab] = useState('bracket');
   const [cup, setCup] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [prizes, setPrizes] = useState<any[]>([]);
