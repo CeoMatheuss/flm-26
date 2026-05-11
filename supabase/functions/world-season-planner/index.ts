@@ -165,7 +165,12 @@ Deno.serve(async (req: Request) => {
         rounds.forEach((round, idx) => {
           const matchday = idx + 1;
           const dateStr = addDaysBrt(startDate, idx);
-          const kickoffUtc = brtDateTimeToUtcIso(dateStr, league.kickoff_hour, league.kickoff_minute ?? 0);
+          
+          // Enforce 19:30 for Division 1, otherwise use league settings
+          const hour = league.division === 1 ? 19 : league.kickoff_hour;
+          const minute = league.division === 1 ? 30 : (league.kickoff_minute ?? 0);
+          
+          const kickoffUtc = brtDateTimeToUtcIso(dateStr, hour, minute);
           for (const [home, away] of round) {
             inserts.push({
               league_id: league.id,
