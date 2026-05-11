@@ -49,7 +49,13 @@ export function MatchesTab({
       const allCompetitionsMatches: any[] = [];
 
       // 1. National Cup Matches (New System)
-      const { data: cupEntry } = await supabase.from('national_cup_teams').select('cup_id').eq('user_id', userId).maybeSingle();
+      const { data: cupEntry } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', userId)
+        .eq('eliminated', false)
+        .maybeSingle();
+
       if (cupEntry) {
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
@@ -60,7 +66,7 @@ export function MatchesTab({
             away:national_cup_teams!away_team_id(club_name, club_logo, user_id)
           `)
           .eq('cup_id', cupEntry.cup_id)
-          .eq('status', 'scheduled')
+          .in('status', ['scheduled', 'live'])
           .order('scheduled_at', { ascending: true })
           .limit(5);
 
@@ -73,7 +79,7 @@ export function MatchesTab({
             awayLogo: m.away?.club_logo,
             isHome: m.home?.user_id === userId,
             competition: m.cup?.name || 'Copa Nacional',
-            stage: `Rodada ${m.round}`
+            stage: `Fase ${m.round}`
           })));
         }
       }
