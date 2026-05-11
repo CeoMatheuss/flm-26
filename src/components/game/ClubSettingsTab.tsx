@@ -147,7 +147,7 @@ export function ClubSettingsTab({
 
       {/* Shield Editor Sheet */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="w-full sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" /> Editor de Escudo
