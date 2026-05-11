@@ -1,300 +1,351 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Wallet, ChevronRight, X, ArrowUpRight, ArrowDownRight, History } from 'lucide-react';
+import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2 } from 'lucide-react';
 
-type ClubOption = { user_id: string; club_name: string; club_logo: string };
+type Club = {
+  user_id: string;
+  name: string;
+  logo: string | null;
+  budget: number;
+};
+
+type FinanceLog = {
+  id: string;
+  amount: number;
+  reason: string | null;
+  created_at: string;
+  target_user_id: string;
+  target?: { display_name: string | null } | null;
+};
+
+const QUICK_VALUES = [
+  { label: '+100K', v: 100_000 },
+  { label: '+500K', v: 500_000 },
+  { label: '+1M', v: 1_000_000 },
+  { label: '+10M', v: 10_000_000 },
+  { label: '-1M', v: -1_000_000 },
+];
 
 /**
- * 💰 FINANCEIRO — Painel isolado, único responsável por ajustar saldo de clubes.
- *
- * Não compartilha lógica nem estado com outros sistemas (premium, gift, personalização).
- * Chama diretamente a RPC `admin_add_money_to_club` (SECURITY DEFINER, lock atômico).
- * Trava de execução dupla via flag local `busy`.
+ * 💰 Painel Financeiro Admin V3 — refeito do zero.
+ * Busca direta na tabela clubs + RPC execute_admin_money_transfer.
  */
 export function FinancePanel() {
-  const [allClubs, setAllClubs] = useState<any[]>([]);
-  const [loadingClubs, setLoadingClubs] = useState(false);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [loadingClubs, setLoadingClubs] = useState(true);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<any | null>(null);
-  const [amount, setAmount] = useState<string>('');
-  const [reason, setReason] = useState<string>('');
+  const [selected, setSelected] = useState<Club | null>(null);
+  const [amount, setAmount] = useState('');
+  const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
-  const [lastResult, setLastResult] = useState<{ club: string; newBudget: number; delta: number } | null>(null);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [lastResult, setLastResult] = useState<{ name: string; newBudget: number; delta: number } | null>(null);
+  const [logs, setLogs] = useState<FinanceLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // Carrega clubes uma vez para autocomplete
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoadingClubs(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const { data: clubs, error } = await supabase
-          .from('clubs')
-          .select('user_id, name, logo_url')
-          .order('name', { ascending: true });
-        
-        if (mounted && clubs) {
-          const formatted = clubs.map(c => ({
-            user_id: c.user_id,
-            club_name: c.name,
-            club_logo: c.logo_url || '⚽'
-          }));
-          setAllClubs(formatted);
-        }
-      } catch {
-        // autocomplete é opcional
-      } finally {
-        if (mounted) setLoadingClubs(false);
-      }
-    })();
-    return () => { mounted = false; };
+  // Carrega lista de clubes (uma vez)
+  const loadClubs = useCallback(async () => {
+    setLoadingClubs(true);
+    const { data, error } = await supabase
+      .from('clubs')
+      .select('user_id, name, logo_url, budget')
+      .order('name');
+    if (error) {
+      toast.error('Erro ao carregar clubes: ' + error.message);
+    } else if (data) {
+      setClubs(data.map((c: any) => ({
+        user_id: c.user_id,
+        name: c.name,
+        logo: c.logo_url,
+        budget: Number(c.budget) || 0,
+      })));
+    }
+    setLoadingClubs(false);
   }, []);
 
   const loadLogs = useCallback(async () => {
     setLoadingLogs(true);
     const { data } = await supabase
       .from('admin_finance_logs')
-      .select(`
-        *,
-        admin:admin_id(display_name),
-        target:target_user_id(display_name)
-      `)
+      .select('id, amount, reason, created_at, target_user_id, target:target_user_id(display_name)')
       .order('created_at', { ascending: false })
       .limit(15);
-    if (data) setLogs(data);
+    if (data) setLogs(data as any);
     setLoadingLogs(false);
   }, []);
 
   useEffect(() => {
+    loadClubs();
     loadLogs();
-  }, [loadLogs]);
+  }, [loadClubs, loadLogs]);
 
-  const suggestions = useMemo(() => {
+  // Filtragem em tempo real
+  const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q || selected?.club_name.toLowerCase() === q) return [];
-    return allClubs
-      .filter(c => c.club_name.toLowerCase().includes(q))
-      .slice(0, 8);
-  }, [search, allClubs, selected]);
+    if (!q) return [];
+    if (selected && selected.name.toLowerCase() === q) return [];
+    return clubs
+      .filter(c => c.name?.toLowerCase().includes(q) || c.user_id.toLowerCase().includes(q))
+      .slice(0, 10);
+  }, [search, clubs, selected]);
 
-  /** Função única e isolada para adicionar/remover dinheiro. */
-  const addMoneyToClub = async (targetUserId: string, value: number, clubLabel: string) => {
-    const { data, error } = await supabase.rpc('execute_admin_money_transfer', {
-      p_target_id: targetUserId,
-      p_value: value,
-      p_description: reason || 'Ajuste administrativo direto'
-    });
-    
-    if (error) {
-      throw new Error(error.message || 'Falha ao ajustar saldo');
-    }
-    
-    const result = (data as any) || {};
-    return {
-      newBudget: Number(result.current_balance) || 0,
-      delta: Number(result.difference) || value,
-      clubName: result.club || clubLabel,
-    };
+  const handleSelect = (club: Club) => {
+    setSelected(club);
+    setSearch(club.name);
+    setLastResult(null);
   };
 
-  const submit = async () => {
-    if (busy) return;                             // trava execução dupla
-    if (!selected) { toast.error('❌ Selecione um clube na busca.'); return; }
-    const value = Math.trunc(Number(amount));
+  const handleClear = () => {
+    setSelected(null);
+    setSearch('');
+    setAmount('');
+    setReason('');
+    setLastResult(null);
+  };
+
+  const submit = async (overrideAmount?: number) => {
+    if (busy) return;
+    if (!selected) {
+      toast.error('Selecione um clube primeiro.');
+      return;
+    }
+    const value = Math.trunc(overrideAmount ?? Number(amount));
     if (!Number.isFinite(value) || value === 0) {
-      toast.error('❌ Informe um valor diferente de zero.'); return;
+      toast.error('Informe um valor diferente de zero.');
+      return;
     }
 
     setBusy(true);
     try {
-      const r = await addMoneyToClub(selected.user_id, value, selected.club_name);
+      const { data, error } = await supabase.rpc('execute_admin_money_transfer', {
+        p_target_id: selected.user_id,
+        p_value: value,
+        p_description: reason.trim() || (value > 0 ? 'Aporte administrativo' : 'Retirada administrativa'),
+      });
+
+      if (error) throw error;
+
+      const result = (data as any) || {};
+      const newBudget = Number(result.current_balance) || 0;
+
       toast.success(
-        value >= 0
-          ? `✔ R$ ${value.toLocaleString('pt-BR')} adicionado ao ${r.clubName}`
-          : `✔ R$ ${Math.abs(value).toLocaleString('pt-BR')} descontado do ${r.clubName}`
+        value > 0
+          ? `+R$ ${value.toLocaleString('pt-BR')} entregues ao ${selected.name}`
+          : `-R$ ${Math.abs(value).toLocaleString('pt-BR')} retirados do ${selected.name}`
       );
-      setLastResult({ club: r.clubName, newBudget: r.newBudget, delta: r.delta });
+
+      setLastResult({ name: selected.name, newBudget, delta: value });
       setAmount('');
       setReason('');
+      // Atualiza saldo local do clube
+      setClubs(prev => prev.map(c => c.user_id === selected.user_id ? { ...c, budget: newBudget } : c));
+      setSelected(prev => prev ? { ...prev, budget: newBudget } : null);
       loadLogs();
     } catch (e: any) {
-      toast.error(`❌ ${e?.message || 'Erro ao ajustar saldo'}`);
+      toast.error('Erro: ' + (e?.message || 'Falha ao processar'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Card className="border-emerald-500/20 bg-zinc-900/60 shadow-2xl overflow-hidden">
-      <div className="bg-emerald-500/10 p-4 border-b border-emerald-500/20">
-        <CardTitle className="text-base flex items-center gap-3 text-white italic font-black uppercase tracking-tighter">
+    <div className="space-y-4">
+      {/* HEADER */}
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20">
+        <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
           <Wallet className="h-5 w-5 text-emerald-400" />
-          Aporte Financeiro Admin
-        </CardTitle>
-        <p className="text-[10px] text-emerald-400/60 font-bold uppercase mt-1">Gerenciamento de capital dos clubes</p>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Tesouro Administrativo</h3>
+          <p className="text-[10px] text-muted-foreground">{clubs.length} clubes ativos no sistema</p>
+        </div>
+        <Button size="sm" variant="ghost" onClick={loadClubs} disabled={loadingClubs} className="text-xs">
+          {loadingClubs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Atualizar'}
+        </Button>
       </div>
-      
-      <CardContent className="p-6 space-y-5">
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-zinc-500 ml-1">Localizar Clube Destino</label>
+
+      {/* BUSCA */}
+      <Card className="border-border bg-card">
+        <CardContent className="p-4 space-y-3">
+          <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+            1. Buscar Clube
+          </label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-              <Search className="h-4 w-4" />
-            </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={loadingClubs ? 'Carregando banco de dados...' : 'Digite o nome do clube ou ID...'}
+              placeholder={loadingClubs ? 'Carregando…' : 'Digite o nome do clube ou ID do usuário…'}
               value={search}
-              onChange={e => { setSearch(e.target.value); setSelected(null); }}
-              className="pl-10 h-11 bg-black/40 border-white/10 text-white font-bold placeholder:text-zinc-600 focus:border-emerald-500/50 transition-all"
+              onChange={(e) => { setSearch(e.target.value); setSelected(null); }}
+              className="pl-10 h-10 bg-background"
               autoComplete="off"
+              disabled={loadingClubs}
             />
-            
-            {suggestions.length > 0 && !selected && (
-              <div className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-zinc-900 shadow-2xl backdrop-blur-xl">
-                <div className="p-2 border-b border-white/5 bg-white/5">
-                  <span className="text-[9px] font-black text-zinc-500 uppercase px-2 italic">Resultados Encontrados ({suggestions.length})</span>
-                </div>
-                {suggestions.map(c => (
+            {selected && (
+              <Button size="icon" variant="ghost" className="absolute right-1 top-1 h-8 w-8" onClick={handleClear}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+
+            {filtered.length > 0 && (
+              <div className="absolute z-50 mt-2 w-full max-h-72 overflow-y-auto rounded-lg border border-border bg-popover shadow-2xl">
+                {filtered.map((c) => (
                   <button
                     key={c.user_id}
-                    type="button"
-                    onClick={() => { setSelected(c); setSearch(c.club_name); }}
-                    className="w-full text-left px-4 py-3 hover:bg-emerald-500/10 flex items-center gap-3 transition-colors border-b border-white/5 last:border-0 group"
+                    onClick={() => handleSelect(c)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/60 transition-colors text-left border-b border-border/40 last:border-0"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-lg group-hover:border-emerald-500/30 transition-all">
-                      {c.club_logo && (c.club_logo.startsWith('http') || c.club_logo.startsWith('/')) ? (
-                        <img src={c.club_logo} className="w-5 h-5 object-contain" alt="" />
-                      ) : (
-                        <span>{c.club_logo || '⚽'}</span>
-                      )}
+                    <div className="w-9 h-9 rounded bg-muted flex items-center justify-center text-base shrink-0 overflow-hidden">
+                      {c.logo && (c.logo.startsWith('http') || c.logo.startsWith('/'))
+                        ? <img src={c.logo} alt="" className="w-full h-full object-cover" />
+                        : <span>{c.logo || '⚽'}</span>}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-black text-xs text-white uppercase italic truncate group-hover:text-emerald-400 transition-colors">{c.club_name}</span>
-                      <span className="text-[9px] text-zinc-500 font-mono truncate uppercase tracking-tighter">ID: {c.user_id}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {c.user_id.slice(0, 13)}… • R$ {c.budget.toLocaleString('pt-BR')}
+                      </p>
                     </div>
-                    <ChevronRight className="h-3 w-3 ml-auto text-zinc-700 group-hover:text-emerald-500" />
+                    <Badge variant="outline" className="text-[9px] shrink-0">Selecionar</Badge>
                   </button>
                 ))}
               </div>
             )}
           </div>
-        </div>
 
-        {selected && (
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-xl bg-black/40 border border-emerald-500/20 flex items-center justify-center text-2xl shadow-inner">
-              {selected.club_logo && (selected.club_logo.startsWith('http') || selected.club_logo.startsWith('/')) ? (
-                <img src={selected.club_logo} className="w-8 h-8 object-contain" alt="" />
-              ) : (
-                <span>{selected.club_logo || '⚽'}</span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest italic">Clube Selecionado</p>
-              <p className="text-base font-black text-white uppercase italic truncate">{selected.club_name}</p>
-              <p className="text-[9px] text-zinc-500 font-mono truncate uppercase">UID: {selected.user_id}</p>
-            </div>
-            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-zinc-500 hover:text-white hover:bg-white/5"
-              onClick={() => { setSelected(null); setSearch(''); }}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase text-zinc-500 ml-1 italic">Montante (R$)</label>
-            <div className="relative">
-              <Input
-                type="number"
-                placeholder="Ex: 5000000"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                className="h-11 bg-black/40 border-white/10 text-white font-black italic placeholder:text-zinc-700 focus:border-emerald-500/50"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-600">BRL</div>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase text-zinc-500 ml-1 italic">Justificativa</label>
-            <Input
-              placeholder="Ex: Premiação Copa"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              className="h-11 bg-black/40 border-white/10 text-white font-bold placeholder:text-zinc-700 focus:border-emerald-500/50"
-            />
-          </div>
-        </div>
-
-        <Button
-          size="lg"
-          className="w-full h-12 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-tighter italic shadow-lg shadow-emerald-500/10 group transition-all"
-          onClick={submit}
-          disabled={busy || !selected}
-        >
-          {busy ? (
-            <span className="flex items-center gap-2 italic">Processando Camada de Dados...</span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              Executar Transferência de Crédito
-            </span>
+          {!search && !selected && (
+            <p className="text-[10px] text-muted-foreground italic px-1">
+              Digite ao menos 1 caractere para iniciar a busca.
+            </p>
           )}
-        </Button>
+        </CardContent>
+      </Card>
 
-        {lastResult && (
-          <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-400 uppercase italic">Operação Realizada</span>
+      {/* CLUBE SELECIONADO + AÇÃO */}
+      {selected && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5 animate-in fade-in slide-in-from-top-2 duration-200">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl overflow-hidden shrink-0">
+                {selected.logo && (selected.logo.startsWith('http') || selected.logo.startsWith('/'))
+                  ? <img src={selected.logo} alt="" className="w-full h-full object-cover" />
+                  : <span>{selected.logo || '⚽'}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase text-emerald-400 tracking-widest">Clube selecionado</p>
+                <h4 className="text-base font-black text-foreground truncate">{selected.name}</h4>
+                <p className="text-xs text-muted-foreground">
+                  Saldo: <span className="font-mono font-bold text-foreground">R$ {selected.budget.toLocaleString('pt-BR')}</span>
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-white">O saldo do <span className="font-black italic uppercase text-emerald-400">{lastResult.club}</span> foi atualizado.</p>
-            <p className="text-[11px] text-zinc-400 mt-1">Novo Montante em Caixa: <span className="font-black text-white italic tracking-tight">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
-          </div>
-        )}
 
-        <div className="pt-6 border-t border-white/5 mt-4">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-[10px] font-black text-white italic uppercase tracking-widest flex items-center gap-2">
-              <History className="h-3.5 w-3.5 text-zinc-500" />
-              Log de Auditoria Financeira
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                2. Valor Rápido
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_VALUES.map(q => (
+                  <Button
+                    key={q.label}
+                    size="sm"
+                    variant="outline"
+                    className="text-xs font-bold h-8"
+                    disabled={busy}
+                    onClick={() => submit(q.v)}
+                  >
+                    {q.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                3. Valor Personalizado
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Input
+                  type="number"
+                  placeholder="Valor (ex: 5000000)"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="h-10 sm:col-span-1"
+                />
+                <Input
+                  placeholder="Motivo (opcional)"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="h-10 sm:col-span-2"
+                />
+              </div>
+              <Button
+                className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2"
+                onClick={() => submit()}
+                disabled={busy || !amount}
+              >
+                {busy
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Processando…</>
+                  : <>{Number(amount) >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />} Confirmar Operação</>}
+              </Button>
+            </div>
+
+            {lastResult && (
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-2 animate-in zoom-in-95">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-bold text-emerald-400">Operação concluída</p>
+                  <p className="text-muted-foreground">
+                    {lastResult.delta > 0 ? '+' : ''}R$ {lastResult.delta.toLocaleString('pt-BR')} → {lastResult.name}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Novo saldo: <span className="font-mono font-bold text-foreground">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* HISTÓRICO */}
+      <Card className="border-border bg-card">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+              <History className="h-3.5 w-3.5" />
+              Histórico de Transações
             </h4>
-            <Badge variant="outline" className="text-[8px] font-black border-white/10 text-zinc-500 uppercase">Tempo Real</Badge>
+            <Badge variant="outline" className="text-[9px]">Últimas 15</Badge>
           </div>
-          
-          <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
             {loadingLogs ? (
-              <div className="py-10 text-center opacity-20 italic text-xs uppercase font-black">Sincronizando Histórico...</div>
+              <p className="text-xs text-center py-6 text-muted-foreground">Carregando…</p>
             ) : logs.length === 0 ? (
-              <div className="py-10 text-center opacity-20 italic text-xs uppercase font-black">Nenhum registro encontrado</div>
+              <p className="text-xs text-center py-6 text-muted-foreground italic">Nenhuma transação registrada.</p>
             ) : (
-              logs.map(log => {
-                const isPositive = log.amount >= 0;
+              logs.map((log) => {
+                const positive = log.amount >= 0;
                 return (
-                  <div key={log.id} className="p-3 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors flex flex-col gap-2 group">
-                    <div className="flex justify-between items-center">
-                      <div className={`flex items-center gap-1.5 font-black italic text-xs ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                        {isPositive ? '+' : ''}R$ {log.amount?.toLocaleString('pt-BR')}
-                      </div>
-                      <span className="text-[8px] text-zinc-600 font-black uppercase tracking-tighter">
-                        {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                  <div key={log.id} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+                    <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${positive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                      {positive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-[10px] font-bold text-zinc-300 uppercase italic truncate">
-                        Destino: <span className="text-white group-hover:text-emerald-400 transition-colors">{log.target?.display_name || 'Clube ID ' + log.target_user_id.slice(0,8)}</span>
-                      </p>
-                      <p className="text-[9px] text-zinc-500 italic truncate font-medium">
-                        Motivo: {log.reason || 'Sem descrição oficial'}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-xs font-bold ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {positive ? '+' : ''}R$ {log.amount.toLocaleString('pt-BR')}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground font-mono">
+                          {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        → {log.target?.display_name || log.target_user_id.slice(0, 12) + '…'}
+                        {log.reason ? <span className="italic opacity-70"> • {log.reason}</span> : null}
                       </p>
                     </div>
                   </div>
@@ -302,8 +353,8 @@ export function FinancePanel() {
               })
             )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
