@@ -496,8 +496,12 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
                   <div className="flex gap-0.5 justify-center">
                     {last5.length === 0 ? <span className="text-[10px] text-muted-foreground">—</span> : last5.map((r, ri) => (
                       <span key={ri} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
-                        r === 'W' ? 'bg-emerald-500/20 text-emerald-400' : r === 'D' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-                      }`}>{r === 'W' ? 'V' : r === 'D' ? 'E' : 'D'}</span>
+                        r === 'W' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+                        r === 'D' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 
+                        'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      }`} title={r === 'W' ? 'Vitória' : r === 'D' ? 'Empate' : 'Derrota'}>
+                        {r === 'W' ? 'V' : r === 'D' ? 'E' : 'D'}
+                      </span>
                     ))}
                   </div>
                 </TableCell>
