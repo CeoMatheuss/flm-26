@@ -84,11 +84,15 @@ serve(async (req) => {
       if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
       for (const cup of activeCups) {
+        const nowIso = new Date().toISOString();
         const { data: matches } = await supabase.from('national_cup_matches')
           .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
-          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled');
+          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled')
+          .lte('scheduled_at', nowIso);
 
         if (!matches || matches.length === 0) {
+          // Only advance to next phase when ALL matches of this round are finished
+          // (matches with future scheduled_at are still 'scheduled' and count as pending)
           const { count: pending } = await supabase.from('national_cup_matches')
             .select('*', { count: 'exact', head: true })
             .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
