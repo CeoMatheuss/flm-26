@@ -4,31 +4,38 @@ import { useMatchSimulation } from './useMatchSimulation';
 import { supabase } from '@/integrations/supabase/client';
 
 // Mock Supabase
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: vi.fn(),
-          order: vi.fn(() => ({
-            limit: vi.fn(() => ({
-              maybeSingle: vi.fn()
-            }))
+vi.mock('@/integrations/supabase/client', () => {
+  const mockSingle = vi.fn();
+  const mockFrom = vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        maybeSingle: mockSingle,
+        order: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            maybeSingle: vi.fn()
           }))
         }))
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn()
       }))
     })),
-    functions: {
-      invoke: vi.fn()
-    },
-    auth: {
-      getUser: vi.fn()
+    update: vi.fn(() => ({
+      eq: vi.fn()
+    }))
+  }));
+
+  return {
+    supabase: {
+      from: mockFrom,
+      functions: { invoke: vi.fn() },
+      auth: { getUser: vi.fn() },
+      channel: vi.fn(() => ({ on: vi.fn(() => ({ subscribe: vi.fn() })) })),
+      removeChannel: vi.fn()
     }
-  }
-}));
+  };
+});
+
+// Importante para acessar o mock
+import { supabase } from '@/integrations/supabase/client';
+
 
 describe('useMatchSimulation Consistency', () => {
   it('should load match data correctly and enter live phase', async () => {
