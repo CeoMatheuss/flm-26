@@ -279,18 +279,22 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
           )}
         </TabsContent>
 
-        {/* ABA: MERCADO */}
         <TabsContent value="market" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {marketScouts.length === 0 ? (
-              <div className="col-span-full py-20 text-center text-muted-foreground border-2 border-dashed border-white/5 rounded-xl">
-                Nenhum olheiro disponível no mercado no momento.
+              <div className="col-span-full py-20 text-center text-muted-foreground border-2 border-dashed border-white/5 rounded-xl bg-black/20">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <h3 className="text-white font-black italic uppercase">Aguardando Novo Olheiro</h3>
+                <p className="text-[10px] uppercase font-bold tracking-widest mt-2">Novos profissionais aparecem semanalmente no mercado.</p>
               </div>
             ) : (
               marketScouts.map(scout => (
-                <Card key={scout.id} className="bg-zinc-900/40 border-white/5 hover:border-primary/20 transition-all overflow-hidden">
+                <Card key={scout.id} className="bg-zinc-900/40 border-primary/20 hover:border-primary/40 transition-all overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-2">
+                    <Badge className="bg-primary text-black font-black text-[8px] uppercase">Disponível esta semana</Badge>
+                  </div>
                   <CardContent className="p-5">
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-4 mb-4 mt-2">
                       <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
                         <User className="h-6 w-6 text-zinc-500" />
                       </div>
@@ -310,16 +314,16 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
                         <span className="text-zinc-300">{SPEC_LABELS[scout.specialization]}</span>
                       </div>
                       <div className="flex justify-between items-center text-[10px] font-bold">
-                        <span className="text-muted-foreground uppercase">Precisão</span>
+                        <span className="text-muted-foreground uppercase">Precisão Técnica</span>
                         <span className="text-primary">{Math.round(scout.efficiency * 100)}%</span>
                       </div>
                     </div>
                     <Button 
-                      className="w-full h-10 font-black uppercase text-[10px] gap-2"
+                      className="w-full h-10 font-black uppercase text-[10px] gap-2 shadow-lg shadow-primary/10"
                       onClick={() => handleHireScout(scout)}
                       disabled={myScouts.length >= 5}
                     >
-                      <UserPlus className="h-3 w-3" /> Contratar (5 Temp.)
+                      <UserPlus className="h-3 w-3" /> Contratar por 5 Temp.
                     </Button>
                   </CardContent>
                 </Card>
