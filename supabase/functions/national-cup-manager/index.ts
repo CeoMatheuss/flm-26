@@ -29,7 +29,7 @@ serve(async (req) => {
     // 1. GERAR TODAS AS COPAS INTEGRADAS ÀS LIGAS
     if (action === 'generate_all_national_cups') {
       // Pega todos os países únicos que possuem ligas ativas
-      const { data: countries } = await supabase.from('world_leagues').select('country').neq('status', 'inactive');
+      const { data: countries } = await supabase.from('world_leagues').select('country').eq('active', true);
       const uniqueCountries = [...new Set(countries?.map(c => c.country))];
 
       if (!uniqueCountries.length) throw new Error("Nenhuma liga encontrada");
