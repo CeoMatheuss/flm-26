@@ -508,12 +508,18 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {roundMatches.map(m => (
-                              <div key={m.id} className="flex items-center justify-between text-xs p-2 bg-muted/30 rounded border border-transparent hover:border-border transition-colors">
-                                <span className="truncate w-24 text-right">{m.home_team?.name}</span>
-                                <span className="font-black bg-background px-2 py-0.5 rounded shadow-sm">
-                                  {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : 'v'}
+                              <div key={m.id} className="flex items-center justify-between text-[10px] p-2 bg-muted/30 rounded border border-transparent hover:border-border transition-colors">
+                                <div className="flex items-center gap-1.5 w-24 justify-end">
+                                  <span className="truncate">{m.home_team?.name}</span>
+                                  <ClubShield club={m.home_team ? { logoUrl: m.home_team.logo } : null} size={14} />
+                                </div>
+                                <span className="font-black bg-background px-2 py-0.5 rounded shadow-sm text-xs">
+                                  {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : '19:30'}
                                 </span>
-                                <span className="truncate w-24 text-left">{m.away_team?.name}</span>
+                                <div className="flex items-center gap-1.5 w-24 justify-start">
+                                  <ClubShield club={m.away_team ? { logoUrl: m.away_team.logo } : null} size={14} />
+                                  <span className="truncate">{m.away_team?.name}</span>
+                                </div>
                               </div>
                             ))}
                           </div>
