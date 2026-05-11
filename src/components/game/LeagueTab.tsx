@@ -46,6 +46,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         id: teamData.league_id,
         name: league?.name || 'Liga Mundial',
         country: league?.country,
+        division: league?.division || 1, // Store division
         flag: (league as any)?.country_ref?.flag_emoji || '⚽',
         playerTeamId: teamData.id,
         currentRound: league?.current_round || 1
