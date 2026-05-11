@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, MapPin, DollarSign, Globe } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, MapPin, DollarSign, Globe, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ClubShield } from './ClubShield';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
 
 
 interface Props {
@@ -122,12 +126,49 @@ export function CopasTab({ userId }: Props) {
     );
   }
 
+  const navigate = useNavigate();
   const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
   const myNextMatch = matches.find(
     m => (m.status === 'scheduled' || m.status === 'live') &&
          (m.home?.user_id === userId || m.away?.user_id === userId)
   );
   const highlight = myNextMatch || nextMatch;
+
+  // Auto-simulação após 5 minutos do horário
+  useEffect(() => {
+    if (myNextMatch?.status === 'scheduled') {
+      const kickoff = new Date(myNextMatch.scheduled_at).getTime();
+      const timeoutTime = kickoff + (5 * 60 * 1000);
+      const now = Date.now();
+      
+      if (now >= timeoutTime) {
+        // Se o usuário não entrou na partida em 2D após 5 minutos, o servidor simula
+        supabase.functions.invoke('national-cup-manager', {
+          body: { action: 'advance_phase', password: 'ADM112828' }
+        });
+      }
+    }
+  }, [myNextMatch]);
+
+  const handlePlay2D = () => {
+    if (!myNextMatch) return;
+    navigate('/', {
+      replace: true,
+      state: {
+        playTournamentMatch: {
+          matchId: myNextMatch.id,
+          tournamentMatchId: myNextMatch.id,
+          opponentName: myNextMatch.home?.user_id === userId ? myNextMatch.away?.club_name : myNextMatch.home?.club_name,
+          opponentStrength: myNextMatch.home?.user_id === userId ? myNextMatch.away?.strength : myNextMatch.home?.strength,
+          isHome: myNextMatch.home?.user_id === userId,
+          competition: cup.name,
+          tieBreaker: 'both',
+          isNationalCup: true
+        },
+      },
+    });
+  };
+
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl mx-auto pb-10">
@@ -203,6 +244,11 @@ export function CopasTab({ userId }: Props) {
 
               <div className="flex flex-col items-center gap-1">
                 <div className="px-4 py-1 rounded-full bg-muted font-black text-xs italic tracking-tighter">VS</div>
+                {myNextMatch && (
+                  <Button size="sm" className="h-8 px-4 font-black text-[10px] animate-pulse" onClick={handlePlay2D}>
+                    <Play className="h-3 w-3 mr-1" /> JOGAR 2D
+                  </Button>
+                )}
                 <div className="h-px w-8 bg-border"></div>
               </div>
 
