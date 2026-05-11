@@ -10,18 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Maps a national_cup_teams row (or world_teams row) to a ClubShield-compatible object.
-const toShieldClub = (t: any) => t ? ({
-  logoUrl: t.club_logo || t.logo || t.logo_url,
-  shield_config: t.shield_config,
-  shieldConfig: t.shield_config,
-  shieldPattern: t.shield_pattern || t.pattern,
-  shieldShape: t.shield_shape || t.shape,
-  shieldIcon: t.shield_icon || t.icon,
-  primaryColor: t.primary_color || t.primaryColor,
-  secondaryColor: t.secondary_color || t.secondaryColor,
-  detailColor: t.detail_color || t.detailColor,
-}) : null;
+// Maps a team row to a ClubShield-compatible object, ensuring the latest shield data is used.
+const toShieldClub = (t: any) => {
+  if (!t) return null;
+  
+  // Se t.shield_config for um objeto (vindo do RPC), extraímos as propriedades dele
+  const shield = typeof t.shield_config === 'object' && t.shield_config !== null ? t.shield_config : {};
+  
+  return {
+    ...t,
+    logoUrl: t.club_logo || t.logo || t.logo_url || shield.logoUrl,
+    shield_config: t.shield_config,
+    shieldConfig: t.shield_config,
+    shieldPattern: shield.pattern || shield.shieldPattern || t.shield_pattern || t.pattern,
+    shieldShape: shield.shape || shield.shieldShape || t.shield_shape || t.shape,
+    shieldIcon: shield.icon || shield.shieldIcon || t.shield_icon || t.icon,
+    primaryColor: shield.primaryColor || t.primary_color || t.primaryColor,
+    secondaryColor: shield.secondaryColor || t.secondary_color || t.secondaryColor,
+    detailColor: shield.detailColor || t.detail_color || t.detailColor,
+  };
+};
 
 interface Props {
   userId: string;
