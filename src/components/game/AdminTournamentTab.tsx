@@ -95,7 +95,15 @@ export function AdminTournamentTab({ userId }: Props) {
             disabled={loading}
             onClick={() => handleAction('reset_cups')}
           >
-            <RefreshCw className="h-3 w-3" /> Reiniciar Copas
+            <RefreshCw className="h-3 w-3" /> Reiniciar Copas (CUIDADO)
+          </Button>
+          <Button 
+            variant="outline" 
+            className="text-xs h-10 gap-2 font-bold"
+            disabled={loading}
+            onClick={() => handleAction('reconcile_sync')}
+          >
+            <RefreshCw className="h-3 w-3" /> Sincronizar / Corrigir
           </Button>
         </CardContent>
       </Card>
