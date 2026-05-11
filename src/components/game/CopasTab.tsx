@@ -122,12 +122,49 @@ export function CopasTab({ userId }: Props) {
     );
   }
 
+  const navigate = useNavigate();
   const nextMatch = matches.find(m => m.status === 'scheduled' || m.status === 'live');
   const myNextMatch = matches.find(
     m => (m.status === 'scheduled' || m.status === 'live') &&
          (m.home?.user_id === userId || m.away?.user_id === userId)
   );
   const highlight = myNextMatch || nextMatch;
+
+  // Auto-simulação após 5 minutos do horário
+  useEffect(() => {
+    if (myNextMatch?.status === 'scheduled') {
+      const kickoff = new Date(myNextMatch.scheduled_at).getTime();
+      const timeoutTime = kickoff + (5 * 60 * 1000);
+      const now = Date.now();
+      
+      if (now >= timeoutTime) {
+        // Se o usuário não entrou na partida em 2D após 5 minutos, o servidor simula
+        supabase.functions.invoke('national-cup-manager', {
+          body: { action: 'advance_phase', password: 'ADM112828' }
+        });
+      }
+    }
+  }, [myNextMatch]);
+
+  const handlePlay2D = () => {
+    if (!myNextMatch) return;
+    navigate('/', {
+      replace: true,
+      state: {
+        playTournamentMatch: {
+          matchId: myNextMatch.id,
+          tournamentMatchId: myNextMatch.id,
+          opponentName: myNextMatch.home?.user_id === userId ? myNextMatch.away?.club_name : myNextMatch.home?.club_name,
+          opponentStrength: myNextMatch.home?.user_id === userId ? myNextMatch.away?.strength : myNextMatch.home?.strength,
+          isHome: myNextMatch.home?.user_id === userId,
+          competition: cup.name,
+          tieBreaker: 'both',
+          isNationalCup: true
+        },
+      },
+    });
+  };
+
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl mx-auto pb-10">
