@@ -1389,8 +1389,14 @@ Deno.serve(async (req) => {
         const stadium = Array.isArray(stadiumRows) ? stadiumRows[0] : stadiumRows;
         if (stadium) {
           resolvedStadiumName = stadium.stadium_name || resolvedStadiumName;
-          const lvl = Number(stadium.stadium_level) || 1;
-          resolvedStadiumCapacity = Math.max(5000, Math.floor(5000 * (1 + (lvl - 1) * 0.4)));
+          const lvl = Math.max(1, Math.min(15, Number(stadium.stadium_level) || 1));
+          // Tabela oficial de capacidade por nível (alinha com src/types/infrastructure.ts)
+          const STADIUM_CAPACITIES: Record<number, number> = {
+            1: 5000, 2: 10000, 3: 15000, 4: 20000, 5: 25000, 6: 30000,
+            7: 40000, 8: 50000, 9: 60000, 10: 70000, 11: 80000, 12: 90000,
+            13: 100000, 14: 110000, 15: 120000,
+          };
+          resolvedStadiumCapacity = STADIUM_CAPACITIES[lvl] || 5000;
           // Nome do mandante autoritativo (substitui o que o cliente passou)
           if (stadium.club_name && typeof stadium.club_name === 'string' && stadium.club_name.length > 0) {
             effHomeTeam = stadium.club_name;
