@@ -407,7 +407,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           ) : (
                             <div className="flex flex-col items-center">
                               <div className="text-[10px] font-bold bg-muted px-2 py-1 rounded text-muted-foreground uppercase">
-                                19:30
+                                {leagueInfo.division === 1 ? '19:30' : 'A def.'}
                               </div>
                             </div>
                           )}
