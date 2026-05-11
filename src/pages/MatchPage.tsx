@@ -166,12 +166,27 @@ export default function MatchPage() {
   // Auto-start or reconnect
   useEffect(() => {
     let cancelled = false;
+    // Timeout de segurança: se nada terminar em 25s, volta ao Dashboard com aviso
+    const safetyTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      if (!initDone) {
+        toast.error('Demorou demais para entrar na partida. Tente novamente.');
+        navigate('/', { replace: true });
+      }
+    }, 25000);
+
     const init = async () => {
       if (locState?.liveMatchDbId) {
         setLoadingMsg('Reconectando à partida');
         setPreMatchDone(true);
-        await loadMatch(locState.liveMatchDbId);
-        if (!cancelled) setInitDone(true);
+        const ok = await loadMatch(locState.liveMatchDbId);
+        if (cancelled) return;
+        if (!ok) {
+          toast.error('Não foi possível reconectar à partida.');
+          navigate('/', { replace: true });
+          return;
+        }
+        setInitDone(true);
       } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
         doStartMatch(locState.homePlayers, locState.tactics);
       } else if (!locState) {
@@ -186,7 +201,7 @@ export default function MatchPage() {
       }
     };
     init();
-    return () => { cancelled = true; destroy(); };
+    return () => { cancelled = true; window.clearTimeout(safetyTimer); destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!initDone || state.phase === 'loading') {

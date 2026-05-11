@@ -451,34 +451,31 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       {/* Infrastructure */}
       <div className="grid grid-cols-1 gap-3">
-        {/* Infrastructure Summary */}
         <Card className="game-card">
-          <CardHeader className="section-header pb-2 px-3 sm:px-4 pt-3">
-            <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Building2 className="h-3.5 w-3.5 text-primary" /> Infraestrutura
+          <CardHeader className="section-header pb-3 px-4 sm:px-5 pt-4">
+            <CardTitle className="text-sm sm:text-base uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" /> Infraestrutura
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 sm:px-4 pb-3">
+          <CardContent className="space-y-3 px-4 sm:px-5 pb-4">
             {infrastructure ? (
-              <>
-                <div className="space-y-1.5">
-                  {[
-                    { label: 'Estádio', value: infrastructure.stadium?.level || 1, max: 10, icon: '🏟️' },
-                    { label: 'CT', value: infrastructure.trainingCenter?.level || 1, max: 10, icon: '⚽' },
-                    { label: 'Fisioterapia', value: infrastructure.physiotherapy?.level || 1, max: 10, icon: '🏥' },
-                    { label: 'Academia', value: infrastructure.youthAcademy?.level || 1, max: 10, icon: '🎓' },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center gap-2">
-                      <span className="text-[10px] w-4">{item.icon}</span>
-                      <span className="text-[10px] text-muted-foreground w-16">{item.label}</span>
-                      <Progress value={(item.value / item.max) * 100} className="flex-1 h-1.5 progress-glow" />
-                      <span className="text-[9px] font-bold w-6 text-right">Lv.{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
+              <div className="space-y-3">
+                {[
+                  { label: 'Estádio', value: infrastructure.stadium?.level || 1, max: infrastructure.stadium?.maxLevel || 15, icon: '🏟️' },
+                  { label: 'CT', value: infrastructure.trainingCenter?.level || 1, max: infrastructure.trainingCenter?.maxLevel || 30, icon: '⚽' },
+                  { label: 'Fisioterapia', value: infrastructure.physiotherapy?.level || 1, max: infrastructure.physiotherapy?.maxLevel || 10, icon: '🏥' },
+                  { label: 'Academia', value: infrastructure.youthAcademy?.level || 1, max: infrastructure.youthAcademy?.maxLevel || 30, icon: '🎓' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-3">
+                    <span className="text-base sm:text-lg w-6 text-center">{item.icon}</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground w-24 sm:w-28">{item.label}</span>
+                    <Progress value={(item.value / item.max) * 100} className="flex-1 h-2.5 sm:h-3 progress-glow" />
+                    <span className="text-xs sm:text-sm font-bold w-16 sm:w-20 text-right tabular-nums">Lv.{item.value}<span className="text-muted-foreground/60 text-[10px]">/{item.max}</span></span>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <p className="text-xs text-muted-foreground text-center py-4">Carregando...</p>
+              <p className="text-sm text-muted-foreground text-center py-6">Carregando...</p>
             )}
           </CardContent>
         </Card>
