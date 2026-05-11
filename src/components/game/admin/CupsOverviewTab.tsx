@@ -90,7 +90,7 @@ export function CupsOverviewTab() {
         away_team: teamMap[m.away_team_id]
       }));
 
-      setMatches(prev => ({ ...prev, [cupId]: formattedMatches }));
+      setMatches(prev => ({ ...prev, [cupId]: formattedMatches as any }));
     } catch (e: any) {
       console.error(e);
     }
