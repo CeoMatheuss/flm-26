@@ -100,7 +100,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const fanMood = recentWins >= 4 ? 'Eufórica 🔥' : recentWins >= 3 ? 'Empolgada 😄' : recentWins >= 2 ? 'Animada 🙂' : recentLosses >= 5 ? 'Revoltada 😡' : recentLosses >= 4 ? 'Insatisfeita 😤' : recentLosses >= 3 ? 'Preocupada 😟' : 'Estável 😐';
   const fanMoodColor = recentWins >= 3 ? 'text-success' : recentLosses >= 4 ? 'text-destructive' : 'text-primary';
 
-  const playedMatches = club.matches.filter(m => m.played && !(m as any).isFriendly); // Centralizando amistosos na aba GERAIS
+  const playedMatches = club.matches.filter(m => m.played && !(m as any).isFriendly);
   let streak = 0;
   let streakType: 'V' | 'E' | 'D' | '' = '';
   for (let i = playedMatches.length - 1; i >= 0; i--) {
