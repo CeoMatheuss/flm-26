@@ -147,14 +147,19 @@ export function MatchesTab({
           <div className="space-y-3">
             {tournamentMatches.length > 0 ? tournamentMatches.map(m => (
               <Card key={m.id} className="bg-card/40 border-border/50">
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div className="flex-1 text-xs font-bold truncate">{m.homeName}</div>
-                  <div className="flex flex-col items-center px-4">
-                     <Badge variant="outline" className="text-[8px] mb-1">{m.competition}</Badge>
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0 text-center space-y-1">
+                    <div className="w-8 h-8 mx-auto flex items-center justify-center bg-muted/30 rounded-full text-lg">
+                      {m.homeLogo || '🛡️'}
+                    </div>
+                    <div className="text-[10px] font-bold truncate">{m.homeName}</div>
+                  </div>
+                  <div className="flex flex-col items-center px-2 shrink-0">
+                     <Badge variant="outline" className="text-[7px] mb-1">{m.competition}</Badge>
                      {m.status === 'live' ? (
                        <Badge variant="default" className="bg-red-500 animate-pulse text-[8px] h-4 mb-1">AO VIVO</Badge>
                      ) : (
-                       <div className="text-sm font-black">VS</div>
+                       <div className="text-xs font-black">VS</div>
                      )}
                      <span className="text-[8px] text-muted-foreground uppercase">{m.stage}</span>
                      <span className="text-[7px] text-muted-foreground font-bold mt-0.5">{new Date(m.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
