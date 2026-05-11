@@ -21,7 +21,7 @@ export function CopasTab({ userId }: Props) {
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
 
   const loadInitial = async () => {
