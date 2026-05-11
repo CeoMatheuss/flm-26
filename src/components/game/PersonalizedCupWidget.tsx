@@ -80,7 +80,12 @@ export function PersonalizedCupWidget({ userId }: Props) {
           </div>
         </div>
 
-        <Button variant="default" size="sm" className="w-full h-7 text-[10px] gap-1.5 font-bold uppercase">
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="w-full h-7 text-[10px] gap-1.5 font-bold uppercase"
+          onClick={() => onOpenTournament && onOpenTournament(nextMatch.cup_id)}
+        >
           Abrir Copa <ArrowRight className="h-3 w-3" />
         </Button>
       </CardContent>
