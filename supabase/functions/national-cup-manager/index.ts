@@ -206,14 +206,16 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
 
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
+            const homeTeam = shuffled[i];
             matches.push({
                 cup_id: cupId,
                 round: round,
                 bracket_pos: Math.floor(i / 2),
-                home_team_id: shuffled[i].id,
+                home_team_id: homeTeam.id,
                 away_team_id: shuffled[i+1].id,
                 scheduled_at: scheduledAt.toISOString(),
-                status: 'scheduled'
+                status: 'scheduled',
+                stadium: `Estádio ${homeTeam.club_name}`
             });
         }
     }
