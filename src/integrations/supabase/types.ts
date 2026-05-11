@@ -2323,6 +2323,7 @@ export type Database = {
           created_at: string | null
           current_round: number
           id: string
+          kickoff_time: string | null
           name: string
           season: number
           status: string
@@ -2335,6 +2336,7 @@ export type Database = {
           created_at?: string | null
           current_round?: number
           id?: string
+          kickoff_time?: string | null
           name: string
           season?: number
           status?: string
@@ -2347,6 +2349,7 @@ export type Database = {
           created_at?: string | null
           current_round?: number
           id?: string
+          kickoff_time?: string | null
           name?: string
           season?: number
           status?: string
@@ -4493,6 +4496,7 @@ export type Database = {
         Args: { p_league_id: string; p_matchday: number }
         Returns: undefined
       }
+      simulate_overdue_cup_matches: { Args: never; Returns: undefined }
       simulate_overdue_matches: { Args: never; Returns: undefined }
       start_club_world_cup: { Args: { _season_year: number }; Returns: string }
       start_continental_tournament: {
