@@ -822,7 +822,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-3 mt-3">
-            <ModerationPanel onDeleteMessage={deleteMessage} />
+            {/* <ModerationPanel onDeleteMessage={deleteMessage} /> */}
           </TabsContent>
 
           <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
