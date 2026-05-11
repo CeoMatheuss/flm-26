@@ -21,7 +21,7 @@ export function CopasTab({ userId }: Props) {
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
 
   const loadInitial = async () => {
@@ -65,15 +65,13 @@ export function CopasTab({ userId }: Props) {
       if (!currentCup) return;
       setCup(currentCup);
 
-      const [matchesRes, statsRes, newsRes] = await Promise.all([
+      const [matchesRes, statsRes] = await Promise.all([
         supabase.from('national_cup_matches').select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)').eq('cup_id', id).order('round', { ascending: true }).order('bracket_pos', { ascending: true }),
-        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10),
-        supabase.from('cup_news').select('*').eq('cup_id', id).order('created_at', { ascending: false }).limit(5)
+        supabase.from('cup_player_stats').select('*, player:world_players(name), team:world_teams(name, logo)').eq('cup_id', id).order('goals', { ascending: false }).limit(10)
       ]);
 
       if (matchesRes.data) setMatches(matchesRes.data);
       if (statsRes.data) setStats(statsRes.data);
-      if (newsRes.data) setNews(newsRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -196,7 +194,6 @@ export function CopasTab({ userId }: Props) {
           <TabsTrigger value="matches" className="tab-trigger-modern"><Calendar className="h-3.5 w-3.5" /> Jogos</TabsTrigger>
           <TabsTrigger value="bracket" className="tab-trigger-modern"><TrendingUp className="h-3.5 w-3.5" /> Chaveamento</TabsTrigger>
           <TabsTrigger value="stats" className="tab-trigger-modern"><BarChart3 className="h-3.5 w-3.5" /> Estatísticas</TabsTrigger>
-          <TabsTrigger value="news" className="tab-trigger-modern"><Newspaper className="h-3.5 w-3.5" /> Notícias</TabsTrigger>
           <TabsTrigger value="prizes" className="tab-trigger-modern"><DollarSign className="h-3.5 w-3.5" /> Premiação</TabsTrigger>
         </TabsList>
 
@@ -286,26 +283,6 @@ export function CopasTab({ userId }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="news" className="outline-none space-y-4">
-          {news.length > 0 ? news.map(n => (
-            <Card key={n.id} className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer">
-              <CardContent className="p-6 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                  <Newspaper className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-black uppercase tracking-tight">{n.title}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{n.content}</p>
-                  <span className="text-[9px] font-mono text-muted-foreground/50 block pt-2">
-                    {new Date(n.created_at).toLocaleDateString()} • {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="py-20 text-center text-xs text-muted-foreground">Nenhuma notícia recente.</div>
-          )}
-        </TabsContent>
 
         <TabsContent value="prizes" className="outline-none">
           <div className="space-y-6">

@@ -27,7 +27,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   const [loading, setLoading] = useState(true);
   const [currentRound, setCurrentRound] = useState(1);
   const [playerStats, setPlayerStats] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
+  
   const [activeTab, setActiveTab] = useState('standings');
 
   const loadData = async () => {
@@ -157,15 +157,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       
       if (statsData) setPlayerStats(statsData);
 
-      // 4. Load News
-      const { data: newsData } = await supabase
-        .from('world_league_news')
-        .select('*')
-        .eq('league_id', teamData.league_id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      
-      if (newsData) setNews(newsData);
     }
     setLoading(false);
   };
@@ -263,11 +254,10 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 h-auto p-1 bg-muted/50">
           <TabsTrigger value="standings" className="text-[10px] md:text-xs py-2">Tabela</TabsTrigger>
           <TabsTrigger value="matches" className="text-[10px] md:text-xs py-2">Jogos</TabsTrigger>
           <TabsTrigger value="stats" className="text-[10px] md:text-xs py-2">Estatísticas</TabsTrigger>
-          <TabsTrigger value="news" className="text-[10px] md:text-xs py-2">Jornal</TabsTrigger>
           <TabsTrigger value="calendar" className="text-[10px] md:text-xs py-2">Calendário</TabsTrigger>
           <TabsTrigger value="info" className="text-[10px] md:text-xs py-2">Info</TabsTrigger>
         </TabsList>
@@ -579,36 +569,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           </div>
         </TabsContent>
 
-        {/* TAB: NEWS */}
-        <TabsContent value="news" className="mt-4">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {news.map(item => (
-                <Card key={item.id} className={`${item.category === 'fan_reaction' ? 'bg-muted/30' : 'bg-card'} border-l-4 ${item.category === 'match_report' ? 'border-l-primary' : 'border-l-amber-500'}`}>
-                  <CardHeader className="pb-2 pt-3">
-                    <div className="flex items-center justify-between">
-                       <Badge variant="outline" className="text-[8px] uppercase tracking-tighter">
-                         {item.category === 'match_report' ? <Newspaper className="h-3 w-3 mr-1" /> : <MessageSquare className="h-3 w-3 mr-1" />}
-                         {item.category === 'match_report' ? 'Jornal' : 'Torcida'}
-                       </Badge>
-                       <span className="text-[9px] text-muted-foreground">Hoje</span>
-                    </div>
-                    <CardTitle className="text-sm mt-1 leading-tight font-black">{item.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <p className="text-xs text-muted-foreground italic leading-relaxed">
-                      "{item.content}"
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-              {news.length === 0 && (
-                <div className="col-span-full py-20 text-center bg-muted/10 rounded-xl border-2 border-dashed">
-                   <Newspaper className="h-10 w-10 text-muted-foreground/20 mx-auto" />
-                   <p className="text-sm text-muted-foreground mt-2">Nenhuma notícia de destaque hoje.</p>
-                </div>
-              )}
-           </div>
-        </TabsContent>
 
         {/* TAB: CALENDAR */}
         <TabsContent value="calendar" className="mt-4">

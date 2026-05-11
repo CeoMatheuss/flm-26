@@ -92,18 +92,70 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    // Load ALL global news (from all users)
-    const { data } = await supabase
+    
+    // 1. Load ALL global news from the main newspaper
+    const { data: mainNews } = await supabase
       .from('newspaper_entries')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(300);
-    if (data) setEntries(data as SavedEntry[]);
+      .limit(200);
 
-    // Load user reactions
+    // 2. Load League News
+    const { data: leagueNews } = await supabase
+      .from('world_league_news')
+      .select('*, league:world_leagues(name)')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    // 3. Load Cup News
+    const { data: cupNews } = await supabase
+      .from('cup_news')
+      .select('*, cup:national_cups(name)')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    const merged: SavedEntry[] = [];
+
+    if (mainNews) {
+      merged.push(...(mainNews as SavedEntry[]));
+    }
+
+    if (leagueNews) {
+      leagueNews.forEach(ln => {
+        merged.push({
+          id: `ln-${ln.id}`,
+          text: `${ln.title}\n${ln.content}`,
+          category: ln.category || 'CAMPEONATO',
+          is_event: true,
+          created_at: ln.created_at,
+          user_id: '',
+          image_key: ln.category === 'cup' ? 'cup_champion' : null
+        });
+      });
+    }
+
+    if (cupNews) {
+      cupNews.forEach(cn => {
+        merged.push({
+          id: `cn-${cn.id}`,
+          text: `${cn.title}\n${cn.content}`,
+          category: 'COPA',
+          is_event: true,
+          created_at: cn.created_at,
+          user_id: '',
+          image_key: 'cup_champion'
+        });
+      });
+    }
+
+    // Sort all by date
+    merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setEntries(merged);
+
+    // Load user reactions (only for main newspaper for now as the others don't have IDs in reactions table)
     const { data: { user } } = await supabase.auth.getUser();
-    if (user && data && data.length > 0) {
-      const entryIds = (data as SavedEntry[]).map(e => e.id);
+    if (user && mainNews && mainNews.length > 0) {
+      const entryIds = (mainNews as SavedEntry[]).map(e => e.id);
       const { data: rxns } = await supabase
         .from('newspaper_reactions')
         .select('entry_id, emoji')
