@@ -411,7 +411,7 @@ type MatchStatus = 'live' | 'finished' | 'none';
  * Sempre renderizado no topo do dashboard. Nunca removido.
  * Consome dados do backend (live_matches table) e club.matches (scheduled/finished).
  */
-export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }: Props) {
+export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, stadiumLevel }: Props) {
   const navigate = useNavigate();
   const [liveMatch, setLiveMatch] = useState<LiveMatchFromDB | null>(null);
   const [currentMinute, setCurrentMinute] = useState(0);
