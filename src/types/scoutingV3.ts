@@ -46,6 +46,7 @@ export interface ScoutReportV3 {
     potential: number;
     market_value: number;
     nationality: string;
+    status?: 'livre' | 'contratado' | 'disponível';
   };
   accuracy: number;
   status: 'novo' | 'visto' | 'contratado' | 'descartado';
