@@ -226,9 +226,11 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   if (nextMatch) {
     const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
     const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
-    const fmt = nextMatch.date ? {
-      dateFormatted: new Date(nextMatch.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      timeFormatted: new Date(nextMatch.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    // Widget exibe o horário do jogo da liga + 1 hora (alinhado ao kickoff real)
+    const displayDate = nextMatch.date ? new Date(new Date(nextMatch.date).getTime() + 60 * 60 * 1000) : null;
+    const fmt = displayDate ? {
+      dateFormatted: displayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      timeFormatted: displayDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     } : null;
 
     const isFinished = nextMatch.status === 'finished';
