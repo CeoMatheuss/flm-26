@@ -218,34 +218,39 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
 
     if (!teams || teams.length < 2) return;
 
-    // Se for a Rodada 1, embaralhar totalmente. Se for as outras, o chaveamento pode ser pré-determinado ou sorteado
-    const shuffled = teams.sort(() => Math.random() - 0.5);
+    // Sorteio: Fisher-Yates para maior segurança
+    const shuffled = [...teams];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
     const matches = [];
     
-    // Jogos às 12:00 BRT (UTC-3), começando dia 11. 1 jogo por dia (round)
-    // Usando Date.UTC para garantir sincronia global
-    const kickoff = new Date();
-    // Definimos o ano e mês atual
+    // Jogos às 12:00 BRT (UTC-3). Se for dia 10 e status scheduled, começa dia 11.
     const now = new Date();
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth();
     
-    // Dia 11 às 12:00 BRT = 15:00 UTC
+    // Dia base (11) + deslocamento da rodada
     const baseDay = 11 + (round - 1);
-    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0)); // 15:00 UTC is 12:00 BRT (UTC-3)
+    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0)); // 15:00 UTC = 12:00 BRT
 
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
-            const homeTeam = shuffled[i];
+            // Mandante e visitante já definidos pela ordem do array embaralhado
+            const home = shuffled[i];
+            const away = shuffled[i+1];
+            
             matches.push({
                 cup_id: cupId,
                 round: round,
                 bracket_pos: Math.floor(i / 2),
-                home_team_id: homeTeam.id,
-                away_team_id: shuffled[i+1].id,
+                home_team_id: home.id,
+                away_team_id: away.id,
                 scheduled_at: scheduledAt.toISOString(),
                 status: 'scheduled',
-                stadium: `Estádio ${homeTeam.club_name}`
+                stadium: `Estádio ${home.club_name}`
             });
         }
     }
