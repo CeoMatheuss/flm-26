@@ -207,6 +207,7 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [cupName, setCupName] = useState<string>('Copa');
   const [cupCurrentRound, setCupCurrentRound] = useState<number>(1);
   const [scope, setScope] = useState<'all' | 'league' | 'cup'>('all');
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
