@@ -81,6 +81,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     matchId, homeGoals, awayGoals, isHome = true, competition,
   }: { matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean; competition?: string }) => {
     const isCup = /copa|cup/i.test(competition || '');
+    const isFriendly = /amistoso|friendly/i.test(competition || '');
     matchState.applyServerResult({ matchId, homeGoals, awayGoals, isHome, competition }, {
       setClub: clubState.setClub,
       sponsors: financeState.sponsors,
@@ -89,6 +90,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
       setSeason: infraState.setSeason,
       stadiumOps: clubState.club.stadiumOps,
       isCup,
+      isFriendly,
     });
   }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason, clubState.club.stadiumOps]);
 
