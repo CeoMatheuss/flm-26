@@ -159,20 +159,31 @@ serve(async (req) => {
 })
 
 async function drawNextRound(supabase: any, cupId: string, round: number) {
+    const { data: cup } = await supabase.from('national_cups').select('*').eq('id', cupId).single();
+    if (!cup) return;
+
     const { data: teams } = await supabase.from('national_cup_teams')
         .select('*')
         .eq('cup_id', cupId)
-        .eq('eliminated', false)
+        .eq('eliminated', false);
 
-    if (!teams || teams.length < 2) return
+    if (!teams || teams.length < 2) return;
 
-    const shuffled = teams.sort(() => Math.random() - 0.5)
-    const matches = []
+    // Se for a Rodada 1, embaralhar totalmente. Se for as outras, o chaveamento pode ser pré-determinado ou sorteado
+    const shuffled = teams.sort(() => Math.random() - 0.5);
+    const matches = [];
     
-    // Jogos às 12:00, começando dia 11. 1 jogo por dia (round)
-    const kickoff = new Date()
-    kickoff.setDate(11 + (round - 1))
-    kickoff.setHours(12, 0, 0, 0)
+    // Jogos às 12:00 BRT (UTC-3), começando dia 11. 1 jogo por dia (round)
+    // Usando Date.UTC para garantir sincronia global
+    const kickoff = new Date();
+    // Definimos o ano e mês atual
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth();
+    
+    // Dia 11 às 12:00 BRT = 15:00 UTC
+    const baseDay = 11 + (round - 1);
+    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0));
 
     for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
@@ -182,17 +193,17 @@ async function drawNextRound(supabase: any, cupId: string, round: number) {
                 bracket_pos: Math.floor(i / 2),
                 home_team_id: shuffled[i].id,
                 away_team_id: shuffled[i+1].id,
-                scheduled_at: kickoff.toISOString(),
+                scheduled_at: scheduledAt.toISOString(),
                 status: 'scheduled'
-            })
+            });
         }
     }
 
     if (matches.length > 0) {
-        await supabase.from('national_cup_matches').insert(matches)
+        await supabase.from('national_cup_matches').insert(matches);
         await supabase.from('national_cups').update({ 
             status: 'in_progress',
             current_round: round
-        }).eq('id', cupId)
+        }).eq('id', cupId);
     }
 }
