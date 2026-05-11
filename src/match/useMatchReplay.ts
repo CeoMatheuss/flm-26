@@ -100,7 +100,7 @@ export function useMatchReplay() {
     setState({
       phase, currentMinute, progress, homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals, awayGoals, visibleEvents, latestEvent, stats: liveStats,
-      stadiumName: 'Campeonato', matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
+      stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
       currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
     });
 
