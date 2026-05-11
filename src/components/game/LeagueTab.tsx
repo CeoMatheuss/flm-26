@@ -52,25 +52,80 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       });
       setCurrentRound(league?.current_round || 1);
 
-      // 1. Load Standings
+      // 1. Load Standings with Club metadata for shields
       const { data: standingsData } = await supabase
         .from('world_league_table')
-        .select('*, world_teams(name, logo, is_bot)')
+        .select(`
+          *, 
+          world_teams (
+            id,
+            name, 
+            logo, 
+            is_bot,
+            user_id
+          )
+        `)
         .eq('league_id', teamData.league_id)
         .order('points', { ascending: false })
         .order('goals_for', { ascending: false });
       
-      if (standingsData) setStandings(standingsData);
+      if (standingsData) {
+        // Enhance with real club metadata for shields
+        const teamIds = standingsData.map(r => r.world_teams?.user_id).filter(Boolean);
+        const { data: clubsData } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('user_id', teamIds);
 
-      // 2. Load Fixtures
+        const enhancedStandings = standingsData.map(row => {
+          const club = clubsData?.find(c => c.user_id === row.world_teams?.user_id);
+          return {
+            ...row,
+            world_teams: {
+              ...row.world_teams,
+              ...club // Spread club metadata (primaryColor, shield_config, etc) into team
+            }
+          };
+        });
+        setStandings(enhancedStandings);
+      }
+
+      // 2. Load Fixtures with Club metadata
       const { data: fixturesData } = await supabase
         .from('world_matches')
-        .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name, logo), away_team:world_teams!world_matches_away_team_id_fkey(name, logo)')
+        .select(`
+          *, 
+          home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id), 
+          away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id)
+        `)
         .eq('league_id', teamData.league_id)
         .order('round', { ascending: true })
         .order('scheduled_at', { ascending: true });
       
-      if (fixturesData) setFixtures(fixturesData);
+      if (fixturesData) {
+        const userIds = [
+          ...fixturesData.map(f => f.home_team?.user_id),
+          ...fixturesData.map(f => f.away_team?.user_id)
+        ].filter(Boolean);
+
+        const { data: clubsData } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('user_id', userIds);
+
+        const enhancedFixtures = fixturesData.map(match => ({
+          ...match,
+          home_team: {
+            ...match.home_team,
+            ...clubsData?.find(c => c.user_id === match.home_team?.user_id)
+          },
+          away_team: {
+            ...match.away_team,
+            ...clubsData?.find(c => c.user_id === match.away_team?.user_id)
+          }
+        }));
+        setFixtures(enhancedFixtures);
+      }
 
       // 3. Load Player Stats
       const { data: statsData } = await supabase
@@ -236,6 +291,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                             <div className="flex items-center gap-3">
                               <ClubShield 
                                 club={row.world_teams as any} 
+                                fallbackText={row.world_teams?.name} 
                                 size={28} 
                                 className="shrink-0 drop-shadow-sm" 
                               />
@@ -316,7 +372,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-right space-y-1">
                          <p className="text-sm font-bold truncate">{match.home_team?.name}</p>
                           <div className="flex justify-end gap-1">
-                            <ClubShield club={match.home_team as any} size={28} />
+                            <ClubShield club={match.home_team as any} fallbackText={match.home_team?.name} size={28} />
                           </div>
                        </div>
                        <div className="col-span-1 flex flex-col items-center gap-1">
@@ -339,7 +395,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
                           <div className="flex justify-start gap-1">
-                            <ClubShield club={match.away_team as any} size={28} />
+                            <ClubShield club={match.away_team as any} fallbackText={match.away_team?.name} size={28} />
                           </div>
                        </div>
                      </div>

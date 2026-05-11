@@ -18,6 +18,11 @@ export interface ShieldSourceLike {
   shieldShape?: string;
   shieldIcon?: string;
   logoUrl?: string;
+  logo_url?: string; // Add support for DB snake_case
+  primary_color?: string;
+  secondary_color?: string;
+  detail_color?: string;
+  shield_config?: any;
 }
 
 export interface ShieldRenderProps {
@@ -43,15 +48,16 @@ export interface ShieldRenderProps {
 }
 
 export function shieldPropsFromClub(source: ShieldSourceLike | null | undefined): ShieldRenderProps {
-  const cfg = source?.shieldConfig;
-  if (cfg && cfg.pattern) {
+  const cfg = source?.shield_config || source?.shieldConfig;
+  
+  if (cfg && (cfg.pattern || cfg.shieldPattern)) {
     return {
-      primaryColor: cfg.primaryColor || source?.primaryColor || '#2563EB',
-      secondaryColor: cfg.secondaryColor || source?.secondaryColor || '#FFFFFF',
-      detailColor: cfg.detailColor || source?.detailColor,
-      pattern: cfg.pattern as ShieldPattern,
-      shape: (cfg.shape as ShieldShape) || 'classic',
-      icon: cfg.icon as ShieldIcon | undefined,
+      primaryColor: cfg.primaryColor || cfg.primary_color || source?.primaryColor || source?.primary_color || '#2563EB',
+      secondaryColor: cfg.secondaryColor || cfg.secondary_color || source?.secondaryColor || source?.secondary_color || '#FFFFFF',
+      detailColor: cfg.detailColor || cfg.detail_color || source?.detailColor || source?.detail_color,
+      pattern: (cfg.pattern || cfg.shieldPattern) as ShieldPattern,
+      shape: (cfg.shape as ShieldShape) || (cfg.shieldShape as ShieldShape) || 'classic',
+      icon: (cfg.icon || cfg.shieldIcon) as ShieldIcon | undefined,
       borderColor: cfg.borderColor,
       borderWidth: cfg.borderWidth,
       iconScale: cfg.iconScale,
@@ -69,10 +75,10 @@ export function shieldPropsFromClub(source: ShieldSourceLike | null | undefined)
   }
 
   return {
-    primaryColor: source?.primaryColor || '#2563EB',
-    secondaryColor: source?.secondaryColor || '#FFFFFF',
-    detailColor: source?.detailColor,
-    pattern: source?.shieldPattern || 'solid',
+    primaryColor: source?.primaryColor || source?.primary_color || '#2563EB',
+    secondaryColor: source?.secondaryColor || source?.secondary_color || '#FFFFFF',
+    detailColor: source?.detailColor || source?.detail_color,
+    pattern: (source?.shieldPattern || 'solid') as ShieldPattern,
     shape: (source?.shieldShape as ShieldShape) || 'classic',
     icon: source?.shieldIcon as ShieldIcon | undefined,
   };
@@ -81,5 +87,5 @@ export function shieldPropsFromClub(source: ShieldSourceLike | null | undefined)
 /** Returns true if the source has a renderable shield (legacy or V2). */
 export function hasShield(source: ShieldSourceLike | null | undefined): boolean {
   if (!source) return false;
-  return !!(source.shieldConfig?.pattern || source.shieldPattern);
+  return !!(source.shield_config?.pattern || source.shieldConfig?.pattern || source.shieldPattern);
 }

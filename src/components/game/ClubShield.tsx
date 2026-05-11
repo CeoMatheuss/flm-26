@@ -17,10 +17,10 @@ interface ClubShieldProps {
  */
 export function ClubShield({ club, size = 32, className, fallbackText }: ClubShieldProps) {
   // If we have a V2 shield configuration or legacy shield fields
-  const hasRenderableShield = !!(club?.shieldConfig?.pattern || club?.shieldPattern);
+  const hasRenderableShield = !!(club?.shield_config?.pattern || club?.shieldConfig?.pattern || club?.shieldPattern);
   
   // Custom logo URL (must be a valid URL, not a string like "solid")
-  const logoUrl = club?.shieldConfig?.logoUrl || club?.logoUrl;
+  const logoUrl = club?.shield_config?.logoUrl || club?.shieldConfig?.logoUrl || club?.logoUrl || club?.logo_url;
   const FORBIDDEN_PATTERN_NAMES = ['solid', 'outline', 'stripes', 'halves', 'diagonal', 'split', 'chevron', 'cross', 'waves', 'quarters', 'triband', 'sash', 'hoop'];
   const isRealUrl = logoUrl && 
     (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('/')) &&
