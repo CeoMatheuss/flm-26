@@ -1035,7 +1035,7 @@ function simulateFullMatch(
   const baseAttendance = homePart + awayPart;
   const strengthMultiplier = 0.85 + (homeStrength / 200);
   const estimatedCrowd = Math.min(maxCapacity, Math.floor(baseAttendance * strengthMultiplier));
-  const ticketRevenue = Math.floor(estimatedCrowd * 25); // R$ 25 médio por ingresso
+  const ticketRevenue = Math.floor(estimatedCrowd * 25); // R$ 25 médio por ingresso 
 
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
@@ -1292,7 +1292,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = await req.json();
-    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff, tieBreaker, awayPlayers, awayTactics } = body;
+    const { homeTeam, awayTeam, homePlayers, homeStrength, awayStrength, matchId, tactics, stadiumName, stadiumCapacity, isHome, competition, tournamentMatchId, fans, awayFans, staff, tieBreaker, awayPlayers, awayTactics, ticketPrice } = body;
     const validTieBreaker: 'none' | 'extra_time' | 'penalties' | 'both' =
       ['none', 'extra_time', 'penalties', 'both'].includes(tieBreaker) ? tieBreaker : 'none';
 
@@ -1492,7 +1492,8 @@ Deno.serve(async (req) => {
       competition || 'Amistoso', resolvedStadiumCapacity, resolvedHomeFans,
       staff, resolvedAwayFans, validTieBreaker,
       effAwayPlayers,
-      effAwayTactics
+      effAwayTactics,
+      ticketPrice || 25
     );
 
     // Fallback: ensure minimum events so UI never hangs
