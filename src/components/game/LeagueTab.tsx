@@ -578,36 +578,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           </div>
         </TabsContent>
 
-        {/* TAB: NEWS */}
-        <TabsContent value="news" className="mt-4">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {news.map(item => (
-                <Card key={item.id} className={`${item.category === 'fan_reaction' ? 'bg-muted/30' : 'bg-card'} border-l-4 ${item.category === 'match_report' ? 'border-l-primary' : 'border-l-amber-500'}`}>
-                  <CardHeader className="pb-2 pt-3">
-                    <div className="flex items-center justify-between">
-                       <Badge variant="outline" className="text-[8px] uppercase tracking-tighter">
-                         {item.category === 'match_report' ? <Newspaper className="h-3 w-3 mr-1" /> : <MessageSquare className="h-3 w-3 mr-1" />}
-                         {item.category === 'match_report' ? 'Jornal' : 'Torcida'}
-                       </Badge>
-                       <span className="text-[9px] text-muted-foreground">Hoje</span>
-                    </div>
-                    <CardTitle className="text-sm mt-1 leading-tight font-black">{item.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <p className="text-xs text-muted-foreground italic leading-relaxed">
-                      "{item.content}"
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-              {news.length === 0 && (
-                <div className="col-span-full py-20 text-center bg-muted/10 rounded-xl border-2 border-dashed">
-                   <Newspaper className="h-10 w-10 text-muted-foreground/20 mx-auto" />
-                   <p className="text-sm text-muted-foreground mt-2">Nenhuma notícia de destaque hoje.</p>
-                </div>
-              )}
-           </div>
-        </TabsContent>
 
         {/* TAB: CALENDAR */}
         <TabsContent value="calendar" className="mt-4">
