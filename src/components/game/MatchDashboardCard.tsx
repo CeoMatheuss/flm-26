@@ -694,11 +694,11 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
 
   // Render the appropriate shield for a side, prioritizing the player's own club shield
   const renderTeamShield = (isClubSide: boolean, side: 'home' | 'away') => {
-    if (isClubSide && hasShield(club as any)) {
-      return <ShieldCrest {...shieldPropsFromClub(club as any)} size={40} className="mx-auto mb-1" />;
+    if (isClubSide) {
+      return <ClubShield club={club as any} size={40} className="mx-auto mb-1" />;
     }
     const props = side === 'home' ? homeShield : awayShield;
-    return <ShieldCrest {...props} size={40} className="mx-auto mb-1" />;
+    return <ClubShield club={{ shieldConfig: props } as any} size={40} className="mx-auto mb-1" />;
   };
 
   return (
