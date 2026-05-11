@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import MatchPage from "./pages/MatchPage";
 import ReplayPage from "./pages/ReplayPage";
 import NotFound from "./pages/NotFound";
+import TrailerGallery from "./pages/TrailerGallery";
 
 const queryClient = new QueryClient();
 
