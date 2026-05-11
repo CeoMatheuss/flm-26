@@ -183,7 +183,7 @@ export function resolveKnockout(args: {
     if (sH > sA + (4 - i) || sA > sH + (4 - i)) break;
   }
 
-  // Sudden death until decided.
+  // Sudden death until decided (FIFA style: each team takes one kick until one marks and the other misses).
   while (sH === sA) {
     const homeScored = Math.random() < homeConv;
     if (homeScored) sH++;
