@@ -13,7 +13,7 @@ export function GameNavBar() {
           <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Elenco</span>
         </TabsTrigger>
-        <TabsTrigger value="matches" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+        <TabsTrigger value="matches" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 opacity-0 pointer-events-none absolute h-0 w-0 overflow-hidden">
           <Swords className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Partidas</span>
         </TabsTrigger>
