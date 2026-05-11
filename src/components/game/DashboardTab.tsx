@@ -58,7 +58,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
             <div 
               key={s.id} 
               className="flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group"
-              onClick={() => handleOpenProfile(s.world_teams?.name)}
+              onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.world_teams?.name } }))}
             >
               <div className="flex items-center gap-2">
                 <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
