@@ -7,7 +7,7 @@
  *   • Derrota  → -6
  *
  * Pesos:
- *   amistoso 0.5 · liga 1.0 · copa 1.2 · continental 1.6 · mundial 2.0
+ *   amistoso 0.5 · liga 1.0 · continental 1.6 · mundial 2.0 (Copas Nacionais desativadas)
  *
  * Nunca destrói histórico — sempre incrementa via UPDATE.
  */
