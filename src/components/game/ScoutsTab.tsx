@@ -33,6 +33,7 @@ const SPEC_LABELS: Record<ScoutSpecialization, string> = {
 
 export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   const [myScouts, setMyScouts] = useState<ScoutV3[]>([]);
+  const SCOUT_LIMIT = 3;
   const [marketScouts, setMarketScouts] = useState<ScoutV3[]>([]);
   const [missions, setMissions] = useState<ScoutMissionV3[]>([]);
   const [reports, setReports] = useState<ScoutReportV3[]>([]);
