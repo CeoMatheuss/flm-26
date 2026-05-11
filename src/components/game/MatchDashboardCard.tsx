@@ -45,7 +45,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // 1. Check for next National Cup match
+      // Coleta candidatos (Copa + Liga) e escolhe o de menor scheduled_at
+      const candidates: any[] = [];
+
+      // 1. Próxima partida da Copa Nacional
       const { data: cupEntry } = await supabase
         .from('national_cup_teams')
         .select('cup_id')
@@ -68,34 +71,28 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
           .limit(1);
 
         if (cupMatches && cupMatches.length > 0) {
-          const match: any = cupMatches[0];
-          const isHome = match.home?.club_name === clubName;
-          
-          if (!cancelled) {
-            setNextMatch({
-              home: match.home.club_name,
-              away: match.away.club_name,
-              date: match.scheduled_at,
-              tournament: match.cup?.name || 'Copa',
-              matchId: match.id,
-              homeTeamId: match.home_team_id,
-              awayTeamId: match.away_team_id,
-              opponentStrength: isHome ? match.away.strength : match.home.strength,
-              isHome,
-              tournamentName: match.cup?.name || 'Copa',
-              status: match.status,
-              round: match.round,
-              kind: 'tournament',
-              stage: `Fase ${match.round}`,
-            });
-            setLoading(false);
-            return;
-          }
+          const m: any = cupMatches[0];
+          const isHome = m.home?.club_name === clubName;
+          candidates.push({
+            home: m.home.club_name,
+            away: m.away.club_name,
+            date: m.scheduled_at,
+            tournament: m.cup?.name || 'Copa',
+            matchId: m.id,
+            homeTeamId: m.home_team_id,
+            awayTeamId: m.away_team_id,
+            opponentStrength: isHome ? m.away.strength : m.home.strength,
+            isHome,
+            tournamentName: m.cup?.name || 'Copa',
+            status: m.status,
+            round: m.round,
+            kind: 'tournament',
+            stage: `Fase ${m.round}`,
+          });
         }
       }
 
-
-      // 2. Check for next league match
+      // 2. Próxima partida da Liga
       const { data: matches, error } = await supabase
         .from('world_matches')
         .select(`
@@ -114,33 +111,36 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
-      if (error) {
-        console.error('Error fetching next match:', error);
+      if (error) console.error('Error fetching next match:', error);
+
+      if (matches && matches.length > 0) {
+        const m: any = matches[0];
+        const isHome = m.home_team_id === teamData.id;
+        candidates.push({
+          home: m.home_team.name,
+          away: m.away_team.name,
+          date: m.scheduled_at,
+          tournament: m.world_leagues?.name || 'Liga',
+          matchId: m.id,
+          homeTeamId: m.home_team_id,
+          awayTeamId: m.away_team_id,
+          opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
+          isHome,
+          tournamentName: m.world_leagues?.name || 'Liga',
+          status: m.status,
+          round: m.round,
+          kind: 'league',
+          stage: 'Liga',
+        });
       }
 
       if (!cancelled) {
-        if (!matches || matches.length === 0) {
+        if (candidates.length === 0) {
           setNextMatch(null);
         } else {
-          const match: any = matches[0];
-          const isHome = match.home_team_id === teamData.id;
-
-          setNextMatch({
-            home: match.home_team.name,
-            away: match.away_team.name,
-            date: match.scheduled_at,
-            tournament: match.world_leagues?.name || 'Liga',
-            matchId: match.id,
-            homeTeamId: match.home_team_id,
-            awayTeamId: match.away_team_id,
-            opponentStrength: isHome ? match.away_team.strength : match.home_team.strength,
-            isHome,
-            tournamentName: match.world_leagues?.name || 'Liga',
-            status: match.status,
-            round: match.round,
-            kind: 'league',
-            stage: 'Liga',
-          });
+          // Escolhe o de menor scheduled_at — se a copa for hoje 12h e a liga 19:30, mostra a copa primeiro
+          candidates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setNextMatch(candidates[0]);
         }
         setLoading(false);
       }
@@ -271,8 +271,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         </div>
         <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
           {isReady ? '🔴 AO VIVO' :
-            isToday ? `⏰ HOJE às ${nextMatch.kind === 'tournament' ? '12:00' : '19:30'}` :
-            fmt ? `📅 ${fmt.dateFormatted} às ${nextMatch.kind === 'tournament' ? '12:00' : '19:30'}` : 'Em breve'}
+            isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
+            fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
         <div className="flex items-center justify-center gap-3">
           <button onClick={() => onViewClub?.(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
