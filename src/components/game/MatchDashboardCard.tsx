@@ -151,6 +151,7 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
     const channel = supabase
       .channel(`dash-next-match-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadNextMatch())
       .subscribe();
 
     const interval = setInterval(loadNextMatch, 60000);
