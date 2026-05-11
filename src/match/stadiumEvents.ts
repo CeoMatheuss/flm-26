@@ -188,6 +188,8 @@ export interface StadiumOpsState {
   phase6?: import('./stadiumPhase6').StadiumPhase6State;
   /** Fase 6 — última cobrança/recálculo do programa de sócios */
   lastMembershipBilledAt?: string;
+  /** 🛡️ Anti-Duplicação: Lista de IDs de propostas já processadas neste ciclo */
+  processedEventIds?: string[];
 }
 
 // ─── Insurance plans ──────────────────────────────────────────────────────
@@ -394,6 +396,8 @@ export function emptyStadiumOps(): StadiumOpsState {
     sponsorContracts: [],
     achievements: { unlocked: [], progress: {} },
     phase6: { membership: { activeTiers: [], membersByTier: {} }, upgrades: { owned: [], purchasedAt: {} } },
+    lastMembershipBilledAt: undefined,
+    processedEventIds: [],
   };
 }
 

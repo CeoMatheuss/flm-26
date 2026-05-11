@@ -164,19 +164,33 @@ export function useClubState(initialState: any, userId?: string) {
         if (nextOps.proposals.length !== before) changed = true;
 
         // 2) resolver eventos cuja data passou
-        const due = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() <= now);
+        const processedIds = nextOps.processedEventIds ?? [];
+        const due = nextOps.acceptedEvents.filter(e => 
+          new Date(e.scheduledFor).getTime() <= now && !processedIds.includes(e.proposalId)
+        );
+
         if (due.length > 0) {
           const upgEffEvents = computeUpgradeEffects(nextOps.phase6?.upgrades);
           for (const e of due) {
             const baseProposal = ops.proposals.find(p => p.id === e.proposalId)
               ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
-            // Aplica redução de chance de dano por upgrades modulares (gramado híbrido, etc.)
-            const proposal: StadiumEventProposal = { ...baseProposal, damageChance: Math.max(0, Math.min(1, baseProposal.damageChance * upgEffEvents.eventDamageMult)) };
+            
+            const proposal: StadiumEventProposal = { 
+              ...baseProposal, 
+              damageChance: Math.max(0, Math.min(1, baseProposal.damageChance * upgEffEvents.eventDamageMult)) 
+            };
             const res = resolveEvent(proposal);
+            
             next.budget = (next.budget ?? 0) + e.revenue;
             const evLabel = EVENT_CATALOG.find(c => c.category === e.category)?.label ?? e.category;
             pushFin({ at: new Date().toISOString(), category: 'evento', label: evLabel, amount: e.revenue });
-            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${evLabel}"`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            
+            nextOps.recentLog = [{ 
+              at: new Date().toISOString(), 
+              message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${evLabel}"`, 
+              type: 'success' as const 
+            }, ...nextOps.recentLog].slice(0, 12);
+
             if (res.damageOccurred && res.damage) {
               const dmg = { ...res.damage };
               if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
@@ -190,8 +204,11 @@ export function useClubState(initialState: any, userId?: string) {
             } else {
               toast.success(res.message);
             }
+            // 🛡️ Marca como processado para evitar duplicação em caso de refresh sem save
+            processedIds.push(e.proposalId);
           }
-          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() > now);
+          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => !processedIds.includes(e.proposalId));
+          nextOps.processedEventIds = processedIds.slice(-20); // Keep last 20 to avoid bloat
           changed = true;
         }
 
@@ -478,6 +495,11 @@ export function useClubState(initialState: any, userId?: string) {
     const value = getPlayerValue(player);
     setClub(prev => {
       if (prev.budget < value) return prev;
+      // 🛡️ Anti-Duplicação: Verifica se o jogador já está no elenco
+      if (prev.players.find(p => p.id === player.id)) {
+        toast.error('Este jogador já faz parte do seu elenco!');
+        return prev;
+      }
       return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
@@ -487,6 +509,8 @@ export function useClubState(initialState: any, userId?: string) {
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
     setClub(prev => {
+      // 🛡️ Anti-Duplicação
+      if (prev.players.find(p => p.id === player.id)) return prev;
       const signed = { ...player, salary, contract: Math.floor(Math.random() * 3 + 2) };
       return { ...prev, budget: prev.budget - salary * 3, players: [...prev.players, signed] };
     });
@@ -542,7 +566,14 @@ export function useClubState(initialState: any, userId?: string) {
   const sellPlayer = useCallback((player: Player) => {
     const value = Math.floor(getPlayerValue(player) * 0.8);
     setClub(prev => {
-      if (prev.players.length <= 11) return prev;
+      // 🛡️ Anti-Exploit: Verifica se o jogador REALMENTE está no elenco antes de pagar
+      const exists = prev.players.find(p => p.id === player.id);
+      if (!exists) return prev;
+      
+      if (prev.players.length <= 11) {
+        toast.error('Elenco muito pequeno para vender jogadores!');
+        return prev;
+      }
       return { ...prev, budget: prev.budget + value, players: prev.players.filter(p => p.id !== player.id) };
     });
     setListedForSale(l => l.filter(id => id !== player.id));

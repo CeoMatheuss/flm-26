@@ -50,10 +50,19 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
+    const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
+
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
     else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure.youthAcademy.level);
     else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure.trainingCenter.level);
     else cost = getPhysioUpgradeCost(infrastructure.physiotherapy.level);
+
+    // 🛡️ Bloqueio Anti-Exploit/Gasto Indevido: Verificamos o status da obra ANTES de cobrar
+    const existingPending = infrastructure[facility].upgradeCompletesAt;
+    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
+      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
+      return;
+    }
 
     // Hard cap on physiotherapy at level 20
     if (facility === 'physiotherapy' && infrastructure.physiotherapy.level >= 20) {
@@ -65,21 +74,11 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       toast.error(`💸 Orçamento insuficiente para upgrade!`);
       return;
     }
-    const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
-    // (Bloqueio de obras em andamento agora ocorre logo antes do início da obra,
-    // dentro do bloco de cobrança/agendamento — válido para TODAS as instalações.)
-
+    // Cobramos APENAS após todas as verificações passarem
     deductBudget(cost);
     addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
-
-    // Bloqueia se já houver obra em andamento nesta instalação
-    const existingPending = infrastructure[facility].upgradeCompletesAt;
-    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
-      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
-      return;
-    }
 
     // Não-Premium: TODAS as obras demoram 24h
     if (!isPremium) {
@@ -310,39 +309,49 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
   }, [infrastructure.youthAcademy.level, userId]);
 
   const promoteYouth = useCallback((youthId: string, addPlayerToClub: (p: any) => void) => {
-    const prospect = youthProspects.find(p => p.id === youthId);
-    if (!prospect) return;
-    if (prospect.age < 18 && prospect.overall < 60) {
-      toast.warning('⚠️ Promovido muito cedo', {
-        description: `${prospect.name} pode ter dificuldade no profissional. Continue acompanhando.`,
-      });
-    }
-    const player = {
-      id: prospect.id, name: prospect.name, position: prospect.position,
-      overall: prospect.overall, attributes: prospect.attributes,
-      age: prospect.age, salary: prospect.salary,
-      stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
-      contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
-    };
-    addPlayerToClub(player);
-    setYouthProspects(prev => prev.filter(p => p.id !== youthId));
-    setYouthPromotedCount((c: number) => c + 1);
-    toast.success(`${prospect.name} promovido ao time principal!`);
-  }, [youthProspects]);
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === youthId);
+      if (!prospect) return prev;
+
+      if (prospect.age < 18 && prospect.overall < 60) {
+        toast.warning('⚠️ Promovido muito cedo', {
+          description: `${prospect.name} pode ter dificuldade no profissional. Continue acompanhando.`,
+        });
+      }
+      
+      const player = {
+        id: prospect.id, name: prospect.name, position: prospect.position,
+        overall: prospect.overall, attributes: prospect.attributes,
+        age: prospect.age, salary: prospect.salary,
+        stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
+        contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
+      };
+      
+      addPlayerToClub(player);
+      setYouthPromotedCount((c: number) => c + 1);
+      toast.success(`${prospect.name} promovido ao time principal!`);
+      
+      return prev.filter(p => p.id !== youthId);
+    });
+  }, []);
 
   const sellYouth = useCallback((
     youthId: string,
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
     addBudget: (amount: number) => void,
   ) => {
-    const prospect = youthProspects.find(p => p.id === youthId);
-    if (!prospect) return;
-    const value = prospect.overall * 50_000;
-    addBudget(value);
-    addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
-    setYouthProspects(prev => prev.filter(p => p.id !== youthId));
-    toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
-  }, [youthProspects]);
+    // 🛡️ Anti-Exploit: Usamos o callback do estado para garantir atomicidade
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === youthId);
+      if (!prospect) return prev;
+      
+      const value = prospect.overall * 50_000;
+      addBudget(value);
+      addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
+      toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
+      return prev.filter(p => p.id !== youthId);
+    });
+  }, []); // youthProspects removed from deps to avoid stale closures in some patterns, but here we use functional update so it's fine.
 
   const enrollCopinha = useCallback((clubName: string, updateClubProfile: (fn: (prev: any) => any) => void) => {
     const eligible = youthProspects.filter(p => p.age <= 20 && (p.injuredCycles ?? 0) === 0);

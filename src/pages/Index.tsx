@@ -411,12 +411,28 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
     if (st?.serverMatchResult) {
       const { matchDbId, homeGoals, awayGoals, competition } = st.serverMatchResult;
-      const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
-      if (pendingMatch) {
-        game.applyServerResult({ matchId: pendingMatch.id, homeGoals, awayGoals, isHome: pendingMatch.isHome ?? true, competition });
-      }
-      supabase.from('live_matches').delete().eq('id', matchDbId).then(() => {});
-      navigate('/', { replace: true, state: {} });
+      
+      const processResult = async () => {
+        // 🛡️ Lock Anti-Duplicação: Tenta deletar a partida live antes de processar.
+        // Se já foi deletada (por outra aba ou refresh), não processamos novamente.
+        const { data: deleted } = await supabase.from('live_matches').delete().eq('id', matchDbId).select();
+        
+        if (deleted && deleted.length > 0) {
+          const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
+          if (pendingMatch) {
+            game.applyServerResult({ 
+              matchId: pendingMatch.id, 
+              homeGoals, 
+              awayGoals, 
+              isHome: pendingMatch.isHome ?? true, 
+              competition 
+            });
+          }
+        }
+        navigate('/', { replace: true, state: {} });
+      };
+      
+      processResult();
       return;
     }
 
@@ -432,10 +448,21 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             await supabase.from('live_matches').delete().eq('id', fm.id);
             continue;
           }
+
+          // 🛡️ Lock Anti-Duplicação: Somente a aba que conseguir deletar a linha processa a recompensa.
+          const { data: deleted } = await supabase.from('live_matches').delete().eq('id', fm.id).select();
+          if (!deleted || deleted.length === 0) continue;
+
           // Only apply if match_id matches exactly a local unplayed match
           const localMatch = game.club.matches.find(m => m.id === fm.match_id && !m.played);
           if (localMatch) {
-            game.applyServerResult({ matchId: localMatch.id, homeGoals: fm.home_goals, awayGoals: fm.away_goals, isHome: fm.is_home ?? localMatch.isHome ?? true, competition: fm.competition || 'Amistoso' });
+            game.applyServerResult({ 
+              matchId: localMatch.id, 
+              homeGoals: fm.home_goals, 
+              awayGoals: fm.away_goals, 
+              isHome: fm.is_home ?? localMatch.isHome ?? true, 
+              competition: fm.competition || 'Amistoso' 
+            });
           }
           
           // Create report + notification NOW (post-game)
