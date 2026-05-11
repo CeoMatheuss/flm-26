@@ -87,6 +87,10 @@ export function MatchesTab({
       setTournamentMatches(allCompetitionsMatches);
     };
     loadMatches();
+    const channel = supabase.channel('cup-matches-tab')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadMatches())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const runInstantBot = async (mode: 'bot_balanced' | 'bot_random') => {
