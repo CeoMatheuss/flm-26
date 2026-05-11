@@ -39,6 +39,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
+  
+  const { homeShield, awayShield } = useMatchShields(nextMatch?.home, nextMatch?.away);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
@@ -322,10 +324,16 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
         
         <div className="flex flex-col items-center gap-0.5 my-1">
-          <div className="flex items-center justify-center gap-3">
-            <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
-            <span className="text-base font-black text-muted-foreground">VS</span>
-            <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col items-center gap-1">
+              <ClubShield club={{ shieldConfig: homeShield } as any} size={40} />
+              <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
+            </div>
+            <span className="text-xl font-black text-primary/40 italic mt-2">VS</span>
+            <div className="flex flex-col items-center gap-1">
+              <ClubShield club={{ shieldConfig: awayShield } as any} size={40} />
+              <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+            </div>
           </div>
           <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
             <Landmark className="h-2.5 w-2.5" />
