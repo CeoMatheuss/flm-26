@@ -715,10 +715,9 @@ function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 
           myGoals > oppGoals ? 'win' : myGoals === oppGoals ? 'draw' : 'loss';
         const resultIcon = outcome === 'win' ? '🟢' : outcome === 'draw' ? '🟡' : '🔴';
         const compLabel = competition || 'Amistoso';
-        const compKey: 'friendly' | 'league' | 'cup' | 'continental' | 'world' =
+        const compKey: 'friendly' | 'league' | 'continental' | 'world' =
           /mundial/i.test(compLabel) ? 'world'
           : /continental|libertadores|champions|sul-american|europa/i.test(compLabel) ? 'continental'
-          : /copa|cup/i.test(compLabel) ? 'cup'
           : /liga|league|série|serie|brasileir/i.test(compLabel) ? 'league'
           : 'friendly';
 
