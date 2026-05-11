@@ -32,23 +32,26 @@ const SPEC_LABELS: Record<ScoutSpecialization, string> = {
 };
 
 export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
-  const [scouts, setScouts] = useState<ScoutV3[]>([]);
+  const [myScouts, setMyScouts] = useState<ScoutV3[]>([]);
+  const [marketScouts, setMarketScouts] = useState<ScoutV3[]>([]);
   const [missions, setMissions] = useState<ScoutMissionV3[]>([]);
   const [reports, setReports] = useState<ScoutReportV3[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showHireModal, setShowHireModal] = useState(false);
   const [showMissionModal, setShowMissionModal] = useState<ScoutV3 | null>(null);
+  const [activeTab, setActiveTab] = useState('scouts');
 
   const fetchScoutingData = async () => {
     try {
       setLoading(true);
-      const [scoutsRes, missionsRes, reportsRes] = await Promise.all([
+      const [myScoutsRes, marketScoutsRes, missionsRes, reportsRes] = await Promise.all([
         supabase.from('scouts').select('*').eq('user_id', userId),
+        supabase.from('scouts').select('*').eq('is_free_agent', true),
         supabase.from('scout_missions').select('*').eq('user_id', userId).eq('status', 'em_andamento'),
         supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
 
-      if (scoutsRes.data) setScouts(scoutsRes.data as ScoutV3[]);
+      if (myScoutsRes.data) setMyScouts(myScoutsRes.data as ScoutV3[]);
+      if (marketScoutsRes.data) setMarketScouts(marketScoutsRes.data as ScoutV3[]);
       if (missionsRes.data) setMissions(missionsRes.data as ScoutMissionV3[]);
       if (reportsRes.data) setReports(reportsRes.data as ScoutReportV3[]);
     } catch (error) {
