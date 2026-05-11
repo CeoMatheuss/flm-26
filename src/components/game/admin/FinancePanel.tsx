@@ -131,40 +131,59 @@ export function FinancePanel() {
   };
 
   return (
-    <Card className="border-emerald-500/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <span className="text-emerald-400">💰</span>
-          Adicionar Dinheiro ao Clube
+    <Card className="border-emerald-500/20 bg-zinc-900/60 shadow-2xl overflow-hidden">
+      <div className="bg-emerald-500/10 p-4 border-b border-emerald-500/20">
+        <CardTitle className="text-base flex items-center gap-3 text-white italic font-black uppercase tracking-tighter">
+          <Wallet className="h-5 w-5 text-emerald-400" />
+          Aporte Financeiro Admin
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="relative">
-          <Input
-            placeholder={loadingClubs ? 'Carregando clubes…' : 'Buscar clube por nome (ex: Pal...)'}
-            value={search}
-            onChange={e => { setSearch(e.target.value); setSelected(null); }}
-            className="text-xs h-8"
-            autoComplete="off"
-          />
-          {suggestions.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg">
-              {suggestions.map(c => (
-                <button
-                  key={c.user_id}
-                  type="button"
-                  onClick={() => { setSelected(c); setSearch(c.club_name); }}
-                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted flex items-center gap-2"
-                >
-                  <span className="shrink-0">{c.club_logo || '⚽'}</span>
-                  <span className="font-medium truncate">{c.club_name}</span>
-                  <span className="ml-auto text-[9px] text-muted-foreground font-mono truncate max-w-[100px]">
-                    {c.user_id.slice(0, 8)}
-                  </span>
-                </button>
-              ))}
+        <p className="text-[10px] text-emerald-400/60 font-bold uppercase mt-1">Gerenciamento de capital dos clubes</p>
+      </div>
+      
+      <CardContent className="p-6 space-y-5">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-zinc-500 ml-1">Localizar Clube Destino</label>
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
+              <Search className="h-4 w-4" />
             </div>
-          )}
+            <Input
+              placeholder={loadingClubs ? 'Carregando banco de dados...' : 'Digite o nome do clube ou ID...'}
+              value={search}
+              onChange={e => { setSearch(e.target.value); setSelected(null); }}
+              className="pl-10 h-11 bg-black/40 border-white/10 text-white font-bold placeholder:text-zinc-600 focus:border-emerald-500/50 transition-all"
+              autoComplete="off"
+            />
+            
+            {suggestions.length > 0 && !selected && (
+              <div className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-zinc-900 shadow-2xl backdrop-blur-xl">
+                <div className="p-2 border-b border-white/5 bg-white/5">
+                  <span className="text-[9px] font-black text-zinc-500 uppercase px-2 italic">Resultados Encontrados ({suggestions.length})</span>
+                </div>
+                {suggestions.map(c => (
+                  <button
+                    key={c.user_id}
+                    type="button"
+                    onClick={() => { setSelected(c); setSearch(c.club_name); }}
+                    className="w-full text-left px-4 py-3 hover:bg-emerald-500/10 flex items-center gap-3 transition-colors border-b border-white/5 last:border-0 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-lg group-hover:border-emerald-500/30 transition-all">
+                      {c.club_logo && (c.club_logo.startsWith('http') || c.club_logo.startsWith('/')) ? (
+                        <img src={c.club_logo} className="w-5 h-5 object-contain" alt="" />
+                      ) : (
+                        <span>{c.club_logo || '⚽'}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-black text-xs text-white uppercase italic truncate group-hover:text-emerald-400 transition-colors">{c.club_name}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono truncate uppercase tracking-tighter">ID: {c.user_id}</span>
+                    </div>
+                    <ChevronRight className="h-3 w-3 ml-auto text-zinc-700 group-hover:text-emerald-500" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {selected && (
