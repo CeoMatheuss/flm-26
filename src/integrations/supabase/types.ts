@@ -4547,6 +4547,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_cup_goals: {
+        Args: { p_cup_id: string; p_player_id: string; p_team_id: string }
+        Returns: undefined
+      }
       initialize_player_league: {
         Args: { p_player_team_id: string }
         Returns: string
