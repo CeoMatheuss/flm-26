@@ -226,7 +226,7 @@ export function CopasTab({ userId }: Props) {
                 <Swords className="h-3 w-3" /> {myNextMatch ? 'SEU PRÓXIMO DESAFIO' : 'PRÓXIMO JOGO DA RODADA'}
               </span>
               <Badge variant="outline" className="text-[9px] h-5 bg-background font-mono">
-                {new Date(highlight.scheduled_at).toLocaleDateString()} • 12:00
+                {new Date(highlight.scheduled_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} • {new Date(highlight.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
               </Badge>
             </div>
           </CardHeader>
