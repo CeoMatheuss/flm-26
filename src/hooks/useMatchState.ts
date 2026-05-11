@@ -82,6 +82,11 @@ export function useMatchState(initialState: any, userId?: string) {
         const resultMult = isWin ? 1.5 : isDraw ? 1.0 : 0.75;
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
+      if (deps.isCup) {
+        // Prêmio fixo de 50k por vitória em copa, 20k empate, 10k derrota
+        const cupBase = isWin ? 50000 : isDraw ? 20000 : 10000;
+        leaguePrize = cupBase; // Reutilizando a variável de premiação extra
+      }
 
       let stadiumPenaltyFine = 0;
       let stadiumPenaltyRep = 0;
