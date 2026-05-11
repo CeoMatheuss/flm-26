@@ -2274,9 +2274,11 @@ export type Database = {
           club_name: string
           created_at: string | null
           cup_id: string
+          division_level: number | null
           eliminated: boolean | null
           id: string
           is_bot: boolean | null
+          league_id: string | null
           seed: number | null
           strength: number | null
           user_id: string | null
@@ -2287,9 +2289,11 @@ export type Database = {
           club_name: string
           created_at?: string | null
           cup_id: string
+          division_level?: number | null
           eliminated?: boolean | null
           id?: string
           is_bot?: boolean | null
+          league_id?: string | null
           seed?: number | null
           strength?: number | null
           user_id?: string | null
@@ -2300,9 +2304,11 @@ export type Database = {
           club_name?: string
           created_at?: string | null
           cup_id?: string
+          division_level?: number | null
           eliminated?: boolean | null
           id?: string
           is_bot?: boolean | null
+          league_id?: string | null
           seed?: number | null
           strength?: number | null
           user_id?: string | null
@@ -2328,6 +2334,7 @@ export type Database = {
           season: number
           status: string
           total_rounds: number
+          total_teams: number | null
           updated_at: string | null
           winner_team_id: string | null
         }
@@ -2341,6 +2348,7 @@ export type Database = {
           season?: number
           status?: string
           total_rounds?: number
+          total_teams?: number | null
           updated_at?: string | null
           winner_team_id?: string | null
         }
@@ -2354,6 +2362,7 @@ export type Database = {
           season?: number
           status?: string
           total_rounds?: number
+          total_teams?: number | null
           updated_at?: string | null
           winner_team_id?: string | null
         }
@@ -4404,6 +4413,10 @@ export type Database = {
       initialize_world_league: {
         Args: { p_league_id: string }
         Returns: undefined
+      }
+      is_in_national_cup: {
+        Args: { _cup_id: string; _user_id: string }
+        Returns: boolean
       }
       is_league_member: {
         Args: { _league_id: string; _user_id: string }
