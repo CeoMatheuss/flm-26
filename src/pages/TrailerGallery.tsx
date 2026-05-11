@@ -71,7 +71,7 @@ export default function TrailerGallery() {
     { name: 'Dashboard', component: <DashboardTab club={mockGame.club} events={mockGame.events} infrastructure={mockGame.infrastructure} userId="mock-user" /> },
     { name: 'Tactics', component: <TacticsTab tactics={mockGame.tactics} players={mockGame.club.players} onUpdate={() => {}} userId="mock-user" /> },
     { name: 'League', component: <LeagueTab clubName={mockGame.club.name} clubPlayers={mockGame.club.players} /> },
-    { name: 'Copas', component: <CopasTab userId="mock-user" /> },
+    { name: 'Copas', component: <div className="p-20 text-center">Copa Desativada</div> },
     { name: 'Scouts', component: <ScoutsTab userId="mock-user" budget={mockGame.club.budget} /> },
     { name: 'Match', component: (
       <div className="h-[600px] overflow-y-auto bg-slate-900">
