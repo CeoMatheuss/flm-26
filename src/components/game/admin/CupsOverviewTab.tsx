@@ -56,7 +56,7 @@ export function CupsOverviewTab() {
         .order('country_code');
       
       if (error) throw error;
-      setCups(data || []);
+      setCups((data || []) as any);
     } catch (e: any) {
       toast.error("Erro ao carregar copas");
     } finally {
@@ -90,7 +90,7 @@ export function CupsOverviewTab() {
         away_team: teamMap[m.away_team_id]
       }));
 
-      setMatches(prev => ({ ...prev, [cupId]: formattedMatches }));
+      setMatches(prev => ({ ...prev, [cupId]: formattedMatches as any }));
     } catch (e: any) {
       console.error(e);
     }
@@ -295,10 +295,10 @@ export function CupsOverviewTab() {
                     </div>
                   </CollapsibleContent>
                 </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+              </Collapsible>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );

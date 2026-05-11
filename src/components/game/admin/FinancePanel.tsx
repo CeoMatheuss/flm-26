@@ -50,20 +50,45 @@ export function FinancePanel() {
   // Carrega lista de clubes (uma vez)
   const loadClubs = useCallback(async () => {
     setLoadingClubs(true);
-    const { data, error } = await supabase
-      .from('clubs')
-      .select('user_id, name, logo_url, budget')
-      .order('name');
-    if (error) {
-      toast.error('Erro ao carregar clubes: ' + error.message);
-    } else if (data) {
-      setClubs(data.map((c: any) => ({
-        user_id: c.user_id,
-        name: c.name,
-        logo: c.logo_url,
-        budget: Number(c.budget) || 0,
-      })));
+    // 1) Tenta a tabela `clubs` (legado)
+    const [{ data: clubsData }, { data: savesData, error: savesErr }] = await Promise.all([
+      supabase.from('clubs').select('user_id, name, logo_url, budget'),
+      supabase.from('game_saves').select('user_id, club_data'),
+    ]);
+
+    if (savesErr) {
+      toast.error('Erro ao carregar clubes: ' + savesErr.message);
+      setLoadingClubs(false);
+      return;
     }
+
+    const map = new Map<string, Club>();
+
+    (clubsData || []).forEach((c: any) => {
+      if (!c?.user_id) return;
+      map.set(c.user_id, {
+        user_id: c.user_id,
+        name: c.name || 'Sem nome',
+        logo: c.logo_url || null,
+        budget: Number(c.budget) || 0,
+      });
+    });
+
+    (savesData || []).forEach((s: any) => {
+      const club = s?.club_data?.club || s?.club_data || {};
+      const name = club?.name;
+      if (!s?.user_id || !name) return;
+      // game_saves prevalece (é a fonte real do save online)
+      map.set(s.user_id, {
+        user_id: s.user_id,
+        name,
+        logo: club?.logoUrl || club?.logo_url || club?.logo || null,
+        budget: Number(club?.budget) || 0,
+      });
+    });
+
+    const list = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    setClubs(list);
     setLoadingClubs(false);
   }, []);
 
