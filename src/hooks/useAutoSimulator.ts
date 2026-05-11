@@ -5,6 +5,20 @@ export function useAutoSimulator(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
+    // Trigger initial simulation
+    const runSim = async () => {
+      console.log('[AutoSim] Executando simulação inicial...');
+      try {
+        await Promise.all([
+          supabase.functions.invoke('world-match-simulator'),
+          supabase.functions.invoke('national-cup-manager', { body: { action: 'reconcile_sync' } })
+        ]);
+      } catch (err) {
+        console.error('[AutoSim] Erro na simulação inicial:', err);
+      }
+    };
+    runSim();
+
     // Trigger simulation every 2 minutes if the tab is open
     const interval = setInterval(async () => {
       console.log('[AutoSim] Verificando partidas pendentes...');
