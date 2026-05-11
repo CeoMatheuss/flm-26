@@ -557,7 +557,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold w-4 text-muted-foreground">{i + 1}</span>
-                        <div>
+                        <div className="cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.team?.name } }))}>
                           <p className="text-xs font-bold">{s.player?.name}</p>
                           <p className="text-[10px] text-muted-foreground">{s.team?.name}</p>
                         </div>
@@ -637,14 +637,20 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {roundMatches.map(m => (
                               <div key={m.id} className="flex items-center justify-between text-[10px] p-2 bg-muted/30 rounded border border-transparent hover:border-border transition-colors">
-                                <div className="flex items-center gap-1.5 w-24 justify-end">
+                                <div 
+                                  className="flex items-center gap-1.5 w-24 justify-end cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home_team?.name } }))}
+                                >
                                   <span className="truncate">{m.home_team?.name}</span>
                                   <ClubShield club={m.home_team ? { logoUrl: m.home_team.logo } : null} size={14} />
                                 </div>
                                 <span className="font-black bg-background px-2 py-0.5 rounded shadow-sm text-xs">
                                   {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : '19:30'}
                                 </span>
-                                <div className="flex items-center gap-1.5 w-24 justify-start">
+                                <div 
+                                  className="flex items-center gap-1.5 w-24 justify-start cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away_team?.name } }))}
+                                >
                                   <ClubShield club={m.away_team ? { logoUrl: m.away_team.logo } : null} size={14} />
                                   <span className="truncate">{m.away_team?.name}</span>
                                 </div>

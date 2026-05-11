@@ -236,7 +236,7 @@ export function CopasTab({ userId }: Props) {
                 <div className={`p-1 rounded-full ${highlight.home?.user_id === userId ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
                   <ClubShield club={{ logoUrl: highlight.home?.club_logo } as any} size={56} />
                 </div>
-                <span className={`text-xs sm:text-sm font-black truncate w-full text-center ${highlight.home?.user_id === userId ? 'text-primary' : ''}`}>
+                <span className={`text-xs sm:text-sm font-black truncate w-full text-center cursor-pointer hover:text-primary transition-colors ${highlight.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: highlight.home?.club_name } }))}>
                   {highlight.home?.club_name}
                 </span>
               </div>
@@ -265,7 +265,7 @@ export function CopasTab({ userId }: Props) {
                 <div className={`p-1 rounded-full ${highlight.away?.user_id === userId ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
                   <ClubShield club={{ logoUrl: highlight.away?.club_logo } as any} size={56} />
                 </div>
-                <span className={`text-xs sm:text-sm font-black truncate w-full text-center ${highlight.away?.user_id === userId ? 'text-primary' : ''}`}>
+                <span className={`text-xs sm:text-sm font-black truncate w-full text-center cursor-pointer hover:text-primary transition-colors ${highlight.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: highlight.away?.club_name } }))}>
                   {highlight.away?.club_name}
                 </span>
               </div>
@@ -296,7 +296,7 @@ export function CopasTab({ userId }: Props) {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <ClubShield club={{ logoUrl: m.home?.club_logo } as any} size={32} />
-                        <span className={`text-xs font-bold truncate ${m.home?.user_id === userId ? 'text-primary' : ''}`}>
+                        <span className={`text-xs font-bold truncate cursor-pointer hover:text-primary transition-colors ${m.home?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home?.club_name } }))}>
                           {m.home?.club_name}
                         </span>
 
@@ -315,7 +315,7 @@ export function CopasTab({ userId }: Props) {
                       </div>
 
                       <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className={`text-xs font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>
+                        <span className={`text-xs font-bold truncate text-right cursor-pointer hover:text-primary transition-colors ${m.away?.user_id === userId ? 'text-primary' : ''}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away?.club_name } }))}>
                           {m.away?.club_name}
                         </span>
                         <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
@@ -347,7 +347,7 @@ export function CopasTab({ userId }: Props) {
                         <div key={m.id} className="relative group">
                           <Card className={`p-3 text-[10px] bg-card/60 border-l-4 transition-all hover:scale-105 hover:shadow-xl ${m.winner_team_id ? 'border-l-emerald-500' : 'border-l-primary/30'} ${m.home?.user_id === userId || m.away?.user_id === userId ? 'ring-1 ring-primary' : ''}`}>
                             <div className="flex justify-between items-center mb-2">
-                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
+                              <span className={`font-bold truncate max-w-[80px] cursor-pointer hover:text-primary transition-colors ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.home?.club_name } }))}>
                                 {m.home?.club_name || 'TBD'}
                               </span>
                               <div className="flex flex-col items-end leading-none">
@@ -357,7 +357,7 @@ export function CopasTab({ userId }: Props) {
                             </div>
                             <div className="h-px w-full bg-border/50 my-1"></div>
                             <div className="flex justify-between items-center">
-                              <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
+                              <span className={`font-bold truncate max-w-[80px] cursor-pointer hover:text-primary transition-colors ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: m.away?.club_name } }))}>
                                 {m.away?.club_name || 'TBD'}
                               </span>
                               <div className="flex flex-col items-end leading-none">
