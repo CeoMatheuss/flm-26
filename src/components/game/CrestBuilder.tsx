@@ -262,9 +262,8 @@ export function CrestBuilder({ value, onChange, onSave, showSaveButton = true }:
         </div>
 
         <div
-          className="relative rounded-xl border-2 border-border p-6 flex items-center justify-center overflow-hidden shadow-inner"
+          className="relative rounded-xl border-2 border-border p-6 flex items-center justify-center overflow-hidden shadow-inner bg-card/50"
           style={{
-            backgroundColor: '#FAF7F2',
             backgroundImage:
               'radial-gradient(circle at center, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0) 70%)',
             minHeight: 200,
