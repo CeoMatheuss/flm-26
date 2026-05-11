@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
-function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string; club: Club; onGoToFriendly?: () => void }) {
+function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { userId?: string; club: Club; onGoToFriendly?: () => void; stadiumLevel?: number }) {
   const clubName = club.name;
   const handleOpenProfile = (name?: string) => {
     if (!name) return;
