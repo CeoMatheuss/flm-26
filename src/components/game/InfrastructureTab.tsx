@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Infrastructure, getUpgradeCost, getPhysioBonuses, getDailyStaminaRecovery } from '@/types/infrastructure';
+import { Infrastructure, getPhysioUpgradeCost, getPhysioBonuses, getDailyStaminaRecovery } from '@/types/infrastructure';
 import type { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,8 @@ export function InfrastructureTab({ infrastructure, budget, players = [], onUpgr
   const onUpgrade = guard(_onUpgrade);
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const facility = infrastructure?.physiotherapy ?? { level: 1, maxLevel: 20 };
-  const cost = getUpgradeCost(facility.level, 'physiotherapy');
+  const facility = infrastructure?.physiotherapy ?? { level: 0, maxLevel: 20 };
+  const cost = getPhysioUpgradeCost(facility.level);
   const isMaxed = facility.level >= facility.maxLevel;
   const pct = (facility.level / facility.maxLevel) * 100;
   const bonuses = getPhysioBonuses(facility.level);
@@ -144,9 +144,13 @@ export function InfrastructureTab({ infrastructure, budget, players = [], onUpgr
           </div>
 
           {!isMaxed ? (
-            <Button onClick={() => onUpgrade('physiotherapy')} disabled={budget < cost} className="w-full gap-2 h-11 text-sm font-semibold">
+            <Button 
+              onClick={() => onUpgrade('physiotherapy')} 
+              disabled={budget < cost} 
+              className="w-full gap-2 h-12 text-sm font-black uppercase tracking-tighter shadow-lg shadow-pink-500/10"
+            >
               <ArrowUp className="h-4 w-4" />
-              Melhorar para Nível {facility.level + 1} — {cost >= 1_000_000 ? `R$ ${(cost / 1_000_000).toFixed(cost >= 10_000_000 ? 0 : 1)}M` : `R$ ${(cost / 1000).toFixed(0)}k`}
+              Melhorar para Nível {facility.level + 1} — R$ {(cost / 1000).toLocaleString('pt-BR')}k
             </Button>
           ) : (
             <div className="text-center py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">

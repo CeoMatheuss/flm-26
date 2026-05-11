@@ -150,6 +150,7 @@ export const defaultInfrastructure: Infrastructure = {
 // IMPORTANTE: chave N = custo para SUBIR PARA o nível N (de N-1 → N).
 // Ex.: physiotherapyCosts[2] = 300k = custo de Nv 1 → Nv 2.
 export const physiotherapyCosts: Record<number, number> = {
+  1: 150_000,
   2: 300_000,    3: 500_000,    4: 800_000,    5: 1_200_000,  6: 1_800_000,
   7: 2_500_000,  8: 3_500_000,  9: 4_800_000,  10: 6_000_000,
   11: 8_000_000, 12: 10_000_000, 13: 13_000_000, 14: 16_000_000, 15: 20_000_000,
