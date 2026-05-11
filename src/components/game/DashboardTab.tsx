@@ -165,9 +165,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">
-      {/* Personalized Cup Widget */}
-      <PersonalizedCupWidget userId={userId} onOpenTournament={onOpenTournament} />
-
       {/* Fatigue Warning V4 */}
       {showFatigueWarning && (
         <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
