@@ -307,8 +307,28 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
             competition_name: cupInfo?.name || 'Copa',
             home_team: { name: m.home?.club_name, logo: m.home?.club_logo, user_id: m.home?.user_id },
             away_team: { name: m.away?.club_name, logo: m.away?.club_logo, user_id: m.away?.user_id },
-            home_full: { name: m.home?.club_name, logoUrl: m.home?.club_logo },
-            away_full: { name: m.away?.club_name, logoUrl: m.away?.club_logo },
+            home_full: { 
+              name: m.home?.club_name, 
+              logoUrl: m.home?.club_logo,
+              shield_config: m.home?.shield_config,
+              shieldPattern: m.home?.shield_pattern,
+              shieldShape: m.home?.shield_shape,
+              shieldIcon: m.home?.shield_icon,
+              primaryColor: m.home?.primary_color,
+              secondaryColor: m.home?.secondary_color,
+              detailColor: m.home?.detail_color,
+            },
+            away_full: { 
+              name: m.away?.club_name, 
+              logoUrl: m.away?.club_logo,
+              shield_config: m.away?.shield_config,
+              shieldPattern: m.away?.shield_pattern,
+              shieldShape: m.away?.shield_shape,
+              shieldIcon: m.away?.shield_icon,
+              primaryColor: m.away?.primary_color,
+              secondaryColor: m.away?.secondary_color,
+              detailColor: m.away?.detail_color,
+            },
           }));
           setCupMatches(enhanced);
         }
