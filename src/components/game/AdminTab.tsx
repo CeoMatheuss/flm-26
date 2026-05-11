@@ -830,7 +830,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-3 mt-3">
-            <AdminAnnouncementsPanel userId={userId} />
+            {/* <AdminAnnouncementsPanel userId={userId} /> */}
           </TabsContent>
 
           <TabsContent value="support" className="space-y-3 mt-3">
