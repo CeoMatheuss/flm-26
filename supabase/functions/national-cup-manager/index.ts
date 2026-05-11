@@ -219,7 +219,16 @@ serve(async (req) => {
                 });
 
                 // Crédito real para o usuário
-                if (match.winner?.user_id) {
+                // Notificação de Avanço
+                if (match.home?.user_id || match.away?.user_id) {
+                    await supabase.from('user_notifications').insert({
+                        user_id: winner_id === match.home_team_id ? match.home.user_id : match.away.user_id,
+                        title: '🏆 Avançou na Copa!',
+                        message: `Seu time venceu e avançou para a Fase ${match.round + 1}! Prêmio de R$ ${prize/1000}k creditado.`,
+                        type: 'success'
+                    });
+                }
+
                     const { data: currentSave } = await supabase
                         .from('game_saves')
                         .select('club_data')
