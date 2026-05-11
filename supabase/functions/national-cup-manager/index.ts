@@ -84,11 +84,15 @@ serve(async (req) => {
       if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
       for (const cup of activeCups) {
+        const nowIso = new Date().toISOString();
         const { data: matches } = await supabase.from('national_cup_matches')
           .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
-          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled');
+          .eq('cup_id', cup.id).eq('round', cup.current_round).eq('status', 'scheduled')
+          .lte('scheduled_at', nowIso);
 
         if (!matches || matches.length === 0) {
+          // Only advance to next phase when ALL matches of this round are finished
+          // (matches with future scheduled_at are still 'scheduled' and count as pending)
           const { count: pending } = await supabase.from('national_cup_matches')
             .select('*', { count: 'exact', head: true })
             .eq('cup_id', cup.id).eq('round', cup.current_round).neq('status', 'finished');
@@ -143,6 +147,14 @@ serve(async (req) => {
   }
 })
 
+// Próximo horário fixo de Copa: 15:00 BRT (18:00 UTC) do próximo dia
+function nextCupKickoff(): Date {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  d.setUTCHours(18, 0, 0, 0);
+  return d;
+}
+
 function simulateMatch(homeS: number, awayS: number) {
   const prob = homeS / (homeS + awayS);
   let hG = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
@@ -182,7 +194,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number, total:
         cup_id: cupId, round, bracket_pos: i / 2,
         home_team_id: shuffled[i].id, away_team_id: shuffled[i+1].id,
         status: 'scheduled', phase_name: phaseName,
-        scheduled_at: new Date(Date.now() + 86400000).toISOString()
+        scheduled_at: nextCupKickoff().toISOString()
       });
     }
   }
