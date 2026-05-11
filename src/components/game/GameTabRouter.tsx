@@ -248,12 +248,14 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="world">
         <WorldLeagues 
+          userId={userId}
           rating={game.ranking} 
           rankingHistory={game.rankingHistory} 
           clubName={game.club.name} 
           stats={game.club.stats} 
           season={game.season?.currentSeason ?? 1} 
         />
+
       </TabsContent>
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
