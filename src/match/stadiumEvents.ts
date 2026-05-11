@@ -400,3 +400,32 @@ export function emptyStadiumOps(): StadiumOpsState {
 export function getEventConfig(category: EventCategory): EventCategoryConfig {
   return EVENT_CATALOG.find(c => c.category === category)!;
 }
+
+/**
+ * Verifica se uma data específica está bloqueada por algum evento aceito.
+ * Útil para o Widget de Partida.
+ */
+export function isDateBlockedByEvents(matchDate: string, acceptedEvents: StadiumOpsState['acceptedEvents']): { blocked: boolean; eventLabel?: string } {
+  if (!acceptedEvents || acceptedEvents.length === 0) return { blocked: false };
+  const md = new Date(matchDate).getTime();
+
+  for (const e of acceptedEvents) {
+    const cfg = getEventConfig(e.category);
+    const evDay = new Date(e.scheduledFor).getTime();
+    const blockDays = cfg?.blockDays || 1;
+
+    // Janela bloqueada: [evento - 1d, evento + blockDays + 1d]
+    // Usamos um buffer de 24h antes e pós-bloqueio
+    const winStart = evDay - 24 * 3600_000;
+    const winEnd = evDay + (blockDays + 1) * 24 * 3600_000;
+
+    if (md >= winStart && md <= winEnd) {
+      return { 
+        blocked: true, 
+        eventLabel: cfg?.label || 'Evento'
+      };
+    }
+  }
+  return { blocked: false };
+}
+

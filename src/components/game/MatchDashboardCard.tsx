@@ -2,7 +2,7 @@ import { Club } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X } from 'lucide-react';
+import { Target, Swords, MapPin, Calendar, Clock, Radio, FileText, Building2, Crown, Trophy, Loader2, Play, Eye, X, Landmark, AlertTriangle } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { ClubShield } from './ClubShield';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
@@ -11,9 +11,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMatchShields } from '@/hooks/useMatchShields';
+import { isDateBlockedByEvents } from '@/match/stadiumEvents';
+
 
 /* ── Component to show next match (friendly OR tournament) when idle ── */
-function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: string; clubName: string; onGoToFriendly?: () => void }) {
+function NextTournamentMatch({ userId, club, onGoToFriendly }: { userId?: string; club: Club; onGoToFriendly?: () => void }) {
+  const clubName = club.name;
   const handleOpenProfile = (name?: string) => {
     if (!name) return;
     (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: name } }));
@@ -28,7 +31,9 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
     round?: number;
     kind?: 'friendly' | 'tournament' | 'league';
     stage?: string | null;
+    stadium?: string;
   } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
@@ -279,6 +284,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
       );
     }
 
+    const isHome = nextMatch.isHome;
+    const stadiumName = isHome ? club.stadiumName : `Estádio ${nextMatch.home}`;
+    const blockCheck = isHome && club.stadiumOps?.acceptedEvents ? isDateBlockedByEvents(nextMatch.date, club.stadiumOps.acceptedEvents) : { blocked: false };
+
     return (
       <div className="text-center py-3 space-y-2">
         <div className="flex items-center justify-center gap-1.5">
@@ -287,34 +296,61 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly }: { userId?: st
             {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
           </p>
         </div>
-        <Badge variant={isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
-          {isReady ? '🔴 AO VIVO' :
+        <Badge variant={blockCheck.blocked ? 'destructive' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady && !blockCheck.blocked ? 'animate-pulse' : ''}`}>
+          {blockCheck.blocked ? '🚫 BLOQUEADO' :
+            isReady ? '🔴 AO VIVO' :
             isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
-        <div className="flex items-center justify-center gap-3">
-          <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
-          <span className="text-base font-black text-muted-foreground">VS</span>
-          <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+
+        
+        <div className="flex flex-col items-center gap-0.5 my-1">
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => handleOpenProfile(nextMatch.home)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.home}</button>
+            <span className="text-base font-black text-muted-foreground">VS</span>
+            <button onClick={() => handleOpenProfile(nextMatch.away)} className="text-xs font-bold truncate max-w-[100px] hover:text-primary hover:underline transition-colors cursor-pointer">{nextMatch.away}</button>
+          </div>
+          <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+            <Landmark className="h-2.5 w-2.5" />
+            <span className="truncate max-w-[180px]">{stadiumName}</span>
+          </div>
         </div>
-        <div className="flex items-center justify-center gap-1.5">
-          <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
-          <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>⏱️ {timeLeft}</p>
-        </div>
+
+        {blockCheck.blocked ? (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded p-1.5 flex items-center gap-2 justify-center mx-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <p className="text-[9px] text-amber-200 font-bold leading-tight">
+              ESTÁDIO BLOQUEADO: {blockCheck.eventLabel}
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-1.5">
+            <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
+            <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>⏱️ {timeLeft}</p>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5 pt-1">
           <Button
             size="sm"
-            variant={isReady ? 'default' : 'outline'}
-            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
+            variant={isReady && !blockCheck.blocked ? 'default' : 'outline'}
+            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady && !blockCheck.blocked ? 'animate-pulse' : ''}`}
             onClick={handleGoToMatch}
-            disabled={!isReady}
+            disabled={!isReady || blockCheck.blocked}
           >
-            {isReady ? <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</> : <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>}
+            {blockCheck.blocked ? (
+              <><X className="h-3.5 w-3.5" /> LOCAL INDISPONÍVEL</>
+            ) : isReady ? (
+              <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
+            ) : (
+              <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
+            )}
           </Button>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="text-center py-4">
@@ -682,7 +718,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
         {status === 'none' ?
-        <NextTournamentMatch userId={userId || ''} clubName={club.name} onGoToFriendly={onGoToFriendly} /> :
+        <NextTournamentMatch userId={userId || ''} club={club} onGoToFriendly={onGoToFriendly} /> :
+
 
         <div className="space-y-3">
             {/* Info bar */}
