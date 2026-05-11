@@ -116,9 +116,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
               <p className="text-[10px] sm:text-xs text-muted-foreground">Temporada {season}</p>
               <p className="text-2xl font-bold">{rankings.find(r => r.user_id === userId)?.ranking_points ?? 0} <span className="text-xs text-muted-foreground">pts</span></p>
               <div className="flex gap-3 text-xs font-mono justify-end">
-                <span className="text-emerald-400">{stats.wins}V</span>
-                <span className="text-primary">{stats.draws}E</span>
-                <span className="text-destructive">{stats.losses}D</span>
+                <span className="text-emerald-500 font-bold">{stats.wins}V</span>
+                <span className="text-amber-500 font-bold">{stats.draws}E</span>
+                <span className="text-red-500 font-bold">{stats.losses}D</span>
               </div>
               {totalGames > 0 && (
                 <p className="text-[10px] text-muted-foreground">{winRate}% aproveitamento</p>
@@ -221,9 +221,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                           {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
                         </td>
                         <td className="py-2 px-1 text-right font-bold">{entry.ranking_points}</td>
-                        <td className="py-2 px-1 text-center text-emerald-400 hidden sm:table-cell">{entry.wins}</td>
-                        <td className="py-2 px-1 text-center text-primary hidden sm:table-cell">{entry.draws}</td>
-                        <td className="py-2 px-1 text-center text-destructive hidden sm:table-cell">{entry.losses}</td>
+                        <td className="py-2 px-1 text-center text-emerald-500 font-bold hidden sm:table-cell">{entry.wins}</td>
+                        <td className="py-2 px-1 text-center text-amber-500 font-bold hidden sm:table-cell">{entry.draws}</td>
+                        <td className="py-2 px-1 text-center text-red-500 font-bold hidden sm:table-cell">{entry.losses}</td>
                         <td className="py-2 px-1 text-muted-foreground truncate max-w-[80px] hidden sm:table-cell">{entry.current_competition}</td>
                       </tr>
                     );
