@@ -1574,46 +1574,66 @@ function MatchMiniWidgets({
   currentMoment: string; homeGoals: number; awayGoals: number;
   homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps;
 }) {
-  // Estimate opponent attribute breakdown from awayStrength
-  const atk = Math.max(30, Math.min(99, awayStrength + 3));
-  const mid = Math.max(30, Math.min(99, awayStrength));
-  const def = Math.max(30, Math.min(99, awayStrength - 3));
-
   const xgHome = (stats.shotsOnTarget[0] * 0.35 + stats.shots[0] * 0.08).toFixed(1);
   const xgAway = (stats.shotsOnTarget[1] * 0.35 + stats.shots[1] * 0.08).toFixed(1);
 
-  const Bar = ({ value, color }: { value: number; color: string }) => (
-    <div className="h-1 flex-1 rounded-full bg-muted/20 overflow-hidden">
-      <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, value)}%` }} />
-    </div>
-  );
-
   return (
-    <div className="grid grid-cols-2 gap-1.5">
-      {/* Adversário — compacto */}
-      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-0.5">
-          {awayShield ? <ShieldCrest size={12} {...awayShield} /> : <span className="text-[10px]">🤖</span>}
-          <span className="text-[9px] font-bold truncate flex-1">{awayTeam}</span>
-          <Badge variant="outline" className="text-[8px] h-3 px-1">{awayStrength}</Badge>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Adversário Info */}
+      <Card className="border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden">
+        <div className="bg-muted/10 px-2 py-1 border-b border-border/10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            {awayShield ? <ShieldCrest size={14} {...awayShield} /> : <div className="w-3.5 h-3.5 bg-muted rounded-full" />}
+            <span className="text-[10px] font-black uppercase tracking-tight truncate max-w-[100px]">{awayTeam}</span>
+          </div>
+          <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5 border-primary/20 text-primary">OVR {awayStrength}</Badge>
         </div>
-        <div className="flex items-center gap-1 text-[8px]">
-          <span className="flex-1 text-center"><span className="text-red-400">A</span> {atk}</span>
-          <span className="flex-1 text-center"><span className="text-yellow-400">M</span> {mid}</span>
-          <span className="flex-1 text-center"><span className="text-blue-400">D</span> {def}</span>
+        <div className="p-2 grid grid-cols-3 gap-1 text-center">
+          <div className="bg-red-500/5 rounded p-1">
+            <p className="text-[8px] text-red-400 font-bold uppercase">ATA</p>
+            <p className="text-xs font-black">{Math.min(99, awayStrength + 3)}</p>
+          </div>
+          <div className="bg-yellow-500/5 rounded p-1">
+            <p className="text-[8px] text-yellow-400 font-bold uppercase">MEI</p>
+            <p className="text-xs font-black">{awayStrength}</p>
+          </div>
+          <div className="bg-blue-500/5 rounded p-1">
+            <p className="text-[8px] text-blue-400 font-bold uppercase">DEF</p>
+            <p className="text-xs font-black">{Math.max(30, awayStrength - 3)}</p>
+          </div>
         </div>
       </Card>
 
-      {/* Pulso da Partida — compacto */}
-      <Card className="border-border/30 p-1.5 bg-gradient-to-br from-card to-card/50">
-        <div className="flex items-center gap-1 mb-0.5">
-          <span className="text-[10px]">📊</span>
-          <span className="text-[9px] font-bold flex-1 truncate capitalize">{currentMoment.replace('_', ' ')}</span>
+      {/* Match Stats Pulse */}
+      <Card className="border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden">
+        <div className="bg-muted/10 px-2 py-1 border-b border-border/10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-primary">
+            <Activity className="h-3 w-3" />
+            <span className="text-[10px] font-black uppercase tracking-tight">Pulso da Partida</span>
+          </div>
+          <Badge variant="secondary" className="text-[9px] font-bold h-4 px-1.5 capitalize">{currentMoment.replace('_', ' ')}</Badge>
         </div>
-        <div className="flex items-center gap-1 text-[8px]">
-          <span className="flex-1 text-center font-mono">{stats.possession[0]}/{stats.possession[1]}%</span>
-          <span className="flex-1 text-center font-mono">xG {xgHome}-{xgAway}</span>
-          <span className="flex-1 text-center font-mono">⚡{stats.shots[0]}-{stats.shots[1]}</span>
+        <div className="p-2 flex flex-col justify-center h-full gap-2">
+          <div className="flex items-center justify-between gap-4">
+             <div className="flex-1 space-y-0.5">
+               <div className="flex justify-between text-[8px] font-bold text-muted-foreground uppercase">
+                 <span>Shots</span>
+                 <span>{stats.shots[0]} - {stats.shots[1]}</span>
+               </div>
+               <div className="h-1 bg-muted/20 rounded-full overflow-hidden flex">
+                 <div className="h-full bg-blue-500" style={{ width: `${(stats.shots[0] / (stats.shots[0] + stats.shots[1] || 1)) * 100}%` }} />
+               </div>
+             </div>
+             <div className="flex-1 space-y-0.5">
+               <div className="flex justify-between text-[8px] font-bold text-muted-foreground uppercase">
+                 <span>xG</span>
+                 <span>{xgHome} - {xgAway}</span>
+               </div>
+               <div className="h-1 bg-muted/20 rounded-full overflow-hidden flex">
+                 <div className="h-full bg-emerald-500" style={{ width: `${(Number(xgHome) / (Number(xgHome) + Number(xgAway) || 1)) * 100}%` }} />
+               </div>
+             </div>
+          </div>
         </div>
       </Card>
     </div>
