@@ -295,6 +295,7 @@ export type Database = {
           primary_color: string | null
           reputation: number | null
           secondary_color: string | null
+          shield_config: Json | null
           stadium_name: string | null
           updated_at: string
           user_id: string | null
@@ -311,6 +312,7 @@ export type Database = {
           primary_color?: string | null
           reputation?: number | null
           secondary_color?: string | null
+          shield_config?: Json | null
           stadium_name?: string | null
           updated_at?: string
           user_id?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           primary_color?: string | null
           reputation?: number | null
           secondary_color?: string | null
+          shield_config?: Json | null
           stadium_name?: string | null
           updated_at?: string
           user_id?: string | null
