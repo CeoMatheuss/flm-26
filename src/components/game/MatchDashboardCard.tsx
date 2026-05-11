@@ -224,6 +224,8 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   }
 
   if (nextMatch) {
+    const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
+    const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
     // Horário exibido = horário real salvo no banco (Liga 19:30 BRT, Copa 12:00 BRT)
     const fmt = nextMatch.date ? {
       dateFormatted: new Date(nextMatch.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }),
