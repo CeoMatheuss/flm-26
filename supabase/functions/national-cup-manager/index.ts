@@ -186,7 +186,7 @@ async function drawNextRound(supabase: any, cupId: string, round: number, total:
         cup_id: cupId, round, bracket_pos: i / 2,
         home_team_id: shuffled[i].id, away_team_id: shuffled[i+1].id,
         status: 'scheduled', phase_name: phaseName,
-        scheduled_at: new Date(Date.now() + 86400000).toISOString()
+        scheduled_at: nextCupKickoff().toISOString()
       });
     }
   }
