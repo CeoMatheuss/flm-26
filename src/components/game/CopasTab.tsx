@@ -85,8 +85,21 @@ export function CopasTab({ userId }: Props) {
   const navigate = useNavigate();
   const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
 
+  // Janela de horário: só permite entrar 5 min antes até 60 min depois do scheduled_at
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const matchTimeMs = myMatch?.scheduled_at ? new Date(myMatch.scheduled_at).getTime() : 0;
+  const minutesUntilMatch = matchTimeMs ? Math.round((matchTimeMs - now) / 60000) : 0;
+  const canPlayNow = !!myMatch && matchTimeMs > 0 && now >= matchTimeMs - 5 * 60_000 && now <= matchTimeMs + 60 * 60_000;
+
   const handlePlayMatch = () => {
     if (!myMatch) return;
+    if (!canPlayNow) {
+      return;
+    }
     navigate('/', {
       replace: true,
       state: {
@@ -163,8 +176,10 @@ export function CopasTab({ userId }: Props) {
           {myMatch && (
             <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match">
               <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
-                <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO HOJE</span>
-                <span className="text-[9px] font-mono text-white/50">12:00</span>
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
+                <span className="text-[9px] font-mono text-white/50">
+                  {matchTimeMs ? new Date(myMatch.scheduled_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                </span>
               </div>
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center justify-around gap-2">
@@ -180,9 +195,23 @@ export function CopasTab({ userId }: Props) {
                     <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.away?.club_name}</span>
                   </div>
                 </div>
-                <Button onClick={handlePlayMatch} className="w-full h-9 bg-primary hover:bg-primary/80 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20">
-                  <Play className="h-3 w-3 mr-2" /> ENTRAR EM CAMPO
+                <Button
+                  onClick={handlePlayMatch}
+                  disabled={!canPlayNow}
+                  className="w-full h-9 bg-primary hover:bg-primary/80 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Play className="h-3 w-3 mr-2" />
+                  {canPlayNow
+                    ? 'ENTRAR EM CAMPO'
+                    : minutesUntilMatch > 0
+                      ? `LIBERA EM ${minutesUntilMatch < 60 ? `${minutesUntilMatch}MIN` : `${Math.floor(minutesUntilMatch/60)}H${minutesUntilMatch%60}M`}`
+                      : 'JANELA ENCERRADA'}
                 </Button>
+                {!canPlayNow && (
+                  <p className="text-[9px] text-center text-white/40 font-mono uppercase tracking-wider">
+                    Disponível 5min antes do horário oficial
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

@@ -196,12 +196,17 @@ function MatchDetailModal({ match, clubName, onClose }: {
 export function MatchCalendarTab({ userId, clubName }: Props) {
   const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [worldMatches, setWorldMatches] = useState<any[]>([]);
+  const [cupMatches, setCupMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MatchHistoryItem | null>(null);
   const [activeView, setActiveView] = useState<'history' | 'scheduled'>('scheduled');
   const [selectedMatchday, setSelectedMatchday] = useState<number>(1);
   const [maxMatchdays, setMaxMatchdays] = useState<number>(30);
   const [leagueDivision, setLeagueDivision] = useState<number>(1);
+  const [leagueName, setLeagueName] = useState<string>('Liga');
+  const [cupName, setCupName] = useState<string>('Copa');
+  const [cupCurrentRound, setCupCurrentRound] = useState<number>(1);
+  const [scope, setScope] = useState<'all' | 'league' | 'cup'>('all');
 
   useEffect(() => {
     const load = async () => {
@@ -209,7 +214,6 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // 1. Carrega Histórico Real de Partidas
       const { data: historyData } = await supabase
         .from('match_history')
         .select('*')
@@ -218,10 +222,9 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         .limit(50);
       setHistory((historyData as MatchHistoryItem[]) || []);
 
-      // 2. Carrega Informações da Liga e Próximos Jogos
       const { data: teamData } = await supabase
         .from('world_teams')
-        .select('*, league:world_leagues(id, current_round, total_rounds, division)')
+        .select('*, league:world_leagues(id, name, current_round, total_rounds, division)')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -230,8 +233,8 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         setSelectedMatchday(league.current_round || 1);
         setMaxMatchdays(league.total_rounds || 30);
         setLeagueDivision(league.division || 1);
+        setLeagueName(league.name || 'Liga');
 
-        // 3. Carrega TODOS os jogos da liga do usuário (atualizado para Engine V3)
         const { data: wm } = await supabase
           .from('world_matches')
           .select(`
@@ -244,18 +247,59 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
           .order('scheduled_at', { ascending: true });
         
         if (wm) {
-          // Busca metadados dos clubes reais para os escudos
           const userIds = [...wm.map(m => m.home_team?.user_id), ...wm.map(m => m.away_team?.user_id)].filter(Boolean);
           const { data: clubsData } = await supabase.from('clubs').select('*').in('user_id', userIds);
 
           const enhanced = wm.map(m => ({
             ...m,
+            competition_kind: 'league' as const,
+            competition_name: league.name || 'Liga',
             home_full: { ...m.home_team, ...clubsData?.find(c => c.user_id === m.home_team?.user_id) },
             away_full: { ...m.away_team, ...clubsData?.find(c => c.user_id === m.away_team?.user_id) }
           }));
           setWorldMatches(enhanced);
         }
       }
+
+      // Carrega Copa atual do usuário
+      const { data: myCupTeam } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (myCupTeam?.cup_id) {
+        const { data: cupInfo } = await supabase
+          .from('national_cups')
+          .select('id, name, current_round')
+          .eq('id', myCupTeam.cup_id)
+          .maybeSingle();
+        if (cupInfo) {
+          setCupName(cupInfo.name);
+          setCupCurrentRound(cupInfo.current_round || 1);
+        }
+
+        const { data: cm } = await supabase
+          .from('national_cup_matches')
+          .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
+          .eq('cup_id', myCupTeam.cup_id)
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
+
+        if (cm) {
+          const enhanced = cm.map(m => ({
+            ...m,
+            competition_kind: 'cup' as const,
+            competition_name: cupInfo?.name || 'Copa',
+            home_team: { name: m.home?.club_name, logo: m.home?.club_logo, user_id: m.home?.user_id },
+            away_team: { name: m.away?.club_name, logo: m.away?.club_logo, user_id: m.away?.user_id },
+            home_full: { name: m.home?.club_name, logoUrl: m.home?.club_logo },
+            away_full: { name: m.away?.club_name, logoUrl: m.away?.club_logo },
+          }));
+          setCupMatches(enhanced);
+        }
+      }
+
       setLoading(false);
     };
     load();
@@ -269,7 +313,9 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
     </div>
   );
 
-  const filteredMatches = worldMatches.filter(m => m.round === selectedMatchday);
+  const leagueRoundMatches = scope === 'cup' ? [] : worldMatches.filter(m => m.round === selectedMatchday);
+  const cupRoundMatches = scope === 'league' ? [] : cupMatches.filter(m => m.round === cupCurrentRound);
+  const filteredMatches = [...leagueRoundMatches, ...cupRoundMatches];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -293,32 +339,45 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
 
       {activeView === 'scheduled' ? (
         <div className="space-y-4">
-          {/* Navegador de Rodadas */}
-          <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 p-4 rounded-xl shadow-2xl">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-primary hover:bg-primary/10" 
-              onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} 
-              disabled={selectedMatchday === 1}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <div className="text-center">
-              <span className="text-[10px] text-primary font-black uppercase tracking-tighter italic">Temporada 2026</span>
-              <h3 className="text-xl font-black text-white italic leading-tight">RODADA {selectedMatchday}</h3>
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Total de {maxMatchdays} Jornadas</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-primary hover:bg-primary/10" 
-              onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} 
-              disabled={selectedMatchday === maxMatchdays}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
+          {/* Filtro de Competição */}
+          <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl text-[10px]">
+            {(['all', 'league', 'cup'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setScope(s)}
+                className={`flex-1 py-2 rounded-lg font-black uppercase tracking-widest transition-all
+                  ${scope === s ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+              >
+                {s === 'all' ? 'Tudo' : s === 'league' ? leagueName : cupName}
+              </button>
+            ))}
           </div>
+
+          {/* Navegador de Rodadas (apenas para Liga) */}
+          {scope !== 'cup' && (
+            <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 p-4 rounded-xl shadow-2xl">
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
+                onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} disabled={selectedMatchday === 1}>
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <div className="text-center">
+                <span className="text-[10px] text-primary font-black uppercase tracking-tighter italic">{leagueName}</span>
+                <h3 className="text-xl font-black text-white italic leading-tight">RODADA {selectedMatchday}</h3>
+                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Total de {maxMatchdays} Jornadas</p>
+              </div>
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
+                onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} disabled={selectedMatchday === maxMatchdays}>
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
+
+          {scope === 'cup' && cupRoundMatches.length > 0 && (
+            <div className="bg-zinc-900/60 border border-amber-500/20 p-4 rounded-xl text-center">
+              <span className="text-[10px] text-amber-400 font-black uppercase tracking-tighter italic">{cupName}</span>
+              <h3 className="text-xl font-black text-white italic leading-tight">FASE {cupCurrentRound}</h3>
+            </div>
+          )}
 
           <ScrollArea className="h-[480px] pr-4">
             <div className="space-y-3 pb-10">
@@ -329,21 +388,31 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                 </div>
               ) : filteredMatches.map(m => {
                 const isFinished = m.status === 'finished';
-                // Regra de horário da Divisão 1 vs Outras
-                const displayTime = leagueDivision === 1 ? '19:30' : 
-                                   new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+                const isCup = m.competition_kind === 'cup';
+                const displayTime = m.scheduled_at
+                  ? new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+                  : '--:--';
+                const displayDate = m.scheduled_at
+                  ? new Date(m.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                  : '';
 
                 return (
-                  <Card key={m.id} className={`overflow-hidden border-white/5 bg-zinc-900/40 hover:border-primary/20 transition-all ${isFinished ? 'opacity-70' : ''}`}>
+                  <Card key={`${m.competition_kind}-${m.id}`} className={`overflow-hidden border-white/5 bg-zinc-900/40 hover:border-primary/20 transition-all ${isFinished ? 'opacity-70' : ''}`}>
                     <CardContent className="p-4">
+                      {/* Cabeçalho competição + data */}
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                        <Badge className={`text-[8px] uppercase font-black tracking-widest border-none ${isCup ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-primary'}`}>
+                          {m.competition_name}
+                        </Badge>
+                        <div className="text-[9px] font-mono text-white/50">{displayDate} • {displayTime}</div>
+                      </div>
+
                       <div className="grid grid-cols-7 items-center gap-4">
-                        {/* Casa */}
                         <div className="col-span-3 flex flex-col items-center gap-2">
                           <ClubShield club={m.home_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
                           <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.home_team?.name}</p>
                         </div>
 
-                        {/* Placar/Hora */}
                         <div className="col-span-1 flex flex-col items-center justify-center gap-1">
                           {isFinished ? (
                             <div className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg flex items-center gap-2">
@@ -360,20 +429,20 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
                           {isFinished && <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[7px] py-0 px-1 uppercase font-black tracking-widest">Final</Badge>}
                         </div>
 
-                        {/* Fora */}
                         <div className="col-span-3 flex flex-col items-center gap-2">
                           <ClubShield club={m.away_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
                           <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.away_team?.name}</p>
                         </div>
                       </div>
 
-                      {/* Info Adicional */}
                       <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                          <div className="flex items-center gap-1.5 opacity-50">
                             <MapPin className="h-3 w-3 text-primary" />
-                            <span className="text-[9px] font-bold text-white truncate max-w-[120px] uppercase">{m.stadium_name || 'Estádio Municipal'}</span>
+                            <span className="text-[9px] font-bold text-white truncate max-w-[160px] uppercase">{m.stadium_name || (isCup ? 'Sede Definida' : 'Estádio Municipal')}</span>
                          </div>
-                         <div className="text-[9px] font-black text-primary/40 italic uppercase tracking-tighter">Campeonato Mundial V3</div>
+                         <div className={`text-[9px] font-black italic uppercase tracking-tighter ${isCup ? 'text-amber-400/40' : 'text-primary/40'}`}>
+                           {isCup ? `Fase ${m.round}` : `Rodada ${m.round}`}
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
