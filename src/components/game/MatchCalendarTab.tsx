@@ -209,8 +209,111 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   const [scope, setScope] = useState<'all' | 'league' | 'cup'>('all');
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: historyData } = await supabase
+        .from('match_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('played_at', { ascending: false })
+        .limit(50);
+      setHistory((historyData as MatchHistoryItem[]) || []);
+
+      const { data: teamData } = await supabase
+        .from('world_teams')
+        .select('*, league:world_leagues(id, name, current_round, total_rounds, division)')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (teamData) {
+        setMyTeamId(teamData.id);
+      }
+
+      if (teamData?.league) {
+        const league = teamData.league as any;
+        setSelectedMatchday(league.current_round || 1);
+        setMaxMatchdays(league.total_rounds || 30);
+        setLeagueDivision(league.division || 1);
+        setLeagueName(league.name || 'Liga');
+
+        const { data: wm } = await supabase
+          .from('world_matches')
+          .select(`
+            *, 
+            home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id), 
+            away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id)
+          `)
+          .eq('league_id', league.id)
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
+        
+        if (wm) {
+          const userIds = [...wm.map(m => m.home_team?.user_id), ...wm.map(m => m.away_team?.user_id)].filter(Boolean);
+          const { data: clubsData } = await supabase.from('clubs').select('*').in('user_id', userIds);
+
+          const enhanced = wm.map(m => ({
+            ...m,
+            competition_kind: 'league' as const,
+            competition_name: league.name || 'Liga',
+            home_full: { ...m.home_team, ...clubsData?.find(c => c.user_id === m.home_team?.user_id) },
+            away_full: { ...m.away_team, ...clubsData?.find(c => c.user_id === m.away_team?.user_id) }
+          }));
+          setWorldMatches(enhanced);
+        }
+      }
+
+      // Carrega Copa atual do usuário
+      const { data: myCupTeam } = await supabase
+        .from('national_cup_teams')
+        .select('cup_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (myCupTeam?.cup_id) {
+        const { data: cupInfo } = await supabase
+          .from('national_cups')
+          .select('id, name, current_round')
+          .eq('id', myCupTeam.cup_id)
+          .maybeSingle();
+        if (cupInfo) {
+          setCupName(cupInfo.name);
+          setCupCurrentRound(cupInfo.current_round || 1);
+        }
+
+        const { data: cm } = await supabase
+          .from('national_cup_matches')
+          .select('*, home:national_cup_teams!home_team_id(*), away:national_cup_teams!away_team_id(*)')
+          .eq('cup_id', myCupTeam.cup_id)
+          .order('round', { ascending: true })
+          .order('scheduled_at', { ascending: true });
+
+        if (cm) {
+          const enhanced = cm.map(m => ({
+            ...m,
+            competition_kind: 'cup' as const,
+            competition_name: cupInfo?.name || 'Copa',
+            home_team: { name: m.home?.club_name, logo: m.home?.club_logo, user_id: m.home?.user_id },
+            away_team: { name: m.away?.club_name, logo: m.away?.club_logo, user_id: m.away?.user_id },
+            home_full: { name: m.home?.club_name, logoUrl: m.home?.club_logo },
+            away_full: { name: m.away?.club_name, logoUrl: m.away?.club_logo },
+          }));
+          setCupMatches(enhanced);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading calendar:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
+    load();
+  }, [userId]);
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
