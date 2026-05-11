@@ -50,6 +50,8 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
+    const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
+
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
     else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure.youthAcademy.level);
     else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure.trainingCenter.level);
@@ -72,7 +74,6 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       toast.error(`💸 Orçamento insuficiente para upgrade!`);
       return;
     }
-    const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
     // Cobramos APENAS após todas as verificações passarem
