@@ -304,7 +304,7 @@ export function useClubState(initialState: any, userId?: string) {
             const bonus = activeDamagesCount === 0 ? c.bonusIfHealthy : 0;
             const total = c.monthlyPay + bonus;
             next.budget = (next.budget ?? 0) + total;
-            pushFin({ at: new Date().toISOString(), category: 'evento', label: `Patrocínio ${c.brand}`, amount: total });
+            pushFin({ at: new Date().toISOString(), category: 'receita', label: `Patrocínio ${c.brand}`, amount: total });
             nextOps.sponsorContracts![i] = { ...c, nextPayoutAt: new Date(now + 30 * 24 * 3600_000).toISOString() };
             const bonusMsg = bonus > 0 ? ` (+R$${(bonus/1000).toFixed(0)}k bônus estádio íntegro)` : '';
             nextOps.recentLog = [{ at: new Date().toISOString(), message: `💼 ${c.brand} pagou R$ ${(c.monthlyPay/1000).toFixed(0)}k${bonusMsg}`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
