@@ -58,6 +58,11 @@ serve(async (req) => {
           total_teams: participantsCount, total_rounds: Math.log2(participantsCount) 
         }).eq('id', cup.id);
         
+        // Grant participation prize (100K) to all selected teams
+        for (const ct of cupTeams) {
+          await grantPrize(supabase, ct.club_id, 100000, "Participação na Copa", cup.id);
+        }
+
         await drawNextRound(supabase, cup.id, 1, Math.log2(participantsCount));
         await createCupNews(supabase, cup.id, `Copa de ${country} Iniciada!`, `O sorteio foi realizado e ${participantsCount} times começam a busca pelo troféu.`);
       }
@@ -90,7 +95,10 @@ serve(async (req) => {
               if (winnerMatch) {
                 await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
                 await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
-                await grantPrize(supabase, winnerMatch.winner_team_id, 25000000, "Campeão da Copa", cup.id);
+                await grantPrize(supabase, winnerMatch.winner_team_id, 10000000, "Campeão da Copa", cup.id);
+
+                // Bonus logic: Best Attack / Best Defense
+                await processEndOfCupBonuses(supabase, cup.id);
               }
             }
           }
@@ -186,26 +194,77 @@ function getPhaseName(round: number, total: number) {
 
 function getPrizeForRound(round: number, total: number) {
   const rem = total - round;
+  // Based on user requirements:
+  // Final (Campeão) -> 10M (granted via winner logic)
+  // Semifinal -> 5M
+  // Quartas -> 2M
+  // Oitavas -> 1M
+  // Round 3 -> 500K
+  // Round 2 -> 500K
+  // Round 1 -> 250K
+  
   if (rem === 0) return 10000000;
   if (rem === 1) return 5000000;
   if (rem === 2) return 2000000;
   if (rem === 3) return 1000000;
-  return 100000 * Math.pow(2, round - 1);
+  if (round === 3) return 500000;
+  if (round === 2) return 500000;
+  if (round === 1) return 250000;
+  return 100000;
 }
 
-async function grantPrize(supabase: any, teamId: string, amount: number, desc: string, cupId: string) {
-  const { data: team } = await supabase.from('national_cup_teams').select('user_id, club_id').eq('id', teamId).single();
-  if (!team) return;
+async function grantPrize(supabase: any, target: string, amount: number, desc: string, cupId: string) {
+  // target can be club_id (legacy/internal) or national_cup_teams.id
+  let clubId = target;
+  let userId = null;
+  let teamId = null;
+
+  // Try to find if target is national_cup_teams.id first
+  const { data: cupTeam } = await supabase.from('national_cup_teams').select('user_id, club_id, id').eq('id', target).single();
+  if (cupTeam) {
+    clubId = cupTeam.club_id;
+    userId = cupTeam.user_id;
+    teamId = cupTeam.id;
+  } else {
+    // If not found, assume target is club_id and find the cup team record
+    const { data: ctByClub } = await supabase.from('national_cup_teams').select('user_id, id').eq('club_id', target).eq('cup_id', cupId).single();
+    if (ctByClub) {
+      userId = ctByClub.user_id;
+      teamId = ctByClub.id;
+    }
+  }
+
+  // Idempotency: avoid duplicate payments for the same phase/team
+  const { data: existing } = await supabase.from('national_cup_prizes')
+    .select('id').eq('cup_id', cupId).eq('team_id', teamId).eq('description', desc).single();
+  if (existing) return;
 
   await supabase.from('national_cup_prizes').insert({
     cup_id: cupId, team_id: teamId, amount, description: desc
   });
 
-  if (team.user_id) {
-    const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', team.user_id).single();
+  if (userId) {
+    const { data: save } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).single();
     if (save?.club_data) {
       save.club_data.club.budget = (save.club_data.club.budget || 0) + amount;
-      await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', team.user_id);
+      await supabase.from('game_saves').update({ club_data: save.club_data }).eq('user_id', userId);
+      
+      // Register transaction in history
+      await supabase.from('club_transactions').insert({
+        user_id: userId,
+        amount: amount,
+        type: 'income',
+        description: `Copa: ${desc}`,
+        category: 'tournament'
+      });
+
+      // Send notification
+      await supabase.from('user_notifications').insert({
+        user_id: userId,
+        title: 'Premiação da Copa Recebida',
+        message: `Seu clube recebeu R$ ${(amount/1000000).toFixed(1)}M da ${desc}. Dinheiro adicionado ao caixa!`,
+        type: 'finance'
+      });
     }
   }
 }
@@ -221,6 +280,46 @@ async function assignGoalsToPlayers(supabase: any, teamId: string, goals: number
   for (let i = 0; i < goals; i++) {
     const p = players[Math.floor(Math.random() * players.length)];
     await supabase.rpc('increment_cup_goals', { p_cup_id: cupId, p_player_id: p.id, p_team_id: cupTeam.club_id });
+  }
+}
+
+async function processEndOfCupBonuses(supabase: any, cupId: string) {
+  const { data: matches } = await supabase.from('national_cup_matches').select('*').eq('cup_id', cupId).eq('status', 'finished');
+  if (!matches) return;
+
+  const teamStats: Record<string, { goalsScored: number, goalsConceded: number }> = {};
+  
+  matches.forEach((m: any) => {
+    if (!teamStats[m.home_team_id]) teamStats[m.home_team_id] = { goalsScored: 0, goalsConceded: 0 };
+    if (!teamStats[m.away_team_id]) teamStats[m.away_team_id] = { goalsScored: 0, goalsConceded: 0 };
+    
+    teamStats[m.home_team_id].goalsScored += m.home_score || 0;
+    teamStats[m.home_team_id].goalsConceded += m.away_score || 0;
+    teamStats[m.away_team_id].goalsScored += m.away_score || 0;
+    teamStats[m.away_team_id].goalsConceded += m.home_score || 0;
+  });
+
+  let bestAttackTeam = null;
+  let maxGoals = -1;
+  let bestDefenseTeam = null;
+  let minConceded = Infinity;
+
+  for (const [teamId, stats] of Object.entries(teamStats)) {
+    if (stats.goalsScored > maxGoals) {
+      maxGoals = stats.goalsScored;
+      bestAttackTeam = teamId;
+    }
+    if (stats.goalsConceded < minConceded) {
+      minConceded = stats.goalsConceded;
+      bestDefenseTeam = teamId;
+    }
+  }
+
+  if (bestAttackTeam) {
+    await grantPrize(supabase, bestAttackTeam, 500000, "Melhor Ataque da Copa", cupId);
+  }
+  if (bestDefenseTeam) {
+    await grantPrize(supabase, bestDefenseTeam, 500000, "Melhor Defesa da Copa", cupId);
   }
 }
 

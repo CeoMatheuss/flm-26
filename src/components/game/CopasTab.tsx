@@ -308,15 +308,42 @@ export function CopasTab({ userId }: Props) {
         </TabsContent>
 
         <TabsContent value="prizes" className="outline-none">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <PrizeCard label="Fase 1" amount="100.000" />
-            <PrizeCard label="Fase 2" amount="250.000" />
-            <PrizeCard label="Fase 3" amount="500.000" />
-            <PrizeCard label="Oitavas" amount="1.000.000" />
-            <PrizeCard label="Quartas" amount="2.000.000" />
-            <PrizeCard label="Semifinal" amount="5.000.000" />
-            <PrizeCard label="Vice" amount="10.000.000" highlight="silver" />
-            <PrizeCard label="Campeão" amount="25.000.000" highlight="gold" />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <PrizeCard label="Participação" amount="100.000" />
+              <PrizeCard label="Fase 1" amount="250.000" />
+              <PrizeCard label="Fase 2" amount="500.000" />
+              <PrizeCard label="Fase 3" amount="500.000" />
+              <PrizeCard label="Oitavas" amount="1.000.000" />
+              <PrizeCard label="Quartas" amount="2.000.000" />
+              <PrizeCard label="Semifinal" amount="5.000.000" />
+              <PrizeCard label="Campeão" amount="10.000.000" highlight="gold" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+               <Card className="bg-emerald-500/10 border-emerald-500/20 rounded-3xl p-6 border-dashed">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider">Melhor Ataque</h4>
+                    <p className="text-[10px] text-muted-foreground font-bold mt-1">Bônus de R$ 500.000 ao final da competição.</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="bg-blue-500/10 border-blue-500/20 rounded-3xl p-6 border-dashed">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                    <BarChart3 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider">Melhor Defesa</h4>
+                    <p className="text-[10px] text-muted-foreground font-bold mt-1">Bônus de R$ 500.000 ao final da competição.</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
