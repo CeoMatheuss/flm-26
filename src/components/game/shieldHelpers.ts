@@ -18,6 +18,11 @@ export interface ShieldSourceLike {
   shieldShape?: string;
   shieldIcon?: string;
   logoUrl?: string;
+  logo_url?: string; // Add support for DB snake_case
+  primary_color?: string;
+  secondary_color?: string;
+  detail_color?: string;
+  shield_config?: any;
 }
 
 export interface ShieldRenderProps {
