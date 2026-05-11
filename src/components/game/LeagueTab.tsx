@@ -27,7 +27,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   const [loading, setLoading] = useState(true);
   const [currentRound, setCurrentRound] = useState(1);
   const [playerStats, setPlayerStats] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
+  
   const [activeTab, setActiveTab] = useState('standings');
 
   const loadData = async () => {
