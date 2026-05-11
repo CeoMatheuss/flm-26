@@ -66,23 +66,43 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
     fetchScoutingData();
   }, [userId]);
 
-  const handleHireInitialScout = async () => {
-    const names = ['Bruno Olheiro', 'Marcos Scout', 'Ricardo Silva', 'Fabio Junior'];
-    const countries = ['Brasil', 'Argentina', 'Portugal', 'Espanha'];
-    
-    const newScout = {
-      user_id: userId,
-      name: names[Math.floor(Math.random() * names.length)],
-      country: countries[Math.floor(Math.random() * countries.length)],
-      level: 'baixo' as ScoutLevel,
-      specialization: 'geral' as ScoutSpecialization,
-      efficiency: 0.5
-    };
+  const handleHireScout = async (scout: ScoutV3) => {
+    if (myScouts.length >= 5) {
+      toast.error('Limite de olheiros atingido (Máx: 5)');
+      return;
+    }
 
-    const { error } = await supabase.from('scouts').insert([newScout]);
-    if (error) toast.error('Erro ao contratar olheiro');
-    else {
-      toast.success('Olheiro contratado com sucesso!');
+    const { error } = await supabase
+      .from('scouts')
+      .update({ 
+        user_id: userId, 
+        is_free_agent: false,
+        seasons_remaining: 5 
+      })
+      .eq('id', scout.id);
+
+    if (error) {
+      toast.error('Erro ao contratar olheiro');
+    } else {
+      toast.success(`${scout.name} contratado por 5 temporadas!`);
+      fetchScoutingData();
+    }
+  };
+
+  const handleFireScout = async (scoutId: string) => {
+    const { error } = await supabase
+      .from('scouts')
+      .update({ 
+        user_id: null, 
+        is_free_agent: true,
+        is_busy: false 
+      })
+      .eq('id', scoutId);
+
+    if (error) {
+      toast.error('Erro ao dispensar olheiro');
+    } else {
+      toast.success('Olheiro dispensado e agora está livre no mercado.');
       fetchScoutingData();
     }
   };
