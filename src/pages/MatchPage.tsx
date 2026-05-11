@@ -227,18 +227,7 @@ export default function MatchPage() {
     return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
   }
 
-  if (state.phase === 'error') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full">
-          <CardContent className="p-6 text-center space-y-3">
-            <p className="text-base text-destructive">{state.errorMsg || 'Erro ao carregar partida.'}</p>
-            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // (bloco de erro duplicado removido — agora prioritário no topo)
 
   if (state.phase === 'idle') {
     return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
