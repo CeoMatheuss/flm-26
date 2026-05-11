@@ -878,15 +878,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
     return map;
   }, [homePlayers, currentMinute, liveTactics, isHalftime, enteredAtMap, substitutedPlayerIds, matchState.playerStamina]);
 
-  // ── Inline section refs (for scroll-to-section navigation) ──
-  const tacticsSectionRef = useRef<HTMLDivElement>(null);
-  const lineupSectionRef = useRef<HTMLDivElement>(null);
-  const statsSectionRef = useRef<HTMLDivElement>(null);
-  const assistantSectionRef = useRef<HTMLDivElement>(null);
-  const scrollToSection = useCallback((ref: React.RefObject<HTMLDivElement>) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
   // Process queued substitutions — rápido: aplica imediatamente após qualquer evento
   // Substituição agendada para minuto X aguarda o minuto chegar.
   // No intervalo, queue espera; assim que voltar (currentMinute >= 46) é processada.
