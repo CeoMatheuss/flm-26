@@ -288,14 +288,20 @@ export function CopasTab({ userId }: Props) {
                               <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.home_team_id ? 'text-primary' : m.home?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.home?.club_name || 'TBD'}
                               </span>
-                              <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
+                              <div className="flex flex-col items-end leading-none">
+                                <span className="font-black tabular-nums">{m.home_score ?? ''}</span>
+                                {m.home_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.home_penalties})</span>}
+                              </div>
                             </div>
                             <div className="h-px w-full bg-border/50 my-1"></div>
                             <div className="flex justify-between items-center">
                               <span className={`font-bold truncate max-w-[80px] ${m.winner_team_id === m.away_team_id ? 'text-primary' : m.away?.user_id === userId ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {m.away?.club_name || 'TBD'}
                               </span>
-                              <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
+                              <div className="flex flex-col items-end leading-none">
+                                <span className="font-black tabular-nums">{m.away_score ?? ''}</span>
+                                {m.away_penalties !== null && <span className="text-[7px] text-muted-foreground">({m.away_penalties})</span>}
+                              </div>
                             </div>
                           </Card>
                         </div>
