@@ -1035,7 +1035,7 @@ function simulateFullMatch(
   const baseAttendance = homePart + awayPart;
   const strengthMultiplier = 0.85 + (homeStrength / 200);
   const estimatedCrowd = Math.min(maxCapacity, Math.floor(baseAttendance * strengthMultiplier));
-  const ticketRevenue = Math.floor(estimatedCrowd * 25); // R$ 25 médio por ingresso
+  const ticketRevenue = Math.floor(estimatedCrowd * ticketPrice); 
 
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
