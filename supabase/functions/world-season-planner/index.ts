@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
         // Buscar 20 times
         const { data: teams, error: tErr } = await supabase
           .from("world_league_teams")
-          .select("id")
+          .select("id, club_name")
           .eq("league_id", league.id);
         if (tErr) throw tErr;
         if (!teams || teams.length !== 20) {
