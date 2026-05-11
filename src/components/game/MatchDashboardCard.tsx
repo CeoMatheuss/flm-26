@@ -648,7 +648,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
 
   const venueName = isHome
     ? (club.stadiumName || (status === 'live' ? liveMatch!.stadium_name : status === 'finished' ? lastFinished!.stadium : undefined))
-    : (status === 'live' ? (liveMatch!.stadium_name || `Estádio ${awayTeamName}`) : (lastFinished?.stadium || `Estádio ${awayTeamName}`));
+    : (status === 'live' ? (liveMatch!.stadium_name || `Estádio do ${homeTeamName}`) : (lastFinished?.stadium || `Estádio do ${homeTeamName}`));
 
   const venueCapacity = isHome
     ? (realCapacity || (status === 'live' ? liveMatch!.stadium_capacity : status === 'finished' ? lastFinished!.stadiumCapacity : null) || null)
