@@ -13,7 +13,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 
-export type RankingCompetition = 'friendly' | 'league' | 'cup' | 'continental' | 'world';
+export type RankingCompetition = 'friendly' | 'league' | 'continental' | 'world';
 export type RankingOutcome = 'win' | 'draw' | 'loss';
 
 const WEIGHT: Record<RankingCompetition, number> = {
