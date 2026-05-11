@@ -263,11 +263,10 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 h-auto p-1 bg-muted/50">
           <TabsTrigger value="standings" className="text-[10px] md:text-xs py-2">Tabela</TabsTrigger>
           <TabsTrigger value="matches" className="text-[10px] md:text-xs py-2">Jogos</TabsTrigger>
           <TabsTrigger value="stats" className="text-[10px] md:text-xs py-2">Estatísticas</TabsTrigger>
-          <TabsTrigger value="news" className="text-[10px] md:text-xs py-2">Jornal</TabsTrigger>
           <TabsTrigger value="calendar" className="text-[10px] md:text-xs py-2">Calendário</TabsTrigger>
           <TabsTrigger value="info" className="text-[10px] md:text-xs py-2">Info</TabsTrigger>
         </TabsList>
