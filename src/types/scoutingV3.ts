@@ -7,13 +7,15 @@ export type MissionStatus = 'em_andamento' | 'concluída' | 'cancelada';
 
 export interface ScoutV3 {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
   country: string;
   level: ScoutLevel;
   specialization: ScoutSpecialization;
   efficiency: number;
   is_busy: boolean;
+  is_free_agent: boolean;
+  seasons_remaining: number;
   avatar_url?: string;
   created_at?: string;
 }
@@ -44,6 +46,7 @@ export interface ScoutReportV3 {
     potential: number;
     market_value: number;
     nationality: string;
+    status?: 'livre' | 'contratado' | 'disponível';
   };
   accuracy: number;
   status: 'novo' | 'visto' | 'contratado' | 'descartado';
