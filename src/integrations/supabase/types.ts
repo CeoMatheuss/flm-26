@@ -4155,6 +4155,10 @@ export type Database = {
         Returns: number
       }
       calculate_league_reward: { Args: { p_pos: number }; Returns: number }
+      calculate_match_scheduled_time: {
+        Args: { p_date: string; p_league_id: string }
+        Returns: string
+      }
       check_and_advance_round: {
         Args: { p_league_id: string }
         Returns: undefined
@@ -4253,6 +4257,10 @@ export type Database = {
       }
       generate_random_scout: { Args: never; Returns: undefined }
       generate_weekly_scout: { Args: never; Returns: undefined }
+      get_available_league_for_country: {
+        Args: { p_country_id: string }
+        Returns: string
+      }
       get_club_shields_by_names: {
         Args: { _names: string[] }
         Returns: {
