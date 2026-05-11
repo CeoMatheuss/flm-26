@@ -124,13 +124,14 @@ serve(async (req) => {
             const { data: matches } = await supabase
                 .from('national_cup_matches')
                 .select(`
-                    *,
+                    id, round, cup_id, home_team_id, away_team_id,
                     home:national_cup_teams!home_team_id(strength, club_name, user_id),
                     away:national_cup_teams!away_team_id(strength, club_name, user_id)
                 `)
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
                 .lte('scheduled_at', now.toISOString());
+
 
 
 
