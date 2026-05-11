@@ -164,19 +164,33 @@ export function useClubState(initialState: any, userId?: string) {
         if (nextOps.proposals.length !== before) changed = true;
 
         // 2) resolver eventos cuja data passou
-        const due = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() <= now);
+        const processedIds = nextOps.processedEventIds ?? [];
+        const due = nextOps.acceptedEvents.filter(e => 
+          new Date(e.scheduledFor).getTime() <= now && !processedIds.includes(e.proposalId)
+        );
+
         if (due.length > 0) {
           const upgEffEvents = computeUpgradeEffects(nextOps.phase6?.upgrades);
           for (const e of due) {
             const baseProposal = ops.proposals.find(p => p.id === e.proposalId)
               ?? ({ id: e.proposalId, category: e.category, damageChance: 0.2, damageSeverity: 'medio', revenue: e.revenue } as StadiumEventProposal);
-            // Aplica redução de chance de dano por upgrades modulares (gramado híbrido, etc.)
-            const proposal: StadiumEventProposal = { ...baseProposal, damageChance: Math.max(0, Math.min(1, baseProposal.damageChance * upgEffEvents.eventDamageMult)) };
+            
+            const proposal: StadiumEventProposal = { 
+              ...baseProposal, 
+              damageChance: Math.max(0, Math.min(1, baseProposal.damageChance * upgEffEvents.eventDamageMult)) 
+            };
             const res = resolveEvent(proposal);
+            
             next.budget = (next.budget ?? 0) + e.revenue;
             const evLabel = EVENT_CATALOG.find(c => c.category === e.category)?.label ?? e.category;
             pushFin({ at: new Date().toISOString(), category: 'evento', label: evLabel, amount: e.revenue });
-            nextOps.recentLog = [{ at: new Date().toISOString(), message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${evLabel}"`, type: 'success' as const }, ...nextOps.recentLog].slice(0, 12);
+            
+            nextOps.recentLog = [{ 
+              at: new Date().toISOString(), 
+              message: `💰 +R$ ${(e.revenue / 1000).toFixed(0)}k de "${evLabel}"`, 
+              type: 'success' as const 
+            }, ...nextOps.recentLog].slice(0, 12);
+
             if (res.damageOccurred && res.damage) {
               const dmg = { ...res.damage };
               if (nextOps.insurance.tier && nextOps.insurance.coverage > 0) {
@@ -190,8 +204,11 @@ export function useClubState(initialState: any, userId?: string) {
             } else {
               toast.success(res.message);
             }
+            // 🛡️ Marca como processado para evitar duplicação em caso de refresh sem save
+            processedIds.push(e.proposalId);
           }
-          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => new Date(e.scheduledFor).getTime() > now);
+          nextOps.acceptedEvents = nextOps.acceptedEvents.filter(e => !processedIds.includes(e.proposalId));
+          nextOps.processedEventIds = processedIds.slice(-20); // Keep last 20 to avoid bloat
           changed = true;
         }
 
