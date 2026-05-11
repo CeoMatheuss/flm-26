@@ -188,83 +188,117 @@ export function FinancePanel() {
         </div>
 
         {selected && (
-          <div className="flex items-center gap-2 p-2 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-            <span className="text-base">{selected.club_logo || '⚽'}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold truncate">{selected.club_name}</p>
-              <p className="text-[9px] text-muted-foreground font-mono truncate">{selected.user_id}</p>
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-xl bg-black/40 border border-emerald-500/20 flex items-center justify-center text-2xl shadow-inner">
+              {selected.club_logo && (selected.club_logo.startsWith('http') || selected.club_logo.startsWith('/')) ? (
+                <img src={selected.club_logo} className="w-8 h-8 object-contain" alt="" />
+              ) : (
+                <span>{selected.club_logo || '⚽'}</span>
+              )}
             </div>
-            <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]"
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest italic">Clube Selecionado</p>
+              <p className="text-base font-black text-white uppercase italic truncate">{selected.club_name}</p>
+              <p className="text-[9px] text-zinc-500 font-mono truncate uppercase">UID: {selected.user_id}</p>
+            </div>
+            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-zinc-500 hover:text-white hover:bg-white/5"
               onClick={() => { setSelected(null); setSearch(''); }}>
-              Trocar
+              <X className="h-4 w-4" />
             </Button>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            type="number"
-            placeholder="Valor (R$)"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            className="text-xs h-8"
-          />
-          <Input
-            placeholder="Motivo (ex: Evento, Bônus)"
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-            className="text-xs h-8"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase text-zinc-500 ml-1 italic">Montante (R$)</label>
+            <div className="relative">
+              <Input
+                type="number"
+                placeholder="Ex: 5000000"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                className="h-11 bg-black/40 border-white/10 text-white font-black italic placeholder:text-zinc-700 focus:border-emerald-500/50"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-600">BRL</div>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase text-zinc-500 ml-1 italic">Justificativa</label>
+            <Input
+              placeholder="Ex: Premiação Copa"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              className="h-11 bg-black/40 border-white/10 text-white font-bold placeholder:text-zinc-700 focus:border-emerald-500/50"
+            />
+          </div>
         </div>
-        <p className="text-[10px] text-muted-foreground italic">
-          O jogador receberá uma notificação no sino com o valor e o motivo.
-        </p>
 
         <Button
-          size="sm"
-          className="w-full h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+          size="lg"
+          className="w-full h-12 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-tighter italic shadow-lg shadow-emerald-500/10 group transition-all"
           onClick={submit}
           disabled={busy || !selected}
         >
-          {busy ? 'Processando…' : 'CONFIRMAR ENTREGA'}
+          {busy ? (
+            <span className="flex items-center gap-2 italic">Processando Camada de Dados...</span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              Executar Transferência de Crédito
+            </span>
+          )}
         </Button>
 
         {lastResult && (
-          <div className="mt-2 p-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] animate-in fade-in slide-in-from-top-1">
-            <p className="font-semibold text-emerald-400">✔ Operação realizada com sucesso!</p>
-            <p>Saldo atualizado de <span className="font-medium">{lastResult.club}</span>: <span className="font-mono font-bold text-emerald-300">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
+          <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-400 uppercase italic">Operação Realizada</span>
+            </div>
+            <p className="text-xs text-white">O saldo do <span className="font-black italic uppercase text-emerald-400">{lastResult.club}</span> foi atualizado.</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Novo Montante em Caixa: <span className="font-black text-white italic tracking-tight">R$ {lastResult.newBudget.toLocaleString('pt-BR')}</span></p>
           </div>
         )}
 
-        <div className="pt-4 border-t border-white/5 mt-4">
-          <h4 className="text-[11px] font-bold text-muted-foreground uppercase mb-2 tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Histórico Recente
-          </h4>
-          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
+        <div className="pt-6 border-t border-white/5 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[10px] font-black text-white italic uppercase tracking-widest flex items-center gap-2">
+              <History className="h-3.5 w-3.5 text-zinc-500" />
+              Log de Auditoria Financeira
+            </h4>
+            <Badge variant="outline" className="text-[8px] font-black border-white/10 text-zinc-500 uppercase">Tempo Real</Badge>
+          </div>
+          
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
             {loadingLogs ? (
-              <p className="text-[10px] text-center py-2 text-muted-foreground">Carregando histórico...</p>
+              <div className="py-10 text-center opacity-20 italic text-xs uppercase font-black">Sincronizando Histórico...</div>
             ) : logs.length === 0 ? (
-              <p className="text-[10px] text-center py-2 text-muted-foreground">Nenhuma transação recente.</p>
+              <div className="py-10 text-center opacity-20 italic text-xs uppercase font-black">Nenhum registro encontrado</div>
             ) : (
-              logs.map(log => (
-                <div key={log.id} className="p-1.5 rounded bg-white/5 border border-white/5 flex flex-col gap-0.5">
-                  <div className="flex justify-between items-start">
-                    <span className={`text-[10px] font-bold ${log.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {log.amount > 0 ? '+' : ''}R$ {log.amount?.toLocaleString('pt-BR')}
-                    </span>
-                    <span className="text-[8px] text-muted-foreground font-mono">
-                      {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </span>
+              logs.map(log => {
+                const isPositive = log.amount >= 0;
+                return (
+                  <div key={log.id} className="p-3 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors flex flex-col gap-2 group">
+                    <div className="flex justify-between items-center">
+                      <div className={`flex items-center gap-1.5 font-black italic text-xs ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {isPositive ? '+' : ''}R$ {log.amount?.toLocaleString('pt-BR')}
+                      </div>
+                      <span className="text-[8px] text-zinc-600 font-black uppercase tracking-tighter">
+                        {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-[10px] font-bold text-zinc-300 uppercase italic truncate">
+                        Destino: <span className="text-white group-hover:text-emerald-400 transition-colors">{log.target?.display_name || 'Clube ID ' + log.target_user_id.slice(0,8)}</span>
+                      </p>
+                      <p className="text-[9px] text-zinc-500 italic truncate font-medium">
+                        Motivo: {log.reason || 'Sem descrição oficial'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[9px] truncate">
-                    Para: <span className="text-white">{log.target?.display_name || 'Clube ID ' + log.target_user_id.slice(0,8)}</span>
-                  </p>
-                  <p className="text-[9px] text-muted-foreground italic truncate">
-                    Motivo: {log.reason || 'Sem motivo'}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
