@@ -160,8 +160,8 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-6 bg-black/40 border border-white/5 p-1 h-12">
-          <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
-            MEUS OLHEIROS ({myScouts.length})
+          <TabsTrigger value="scouts" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] sm:text-sm">
+            MEUS OLHEIROS ({myScouts.length}/{SCOUT_LIMIT})
           </TabsTrigger>
           <TabsTrigger value="market" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-black">
             MERCADO SEMANAL
