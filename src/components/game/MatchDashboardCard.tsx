@@ -45,52 +45,11 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
         return;
       }
 
-      // Coleta candidatos (Copa + Liga) e escolhe o de menor scheduled_at
+      // Coleta candidatos (Liga) e escolhe o de menor scheduled_at
       const candidates: any[] = [];
 
-      // 1. Próxima partida da Copa Nacional
-      const { data: cupEntry } = await supabase
-        .from('national_cup_teams')
-        .select('cup_id')
-        .eq('user_id', userId)
-        .eq('eliminated', false)
-        .maybeSingle();
+      // 1. Próxima partida da Copa Nacional - REMOVIDO
 
-      if (cupEntry) {
-        const { data: cupMatches } = await supabase
-          .from('national_cup_matches')
-          .select(`
-            id, round, status, scheduled_at, home_team_id, away_team_id,
-            cup:national_cups(name),
-            home:national_cup_teams!home_team_id(club_name, strength),
-            away:national_cup_teams!away_team_id(club_name, strength)
-          `)
-          .eq('cup_id', cupEntry.cup_id)
-          .in('status', ['scheduled', 'live'])
-          .order('scheduled_at', { ascending: true })
-          .limit(1);
-
-        if (cupMatches && cupMatches.length > 0) {
-          const m: any = cupMatches[0];
-          const isHome = m.home?.club_name === clubName;
-          candidates.push({
-            home: m.home.club_name,
-            away: m.away.club_name,
-            date: m.scheduled_at,
-            tournament: m.cup?.name || 'Copa',
-            matchId: m.id,
-            homeTeamId: m.home_team_id,
-            awayTeamId: m.away_team_id,
-            opponentStrength: isHome ? m.away.strength : m.home.strength,
-            isHome,
-            tournamentName: m.cup?.name || 'Copa',
-            status: m.status,
-            round: m.round,
-            kind: 'tournament',
-            stage: `Fase ${m.round}`,
-          });
-        }
-      }
 
       // 2. Próxima partida da Liga
       const { data: matches, error } = await supabase

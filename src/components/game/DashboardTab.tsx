@@ -15,7 +15,7 @@ import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
-import { PersonalizedCupWidget } from './PersonalizedCupWidget';
+
 
 
 // Logic for standing sync
@@ -262,12 +262,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} />
 
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenTournament={onOpenTournament}
-        />
-      )}
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">

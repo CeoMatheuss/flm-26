@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
 import { LeagueTab } from '@/components/game/LeagueTab';
-import { CopasTab } from '@/components/game/CopasTab';
+
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { MatchViewer } from '@/pages/MatchPage';
 import { initialClub } from '@/data/initialData';
@@ -71,7 +71,7 @@ export default function TrailerGallery() {
     { name: 'Dashboard', component: <DashboardTab club={mockGame.club} events={mockGame.events} infrastructure={mockGame.infrastructure} userId="mock-user" /> },
     { name: 'Tactics', component: <TacticsTab tactics={mockGame.tactics} players={mockGame.club.players} onUpdate={() => {}} userId="mock-user" /> },
     { name: 'League', component: <LeagueTab clubName={mockGame.club.name} clubPlayers={mockGame.club.players} /> },
-    { name: 'Copas', component: <CopasTab userId="mock-user" /> },
+    { name: 'Copas', component: <div className="p-20 text-center">Copa Desativada</div> },
     { name: 'Scouts', component: <ScoutsTab userId="mock-user" budget={mockGame.club.budget} /> },
     { name: 'Match', component: (
       <div className="h-[600px] overflow-y-auto bg-slate-900">
