@@ -194,23 +194,23 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
 
         {/* TAB: STANDINGS */}
         <TabsContent value="standings" className="mt-4">
-          <Card className="overflow-hidden border-white/5 bg-black/40 shadow-2xl">
+          <Card className="overflow-hidden border-none shadow-md">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-black/60">
-                    <TableRow className="hover:bg-transparent border-b border-white/10">
-                      <TableHead className="w-12 text-center font-black text-white italic text-[10px] uppercase">Pos</TableHead>
-                      <TableHead className="min-w-[180px] font-black text-white italic text-[10px] uppercase">Clube</TableHead>
-                      <TableHead className="text-center w-14 font-black text-primary italic text-[10px] uppercase">Pts</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">J</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">V</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">E</TableHead>
-                      <TableHead className="text-center w-10 font-black text-white/40 text-[10px] uppercase">D</TableHead>
-                      <TableHead className="text-center w-12 hidden md:table-cell font-black text-white/40 text-[10px] uppercase">GP</TableHead>
-                      <TableHead className="text-center w-12 hidden md:table-cell font-black text-white/40 text-[10px] uppercase">GC</TableHead>
-                      <TableHead className="text-center w-14 font-black text-white/40 text-[10px] uppercase italic">SG</TableHead>
-                      <TableHead className="text-center w-36 font-black text-white/60 italic text-[10px] uppercase">Sequência</TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-10 text-center font-bold">#</TableHead>
+                      <TableHead className="min-w-[180px]">Clube</TableHead>
+                      <TableHead className="text-center w-12">P</TableHead>
+                      <TableHead className="text-center w-10">J</TableHead>
+                      <TableHead className="text-center w-10">V</TableHead>
+                      <TableHead className="text-center w-10">E</TableHead>
+                      <TableHead className="text-center w-10">D</TableHead>
+                      <TableHead className="text-center w-12 hidden md:table-cell">GP</TableHead>
+                      <TableHead className="text-center w-12 hidden md:table-cell">GC</TableHead>
+                      <TableHead className="text-center w-12">SG</TableHead>
+                      <TableHead className="text-center w-32">Últimos 5</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
