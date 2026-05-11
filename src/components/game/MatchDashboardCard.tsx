@@ -109,16 +109,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         }
       }
 
-      // 2. Próxima partida da Liga
+      // 2. Próxima partida da Liga Mundial
       const { data: matches, error } = await supabase
         .from('world_matches')
         .select(`
-          id,
-          round,
-          status,
-          scheduled_at,
-          home_team_id,
-          away_team_id,
+          id, round, status, scheduled_at, home_team_id, away_team_id,
           world_leagues (name),
           home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
           away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
@@ -128,26 +123,38 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
-      if (error) console.error('Error fetching next match:', error);
-
       if (matches && matches.length > 0) {
         const m: any = matches[0];
         const isHome = m.home_team_id === teamData.id;
         candidates.push({
-          home: m.home_team.name,
-          away: m.away_team.name,
-          date: m.scheduled_at,
-          tournament: m.world_leagues?.name || 'Liga',
-          matchId: m.id,
-          homeTeamId: m.home_team_id,
-          awayTeamId: m.away_team_id,
+          home: m.home_team.name, away: m.away_team.name, date: m.scheduled_at,
+          tournament: m.world_leagues?.name || 'Liga Mundial',
+          matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
           opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
-          isHome,
-          tournamentName: m.world_leagues?.name || 'Liga',
-          status: m.status,
-          round: m.round,
-          kind: 'league',
-          stage: 'Liga',
+          isHome, tournamentName: m.world_leagues?.name || 'Liga Mundial',
+          status: m.status, round: m.round, kind: 'league', stage: 'Liga',
+        });
+      }
+
+      // 3. Próxima partida da Liga Regional/Multiplayer
+      const { data: leagueMatches } = await supabase
+        .from('league_matches')
+        .select(`
+          id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id
+        `)
+        .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
+        .in('status', ['scheduled', 'live'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
+
+      if (leagueMatches && leagueMatches.length > 0) {
+        const m: any = leagueMatches[0];
+        const isHome = m.home_user_id === userId;
+        candidates.push({
+          home: 'Seu Time', away: 'Oponente', date: m.scheduled_at, 
+          tournament: 'Liga Regional', matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
+          opponentStrength: 75, isHome, tournamentName: 'Liga Regional',
+          status: m.status, round: m.round, kind: 'league', stage: 'Liga',
         });
       }
 
@@ -168,6 +175,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       .channel(`dash-next-match-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => loadNextMatch())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => loadNextMatch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_matches' }, () => loadNextMatch())
       .subscribe();
 
     // Listen for custom league update events from other components

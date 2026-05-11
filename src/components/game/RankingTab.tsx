@@ -17,6 +17,10 @@ interface RankingEntry {
   losses: number;
   last_change: number;
   current_competition: string;
+  clubs?: {
+    shield_config: any;
+    logo_url: string | null;
+  };
 }
 
 interface Props {
@@ -41,16 +45,27 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   const fetchRankings = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: rankingData, error } = await supabase
       .from('global_ranking')
       .select('*')
       .order('ranking_points', { ascending: false })
-      .limit(500);
+      .limit(200);
 
-    if (!error && data) {
-      setRankings(data as RankingEntry[]);
+    if (!error && rankingData) {
+      const userIds = rankingData.map(r => r.user_id);
+      const { data: clubsData } = await (supabase
+        .from('clubs')
+        .select('user_id, shield_config, logo_url') as any)
+        .in('user_id', userIds);
+
+      const enhanced = rankingData.map(r => ({
+        ...r,
+        clubs: clubsData?.find(c => c.user_id === r.user_id)
+      }));
+
+      setRankings(enhanced as any[]);
       if (userId) {
-        const pos = data.findIndex((r: any) => r.user_id === userId);
+        const pos = rankingData.findIndex((r: any) => r.user_id === userId);
         setMyPosition(pos >= 0 ? pos + 1 : null);
       }
     }
@@ -216,8 +231,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                             <span className="text-muted-foreground">{pos}</span>
                           )}
                         </td>
-                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px] cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: entry.club_name } }))}>
-                          {entry.club_name || 'Sem nome'}
+                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px] cursor-pointer hover:text-primary transition-colors flex items-center gap-2" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: entry.club_name } }))}>
+                          <ClubShield club={entry.clubs as any} size={20} />
+                          <span className="truncate">{entry.club_name || 'Sem nome'}</span>
                           {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
                         </td>
                         <td className="py-2 px-1 text-right font-bold">{entry.ranking_points}</td>

@@ -4,10 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Clock, MapPin } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
+import { useMatchShields } from '@/hooks/useMatchShields';
 
 export function UpcomingLeagueMatchesWidget() {
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Resolve escudos reais/customizados via hook global
+  const { homeShield, awayShield } = useMatchShields(match?.home_team_name, match?.away_team_name);
 
   useEffect(() => {
     const load = async () => {
@@ -49,12 +53,12 @@ export function UpcomingLeagueMatchesWidget() {
         </div>
         <div className="flex items-center justify-center gap-4 py-2">
           <div className="text-center flex-1 flex flex-col items-center gap-1 cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home_team_name } }))}>
-            <ClubShield club={{ logoUrl: match.home_team_logo } as any} size={32} />
+            <ClubShield club={{ shieldConfig: homeShield } as any} size={32} />
             <p className="text-[10px] font-bold truncate max-w-[80px]">{match.home_team_name}</p>
           </div>
           <Badge variant="outline" className="text-[10px] font-black shrink-0">VS</Badge>
           <div className="text-center flex-1 flex flex-col items-center gap-1 cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away_team_name } }))}>
-            <ClubShield club={{ logoUrl: match.away_team_logo } as any} size={32} />
+            <ClubShield club={{ shieldConfig: awayShield } as any} size={32} />
             <p className="text-[10px] font-bold truncate max-w-[80px]">{match.away_team_name}</p>
           </div>
         </div>
