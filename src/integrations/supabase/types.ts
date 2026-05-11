@@ -56,6 +56,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_finance_logs: {
+        Row: {
+          admin_id: string | null
+          amount: number
+          created_at: string | null
+          id: string
+          reason: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          amount: number
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          amount?: number
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_login_attempts: {
         Row: {
           attempted_at: string
@@ -4217,6 +4244,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      execute_admin_money_transfer: {
+        Args: { p_description: string; p_target_id: string; p_value: number }
+        Returns: Json
       }
       fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
       finish_national_cup_award_continental: {

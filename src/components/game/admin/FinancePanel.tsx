@@ -34,13 +34,17 @@ export function FinancePanel() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-all-clubs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-          body: JSON.stringify({ scope: 'Mundial' }),
-        });
-        const result = await res.json();
-        if (mounted && Array.isArray(result.clubs)) setAllClubs(result.clubs);
+        const res = await supabase.from('profiles').select('user_id, display_name');
+        const { data: clubs } = await supabase.from('clubs').select('user_id, name');
+        
+        if (mounted && clubs) {
+          const formatted = clubs.map(c => ({
+            user_id: c.user_id,
+            club_name: c.name,
+            club_logo: '⚽'
+          }));
+          setAllClubs(formatted);
+        }
       } catch {
         // autocomplete é opcional
       } finally {
@@ -53,15 +57,14 @@ export function FinancePanel() {
   const loadLogs = useCallback(async () => {
     setLoadingLogs(true);
     const { data } = await supabase
-      .from('admin_logs')
+      .from('admin_finance_logs')
       .select(`
         *,
-        admin:user_id(display_name),
+        admin:admin_id(display_name),
         target:target_user_id(display_name)
       `)
-      .eq('action', 'add_money')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(15);
     if (data) setLogs(data);
     setLoadingLogs(false);
   }, []);
@@ -80,19 +83,21 @@ export function FinancePanel() {
 
   /** Função única e isolada para adicionar/remover dinheiro. */
   const addMoneyToClub = async (targetUserId: string, value: number, clubLabel: string) => {
-    const { data, error } = await supabase.rpc('admin_add_money_to_club', {
-      p_target_user_id: targetUserId,
-      p_amount: value,
-      p_reason: reason || 'Ajuste administrativo'
+    const { data, error } = await supabase.rpc('execute_admin_money_transfer', {
+      p_target_id: targetUserId,
+      p_value: value,
+      p_description: reason || 'Ajuste administrativo direto'
     });
+    
     if (error) {
       throw new Error(error.message || 'Falha ao ajustar saldo');
     }
+    
     const result = (data as any) || {};
     return {
-      newBudget: Number(result.new_budget) || 0,
-      delta: Number(result.delta) || value,
-      clubName: result.club_name || clubLabel,
+      newBudget: Number(result.current_balance) || 0,
+      delta: Number(result.difference) || value,
+      clubName: result.club || clubLabel,
     };
   };
 
@@ -223,18 +228,18 @@ export function FinancePanel() {
               logs.map(log => (
                 <div key={log.id} className="p-1.5 rounded bg-white/5 border border-white/5 flex flex-col gap-0.5">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-medium text-emerald-400">
-                      {log.details?.amount > 0 ? '+' : ''}R$ {log.details?.amount?.toLocaleString()}
+                    <span className={`text-[10px] font-bold ${log.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {log.amount > 0 ? '+' : ''}R$ {log.amount?.toLocaleString('pt-BR')}
                     </span>
                     <span className="text-[8px] text-muted-foreground font-mono">
                       {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <p className="text-[9px] truncate">
-                    Para: <span className="text-white">{log.details?.club_name || log.target?.display_name || 'Desconhecido'}</span>
+                    Para: <span className="text-white">{log.target?.display_name || 'Clube ID ' + log.target_user_id.slice(0,8)}</span>
                   </p>
                   <p className="text-[9px] text-muted-foreground italic truncate">
-                    Motivo: {log.details?.reason || 'Sem motivo'}
+                    Motivo: {log.reason || 'Sem motivo'}
                   </p>
                 </div>
               ))
