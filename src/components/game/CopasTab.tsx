@@ -259,8 +259,11 @@ export function CopasTab({ userId }: Props) {
                       </div>
 
                       <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className={`text-xs font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>{m.away?.club_name}</span>
+                        <span className={`text-xs font-bold truncate text-right ${m.away?.user_id === userId ? 'text-primary' : ''}`}>
+                          {m.away?.club_name}
+                        </span>
                         <ClubShield club={{ logoUrl: m.away?.club_logo } as any} size={32} />
+
                       </div>
                     </div>
                   </CardContent>
