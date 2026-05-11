@@ -196,7 +196,6 @@ export function CopasTab({ userId }: Props) {
           <TabsTrigger value="matches" className="tab-trigger-modern"><Calendar className="h-3.5 w-3.5" /> Jogos</TabsTrigger>
           <TabsTrigger value="bracket" className="tab-trigger-modern"><TrendingUp className="h-3.5 w-3.5" /> Chaveamento</TabsTrigger>
           <TabsTrigger value="stats" className="tab-trigger-modern"><BarChart3 className="h-3.5 w-3.5" /> Estatísticas</TabsTrigger>
-          <TabsTrigger value="news" className="tab-trigger-modern"><Newspaper className="h-3.5 w-3.5" /> Notícias</TabsTrigger>
           <TabsTrigger value="prizes" className="tab-trigger-modern"><DollarSign className="h-3.5 w-3.5" /> Premiação</TabsTrigger>
         </TabsList>
 
