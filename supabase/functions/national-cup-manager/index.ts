@@ -154,17 +154,23 @@ serve(async (req) => {
                 let homePen = null;
                 let awayPen = null;
 
+                // Em Copas Mata-Mata, empate vai direto para os pênaltis
                 if (homeGoals > awayGoals) {
                     winner_id = match.home_team_id;
                 } else if (awayGoals > homeGoals) {
                     winner_id = match.away_team_id;
                 } else {
-                    // Empate em Copa = Pênaltis obrigatórios
-                    homePen = Math.floor(Math.random() * 5) + 3;
+                    // Empate -> Pênaltis obrigatórios
+                    homePen = Math.floor(Math.random() * 5) + 3; // 3 a 8 gols de pênalti
                     awayPen = Math.floor(Math.random() * 5) + 3;
-                    if (homePen === awayPen) homePen++; // Desempate simples
+                    if (homePen === awayPen) {
+                      // Desempate nas cobranças alternadas (morte súbita)
+                      if (Math.random() > 0.5) homePen++;
+                      else awayPen++;
+                    }
                     winner_id = homePen > awayPen ? match.home_team_id : match.away_team_id;
                 }
+
 
                 await supabase.from('national_cup_matches').update({
                     home_score: homeGoals,
