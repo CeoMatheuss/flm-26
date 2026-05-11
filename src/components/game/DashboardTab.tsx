@@ -228,16 +228,60 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   <span className="font-bold">{clubProfile?.foundedDate || `T${clubProfile?.foundedSeason || season || 1}`}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Landmark className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">Estádio:</span>
-                  <span className="font-bold truncate">{club.stadiumName} ({stadiumCapacity?.toLocaleString() || '?'})</span>
-                </div>
-                <div className="flex items-center gap-1">
                   <Users className="h-3 w-3 text-primary" />
                   <span className="text-muted-foreground">Elenco:</span>
-                  <span className="font-bold">{club.players.length} jogadores</span>
+                  <span className="font-bold">{club.players.length} jog. (OVR {avgOvr})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">País:</span>
+                  <span className="font-bold truncate">{club.country || '—'}</span>
                 </div>
               </div>
+
+              {/* Stadium block */}
+              <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-2 space-y-1.5">
+                <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Landmark className="h-3 w-3 text-primary shrink-0" />
+                    <span className="font-bold truncate">{club.stadiumName}</span>
+                  </div>
+                  <Badge variant="outline" className="text-[8px] gap-1 shrink-0">
+                    <Building2 className="h-2.5 w-2.5" /> Lv.{stadiumLevel}{!isMaxStadium ? `/${infrastructure?.stadium?.maxLevel || 15}` : ' MAX'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Capacidade</span>
+                    <span className="font-bold">{stadiumCapacity?.toLocaleString() || '?'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Ingresso</span>
+                    <span className="font-bold">R${club.ticketPrice}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Torcida</span>
+                    <span className="font-bold">{club.fans.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Receita/jogo</span>
+                    <span className="font-bold text-emerald-400">{formatMoneyShort(estMatchRevenue)}</span>
+                  </div>
+                  {occupancyPct !== null && (
+                    <div className="flex items-center justify-between col-span-2">
+                      <span className="text-muted-foreground">Última lotação</span>
+                      <span className="font-bold">{lastAttendance?.toLocaleString()} ({occupancyPct}%)</span>
+                    </div>
+                  )}
+                  {!isMaxStadium && nextStadiumCapacity && (
+                    <div className="flex items-center justify-between col-span-2">
+                      <span className="text-muted-foreground">Próx. nível</span>
+                      <span className="font-bold text-primary">+{(nextStadiumCapacity - (stadiumCapacity || 0)).toLocaleString()} lugares</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Infrastructure mini */}
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <Badge variant="outline" className="text-[8px] gap-1">
@@ -250,7 +294,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   <GraduationCap className="h-2.5 w-2.5" /> Base Lv.{infrastructure?.youthAcademy?.level || 0}
                 </Badge>
                 <Badge variant="outline" className="text-[8px] gap-1">
-                  <Building2 className="h-2.5 w-2.5" /> Estádio Lv.{infrastructure?.stadium?.level || 1}
+                  <Star className="h-2.5 w-2.5" /> Reputação {club.reputation}
                 </Badge>
               </div>
               {/* Instagram */}
