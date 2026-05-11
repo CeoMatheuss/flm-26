@@ -1,287 +1,312 @@
-import { Scout, ScoutReport, PlayerAttributes } from '@/types/game';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Search, UserPlus, Trash2, Star } from 'lucide-react';
-import { useState } from 'react';
-import { useLiveMatchGuard } from './LiveMatchGuard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScoutV3, ScoutMissionV3, ScoutReportV3, ScoutLevel, ScoutSpecialization, MissionType } from '@/types/scoutingV3';
+import { Search, UserPlus, Trash2, MapPin, Globe, Target, Star, Shield, Clock, Play, FileText, CheckCircle2, AlertCircle, X, ChevronRight, User } from 'lucide-react';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-interface Props {
-  scouts: Scout[];
-  scoutReports: ScoutReport[];
-  matchesSinceLastScout: number;
+interface ScoutsTabProps {
+  userId: string;
   budget: number;
-  availableScouts?: Scout[];
-  lastScoutGeneratedAt?: string;
-  onHireScout: (skill: number) => void;
-  onFireScout: (scoutId: string) => void;
-  onAcceptAvailableScout?: (scoutId: string) => void;
-  onBuyPremiumScout?: () => void;
-  /** Quando o usuário não é Premium, callback para abrir aba Premium (R$ 10/mês). */
-  onUpgradePremium?: () => void;
 }
 
-const scoutOptions = [
-  { skill: 1, name: 'Amador Local', salary: 5000, description: 'Observa jogadores da região. Relatórios básicos.' },
-  { skill: 2, name: 'Observador Iniciante', salary: 12000, description: 'Alguma experiência. Identifica posição e idade.' },
-  { skill: 3, name: 'Olheiro Regional', salary: 25000, description: 'Conhece a divisão. Revela alguns atributos.' },
-  { skill: 4, name: 'Olheiro Experiente', salary: 45000, description: 'Bom olho para talentos. Boa precisão.' },
-  { skill: 5, name: 'Analista Profissional', salary: 70000, description: 'Relatórios detalhados. Alta precisão.' },
-  { skill: 6, name: 'Scout Nacional', salary: 100000, description: 'Rede nacional de contatos. Relatórios completos.' },
-  { skill: 7, name: 'Scout Internacional', salary: 150000, description: 'Visão global. Descobre joias escondidas.' },
-  { skill: 8, name: 'Especialista Elite', salary: 220000, description: 'Top do mercado. Quase 100% de precisão.' },
-  { skill: 9, name: 'Lenda da Observação', salary: 300000, description: 'O melhor dos melhores. Nunca erra.' },
-  { skill: 10, name: 'Gênio Supremo', salary: 500000, description: 'Lendário. Relatórios perfeitos e instantâneos.' },
-];
-
-const attrLabels: Record<string, string> = {
-  speed: '⚡ Vel',
-  shooting: '🎯 Fin',
-  passing: '📐 Pas',
-  defending: '🛡️ Def',
-  physical: '💪 Fís',
-  dribbling: '🎨 Dri',
-  setPieces: '🎱 BP',
-  positioning: '📍 Pos',
-  heading: '🗣️ Cab',
-  marking: '🔒 Mar',
-  vision: '👁️ Vis',
-  crossing: '🎯 Cru',
-  longShots: '🚀 CL',
-  workRate: '🔥 Int',
-  composure: '🧠 Com',
-  aggression: '⚔️ Agr',
+const LEVEL_COLORS: Record<ScoutLevel, string> = {
+  baixo: 'text-muted-foreground bg-muted/20',
+  médio: 'text-blue-400 bg-blue-500/10',
+  alto: 'text-amber-400 bg-amber-500/10',
+  elite: 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
 };
 
-export function ScoutsTab({ scouts, scoutReports, matchesSinceLastScout, budget, availableScouts = [], lastScoutGeneratedAt, onHireScout: _onHireScout, onFireScout: _onFireScout, onAcceptAvailableScout: _onAcceptAvailableScout, onBuyPremiumScout: _onBuyPremiumScout, onUpgradePremium }: Props) {
-  const { guard } = useLiveMatchGuard();
-  const onHireScout = guard(_onHireScout);
-  const onFireScout = guard(_onFireScout);
-  const onAcceptAvailableScout = guard(_onAcceptAvailableScout || (() => {}));
-  const onBuyPremiumScout = guard(_onBuyPremiumScout || (() => {}));
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [showHire, setShowHire] = useState(false);
+const SPEC_LABELS: Record<ScoutSpecialization, string> = {
+  ataque: '🎯 Ataque',
+  defesa: '🛡️ Defesa',
+  meio: '⚙️ Meio-campo',
+  jovens: '💎 Promessas',
+  geral: '🔍 Geral'
+};
 
-  const bestScoutSkill = scouts.length > 0 ? Math.max(...scouts.map(s => s.skill)) : 0;
-  const totalScoutSalary = scouts.reduce((s, sc) => s + sc.salary, 0);
-  const reportsPerCycle = scouts.length;
+export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
+  const [scouts, setScouts] = useState<ScoutV3[]>([]);
+  const [missions, setMissions] = useState<ScoutMissionV3[]>([]);
+  const [reports, setReports] = useState<ScoutReportV3[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showHireModal, setShowHireModal] = useState(false);
+  const [showMissionModal, setShowMissionModal] = useState<ScoutV3 | null>(null);
 
-  // Próximo olheiro auto em (7d - tempo decorrido)
-  const nextScoutMs = (() => {
-    if (!lastScoutGeneratedAt) return 0;
-    const elapsed = Date.now() - new Date(lastScoutGeneratedAt).getTime();
-    return Math.max(0, 7 * 24 * 60 * 60 * 1000 - elapsed);
-  })();
-  const nextScoutLabel = nextScoutMs > 0
-    ? `${Math.floor(nextScoutMs / (24 * 60 * 60 * 1000))}d ${Math.floor((nextScoutMs / (60 * 60 * 1000)) % 24)}h`
-    : 'Disponível agora!';
+  const fetchScoutingData = async () => {
+    try {
+      setLoading(true);
+      const [scoutsRes, missionsRes, reportsRes] = await Promise.all([
+        supabase.from('scouts').select('*').eq('user_id', userId),
+        supabase.from('scout_missions').select('*').eq('user_id', userId).eq('status', 'em_andamento'),
+        supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      ]);
+
+      if (scoutsRes.data) setScouts(scoutsRes.data as ScoutV3[]);
+      if (missionsRes.data) setMissions(missionsRes.data as ScoutMissionV3[]);
+      if (reportsRes.data) setReports(reportsRes.data as ScoutReportV3[]);
+    } catch (error) {
+      console.error('Error fetching scouting data:', error);
+      toast.error('Erro ao carregar dados de olheiros');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchScoutingData();
+  }, [userId]);
+
+  const handleHireInitialScout = async () => {
+    const names = ['Bruno Olheiro', 'Marcos Scout', 'Ricardo Silva', 'Fabio Junior'];
+    const countries = ['Brasil', 'Argentina', 'Portugal', 'Espanha'];
+    
+    const newScout = {
+      user_id: userId,
+      name: names[Math.floor(Math.random() * names.length)],
+      country: countries[Math.floor(Math.random() * countries.length)],
+      level: 'baixo' as ScoutLevel,
+      specialization: 'geral' as ScoutSpecialization,
+      efficiency: 0.5
+    };
+
+    const { error } = await supabase.from('scouts').insert([newScout]);
+    if (error) toast.error('Erro ao contratar olheiro');
+    else {
+      toast.success('Olheiro contratado com sucesso!');
+      fetchScoutingData();
+    }
+  };
+
+  const startMission = async (scoutId: string, type: MissionType) => {
+    const durationHours = type === 'local' ? 2 : type === 'global' ? 6 : type === 'posição' ? 4 : 8;
+    const endsAt = new Date();
+    endsAt.setHours(endsAt.getHours() + durationHours);
+
+    const { error } = await supabase.from('scout_missions').insert([{
+      user_id: userId,
+      scout_id: scoutId,
+      type,
+      ends_at: endsAt.toISOString(),
+      risk: Math.random() * 0.3,
+      reward_multiplier: 1.0 + (Math.random() * 0.5)
+    }]);
+
+    if (error) toast.error('Erro ao iniciar missão');
+    else {
+      toast.success('Missão iniciada!');
+      setShowMissionModal(null);
+      fetchScoutingData();
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando scouting...</div>;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-primary">🔍 Departamento de Olheiros</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {scouts.length === 0
-                  ? 'Contrate olheiros para avaliar jogadores livres!'
-                  : `${scouts.length} olheiro(s) • ${reportsPerCycle} relatório(s) a cada 5 jogos`}
-              </p>
-            </div>
-            <div className="text-right shrink-0 ml-3">
-              <p className="text-[10px] text-muted-foreground">Próximo relatório</p>
-              <p className="text-sm font-bold text-primary">{scouts.length > 0 ? `${5 - matchesSinceLastScout} jogos` : '—'}</p>
-            </div>
-          </div>
-          {scouts.length > 0 && <Progress value={(matchesSinceLastScout / 5) * 100} className="h-1.5 mt-2" />}
-        </CardContent>
-      </Card>
-
-      {/* V3: Olheiros Disponíveis (auto-gerados a cada 7 dias) + Premium */}
-      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-background">
-        <CardContent className="p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-amber-400">🎁 Olheiros Disponíveis</p>
-              <p className="text-[10px] text-muted-foreground">Próximo automático em: <strong>{nextScoutLabel}</strong></p>
-            </div>
-            {_onBuyPremiumScout ? (
-              <Button size="sm" onClick={onBuyPremiumScout} className="h-7 text-[10px] gap-1 bg-amber-500 hover:bg-amber-600 text-black">
-                🌟 Olheiro Lendário (Premium)
-              </Button>
-            ) : onUpgradePremium ? (
-              <Button size="sm" variant="outline" onClick={onUpgradePremium} className="h-7 text-[10px] gap-1 border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
-                🔒 Olheiro Lendário — Premium R$10
-              </Button>
-            ) : null}
-          </div>
-          {availableScouts.length > 0 ? (
-            <div className="space-y-1.5">
-              {availableScouts.map(s => (
-                <div key={s.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/40">
-                  <div className="flex items-center gap-0.5 shrink-0 w-14">
-                    {Array.from({ length: Math.min(5, s.skill) }).map((_, i) => (
-                      <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                    {s.skill > 5 && <span className="text-[8px] text-yellow-400 font-bold">+{s.skill - 5}</span>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold truncate">{s.name}</p>
-                    <p className="text-[9px] text-muted-foreground">Hab {s.skill}/10 • R${(s.salary / 1000).toFixed(0)}k/mês</p>
-                  </div>
-                  <Button size="sm" onClick={() => onAcceptAvailableScout(s.id)} className="h-6 text-[10px] px-2">Aceitar</Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[10px] text-muted-foreground text-center py-2">Aguardando geração automática...</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <Card>
-          <CardContent className="p-2 text-center">
-            <p className="text-[10px] text-muted-foreground">Olheiros</p>
-            <p className="text-lg font-bold">{scouts.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-2 text-center">
-            <p className="text-[10px] text-muted-foreground">Melhor Habilidade</p>
-            <p className="text-lg font-bold text-primary">{bestScoutSkill || '—'}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-2 text-center">
-            <p className="text-[10px] text-muted-foreground">Custo Mensal</p>
-            <p className="text-lg font-bold text-yellow-400">R${(totalScoutSalary / 1000).toFixed(0)}k</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* My Scouts */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-sm">Meus Olheiros</h3>
-          <Button size="sm" variant="outline" onClick={() => setShowHire(!showHire)} className="text-xs gap-1 h-7">
-            <UserPlus className="h-3 w-3" /> Contratar
-          </Button>
+    <div className="space-y-6 max-w-5xl mx-auto p-2 sm:p-4">
+      {/* Header Estilizado */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tighter flex items-center gap-2">
+            <Search className="h-6 w-6 text-primary" /> DEPARTAMENTO DE SCOUTING
+          </h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Descubra os próximos craques do {scouts.length > 0 ? 'clube' : 'mercado'}</p>
         </div>
-
-        {scouts.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Nenhum olheiro contratado.</p>
-              <p className="text-[10px] text-muted-foreground">Contrate olheiros para avaliar jogadores livres antes de assinar.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-1.5">
-            {scouts.map(scout => (
-              <Card key={scout.id}>
-                <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                  <div className="flex items-center gap-1 shrink-0">
-                    {Array.from({ length: Math.min(5, scout.skill) }).map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    ))}
-                    {scout.skill > 5 && <span className="text-[9px] text-yellow-400 font-bold">+{scout.skill - 5}</span>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs truncate">{scout.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Hab: {scout.skill}/10 • Contrato: {scout.contract}T • R${(scout.salary / 1000).toFixed(0)}k/mês
-                    </p>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => onFireScout(scout.id)} className="h-6 px-2 text-destructive hover:text-destructive">
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {scouts.length < 5 && (
+          <Button onClick={handleHireInitialScout} className="gap-2 font-bold shadow-lg shadow-primary/20">
+            <UserPlus className="h-4 w-4" /> CONTRATAR OLHEIRO
+          </Button>
         )}
       </div>
 
-      {/* Hire */}
-      {showHire && (
-        <div>
-          <h3 className="font-semibold text-sm mb-2">Contratar Olheiro</h3>
-          <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-            {scoutOptions.map(opt => {
-              const hireCost = opt.salary * 3; // 3 months signing fee
-              return (
-                <Card key={opt.skill} className="hover:border-primary/30 transition-colors">
-                  <CardContent className="p-2 sm:p-3 flex items-center gap-2">
-                    <div className="flex items-center gap-0.5 shrink-0 w-16">
-                      {Array.from({ length: Math.min(5, opt.skill) }).map((_, i) => (
-                        <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                      {opt.skill > 5 && <span className="text-[8px] text-yellow-400 font-bold ml-0.5">+{opt.skill - 5}</span>}
+      <Tabs defaultValue="scouts" className="w-full">
+        <TabsList className="grid grid-cols-2 w-full max-w-md mb-6">
+          <TabsTrigger value="scouts" className="font-bold">Olheiros ({scouts.length})</TabsTrigger>
+          <TabsTrigger value="reports" className="font-bold">Relatórios ({reports.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="scouts" className="space-y-4">
+          {scouts.length === 0 ? (
+            <Card className="border-dashed border-2 bg-muted/5">
+              <CardContent className="py-12 text-center">
+                <User className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="font-bold">Nenhum olheiro na equipe</h3>
+                <p className="text-sm text-muted-foreground mb-6">Contrate seu primeiro olheiro para começar a descobrir talentos.</p>
+                <Button onClick={handleHireInitialScout} variant="outline" className="font-bold">Iniciar Departamento</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {scouts.map(scout => {
+                const activeMission = missions.find(m => m.scout_id === scout.id);
+                return (
+                  <Card key={scout.id} className={`overflow-hidden transition-all hover:border-primary/40 ${scout.is_busy ? 'opacity-90 grayscale-[0.3]' : ''}`}>
+                    <CardContent className="p-0">
+                      <div className="flex items-stretch">
+                        {/* Avatar/Icone do Olheiro */}
+                        <div className={`w-24 sm:w-32 bg-gradient-to-b from-muted to-muted/30 flex flex-col items-center justify-center p-4 border-r ${scout.is_busy ? 'bg-primary/5' : ''}`}>
+                          <div className="w-16 h-16 rounded-full bg-background border-2 border-primary/20 flex items-center justify-center mb-2 shadow-inner">
+                            <User className="h-8 w-8 text-primary/50" />
+                          </div>
+                          <Badge variant="outline" className={`text-[10px] uppercase font-black ${LEVEL_COLORS[scout.level]}`}>
+                            {scout.level}
+                          </Badge>
+                        </div>
+
+                        {/* Info do Olheiro */}
+                        <div className="flex-1 p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-bold text-sm sm:text-base">{scout.name}</h3>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">🌍 {scout.country}</p>
+                            </div>
+                            <Badge variant="secondary" className="text-[9px] font-bold">
+                              {SPEC_LABELS[scout.specialization]}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
+                              <span>Eficiência</span>
+                              <span>{Math.round(scout.efficiency * 100)}%</span>
+                            </div>
+                            <Progress value={scout.efficiency * 100} className="h-1" />
+                          </div>
+
+                          {scout.is_busy && activeMission ? (
+                            <div className="bg-primary/5 rounded-lg p-2 space-y-1.5 border border-primary/10">
+                              <div className="flex justify-between items-center text-[9px] font-black uppercase text-primary">
+                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Missão {activeMission.type}</span>
+                                <span>Finaliza em {formatDistanceToNow(new Date(activeMission.ends_at), { locale: ptBR })}</span>
+                              </div>
+                              <Progress value={50} className="h-1.5 bg-primary/10" />
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              onClick={() => setShowMissionModal(scout)}
+                              className="w-full h-8 text-[11px] font-black uppercase tracking-tighter gap-2"
+                            >
+                              <Play className="h-3 w-3" /> Enviar em Missão
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+          {reports.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+              <p className="text-sm">Nenhum relatório disponível ainda. Envie seus olheiros em missões!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reports.map(report => (
+                <Card key={report.id} className="group hover:border-emerald-500/50 transition-all cursor-pointer">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <Badge className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-black text-[10px]">
+                        {report.player_data.position}
+                      </Badge>
+                      <div className="text-right">
+                        <div className="text-[10px] text-muted-foreground uppercase font-bold">OVR Estimado</div>
+                        <div className="text-lg font-black text-primary">~{report.player_data.overall}</div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[11px] truncate">{opt.name}</p>
-                      <p className="text-[9px] text-muted-foreground">{opt.description}</p>
-                      <p className="text-[9px] text-muted-foreground">Salário: R${(opt.salary / 1000).toFixed(0)}k/mês • Contratação: R${(hireCost / 1000).toFixed(0)}k</p>
+
+                    <div>
+                      <h4 className="font-bold text-sm truncate">{report.player_data.name}</h4>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold">
+                        <span>{report.player_data.age} ANOS</span>
+                        <span>•</span>
+                        <span>🌍 {report.player_data.nationality}</span>
+                      </div>
                     </div>
-                    <Button size="sm" onClick={() => { onHireScout(opt.skill); setShowHire(false); }} disabled={budget < hireCost} className="h-6 px-2 text-[10px]">
-                      <UserPlus className="h-3 w-3 mr-1" /> Contratar
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-muted/50">
+                      <div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black">Potencial</div>
+                        <div className="text-xs font-bold text-blue-400">~{report.player_data.potential}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] text-muted-foreground uppercase font-black">Precisão</div>
+                        <div className="text-xs font-bold">{report.accuracy}%</div>
+                      </div>
+                    </div>
+
+                    <Button variant="secondary" size="sm" className="w-full h-7 text-[10px] font-black group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      VER DETALHES
                     </Button>
                   </CardContent>
                 </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-      {/* Reports */}
-      <div>
-        <h3 className="font-semibold text-sm mb-2">Relatórios ({scoutReports.length})</h3>
-        {scoutReports.length === 0 ? (
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-xs text-muted-foreground">
-                {scouts.length === 0 ? 'Contrate olheiros primeiro!' : 'Dispute partidas para receber relatórios.'}
-              </p>
+      {/* Modal de Missão (Simples para MVP) */}
+      {showMissionModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl border-primary/20">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-black tracking-tight uppercase italic">Nova Missão Scouting</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowMissionModal(null)}><X className="h-4 w-4" /></Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {showMissionModal.name[0]}
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase text-primary">{showMissionModal.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">Nível: {showMissionModal.level}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: 'local', icon: MapPin, label: 'Missão Local', time: '2h', reward: 'Relatório Simples' },
+                  { id: 'global', icon: Globe, label: 'Missão Global', time: '6h', reward: 'Grandes Talentos' },
+                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4h', reward: 'Alvos Específicos' },
+                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8h', reward: 'Futuros Craques' }
+                ].map(type => (
+                  <Button 
+                    key={type.id} 
+                    variant="outline" 
+                    className="justify-between h-12 px-4 hover:border-primary/50"
+                    onClick={() => startMission(showMissionModal.id, type.id as MissionType)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <type.icon className="h-4 w-4 text-primary" />
+                      <div className="text-left">
+                        <p className="text-[11px] font-black uppercase leading-none">{type.label}</p>
+                        <p className="text-[9px] text-muted-foreground uppercase">{type.reward}</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px] font-bold">{type.time}</Badge>
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-1.5">
-            {scoutReports.map(report => (
-              <Card key={report.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedReport(selectedReport === report.id ? null : report.id)}>
-                <CardContent className="p-2 sm:p-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[9px] shrink-0">{report.player.position}</Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs truncate">{report.player.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {report.player.age}a • Por: {report.scoutName} • Precisão: {report.accuracy}%
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-[10px]">~OVR {report.estimatedOverall}</Badge>
-                  </div>
-                  {selectedReport === report.id && (
-                    <div className="mt-2 grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                      {(Object.entries(report.estimatedAttributes) as [keyof PlayerAttributes, number][]).map(([key, val]) => (
-                        <div key={key} className="text-center bg-muted/30 rounded px-1 py-0.5">
-                          <p className="text-[8px] text-muted-foreground">{attrLabels[key]}</p>
-                          <p className="text-[10px] font-bold">{val}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
