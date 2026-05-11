@@ -34,15 +34,37 @@ serve(async (req) => {
 
       if (!uniqueCountries.length) throw new Error("Nenhuma liga encontrada");
 
+      const cupNamesMap: Record<string, string> = {
+        'Brasil': 'Copa do Brasil',
+        'Espanha': 'Copa del Rey',
+        'Inglaterra': 'FA Cup',
+        'Alemanha': 'DFB-Pokal',
+        'Itália': 'Coppa Italia',
+        'França': 'Coupe de France',
+        'Portugal': 'Taça de Portugal',
+        'Argentina': 'Copa Argentina',
+        'Holanda': 'KNVB Beker',
+        'Bélgica': 'Belgian Cup',
+        'Turquia': 'Türkiye Kupası',
+        'Escócia': 'Scottish Cup',
+        'Estados Unidos': 'U.S. Open Cup',
+        'México': 'Copa MX',
+        'Japão': 'Emperor\'s Cup',
+        'Arábia Saudita': 'King Cup'
+      };
+
       for (const countryName of uniqueCountries) {
+        const officialName = cupNamesMap[countryName] || `Copa de ${countryName}`;
+
         // Busca a Copa existente ou cria uma nova
         const { data: cup, error: cupError } = await supabase.from('national_cups').upsert({
-            name: `Copa de ${countryName}`,
+            name: officialName,
             country_code: countryName,
             season: 1, 
             status: 'scheduled',
             current_round: 1
         }, { onConflict: 'country_code, season' }).select().single();
+
 
         if (cupError || !cup) continue;
 
@@ -109,6 +131,8 @@ serve(async (req) => {
                 .eq('cup_id', cup.id)
                 .in('status', ['scheduled', 'live'])
                 .lte('scheduled_at', now.toISOString());
+
+
 
 
 
