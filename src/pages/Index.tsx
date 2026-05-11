@@ -411,12 +411,28 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
     if (st?.serverMatchResult) {
       const { matchDbId, homeGoals, awayGoals, competition } = st.serverMatchResult;
-      const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
-      if (pendingMatch) {
-        game.applyServerResult({ matchId: pendingMatch.id, homeGoals, awayGoals, isHome: pendingMatch.isHome ?? true, competition });
-      }
-      supabase.from('live_matches').delete().eq('id', matchDbId).then(() => {});
-      navigate('/', { replace: true, state: {} });
+      
+      const processResult = async () => {
+        // 🛡️ Lock Anti-Duplicação: Tenta deletar a partida live antes de processar.
+        // Se já foi deletada (por outra aba ou refresh), não processamos novamente.
+        const { data: deleted } = await supabase.from('live_matches').delete().eq('id', matchDbId).select();
+        
+        if (deleted && deleted.length > 0) {
+          const pendingMatch = game.club.matches.find(m => m.id === matchDbId && !m.played);
+          if (pendingMatch) {
+            game.applyServerResult({ 
+              matchId: pendingMatch.id, 
+              homeGoals, 
+              awayGoals, 
+              isHome: pendingMatch.isHome ?? true, 
+              competition 
+            });
+          }
+        }
+        navigate('/', { replace: true, state: {} });
+      };
+      
+      processResult();
       return;
     }
 
