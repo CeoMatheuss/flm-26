@@ -209,6 +209,20 @@ export default function MatchPage() {
     return () => { cancelled = true; window.clearTimeout(safetyTimer); destroy(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Erro tem prioridade sobre loading para evitar travas em 99%
+  if (state.phase === 'error') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full">
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="text-base text-destructive">{state.errorMsg || 'Erro ao carregar partida.'}</p>
+            <Button onClick={() => navigate('/', { replace: true })}>Voltar ao Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!initDone || state.phase === 'loading') {
     return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
   }
