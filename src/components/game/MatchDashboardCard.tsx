@@ -226,11 +226,14 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   if (nextMatch) {
     const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
     const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
-    // Widget exibe o horário do jogo da liga + 1 hora (alinhado ao kickoff real)
-    const displayDate = nextMatch.date ? new Date(new Date(nextMatch.date).getTime() + 60 * 60 * 1000) : null;
-    const fmt = displayDate ? {
-      dateFormatted: displayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      timeFormatted: displayDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    
+    // Regra de horário dinâmica: 19:30 para Liga (e outros), 12:00 para Copa
+    const isCup = nextMatch.kind === 'tournament' || nextMatch.tournamentName?.toLowerCase().includes('copa');
+    const displayTime = isCup ? '12:00' : '19:30';
+    
+    const fmt = nextMatch.date ? {
+      dateFormatted: new Date(nextMatch.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      timeFormatted: displayTime,
     } : null;
 
     const isFinished = nextMatch.status === 'finished';
