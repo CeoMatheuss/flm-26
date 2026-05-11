@@ -666,7 +666,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub }:
       </CardHeader>
       <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
         {status === 'none' ?
-        <NextTournamentMatch userId={userId} clubName={club.name} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} /> :
+        <NextTournamentMatch userId={userId || ''} clubName={club.name} onGoToFriendly={onGoToFriendly} /> :
 
         <div className="space-y-3">
             {/* Info bar */}
