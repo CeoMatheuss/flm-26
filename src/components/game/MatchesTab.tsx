@@ -79,8 +79,8 @@ export function MatchesTab({
       <Card className="bg-gradient-to-br from-primary/5 via-card to-background border-primary/20 overflow-hidden">
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
-              <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
+            <TabsList className="grid grid-cols-2 w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
+              <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background"> // Centralizando amistosos em GERAIS - BOT
                 <Users className="h-4 w-4" /> Desafiar BOT
               </TabsTrigger>
               <TabsTrigger value="online" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
@@ -154,7 +154,7 @@ export function MatchesTab({
       </Card>
 
       <Card className="bg-muted/20 border-dashed">
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
           <div className="flex items-start gap-3">
             <Trophy className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
             <div className="space-y-1">
@@ -162,6 +162,15 @@ export function MatchesTab({
               <p className="text-[10px] text-muted-foreground">
                 Vitórias em amistosos atraem novos torcedores para o clube. Empates mantêm a estabilidade, enquanto derrotas podem afastar os mais exigentes.
               </p>
+            </div>
+          </div>
+          
+          <div className="pt-2 border-t border-border/20">
+            <h4 className="text-[10px] font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Swords className="h-3 w-3" /> Histórico de Amistosos
+            </h4>
+            <div className="bg-background/40 rounded-lg p-3 text-center text-[10px] text-muted-foreground italic">
+              Seus últimos resultados em amistosos aparecerão aqui.
             </div>
           </div>
         </CardContent>
