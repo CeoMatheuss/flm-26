@@ -43,13 +43,23 @@ serve(async (req) => {
         const { data: teams } = await supabase.from('world_teams').select('*').eq('country', country);
         if (!teams || teams.length < 2) continue;
 
-        const participantsCount = Math.pow(2, Math.floor(Math.log2(Math.min(teams.length, 128))));
-        const selectedTeams = teams.sort(() => Math.random() - 0.5).slice(0, participantsCount);
+        // Use ALL teams (online + bots) for the cup
+        // The total number of teams should ideally be a power of 2 for a perfect knockout bracket
+        // If it's not a power of 2, we cap it or we could implement "byes", but the current engine prefers power of 2.
+        const participantsCount = Math.pow(2, Math.floor(Math.log2(teams.length)));
+        
+        // Sort teams: priority to humans, then strength
+        const selectedTeams = teams
+          .sort((a: any, b: any) => {
+            if (a.user_id && !b.user_id) return -1;
+            if (!a.user_id && b.user_id) return 1;
+            return b.strength - a.strength;
+          })
+          .slice(0, participantsCount);
 
-        const cupTeams = selectedTeams.map((t, idx) => ({
+        const cupTeams = selectedTeams.map((t: any, idx: number) => ({
           cup_id: cup.id, club_id: t.id, club_name: t.name, club_logo: t.logo,
-          user_id: t.user_id, strength: t.strength, is_bot: !t.user_id, seed: idx,
-          shield_config: t.shield_config, primary_color: t.primary_color, secondary_color: t.secondary_color, detail_color: t.detail_color, shield_pattern: t.shield_pattern, shield_shape: t.shield_shape, shield_icon: t.shield_icon
+          user_id: t.user_id, strength: t.strength, is_bot: !t.user_id, seed: idx
         }));
 
         await supabase.from('national_cup_teams').delete().eq('cup_id', cup.id);
@@ -58,7 +68,6 @@ serve(async (req) => {
           total_teams: participantsCount, total_rounds: Math.log2(participantsCount) 
         }).eq('id', cup.id);
         
-        // Grant participation prize (100K) to all selected teams
         for (const ct of cupTeams) {
           await grantPrize(supabase, ct.club_id, 100000, "Participação na Copa", cup.id);
         }
