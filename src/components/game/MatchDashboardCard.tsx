@@ -224,16 +224,10 @@ function NextTournamentMatch({ userId, clubName, onGoToFriendly, onViewClub }: {
   }
 
   if (nextMatch) {
-    const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
-    const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
-    
-    // Regra de horário dinâmica: 19:30 para Liga (e outros), 12:00 para Copa
-    const isCup = nextMatch.kind === 'tournament' || nextMatch.tournamentName?.toLowerCase().includes('copa');
-    const displayTime = isCup ? '12:00' : '19:30';
-    
+    // Horário exibido = horário real salvo no banco (Liga 19:30 BRT, Copa 12:00 BRT)
     const fmt = nextMatch.date ? {
-      dateFormatted: new Date(nextMatch.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      timeFormatted: displayTime,
+      dateFormatted: new Date(nextMatch.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }),
+      timeFormatted: new Date(nextMatch.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }),
     } : null;
 
     const isFinished = nextMatch.status === 'finished';
