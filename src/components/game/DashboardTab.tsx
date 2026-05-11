@@ -328,11 +328,11 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {stats.map(item => (
-          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2">
-            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0`} />
+          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2 hover:bg-accent/50 transition-colors group cursor-default">
+            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0 group-hover:scale-110 transition-transform`} />
             <div className="min-w-0">
               <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
-              <p className="text-sm sm:text-sm font-bold truncate">{item.value}</p>
+              <p className="text-sm sm:text-sm font-bold truncate group-hover:text-primary transition-colors">{item.value}</p>
             </div>
           </div>
         ))}
