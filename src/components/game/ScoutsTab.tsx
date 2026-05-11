@@ -375,48 +375,64 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Modal de Missão (Simples para MVP) */}
+      {/* Modal de Missão Estilizado */}
       {showMissionModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-2xl border-primary/20">
-            <CardHeader className="pb-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl border-white/5 bg-zinc-900 overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/20 to-transparent p-6 border-b border-white/5">
               <div className="flex justify-between items-center">
-                <CardTitle className="text-lg font-black tracking-tight uppercase italic">Nova Missão Scouting</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowMissionModal(null)}><X className="h-4 w-4" /></Button>
+                <div>
+                  <CardTitle className="text-xl font-black tracking-tight uppercase italic text-white leading-none">Diretrizes de Missão</CardTitle>
+                  <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">Defina o foco do olheiro</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowMissionModal(null)} className="text-white/50 hover:text-white">
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {showMissionModal.name[0]}
+            </div>
+            
+            <CardContent className="p-6 space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                <div className="w-14 h-14 rounded-full bg-zinc-800 border-2 border-primary/20 flex items-center justify-center text-primary/60">
+                  <User className="h-8 w-8" />
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase text-primary">{showMissionModal.name}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">Nível: {showMissionModal.level}</p>
+                  <p className="text-sm font-black uppercase text-white italic">{showMissionModal.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Badge className={`text-[8px] font-black uppercase ${LEVEL_COLORS[showMissionModal.level]}`}>
+                      {showMissionModal.level}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase">{SPEC_LABELS[showMissionModal.specialization]}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-3">
                 {[
-                  { id: 'local', icon: MapPin, label: 'Missão Local', time: '2h', reward: 'Relatório Simples' },
-                  { id: 'global', icon: Globe, label: 'Missão Global', time: '6h', reward: 'Grandes Talentos' },
-                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4h', reward: 'Alvos Específicos' },
-                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8h', reward: 'Futuros Craques' }
+                  { id: 'local', icon: MapPin, label: 'Busca Local', time: '2h', reward: 'Relatório Regional', color: 'text-blue-400' },
+                  { id: 'global', icon: Globe, label: 'Busca Global', time: '6h', reward: 'Mapeamento Mundial', color: 'text-emerald-400' },
+                  { id: 'posição', icon: Target, label: 'Foco Posição', time: '4h', reward: 'Necessidade do Elenco', color: 'text-amber-400' },
+                  { id: 'promessas', icon: Star, label: 'Jovens Promessas', time: '8h', reward: 'Foco no Futuro', color: 'text-purple-400' }
                 ].map(type => (
                   <Button 
                     key={type.id} 
                     variant="outline" 
-                    className="justify-between h-12 px-4 hover:border-primary/50"
+                    className="group justify-between h-16 px-5 border-white/5 bg-black/20 hover:border-primary/50 hover:bg-primary/5 transition-all"
                     onClick={() => startMission(showMissionModal.id, type.id as MissionType)}
                   >
-                    <div className="flex items-center gap-3">
-                      <type.icon className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-lg bg-zinc-900 border border-white/5 group-hover:border-primary/20 ${type.color}`}>
+                        <type.icon className="h-5 w-5" />
+                      </div>
                       <div className="text-left">
-                        <p className="text-[11px] font-black uppercase leading-none">{type.label}</p>
-                        <p className="text-[9px] text-muted-foreground uppercase">{type.reward}</p>
+                        <p className="text-xs font-black uppercase text-white leading-none group-hover:text-primary transition-colors">{type.label}</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold mt-1 tracking-tighter">{type.reward}</p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="text-[10px] font-bold">{type.time}</Badge>
+                    <div className="text-right">
+                      <div className="text-[10px] font-black text-white italic">{type.time}</div>
+                      <div className="text-[8px] text-muted-foreground uppercase font-bold">Duração</div>
+                    </div>
                   </Button>
                 ))}
               </div>
