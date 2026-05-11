@@ -47,13 +47,20 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     clubBudget: number,
     clubName: string,
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
-    deductBudget: (cost: number) => void,
+    const deductBudget: (cost: number) => void,
   ) => {
     let cost: number;
     if (facility === 'stadium') cost = getStadiumUpgradeCost(infrastructure.stadium.level);
     else if (facility === 'youthAcademy') cost = getAcademyUpgradeCost(infrastructure.youthAcademy.level);
     else if (facility === 'trainingCenter') cost = getTrainingCenterUpgradeCost(infrastructure.trainingCenter.level);
     else cost = getPhysioUpgradeCost(infrastructure.physiotherapy.level);
+
+    // 🛡️ Bloqueio Anti-Exploit/Gasto Indevido: Verificamos o status da obra ANTES de cobrar
+    const existingPending = infrastructure[facility].upgradeCompletesAt;
+    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
+      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
+      return;
+    }
 
     // Hard cap on physiotherapy at level 20
     if (facility === 'physiotherapy' && infrastructure.physiotherapy.level >= 20) {
@@ -68,18 +75,9 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
     const newLevel = infrastructure[facility].level + 1;
 
-    // (Bloqueio de obras em andamento agora ocorre logo antes do início da obra,
-    // dentro do bloco de cobrança/agendamento — válido para TODAS as instalações.)
-
+    // Cobramos APENAS após todas as verificações passarem
     deductBudget(cost);
     addFinance('despesa', 'Infraestrutura', cost, `Upgrade: ${label} → Nv${newLevel}`);
-
-    // Bloqueia se já houver obra em andamento nesta instalação
-    const existingPending = infrastructure[facility].upgradeCompletesAt;
-    if (existingPending && new Date(existingPending).getTime() > Date.now()) {
-      toast.error(`🏗️ Já existe uma obra em andamento em ${label}!`);
-      return;
-    }
 
     // Não-Premium: TODAS as obras demoram 24h
     if (!isPremium) {
