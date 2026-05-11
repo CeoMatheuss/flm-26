@@ -25,7 +25,6 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">🌎 Competições</p>
         <DropdownMenuItem onClick={() => onTabChange('world')} className="menu-item"><Globe className="h-3.5 w-3.5 text-purple-400" /> Mundo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('copas')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-blue-400" /> Copas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('ranking')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Rankings <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('trophies')} className="menu-item"><Medal className="h-3.5 w-3.5 text-primary/70" /> Histórico <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('stats')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Estatísticas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>

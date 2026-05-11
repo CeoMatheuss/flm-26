@@ -275,14 +275,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         ))}
       </div>
 
-      {/* Personalized Cup Widget */}
-      {userId && (
-        <PersonalizedCupWidget 
-          userId={userId} 
-          onOpenCompetition={(id) => onOpenTournament?.(id)}
-          onGoToMatches={onGoToFriendly}
-        />
-      )}
+      {/* Personalized Cup Widget Removido */}
+
 
       {/* Active Tournaments - Moved logic to World tab if needed, but keeping it here for Custom Tournaments for now, 
           unless they are also considered part of "World" */}
