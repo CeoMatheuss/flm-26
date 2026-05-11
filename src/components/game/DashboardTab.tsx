@@ -323,17 +323,80 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} stadiumLevel={stadiumLevel} />
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {stats.map(item => (
-          <div key={item.label} className="stat-card flex items-center gap-2 p-2.5 sm:p-2 hover:bg-accent/50 transition-colors group cursor-default">
-            <item.icon className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${item.color} shrink-0 group-hover:scale-110 transition-transform`} />
-            <div className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground truncate">{item.label}</p>
-              <p className="text-sm sm:text-sm font-bold truncate group-hover:text-primary transition-colors">{item.value}</p>
+      {/* Stats Row — Refeito como widget de Ranking e Reputação */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="game-card border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2 px-4 pt-3">
+            <CardTitle className="text-[10px] sm:text-xs uppercase tracking-widest text-primary flex items-center justify-between">
+              🏆 Pontuação & Ranking
+              <span className="text-[9px] font-mono text-muted-foreground">S{season}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-3xl sm:text-4xl font-black text-foreground tabular-nums leading-none">
+                  {club.stats.points}<span className="text-sm font-bold text-muted-foreground ml-1">pts</span>
+                </p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/10">
+                    Posição #{Math.floor(Math.random() * 50) + 1}
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground">Aproveit. {winRate}%</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-pulse" />
+              </div>
             </div>
-          </div>
-        ))}
+            <div className="mt-4 pt-4 border-t border-border/10">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta da Diretoria</span>
+                <span className="text-[10px] font-bold text-primary">{(club.stats.points / 50 * 100).toFixed(0)}%</span>
+              </div>
+              <Progress value={Math.min(100, (club.stats.points / 50) * 100)} className="h-2 progress-glow" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="game-card border-amber-500/20 bg-amber-500/5">
+          <CardHeader className="pb-2 px-4 pt-3">
+            <CardTitle className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-500 flex items-center justify-between">
+              ⭐ Prestígio & Reputação
+              <Badge variant="outline" className="text-[8px] h-4 border-amber-500/30 text-amber-400">Nível {Math.floor(club.reputation / 20) + 1}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-3xl sm:text-4xl font-black text-amber-500 leading-none">{club.reputation}</p>
+                  <p className="text-xs font-bold text-amber-500/60 uppercase">/100</p>
+                </div>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`h-3 w-3 ${i < Math.floor(club.reputation / 20) ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground/30'}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{club.reputation >= 80 ? 'Clube de Elite' : club.reputation >= 50 ? 'Respeitado' : 'Emergente'}</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Star className="h-6 w-6 sm:h-8 sm:w-8 text-amber-500" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 space-y-1">
+                  <p className="text-[9px] uppercase font-bold text-muted-foreground">Influência no Mercado</p>
+                  <Progress value={club.reputation} className="h-1.5 bg-amber-500/10 [&>div]:bg-amber-500" />
+                </div>
+                <Badge variant="outline" className="text-[9px] border-emerald-500/20 text-emerald-400">+{(club.reputation * 0.1).toFixed(1)}%</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
 
