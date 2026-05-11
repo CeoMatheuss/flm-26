@@ -38,6 +38,7 @@ import { WorldLeagues } from './WorldLeagues';
 // StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
+import { ShopTab } from '@/components/game/ShopTab';
 import { SupportTab } from '@/components/game/SupportTab';
 import { TermsTab } from '@/components/game/TermsTab';
 import { getStadiumCapacity } from '@/types/infrastructure';
