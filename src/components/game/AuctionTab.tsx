@@ -57,14 +57,7 @@ function minIncrement(currentBid: number): number {
 }
 
 function fmtMoney(v: number): string {
-  // Formato compacto: <1M -> "K" inteiro; >=1M -> "M" com 1 casa só se necessário
-  if (v >= 1_000_000) {
-    const m = v / 1_000_000;
-    const formatted = m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace('.', ',');
-    return `R$ ${formatted}M`;
-  }
-  if (v >= 1_000) return `R$ ${Math.round(v / 1_000)}K`;
-  return `R$ ${v}`;
+  return `R$ ${v.toLocaleString('pt-BR')}`;
 }
 
 function fmtDateShort(iso: string): string {
