@@ -395,7 +395,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                        <div className="col-span-3 text-left space-y-1">
                          <p className="text-sm font-bold truncate">{match.away_team?.name}</p>
                           <div className="flex justify-start gap-1">
-                            <ClubShield club={match.away_team as any} size={28} />
+                            <ClubShield club={match.away_team as any} fallbackText={match.away_team?.name} size={28} />
                           </div>
                        </div>
                      </div>
