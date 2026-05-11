@@ -106,16 +106,20 @@ export function CopasTab({ userId }: Props) {
                 <Card key={m.id} className="bg-card/50">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
-                      <span className="text-lg">{m.home?.club_logo}</span>
+                      <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.home?.club_logo || '🛡️'}</span>
                       <span className="text-xs font-bold truncate">{m.home?.club_name}</span>
                     </div>
                     <div className="flex flex-col items-center px-4">
-                      <span className="text-sm font-black">{m.home_goals ?? '-'} x {m.away_goals ?? '-'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black">{m.home_score ?? 0}</span>
+                        <span className="text-xs text-muted-foreground">x</span>
+                        <span className="text-sm font-black">{m.away_score ?? 0}</span>
+                      </div>
                       <span className="text-[8px] text-muted-foreground uppercase">{new Date(m.scheduled_at).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-1 justify-end">
                       <span className="text-xs font-bold truncate">{m.away?.club_name}</span>
-                      <span className="text-lg">{m.away?.club_logo}</span>
+                      <span className="text-lg w-8 h-8 flex items-center justify-center bg-muted/30 rounded-full">{m.away?.club_logo || '🛡️'}</span>
                     </div>
                   </CardContent>
                 </Card>

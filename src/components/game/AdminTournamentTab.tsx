@@ -48,20 +48,15 @@ export function AdminTournamentTab({ userId }: Props) {
             variant="outline" 
             className="text-xs h-10 gap-2"
             disabled={loading}
+            onClick={() => handleAction('advance_phase')}
           >
-            <RefreshCw className="h-3 w-3" /> Simular Rodada
-          </Button>
-          <Button 
-            variant="outline" 
-            className="text-xs h-10 gap-2"
-            disabled={loading}
-          >
-            <Calendar className="h-3 w-3" /> Avançar Fases
+            <RefreshCw className="h-3 w-3" /> Simular Rodada / Avançar
           </Button>
           <Button 
             variant="destructive" 
             className="text-xs h-10 gap-2"
             disabled={loading}
+            onClick={() => handleAction('reset_cups')}
           >
             <RefreshCw className="h-3 w-3" /> Reiniciar Copas
           </Button>

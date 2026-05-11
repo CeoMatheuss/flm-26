@@ -278,7 +278,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {userId && (
         <PersonalizedCupWidget 
           userId={userId} 
-          onGoToMatches={onGoToFriendly}
+          onOpenTournament={onOpenTournament}
         />
       )}
 
