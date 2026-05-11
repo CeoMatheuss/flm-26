@@ -105,7 +105,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   let streakType: 'V' | 'E' | 'D' | '' = '';
   for (let i = playedMatches.length - 1; i >= 0; i--) {
     const r = playedMatches[i].result;
-    if (!r) break;
+    if (!r) continue;
     const isHome = playedMatches[i].isHome;
     const outcome = (isHome ? r.home > r.away : r.away > r.home) ? 'V' : (r.home === r.away ? 'E' : 'D');
     if (streakType === '') streakType = outcome;
