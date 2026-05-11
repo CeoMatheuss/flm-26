@@ -2232,6 +2232,7 @@ export type Database = {
           cup_id: string
           description: string | null
           id: string
+          status: string | null
           team_id: string
         }
         Insert: {
@@ -2240,6 +2241,7 @@ export type Database = {
           cup_id: string
           description?: string | null
           id?: string
+          status?: string | null
           team_id: string
         }
         Update: {
@@ -2248,6 +2250,7 @@ export type Database = {
           cup_id?: string
           description?: string | null
           id?: string
+          status?: string | null
           team_id?: string
         }
         Relationships: [
