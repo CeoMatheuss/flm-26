@@ -95,61 +95,93 @@ serve(async (req) => {
       })
     }
 
-    // 2. SIMULAR RODADA E AVANÇAR
+    // 2. AVANÇAR FASE (SIMULAR RODADA)
     if (action === 'advance_phase') {
-        const { data: activeCups } = await supabase.from('national_cups').select('*').eq('status', 'in_progress')
-        if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
+        const { data: activeCups } = await supabase
+            .from('national_cups')
+            .select('*')
+            .eq('status', 'in_progress')
+
+        if (!activeCups) return new Response(JSON.stringify({ success: true, message: "Nenhuma copa ativa" }), { headers: corsHeaders })
 
         for (const cup of activeCups) {
-            const { data: matches } = await supabase.from('national_cup_matches')
+            const { data: matches } = await supabase
+                .from('national_cup_matches')
                 .select('*')
                 .eq('cup_id', cup.id)
                 .eq('round', cup.current_round)
                 .eq('status', 'scheduled')
 
             for (const match of matches) {
-                // Simulação ultra-rápida (autoritativa)
-                const homeS = match.home_strength || 50;
-                const awayS = match.away_strength || 50;
-                const prob = homeS / (homeS + awayS);
+                // Simulação balanceada por força (RPC shared_match_id e simulate_match seriam ideais aqui)
+                const homeStrength = match.home_strength || 50;
+                const awayStrength = match.away_strength || 50;
+                const probHome = homeStrength / (homeStrength + awayStrength);
                 
-                const homeGoals = Math.floor(Math.random() * 3) + (Math.random() < prob ? 1 : 0);
-                const awayGoals = Math.floor(Math.random() * 3) + (Math.random() < (1-prob) ? 1 : 0);
+                const homeScore = Math.floor(Math.random() * 3) + (Math.random() < probHome ? 1 : 0);
+                const awayScore = Math.floor(Math.random() * 3) + (Math.random() < (1-probHome) ? 1 : 0);
                 
-                let winner;
-                if (homeGoals > awayGoals) winner = match.home_team_id;
-                else if (awayGoals > homeGoals) winner = match.away_team_id;
-                else winner = Math.random() < prob ? match.home_team_id : match.away_team_id;
-
+                let winner_team_id;
+                if (homeScore > awayScore) {
+                    winner_team_id = match.home_team_id;
+                } else if (awayScore > homeScore) {
+                    winner_team_id = match.away_team_id;
+                } else {
+                    // Empate em Copa = Pênaltis
+                    winner_team_id = Math.random() < probHome ? match.home_team_id : match.away_team_id;
+                }
+                
                 await supabase.from('national_cup_matches').update({
-                    home_score: homeGoals,
-                    away_score: awayGoals,
+                    home_score: homeScore,
+                    away_score: awayScore,
                     status: 'finished',
-                    winner_team_id: winner
-                }).eq('id', match.id)
+                    winner_team_id: winner_team_id
+                }).eq('id', match.id);
 
-                const loser = winner === match.home_team_id ? match.away_team_id : match.home_team_id;
-                await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser)
+                const loser_team_id = winner_team_id === match.home_team_id ? match.away_team_id : match.home_team_id;
+                if (loser_team_id) {
+                    await supabase.from('national_cup_teams').update({ eliminated: true }).eq('id', loser_team_id);
+                }
 
-                // Pagar prêmio (50k por avanço)
+                // Premiação progressiva: Rodada 1 = 50k, 2 = 100k, 3 = 200k...
+                const prizeAmount = 50000 * Math.pow(2, cup.current_round - 1);
                 await supabase.from('national_cup_prizes').insert({
                     cup_id: cup.id,
-                    team_id: winner,
-                    amount: 50000,
+                    team_id: winner_team_id,
+                    amount: prizeAmount,
                     description: `Prêmio Rodada ${cup.current_round}`
-                })
+                });
+
+                // Notificar usuário se o time dele avançou
+                const { data: winnerTeam } = await supabase.from('national_cup_teams').select('user_id, club_name').eq('id', winner_team_id).single();
+                if (winnerTeam?.user_id) {
+                    await supabase.from('user_notifications').insert({
+                        user_id: winnerTeam.user_id,
+                        title: '🏆 Avançou na Copa!',
+                        message: `O ${winnerTeam.club_name} venceu por ${homeScore}x${awayScore} e avançou para a próxima fase! Prêmio: R$ ${(prizeAmount/1000).toFixed(0)}k`,
+                        type: 'success'
+                    });
+                }
+
+                // Jornal
+                await supabase.from('newspaper_entries').insert({
+                    category: 'COPA',
+                    text: `[COPA] ${cup.name}: O ${winnerTeam?.club_name || 'Vencedor'} avançou! Placar: ${homeScore}x${awayScore}.`,
+                });
             }
 
-            // Gerar próxima rodada ou finalizar
-            const { data: stillAlive } = await supabase.from('national_cup_teams').select('id').eq('cup_id', cup.id).eq('eliminated', false)
-            if (stillAlive && stillAlive.length > 1) {
+            if (cup.current_round < cup.total_rounds) {
                 await drawNextRound(supabase, cup.id, cup.current_round + 1)
             } else {
                 await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id)
             }
         }
-        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
+
+        return new Response(JSON.stringify({ success: true, message: "Rodada simulada e fases avançadas" }), { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
     }
+
     // 3. REINICIAR COPAS
     if (action === 'reset_cups') {
         await supabase.from('national_cups').delete().neq('id', '00000000-0000-0000-0000-000000000000')
@@ -193,11 +225,66 @@ serve(async (req) => {
         return new Response(JSON.stringify({ success: true, message: "Sincronização e ativação concluídas" }), { headers: corsHeaders })
     }
 
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    })
+  }
+})
+
+async function drawNextRound(supabase: any, cupId: string, round: number) {
+    const { data: cup } = await supabase.from('national_cups').select('*').eq('id', cupId).single();
+    if (!cup) return;
+
+    const { data: teams } = await supabase.from('national_cup_teams')
+        .select('*')
+        .eq('cup_id', cupId)
+        .eq('eliminated', false);
+
+    if (!teams || teams.length < 2) return;
+
+    // Sorteio: Fisher-Yates para maior segurança
+    const shuffled = [...teams];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const matches = [];
+    
+    // Jogos às 12:00 BRT (UTC-3). Se for dia 10 e status scheduled, começa dia 11.
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth();
+    
+    // Dia base (11) + deslocamento da rodada
+    const baseDay = 11 + (round - 1);
+    const scheduledAt = new Date(Date.UTC(year, month, baseDay, 15, 0, 0)); // 15:00 UTC = 12:00 BRT
+
+    for (let i = 0; i < shuffled.length; i += 2) {
+        if (shuffled[i + 1]) {
+            // Mandante e visitante já definidos pela ordem do array embaralhado
+            const home = shuffled[i];
+            const away = shuffled[i+1];
+            
+            matches.push({
+                cup_id: cupId,
+                round: round,
+                bracket_pos: Math.floor(i / 2),
+                home_team_id: home.id,
+                away_team_id: away.id,
+                scheduled_at: scheduledAt.toISOString(),
+                status: 'scheduled',
+                stadium: `Estádio ${home.club_name}`
+            });
+        }
+    }
+
     if (matches.length > 0) {
-        await supabase.from('national_cup_matches').insert(matches)
+        await supabase.from('national_cup_matches').insert(matches);
         await supabase.from('national_cups').update({ 
-            current_round: round,
-            total_rounds: Math.max(round, 1) // simplificado
-        }).eq('id', cupId)
+            status: 'in_progress',
+            current_round: round
+        }).eq('id', cupId);
     }
 }
