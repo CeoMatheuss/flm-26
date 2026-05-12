@@ -685,6 +685,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       </Dialog>
 
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
+      <DatabaseResetWidget userId={userId} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
