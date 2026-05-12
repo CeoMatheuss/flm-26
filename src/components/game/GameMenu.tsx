@@ -66,7 +66,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => onTabChange('fans')} className="menu-item"><Heart className="h-3.5 w-3.5 text-primary/70" /> Torcida <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('members')} className="menu-item"><Crown className="h-3.5 w-3.5 text-yellow-400" /> Sócios Torcedores <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('chat')} className="menu-item"><MessageCircle className="h-3.5 w-3.5 text-primary/70" /> Chat Global <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('insta')} className="menu-item"><Instagram className="h-3.5 w-3.5 text-pink-500" /> Instagram <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
         
         <DropdownMenuItem onClick={() => onTabChange('pacotinhos')} className="menu-item"><Gift className="h-3.5 w-3.5 text-primary/70" /> Pacotinhos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('shop')} className="menu-item font-bold text-primary"><ShoppingBag className="h-3.5 w-3.5 text-primary" /> Loja FLM <Badge variant="secondary" className="ml-2 scale-75 bg-primary/10 text-primary border-none">Breve</Badge> <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
