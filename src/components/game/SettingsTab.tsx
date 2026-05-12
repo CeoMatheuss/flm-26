@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX, Download, Smartphone, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,11 +11,18 @@ export function SettingsTab() {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
   const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  
   const [matchNotifications, setMatchNotifications] = useState<boolean>(() => {
     return localStorage.getItem('flm-notifications-match') === 'true';
   });
   const [generalNotifications, setGeneralNotifications] = useState<boolean>(() => {
     return localStorage.getItem('flm-notifications-general') !== 'false'; // Default true
+  });
+  const [pushEnabled, setPushEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('flm-push-enabled') === 'true';
   });
   const [gameSounds, setGameSounds] = useState<boolean>(() => {
     return localStorage.getItem('flm-game-sounds') !== 'false'; // Default true
@@ -38,12 +45,35 @@ export function SettingsTab() {
   }, []);
 
   useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    // Check current notification permission
+    if ('Notification' in window) {
+      setPushPermission(Notification.permission);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('flm-notifications-match', String(matchNotifications));
   }, [matchNotifications]);
 
   useEffect(() => {
     localStorage.setItem('flm-notifications-general', String(generalNotifications));
   }, [generalNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('flm-push-enabled', String(pushEnabled));
+  }, [pushEnabled]);
 
   useEffect(() => {
     localStorage.setItem('flm-game-sounds', String(gameSounds));
@@ -73,6 +103,42 @@ export function SettingsTab() {
       toast.success('Sons do jogo ativados!');
     } else {
       toast.info('Sons do jogo desativados.');
+    }
+  };
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      toast.info('Para instalar, use a opção "Adicionar à tela de início" do seu navegador.');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      toast.success('Obrigado por instalar o Football Life Manager!');
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
+
+  const handleTogglePush = async (checked: boolean) => {
+    if (!('Notification' in window)) {
+      toast.error('Seu navegador não suporta notificações push.');
+      return;
+    }
+
+    if (checked) {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission === 'granted') {
+        setPushEnabled(true);
+        toast.success('Notificações Push ativadas com sucesso!');
+      } else {
+        setPushEnabled(false);
+        toast.error('Permissão de notificação negada.');
+      }
+    } else {
+      setPushEnabled(false);
+      toast.info('Notificações Push desativadas.');
     }
   };
 
@@ -188,6 +254,45 @@ export function SettingsTab() {
               onCheckedChange={toggleGeneralNotifications}
             />
           </div>
+
+          <div className="flex items-center justify-between border-t border-border/10 pt-4">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Notificações Push</span>
+                {pushPermission === 'denied' && (
+                  <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full uppercase font-bold">Bloqueado</span>
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Alertas diretos no seu dispositivo.</p>
+            </div>
+            <Switch 
+              checked={pushEnabled} 
+              onCheckedChange={handleTogglePush}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Smartphone className="h-4 w-4 text-primary" />
+            Aplicativo
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Instale o jogo para uma experiência completa.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            size="sm"
+            className="w-full text-xs gap-2 bg-primary hover:bg-primary/90"
+            onClick={handleInstallApp}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Instalar Web App (PWA)
+          </Button>
+          <p className="text-[9px] text-center text-muted-foreground">
+            Instalando o app, você terá acesso rápido, modo tela cheia e melhor performance.
+          </p>
         </CardContent>
       </Card>
 
