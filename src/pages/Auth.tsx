@@ -46,6 +46,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
 
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
