@@ -53,9 +53,7 @@ export function useActiveMatch() {
           action: {
             label: 'Assistir',
             onClick: () => {
-              // Assuming there's a way to navigate to the match tab.
-              // In this project, tabs are often handled by state.
-              window.dispatchEvent(new CustomEvent('flm:navigate-to-match', { detail: { matchId: data.id } }));
+              window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'matches' } }));
             }
           }
         });
