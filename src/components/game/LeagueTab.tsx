@@ -6,14 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Trophy, Loader2, CheckCircle2, Calendar, Target, Swords, 
   TrendingUp, Users, Star, Newspaper, MessageSquare, 
-  ChevronLeft, ChevronRight, Activity, Zap, Globe
+  ChevronLeft, ChevronRight, Activity, Zap
 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 
 interface Props {
   clubName: string;
@@ -261,12 +259,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           <TabsTrigger value="matches" className="text-[10px] md:text-xs py-2">Jogos</TabsTrigger>
           <TabsTrigger value="stats" className="text-[10px] md:text-xs py-2">Estatísticas</TabsTrigger>
           <TabsTrigger value="calendar" className="text-[10px] md:text-xs py-2">Calendário</TabsTrigger>
-          <TabsTrigger value="online" className="text-[10px] md:text-xs py-2">
-            <div className="flex items-center gap-1">
-              <Globe className="h-3 w-3 text-blue-400" />
-              Online
-            </div>
-          </TabsTrigger>
           <TabsTrigger value="info" className="text-[10px] md:text-xs py-2">Info</TabsTrigger>
         </TabsList>
 
@@ -635,67 +627,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                 </ScrollArea>
              </CardContent>
            </Card>
-        </TabsContent>
-
-        {/* TAB: ONLINE (Preparação para partidas online) */}
-        <TabsContent value="online" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-gradient-to-br from-blue-500/5 to-primary/10 border-blue-500/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-blue-500" /> Matchmaking Online
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 bg-background/50 rounded-lg border border-blue-500/20">
-                  <h4 className="text-xs font-bold mb-1">Status da Fila</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] text-muted-foreground">Servidores prontos para a rodada online</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-muted-foreground">Jogadores Online na Liga</span>
-                    <span className="font-bold">12/16</span>
-                  </div>
-                  <Progress value={75} className="h-1.5" />
-                </div>
-                <Button className="w-full h-9 text-xs font-bold gap-2 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                  <Swords className="h-3.5 w-3.5" /> Buscar Oponente da Rodada
-                </Button>
-                <p className="text-[9px] text-center text-muted-foreground italic">
-                  * Partidas online seguem o calendário oficial da liga.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" /> Estabilidade de Conexão
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 rounded-lg bg-background/50 border flex flex-col items-center">
-                    <span className="text-[8px] uppercase font-bold text-muted-foreground">Ping Médio</span>
-                    <span className="text-xs font-black text-emerald-500">24ms</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-background/50 border flex flex-col items-center">
-                    <span className="text-[8px] uppercase font-bold text-muted-foreground">Região</span>
-                    <span className="text-xs font-black">Brasil (SP)</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Zap className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    Sua conexão está estável. Para melhor experiência em partidas online, utilize uma rede cabeada.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
 
         {/* TAB: INFO */}
