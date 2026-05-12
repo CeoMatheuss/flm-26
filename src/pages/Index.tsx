@@ -370,9 +370,17 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   // Handle club profile viewing via events
   useEffect(() => {
     const handler = (e: any) => {
+      if (e.detail?.club_name) handleSetViewedClubName(e.detail.club_name);
+    };
+    window.addEventListener('flm:open-club-profile', handler);
+    return () => window.removeEventListener('flm:open-club-profile', handler);
+  }, [handleSetViewedClubName]);
+
+  // Handle generic navigation via events
+  useEffect(() => {
+    const handler = (e: any) => {
       if (e.detail?.tab) {
         setActiveTab(e.detail.tab);
-        // Se houver um ID de torneio opcional
         if (e.detail.tournamentId) setActiveTournamentId(e.detail.tournamentId);
       }
     };
