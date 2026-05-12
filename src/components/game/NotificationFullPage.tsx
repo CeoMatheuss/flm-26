@@ -212,17 +212,17 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
                     return (
                       <div
                         key={n.id}
-                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#151518] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-60' : ''}`}
+                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#121215] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-50 grayscale-[0.5]' : ''}`}
                         onClick={() => handleClickNotification(n)}
                       >
-                        {/* Status bar */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.dot}`} />
+                        {/* Status bar with animation */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${style.dot} group-hover:w-2 transition-all`} />
                         
-                        <div className="p-4 sm:p-5 flex items-start gap-4">
-                          <div className={`relative flex items-center justify-center h-12 w-12 rounded-xl border border-white/5 bg-black/40 shadow-inner shrink-0 transition-transform group-hover:scale-105`}>
-                            <CatIcon className={`h-5 w-5 ${style.text}`} />
+                        <div className="p-4 sm:p-5 flex items-start gap-5 relative">
+                          <div className={`relative flex items-center justify-center h-14 w-14 rounded-2xl border border-white/5 bg-black shadow-inner shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3`}>
+                            <CatIcon className={`h-6 w-6 ${style.text}`} />
                             {isPremium && (
-                              <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-ping" />
+                              <div className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-primary rounded-full border-[3px] border-[#121215] animate-pulse" />
                             )}
                           </div>
 
