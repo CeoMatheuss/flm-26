@@ -121,7 +121,6 @@ export default function AuthPage() {
     });
     if (error) {
       const msg = error.message || '';
-      // Beta whitelist block — backend mascara com "Database error saving new user"
       const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
       const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
       if (isDuplicate) {
@@ -134,20 +133,49 @@ export default function AuthPage() {
       }
     } else {
       setPendingEmail(email);
+      // Dispara o envio do código via Edge Function
+      await supabase.functions.invoke('auth-service', {
+        body: { action: 'send-code', email }
+      });
       setStep('verify-email');
       startResendTimer();
-      toast.success('Email de verificação enviado!');
+      toast.success('Código de verificação enviado para seu email!');
     }
     setLoading(false);
+  };
+
+  const handleVerifyCode = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error('O código deve ter 6 dígitos');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('auth-service', {
+        body: { action: 'verify-code', email: pendingEmail, code: verificationCode }
+      });
+
+      if (error || data?.error) throw new Error(error?.message || data?.error);
+
+      toast.success('Conta verificada com sucesso! Você já pode entrar.');
+      setStep('login');
+      setEmail(pendingEmail);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao verificar código');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResendVerification = async () => {
     if (resendTimer > 0) return;
     setLoading(true);
-    const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-    if (error) toast.error('Erro ao reenviar email.');
+    const { error } = await supabase.functions.invoke('auth-service', {
+      body: { action: 'send-code', email: pendingEmail }
+    });
+    if (error) toast.error('Erro ao reenviar código.');
     else {
-      toast.success('Novo email de verificação enviado!');
+      toast.success('Novo código enviado!');
       startResendTimer();
     }
     setLoading(false);
