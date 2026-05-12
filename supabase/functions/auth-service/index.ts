@@ -352,7 +352,7 @@ serve(async (req) => {
               html: PREMIUM_EMAIL_TEMPLATE(
                 'Bem-vindo ao Football Life Manager',
                 'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                '483921',
+                Math.floor(100000 + Math.random() * 900000).toString(),
                 'Digite este código dentro do Football Life Manager para acessar sua conta.',
                 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200'
               ),
