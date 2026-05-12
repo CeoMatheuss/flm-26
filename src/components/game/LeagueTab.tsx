@@ -178,6 +178,28 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Derive current round from actual match progression: the first round
+  // that still has at least one non-finished match. If all are finished,
+  // use the highest round number. Falls back to stored value if no fixtures.
+  const derivedRound = useMemo(() => {
+    if (!fixtures || fixtures.length === 0) return currentRound;
+    const rounds = Array.from(new Set(fixtures.map(f => f.round))).sort((a, b) => a - b);
+    for (const r of rounds) {
+      const matches = fixtures.filter(f => f.round === r);
+      const allFinished = matches.every(m => m.status === 'finished');
+      if (!allFinished) return r;
+    }
+    return rounds[rounds.length - 1];
+  }, [fixtures, currentRound]);
+
+  // Sync displayed round with progression and keep leagueInfo aligned
+  useEffect(() => {
+    if (derivedRound && derivedRound !== currentRound) {
+      setCurrentRound(derivedRound);
+      setLeagueInfo((prev: any) => prev ? { ...prev, currentRound: derivedRound } : prev);
+    }
+  }, [derivedRound]);
+
   const roundMatches = useMemo(() => {
     return fixtures.filter(f => f.round === currentRound);
   }, [fixtures, currentRound]);
