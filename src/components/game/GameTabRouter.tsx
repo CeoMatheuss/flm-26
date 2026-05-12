@@ -1,5 +1,6 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
@@ -46,7 +47,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock, Globe, Star } from 'lucide-react';
+import { Lock, Globe, Star, Instagram, ExternalLink } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -87,6 +88,14 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
     return { winStreak: ws, loseStreak: ls };
   }, [game.club.matches]);
 
+  useEffect(() => {
+    if (activeTab === 'insta') {
+      window.open('https://www.instagram.com/footballlifemanager26/', '_blank');
+      // Revert to dashboard or previous tab to avoid getting stuck
+      setTimeout(() => setActiveTab('dashboard'), 500);
+    }
+  }, [activeTab, setActiveTab]);
+
   const isTabBlocked = (tab: string) => !isAdmin && blockedTabs.includes(tab);
 
   const BlockedMessage = () => (
@@ -101,6 +110,26 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
 
   return (
     <>
+      <TabsContent value="insta">
+        <Card className="border-pink-500/30 bg-gradient-to-br from-card to-pink-500/5">
+          <CardContent className="p-8 text-center space-y-4">
+            <Instagram className="h-12 w-12 mx-auto text-pink-500 animate-pulse" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-white">Seguir no Instagram</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Fique por dentro de todas as novidades, atualizações e bastidores do Football Life Manager!
+              </p>
+            </div>
+            <Button 
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border-none shadow-lg shadow-pink-500/20"
+              onClick={() => window.open('https://www.instagram.com/footballlifemanager26/', '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Abrir Instagram
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="dashboard">
         <DashboardTab 
           club={game.club} 

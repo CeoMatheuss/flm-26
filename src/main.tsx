@@ -1,7 +1,11 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { registerSW } from 'virtual:pwa-register';
 import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// Register Service Worker for PWA
+registerSW({ immediate: true });
 
 // Apply saved theme
 const savedTheme = localStorage.getItem('flm-theme') || 'dark';

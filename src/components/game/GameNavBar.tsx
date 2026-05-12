@@ -1,10 +1,10 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe, Swords } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe, Swords, Instagram } from 'lucide-react';
 
 export function GameNavBar() {
   return (
     <div className="flex-1 flex flex-col gap-1">
-      <TabsList className="grid grid-cols-5 h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/20 rounded-xl overflow-hidden">
+      <TabsList className="grid grid-cols-6 h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/20 rounded-xl overflow-hidden">
         <TabsTrigger value="dashboard" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
           <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Início</span>
@@ -24,6 +24,10 @@ export function GameNavBar() {
         <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
           <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
+        </TabsTrigger>
+        <TabsTrigger value="insta" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5">
+          <Instagram className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-pink-500" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Insta</span>
         </TabsTrigger>
       </TabsList>
     </div>
