@@ -17,6 +17,8 @@ export interface Notification {
   title: string;
   message: string;
   type: 'warning' | 'info' | 'danger' | 'success';
+  category?: 'Jogos' | 'Transferências' | 'Financeiro' | 'Copa' | 'Liga' | 'Clube';
+  priority?: 'low' | 'medium' | 'high' | 'ultra';
   createdAt: Date;
   actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
   /** Optional structured payload (e.g. { match_db_id } for match_report notifications). */
@@ -51,7 +53,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [fullPage, setFullPage] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [dbNotifications, setDbNotifications] = useState<Array<{
-    id: string; icon: string; title: string; message: string; type: string; read_at: string | null; created_at: string; data: any;
+    id: string; icon: string; title: string; message: string; type: string; category?: string; priority?: string; read_at: string | null; created_at: string; data: any;
   }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [persistedReadKeys, setPersistedReadKeys] = useState<Set<string>>(new Set());
@@ -70,7 +72,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from('user_notifications')
-      .select('id, icon, title, message, type, read_at, created_at, data')
+      .select('id, icon, title, message, type, category, priority, read_at, created_at, data')
       .eq('user_id', userId)
       .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
@@ -129,6 +131,8 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       title: `${invite.sender_club_name} quer jogar!`,
       message: `📅 ${dateStr} • 🏟️ ${isHome ? invite.receiver_stadium : invite.sender_stadium} (${(isHome ? invite.receiver_stadium_capacity : invite.sender_stadium_capacity).toLocaleString()})`,
       type: 'warning',
+      category: 'Jogos',
+      priority: 'high',
       createdAt: new Date(invite.created_at),
       actions: [
         { label: 'Aceitar', icon: <Check className="h-3 w-3" />, variant: 'default', onClick: () => respondInvite(invite.id, true) },
@@ -147,6 +151,8 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       title: dbN.title,
       message: dbN.message,
       type: typeMap[dbN.type] || 'info',
+      category: (dbN.category as any) || 'Clube',
+      priority: (dbN.priority as any) || 'medium',
       createdAt: new Date(dbN.created_at),
       data: dbN.data ?? null,
     });
@@ -159,7 +165,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     notifications.push({
       id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`,
       message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove!`,
-      type: 'danger', createdAt: new Date(),
+      type: 'danger', category: 'Clube', priority: 'high', createdAt: new Date(),
     });
   }
 
@@ -168,7 +174,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     notifications.push({
       id: 'injured', icon: '🏥', title: `${injured.length} lesionado(s)`,
       message: injured.slice(0, 3).map(p => `${p.name.split(' ')[0]} (${p.injury!.weeksRemaining}j)`).join(', '),
-      type: 'danger', createdAt: new Date(),
+      type: 'danger', category: 'Clube', priority: 'high', createdAt: new Date(),
     });
   }
 
@@ -178,7 +184,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     notifications.push({
       id: 'budget', icon: '💰', title: 'Orçamento crítico!',
       message: `~${monthsLeft} meses de salários restantes.`,
-      type: 'danger', createdAt: new Date(),
+      type: 'danger', category: 'Financeiro', priority: 'high', createdAt: new Date(),
     });
   }
 
@@ -186,7 +192,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     notifications.push({
       id: 'squad', icon: '👥', title: 'Elenco curto',
       message: `${players.length} jogadores. Ideal: 18+.`,
-      type: 'warning', createdAt: new Date(),
+      type: 'warning', category: 'Clube', priority: 'medium', createdAt: new Date(),
     });
   }
 
