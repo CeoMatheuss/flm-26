@@ -3600,33 +3600,39 @@ export type Database = {
       }
       user_notifications: {
         Row: {
+          category: string | null
           created_at: string
           data: Json | null
           icon: string
           id: string
           message: string
+          priority: string | null
           read_at: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           data?: Json | null
           icon?: string
           id?: string
           message: string
+          priority?: string | null
           read_at?: string | null
           title: string
           type?: string
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           data?: Json | null
           icon?: string
           id?: string
           message?: string
+          priority?: string | null
           read_at?: string | null
           title?: string
           type?: string
