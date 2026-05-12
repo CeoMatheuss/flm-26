@@ -155,7 +155,7 @@ export function StadiumTab({
                 Nv {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
               </p>
             </div>
-            <div className="text-right sm:text-right">
+            <div className="text-left sm:text-right shrink-0">
               <p className="text-[10px] uppercase text-muted-foreground">Receita estimada</p>
               <p className="text-xl sm:text-2xl font-extrabold text-amber-400">
                 R$ {(revenue.total / 1000).toFixed(0)}k
