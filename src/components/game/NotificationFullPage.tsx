@@ -57,7 +57,8 @@ const typeStyles: Record<string, { border: string; dot: string; glow: string; te
   warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]', text: 'text-amber-500' },
   info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', text: 'text-blue-500' },
   success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.2)]', text: 'text-emerald-500' },
-  premium: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
+  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
+  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_25px_rgba(34,211,238,0.5)]', text: 'text-cyan-400' },
 };
 
 const categoryIcons: Record<string, any> = {
@@ -67,6 +68,7 @@ const categoryIcons: Record<string, any> = {
   'Copa': Trophy,
   'Liga': TrophyIcon,
   'Clube': Shield,
+  'Eventos': Bell,
 };
 
 export function NotificationFullPage({ notifications, isRead, onMarkRead, onMarkAllRead, onClose, respondingId }: Props) {
