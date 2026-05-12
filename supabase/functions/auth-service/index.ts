@@ -25,15 +25,15 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
     .container {
       max-width: 600px;
       margin: 20px auto;
-      background: #08080a;
-      border: 1px solid #1a1a20;
+      background: #0a0a0c;
+      border: 1px solid #1f1f23;
       border-radius: 24px;
       overflow: hidden;
       box-shadow: 0 30px 60px rgba(0,0,0,0.8);
     }
     .header-banner {
-      height: 280px;
-      background: linear-gradient(to bottom, rgba(5,5,7,0) 0%, rgba(8,8,10,1) 100%), url('${bannerUrl}');
+      height: 320px;
+      background: linear-gradient(to bottom, rgba(5,5,7,0.1) 0%, rgba(10,10,12,1) 100%), url('${bannerUrl}');
       background-size: cover;
       background-position: center;
       display: flex;
@@ -42,20 +42,28 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
       justify-content: center;
       text-align: center;
       padding: 0 20px;
+      border-bottom: 2px solid #1f1f23;
+    }
+    .logo-container {
+      padding: 20px;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     .logo-text {
       font-family: 'Orbitron', sans-serif;
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: 4px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 6px;
       color: #ffffff;
       text-transform: uppercase;
       margin-bottom: 5px;
-      text-shadow: 0 0 20px rgba(0,242,255,0.4);
+      opacity: 0.8;
     }
     .logo-main {
       font-family: 'Orbitron', sans-serif;
-      font-size: 36px;
+      font-size: 32px;
       font-weight: 900;
       letter-spacing: -1px;
       color: #ffffff;
@@ -64,97 +72,110 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
     }
     .logo-main span {
       color: #00f2ff;
-      text-shadow: 0 0 15px rgba(0,242,255,0.8);
+      text-shadow: 0 0 20px rgba(0,242,255,0.8);
     }
     .content {
-      padding: 40px 30px;
+      padding: 50px 40px;
       text-align: center;
+      background: linear-gradient(180deg, #0a0a0c 0%, #050507 100%);
     }
     .main-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       text-transform: uppercase;
       margin-bottom: 15px;
-      font-style: italic;
-      background: linear-gradient(90deg, #ffffff, #00f2ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+      color: #ffffff;
     }
     .description {
-      font-size: 16px;
-      color: #a0a0a8;
+      font-size: 15px;
+      color: #8a8a90;
       line-height: 1.6;
-      margin-bottom: 40px;
+      margin-bottom: 45px;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .code-display {
-      background: linear-gradient(145deg, rgba(10, 10, 15, 1) 0%, rgba(20, 20, 35, 1) 100%);
-      border: 1px solid rgba(0, 242, 255, 0.3);
-      border-radius: 20px;
-      padding: 50px 20px;
+      background: #0f0f13;
+      border: 2px solid #1f1f23;
+      border-radius: 24px;
+      padding: 60px 20px;
       margin: 40px 0;
       position: relative;
-      box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
+      overflow: hidden;
     }
-    .code-glow {
+    .code-accent {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 150px;
-      height: 150px;
-      background: radial-gradient(circle, rgba(0, 242, 255, 0.2) 0%, transparent 70%);
-      z-index: 1;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #00f2ff, #7b1fa2);
+      box-shadow: 0 0 15px rgba(0,242,255,0.5);
     }
     .code-text {
       font-family: 'Orbitron', sans-serif;
-      font-size: 64px;
+      font-size: 72px;
       font-weight: 900;
       color: #ffffff;
-      letter-spacing: 15px;
+      letter-spacing: 18px;
       margin: 0;
-      position: relative;
-      z-index: 2;
-      text-shadow: 0 0 25px rgba(0,242,255,0.5);
+      text-shadow: 0 0 30px rgba(0,242,255,0.4);
+    }
+    .call-to-action {
+      font-size: 13px;
+      color: #00f2ff;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 25px;
+      text-shadow: 0 0 10px rgba(0,242,255,0.3);
     }
     .footer {
       background: #050507;
-      padding: 40px 20px;
+      padding: 50px 20px;
       text-align: center;
       border-top: 1px solid #1a1a20;
     }
-    .socials {
-      margin-bottom: 25px;
-    }
-    .socials a {
+    .social-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #0f0f13;
+      border: 1px solid #1f1f23;
       color: #ffffff;
       text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      margin: 0 15px;
-      letter-spacing: 2px;
-      opacity: 0.5;
+      margin: 0 8px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+      transition: all 0.3s;
     }
-    .neon-divider {
+    .neon-glow-line {
       height: 1px;
-      background: linear-gradient(90deg, transparent, #00f2ff, #7b1fa2, transparent);
-      width: 80%;
-      margin: 25px auto;
+      background: linear-gradient(90deg, transparent, #1f1f23, #00f2ff, #1f1f23, transparent);
+      width: 100%;
+      margin: 30px 0;
     }
     .copyright {
       font-size: 10px;
-      color: #44444a;
+      color: #404045;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      line-height: 2;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header-banner">
-      <div class="logo-text">FOOTBALL</div>
-      <div class="logo-main">LIFE <span>MANAGER</span></div>
+      <div class="logo-container">
+        <div class="logo-text">FOOTBALL</div>
+        <div class="logo-main">LIFE <span>MANAGER</span></div>
+      </div>
     </div>
     
     <div class="content">
@@ -162,29 +183,30 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
       <p class="description">${subtitle}</p>
       
       <div class="code-display">
-        <div class="code-glow"></div>
+        <div class="code-accent"></div>
         <p class="code-text">${mainContent}</p>
+        <div class="call-to-action">CÓDIGO DE ACESSO EXCLUSIVO</div>
       </div>
       
-      <p style="font-size: 14px; color: #00f2ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+      <p style="font-size: 14px; color: #ffffff; font-weight: 400; opacity: 0.8; margin-top: 40px;">
         Digite este código dentro do Football Life Manager para acessar sua conta.
       </p>
       
-      <p style="margin-top: 30px; font-size: 12px; color: #505058; line-height: 1.6;">
+      <p style="margin-top: 30px; font-size: 11px; color: #505058; line-height: 1.6; font-style: italic;">
         ${footerText}
       </p>
     </div>
     
     <div class="footer">
       <div class="socials">
-        <a href="#">Instagram</a>
-        <a href="#">Discord</a>
-        <a href="#">Suporte</a>
+        <a href="#" class="social-btn">Instagram</a>
+        <a href="#" class="social-btn">Discord</a>
+        <a href="#" class="social-btn">Suporte</a>
       </div>
-      <div class="neon-divider"></div>
+      <div class="neon-glow-line"></div>
       <p class="copyright">
         © 2026 FOOTBALL LIFE MANAGER. TODOS OS DIREITOS RESERVADOS.<br>
-        <span style="display: inline-block; margin-top: 10px; opacity: 0.6;">Este e-mail foi enviado automaticamente pelo sistema do FLM.</span>
+        SISTEMA DE SEGURANÇA AVANÇADO FLM.
       </p>
     </div>
   </div>
