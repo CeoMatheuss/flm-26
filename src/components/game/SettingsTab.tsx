@@ -11,6 +11,12 @@ export function SettingsTab() {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
   const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(true);
+  const [matchNotifications, setMatchNotifications] = useState<boolean>(() => {
+    return localStorage.getItem('flm-notifications-match') === 'true';
+  });
+  const [generalNotifications, setGeneralNotifications] = useState<boolean>(() => {
+    return localStorage.getItem('flm-notifications-general') !== 'false'; // Default true
+  });
 
   useEffect(() => {
     const root = document.documentElement;
