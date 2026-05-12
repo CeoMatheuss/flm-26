@@ -199,7 +199,7 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
     
     <div class="footer">
       <div class="socials">
-        <a href="#" class="social-btn">Instagram</a>
+        <a href="https://www.instagram.com/footballlifemanager26/" class="social-btn">Instagram</a>
         <a href="#" class="social-btn">Discord</a>
         <a href="#" class="social-btn">Suporte</a>
       </div>
