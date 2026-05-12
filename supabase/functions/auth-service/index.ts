@@ -210,7 +210,7 @@ serve(async (req) => {
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
       if (listError) throw listError
 
-      const gmailUsers = users.filter(u => u.email?.toLowerCase().endsWith('@gmail.com'))
+      const gmailUsers = users.filter(u => u.email?.toLowerCase() === 'fcmsistemas7@gmail.com')
       const resendKey = Deno.env.get('RESEND_API_KEY')
       
       if (!resendKey) {
