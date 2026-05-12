@@ -145,22 +145,22 @@ export function StadiumTab({
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
         </div>
         <div className="relative p-4 sm:p-5 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
               <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 mb-2">
                 <Sparkles className="h-3 w-3 mr-1" /> Gestão de Estádio
               </Badge>
-              <h2 className="text-2xl font-extrabold tracking-tight">{stadiumName}</h2>
-              <p className="text-xs text-muted-foreground mt-1">
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{stadiumName}</h2>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 Nv {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
               </p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right shrink-0">
               <p className="text-[10px] uppercase text-muted-foreground">Receita estimada</p>
-              <p className="text-2xl font-extrabold text-amber-400">
+              <p className="text-xl sm:text-2xl font-extrabold text-amber-400">
                 R$ {(revenue.total / 1000).toFixed(0)}k
               </p>
-              <p className="text-[10px] text-muted-foreground">/ partida ({IMPORTANCE_LABEL[previewImportance]})</p>
+              <p className="text-[10px] text-muted-foreground whitespace-nowrap">/ partida ({IMPORTANCE_LABEL[previewImportance]})</p>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export function StadiumTab({
             <KpiCard icon={Users} label="Capacidade" value={getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()} />
             <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
             <KpiCard icon={Users} label="Público" value={revenue.attendance.toLocaleString()} />
-            <KpiCard icon={Wrench} label="Manut./sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
+            <KpiCard icon={Wrench} label="Manut/sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
           </div>
           {ops.damages.filter(d => !d.repairing).length > 0 && (
             <div className="mt-2 rounded-md bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-[11px] text-red-300">
@@ -314,7 +314,7 @@ export function StadiumTab({
             <p className="text-[10px] uppercase text-muted-foreground mb-1.5 font-bold">
               Público estimado por humor da torcida
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
               {moodScenarios.map(s => (
                 <div key={s.mood} className="bg-muted/30 rounded-md p-2 text-center">
                   <p className="text-base">{s.emoji}</p>
