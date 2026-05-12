@@ -343,7 +343,7 @@ serve(async (req) => {
                 'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
                 '483921',
                 'Digite este código dentro do Football Life Manager para acessar sua conta.',
-                'https://images.unsplash.com/photo-1614632537423-1e6c2e7a0aab?auto=format&fit=crop&q=80&w=1200'
+                'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200'
               ),
             }),
           })
