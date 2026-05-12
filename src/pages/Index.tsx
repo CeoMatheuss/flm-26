@@ -6,6 +6,7 @@ import { GameTabRouter } from '@/components/game/GameTabRouter';
 import { MaintenanceScreen } from '@/components/game/MaintenanceScreen';
 import { UpdatePopupWidget } from '@/components/game/UpdatePopupWidget';
 import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
+import { DatabaseResetWidget } from '@/components/game/DatabaseResetWidget';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
@@ -684,6 +685,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       </Dialog>
 
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
+      <DatabaseResetWidget userId={userId} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
