@@ -44,6 +44,24 @@ export function useActiveMatch() {
       return;
     }
 
+    if (data.id !== prevMatchIdRef.current) {
+      const isNotificationEnabled = localStorage.getItem('flm-notifications-match') === 'true';
+      if (isNotificationEnabled) {
+        toast.info('🚀 Uma partida começou! Clique para assistir.', {
+          duration: 6000,
+          action: {
+            label: 'Assistir',
+            onClick: () => {
+              // Assuming there's a way to navigate to the match tab.
+              // In this project, tabs are often handled by state.
+              window.dispatchEvent(new CustomEvent('flm:navigate-to-match', { detail: { matchId: data.id } }));
+            }
+          }
+        });
+      }
+      prevMatchIdRef.current = data.id;
+    }
+
     setState({
       isInLiveMatch: true,
       matchId: data.match_id,
