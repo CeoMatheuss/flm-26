@@ -181,10 +181,12 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
 <body>
   <div class="container">
     <div class="header-banner">
-      <div class="logo-container">
-        <div class="logo-text">FOOTBALL</div>
-        <div class="logo-main">LIFE <span>MANAGER</span></div>
-      </div>
+      <a href="https://www.instagram.com/footballlifemanager26/" class="logo-link">
+        <div class="logo-container">
+          <div class="logo-text">FOOTBALL</div>
+          <div class="logo-main">LIFE <span>MANAGER</span></div>
+        </div>
+      </a>
     </div>
     
     <div class="content">
