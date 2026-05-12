@@ -206,6 +206,54 @@ serve(async (req) => {
       })
     }
 
+    if (action === 'broadcast-test') {
+      const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+      if (listError) throw listError
+
+      const gmailUsers = users.filter(u => u.email?.toLowerCase().endsWith('@gmail.com'))
+      const resendKey = Deno.env.get('RESEND_API_KEY')
+      
+      if (!resendKey) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'RESEND_API_KEY não configurada no Supabase',
+          emails: gmailUsers.map(u => u.email)
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const results = await Promise.all(gmailUsers.map(async (user) => {
+        try {
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${resendKey}`,
+            },
+            body: JSON.stringify({
+              from: 'FLM 26 <news@flm26.com.br>',
+              to: [user.email],
+              subject: 'FLM 26 - Teste do Sistema Premium',
+              html: PREMIUM_EMAIL_TEMPLATE(
+                'SISTEMA PREMIUM ATIVADO',
+                'Manager, estamos testando o novo sistema de comunicação cinematográfica do FLM 26.',
+                'TESTE OK',
+                'Você recebeu este email porque sua conta Gmail está cadastrada no sistema.'
+              ),
+            }),
+          })
+          return { email: user.email, status: res.status }
+        } catch (e) {
+          return { email: user.email, error: e.message }
+        }
+      }))
+
+      return new Response(JSON.stringify({ success: true, results }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
