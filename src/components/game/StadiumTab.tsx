@@ -314,7 +314,7 @@ export function StadiumTab({
             <p className="text-[10px] uppercase text-muted-foreground mb-1.5 font-bold">
               Público estimado por humor da torcida
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
               {moodScenarios.map(s => (
                 <div key={s.mood} className="bg-muted/30 rounded-md p-2 text-center">
                   <p className="text-base">{s.emoji}</p>
