@@ -221,7 +221,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                       <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-border/30">
+                  <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-border/30 z-[60]">
                     <p className="menu-category">⚽ Funções do Time</p>
                     <DropdownMenuItem onClick={() => handleOpenProfile(club.name)} className="menu-item">
                       <User className="h-3.5 w-3.5 text-primary/70" /> Ver Perfil Público
