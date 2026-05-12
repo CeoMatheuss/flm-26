@@ -44,12 +44,21 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
       padding: 0 20px;
       border-bottom: 2px solid #1f1f23;
     }
+    .logo-link {
+      text-decoration: none;
+      transition: transform 0.3s ease;
+      display: block;
+    }
+    .logo-link:hover {
+      transform: scale(1.05);
+    }
     .logo-container {
       padding: 20px;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.6);
       backdrop-filter: blur(10px);
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(0,242,255,0.3);
+      box-shadow: 0 0 30px rgba(0,242,255,0.2);
     }
     .logo-text {
       font-family: 'Orbitron', sans-serif;
@@ -172,10 +181,12 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
 <body>
   <div class="container">
     <div class="header-banner">
-      <div class="logo-container">
-        <div class="logo-text">FOOTBALL</div>
-        <div class="logo-main">LIFE <span>MANAGER</span></div>
-      </div>
+      <a href="https://www.instagram.com/footballlifemanager26/" class="logo-link">
+        <div class="logo-container">
+          <div class="logo-text">FOOTBALL</div>
+          <div class="logo-main">LIFE <span>MANAGER</span></div>
+        </div>
+      </a>
     </div>
     
     <div class="content">
@@ -341,7 +352,7 @@ serve(async (req) => {
               html: PREMIUM_EMAIL_TEMPLATE(
                 'Bem-vindo ao Football Life Manager',
                 'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                '483921',
+                Math.floor(100000 + Math.random() * 900000).toString(),
                 'Digite este código dentro do Football Life Manager para acessar sua conta.',
                 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200'
               ),
