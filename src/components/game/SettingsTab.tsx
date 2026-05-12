@@ -45,6 +45,10 @@ export function SettingsTab() {
     localStorage.setItem('flm-notifications-general', String(generalNotifications));
   }, [generalNotifications]);
 
+  useEffect(() => {
+    localStorage.setItem('flm-game-sounds', String(gameSounds));
+  }, [gameSounds]);
+
   const toggleMatchNotifications = (checked: boolean) => {
     setMatchNotifications(checked);
     if (checked) {
@@ -60,6 +64,15 @@ export function SettingsTab() {
       toast.success('Notificações gerais ativadas!');
     } else {
       toast.info('Notificações gerais desativadas.');
+    }
+  };
+
+  const toggleGameSounds = (checked: boolean) => {
+    setGameSounds(checked);
+    if (checked) {
+      toast.success('Sons do jogo ativados!');
+    } else {
+      toast.info('Sons do jogo desativados.');
     }
   };
 
@@ -144,7 +157,7 @@ export function SettingsTab() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Bell className="h-4 w-4" />
+            <Bell className="h-4 w-4 text-primary" />
             Notificações
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">Escolha quais alertas deseja receber.</p>
@@ -152,10 +165,10 @@ export function SettingsTab() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-semibold flex items-center gap-2">
-                Início de Partida
-              </label>
-              <p className="text-[10px] text-muted-foreground">Alertar quando uma partida começar.</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Início de Partida</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Aviso visual ao iniciar um jogo.</p>
             </div>
             <Switch 
               checked={matchNotifications} 
@@ -165,14 +178,38 @@ export function SettingsTab() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-semibold flex items-center gap-2">
-                Notificações Gerais
-              </label>
-              <p className="text-[10px] text-muted-foreground">Leilões, transferências e novidades.</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Notificações Gerais</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Leilões, propostas e mercado.</p>
             </div>
             <Switch 
               checked={generalNotifications} 
               onCheckedChange={toggleGeneralNotifications}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Volume2 className="h-4 w-4 text-primary" />
+            Áudio
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Configure os efeitos sonoros.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Sons do Jogo</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Efeitos de clique e interface.</p>
+            </div>
+            <Switch 
+              checked={gameSounds} 
+              onCheckedChange={toggleGameSounds}
             />
           </div>
         </CardContent>
