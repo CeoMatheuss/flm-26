@@ -13,191 +13,178 @@ const PREMIUM_EMAIL_TEMPLATE = (title: string, subtitle: string, mainContent: st
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap');
+    
     body {
       background-color: #050507;
       color: #ffffff;
-      font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
-      -webkit-font-smoothing: antialiased;
     }
     .container {
       max-width: 600px;
       margin: 20px auto;
-      background: #0a0a0c;
-      border: 1px solid #1f1f23;
-      border-radius: 16px;
+      background: #08080a;
+      border: 1px solid #1a1a20;
+      border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
     }
-    .banner {
-      height: 240px;
-      background: linear-gradient(to bottom, rgba(5,5,7,0.2), rgba(10,10,12,1)), url('${bannerUrl}');
+    .header-banner {
+      height: 280px;
+      background: linear-gradient(to bottom, rgba(5,5,7,0) 0%, rgba(8,8,10,1) 100%), url('${bannerUrl}');
       background-size: cover;
       background-position: center;
-      position: relative;
       display: flex;
-      align-items: flex-end;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding-bottom: 20px;
-    }
-    .logo-container {
       text-align: center;
-      padding: 30px 20px 10px;
+      padding: 0 20px;
     }
-    .logo {
-      font-size: 38px;
+    .logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
       font-weight: 900;
-      font-style: italic;
-      text-transform: uppercase;
-      letter-spacing: -2px;
-      margin: 0;
+      letter-spacing: 4px;
       color: #ffffff;
-    }
-    .logo span { 
-      color: #00f2ff; 
-      text-shadow: 0 0 15px rgba(0,242,255,0.6); 
-    }
-    .brand-subtitle {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 5px;
-      color: rgba(255,255,255,0.5);
       text-transform: uppercase;
-      margin-top: 5px;
+      margin-bottom: 5px;
+      text-shadow: 0 0 20px rgba(0,242,255,0.4);
+    }
+    .logo-main {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .logo-main span {
+      color: #00f2ff;
+      text-shadow: 0 0 15px rgba(0,242,255,0.8);
     }
     .content {
-      padding: 40px;
+      padding: 40px 30px;
       text-align: center;
     }
-    .title {
-      font-size: 28px;
-      font-weight: 800;
+    .main-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
       text-transform: uppercase;
       margin-bottom: 15px;
-      letter-spacing: 1px;
-      color: #ffffff;
       font-style: italic;
+      background: linear-gradient(90deg, #ffffff, #00f2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .subtitle {
-      color: #a0a0a8;
+    .description {
       font-size: 16px;
-      margin-bottom: 35px;
+      color: #a0a0a8;
       line-height: 1.6;
-      font-weight: 400;
+      margin-bottom: 40px;
     }
-    .code-box {
-      background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(123, 31, 162, 0.1) 100%);
+    .code-display {
+      background: linear-gradient(145deg, rgba(10, 10, 15, 1) 0%, rgba(20, 20, 35, 1) 100%);
       border: 1px solid rgba(0, 242, 255, 0.3);
       border-radius: 20px;
-      padding: 40px 20px;
-      margin: 30px 0;
-      box-shadow: 0 0 30px rgba(0,242,255,0.1);
+      padding: 50px 20px;
+      margin: 40px 0;
       position: relative;
+      box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
     }
-    .code-label {
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      color: #00f2ff;
-      margin-bottom: 15px;
+    .code-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(0, 242, 255, 0.2) 0%, transparent 70%);
+      z-index: 1;
     }
-    .code-value {
-      font-size: 56px;
+    .code-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 64px;
       font-weight: 900;
       color: #ffffff;
-      letter-spacing: 12px;
-      text-shadow: 0 0 20px rgba(0,242,255,0.4);
+      letter-spacing: 15px;
       margin: 0;
-    }
-    .button-container {
-      margin-top: 40px;
-    }
-    .btn {
-      display: inline-block;
-      padding: 18px 45px;
-      background: #00f2ff;
-      color: #000000 !important;
-      text-decoration: none;
-      font-weight: 900;
-      text-transform: uppercase;
-      border-radius: 8px;
-      font-size: 14px;
-      letter-spacing: 1px;
-      box-shadow: 0 0 25px rgba(0,242,255,0.4);
-      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+      text-shadow: 0 0 25px rgba(0,242,255,0.5);
     }
     .footer {
-      padding: 40px;
       background: #050507;
+      padding: 40px 20px;
       text-align: center;
-      border-top: 1px solid #1f1f23;
+      border-top: 1px solid #1a1a20;
     }
-    .social-links {
+    .socials {
       margin-bottom: 25px;
     }
-    .social-links a {
+    .socials a {
       color: #ffffff;
       text-decoration: none;
-      margin: 0 15px;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      opacity: 0.6;
+      margin: 0 15px;
+      letter-spacing: 2px;
+      opacity: 0.5;
     }
-    .footer-text {
-      font-size: 11px;
-      color: #505058;
-      line-height: 1.8;
+    .neon-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #00f2ff, #7b1fa2, transparent);
+      width: 80%;
+      margin: 25px auto;
+    }
+    .copyright {
+      font-size: 10px;
+      color: #44444a;
       text-transform: uppercase;
       letter-spacing: 1px;
-    }
-    .neon-line {
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #00f2ff, transparent);
-      width: 100%;
-      margin: 20px 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="banner"></div>
-    <div class="logo-container">
-      <h1 class="logo">FLM <span>26</span></h1>
-      <div class="brand-subtitle">Football Legend Manager</div>
+    <div class="header-banner">
+      <div class="logo-text">FOOTBALL</div>
+      <div class="logo-main">LIFE <span>MANAGER</span></div>
     </div>
     
     <div class="content">
-      <h2 class="title">${title}</h2>
-      <p class="subtitle">${subtitle}</p>
+      <h1 class="main-title">${title}</h1>
+      <p class="description">${subtitle}</p>
       
-      <div class="code-box">
-        <div class="code-label">Código de Acesso Premium</div>
-        <div class="code-value">${mainContent}</div>
+      <div class="code-display">
+        <div class="code-glow"></div>
+        <p class="code-text">${mainContent}</p>
       </div>
       
-      <div class="button-container">
-        <a href="https://flm26.com.br" class="btn">Confirmar Conta</a>
-      </div>
+      <p style="font-size: 14px; color: #00f2ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Digite este código dentro do Football Life Manager para acessar sua conta.
+      </p>
       
-      <p style="margin-top: 40px; font-size: 12px; color: #505058; font-style: italic;">
+      <p style="margin-top: 30px; font-size: 12px; color: #505058; line-height: 1.6;">
         ${footerText}
       </p>
     </div>
     
     <div class="footer">
-      <div class="social-links">
+      <div class="socials">
         <a href="#">Instagram</a>
         <a href="#">Discord</a>
         <a href="#">Suporte</a>
       </div>
-      <div class="neon-line"></div>
-      <p class="footer-text">
-        © 2026 Football Legend Manager. Todos os direitos reservados.<br>
-        Este é um e-mail automático do sistema AAA do FLM.
+      <div class="neon-divider"></div>
+      <p class="copyright">
+        © 2026 FOOTBALL LIFE MANAGER. TODOS OS DIREITOS RESERVADOS.<br>
+        <span style="display: inline-block; margin-top: 10px; opacity: 0.6;">Este e-mail foi enviado automaticamente pelo sistema do FLM.</span>
       </p>
     </div>
   </div>
@@ -231,8 +218,6 @@ serve(async (req) => {
       
       if (dbError) throw dbError
 
-      // Here we would integrate Resend or other SMTP
-      // For now we use a mock/console log, but if RESEND_API_KEY is present, we could use it
       const resendKey = Deno.env.get('RESEND_API_KEY')
       if (resendKey) {
         await fetch('https://api.resend.com/emails', {
@@ -242,20 +227,18 @@ serve(async (req) => {
             'Authorization': `Bearer ${resendKey}`,
           },
           body: JSON.stringify({
-            from: 'FLM 26 <noreply@flm26.com.br>',
+            from: 'Football Life Manager <onboarding@resend.dev>',
             to: [email],
-            subject: `Código de Verificação: ${verificationCode}`,
+            subject: `CÓDIGO DE ACESSO: ${verificationCode} | FLM`,
             html: PREMIUM_EMAIL_TEMPLATE(
-              'Bem-vindo ao Campo, Manager',
-              'Sua carreira começa agora. Digite o código abaixo para validar sua conta e assumir o comando.',
+              'Bem-vindo ao Football Life Manager',
+              'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
               verificationCode,
               'Este código expira em 10 minutos por motivos de segurança.'
             ),
           }),
         })
       }
-
-      console.log(`[AUTH] Sent code ${verificationCode} to ${email}`)
 
       return new Response(JSON.stringify({ success: true, message: 'Código enviado com sucesso' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -330,15 +313,15 @@ serve(async (req) => {
               'Authorization': `Bearer ${resendKey}`,
             },
             body: JSON.stringify({
-              from: 'FLM 26 <onboarding@resend.dev>',
+              from: 'Football Life Manager <onboarding@resend.dev>',
               to: [user.email],
-              subject: 'BEM-VINDO AO CAMPO, MANAGER | FLM 26',
+              subject: 'BEM-VINDO AO CAMPO, MANAGER | FOOTBALL LIFE MANAGER',
               html: PREMIUM_EMAIL_TEMPLATE(
-                'Bem-vindo ao Football Legend Manager',
-                'Sua carreira como treinador começa agora. Monte seu elenco, dispute títulos e construa sua história no futebol.',
+                'Bem-vindo ao Football Life Manager',
+                'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
                 '483921',
-                'Digite este código dentro do FLM para confirmar sua conta e assumir o comando técnico.',
-                'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1200'
+                'Digite este código dentro do Football Life Manager para acessar sua conta.',
+                'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200'
               ),
             }),
           })
