@@ -6,6 +6,7 @@ import { GameTabRouter } from '@/components/game/GameTabRouter';
 import { MaintenanceScreen } from '@/components/game/MaintenanceScreen';
 import { UpdatePopupWidget } from '@/components/game/UpdatePopupWidget';
 import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateAnnouncementModal';
+import { DatabaseResetWidget } from '@/components/game/DatabaseResetWidget';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
