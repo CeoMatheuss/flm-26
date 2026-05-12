@@ -36,12 +36,12 @@ interface Props {
 }
 
 const posColors: Record<string, string> = {
-  GOL: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  ZAG: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  LAT: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  VOL: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  MEI: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  ATA: 'bg-red-500/20 text-red-400 border-red-500/30',
+  GOL: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)]',
+  ZAG: 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_-3px_rgba(59,130,246,0.2)]',
+  LAT: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_10px_-3px_rgba(6,182,212,0.2)]',
+  VOL: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_-3px_rgba(16,185,129,0.2)]',
+  MEI: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_-3px_rgba(168,85,247,0.2)]',
+  ATA: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_-3px_rgba(239,68,68,0.2)]',
 };
 
 const posLabels: Record<string, string> = {
@@ -71,10 +71,10 @@ const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
 const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
 
 function getOvrColor(val: number) {
-  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', glow: 'shadow-emerald-500/20' };
-  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/15', border: 'border-primary/40', glow: 'shadow-primary/20' };
-  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/40', glow: 'shadow-amber-500/20' };
-  return { text: 'text-muted-foreground', bg: 'bg-muted/30', border: 'border-border', glow: '' };
+  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]' };
+  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30', glow: 'shadow-[0_0_15px_-5px_rgba(var(--primary),0.3)]' };
+  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(245,158,11,0.3)]' };
+  return { text: 'text-muted-foreground', bg: 'bg-muted/10', border: 'border-border/30', glow: '' };
 }
 
 function getAttrColor(val: number): string {
@@ -537,15 +537,16 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     return (
       <div
         key={player.id}
-        className={`group rounded-xl border border-border/15 bg-card/40 hover:bg-card/70 hover:border-border/40 transition-all border-l-2 ${stateBorder} ${swapHighlight}`}
+        className={`group relative rounded-xl border border-white/5 bg-gradient-to-r from-card/60 to-card/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/30 transition-all duration-300 border-l-4 ${stateBorder} ${swapHighlight} overflow-hidden`}
       >
-        <div className="flex items-center gap-2 p-2">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="relative flex items-center gap-3 p-3">
           <button
             onClick={handleRowClick}
-            className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${ovr.border} ${ovr.bg} hover:scale-105 transition-transform`}
+            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border-2 ${ovr.border} ${ovr.bg} hover:scale-105 transition-all duration-300 ${ovr.glow} group-hover:shadow-[0_0_20px_-5px_rgba(var(--primary),0.2)]`}
           >
-            <span className={`text-sm font-black leading-none ${ovr.text}`}>{player.overall}</span>
-            <span className="text-[7px] text-muted-foreground -mt-0.5">OVR</span>
+            <span className={`text-lg font-black leading-none tracking-tighter ${ovr.text}`}>{player.overall}</span>
+            <span className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-widest mt-0.5">OVR</span>
           </button>
 
           <button
