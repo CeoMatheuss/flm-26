@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
