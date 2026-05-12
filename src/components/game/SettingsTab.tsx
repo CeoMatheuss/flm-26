@@ -17,6 +17,9 @@ export function SettingsTab() {
   const [generalNotifications, setGeneralNotifications] = useState<boolean>(() => {
     return localStorage.getItem('flm-notifications-general') !== 'false'; // Default true
   });
+  const [gameSounds, setGameSounds] = useState<boolean>(() => {
+    return localStorage.getItem('flm-game-sounds') !== 'false'; // Default true
+  });
 
   useEffect(() => {
     const root = document.documentElement;
