@@ -138,7 +138,43 @@ export function SettingsTab() {
         </CardContent>
       </Card>
 
-      {!tutorialCompleted && (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notificações
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Escolha quais alertas deseja receber.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-xs font-semibold flex items-center gap-2">
+                Início de Partida
+              </label>
+              <p className="text-[10px] text-muted-foreground">Alertar quando uma partida começar.</p>
+            </div>
+            <Switch 
+              checked={matchNotifications} 
+              onCheckedChange={toggleMatchNotifications}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-xs font-semibold flex items-center gap-2">
+                Notificações Gerais
+              </label>
+              <p className="text-[10px] text-muted-foreground">Leilões, transferências e novidades.</p>
+            </div>
+            <Switch 
+              checked={generalNotifications} 
+              onCheckedChange={toggleGeneralNotifications}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
