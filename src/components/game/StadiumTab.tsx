@@ -145,13 +145,13 @@ export function StadiumTab({
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
         </div>
         <div className="relative p-4 sm:p-5 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
               <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 mb-2">
                 <Sparkles className="h-3 w-3 mr-1" /> Gestão de Estádio
               </Badge>
-              <h2 className="text-2xl font-extrabold tracking-tight">{stadiumName}</h2>
-              <p className="text-xs text-muted-foreground mt-1">
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{stadiumName}</h2>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 Nv {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
               </p>
             </div>
