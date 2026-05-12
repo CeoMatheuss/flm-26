@@ -40,6 +40,7 @@ export function useActiveMatch() {
       .maybeSingle();
 
     if (error || !data) {
+      prevMatchIdRef.current = null;
       setState({ isInLiveMatch: false, matchId: null, liveMatchId: null, minute: 0 });
       return;
     }
