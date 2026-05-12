@@ -166,6 +166,39 @@ export type Database = {
           },
         ]
       }
+      auth_verification_codes: {
+        Row: {
+          attempts: number | null
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          code: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       beta_access_requests: {
         Row: {
           created_at: string
@@ -3605,6 +3638,7 @@ export type Database = {
           data: Json | null
           icon: string
           id: string
+          link: string | null
           message: string
           priority: string | null
           read_at: string | null
@@ -3618,6 +3652,7 @@ export type Database = {
           data?: Json | null
           icon?: string
           id?: string
+          link?: string | null
           message: string
           priority?: string | null
           read_at?: string | null
@@ -3631,6 +3666,7 @@ export type Database = {
           data?: Json | null
           icon?: string
           id?: string
+          link?: string | null
           message?: string
           priority?: string | null
           read_at?: string | null
