@@ -4650,6 +4650,7 @@ export type Database = {
       }
       next_sunday_17: { Args: never; Returns: string }
       normalize_country: { Args: { _input: string }; Returns: string }
+      notify_upcoming_matches: { Args: never; Returns: undefined }
       place_auction_bid: {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
