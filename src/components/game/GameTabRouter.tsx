@@ -1,5 +1,6 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { SquadTab } from '@/components/game/SquadTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
