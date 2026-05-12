@@ -25,6 +25,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">🌎 Competições</p>
+        <DropdownMenuItem onClick={() => onTabChange('league')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-emerald-400" /> Liga Nacional <Badge variant="secondary" className="ml-2 scale-75 bg-emerald-500/10 text-emerald-500 border-none">Online</Badge> <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('world')} className="menu-item"><Globe className="h-3.5 w-3.5 text-purple-400" /> Mundo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('copas')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-orange-400" /> Copas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('ranking')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Rankings <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>

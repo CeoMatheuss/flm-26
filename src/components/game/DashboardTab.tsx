@@ -5,12 +5,13 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, MoreHorizontal, Shirt, Settings } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
@@ -212,7 +213,36 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
               <ClubShield club={club as any} size={64} className="sm:w-16 sm:h-16" />
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
-              <h2 className="text-sm sm:text-base font-black truncate cursor-pointer hover:text-primary transition-colors" onClick={() => handleOpenProfile(club.name)}>{club.name}</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm sm:text-base font-black truncate cursor-pointer hover:text-primary transition-colors" onClick={() => handleOpenProfile(club.name)}>{club.name}</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary/10">
+                      <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-border/30 z-[60]">
+                    <p className="menu-category">⚽ Funções do Time</p>
+                    <DropdownMenuItem onClick={() => handleOpenProfile(club.name)} className="menu-item">
+                      <User className="h-3.5 w-3.5 text-primary/70" /> Ver Perfil Público
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:set-tab', { detail: 'uniforms' }))} className="menu-item">
+                      <Shirt className="h-3.5 w-3.5 text-primary/70" /> Personalizar Uniformes
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:set-tab', { detail: 'clubsettings' }))} className="menu-item">
+                      <Settings className="h-3.5 w-3.5 text-primary/70" /> Configurações do Clube
+                    </DropdownMenuItem>
+                    <div className="my-1 border-t border-border/10" />
+                    <p className="menu-category">📊 Gestão Rápida</p>
+                    <DropdownMenuItem onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:set-tab', { detail: 'finance' }))} className="menu-item">
+                      <DollarSign className="h-3.5 w-3.5 text-emerald-500" /> Ver Finanças
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:set-tab', { detail: 'squad' }))} className="menu-item">
+                      <Users className="h-3.5 w-3.5 text-blue-500" /> Gerenciar Elenco
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               {clubProfile?.motto && <p className="text-[9px] text-muted-foreground italic">"{clubProfile.motto}"</p>}
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                 <div className="flex items-center gap-1">
