@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor, GraduationCap } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
