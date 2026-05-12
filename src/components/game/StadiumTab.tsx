@@ -168,7 +168,7 @@ export function StadiumTab({
             <KpiCard icon={Users} label="Capacidade" value={getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()} />
             <KpiCard icon={TrendingUp} label="Ocupação" value={`${occupancyPct}%`} accent />
             <KpiCard icon={Users} label="Público" value={revenue.attendance.toLocaleString()} />
-            <KpiCard icon={Wrench} label="Manut./sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
+            <KpiCard icon={Wrench} label="Manut/sem" value={`R$${(modules.weeklyMaintenance/1000).toFixed(0)}k`} muted />
           </div>
           {ops.damages.filter(d => !d.repairing).length > 0 && (
             <div className="mt-2 rounded-md bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-[11px] text-red-300">
