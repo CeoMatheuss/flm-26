@@ -232,7 +232,7 @@ serve(async (req) => {
               'Authorization': `Bearer ${resendKey}`,
             },
             body: JSON.stringify({
-              from: 'FLM 26 <news@flm26.com.br>',
+              from: 'FLM 26 <onboarding@resend.dev>',
               to: [user.email],
               subject: 'FLM 26 - Teste do Sistema Premium',
               html: PREMIUM_EMAIL_TEMPLATE(
