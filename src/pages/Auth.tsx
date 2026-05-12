@@ -46,6 +46,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
 
   const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>('welcome');
@@ -120,7 +121,6 @@ export default function AuthPage() {
     });
     if (error) {
       const msg = error.message || '';
-      // Beta whitelist block — backend mascara com "Database error saving new user"
       const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
       const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
       if (isDuplicate) {
@@ -133,20 +133,49 @@ export default function AuthPage() {
       }
     } else {
       setPendingEmail(email);
+      // Dispara o envio do código via Edge Function
+      await supabase.functions.invoke('auth-service', {
+        body: { action: 'send-code', email }
+      });
       setStep('verify-email');
       startResendTimer();
-      toast.success('Email de verificação enviado!');
+      toast.success('Código de verificação enviado para seu email!');
     }
     setLoading(false);
+  };
+
+  const handleVerifyCode = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error('O código deve ter 6 dígitos');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('auth-service', {
+        body: { action: 'verify-code', email: pendingEmail, code: verificationCode }
+      });
+
+      if (error || data?.error) throw new Error(error?.message || data?.error);
+
+      toast.success('Conta verificada com sucesso! Você já pode entrar.');
+      setStep('login');
+      setEmail(pendingEmail);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao verificar código');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResendVerification = async () => {
     if (resendTimer > 0) return;
     setLoading(true);
-    const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-    if (error) toast.error('Erro ao reenviar email.');
+    const { error } = await supabase.functions.invoke('auth-service', {
+      body: { action: 'send-code', email: pendingEmail }
+    });
+    if (error) toast.error('Erro ao reenviar código.');
     else {
-      toast.success('Novo email de verificação enviado!');
+      toast.success('Novo código enviado!');
       startResendTimer();
     }
     setLoading(false);
@@ -187,65 +216,69 @@ export default function AuthPage() {
       <div className="min-h-screen relative flex items-center justify-center p-4">
         <img src={slides[0].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
-        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10">
-          <CardContent className="p-6 space-y-5">
+        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10 overflow-hidden">
+          {/* Neon Top Bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse" />
+          
+          <CardContent className="p-6 space-y-6">
             <div className="text-center space-y-3">
-              <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center relative">
-                <Mail className="w-10 h-10 text-primary" />
+              <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center relative transform rotate-3">
+                <ShieldCheck className="w-10 h-10 text-primary" />
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 flex items-center justify-center border-2 border-card">
                   <CheckCircle2 className="w-4 h-4 text-success" />
                 </div>
               </div>
-              <h2 className="text-xl font-black">Verifique seu Email! 📬</h2>
-              <p className="text-sm text-muted-foreground">Enviamos um link de verificação para:</p>
-              <Badge variant="secondary" className="text-xs font-bold px-4 py-1.5">{pendingEmail}</Badge>
+              <h2 className="text-2xl font-black italic uppercase tracking-tighter">Validar Manager</h2>
+              <p className="text-sm text-muted-foreground">Enviamos um código de 6 dígitos para:</p>
+              <Badge variant="secondary" className="text-xs font-bold px-4 py-1.5 bg-primary/5 border-primary/20 text-primary">{pendingEmail}</Badge>
             </div>
 
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-sm font-bold text-primary">1</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold">Abra seu email</p>
-                  <p className="text-[10px] text-muted-foreground">Verifique a caixa de entrada e spam</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-sm font-bold text-primary">2</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold">Clique no link "Confirm your mail"</p>
-                  <p className="text-[10px] text-muted-foreground">O link vai te redirecionar de volta para o jogo</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código de Verificação</label>
+                <div className="relative">
+                  <Input 
+                    placeholder="000000" 
+                    value={verificationCode} 
+                    onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="h-16 text-3xl font-black text-center tracking-[0.5em] bg-white/5 border-white/10 rounded-xl focus:border-primary/50 focus:ring-primary/20"
+                  />
+                  <div className="absolute -inset-1 bg-primary/5 blur-sm -z-10 rounded-xl" />
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-success/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-sm font-bold text-success">3</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold">Pronto! 🎮</p>
-                  <p className="text-[10px] text-muted-foreground">Sua conta será ativada automaticamente</p>
-                </div>
-              </div>
+
+              <Button 
+                onClick={handleVerifyCode} 
+                disabled={loading || verificationCode.length !== 6}
+                className="w-full h-14 text-sm font-black uppercase italic tracking-wider gap-3 rounded-xl shadow-[0_0_20px_rgba(0,242,255,0.2)]"
+              >
+                {loading ? 'Validando...' : 'Confirmar Acesso'} <ChevronRight className="w-5 h-5" />
+              </Button>
             </div>
 
-            <div className="text-center space-y-2">
-              {resendTimer > 0 ? (
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                  <Clock className="w-3 h-3" /> Reenviar em <strong className="text-primary">{resendTimer}s</strong>
-                </p>
-              ) : (
-                <Button variant="outline" size="sm" onClick={handleResendVerification} disabled={loading} className="text-xs gap-1">
-                  <RefreshCw className="w-3 h-3" /> Reenviar email de verificação
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-4">
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Problemas?</span>
+                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {resendTimer > 0 ? (
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 font-bold">
+                    <Clock className="w-3.5 h-3.5" /> Reenviar código em <strong className="text-primary">{resendTimer}s</strong>
+                  </p>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading} className="text-xs font-bold gap-2 hover:bg-white/5">
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Reenviar código de verificação
+                  </Button>
+                )}
+                
+                <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 hover:text-foreground">
+                  <ArrowLeft className="w-3 h-3 mr-2" /> Alterar Email
                 </Button>
-              )}
+              </div>
             </div>
-
-            <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
-              <ArrowLeft className="w-3 h-3" /> Voltar ao início
-            </Button>
           </CardContent>
         </Card>
       </div>

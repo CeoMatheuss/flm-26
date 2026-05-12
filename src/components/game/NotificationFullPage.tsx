@@ -57,7 +57,8 @@ const typeStyles: Record<string, { border: string; dot: string; glow: string; te
   warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]', text: 'text-amber-500' },
   info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', text: 'text-blue-500' },
   success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.2)]', text: 'text-emerald-500' },
-  premium: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
+  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
+  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_25px_rgba(34,211,238,0.5)]', text: 'text-cyan-400' },
 };
 
 const categoryIcons: Record<string, any> = {
@@ -67,6 +68,7 @@ const categoryIcons: Record<string, any> = {
   'Copa': Trophy,
   'Liga': TrophyIcon,
   'Clube': Shield,
+  'Eventos': Bell,
 };
 
 export function NotificationFullPage({ notifications, isRead, onMarkRead, onMarkAllRead, onClose, respondingId }: Props) {
@@ -94,24 +96,28 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0a0a0c]/98 backdrop-blur-xl flex flex-col animate-in fade-in zoom-in-95 duration-300">
-      {/* Premium Header */}
-      <div className="flex-shrink-0 border-b border-white/5 bg-gradient-to-b from-black/40 to-transparent">
+    <div className="fixed inset-0 z-[100] bg-[#0a0a0c]/98 backdrop-blur-3xl flex flex-col animate-in fade-in zoom-in-95 duration-300">
+      {/* Premium Header with Neon Glow */}
+      <div className="flex-shrink-0 border-b border-white/10 bg-gradient-to-b from-primary/10 to-transparent relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+        
         <div className="max-w-3xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="absolute -inset-1 bg-primary/20 blur-md rounded-full" />
-                <div className="relative flex items-center justify-center h-12 w-12 rounded-2xl bg-card border border-white/10 shadow-2xl">
-                  <Bell className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-5">
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-primary/30 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center justify-center h-14 w-14 rounded-2xl bg-black border border-white/10 shadow-[0_0_30px_rgba(0,242,255,0.15)] transform -rotate-3 transition-transform group-hover:rotate-0">
+                  <Bell className="h-7 w-7 text-primary" />
                 </div>
               </div>
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Central de Notificações</h2>
-                <div className="flex items-center gap-2">
-                   <span className="text-[11px] font-bold text-primary px-1.5 py-0.5 bg-primary/10 rounded border border-primary/20 uppercase">Premium</span>
-                   <p className="text-xs text-muted-foreground font-medium">
-                    {unreadCount > 0 ? `${unreadCount} novas mensagens` : 'Sistema operando normalmente'}
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase italic leading-none mb-1">Central de Notificações</h2>
+                <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary text-black rounded-sm text-[9px] font-black uppercase italic skew-x-[-10deg]">
+                     Live System
+                   </div>
+                   <p className="text-xs text-muted-foreground font-bold tracking-tight">
+                    {unreadCount > 0 ? `${unreadCount} NOVAS MENSAGENS` : 'SISTEMA OPERANDO NORMALMENTE'}
                   </p>
                 </div>
               </div>
@@ -120,27 +126,27 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10"
+                className="h-11 w-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5"
                 onClick={() => setSoundEnabled(!soundEnabled)}
               >
-                {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                {soundEnabled ? <Volume2 className="h-5 w-5 text-primary" /> : <VolumeX className="h-5 w-5 text-zinc-500" />}
               </Button>
               <Button 
                 onClick={onClose} 
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10 border-white/5"
+                className="h-11 w-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 group"
                 variant="outline"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-4">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Pesquisar notificações..." 
-                className="bg-white/5 border-white/10 pl-11 h-11 rounded-xl focus:ring-primary/30 text-sm"
+                placeholder="FILTRAR NOTIFICAÇÕES..." 
+                className="bg-white/5 border-white/10 pl-12 h-12 rounded-xl focus:ring-primary/30 text-sm font-bold placeholder:text-zinc-600 tracking-wider uppercase"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -148,12 +154,12 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
 
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
               <ScrollArea className="w-full whitespace-nowrap pb-2">
-                <TabsList className="bg-white/5 border border-white/5 p-1 h-auto flex gap-1">
-                  {['all', 'Jogos', 'Transferências', 'Financeiro', 'Copa', 'Liga', 'Clube'].map(cat => (
+                <TabsList className="bg-transparent h-auto flex gap-2 p-0">
+                  {['all', 'Jogos', 'Transferências', 'Financeiro', 'Copa', 'Liga', 'Clube', 'Eventos'].map(cat => (
                     <TabsTrigger 
                       key={cat} 
                       value={cat}
-                      className="rounded-lg px-4 py-2 text-[11px] font-bold uppercase tracking-wider data-[state=active]:bg-primary data-[state=active]:text-black"
+                      className="rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] border border-white/5 data-[state=active]:bg-primary data-[state=active]:text-black data-[state=active]:border-primary transition-all active:scale-95"
                     >
                       {cat === 'all' ? 'Todas' : cat}
                     </TabsTrigger>
@@ -206,17 +212,17 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
                     return (
                       <div
                         key={n.id}
-                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#151518] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-60' : ''}`}
+                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#121215] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-50 grayscale-[0.5]' : ''}`}
                         onClick={() => handleClickNotification(n)}
                       >
-                        {/* Status bar */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.dot}`} />
+                        {/* Status bar with animation */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${style.dot} group-hover:w-2 transition-all`} />
                         
-                        <div className="p-4 sm:p-5 flex items-start gap-4">
-                          <div className={`relative flex items-center justify-center h-12 w-12 rounded-xl border border-white/5 bg-black/40 shadow-inner shrink-0 transition-transform group-hover:scale-105`}>
-                            <CatIcon className={`h-5 w-5 ${style.text}`} />
+                        <div className="p-4 sm:p-5 flex items-start gap-5 relative">
+                          <div className={`relative flex items-center justify-center h-14 w-14 rounded-2xl border border-white/5 bg-black shadow-inner shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3`}>
+                            <CatIcon className={`h-6 w-6 ${style.text}`} />
                             {isPremium && (
-                              <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-ping" />
+                              <div className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-primary rounded-full border-[3px] border-[#121215] animate-pulse" />
                             )}
                           </div>
 
