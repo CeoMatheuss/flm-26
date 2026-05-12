@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ActiveMatchState {
   isInLiveMatch: boolean;
@@ -19,6 +20,7 @@ export function useActiveMatch() {
     liveMatchId: null,
     minute: 0,
   });
+  const prevMatchIdRef = useRef<string | null>(null);
 
   const checkActive = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -38,8 +40,25 @@ export function useActiveMatch() {
       .maybeSingle();
 
     if (error || !data) {
+      prevMatchIdRef.current = null;
       setState({ isInLiveMatch: false, matchId: null, liveMatchId: null, minute: 0 });
       return;
+    }
+
+    if (data.id !== prevMatchIdRef.current) {
+      const isNotificationEnabled = localStorage.getItem('flm-notifications-match') === 'true';
+      if (isNotificationEnabled) {
+        toast.info('🚀 Uma partida começou! Clique para assistir.', {
+          duration: 6000,
+          action: {
+            label: 'Assistir',
+            onClick: () => {
+              window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'matches' } }));
+            }
+          }
+        });
+      }
+      prevMatchIdRef.current = data.id;
     }
 
     setState({

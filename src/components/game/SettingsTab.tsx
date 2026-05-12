@@ -1,14 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Sun, Moon, Monitor, GraduationCap } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function SettingsTab() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('flm-theme') as 'dark' | 'light') || 'dark';
   });
   const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(true);
+  const [matchNotifications, setMatchNotifications] = useState<boolean>(() => {
+    return localStorage.getItem('flm-notifications-match') === 'true';
+  });
+  const [generalNotifications, setGeneralNotifications] = useState<boolean>(() => {
+    return localStorage.getItem('flm-notifications-general') !== 'false'; // Default true
+  });
+  const [gameSounds, setGameSounds] = useState<boolean>(() => {
+    return localStorage.getItem('flm-game-sounds') !== 'false'; // Default true
+  });
 
   useEffect(() => {
     const root = document.documentElement;
@@ -26,8 +37,47 @@ export function SettingsTab() {
     })();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('flm-notifications-match', String(matchNotifications));
+  }, [matchNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('flm-notifications-general', String(generalNotifications));
+  }, [generalNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('flm-game-sounds', String(gameSounds));
+  }, [gameSounds]);
+
+  const toggleMatchNotifications = (checked: boolean) => {
+    setMatchNotifications(checked);
+    if (checked) {
+      toast.success('Notificações de partida ativadas!');
+    } else {
+      toast.info('Notificações de partida desativadas.');
+    }
+  };
+
+  const toggleGeneralNotifications = (checked: boolean) => {
+    setGeneralNotifications(checked);
+    if (checked) {
+      toast.success('Notificações gerais ativadas!');
+    } else {
+      toast.info('Notificações gerais desativadas.');
+    }
+  };
+
+  const toggleGameSounds = (checked: boolean) => {
+    setGameSounds(checked);
+    if (checked) {
+      toast.success('Sons do jogo ativados!');
+    } else {
+      toast.info('Sons do jogo desativados.');
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-10">
       <div className="flex items-center gap-2">
         <Settings className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-bold">Sistema</h2>
@@ -100,6 +150,67 @@ export function SettingsTab() {
                 </div>
               )}
             </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bell className="h-4 w-4 text-primary" />
+            Notificações
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Escolha quais alertas deseja receber.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Início de Partida</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Aviso visual ao iniciar um jogo.</p>
+            </div>
+            <Switch 
+              checked={matchNotifications} 
+              onCheckedChange={toggleMatchNotifications}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Notificações Gerais</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Leilões, propostas e mercado.</p>
+            </div>
+            <Switch 
+              checked={generalNotifications} 
+              onCheckedChange={toggleGeneralNotifications}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Volume2 className="h-4 w-4 text-primary" />
+            Áudio
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Configure os efeitos sonoros.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">Sons do Jogo</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Efeitos de clique e interface.</p>
+            </div>
+            <Switch 
+              checked={gameSounds} 
+              onCheckedChange={toggleGameSounds}
+            />
           </div>
         </CardContent>
       </Card>

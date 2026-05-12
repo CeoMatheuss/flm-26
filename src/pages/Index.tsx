@@ -376,6 +376,19 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => window.removeEventListener('flm:open-club-profile', handler);
   }, [handleSetViewedClubName]);
 
+  // Handle generic navigation via events
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail?.tab) {
+        setActiveTab(e.detail.tab);
+        if (e.detail.tournamentId) setActiveTournamentId(e.detail.tournamentId);
+      }
+    };
+    window.addEventListener('flm:navigate-to-tab', handler);
+    return () => window.removeEventListener('flm:navigate-to-tab', handler);
+  }, []);
+
+
   // Sync state between saves
   const handleClubViewClose = useCallback(() => {
     handleSetViewedClubName(null);
