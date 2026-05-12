@@ -32,10 +32,34 @@ export function SettingsTab() {
       const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', user.id).maybeSingle();
       setTutorialCompleted(!!(data as any)?.tutorial_completed);
     })();
-  }, []);
+  useEffect(() => {
+    localStorage.setItem('flm-notifications-match', String(matchNotifications));
+  }, [matchNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('flm-notifications-general', String(generalNotifications));
+  }, [generalNotifications]);
+
+  const toggleMatchNotifications = (checked: boolean) => {
+    setMatchNotifications(checked);
+    if (checked) {
+      toast.success('Notificações de partida ativadas!');
+    } else {
+      toast.info('Notificações de partida desativadas.');
+    }
+  };
+
+  const toggleGeneralNotifications = (checked: boolean) => {
+    setGeneralNotifications(checked);
+    if (checked) {
+      toast.success('Notificações gerais ativadas!');
+    } else {
+      toast.info('Notificações gerais desativadas.');
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-10">
       <div className="flex items-center gap-2">
         <Settings className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-bold">Sistema</h2>
