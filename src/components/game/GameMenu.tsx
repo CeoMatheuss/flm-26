@@ -78,6 +78,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">⚙️ Sistema</p>
         <DropdownMenuItem onClick={() => onTabChange('settings')} className="menu-item"><Settings className="h-3.5 w-3.5 text-primary/70" /> Configurações <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.open('https://www.instagram.com/footballlifemanager26/', '_blank')} className="menu-item"><Instagram className="h-3.5 w-3.5 text-pink-500" /> Instagram <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('support')} className="menu-item"><LifeBuoy className="h-3.5 w-3.5 text-primary/70" /> Suporte <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('terms')} className="menu-item"><FileText className="h-3.5 w-3.5 text-primary/70" /> Termos de Uso <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         {!tutorialCompleted && <DropdownMenuItem onClick={onShowTutorial} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
