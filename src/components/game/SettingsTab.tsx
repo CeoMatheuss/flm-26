@@ -32,6 +32,8 @@ export function SettingsTab() {
       const { data } = await supabase.from('profiles').select('tutorial_completed').eq('user_id', user.id).maybeSingle();
       setTutorialCompleted(!!(data as any)?.tutorial_completed);
     })();
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('flm-notifications-match', String(matchNotifications));
   }, [matchNotifications]);
