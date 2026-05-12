@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Trophy, Loader2, CheckCircle2, Calendar, Target, Swords, 
   TrendingUp, Users, Star, Newspaper, MessageSquare, 
-  ChevronLeft, ChevronRight, Activity, Zap
+  ChevronLeft, ChevronRight, Activity, Zap, Globe
 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 interface Props {
   clubName: string;
