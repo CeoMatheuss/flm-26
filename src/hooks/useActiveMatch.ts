@@ -20,6 +20,7 @@ export function useActiveMatch() {
     liveMatchId: null,
     minute: 0,
   });
+  const prevMatchIdRef = useRef<string | null>(null);
 
   const checkActive = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
