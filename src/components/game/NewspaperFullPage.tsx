@@ -241,48 +241,57 @@ export function NewspaperFullPage({ onBack }: Props) {
           {featuredEntries.length > 0 && !categoryFilter && (
             <div className="space-y-2">
               {featuredEntries.map((item) => {
-                const key = detectImageKey(item)!;
-                const preset = IMAGE_PRESETS[key];
+                const key = detectImageKey(item);
+                const preset = key ? IMAGE_PRESETS[key] : null;
+                const imageSrc = item.image_url || preset?.src;
+                const label = preset?.label || item.category;
+                const gradient = preset?.gradient || 'from-primary/80 via-primary/40';
+                
                 const lines = item.text.split('\n').filter(Boolean);
                 const headline = lines[0] || item.text;
                 const body = lines.slice(1).join(' ').trim();
+                
                 return (
-                  <Card key={item.id} className="border-amber-500/40 overflow-hidden bg-gradient-to-br from-amber-500/5 to-transparent">
+                  <Card key={item.id} className="border-border/50 overflow-hidden bg-gradient-to-br from-card to-primary/5 hover:border-primary/30 transition-all duration-500 group">
                     <CardContent className="p-0">
-                      <div className="relative w-full overflow-hidden">
-                        <img
-                          src={preset.src}
-                          alt={preset.label}
-                          loading="lazy"
-                          width={1280}
-                          height={640}
-                          className="w-full h-40 sm:h-48 object-cover"
-                        />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${preset.gradient} to-transparent`} />
+                      <div className="relative w-full overflow-hidden aspect-video sm:aspect-[21/9]">
+                        {imageSrc ? (
+                          <img
+                            src={imageSrc}
+                            alt={label}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted animate-pulse" />
+                        )}
+                        <div className={`absolute inset-0 bg-gradient-to-t ${gradient} to-transparent opacity-90 group-hover:opacity-100 transition-opacity`} />
                         <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                          <span className="text-[9px] font-black text-white px-2 py-0.5 rounded bg-amber-500/90 shadow-lg flex items-center gap-1">
-                            <Sparkles className="h-3 w-3" /> {preset.label}
+                          <span className={`text-[9px] font-black text-white px-2 py-0.5 rounded shadow-lg flex items-center gap-1 ${preset ? 'bg-amber-500/90' : 'bg-primary/90'}`}>
+                            <Sparkles className="h-3 w-3" /> {label}
                           </span>
                         </div>
-                        <div className="absolute bottom-0 inset-x-0 p-3 sm:p-4">
-                          <h3 className="text-sm sm:text-lg font-black text-white drop-shadow-lg leading-tight">
+                        <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent">
+                          <h3 className="text-base sm:text-xl font-black text-white drop-shadow-xl leading-tight uppercase italic tracking-tighter">
                             {headline}
                           </h3>
                           {body && (
-                            <p className="text-[11px] sm:text-xs text-white/90 mt-1 line-clamp-2 drop-shadow">
+                            <p className="text-[11px] sm:text-xs text-white/90 mt-1 line-clamp-2 drop-shadow font-medium">
                               {body}
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="px-3 py-2 flex items-center justify-between">
-                        <span className="text-[8px] text-muted-foreground">
+                      <div className="px-3 py-2 flex items-center justify-between bg-muted/20 backdrop-blur-sm">
+                        <span className="text-[9px] text-muted-foreground font-mono flex items-center gap-1">
+                          <Newspaper className="h-3 w-3" />
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <div className="flex items-center gap-1">
+                          {/* Reactions (keep existing code) */}
                           {(reactions[item.id] || []).map(emoji => (
                             <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
-                              className="text-sm px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25">
+                              className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 hover:bg-primary/20">
                               {emoji}
                             </button>
                           ))}
@@ -292,7 +301,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                               <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
                             </button>
                             {showReactionPicker === item.id && (
-                              <div className="absolute bottom-full right-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                              <div className="absolute bottom-full right-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
                                 {REACT_EMOJIS.map(emoji => (
                                   <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
                                     className={`text-sm p-1 rounded hover:bg-muted ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}>
