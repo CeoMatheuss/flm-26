@@ -39,6 +39,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 4000000,
+        navigateFallbackDenylist: [/^\/~oauth/],
       }
     }),
   ].filter(Boolean),
