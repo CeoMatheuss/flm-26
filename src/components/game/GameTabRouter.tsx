@@ -112,6 +112,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onGoToFriendly={() => setActiveTab('matches')} 
           userId={userId} 
           onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} 
+          onExploreOtherModes={() => setActiveTab('copas')}
           clubProfile={game.clubProfile} 
           season={game.season?.currentSeason} 
           currentWeek={game.season?.currentWeek} 
