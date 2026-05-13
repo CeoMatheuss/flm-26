@@ -4789,6 +4789,10 @@ export type Database = {
         Returns: Json
       }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
+      process_league_waiting_list: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
       process_season_transition:
         | { Args: never; Returns: undefined }
         | { Args: { _country: string }; Returns: undefined }
