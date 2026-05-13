@@ -28,12 +28,10 @@ function simulate(homeStr: number, awayStr: number) {
   };
 }
 
-// Auxiliar para distribuir estatísticas entre jogadores
 function distributeStats(players: any[], goals: number, goalsConceded: number, isWinner: boolean) {
   const statsUpdates: any[] = [];
   const scorers: string[] = [];
   
-  // Sort players by position weights for goals
   const getWeight = (pos: string) => {
     if (pos === 'ATA') return 10;
     if (pos === 'MEI') return 5;
@@ -42,13 +40,12 @@ function distributeStats(players: any[], goals: number, goalsConceded: number, i
     return 0;
   };
 
-  // Assign goals
   let remainingGoals = goals;
   while (remainingGoals > 0 && players.length > 0) {
     const pool = players.filter(p => p.position !== 'GOL');
     if (pool.length === 0) break;
-    
     const totalWeight = pool.reduce((acc, p) => acc + getWeight(p.position) * (p.overall / 50), 0);
+    if (totalWeight <= 0) break;
     let r = Math.random() * totalWeight;
     for (const p of pool) {
       r -= getWeight(p.position) * (p.overall / 50);
@@ -61,11 +58,12 @@ function distributeStats(players: any[], goals: number, goalsConceded: number, i
     }
   }
 
-  // Assign assists (70% of goals have assists)
   let remainingAssists = Math.floor(goals * 0.7);
   while (remainingAssists > 0 && players.length > 0) {
     const pool = players.filter(p => p.position !== 'GOL');
+    if (pool.length === 0) break;
     const totalWeight = pool.reduce((acc, p) => acc + (p.position === 'MEI' ? 10 : 5) * (p.overall / 50), 0);
+    if (totalWeight <= 0) break;
     let r = Math.random() * totalWeight;
     for (const p of pool) {
       r -= (p.position === 'MEI' ? 10 : 5) * (p.overall / 50);
@@ -77,9 +75,8 @@ function distributeStats(players: any[], goals: number, goalsConceded: number, i
     }
   }
 
-  // Generate ratings and other stats
   for (const p of players) {
-    let rating = 6.0 + (Math.random() * 2 - 1); // Base 5-7
+    let rating = 6.0 + (Math.random() * 2 - 1);
     if (p.goals) rating += p.goals * 1.5;
     if (p.assists) rating += p.assists * 0.8;
     if (isWinner) rating += 0.5;
@@ -87,9 +84,7 @@ function distributeStats(players: any[], goals: number, goalsConceded: number, i
       rating += 1.0;
       p.clean_sheets = 1;
     }
-    if (p.position === 'GOL') {
-      p.goals_conceded = goalsConceded;
-    }
+    if (p.position === 'GOL') p.goals_conceded = goalsConceded;
 
     statsUpdates.push({
       player_id: p.id,
@@ -104,227 +99,118 @@ function distributeStats(players: any[], goals: number, goalsConceded: number, i
       minutes_played: 90,
       yellow_cards: Math.random() < 0.15 ? 1 : 0,
       red_cards: Math.random() < 0.02 ? 1 : 0,
-      motm_count: 0 // Will decide outside
+      motm_count: 0
     });
   }
 
-  // Decide MOTM (highest rating)
   if (statsUpdates.length > 0) {
     const best = statsUpdates.reduce((prev, curr) => (prev.avg_rating > curr.avg_rating) ? prev : curr);
     best.motm_count = 1;
   }
-
-  return statsUpdates;
+  return { statsUpdates, scorers };
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const now = new Date();
+  let totalProcessed = 0;
 
   try {
-    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const now = new Date();
-    let totalProcessed = 0;
+    // --- 1. LEAGUE MATCHES ---
+    const { data: wMatches } = await sb.from("world_matches").select(`*, 
+      home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength, user_id),
+      away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength, user_id)
+    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
 
-    // --- 1. PROCESS WORLD LEAGUE MATCHES ---
-    const { data: wMatches, error: wErr } = await sb
-      .from("world_matches")
-      .select(`
-        id, league_id, home_team_id, away_team_id, round, season_month, season_year,
-        home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength, user_id),
-        away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength, user_id)
-      `)
-      .eq("status", "scheduled")
-      .lte("scheduled_at", now.toISOString())
-      .order("scheduled_at", { ascending: true })
-      .limit(20);
-
-    if (!wErr && wMatches) {
-      for (const match of wMatches) {
-        const { data: live } = await sb.from('live_matches').select('id').eq('shared_match_id', match.id).limit(1).maybeSingle();
+    if (wMatches) {
+      for (const m of wMatches) {
+        const { data: live } = await sb.from('live_matches').select('id').eq('shared_match_id', m.id).limit(1).maybeSingle();
         if (live) continue;
 
-        const homeStr = match.home_team?.strength || 65;
-        const awayStr = match.away_team?.strength || 65;
-        const { home: hg, away: ag } = simulate(homeStr, awayStr);
+        const { home: hg, away: ag } = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
+        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id);
+        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id);
+        
+        const hRes = distributeStats(hPlayers || [], hg, ag, hg > ag);
+        const aRes = distributeStats(aPlayers || [], ag, hg, ag > hg);
 
-        // Fetch players for stats
-        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', match.home_team_id);
-        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', match.away_team_id);
-
-        const hStats = distributeStats(hPlayers || [], hg, ag, hg > ag);
-        const aStats = distributeStats(aPlayers || [], ag, hg, ag > hg);
-
-        // Persist Stats using batch RPC
-        if (hStats.length > 0) {
-          await sb.rpc('batch_upsert_player_stats', {
-            _table_name: 'world_player_stats',
-            _comp_id_field: 'league_id',
-            _comp_id: match.league_id,
-            _team_id_field: 'team_id',
-            _updates: hStats.map(s => ({ ...s, season_month: match.season_month, season_year: match.season_year }))
-          });
-        }
-        if (aStats.length > 0) {
-          await sb.rpc('batch_upsert_player_stats', {
-            _table_name: 'world_player_stats',
-            _comp_id_field: 'league_id',
-            _comp_id: match.league_id,
-            _team_id_field: 'team_id',
-            _updates: aStats.map(s => ({ ...s, season_month: match.season_month, season_year: match.season_year }))
-          });
+        // Batch Persist
+        for (const stats of [hRes.statsUpdates, aRes.statsUpdates]) {
+          if (stats.length > 0) {
+            await sb.rpc('batch_upsert_player_stats', {
+              _table_name: 'world_player_stats', _comp_id_field: 'league_id', _comp_id: m.league_id, _team_id_field: 'team_id',
+              _updates: stats.map(s => ({ ...s, season_month: m.season_month, season_year: m.season_year }))
+            });
+          }
         }
 
-        await sb.from("world_matches").update({
-          home_goals: hg,
-          away_goals: ag,
-          status: "finished",
-          played_at: now.toISOString()
-        }).eq("id", match.id);
+        // News
+        const newsTitle = `${m.home_team.name} ${hg} x ${ag} ${m.away_team.name}`;
+        const newsContent = hg === ag ? "Empate eletrizante em campo!" : `${hg > ag ? m.home_team.name : m.away_team.name} domina o adversário e garante 3 pontos.`;
+        await sb.from('world_league_news').insert({ league_id: m.league_id, match_id: m.id, title: newsTitle, content: newsContent });
 
-        totalProcessed++;
-
-        // Update Table
-        const teams = [
-          { id: match.home_team_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag },
-          { id: match.away_team_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }
-        ];
-
-        for (const t of teams) {
-          const { data: row } = await sb.from("world_league_table")
-            .select("*")
-            .eq("team_id", t.id)
-            .eq("league_id", match.league_id)
-            .eq("season_month", match.season_month)
-            .eq("season_year", match.season_year)
-            .maybeSingle();
-
+        // Update Match & Table
+        await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
+        
+        for (const t of [{ id: m.home_team_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag }, { id: m.away_team_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }]) {
+          const { data: row } = await sb.from("world_league_table").select("*").eq("team_id", t.id).eq("league_id", m.league_id).eq("season_month", m.season_month).eq("season_year", m.season_year).maybeSingle();
           if (row) {
-            const resChar = t.win ? 'V' : (t.draw ? 'E' : 'D');
-            const newForm = ((row.last_5_games || '').replace(/-/g, '') + resChar).slice(-5);
+            const res = t.win ? 'V' : (t.draw ? 'E' : 'D');
+            const newForm = ((row.last_5_games || '').replace(/-/g, '') + res).slice(-5);
             await sb.from("world_league_table").update({
-              played: row.played + 1,
-              wins: row.wins + (t.win ? 1 : 0),
-              draws: row.draws + (t.draw ? 1 : 0),
-              losses: row.losses + (!t.win && !t.draw ? 1 : 0),
-              goals_for: row.goals_for + t.gf,
-              goals_against: row.goals_against + t.ga,
-              points: row.points + (t.win ? 3 : t.draw ? 1 : 0),
-              last_5_games: newForm,
-              win_rate: ((row.wins + (t.win ? 1 : 0)) / (row.played + 1)) * 100
+              played: row.played + 1, wins: row.wins + (t.win ? 1 : 0), draws: row.draws + (t.draw ? 1 : 0),
+              losses: row.losses + (!t.win && !t.draw ? 1 : 0), goals_for: row.goals_for + t.gf, goals_against: row.goals_against + t.ga,
+              points: row.points + (t.win ? 3 : t.draw ? 1 : 0), last_5_games: newForm, win_rate: ((row.wins + (t.win ? 1 : 0)) / (row.played + 1)) * 100
             }).eq("id", row.id);
           }
         }
-      }
-    }
-
-    // --- 2. PROCESS NATIONAL CUP MATCHES ---
-    const { data: cMatches, error: cErr } = await sb
-      .from("national_cup_matches")
-      .select(`
-        *,
-        home_team:national_cup_teams!national_cup_matches_home_team_id_fkey(*),
-        away_team:national_cup_teams!national_cup_matches_away_team_id_fkey(*)
-      `)
-      .eq("status", "scheduled")
-      .lte("scheduled_at", now.toISOString())
-      .limit(20);
-
-    if (!cErr && cMatches) {
-      for (const match of cMatches) {
-        const { data: cupStatus } = await sb.from('national_cups').select('status').eq('id', match.cup_id).single();
-        if (cupStatus?.status !== 'in_progress') continue;
-
-        const homeStr = match.home_team?.strength || 65;
-        const awayStr = match.away_team?.strength || 65;
-        const { home: hg, away: ag } = simulate(homeStr, awayStr);
-
-        let homeScore = hg;
-        let awayScore = ag;
-        let winnerId = homeScore > awayScore ? match.home_team_id : (awayScore > homeScore ? match.away_team_id : null);
-        
-        if (homeScore === awayScore) {
-          const homePen = Math.floor(Math.random() * 6) + 3;
-          let awayPen = Math.floor(Math.random() * 6) + 3;
-          while (homePen === awayPen) awayPen = Math.floor(Math.random() * 6) + 3;
-          winnerId = homePen > awayPen ? match.home_team_id : match.away_team_id;
-          
-          await sb.from("national_cup_matches").update({
-            home_penalties: homePen,
-            away_penalties: awayPen
-          }).eq("id", match.id);
-        }
-
-        // Stats for Cup
-        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', match.home_team_id);
-        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', match.away_team_id);
-        
-        const hStats = distributeStats(hPlayers || [], hg, ag, winnerId === match.home_team_id);
-        const aStats = distributeStats(aPlayers || [], ag, hg, winnerId === match.away_team_id);
-
-        if (hStats.length > 0) {
-          await sb.rpc('batch_upsert_player_stats', {
-            _table_name: 'cup_player_stats',
-            _comp_id_field: 'cup_id',
-            _comp_id: match.cup_id,
-            _team_id_field: 'team_id',
-            _updates: hStats
-          });
-        }
-        if (aStats.length > 0) {
-          await sb.rpc('batch_upsert_player_stats', {
-            _table_name: 'cup_player_stats',
-            _comp_id_field: 'cup_id',
-            _comp_id: match.cup_id,
-            _team_id_field: 'team_id',
-            _updates: aStats
-          });
-        }
-
-        await sb.from("national_cup_matches").update({
-          home_score: homeScore,
-          away_score: awayScore,
-          status: "finished",
-          winner_team_id: winnerId
-        }).eq("id", match.id);
-
         totalProcessed++;
-
-        const loserId = winnerId === match.home_team_id ? match.away_team_id : match.home_team_id;
-        await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
-        await sb.from('national_cup_prizes').insert({
-          cup_id: match.cup_id,
-          team_id: winnerId,
-          amount: 50000,
-          description: `Vitória na Rodada ${match.round}`
-        });
       }
     }
 
-    // --- 3. AUTO-UPDATE LEAGUE ROUNDS ---
-    const { data: activeLeagues } = await sb
-      .from("world_leagues")
-      .select("id, season_started_at, current_round")
-      .eq("status", "in_progress");
+    // --- 2. CUP MATCHES ---
+    const { data: cMatches } = await sb.from("national_cup_matches").select(`*, 
+      home_team:national_cup_teams!national_cup_matches_home_team_id_fkey(*),
+      away_team:national_cup_teams!national_cup_matches_away_team_id_fkey(*)
+    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
 
-    if (activeLeagues) {
-      for (const league of activeLeagues) {
-        if (!league.season_started_at) continue;
-        const start = new Date(league.season_started_at);
-        const elapsedMs = now.getTime() - start.getTime();
-        const daysElapsed = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
-        const targetRound = Math.min(38, Math.max(1, daysElapsed + 1));
-        if (targetRound !== league.current_round) {
-          await sb.from("world_leagues").update({ current_round: targetRound }).eq("id", league.id);
+    if (cMatches) {
+      for (const m of cMatches) {
+        const { data: cs } = await sb.from('national_cups').select('status').eq('id', m.cup_id).single();
+        if (cs?.status !== 'in_progress') continue;
+
+        const { home: hg, away: ag } = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
+        let winnerId = hg > ag ? m.home_team_id : (ag > hg ? m.away_team_id : null);
+        let hPen = null, aPen = null;
+
+        if (hg === ag) {
+          hPen = Math.floor(Math.random() * 6) + 3;
+          aPen = Math.floor(Math.random() * 6) + 3;
+          while (hPen === aPen) aPen = Math.floor(Math.random() * 6) + 3;
+          winnerId = hPen > aPen ? m.home_team_id : m.away_team_id;
         }
+
+        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id);
+        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id);
+        const hRes = distributeStats(hPlayers || [], hg, ag, winnerId === m.home_team_id);
+        const aRes = distributeStats(aPlayers || [], ag, hg, winnerId === m.away_team_id);
+
+        for (const stats of [hRes.statsUpdates, aRes.statsUpdates]) {
+          if (stats.length > 0) await sb.rpc('batch_upsert_player_stats', { _table_name: 'cup_player_stats', _comp_id_field: 'cup_id', _comp_id: m.cup_id, _team_id_field: 'team_id', _updates: stats });
+        }
+
+        await sb.from('cup_news').insert({ cup_id: m.cup_id, title: `Copa: ${m.home_team.club_name} ${hg}x${ag} ${m.away_team.club_name}`, content: `Duelo intenso na Copa Nacional. ${winnerId === m.home_team_id ? m.home_team.club_name : m.away_team.club_name} avança!` });
+        await sb.from("national_cup_matches").update({ home_score: hg, away_score: ag, home_penalties: hPen, away_penalties: aPen, status: "finished", winner_team_id: winnerId }).eq("id", m.id);
+        const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+        await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
+        await sb.from('national_cup_prizes').insert({ cup_id: m.cup_id, team_id: winnerId, amount: 50000, description: `Vitória na Rodada ${m.round}` });
+        totalProcessed++;
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, processed: totalProcessed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true, processed: totalProcessed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
