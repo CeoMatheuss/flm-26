@@ -81,50 +81,59 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
           <span className="text-[8px] sm:text-[10px] text-muted-foreground">Global • Online</span>
         </div>
       </CardHeader>
-      <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2">
+      <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-primary/60" />
           </div>
         ) : main ? (
           <>
-            <div className="border-b border-border/50 pb-2">
-              <span className={`text-[8px] sm:text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${categoryColors[main.category] || 'bg-primary'}`}>
-                {main.category}
-              </span>
-              {(() => {
-                const LIMIT = 90;
-                const isLong = (main.text || '').length > LIMIT;
-                const preview = isLong ? main.text.slice(0, LIMIT).trimEnd() + '…' : main.text;
-                return (
-                  <>
-                    <h3 className="text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2">{preview}</h3>
-                    {isLong && onOpenFullPage && (
-                      <button
-                        onClick={onOpenFullPage}
-                        className="text-[10px] font-semibold text-primary hover:underline mt-0.5"
-                      >
-                        Ver mais →
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
-              <p className="text-[8px] text-muted-foreground mt-0.5">
+            {/* Main Story with possible Image */}
+            <div className="group cursor-pointer" onClick={onOpenFullPage}>
+              {main.image_url ? (
+                <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
+                  <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-1`}>
+                      {main.category}
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-b border-border/50 pb-2 mb-2">
+                   <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-2`}>
+                      {main.category}
+                    </Badge>
+                </div>
+              )}
+              
+              <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${main.image_url ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
+                {main.text.split(': ')[1] || main.text}
+              </h3>
+              
+              <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-primary" />
                 {new Date(main.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
+
+            {/* Secondary Stories */}
             {secondary.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-2 pt-1">
                 {secondary.map((item) => {
                   const LIMIT = 70;
-                  const isLong = (item.text || '').length > LIMIT;
-                  const preview = isLong ? item.text.slice(0, LIMIT).trimEnd() + '…' : item.text;
+                  const textOnly = item.text.includes(': ') ? item.text.split(': ')[1] : item.text;
+                  const preview = textOnly.length > LIMIT ? textOnly.slice(0, LIMIT).trimEnd() + '…' : textOnly;
                   return (
-                    <div key={item.id} className="flex items-start gap-1.5">
-                      <span className="text-[8px] text-primary font-bold mt-0.5">▸</span>
-                      <p className="text-[9px] sm:text-[11px] text-muted-foreground leading-snug flex-1 line-clamp-2">{preview}</p>
-                      <Badge variant="outline" className="text-[7px] px-1 py-0 h-3.5 shrink-0">{item.category}</Badge>
+                    <div key={item.id} className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors group/item">
+                      <div className="w-1 h-8 bg-muted group-hover/item:bg-primary transition-colors rounded-full" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-[7px] font-black text-primary uppercase tracking-tighter">{item.category}</span>
+                        </div>
+                        <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight line-clamp-2">{preview}</p>
+                      </div>
                     </div>
                   );
                 })}
@@ -132,12 +141,12 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
             )}
           </>
         ) : (
-          <p className="text-xs text-muted-foreground text-center py-3">Nenhuma notícia ainda</p>
+          <p className="text-xs text-muted-foreground text-center py-8">Nenhuma notícia ainda</p>
         )}
 
         {onOpenFullPage && (
-          <Button variant="secondary" size="sm" className="w-full h-7 text-[10px] sm:text-xs gap-1" onClick={onOpenFullPage}>
-            <ExternalLink className="h-3 w-3" /> Ver Mais no Jornal
+          <Button variant="outline" size="sm" className="w-full h-8 text-[10px] sm:text-xs gap-2 border-primary/20 hover:bg-primary/5 hover:border-primary/40 font-black tracking-widest uppercase" onClick={onOpenFullPage}>
+            <ExternalLink className="h-3.5 w-3.5" /> ACESSAR PORTAL COMPLETO
           </Button>
         )}
       </CardContent>
