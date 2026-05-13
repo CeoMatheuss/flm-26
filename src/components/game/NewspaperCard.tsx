@@ -53,10 +53,10 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
     const merged: NewsEntry[] = [];
     if (mainNews) merged.push(...(mainNews as any[]));
     if (leagueNews) {
-      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, template_key: ln.template_key, metadata: ln.metadata }); });
+      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, template_key: ln.template_key as TemplateKey, metadata: ln.metadata }); });
     }
     if (cupNews) {
-      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, template_key: cn.template_key, metadata: cn.metadata }); });
+      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, template_key: cn.template_key as TemplateKey, metadata: cn.metadata }); });
     }
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setNews(merged.slice(0, 8));
