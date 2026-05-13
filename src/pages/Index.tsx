@@ -801,7 +801,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
       <GameHeader club={game.club} season={game.season} infrastructure={game.infrastructure} listedPlayers={game.listedForSale} userId={userId} isNewClub={isNewClub} onSignOut={onSignOut} />
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
             <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />

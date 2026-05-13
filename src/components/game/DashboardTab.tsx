@@ -171,7 +171,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">
-      {/* Top section: full width alerts */}
+      {/* Fatigue Warning V4 */}
       {showFatigueWarning && (
         <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
           <CardContent className="p-4">
@@ -203,12 +203,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </CardContent>
         </Card>
       )}
-
-      {/* Main responsive grid: 1 col mobile, 12 cols on lg+ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
-
-      {/* === LEFT COLUMN (Identity + Match) === */}
-      <div className="lg:col-span-5 xl:col-span-4 space-y-3 sm:space-y-4">
 
       {/* Club Info Widget */}
       <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
@@ -329,12 +323,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} stadiumLevel={stadiumLevel} />
 
-      </div>
-      {/* === END LEFT COLUMN === */}
-
-      {/* === RIGHT COLUMN (Performance + Feed) === */}
-      <div className="lg:col-span-7 xl:col-span-8 space-y-3 sm:space-y-4">
-
       {/* Stats Row — Refeito como widget de Ranking e Reputação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Card className="game-card border-primary/20 bg-primary/5">
@@ -428,7 +416,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       <LeagueStandingsMini userId={userId} />
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Events Feed */}
         {recentEvents.length > 0 && (
           <Card className="game-card-accent">
@@ -604,12 +592,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </div>
         </CardContent>
       </Card>
-
-      </div>
-      {/* === END RIGHT COLUMN === */}
-
-      </div>
-      {/* === END MAIN GRID === */}
     </div>
   );
 }
