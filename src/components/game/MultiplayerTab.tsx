@@ -1270,7 +1270,13 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
                   <TableCell className="font-medium">{s.player_name}</TableCell>
                   <TableCell className="text-muted-foreground">{s.team_name}</TableCell>
                   <TableCell className="text-right font-bold">
-                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : activeStat === 'goals' ? s.goals : s.assists}
+                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : 
+                     activeStat === 'goals' ? s.goals : 
+                     activeStat === 'assists' ? s.assists :
+                     activeStat === 'motm_count' ? s.motm_count :
+                     activeStat === 'clean_sheets' ? s.clean_sheets :
+                     activeStat === 'yellow_cards' ? s.yellow_cards : s.red_cards}
+
                   </TableCell>
                 </TableRow>
               ))
