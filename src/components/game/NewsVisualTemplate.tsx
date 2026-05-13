@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ClubShield } from './ClubShield';
-import { Trophy, Star, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
+import { Trophy, Star, TrendingUp, TrendingDown, Target, Zap, Activity, Newspaper } from 'lucide-react';
 import leagueBg from '@/assets/news-league-champion.jpg';
 import cupBg from '@/assets/news-cup-champion.jpg';
 import ballonDorBg from '@/assets/news-ballon-dor.jpg';
