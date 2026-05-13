@@ -4461,6 +4461,16 @@ export type Database = {
         Args: { _cup_id: string }
         Returns: undefined
       }
+      batch_upsert_player_stats: {
+        Args: {
+          _comp_id: string
+          _comp_id_field: string
+          _table_name: string
+          _team_id_field: string
+          _updates: Json
+        }
+        Returns: undefined
+      }
       bot_strength_for_division: {
         Args: { _division: number }
         Returns: number
