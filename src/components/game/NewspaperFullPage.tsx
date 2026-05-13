@@ -178,8 +178,8 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   // Promote up to 3 most recent special-event news to the top in their own hero layout.
   const featuredEntries = filteredEntries
-    .filter(e => e.is_event && detectImageKey(e))
-    .slice(0, 3);
+    .filter(e => (e.is_event && detectImageKey(e)) || e.image_url || (e.importance && e.importance >= 2))
+    .slice(0, 4);
   const featuredIds = new Set(featuredEntries.map(e => e.id));
   const restEntries = filteredEntries.filter(e => !featuredIds.has(e.id));
   const visibleEntries = showMore ? restEntries : restEntries.slice(0, 30);
