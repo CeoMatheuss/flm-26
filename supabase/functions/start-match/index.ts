@@ -1579,7 +1579,196 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Failed to create match' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Insert match history
+    // --- 3. PERSISTENCE & STATISTICS SYNC ---
+    const isLeagueMatch = String(competition).toLowerCase().includes('liga') || String(matchId).length === 36;
+    const isCupMatch = String(competition).toLowerCase().includes('copa') || String(competition).toLowerCase().includes('cup');
+
+    // Helper: Update Player Stats (League or Cup)
+    const updateStatsForCompetition = async (
+      compType: 'league' | 'cup',
+      compId: string,
+      teamId: string, // member_id for league, team_id for cup
+      players: SimPlayer[],
+      teamGoalsAgainst: number,
+      isWinner: boolean
+    ) => {
+      const statsTable = compType === 'league' ? 'league_player_stats' : 'cup_player_stats';
+      const idField = compType === 'league' ? 'league_id' : 'cup_id';
+      const teamField = compType === 'league' ? 'member_id' : 'team_id';
+
+      for (const p of players) {
+        if (!p.isOnPitch && p.goals === 0 && p.assists === 0 && p.yellowCards === 0) continue;
+
+        const isGK = p.position === 'GOL';
+        const cleanSheet = isGK && teamGoalsAgainst === 0 ? 1 : 0;
+        const conceded = isGK ? teamGoalsAgainst : 0;
+        const isMOTM = result.manOfTheMatch === p.name ? 1 : 0;
+
+        // Collect card data from events for this specific player
+        const playerYellows = result.events.filter(e => e.type === 'yellow_card' && e.playerName === p.name).length;
+        const playerReds = result.events.filter(e => e.type === 'red_card' && e.playerName === p.name).length;
+
+        // Prepare the upsert data
+        const statData: any = {
+          [idField]: compId,
+          [teamField]: teamId,
+          player_name: p.name,
+          goals: p.goals,
+          assists: p.assists,
+          matches_played: 1,
+          yellow_cards: playerYellows,
+          red_cards: playerReds,
+          clean_sheets: cleanSheet,
+          goals_conceded: conceded,
+          motm_count: isMOTM,
+          minutes_played: p.isOnPitch ? 90 : 0, // Simplified, could be more precise
+          team_name: p.team === 'home' ? effHomeTeam : effAwayTeam
+        };
+
+        if (compType === 'league') {
+          statData.total_rating = p.rating;
+        } else {
+          statData.avg_rating = p.rating;
+          statData.player_id = p.id;
+        }
+
+        // RPC to handle atomic increment/update to avoid race conditions and duplicates
+        await adminClient.rpc('upsert_player_stats', {
+          _table_name: statsTable,
+          _comp_id_field: idField,
+          _comp_id: compId,
+          _team_id_field: teamField,
+          _team_id: teamId,
+          _player_name: p.name,
+          _stats: statData
+        });
+      }
+    };
+
+    // Determine competition details and update match tables
+    try {
+      // 3.1. League Match Logic
+      const { data: leagueMatch } = await adminClient
+        .from('league_matches')
+        .select('league_id, home_team_id, away_team_id')
+        .eq('id', String(matchId))
+        .maybeSingle();
+
+      if (leagueMatch) {
+        console.info('[Sync] Updating league_matches', { matchId });
+        await adminClient.from('league_matches').update({
+          home_goals: result.homeGoals,
+          away_goals: result.awayGoals,
+          status: 'played',
+          played_at: new Date().toISOString(),
+          match_data: {
+            events: result.events,
+            stats: result.stats,
+            playerRatings: result.playerRatings,
+            goalScorers: result.goalScorers,
+            manOfTheMatch: result.manOfTheMatch,
+          } as any
+        }).eq('id', String(matchId));
+
+        // Update player stats for both teams
+        // In league_player_stats, teamId is the member_id (UUID)
+        // We need to resolve member_id from league_id + user_id or team_id
+        const { data: members } = await adminClient
+          .from('league_members')
+          .select('id, user_id, is_bot')
+          .eq('league_id', leagueMatch.league_id);
+        
+        const homeMember = members?.find(m => m.id === leagueMatch.home_team_id);
+        const awayMember = members?.find(m => m.id === leagueMatch.away_team_id);
+
+        if (homeMember) {
+          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+        }
+        if (awayMember) {
+          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+        }
+
+        // Update Standings via RPC for consistency
+        await adminClient.rpc('update_league_standings', { _league_id: leagueMatch.league_id });
+      }
+
+      // 3.2. National Cup Match Logic
+      const { data: cupMatch } = await adminClient
+        .from('national_cup_matches')
+        .select('cup_id, home_team_id, away_team_id')
+        .eq('id', String(matchId))
+        .maybeSingle();
+
+      if (cupMatch) {
+        console.info('[Sync] Updating national_cup_matches', { matchId });
+        const winnerId = result.homeGoals > result.awayGoals ? cupMatch.home_team_id 
+                        : result.awayGoals > result.homeGoals ? cupMatch.away_team_id 
+                        : (result.penaltyHomeGoals > result.penaltyAwayGoals ? cupMatch.home_team_id : cupMatch.away_team_id);
+
+        await adminClient.from('national_cup_matches').update({
+          home_score: result.homeGoals,
+          away_score: result.awayGoals,
+          home_penalties: result.penaltyHomeGoals,
+          away_penalties: result.penaltyAwayGoals,
+          status: 'played',
+          winner_team_id: winnerId,
+          updated_at: new Date().toISOString(),
+          match_data: {
+            events: result.events,
+            stats: result.stats,
+            playerRatings: result.playerRatings,
+            goalScorers: result.goalScorers,
+            manOfTheMatch: result.manOfTheMatch,
+          } as any
+        }).eq('id', String(matchId));
+
+        // Update cup player stats
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+      }
+
+      // 3.3. Custom Tournament Logic
+      if (tournamentMatchId) {
+        await adminClient.from('custom_tournament_matches')
+          .update({
+            home_goals: result.homeGoals,
+            away_goals: result.awayGoals,
+            status: 'played',
+            played_at: new Date().toISOString(),
+            match_data: {
+              events: result.events,
+              stats: result.stats,
+              playerRatings: result.playerRatings,
+              goalScorers: result.goalScorers,
+              manOfTheMatch: result.manOfTheMatch,
+            } as any,
+          })
+          .eq('id', tournamentMatchId);
+      }
+
+      // 3.4. Global/World Stats (Always update for any competitive match)
+      if (isLeagueMatch || isCupMatch) {
+        // Find or create global league entry if needed, but usually we just want to update world_player_stats
+        // We can use a default league_id if not a league match
+        const worldLeagueId = leagueMatch?.league_id || '00000000-0000-0000-0000-000000000000';
+        for (const p of allPlayers) {
+          if (!p.isOnPitch && p.goals === 0) continue;
+          await adminClient.rpc('upsert_world_player_stats', {
+            _player_id: p.id,
+            _team_name: p.team === 'home' ? effHomeTeam : effAwayTeam,
+            _league_id: worldLeagueId,
+            _goals: p.goals,
+            _assists: p.assists,
+            _rating: p.rating,
+            _is_mvp: result.manOfTheMatch === p.name
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Sync] Error updating statistics:', err);
+    }
+
+    // 4. LOG HISTORY & REPORTS
     await adminClient.from('match_history').insert({
       user_id: userId,
       live_match_id: matchRow.id,
@@ -1600,7 +1789,6 @@ Deno.serve(async (req) => {
       match_type: competition === 'Amistoso' ? 'friendly' : 'competitive',
     });
 
-    // Insert match report
     await adminClient.from('match_reports').insert({
       user_id: userId,
       home_team: effHomeTeam,
@@ -1613,24 +1801,6 @@ Deno.serve(async (req) => {
       report_data: result.reportData as any,
     });
 
-    // Update tournament match if applicable
-    if (tournamentMatchId) {
-      await adminClient.from('custom_tournament_matches')
-        .update({
-          home_goals: result.homeGoals,
-          away_goals: result.awayGoals,
-          status: 'played',
-          played_at: new Date().toISOString(),
-          match_data: {
-            events: result.events,
-            stats: result.stats,
-            playerRatings: result.playerRatings,
-            goalScorers: result.goalScorers,
-            manOfTheMatch: result.manOfTheMatch,
-          } as any,
-        })
-        .eq('id', tournamentMatchId);
-    }
 
     return new Response(JSON.stringify({
       success: true, matchDbId: matchRow.id,
