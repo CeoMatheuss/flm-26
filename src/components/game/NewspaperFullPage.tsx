@@ -76,6 +76,8 @@ interface SavedEntry {
   created_at: string;
   user_id: string;
   image_key?: string | null;
+  image_url?: string | null;
+  importance?: number;
 }
 
 const transferCategories = ['MERCADO', 'TRANSFERÊNCIA', 'CONTRATAÇÃO', 'EMPRÉSTIMO', 'RENOVAÇÃO'];
