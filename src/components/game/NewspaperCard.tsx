@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NewsVisualTemplate, TemplateKey } from './NewsVisualTemplate';
 
 interface Props {
   onOpenFullPage?: () => void;
@@ -17,6 +18,8 @@ interface NewsEntry {
   category: string;
   created_at: string;
   image_url?: string | null;
+  template_key?: TemplateKey | null;
+  metadata?: any;
 }
 
 const categoryColors: Record<string, string> = {
@@ -43,17 +46,17 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const { data: mainNews } = await supabase.from('newspaper_entries').select('id, text, category, created_at, image_url').order('created_at', { ascending: false }).limit(10);
+    const { data: mainNews } = await supabase.from('newspaper_entries').select('id, text, category, created_at, image_url, template_key, metadata').order('created_at', { ascending: false }).limit(10);
     const { data: leagueNews } = await supabase.from('world_league_news').select('*').order('created_at', { ascending: false }).limit(5);
     const { data: cupNews } = await supabase.from('cup_news').select('*').order('created_at', { ascending: false }).limit(5);
     
     const merged: NewsEntry[] = [];
     if (mainNews) merged.push(...(mainNews as any[]));
     if (leagueNews) {
-      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, image_url: ln.image_url }); });
+      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, template_key: ln.template_key as TemplateKey, metadata: ln.metadata }); });
     }
     if (cupNews) {
-      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, image_url: cn.image_url }); });
+      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, template_key: cn.template_key as TemplateKey, metadata: cn.metadata }); });
     }
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setNews(merged.slice(0, 8));
@@ -104,9 +107,15 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
             >
-              {/* Main Story with possible Image */}
+              {/* Main Story with Template/Image */}
               <div className="group cursor-pointer" onClick={onOpenFullPage}>
-                {main.image_url ? (
+                {main.template_key ? (
+                  <NewsVisualTemplate 
+                    templateKey={main.template_key} 
+                    {...main.metadata}
+                    className="mb-3 shadow-lg shadow-black/20"
+                  />
+                ) : main.image_url ? (
                   <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
                     <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
@@ -129,8 +138,8 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
                   </div>
                 )}
                 
-                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${main.image_url ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
-                  {main.text.split(': ')[1] || main.text}
+                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${(main.image_url || main.template_key) ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
+                  {main.text.includes(': ') ? main.text.split(': ')[1] : main.text}
                 </h3>
                 
                 <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5 font-mono">
@@ -153,10 +162,11 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -5 }}
                   animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 2, backgroundColor: 'rgba(var(--primary), 0.05)' }}
                   transition={{ delay: 0.1 * idx }}
-                  className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors group/item"
+                  className="flex items-start gap-2 p-1.5 rounded-lg transition-colors group/item"
                 >
                   <div className="w-0.5 h-8 bg-muted group-hover/item:bg-primary transition-colors rounded-full" />
                   <div className="flex-1 min-w-0">
