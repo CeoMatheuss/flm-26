@@ -96,61 +96,79 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
             <Loader2 className="h-5 w-5 animate-spin text-primary/60" />
           </div>
         ) : main ? (
-          <>
-            {/* Main Story with possible Image */}
-            <div className="group cursor-pointer" onClick={onOpenFullPage}>
-              {main.image_url ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
-                  <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-1`}>
-                      {main.category}
-                    </Badge>
-                  </div>
-                </div>
-              ) : (
-                <div className="border-b border-border/50 pb-2 mb-2">
-                   <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-2`}>
-                      {main.category}
-                    </Badge>
-                </div>
-              )}
-              
-              <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${main.image_url ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
-                {main.text.split(': ')[1] || main.text}
-              </h3>
-              
-              <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-primary" />
-                {new Date(main.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-
-            {/* Secondary Stories */}
-            {secondary.length > 0 && (
-              <div className="space-y-2 pt-1">
-                {secondary.map((item) => {
-                  const LIMIT = 70;
-                  const textOnly = item.text.includes(': ') ? item.text.split(': ')[1] : item.text;
-                  const preview = textOnly.length > LIMIT ? textOnly.slice(0, LIMIT).trimEnd() + '…' : textOnly;
-                  return (
-                    <div key={item.id} className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors group/item">
-                      <div className="w-1 h-8 bg-muted group-hover/item:bg-primary transition-colors rounded-full" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-[7px] font-black text-primary uppercase tracking-tighter">{item.category}</span>
-                        </div>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight line-clamp-2">{preview}</p>
-                      </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={main.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4 }}
+            >
+              {/* Main Story with possible Image */}
+              <div className="group cursor-pointer" onClick={onOpenFullPage}>
+                {main.image_url ? (
+                  <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
+                    <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute top-2 right-2">
+                       <div className="bg-primary/90 backdrop-blur-sm p-1 rounded-full animate-pulse shadow-lg">
+                         <Sparkles className="h-2.5 w-2.5 text-white" />
+                       </div>
                     </div>
-                  );
-                })}
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-1 shadow-md`}>
+                        {main.category}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-b border-border/50 pb-2 mb-2">
+                     <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-2`}>
+                        {main.category}
+                      </Badge>
+                  </div>
+                )}
+                
+                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${main.image_url ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
+                  {main.text.split(': ')[1] || main.text}
+                </h3>
+                
+                <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5 font-mono">
+                  <span className="w-1 h-1 rounded-full bg-primary" />
+                  {new Date(main.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </p>
               </div>
-            )}
-          </>
+            </motion.div>
+          </AnimatePresence>
         ) : (
-          <p className="text-xs text-muted-foreground text-center py-8">Nenhuma notícia ainda</p>
+          <p className="text-xs text-muted-foreground text-center py-8 font-bold italic opacity-40 uppercase tracking-widest">Nenhuma notícia ainda</p>
+        )}
+
+        {secondary.length > 0 && !loading && (
+          <div className="space-y-2 pt-1">
+            {secondary.map((item, idx) => {
+              const LIMIT = 70;
+              const textOnly = item.text.includes(': ') ? item.text.split(': ')[1] : item.text;
+              const preview = textOnly.length > LIMIT ? textOnly.slice(0, LIMIT).trimEnd() + '…' : textOnly;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * idx }}
+                  className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors group/item"
+                >
+                  <div className="w-0.5 h-8 bg-muted group-hover/item:bg-primary transition-colors rounded-full" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[7px] font-black text-primary uppercase tracking-tighter">{item.category}</span>
+                    </div>
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight line-clamp-2 font-medium">{preview}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         )}
 
         {onOpenFullPage && (
