@@ -44,6 +44,11 @@ export function CopasTab({ userId }: Props) {
   const [goalStats, setGoalStats] = useState<any[]>([]);
   const [assistStats, setAssistStats] = useState<any[]>([]);
   const [ratingStats, setRatingStats] = useState<any[]>([]);
+  const [yellowStats, setYellowStats] = useState<any[]>([]);
+  const [redStats, setRedStats] = useState<any[]>([]);
+  const [cleanStats, setCleanStats] = useState<any[]>([]);
+  const [motmStats, setMotmStats] = useState<any[]>([]);
+
   
   const [loading, setLoading] = useState(true);
 
