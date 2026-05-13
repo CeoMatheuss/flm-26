@@ -46,17 +46,17 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const { data: mainNews } = await supabase.from('newspaper_entries').select('id, text, category, created_at, image_url').order('created_at', { ascending: false }).limit(10);
+    const { data: mainNews } = await supabase.from('newspaper_entries').select('id, text, category, created_at, image_url, template_key, metadata').order('created_at', { ascending: false }).limit(10);
     const { data: leagueNews } = await supabase.from('world_league_news').select('*').order('created_at', { ascending: false }).limit(5);
     const { data: cupNews } = await supabase.from('cup_news').select('*').order('created_at', { ascending: false }).limit(5);
     
     const merged: NewsEntry[] = [];
     if (mainNews) merged.push(...(mainNews as any[]));
     if (leagueNews) {
-      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, image_url: ln.image_url }); });
+      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at, template_key: ln.template_key, metadata: ln.metadata }); });
     }
     if (cupNews) {
-      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, image_url: cn.image_url }); });
+      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at, template_key: cn.template_key, metadata: cn.metadata }); });
     }
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setNews(merged.slice(0, 8));
