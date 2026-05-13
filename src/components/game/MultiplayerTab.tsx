@@ -1228,11 +1228,16 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center justify-between">
           Estatísticas Individuais
-          <div className="flex gap-1">
-            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('goals')}>Gols</Button>
-            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('assists')}>Assists</Button>
-            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('rating')}>Nota</Button>
+          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1 max-w-[200px] sm:max-w-none">
+            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('goals')}>Gols</Button>
+            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('assists')}>Assists</Button>
+            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('rating')}>Nota</Button>
+            <Button size="sm" variant={activeStat === 'motm_count' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('motm_count')}>MOTM</Button>
+            <Button size="sm" variant={activeStat === 'clean_sheets' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('clean_sheets')}>Clean Sheet</Button>
+            <Button size="sm" variant={activeStat === 'yellow_cards' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('yellow_cards')}>🟨</Button>
+            <Button size="sm" variant={activeStat === 'red_cards' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('red_cards')}>🟥</Button>
           </div>
+
         </CardTitle>
       </CardHeader>
       <CardContent>
