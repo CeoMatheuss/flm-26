@@ -18,6 +18,8 @@ interface NewsEntry {
   category: string;
   created_at: string;
   image_url?: string | null;
+  template_key?: TemplateKey | null;
+  metadata?: any;
 }
 
 const categoryColors: Record<string, string> = {
