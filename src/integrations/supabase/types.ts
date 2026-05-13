@@ -487,6 +487,8 @@ export type Database = {
           cup_id: string | null
           id: string
           image_url: string | null
+          metadata: Json | null
+          template_key: string | null
           title: string
         }
         Insert: {
@@ -495,6 +497,8 @@ export type Database = {
           cup_id?: string | null
           id?: string
           image_url?: string | null
+          metadata?: Json | null
+          template_key?: string | null
           title: string
         }
         Update: {
@@ -503,6 +507,8 @@ export type Database = {
           cup_id?: string | null
           id?: string
           image_url?: string | null
+          metadata?: Json | null
+          template_key?: string | null
           title?: string
         }
         Relationships: [
@@ -2626,7 +2632,9 @@ export type Database = {
           image_url: string | null
           importance: number | null
           is_event: boolean
+          metadata: Json | null
           narration: string | null
+          template_key: string | null
           text: string
           user_id: string
         }
@@ -2638,7 +2646,9 @@ export type Database = {
           image_url?: string | null
           importance?: number | null
           is_event?: boolean
+          metadata?: Json | null
           narration?: string | null
+          template_key?: string | null
           text: string
           user_id: string
         }
@@ -2650,7 +2660,9 @@ export type Database = {
           image_url?: string | null
           importance?: number | null
           is_event?: boolean
+          metadata?: Json | null
           narration?: string | null
+          template_key?: string | null
           text?: string
           user_id?: string
         }
@@ -3872,6 +3884,8 @@ export type Database = {
           importance: number | null
           league_id: string | null
           match_id: string | null
+          metadata: Json | null
+          template_key: string | null
           title: string
         }
         Insert: {
@@ -3883,6 +3897,8 @@ export type Database = {
           importance?: number | null
           league_id?: string | null
           match_id?: string | null
+          metadata?: Json | null
+          template_key?: string | null
           title: string
         }
         Update: {
@@ -3894,6 +3910,8 @@ export type Database = {
           importance?: number | null
           league_id?: string | null
           match_id?: string | null
+          metadata?: Json | null
+          template_key?: string | null
           title?: string
         }
         Relationships: [
