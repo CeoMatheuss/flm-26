@@ -107,9 +107,15 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
             >
-              {/* Main Story with possible Image */}
+              {/* Main Story with Template/Image */}
               <div className="group cursor-pointer" onClick={onOpenFullPage}>
-                {main.image_url ? (
+                {main.template_key ? (
+                  <NewsVisualTemplate 
+                    templateKey={main.template_key} 
+                    {...main.metadata}
+                    className="mb-3 shadow-lg shadow-black/20"
+                  />
+                ) : main.image_url ? (
                   <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
                     <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
@@ -132,8 +138,8 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
                   </div>
                 )}
                 
-                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${main.image_url ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
-                  {main.text.split(': ')[1] || main.text}
+                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${(main.image_url || main.template_key) ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
+                  {main.text.includes(': ') ? main.text.split(': ')[1] : main.text}
                 </h3>
                 
                 <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5 font-mono">
