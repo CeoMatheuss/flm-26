@@ -4,10 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ArrowLeft, Loader2, ChevronDown, SmilePlus, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { NewsVisualTemplate, TemplateKey } from './NewsVisualTemplate';
 import signingImg from '@/assets/transfer-signing.jpg';
-import leagueChampionImg from '@/assets/news-league-champion.jpg';
-import cupChampionImg from '@/assets/news-cup-champion.jpg';
-import ballonDorImg from '@/assets/news-ballon-dor.jpg';
 
 interface Props {
   onBack: () => void;
