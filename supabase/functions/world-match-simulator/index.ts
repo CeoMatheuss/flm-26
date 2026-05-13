@@ -7,8 +7,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Map match outcomes to template keys for frontend visualization
-function getMatchTemplate(hg: number, ag: number, isHome: boolean) {
+const HEADLINES = {
+  win: [
+    "{winner} atropela o {loser} em exibição de gala!",
+    "Show de bola! {winner} não toma conhecimento do {loser}.",
+    "Vitória maiúscula: {winner} garante os 3 pontos contra {loser}.",
+    "Domínio total! {winner} vence o clássico contra {loser}."
+  ],
+  draw: [
+    "Equilíbrio total! {team1} e {team2} ficam no empate.",
+    "Jogo truncado termina sem vencedor entre {team1} e {team2}.",
+    "Tudo igual! {team1} e {team2} dividem os pontos.",
+    "Batalha épica! Empate eletrizante entre {team1} e {team2}."
+  ],
+  loss: [
+    "Noite para esquecer: {loser} cai diante do {winner}.",
+    "Decepção! {loser} é derrotado pelo {winner} em casa.",
+    "Superioridade técnica: {winner} supera o {loser}.",
+    "{loser} luta, mas não evita a derrota para o {winner}."
+  ]
+};
+
+function getHeadline(type: 'win' | 'draw' | 'loss', winner: string, loser: string) {
+  const list = HEADLINES[type];
+  const template = list[Math.floor(Math.random() * list.length)];
+  return template.replace(/{winner}/g, winner).replace(/{loser}/g, loser).replace(/{team1}/g, winner).replace(/{team2}/g, loser);
+}
   if (hg === ag) return 'league_draw';
   if (isHome) return hg > ag ? 'league_win' : 'league_loss';
   return ag > hg ? 'league_win' : 'league_loss';
