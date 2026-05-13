@@ -65,7 +65,23 @@ export function MultiplayerTab(props: Props) {
   return <LeagueView {...props} />;
 }
 
-function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
+function LeagueLobby({ leagues, loading, onEnterLeague, userId }: Props) {
+  const [waitingEntry, setWaitingEntry] = useState<any>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    const checkWaiting = async () => {
+      const { data } = await supabase
+        .from('league_waiting_list')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'waiting')
+        .maybeSingle();
+      setWaitingEntry(data);
+    };
+    checkWaiting();
+  }, [userId]);
+
   const [showAllLeagues, setShowAllLeagues] = useState(false);
   const mainLeagues = leagues.filter(l => (l as any).league_type !== 'beginner');
   const beginnerLeagues = leagues.filter(l => (l as any).league_type === 'beginner');
@@ -78,6 +94,18 @@ function LeagueLobby({ leagues, loading, onEnterLeague }: Props) {
 
   return (
     <div className="space-y-4">
+      {waitingEntry && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="py-4 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
+            <div>
+              <p className="text-sm font-bold text-amber-500">Inscrito para Próxima Temporada</p>
+              <p className="text-xs text-muted-foreground">Você está na fila de espera de {waitingEntry.country}.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Season Info Banner */}
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
         <CardContent className="py-4">
