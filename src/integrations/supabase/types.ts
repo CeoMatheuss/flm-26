@@ -2623,6 +2623,8 @@ export type Database = {
           created_at: string
           id: string
           image_key: string | null
+          image_url: string | null
+          importance: number | null
           is_event: boolean
           narration: string | null
           text: string
@@ -2633,6 +2635,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_key?: string | null
+          image_url?: string | null
+          importance?: number | null
           is_event?: boolean
           narration?: string | null
           text: string
@@ -2643,6 +2647,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_key?: string | null
+          image_url?: string | null
+          importance?: number | null
           is_event?: boolean
           narration?: string | null
           text?: string
@@ -3862,6 +3868,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          image_url: string | null
           importance: number | null
           league_id: string | null
           match_id: string | null
@@ -3872,6 +3879,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           importance?: number | null
           league_id?: string | null
           match_id?: string | null
@@ -3882,6 +3890,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           importance?: number | null
           league_id?: string | null
           match_id?: string | null

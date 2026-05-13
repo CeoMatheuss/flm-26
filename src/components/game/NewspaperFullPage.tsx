@@ -76,6 +76,8 @@ interface SavedEntry {
   created_at: string;
   user_id: string;
   image_key?: string | null;
+  image_url?: string | null;
+  importance?: number;
 }
 
 const transferCategories = ['MERCADO', 'TRANSFERÊNCIA', 'CONTRATAÇÃO', 'EMPRÉSTIMO', 'RENOVAÇÃO'];
@@ -92,34 +94,12 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    
-    // 1. Load ALL global news from the main newspaper
-    const { data: mainNews } = await supabase
-      .from('newspaper_entries')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    // 2. Load League News
-    const { data: leagueNews } = await supabase
-      .from('world_league_news')
-      .select('*, league:world_leagues(name)')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    // 3. Load Cup News
-    const { data: cupNews } = await supabase
-      .from('cup_news')
-      .select('*, cup:national_cups(name)')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const { data: mainNews } = await supabase.from('newspaper_entries').select('*').order('created_at', { ascending: false }).limit(200);
+    const { data: leagueNews } = await supabase.from('world_league_news').select('*, league:world_leagues(name)').order('created_at', { ascending: false }).limit(50);
+    const { data: cupNews } = await supabase.from('cup_news').select('*, cup:national_cups(name)').order('created_at', { ascending: false }).limit(50);
 
     const merged: SavedEntry[] = [];
-
-    if (mainNews) {
-      merged.push(...(mainNews as SavedEntry[]));
-    }
-
+    if (mainNews) merged.push(...(mainNews as any[]));
     if (leagueNews) {
       leagueNews.forEach(ln => {
         merged.push({
@@ -129,11 +109,11 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: ln.created_at,
           user_id: '',
-          image_key: ln.category === 'cup' ? 'cup_champion' : null
+          image_url: ln.image_url,
+          importance: ln.importance || 1
         });
       });
     }
-
     if (cupNews) {
       cupNews.forEach(cn => {
         merged.push({
@@ -143,12 +123,12 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: cn.created_at,
           user_id: '',
-          image_key: 'cup_champion'
+          image_url: cn.image_url,
+          importance: 2
         });
       });
     }
 
-    // Sort all by date
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setEntries(merged);
 
@@ -198,8 +178,8 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   // Promote up to 3 most recent special-event news to the top in their own hero layout.
   const featuredEntries = filteredEntries
-    .filter(e => e.is_event && detectImageKey(e))
-    .slice(0, 3);
+    .filter(e => (e.is_event && detectImageKey(e)) || e.image_url || (e.importance && e.importance >= 2))
+    .slice(0, 4);
   const featuredIds = new Set(featuredEntries.map(e => e.id));
   const restEntries = filteredEntries.filter(e => !featuredIds.has(e.id));
   const visibleEntries = showMore ? restEntries : restEntries.slice(0, 30);
@@ -261,48 +241,57 @@ export function NewspaperFullPage({ onBack }: Props) {
           {featuredEntries.length > 0 && !categoryFilter && (
             <div className="space-y-2">
               {featuredEntries.map((item) => {
-                const key = detectImageKey(item)!;
-                const preset = IMAGE_PRESETS[key];
+                const key = detectImageKey(item);
+                const preset = key ? IMAGE_PRESETS[key] : null;
+                const imageSrc = item.image_url || preset?.src;
+                const label = preset?.label || item.category;
+                const gradient = preset?.gradient || 'from-primary/80 via-primary/40';
+                
                 const lines = item.text.split('\n').filter(Boolean);
                 const headline = lines[0] || item.text;
                 const body = lines.slice(1).join(' ').trim();
+                
                 return (
-                  <Card key={item.id} className="border-amber-500/40 overflow-hidden bg-gradient-to-br from-amber-500/5 to-transparent">
+                  <Card key={item.id} className="border-border/50 overflow-hidden bg-gradient-to-br from-card to-primary/5 hover:border-primary/30 transition-all duration-500 group">
                     <CardContent className="p-0">
-                      <div className="relative w-full overflow-hidden">
-                        <img
-                          src={preset.src}
-                          alt={preset.label}
-                          loading="lazy"
-                          width={1280}
-                          height={640}
-                          className="w-full h-40 sm:h-48 object-cover"
-                        />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${preset.gradient} to-transparent`} />
+                      <div className="relative w-full overflow-hidden aspect-video sm:aspect-[21/9]">
+                        {imageSrc ? (
+                          <img
+                            src={imageSrc}
+                            alt={label}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted animate-pulse" />
+                        )}
+                        <div className={`absolute inset-0 bg-gradient-to-t ${gradient} to-transparent opacity-90 group-hover:opacity-100 transition-opacity`} />
                         <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                          <span className="text-[9px] font-black text-white px-2 py-0.5 rounded bg-amber-500/90 shadow-lg flex items-center gap-1">
-                            <Sparkles className="h-3 w-3" /> {preset.label}
+                          <span className={`text-[9px] font-black text-white px-2 py-0.5 rounded shadow-lg flex items-center gap-1 ${preset ? 'bg-amber-500/90' : 'bg-primary/90'}`}>
+                            <Sparkles className="h-3 w-3" /> {label}
                           </span>
                         </div>
-                        <div className="absolute bottom-0 inset-x-0 p-3 sm:p-4">
-                          <h3 className="text-sm sm:text-lg font-black text-white drop-shadow-lg leading-tight">
+                        <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent">
+                          <h3 className="text-base sm:text-xl font-black text-white drop-shadow-xl leading-tight uppercase italic tracking-tighter">
                             {headline}
                           </h3>
                           {body && (
-                            <p className="text-[11px] sm:text-xs text-white/90 mt-1 line-clamp-2 drop-shadow">
+                            <p className="text-[11px] sm:text-xs text-white/90 mt-1 line-clamp-2 drop-shadow font-medium">
                               {body}
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="px-3 py-2 flex items-center justify-between">
-                        <span className="text-[8px] text-muted-foreground">
+                      <div className="px-3 py-2 flex items-center justify-between bg-muted/20 backdrop-blur-sm">
+                        <span className="text-[9px] text-muted-foreground font-mono flex items-center gap-1">
+                          <Newspaper className="h-3 w-3" />
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <div className="flex items-center gap-1">
+                          {/* Reactions (keep existing code) */}
                           {(reactions[item.id] || []).map(emoji => (
                             <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
-                              className="text-sm px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25">
+                              className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 hover:bg-primary/20">
                               {emoji}
                             </button>
                           ))}
@@ -312,7 +301,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                               <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
                             </button>
                             {showReactionPicker === item.id && (
-                              <div className="absolute bottom-full right-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                              <div className="absolute bottom-full right-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
                                 {REACT_EMOJIS.map(emoji => (
                                   <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
                                     className={`text-sm p-1 rounded hover:bg-muted ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}>
@@ -331,53 +320,55 @@ export function NewspaperFullPage({ onBack }: Props) {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleEntries.map((item) => {
               const showSigningVisual = transferCategories.includes(item.category);
-              // Inline thumbnail for special events that didn't make it to "featured" slots.
               const inlineKey = detectImageKey(item);
               const inlinePreset = inlineKey && !showSigningVisual ? IMAGE_PRESETS[inlineKey] : null;
+              const hasImage = item.image_url || inlinePreset || showSigningVisual;
 
               return (
-                <Card key={item.id} className={`border-border overflow-hidden ${inlinePreset ? 'border-amber-500/30' : ''}`}>
+                <Card key={item.id} className={`border-border/40 overflow-hidden hover:border-primary/20 transition-all group ${inlinePreset ? 'border-amber-500/20' : ''}`}>
                   <CardContent className="p-0">
-                    {showSigningVisual && (
-                      <div className="w-full overflow-hidden">
-                        <img src={signingImg} alt="Transferência" loading="lazy" className="w-full h-auto opacity-70" />
+                    {item.image_url ? (
+                      <div className="relative w-full aspect-[16/7] overflow-hidden">
+                        <img src={item.image_url} alt="Notícia" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
-                    )}
-                    {inlinePreset && (
-                      <div className="relative w-full overflow-hidden">
-                        <img src={inlinePreset.src} alt={inlinePreset.label} loading="lazy" width={1280} height={640} className="w-full h-24 object-cover" />
+                    ) : showSigningVisual ? (
+                      <div className="w-full aspect-[21/9] overflow-hidden bg-blue-500/10 flex items-center justify-center relative">
+                        <img src={signingImg} alt="Transferência" loading="lazy" className="w-full h-full object-cover opacity-40 mix-blend-overlay" />
+                        <span className="absolute inset-0 flex items-center justify-center font-black text-blue-500/20 text-4xl italic tracking-tighter">TRANSFER</span>
+                      </div>
+                    ) : inlinePreset ? (
+                      <div className="relative w-full aspect-[21/9] overflow-hidden">
+                        <img src={inlinePreset.src} alt={inlinePreset.label} loading="lazy" className="w-full h-full object-cover" />
                         <div className={`absolute inset-0 bg-gradient-to-t ${inlinePreset.gradient} to-transparent`} />
-                        <span className="absolute top-1.5 left-1.5 text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-amber-500/90">
+                        <span className="absolute top-2 left-2 text-[8px] font-black text-white px-2 py-0.5 rounded bg-amber-500/90 uppercase tracking-wider">
                           {inlinePreset.label}
                         </span>
                       </div>
-                    )}
-                    <div className="p-3">
-                      <div className="flex items-start gap-2">
-                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                          {item.category}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs leading-snug whitespace-pre-line font-medium">{item.text}</p>
-                        </div>
-                        <div className="flex flex-col items-end shrink-0 gap-1">
-                          {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
-                          <span className="text-[8px] text-muted-foreground">
-                            {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+                    ) : null}
+                    
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                         <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-2">
+                             <Badge className={`${categoryColors[item.category] || 'bg-primary/80'} text-[8px] font-bold border-none`}>
+                               {item.category}
+                             </Badge>
+                             <span className="text-[9px] text-muted-foreground font-mono">
+                                {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                             </span>
+                           </div>
+                           <p className="text-xs sm:text-sm font-bold leading-snug whitespace-pre-line group-hover:text-primary transition-colors">{item.text}</p>
+                         </div>
                       </div>
-                      {/* Reaction bar */}
-                      <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-border/30">
+                      
+                      <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
                         {(reactions[item.id] || []).map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={() => toggleReaction(item.id, emoji)}
-                            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
-                          >
+                          <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
+                            className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">
                             {emoji}
                           </button>
                         ))}
@@ -389,7 +380,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                             <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                           {showReactionPicker === item.id && (
-                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
                               {REACT_EMOJIS.map(emoji => (
                                 <button
                                   key={emoji}

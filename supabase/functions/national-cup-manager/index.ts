@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+async function generateArt(sb: any, data: any) {
+  try {
+    const { data: res } = await sb.functions.invoke('generate-sports-art', { body: data });
+    return res?.imageUrl || null;
+  } catch (e) {
+    console.error('Art gen error:', e);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -125,22 +135,38 @@ serve(async (req) => {
 
         if (pending === 0) {
           if (cup.current_round < cup.total_rounds) {
-            await drawNextRound(supabase, cup.id, cup.current_round + 1, cup.total_rounds);
-            await createCupNews(supabase, cup.id, `Próxima Fase Sorteada!`, `Os classificados já conhecem seus adversários na próxima fase.`);
+            const nextRound = cup.current_round + 1;
+            await drawNextRound(supabase, cup.id, nextRound, cup.total_rounds);
+            
+            // Generate art for major phases
+            const phaseName = getPhaseName(nextRound, cup.total_rounds);
+            if (phaseName === 'Final' || phaseName === 'Semifinal') {
+               const { data: teams } = await supabase.from('national_cup_teams').select('club_name').eq('cup_id', cup.id).eq('eliminated', false);
+               if (teams && teams.length > 0) {
+                  for (const team of teams) {
+                    const imageUrl = await generateArt(supabase, { team_name: team.club_name, competition: cup.name, phase: phaseName, event_type: 'advanced' });
+                    await createCupNews(supabase, cup.id, `CLASSIFICADO: ${team.club_name}!`, `${team.club_name} garante vaga na ${phaseName} da ${cup.name}.`, imageUrl);
+                  }
+               }
+            } else {
+               await createCupNews(supabase, cup.id, `Próxima Fase Sorteada!`, `Os classificados já conhecem seus adversários na próxima fase.`);
+            }
           } else {
             await supabase.from('national_cups').update({ status: 'finished' }).eq('id', cup.id);
-            const { data: winnerMatch } = await supabase.from('national_cup_matches')
-              .select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
+            const { data: winnerMatch } = await supabase.from('national_cup_matches').select('winner_team_id').eq('cup_id', cup.id).eq('round', cup.total_rounds).single();
             if (winnerMatch) {
+              const { data: winner } = await supabase.from('national_cup_teams').select('club_name').eq('id', winnerMatch.winner_team_id).single();
+              const imageUrl = await generateArt(supabase, { team_name: winner?.club_name, competition: cup.name, event_type: 'champion' });
+              
               await supabase.from('national_cups').update({ winner_team_id: winnerMatch.winner_team_id }).eq('id', cup.id);
-              await createCupNews(supabase, cup.id, `🏆 TEMOS UM CAMPEÃO!`, `Fim de torneio! A taça da ${cup.name} tem dono.`);
+              await createCupNews(supabase, cup.id, `🏆 ${winner?.club_name} É CAMPEÃO!`, `Festa absoluta! O ${winner?.club_name} conquista o título da ${cup.name}!`, imageUrl);
               await grantPrize(supabase, winnerMatch.winner_team_id, 10000000, "Campeão da Copa", cup.id);
               await processEndOfCupBonuses(supabase, cup.id);
             }
           }
         }
       }
-      return new Response(JSON.stringify({ success: true, auto_simulated: autoSimulated, cups_checked: activeCups.length }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
@@ -346,7 +372,7 @@ async function processEndOfCupBonuses(supabase: any, cupId: string) {
   }
 }
 
-async function createCupNews(supabase: any, cupId: string, title: string, content: string) {
-  await supabase.from('cup_news').insert({ cup_id: cupId, title, content });
-  await supabase.from('world_league_news').insert({ title, content, category: 'cup', created_at: new Date().toISOString() });
+async function createCupNews(supabase: any, cupId: string, title: string, content: string, imageUrl: string | null = null) {
+  await supabase.from('cup_news').insert({ cup_id: cupId, title, content, image_url: imageUrl });
+  await supabase.from('world_league_news').insert({ title, content, category: 'cup', created_at: new Date().toISOString(), image_url: imageUrl, importance: imageUrl ? 3 : 1 });
 }

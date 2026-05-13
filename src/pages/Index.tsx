@@ -519,6 +519,35 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 data: { matchHistoryId: fmStats.matchHistoryId, reportData },
               });
             } catch (err) { console.error('Post-game report error:', err); }
+
+            // Automatic Image Generation for significant wins (3+ goals)
+            try {
+              const userGoals = fm.is_home ? fm.home_goals : fm.away_goals;
+              const oppGoals = fm.is_home ? fm.away_goals : fm.home_goals;
+              const userTeam = fm.is_home ? fm.home_team : fm.away_team;
+              if (userGoals - oppGoals >= 3) {
+                 supabase.functions.invoke('generate-sports-art', {
+                   body: {
+                     team_name: userTeam,
+                     competition: fm.competition || 'Liga',
+                     event_type: 'historic_win',
+                     result: `${userGoals} x ${oppGoals}`,
+                     colors: { primary: initialState?.club?.primaryColor, secondary: initialState?.club?.secondaryColor }
+                   }
+                 }).then(({ data }) => {
+                   if (data?.imageUrl) {
+                     supabase.from('newspaper_entries').insert([{
+                       user_id: userId,
+                       text: `HISTÓRICO: ${userTeam} aplica goleada avassaladora de ${userGoals} x ${oppGoals} na ${fm.competition || 'competição'}!`,
+                       category: 'HISTÓRIA',
+                       is_event: true,
+                       image_url: data.imageUrl,
+                       importance: 3
+                     }]);
+                   }
+                 });
+              }
+            } catch (e) { console.warn('Art generation skipped:', e); }
           }
           
           await supabase.from('live_matches').delete().eq('id', fm.id);
