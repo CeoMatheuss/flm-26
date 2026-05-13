@@ -352,157 +352,16 @@ export function CopasTab({ userId }: Props) {
 
         <TabsContent value="stats" className="outline-none space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Artilheiros */}
-            {/* ... keeping existing goalStats block ... */}
+            <StatsSection title="Artilheiros" stats={goalStats} field="goals" icon={<Trophy className="h-4 w-4 text-yellow-500" />} label="GOLS" />
+            <StatsSection title="Assistências" stats={assistStats} field="assists" icon={<Sparkles className="h-4 w-4 text-blue-400" />} label="AST" />
+            <StatsSection title="Notas Médias" stats={ratingStats} field="avg_rating" icon={<Star className="h-4 w-4 text-orange-400" />} label="NOTA" isRating />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* MOTM */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
-                  <Star className="h-3 w-3 text-amber-400" /> Craque do Jogo (MOTM)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <StatsList stats={motmStats} field="motm_count" icon="🏆" />
-              </CardContent>
-            </Card>
-
-            {/* Clean Sheets */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
-                  <Shield className="h-3 w-3 text-emerald-400" /> Clean Sheets
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <StatsList stats={cleanStats} field="clean_sheets" icon="🧤" />
-              </CardContent>
-            </Card>
-
-            {/* Cartões Amarelos */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
-                  <div className="h-3 w-2 bg-yellow-400 rounded-sm" /> Amarelos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <StatsList stats={yellowStats} field="yellow_cards" icon="🟨" />
-              </CardContent>
-            </Card>
-
-            {/* Cartões Vermelhos */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
-                  <div className="h-3 w-2 bg-red-500 rounded-sm" /> Vermelhos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <StatsList stats={redStats} field="red_cards" icon="🟥" />
-              </CardContent>
-            </Card>
-          </div>
-
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {goalStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {goalStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{s.goals}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Assistências */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-blue-400" /> Assistências
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {assistStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {assistStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{s.assists || 0}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">AST</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Notas Médias */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Star className="h-4 w-4 text-orange-400" /> Notas Médias
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {ratingStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {ratingStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{Number(s.avg_rating || 0).toFixed(1)}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">NOTA</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
+            <StatsSection title="MOTM" stats={motmStats} field="motm_count" icon={<Star className="h-3 w-3 text-amber-400" />} label="🏆" />
+            <StatsSection title="Clean Sheets" stats={cleanStats} field="clean_sheets" icon={<Shield className="h-3 w-3 text-emerald-400" />} label="🧤" />
+            <StatsSection title="Amarelos" stats={yellowStats} field="yellow_cards" icon={<div className="h-3 w-2 bg-yellow-400 rounded-sm" />} label="🟨" />
+            <StatsSection title="Vermelhos" stats={redStats} field="red_cards" icon={<div className="h-3 w-2 bg-red-500 rounded-sm" />} label="🟥" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -519,6 +378,7 @@ export function CopasTab({ userId }: Props) {
             </Card>
           </div>
         </TabsContent>
+
 
 
         <TabsContent value="prizes" className="outline-none">
