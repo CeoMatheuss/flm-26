@@ -31,7 +31,45 @@ const toShieldClub = (t: any) => {
   };
 };
 
-interface Props {
+
+function StatsSection({ title, stats, field, icon, label, isRating = false }: { title: string; stats: any[]; field: string; icon: React.ReactNode; label: string; isRating?: boolean }) {
+  return (
+    <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+      <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+        <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+          {icon} {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {stats.length > 0 ? (
+          <div className="divide-y divide-border/30">
+            {stats.map((s, idx) => (
+              <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                  <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player_name || s.player?.name}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team_name || s.team?.name}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-black text-white">
+                    {isRating ? Number(s[field] || 0).toFixed(1) : s[field] || 0}
+                  </span>
+                  <span className="text-[9px] font-bold text-muted-foreground ml-1">{label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
   userId: string;
 }
 
