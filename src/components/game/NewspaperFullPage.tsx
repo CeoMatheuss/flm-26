@@ -94,34 +94,12 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    
-    // 1. Load ALL global news from the main newspaper
-    const { data: mainNews } = await supabase
-      .from('newspaper_entries')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    // 2. Load League News
-    const { data: leagueNews } = await supabase
-      .from('world_league_news')
-      .select('*, league:world_leagues(name)')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    // 3. Load Cup News
-    const { data: cupNews } = await supabase
-      .from('cup_news')
-      .select('*, cup:national_cups(name)')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const { data: mainNews } = await supabase.from('newspaper_entries').select('*').order('created_at', { ascending: false }).limit(200);
+    const { data: leagueNews } = await supabase.from('world_league_news').select('*, league:world_leagues(name)').order('created_at', { ascending: false }).limit(50);
+    const { data: cupNews } = await supabase.from('cup_news').select('*, cup:national_cups(name)').order('created_at', { ascending: false }).limit(50);
 
     const merged: SavedEntry[] = [];
-
-    if (mainNews) {
-      merged.push(...(mainNews as SavedEntry[]));
-    }
-
+    if (mainNews) merged.push(...(mainNews as any[]));
     if (leagueNews) {
       leagueNews.forEach(ln => {
         merged.push({
@@ -131,11 +109,11 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: ln.created_at,
           user_id: '',
-          image_key: ln.category === 'cup' ? 'cup_champion' : null
+          image_url: ln.image_url,
+          importance: ln.importance || 1
         });
       });
     }
-
     if (cupNews) {
       cupNews.forEach(cn => {
         merged.push({
@@ -145,12 +123,12 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: cn.created_at,
           user_id: '',
-          image_key: 'cup_champion'
+          image_url: cn.image_url,
+          importance: 2
         });
       });
     }
 
-    // Sort all by date
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setEntries(merged);
 
