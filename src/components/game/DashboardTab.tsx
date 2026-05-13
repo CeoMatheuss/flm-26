@@ -204,6 +204,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         </Card>
       )}
 
+      {/* Main responsive grid: 1 col mobile, 12 cols on lg+ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+
+      {/* === LEFT COLUMN (Identity + Match) === */}
+      <div className="lg:col-span-5 xl:col-span-4 space-y-3 sm:space-y-4">
+
       {/* Club Info Widget */}
       <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <CardContent className="p-3 sm:p-4">
