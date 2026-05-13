@@ -15,6 +15,7 @@ import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
+import { WaitingListPanel } from './WaitingListPanel';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 
 
@@ -81,6 +82,7 @@ interface Props {
   onGoToFriendly?: () => void;
   userId?: string;
   onOpenTournament?: (tournamentId: string) => void;
+  onExploreOtherModes?: () => void;
   clubProfile?: ClubProfile;
   season?: number;
   currentWeek?: number;
@@ -90,7 +92,7 @@ interface Props {
   onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
@@ -307,6 +309,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </div>
         </CardContent>
       </Card>
+
+      {/* Waiting List Panel */}
+      {userId && <WaitingListPanel userId={userId} onExploreOtherModes={onExploreOtherModes} />}
 
       {/* Season Start Widget */}
       <SeasonStartWidget seasonNumber={season} userId={userId} />
