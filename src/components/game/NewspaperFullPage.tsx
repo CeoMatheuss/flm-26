@@ -51,16 +51,14 @@ interface SavedEntry {
   is_event: boolean;
   created_at: string;
   user_id: string;
-  image_key?: string | null;
-  image_url?: string | null;
   template_key?: TemplateKey | null;
+  image_url?: string | null;
   metadata?: any;
   importance?: number;
 }
 
 const transferCategories = ['MERCADO', 'TRANSFERÊNCIA', 'CONTRATAÇÃO', 'EMPRÉSTIMO', 'RENOVAÇÃO'];
 const REACT_EMOJIS = ['👍', '🔥', '❤️', '👏', '😂', '😮', '👎', '😡'];
-
 
 export function NewspaperFullPage({ onBack }: Props) {
   const [entries, setEntries] = useState<SavedEntry[]>([]);
@@ -73,8 +71,8 @@ export function NewspaperFullPage({ onBack }: Props) {
   const loadEntries = useCallback(async () => {
     setLoading(true);
     const { data: mainNews } = await supabase.from('newspaper_entries').select('*').order('created_at', { ascending: false }).limit(200);
-    const { data: leagueNews } = await supabase.from('world_league_news').select('*, league:world_leagues(name)').order('created_at', { ascending: false }).limit(50);
-    const { data: cupNews } = await supabase.from('cup_news').select('*, cup:national_cups(name)').order('created_at', { ascending: false }).limit(50);
+    const { data: leagueNews } = await supabase.from('world_league_news').select('*').order('created_at', { ascending: false }).limit(50);
+    const { data: cupNews } = await supabase.from('cup_news').select('*').order('created_at', { ascending: false }).limit(50);
 
     const merged: SavedEntry[] = [];
     if (mainNews) merged.push(...(mainNews as any[]));
@@ -87,6 +85,8 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: ln.created_at,
           user_id: '',
+          template_key: ln.template_key as TemplateKey,
+          metadata: ln.metadata,
           image_url: ln.image_url,
           importance: ln.importance || 1
         });
@@ -101,6 +101,8 @@ export function NewspaperFullPage({ onBack }: Props) {
           is_event: true,
           created_at: cn.created_at,
           user_id: '',
+          template_key: cn.template_key as TemplateKey,
+          metadata: cn.metadata,
           image_url: cn.image_url,
           importance: 2
         });
@@ -110,36 +112,24 @@ export function NewspaperFullPage({ onBack }: Props) {
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setEntries(merged);
 
-    // Load user reactions (only for main newspaper for now as the others don't have IDs in reactions table)
     const { data: { user } } = await supabase.auth.getUser();
     if (user && mainNews && mainNews.length > 0) {
-      const entryIds = (mainNews as SavedEntry[]).map(e => e.id);
-      const { data: rxns } = await supabase
-        .from('newspaper_reactions')
-        .select('entry_id, emoji')
-        .eq('user_id', user.id)
-        .in('entry_id', entryIds);
+      const entryIds = (mainNews as any[]).map(e => e.id);
+      const { data: rxns } = await supabase.from('newspaper_reactions').select('entry_id, emoji').eq('user_id', user.id).in('entry_id', entryIds);
       if (rxns) {
         const map: Record<string, string[]> = {};
-        (rxns as any[]).forEach(r => {
-          if (!map[r.entry_id]) map[r.entry_id] = [];
-          map[r.entry_id].push(r.emoji);
-        });
+        (rxns as any[]).forEach(r => { if (!map[r.entry_id]) map[r.entry_id] = []; map[r.entry_id].push(r.emoji); });
         setReactions(map);
       }
     }
-
     setLoading(false);
   }, []);
 
   const toggleReaction = useCallback(async (entryId: string, emoji: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
     const current = reactions[entryId] || [];
-    const hasIt = current.includes(emoji);
-
-    if (hasIt) {
+    if (current.includes(emoji)) {
       await supabase.from('newspaper_reactions').delete().eq('entry_id', entryId).eq('user_id', user.id).eq('emoji', emoji);
       setReactions(prev => ({ ...prev, [entryId]: (prev[entryId] || []).filter(e => e !== emoji) }));
     } else {
@@ -154,10 +144,7 @@ export function NewspaperFullPage({ onBack }: Props) {
   const allCategories = [...new Set(entries.map(e => e.category))].filter(Boolean).sort();
   const filteredEntries = categoryFilter ? entries.filter(e => e.category === categoryFilter) : entries;
 
-  // Promote up to 3 most recent special-event news to the top in their own hero layout.
-  const featuredEntries = filteredEntries
-    .filter(e => (e.is_event && detectImageKey(e)) || e.image_url || (e.importance && e.importance >= 2))
-    .slice(0, 4);
+  const featuredEntries = filteredEntries.filter(e => e.template_key || (e.importance && e.importance >= 2)).slice(0, 4);
   const featuredIds = new Set(featuredEntries.map(e => e.id));
   const restEntries = filteredEntries.filter(e => !featuredIds.has(e.id));
   const visibleEntries = showMore ? restEntries : restEntries.slice(0, 30);
@@ -169,126 +156,75 @@ export function NewspaperFullPage({ onBack }: Props) {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-1.5">
-          <Newspaper className="h-4 w-4" />
-          <span className="text-sm font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
+          <Newspaper className="h-4 w-4 text-primary" />
+          <span className="text-sm font-black uppercase tracking-[0.2em]">Diário do Futebol</span>
         </div>
-        <Badge variant="outline" className="text-[9px]">{filteredEntries.length} notícias</Badge>
-        <Badge variant="secondary" className="text-[9px] ml-auto">🌍 Global-Online</Badge>
+        <Badge variant="outline" className="text-[9px] font-bold">{filteredEntries.length} NOTÍCIAS</Badge>
+        <div className="ml-auto flex items-center gap-1">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+          </span>
+          <span className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter">Live Feed</span>
+        </div>
       </div>
 
-      {/* Category Filters */}
       {allCategories.length > 0 && (
         <div className="flex gap-1 flex-wrap">
-          <button
-            onClick={() => setCategoryFilter(null)}
-            className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${!categoryFilter ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
-          >
-            Todas
-          </button>
-          {/* Premiações shortcut — pinned so users always see it */}
-          {(allCategories.includes('AWARDS') || allCategories.includes('PREMIAÇÃO')) && (
-            <button
-              onClick={() => {
-                const target = allCategories.includes('AWARDS') ? 'AWARDS' : 'PREMIAÇÃO';
-                setCategoryFilter(categoryFilter === target ? null : target);
-              }}
-              className={`text-[9px] px-2 py-1 rounded-full border transition-colors flex items-center gap-1 ${categoryFilter === 'AWARDS' || categoryFilter === 'PREMIAÇÃO' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'border-amber-500/30 text-amber-400/70 hover:bg-amber-500/10'}`}
-            >
-              🏆 Premiações
-            </button>
-          )}
-          {allCategories.filter(c => c !== 'AWARDS' && c !== 'PREMIAÇÃO').slice(0, 8).map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
-              className={`text-[9px] px-2 py-1 rounded-full border transition-colors ${categoryFilter === cat ? 'bg-primary/15 text-primary border-primary/30' : 'border-border text-muted-foreground hover:bg-muted'}`}
-            >
-              {cat}
-            </button>
+          <button onClick={() => setCategoryFilter(null)} className={`text-[9px] px-3 py-1 rounded-full border font-black uppercase tracking-widest transition-colors ${!categoryFilter ? 'bg-primary/20 text-primary border-primary/40 shadow-sm' : 'border-border text-muted-foreground hover:bg-muted'}`}>Todas</button>
+          {allCategories.map(cat => (
+            <button key={cat} onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)} className={`text-[9px] px-3 py-1 rounded-full border font-black uppercase tracking-widest transition-colors ${categoryFilter === cat ? 'bg-primary/20 text-primary border-primary/40 shadow-sm' : 'border-border text-muted-foreground hover:bg-muted'}`}>{cat}</button>
           ))}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/40" /></div>
       ) : (
         <>
-          {/* Featured (eventos importantes — campeão, copa, bola de ouro) */}
           {featuredEntries.length > 0 && !categoryFilter && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {featuredEntries.map((item) => {
-                const key = detectImageKey(item);
-                const preset = key ? IMAGE_PRESETS[key] : null;
-                const imageSrc = item.image_url || preset?.src;
-                const label = preset?.label || item.category;
-                const gradient = preset?.gradient || 'from-primary/80 via-primary/40';
-                
                 const lines = item.text.split('\n').filter(Boolean);
                 const headline = lines[0] || item.text;
                 const body = lines.slice(1).join(' ').trim();
-                
                 return (
                   <Card key={item.id} className="border-border/50 overflow-hidden bg-gradient-to-br from-card to-primary/5 hover:border-primary/30 transition-all duration-500 group">
                     <CardContent className="p-0">
-                      <div className="relative w-full overflow-hidden aspect-video sm:aspect-[21/9]">
-                        {imageSrc ? (
-                          <img
-                            src={imageSrc}
-                            alt={label}
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted animate-pulse" />
-                        )}
-                        <div className={`absolute inset-0 bg-gradient-to-t ${gradient} to-transparent opacity-90 group-hover:opacity-100 transition-opacity`} />
-                        <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                          <span className={`text-[9px] font-black text-white px-2 py-0.5 rounded shadow-lg flex items-center gap-1 ${preset ? 'bg-amber-500/90' : 'bg-primary/90'}`}>
-                            <Sparkles className="h-3 w-3" /> {label}
-                          </span>
-                        </div>
-                        <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent">
-                          <h3 className="text-base sm:text-xl font-black text-white drop-shadow-xl leading-tight uppercase italic tracking-tighter">
-                            {headline}
-                          </h3>
-                          {body && (
-                            <p className="text-[11px] sm:text-xs text-white/90 mt-1 line-clamp-2 drop-shadow font-medium">
-                              {body}
-                            </p>
+                      {item.template_key ? (
+                        <NewsVisualTemplate templateKey={item.template_key} {...item.metadata} />
+                      ) : (
+                        <div className="relative w-full aspect-video sm:aspect-[21/9] overflow-hidden">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                          ) : (
+                            <div className="w-full h-full bg-primary/10 flex items-center justify-center"><Newspaper className="h-10 w-10 text-primary/20" /></div>
                           )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                          <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6">
+                            <Badge className="bg-primary text-white font-black text-[8px] mb-2">{item.category}</Badge>
+                            <h3 className="text-base sm:text-xl font-black text-white leading-tight uppercase italic">{headline}</h3>
+                          </div>
                         </div>
-                      </div>
-                      <div className="px-3 py-2 flex items-center justify-between bg-muted/20 backdrop-blur-sm">
+                      )}
+                      <div className="px-4 py-2 flex items-center justify-between bg-muted/20 backdrop-blur-sm border-t border-white/5">
                         <span className="text-[9px] text-muted-foreground font-mono flex items-center gap-1">
-                          <Newspaper className="h-3 w-3" />
-                          {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          <Newspaper className="h-3 w-3" /> {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <div className="flex items-center gap-1">
-                          {/* Reactions (keep existing code) */}
                           {(reactions[item.id] || []).map(emoji => (
-                            <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
-                              className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 hover:bg-primary/20">
-                              {emoji}
-                            </button>
+                            <button key={emoji} onClick={() => toggleReaction(item.id, emoji)} className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">{emoji}</button>
                           ))}
-                          <div className="relative">
-                            <button onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)}
-                              className="p-1 rounded hover:bg-muted">
-                              <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
+                          <button onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)} className="p-1 rounded hover:bg-muted relative">
+                            <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
                             {showReactionPicker === item.id && (
-                              <div className="absolute bottom-full right-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
+                              <div className="absolute bottom-full right-0 mb-2 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
                                 {REACT_EMOJIS.map(emoji => (
-                                  <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
-                                    className={`text-sm p-1 rounded hover:bg-muted ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}>
-                                    {emoji}
-                                  </button>
+                                  <button key={emoji} onClick={() => toggleReaction(item.id, emoji)} className={`text-sm p-1 rounded hover:bg-muted ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}>{emoji}</button>
                                 ))}
                               </div>
                             )}
-                          </div>
+                          </button>
                         </div>
                       </div>
                     </CardContent>
@@ -301,72 +237,38 @@ export function NewspaperFullPage({ onBack }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleEntries.map((item) => {
               const showSigningVisual = transferCategories.includes(item.category);
-              const inlineKey = detectImageKey(item);
-              const inlinePreset = inlineKey && !showSigningVisual ? IMAGE_PRESETS[inlineKey] : null;
-              const hasImage = item.image_url || inlinePreset || showSigningVisual;
-
               return (
-                <Card key={item.id} className={`border-border/40 overflow-hidden hover:border-primary/20 transition-all group ${inlinePreset ? 'border-amber-500/20' : ''}`}>
+                <Card key={item.id} className="border-border/40 overflow-hidden hover:border-primary/20 transition-all group">
                   <CardContent className="p-0">
-                    {item.image_url ? (
+                    {item.template_key ? (
+                       <NewsVisualTemplate templateKey={item.template_key} {...item.metadata} className="aspect-[21/9]" />
+                    ) : item.image_url ? (
                       <div className="relative w-full aspect-[16/7] overflow-hidden">
                         <img src={item.image_url} alt="Notícia" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
                     ) : showSigningVisual ? (
                       <div className="w-full aspect-[21/9] overflow-hidden bg-blue-500/10 flex items-center justify-center relative">
-                        <img src={signingImg} alt="Transferência" loading="lazy" className="w-full h-full object-cover opacity-40 mix-blend-overlay" />
-                        <span className="absolute inset-0 flex items-center justify-center font-black text-blue-500/20 text-4xl italic tracking-tighter">TRANSFER</span>
-                      </div>
-                    ) : inlinePreset ? (
-                      <div className="relative w-full aspect-[21/9] overflow-hidden">
-                        <img src={inlinePreset.src} alt={inlinePreset.label} loading="lazy" className="w-full h-full object-cover" />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${inlinePreset.gradient} to-transparent`} />
-                        <span className="absolute top-2 left-2 text-[8px] font-black text-white px-2 py-0.5 rounded bg-amber-500/90 uppercase tracking-wider">
-                          {inlinePreset.label}
-                        </span>
+                        <img src={signingImg} alt="Transferência" className="w-full h-full object-cover opacity-30" />
+                        <span className="absolute inset-0 flex items-center justify-center font-black text-blue-500/20 text-3xl italic tracking-tighter">TRANSFER NEWS</span>
                       </div>
                     ) : null}
-                    
                     <div className="p-4">
-                      <div className="flex items-start gap-3">
-                         <div className="flex-1 min-w-0">
-                           <div className="flex items-center gap-2 mb-2">
-                             <Badge className={`${categoryColors[item.category] || 'bg-primary/80'} text-[8px] font-bold border-none`}>
-                               {item.category}
-                             </Badge>
-                             <span className="text-[9px] text-muted-foreground font-mono">
-                                {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                             </span>
-                           </div>
-                           <p className="text-xs sm:text-sm font-bold leading-snug whitespace-pre-line group-hover:text-primary transition-colors">{item.text}</p>
-                         </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={`${categoryColors[item.category] || 'bg-primary/80'} text-[8px] font-bold border-none`}>{item.category}</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono">{new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                       </div>
-                      
+                      <p className="text-xs sm:text-sm font-bold leading-snug group-hover:text-primary transition-colors whitespace-pre-line">{item.text}</p>
                       <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
                         {(reactions[item.id] || []).map(emoji => (
-                          <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
-                            className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">
-                            {emoji}
-                          </button>
+                          <button key={emoji} onClick={() => toggleReaction(item.id, emoji)} className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">{emoji}</button>
                         ))}
                         <div className="relative">
-                          <button
-                            onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)}
-                            className="p-1 rounded hover:bg-muted transition-colors"
-                          >
-                            <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
+                          <button onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)} className="p-1 rounded hover:bg-muted"><SmilePlus className="h-3.5 w-3.5 text-muted-foreground" /></button>
                           {showReactionPicker === item.id && (
-                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
+                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-50">
                               {REACT_EMOJIS.map(emoji => (
-                                <button
-                                  key={emoji}
-                                  onClick={() => toggleReaction(item.id, emoji)}
-                                  className={`text-sm p-1 rounded hover:bg-muted transition-colors ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}
-                                >
-                                  {emoji}
-                                </button>
+                                <button key={emoji} onClick={() => toggleReaction(item.id, emoji)} className={`text-sm p-1 rounded hover:bg-muted ${(reactions[item.id] || []).includes(emoji) ? 'bg-primary/15' : ''}`}>{emoji}</button>
                               ))}
                             </div>
                           )}
@@ -380,19 +282,11 @@ export function NewspaperFullPage({ onBack }: Props) {
           </div>
 
           {restEntries.length > 30 && !showMore && (
-            <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs gap-1">
-              <ChevronDown className="h-3 w-3" /> Ver mais ({restEntries.length - 30} notícias)
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowMore(true)} className="w-full text-xs font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5 py-6">VER MAIS ({restEntries.length - 30} NOTÍCIAS)</Button>
           )}
 
           {entries.length === 0 && (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Newspaper className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-medium">Nenhuma notícia publicada</p>
-                <p className="text-xs text-muted-foreground">Transferências e eventos aparecerão aqui automaticamente</p>
-              </CardContent>
-            </Card>
+            <Card><CardContent className="p-12 text-center"><Newspaper className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" /><p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Nenhuma notícia publicada ainda</p></CardContent></Card>
           )}
         </>
       )}
