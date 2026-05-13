@@ -320,51 +320,58 @@ export function NewspaperFullPage({ onBack }: Props) {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleEntries.map((item) => {
               const showSigningVisual = transferCategories.includes(item.category);
-              // Inline thumbnail for special events that didn't make it to "featured" slots.
               const inlineKey = detectImageKey(item);
               const inlinePreset = inlineKey && !showSigningVisual ? IMAGE_PRESETS[inlineKey] : null;
+              const hasImage = item.image_url || inlinePreset || showSigningVisual;
 
               return (
-                <Card key={item.id} className={`border-border overflow-hidden ${inlinePreset ? 'border-amber-500/30' : ''}`}>
+                <Card key={item.id} className={`border-border/40 overflow-hidden hover:border-primary/20 transition-all group ${inlinePreset ? 'border-amber-500/20' : ''}`}>
                   <CardContent className="p-0">
-                    {showSigningVisual && (
-                      <div className="w-full overflow-hidden">
-                        <img src={signingImg} alt="Transferência" loading="lazy" className="w-full h-auto opacity-70" />
+                    {item.image_url ? (
+                      <div className="relative w-full aspect-[16/7] overflow-hidden">
+                        <img src={item.image_url} alt="Notícia" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
-                    )}
-                    {inlinePreset && (
-                      <div className="relative w-full overflow-hidden">
-                        <img src={inlinePreset.src} alt={inlinePreset.label} loading="lazy" width={1280} height={640} className="w-full h-24 object-cover" />
+                    ) : showSigningVisual ? (
+                      <div className="w-full aspect-[21/9] overflow-hidden bg-blue-500/10 flex items-center justify-center relative">
+                        <img src={signingImg} alt="Transferência" loading="lazy" className="w-full h-full object-cover opacity-40 mix-blend-overlay" />
+                        <span className="absolute inset-0 flex items-center justify-center font-black text-blue-500/20 text-4xl italic tracking-tighter">TRANSFER</span>
+                      </div>
+                    ) : inlinePreset ? (
+                      <div className="relative w-full aspect-[21/9] overflow-hidden">
+                        <img src={inlinePreset.src} alt={inlinePreset.label} loading="lazy" className="w-full h-full object-cover" />
                         <div className={`absolute inset-0 bg-gradient-to-t ${inlinePreset.gradient} to-transparent`} />
-                        <span className="absolute top-1.5 left-1.5 text-[8px] font-bold text-white px-1.5 py-0.5 rounded bg-amber-500/90">
+                        <span className="absolute top-2 left-2 text-[8px] font-black text-white px-2 py-0.5 rounded bg-amber-500/90 uppercase tracking-wider">
                           {inlinePreset.label}
                         </span>
                       </div>
-                    )}
-                    <div className="p-3">
-                      <div className="flex items-start gap-2">
-                        <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${categoryColors[item.category] || 'bg-primary/80'}`}>
-                          {item.category}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs leading-snug whitespace-pre-line font-medium">{item.text}</p>
-                        </div>
-                        <div className="flex flex-col items-end shrink-0 gap-1">
-                          {item.is_event && <Badge variant="secondary" className="text-[7px]">Evento</Badge>}
-                          <span className="text-[8px] text-muted-foreground">
-                            {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+                    ) : null}
+                    
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                         <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-2">
+                             <Badge className={`${categoryColors[item.category] || 'bg-primary/80'} text-[8px] font-bold border-none`}>
+                               {item.category}
+                             </Badge>
+                             <span className="text-[9px] text-muted-foreground font-mono">
+                                {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                             </span>
+                           </div>
+                           <p className="text-xs sm:text-sm font-bold leading-snug whitespace-pre-line group-hover:text-primary transition-colors">{item.text}</p>
+                         </div>
                       </div>
-                      {/* Reaction bar */}
-                      <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-border/30">
+                      
+                      <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
                         {(reactions[item.id] || []).map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={() => toggleReaction(item.id, emoji)}
+                          <button key={emoji} onClick={() => toggleReaction(item.id, emoji)}
+                            className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">
+                            {emoji}
+                          </button>
+                        ))}
                             className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
                           >
                             {emoji}
