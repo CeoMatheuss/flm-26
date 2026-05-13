@@ -520,34 +520,31 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               });
             } catch (err) { console.error('Post-game report error:', err); }
 
-            // Automatic Image Generation for significant wins (3+ goals)
+            // Automatic News Generation for significant matches
             try {
               const userGoals = fm.is_home ? fm.home_goals : fm.away_goals;
               const oppGoals = fm.is_home ? fm.away_goals : fm.home_goals;
               const userTeam = fm.is_home ? fm.home_team : fm.away_team;
-              if (userGoals - oppGoals >= 3) {
-                 supabase.functions.invoke('generate-sports-art', {
-                   body: {
-                     team_name: userTeam,
-                     competition: fm.competition || 'Liga',
-                     event_type: 'historic_win',
-                     result: `${userGoals} x ${oppGoals}`,
-                     colors: { primary: initialState?.club?.primaryColor, secondary: initialState?.club?.secondaryColor }
-                   }
-                 }).then(({ data }) => {
-                   if (data?.imageUrl) {
-                     supabase.from('newspaper_entries').insert([{
-                       user_id: userId,
-                       text: `HISTÓRICO: ${userTeam} aplica goleada avassaladora de ${userGoals} x ${oppGoals} na ${fm.competition || 'competição'}!`,
-                       category: 'HISTÓRIA',
-                       is_event: true,
-                       image_url: data.imageUrl,
-                       importance: 3
-                     }]);
-                   }
-                 });
-              }
-            } catch (e) { console.warn('Art generation skipped:', e); }
+              const oppTeam = fm.is_home ? fm.away_team : fm.home_team;
+              
+              const isWin = userGoals > oppGoals;
+              const isDraw = userGoals === oppGoals;
+              
+              const template = isDraw ? 'league_draw' : (isWin ? 'league_win' : 'league_loss');
+              const headline = isDraw ? `Empate heróico! ${userTeam} e ${oppTeam} ficam no ${userGoals}x${oppGoals}.` 
+                : isWin ? `Vitória espetacular do ${userTeam} contra o ${oppTeam}!` 
+                : `Duro golpe! ${userTeam} é derrotado pelo ${oppTeam} em casa.`;
+
+              await supabase.from('newspaper_entries').insert([{
+                user_id: userId,
+                text: headline,
+                category: isWin ? 'RESULTADO' : (isDraw ? 'CAMPEONATO' : 'CRISE'),
+                is_event: true,
+                template_key: template,
+                metadata: { team_name: userTeam, opponent_name: oppTeam, score: `${userGoals}x${oppGoals}`, competition: fm.competition || 'Liga', club: { shieldConfig: initialState?.club?.shieldConfig } },
+                importance: (Math.abs(userGoals - oppGoals) >= 3) ? 3 : 1
+              }]);
+            } catch (e) { console.warn('News generation skipped:', e); }
           }
           
           await supabase.from('live_matches').delete().eq('id', fm.id);
