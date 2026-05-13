@@ -78,10 +78,16 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
       <CardHeader className="pb-0 px-3 sm:px-4 pt-3 sm:pt-4">
         <div className="flex items-center justify-between border-b-2 border-foreground pb-1 mb-2">
           <div className="flex items-center gap-1.5">
-            <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">Diário do Futebol</span>
+            <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em]">Diário do Futebol</span>
           </div>
-          <span className="text-[8px] sm:text-[10px] text-muted-foreground">Global • Online</span>
+          <div className="flex items-center gap-1">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-[8px] sm:text-[10px] text-muted-foreground font-bold">LIVE</span>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3">
