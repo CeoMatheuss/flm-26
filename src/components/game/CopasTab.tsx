@@ -135,6 +135,11 @@ export function CopasTab({ userId }: Props) {
         setGoalStats(enhancedStats.sort((a, b) => (b.goals || 0) - (a.goals || 0)).slice(0, 10));
         setAssistStats(enhancedStats.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10));
         setRatingStats(enhancedStats.filter(s => (s.matches_played || 0) > 0).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10));
+        setYellowStats(enhancedStats.sort((a, b) => (b.yellow_cards || 0) - (a.yellow_cards || 0)).slice(0, 10));
+        setRedStats(enhancedStats.sort((a, b) => (b.red_cards || 0) - (a.red_cards || 0)).slice(0, 10));
+        setCleanStats(enhancedStats.sort((a, b) => (b.clean_sheets || 0) - (a.clean_sheets || 0)).slice(0, 10));
+        setMotmStats(enhancedStats.sort((a, b) => (b.motm_count || 0) - (a.motm_count || 0)).slice(0, 10));
+
       }
     } catch (e) {
       console.error(e);
