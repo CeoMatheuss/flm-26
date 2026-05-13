@@ -164,15 +164,15 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   useEffect(() => {
     loadData();
     
-    // Set up realtime subscription for matches and table
+    // Set up realtime subscription for matches, table and player stats
     const channel = supabase.channel('league_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => {
         loadData();
-        // Dispara evento global para o Widget (MatchDashboardCard) se atualizar
         window.dispatchEvent(new CustomEvent('league_match_updated'));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_leagues' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_player_stats' }, () => loadData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

@@ -39,65 +39,32 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
   const [news, setNews] = useState<NewsEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const load = async () => {
+    setLoading(true);
+    const { data: mainNews } = await supabase.from('newspaper_entries').select('id, text, category, created_at').order('created_at', { ascending: false }).limit(10);
+    const { data: leagueNews } = await supabase.from('world_league_news').select('*').order('created_at', { ascending: false }).limit(5);
+    const { data: cupNews } = await supabase.from('cup_news').select('*').order('created_at', { ascending: false }).limit(5);
+    const merged: NewsEntry[] = [];
+    if (mainNews) merged.push(...(mainNews as NewsEntry[]));
+    if (leagueNews) {
+      leagueNews.forEach(ln => { merged.push({ id: `ln-${ln.id}`, text: `${ln.title}: ${ln.content}`, category: ln.category || 'CAMPEONATO', created_at: ln.created_at }); });
+    }
+    if (cupNews) {
+      cupNews.forEach(cn => { merged.push({ id: `cn-${cn.id}`, text: `${cn.title}: ${cn.content}`, category: 'COPA', created_at: cn.created_at }); });
+    }
+    merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setNews(merged.slice(0, 8));
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      
-      // 1. Load latest global news
-      const { data: mainNews } = await supabase
-        .from('newspaper_entries')
-        .select('id, text, category, created_at')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      // 2. Load League News
-      const { data: leagueNews } = await supabase
-        .from('world_league_news')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      // 3. Load Cup News
-      const { data: cupNews } = await supabase
-        .from('cup_news')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const merged: NewsEntry[] = [];
-
-      if (mainNews) {
-        merged.push(...(mainNews as NewsEntry[]));
-      }
-
-      if (leagueNews) {
-        leagueNews.forEach(ln => {
-          merged.push({
-            id: `ln-${ln.id}`,
-            text: `${ln.title}: ${ln.content}`,
-            category: ln.category || 'CAMPEONATO',
-            created_at: ln.created_at
-          });
-        });
-      }
-
-      if (cupNews) {
-        cupNews.forEach(cn => {
-          merged.push({
-            id: `cn-${cn.id}`,
-            text: `${cn.title}: ${cn.content}`,
-            category: 'COPA',
-            created_at: cn.created_at
-          });
-        });
-      }
-
-      // Sort all by date and limit
-      merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setNews(merged.slice(0, 8));
-      setLoading(false);
-    };
     load();
+    const channel = supabase.channel('newspaper-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'newspaper_entries' }, () => load())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'world_league_news' }, () => load())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cup_news' }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const main = news[0];
