@@ -21,7 +21,7 @@ interface GameHeaderProps {
 export function GameHeader({ club, season, infrastructure, listedPlayers, userId, isNewClub, onSignOut }: GameHeaderProps) {
   return (
     <header className="border-b border-border/20 bg-card/80 backdrop-blur-xl sticky top-0 z-10 safe-area-top shadow-sm shadow-black/10">
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-2 flex items-center justify-between gap-2">
         {/* Club Identity */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="relative">
