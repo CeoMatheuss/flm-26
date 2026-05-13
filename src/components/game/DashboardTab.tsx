@@ -329,6 +329,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {/* Match Card */}
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} stadiumLevel={stadiumLevel} />
 
+      </div>
+      {/* === END LEFT COLUMN === */}
+
+      {/* === RIGHT COLUMN (Performance + Feed) === */}
+      <div className="lg:col-span-7 xl:col-span-8 space-y-3 sm:space-y-4">
+
       {/* Stats Row — Refeito como widget de Ranking e Reputação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Card className="game-card border-primary/20 bg-primary/5">
