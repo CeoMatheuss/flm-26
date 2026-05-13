@@ -1247,7 +1247,15 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
               <TableHead className="w-8 text-[10px]">Pos</TableHead>
               <TableHead className="text-[10px]">Jogador</TableHead>
               <TableHead className="text-[10px]">Time</TableHead>
-              <TableHead className="text-right text-[10px]">{activeStat === 'rating' ? 'Nota' : activeStat === 'goals' ? 'Gols' : 'Assists'}</TableHead>
+              <TableHead className="text-right text-[10px]">
+                {activeStat === 'rating' ? 'Nota' : 
+                 activeStat === 'goals' ? 'Gols' : 
+                 activeStat === 'assists' ? 'Assists' :
+                 activeStat === 'motm_count' ? 'MOTM' :
+                 activeStat === 'clean_sheets' ? 'CS' :
+                 activeStat === 'yellow_cards' ? '🟨' : '🟥'}
+              </TableHead>
+
             </TableRow>
           </TableHeader>
           <TableBody>
