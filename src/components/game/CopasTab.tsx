@@ -191,6 +191,20 @@ export function CopasTab({ userId }: Props) {
   useEffect(() => { loadInitial(); }, [userId]);
   useEffect(() => { if (selectedCupId) loadCupData(selectedCupId); }, [selectedCupId, allCups]);
 
+  // Realtime subscription for Cup updates
+  useEffect(() => {
+    if (!selectedCupId) return;
+    const channel = supabase.channel(`cup-realtime-${selectedCupId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches', filter: `cup_id=eq.${selectedCupId}` }, () => {
+        loadCupData(selectedCupId);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cup_player_stats', filter: `cup_id=eq.${selectedCupId}` }, () => {
+        loadCupData(selectedCupId);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCupId]);
+
   const navigate = useNavigate();
   const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
 
