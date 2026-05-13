@@ -519,35 +519,62 @@ export type Database = {
         Row: {
           assists: number | null
           avg_rating: number | null
+          clean_sheets: number | null
           created_at: string | null
           cup_id: string | null
+          decisive_passes: number | null
           goals: number | null
+          goals_conceded: number | null
           id: string
           matches_played: number | null
+          minutes_played: number | null
+          motm_count: number | null
           player_id: string | null
+          player_name: string | null
+          red_cards: number | null
           team_id: string | null
+          team_name: string | null
+          yellow_cards: number | null
         }
         Insert: {
           assists?: number | null
           avg_rating?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
           cup_id?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           matches_played?: number | null
+          minutes_played?: number | null
+          motm_count?: number | null
           player_id?: string | null
+          player_name?: string | null
+          red_cards?: number | null
           team_id?: string | null
+          team_name?: string | null
+          yellow_cards?: number | null
         }
         Update: {
           assists?: number | null
           avg_rating?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
           cup_id?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           matches_played?: number | null
+          minutes_played?: number | null
+          motm_count?: number | null
           player_id?: string | null
+          player_name?: string | null
+          red_cards?: number | null
           team_id?: string | null
+          team_name?: string | null
+          yellow_cards?: number | null
         }
         Relationships: [
           {
@@ -1627,42 +1654,63 @@ export type Database = {
       league_player_stats: {
         Row: {
           assists: number | null
+          clean_sheets: number | null
           created_at: string | null
+          decisive_passes: number | null
           goals: number | null
+          goals_conceded: number | null
           id: string
           league_id: string | null
           matches_played: number | null
           member_id: string | null
+          minutes_played: number | null
+          motm_count: number | null
           player_name: string
+          red_cards: number | null
           team_name: string
           total_rating: number | null
           updated_at: string | null
+          yellow_cards: number | null
         }
         Insert: {
           assists?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           league_id?: string | null
           matches_played?: number | null
           member_id?: string | null
+          minutes_played?: number | null
+          motm_count?: number | null
           player_name: string
+          red_cards?: number | null
           team_name: string
           total_rating?: number | null
           updated_at?: string | null
+          yellow_cards?: number | null
         }
         Update: {
           assists?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           league_id?: string | null
           matches_played?: number | null
           member_id?: string | null
+          minutes_played?: number | null
+          motm_count?: number | null
           player_name?: string
+          red_cards?: number | null
           team_name?: string
           total_rating?: number | null
           updated_at?: string | null
+          yellow_cards?: number | null
         }
         Relationships: [
           {
@@ -4128,49 +4176,67 @@ export type Database = {
           assists: number | null
           avg_rating: number | null
           best_rating: number | null
+          clean_sheets: number | null
           created_at: string | null
+          decisive_passes: number | null
           goals: number | null
+          goals_conceded: number | null
           id: string
           league_id: string
           matches_played: number | null
+          minutes_played: number | null
           mvp_count: number | null
           player_id: string
+          red_cards: number | null
           season_month: number
           season_year: number
           team_id: string
           updated_at: string | null
+          yellow_cards: number | null
         }
         Insert: {
           assists?: number | null
           avg_rating?: number | null
           best_rating?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           league_id: string
           matches_played?: number | null
+          minutes_played?: number | null
           mvp_count?: number | null
           player_id: string
+          red_cards?: number | null
           season_month: number
           season_year: number
           team_id: string
           updated_at?: string | null
+          yellow_cards?: number | null
         }
         Update: {
           assists?: number | null
           avg_rating?: number | null
           best_rating?: number | null
+          clean_sheets?: number | null
           created_at?: string | null
+          decisive_passes?: number | null
           goals?: number | null
+          goals_conceded?: number | null
           id?: string
           league_id?: string
           matches_played?: number | null
+          minutes_played?: number | null
           mvp_count?: number | null
           player_id?: string
+          red_cards?: number | null
           season_month?: number
           season_year?: number
           team_id?: string
           updated_at?: string | null
+          yellow_cards?: number | null
         }
         Relationships: [
           {
@@ -4761,6 +4827,34 @@ export type Database = {
           p_player_id: string
           p_rating?: number
           p_team_id: string
+        }
+        Returns: undefined
+      }
+      update_league_standings: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
+      upsert_player_stats: {
+        Args: {
+          _comp_id: string
+          _comp_id_field: string
+          _player_name: string
+          _stats: Json
+          _table_name: string
+          _team_id: string
+          _team_id_field: string
+        }
+        Returns: undefined
+      }
+      upsert_world_player_stats: {
+        Args: {
+          _assists: number
+          _goals: number
+          _is_mvp: boolean
+          _league_id: string
+          _player_id: string
+          _rating: number
+          _team_name: string
         }
         Returns: undefined
       }

@@ -1191,17 +1191,20 @@ function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; m
 function IndividualStatsView({ leagueId }: { leagueId: string }) {
   const [stats, setStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating'>('goals');
+  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating' | 'yellow_cards' | 'red_cards' | 'clean_sheets' | 'motm_count'>('goals');
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
+      let orderBy = activeStat === 'rating' ? 'total_rating' : activeStat;
+      
       const { data, error } = await supabase
         .from('league_player_stats')
         .select('*')
         .eq('league_id', leagueId)
-        .order(activeStat === 'rating' ? 'total_rating' : activeStat, { ascending: false })
+        .order(orderBy, { ascending: false })
         .limit(20);
+
 
       if (!error && data) {
         setStats(data);
@@ -1225,11 +1228,16 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center justify-between">
           Estatísticas Individuais
-          <div className="flex gap-1">
-            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('goals')}>Gols</Button>
-            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('assists')}>Assists</Button>
-            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px]" onClick={() => setActiveStat('rating')}>Nota</Button>
+          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1 max-w-[200px] sm:max-w-none">
+            <Button size="sm" variant={activeStat === 'goals' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('goals')}>Gols</Button>
+            <Button size="sm" variant={activeStat === 'assists' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('assists')}>Assists</Button>
+            <Button size="sm" variant={activeStat === 'rating' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('rating')}>Nota</Button>
+            <Button size="sm" variant={activeStat === 'motm_count' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('motm_count')}>MOTM</Button>
+            <Button size="sm" variant={activeStat === 'clean_sheets' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('clean_sheets')}>Clean Sheet</Button>
+            <Button size="sm" variant={activeStat === 'yellow_cards' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('yellow_cards')}>🟨</Button>
+            <Button size="sm" variant={activeStat === 'red_cards' ? 'default' : 'outline'} className="h-7 text-[10px] shrink-0" onClick={() => setActiveStat('red_cards')}>🟥</Button>
           </div>
+
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -1239,7 +1247,15 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
               <TableHead className="w-8 text-[10px]">Pos</TableHead>
               <TableHead className="text-[10px]">Jogador</TableHead>
               <TableHead className="text-[10px]">Time</TableHead>
-              <TableHead className="text-right text-[10px]">{activeStat === 'rating' ? 'Nota' : activeStat === 'goals' ? 'Gols' : 'Assists'}</TableHead>
+              <TableHead className="text-right text-[10px]">
+                {activeStat === 'rating' ? 'Nota' : 
+                 activeStat === 'goals' ? 'Gols' : 
+                 activeStat === 'assists' ? 'Assists' :
+                 activeStat === 'motm_count' ? 'MOTM' :
+                 activeStat === 'clean_sheets' ? 'CS' :
+                 activeStat === 'yellow_cards' ? '🟨' : '🟥'}
+              </TableHead>
+
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1254,7 +1270,13 @@ function IndividualStatsView({ leagueId }: { leagueId: string }) {
                   <TableCell className="font-medium">{s.player_name}</TableCell>
                   <TableCell className="text-muted-foreground">{s.team_name}</TableCell>
                   <TableCell className="text-right font-bold">
-                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : activeStat === 'goals' ? s.goals : s.assists}
+                    {activeStat === 'rating' ? (s.total_rating / Math.max(1, s.matches_played)).toFixed(2) : 
+                     activeStat === 'goals' ? s.goals : 
+                     activeStat === 'assists' ? s.assists :
+                     activeStat === 'motm_count' ? s.motm_count :
+                     activeStat === 'clean_sheets' ? s.clean_sheets :
+                     activeStat === 'yellow_cards' ? s.yellow_cards : s.red_cards}
+
                   </TableCell>
                 </TableRow>
               ))

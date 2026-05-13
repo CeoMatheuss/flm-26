@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw, Star, MapPin } from 'lucide-react';
+import { Trophy, Loader2, Calendar, Swords, Globe, Play, Newspaper, BarChart3, TrendingUp, Info, Sparkles, DollarSign, RefreshCw, Star, MapPin, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,9 +31,49 @@ const toShieldClub = (t: any) => {
   };
 };
 
+
+function StatsSection({ title, stats, field, icon, label, isRating = false }: { title: string; stats: any[]; field: string; icon: React.ReactNode; label: string; isRating?: boolean }) {
+  return (
+    <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+      <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+        <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
+          {icon} {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {stats.length > 0 ? (
+          <div className="divide-y divide-border/30">
+            {stats.map((s, idx) => (
+              <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                  <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player_name || s.player?.name}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team_name || s.team?.name}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-black text-white">
+                    {isRating ? Number(s[field] || 0).toFixed(1) : s[field] || 0}
+                  </span>
+                  <span className="text-[9px] font-bold text-muted-foreground ml-1">{label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 interface Props {
   userId: string;
 }
+
 
 export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('matches');
@@ -44,6 +84,11 @@ export function CopasTab({ userId }: Props) {
   const [goalStats, setGoalStats] = useState<any[]>([]);
   const [assistStats, setAssistStats] = useState<any[]>([]);
   const [ratingStats, setRatingStats] = useState<any[]>([]);
+  const [yellowStats, setYellowStats] = useState<any[]>([]);
+  const [redStats, setRedStats] = useState<any[]>([]);
+  const [cleanStats, setCleanStats] = useState<any[]>([]);
+  const [motmStats, setMotmStats] = useState<any[]>([]);
+
   
   const [loading, setLoading] = useState(true);
 
@@ -130,6 +175,11 @@ export function CopasTab({ userId }: Props) {
         setGoalStats(enhancedStats.sort((a, b) => (b.goals || 0) - (a.goals || 0)).slice(0, 10));
         setAssistStats(enhancedStats.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10));
         setRatingStats(enhancedStats.filter(s => (s.matches_played || 0) > 0).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10));
+        setYellowStats(enhancedStats.sort((a, b) => (b.yellow_cards || 0) - (a.yellow_cards || 0)).slice(0, 10));
+        setRedStats(enhancedStats.sort((a, b) => (b.red_cards || 0) - (a.red_cards || 0)).slice(0, 10));
+        setCleanStats(enhancedStats.sort((a, b) => (b.clean_sheets || 0) - (a.clean_sheets || 0)).slice(0, 10));
+        setMotmStats(enhancedStats.sort((a, b) => (b.motm_count || 0) - (a.motm_count || 0)).slice(0, 10));
+
       }
     } catch (e) {
       console.error(e);
@@ -342,104 +392,16 @@ export function CopasTab({ userId }: Props) {
 
         <TabsContent value="stats" className="outline-none space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Artilheiros */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-500" /> Artilheiros
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {goalStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {goalStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{s.goals}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">GOLS</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
+            <StatsSection title="Artilheiros" stats={goalStats} field="goals" icon={<Trophy className="h-4 w-4 text-yellow-500" />} label="GOLS" />
+            <StatsSection title="Assistências" stats={assistStats} field="assists" icon={<Sparkles className="h-4 w-4 text-blue-400" />} label="AST" />
+            <StatsSection title="Notas Médias" stats={ratingStats} field="avg_rating" icon={<Star className="h-4 w-4 text-orange-400" />} label="NOTA" isRating />
+          </div>
 
-            {/* Assistências */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-blue-400" /> Assistências
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {assistStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {assistStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{s.assists || 0}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">AST</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Notas Médias */}
-            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                  <Star className="h-4 w-4 text-orange-400" /> Notas Médias
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {ratingStats.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {ratingStats.map((s, idx) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                          <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player?.name}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team?.name}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{Number(s.avg_rating || 0).toFixed(1)}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground ml-1">NOTA</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-                )}
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <StatsSection title="MOTM" stats={motmStats} field="motm_count" icon={<Star className="h-3 w-3 text-amber-400" />} label="🏆" />
+            <StatsSection title="Clean Sheets" stats={cleanStats} field="clean_sheets" icon={<Shield className="h-3 w-3 text-emerald-400" />} label="🧤" />
+            <StatsSection title="Amarelos" stats={yellowStats} field="yellow_cards" icon={<div className="h-3 w-2 bg-yellow-400 rounded-sm" />} label="🟨" />
+            <StatsSection title="Vermelhos" stats={redStats} field="red_cards" icon={<div className="h-3 w-2 bg-red-500 rounded-sm" />} label="🟥" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -456,6 +418,7 @@ export function CopasTab({ userId }: Props) {
             </Card>
           </div>
         </TabsContent>
+
 
 
         <TabsContent value="prizes" className="outline-none">
