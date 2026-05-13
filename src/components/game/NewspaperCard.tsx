@@ -15,6 +15,7 @@ interface NewsEntry {
   text: string;
   category: string;
   created_at: string;
+  image_url?: string | null;
 }
 
 const categoryColors: Record<string, string> = {
