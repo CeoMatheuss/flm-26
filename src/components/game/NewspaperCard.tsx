@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NewsVisualTemplate, TemplateKey } from './NewsVisualTemplate';
 
 interface Props {
   onOpenFullPage?: () => void;
