@@ -70,8 +70,10 @@ function StatsSection({ title, stats, field, icon, label, isRating = false }: { 
   );
 }
 
+interface Props {
   userId: string;
 }
+
 
 export function CopasTab({ userId }: Props) {
   const [activeTab, setActiveTab] = useState('matches');
