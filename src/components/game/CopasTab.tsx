@@ -353,6 +353,59 @@ export function CopasTab({ userId }: Props) {
         <TabsContent value="stats" className="outline-none space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Artilheiros */}
+            {/* ... keeping existing goalStats block ... */}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* MOTM */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
+                  <Star className="h-3 w-3 text-amber-400" /> Craque do Jogo (MOTM)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <StatsList stats={motmStats} field="motm_count" icon="🏆" />
+              </CardContent>
+            </Card>
+
+            {/* Clean Sheets */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
+                  <Shield className="h-3 w-3 text-emerald-400" /> Clean Sheets
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <StatsList stats={cleanStats} field="clean_sheets" icon="🧤" />
+              </CardContent>
+            </Card>
+
+            {/* Cartões Amarelos */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
+                  <div className="h-3 w-2 bg-yellow-400 rounded-sm" /> Amarelos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <StatsList stats={yellowStats} field="yellow_cards" icon="🟨" />
+              </CardContent>
+            </Card>
+
+            {/* Cartões Vermelhos */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
+                <CardTitle className="text-[10px] font-black uppercase flex items-center gap-2">
+                  <div className="h-3 w-2 bg-red-500 rounded-sm" /> Vermelhos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <StatsList stats={redStats} field="red_cards" icon="🟥" />
+              </CardContent>
+            </Card>
+          </div>
+
             <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
               <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
                 <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
