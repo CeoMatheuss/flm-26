@@ -112,14 +112,14 @@ Deno.serve(async (req) => {
           if (stats.length > 0) await sb.rpc('batch_upsert_player_stats', { _table_name: 'world_player_stats', _comp_id_field: 'league_id', _comp_id: m.league_id, _team_id_field: 'team_id', _updates: stats.map(s => ({ ...s, season_month: m.season_month, season_year: m.season_year })) });
         }
 
-        const newsTitle = `${m.home_team.name} ${hg} x ${ag} ${m.away_team.name}`;
+        const newsTitle = getHeadline(hg === ag ? 'draw' : (hg > ag ? 'win' : 'loss'), hg > ag ? m.home_team.name : m.away_team.name, hg > ag ? m.away_team.name : m.home_team.name);
         const template = getMatchTemplate(hg, ag, true);
         const metadata = { team_name: m.home_team.name, opponent_name: m.away_team.name, score: `${hg}x${ag}`, competition: 'Liga Mundial' };
         
         await sb.from('world_league_news').insert({ 
           league_id: m.league_id, match_id: m.id, title: newsTitle, 
           content: hg === ag ? "Empate em jogo disputado!" : `${hg > ag ? m.home_team.name : m.away_team.name} vence com autoridade.`,
-          template_key: template, metadata, importance: (hg >= 3 || ag >= 3) ? 3 : 1
+          template_key: template, metadata, importance: (Math.abs(hg - ag) >= 3) ? 3 : 1
         });
 
         await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
