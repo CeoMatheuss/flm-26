@@ -162,10 +162,11 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -5 }}
                   animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 2, backgroundColor: 'rgba(var(--primary), 0.05)' }}
                   transition={{ delay: 0.1 * idx }}
-                  className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors group/item"
+                  className="flex items-start gap-2 p-1.5 rounded-lg transition-colors group/item"
                 >
                   <div className="w-0.5 h-8 bg-muted group-hover/item:bg-primary transition-colors rounded-full" />
                   <div className="flex-1 min-w-0">
