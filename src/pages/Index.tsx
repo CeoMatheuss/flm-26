@@ -574,7 +574,16 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       if (eventType === 'signing') text = `${emoji} ${playerName} (${position}, OVR ${overall}, ${age} anos) é o novo reforço do ${game.club.name}!`;
       else if (eventType === 'renewal') text = `${emoji} ${playerName} (${position}, OVR ${overall}) renovou com o ${game.club.name}. ${extraInfo || ''}`;
       else text = `${emoji} ${playerName} (${position}, OVR ${overall}) foi emprestado pelo ${game.club.name}. ${extraInfo || ''}`;
-      await supabase.from('newspaper_entries').insert([{ user_id: userId, text: text.trim(), category, is_event: true }]);
+      
+      await supabase.from('newspaper_entries').insert([{ 
+        user_id: userId, 
+        text: text.trim(), 
+        category, 
+        is_event: true,
+        template_key: eventType === 'signing' ? 'transfer' : null,
+        metadata: eventType === 'signing' ? { playerName, team_name: game.club.name, club: { shieldConfig: game.club.shieldConfig } } : null,
+        importance: eventType === 'signing' ? 2 : 1
+      }]);
     } catch (err) { console.error('Error saving signing news:', err); }
   }, [userId, game.club.name]);
 
