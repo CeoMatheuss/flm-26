@@ -44,28 +44,6 @@ const categoryColors: Record<string, string> = {
   'BOLA DE OURO': 'bg-yellow-500/90',
 };
 
-// Visual presets keyed by image_key (or auto-detected from category/text fallback)
-const IMAGE_PRESETS: Record<string, { src: string; label: string; gradient: string }> = {
-  league_champion:    { src: leagueChampionImg, label: '🏆 CAMPEÃO DA LIGA',     gradient: 'from-amber-500/80 via-amber-600/40' },
-  league_champion_early: { src: leagueChampionImg, label: '🏆 CAMPEÃO ANTECIPADO', gradient: 'from-amber-400/80 via-orange-500/40' },
-  cup_champion:       { src: cupChampionImg,    label: '🏆 CAMPEÃO DE COPA',     gradient: 'from-amber-500/80 via-yellow-600/40' },
-  international_champion: { src: cupChampionImg, label: '🌍 CAMPEÃO INTERNACIONAL', gradient: 'from-blue-500/80 via-amber-500/40' },
-  ballon_dor:         { src: ballonDorImg,      label: '⭐ BOLA DE OURO',         gradient: 'from-yellow-400/80 via-amber-600/40' },
-  awards:             { src: ballonDorImg,      label: '🏅 PREMIAÇÃO',            gradient: 'from-amber-500/70 via-yellow-600/30' },
-};
-
-function detectImageKey(item: { image_key?: string | null; category?: string; text?: string }): string | null {
-  if (item.image_key && IMAGE_PRESETS[item.image_key]) return item.image_key;
-  const cat = (item.category || '').toUpperCase();
-  const txt = (item.text || '').toLowerCase();
-  if (cat === 'BOLA DE OURO' || txt.includes('bola de ouro')) return 'ballon_dor';
-  if (cat === 'AWARDS' || cat === 'PREMIAÇÃO') return 'awards';
-  if (cat === 'COPA' || txt.includes('vence a final') || txt.includes('campeão de copa')) return 'cup_champion';
-  if (cat === 'CAMPEÃO' || txt.includes('campeão antecipado')) return 'league_champion_early';
-  if (txt.includes('campeão da liga') || txt.includes('conquista o título')) return 'league_champion';
-  return null;
-}
-
 interface SavedEntry {
   id: string;
   text: string;
@@ -75,6 +53,8 @@ interface SavedEntry {
   user_id: string;
   image_key?: string | null;
   image_url?: string | null;
+  template_key?: TemplateKey | null;
+  metadata?: any;
   importance?: number;
 }
 
