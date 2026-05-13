@@ -4830,6 +4830,34 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_league_standings: {
+        Args: { _league_id: string }
+        Returns: undefined
+      }
+      upsert_player_stats: {
+        Args: {
+          _comp_id: string
+          _comp_id_field: string
+          _player_name: string
+          _stats: Json
+          _table_name: string
+          _team_id: string
+          _team_id_field: string
+        }
+        Returns: undefined
+      }
+      upsert_world_player_stats: {
+        Args: {
+          _assists: number
+          _goals: number
+          _is_mvp: boolean
+          _league_id: string
+          _player_id: string
+          _rating: number
+          _team_name: string
+        }
+        Returns: undefined
+      }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
