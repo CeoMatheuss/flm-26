@@ -1191,17 +1191,20 @@ function RivalriesView({ rivalries, members, userId }: { rivalries: Rivalry[]; m
 function IndividualStatsView({ leagueId }: { leagueId: string }) {
   const [stats, setStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating'>('goals');
+  const [activeStat, setActiveStat] = useState<'goals' | 'assists' | 'rating' | 'yellow_cards' | 'red_cards' | 'clean_sheets' | 'motm_count'>('goals');
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
+      let orderBy = activeStat === 'rating' ? 'total_rating' : activeStat;
+      
       const { data, error } = await supabase
         .from('league_player_stats')
         .select('*')
         .eq('league_id', leagueId)
-        .order(activeStat === 'rating' ? 'total_rating' : activeStat, { ascending: false })
+        .order(orderBy, { ascending: false })
         .limit(20);
+
 
       if (!error && data) {
         setStats(data);
