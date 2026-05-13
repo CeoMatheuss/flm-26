@@ -118,17 +118,32 @@ Deno.serve(async (req: Request) => {
 
   try {
     // --- 1. LEAGUE MATCHES ---
+    // Fetch scheduled matches AND finished matches without stats (self-correction)
     const { data: wMatches } = await sb.from("world_matches").select(`*, 
       home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength, user_id),
       away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength, user_id)
-    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
+    `).or(`status.eq.scheduled,status.eq.finished`).lte("scheduled_at", now.toISOString()).limit(50);
 
     if (wMatches) {
       for (const m of wMatches) {
-        const { data: live } = await sb.from('live_matches').select('id').eq('shared_match_id', m.id).limit(1).maybeSingle();
-        if (live) continue;
+        // Only re-process finished if played_at is recent and stats might be missing
+        if (m.status === 'finished') {
+          const { count } = await sb.from('world_player_stats').select('*', { count: 'exact', head: true }).eq('league_id', m.league_id).eq('team_id', m.home_team_id).eq('season_month', m.season_month).eq('season_year', m.season_year).limit(1);
+          if (count && count > 0) continue; // Already has stats
+        }
 
-        const { home: hg, away: ag } = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
+        const { data: live } = await sb.from('live_matches').select('id').eq('shared_match_id', m.id).limit(1).maybeSingle();
+        if (live && m.status === 'scheduled') continue;
+
+        let hg = m.home_goals || 0;
+        let ag = m.away_goals || 0;
+        
+        if (m.status === 'scheduled') {
+           const simulated = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
+           hg = simulated.home;
+           ag = simulated.away;
+        }
+
         const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id);
         const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id);
         
@@ -145,25 +160,25 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // News
-        const newsTitle = `${m.home_team.name} ${hg} x ${ag} ${m.away_team.name}`;
-        const newsContent = hg === ag ? "Empate eletrizante em campo!" : `${hg > ag ? m.home_team.name : m.away_team.name} domina o adversário e garante 3 pontos.`;
-        await sb.from('world_league_news').insert({ league_id: m.league_id, match_id: m.id, title: newsTitle, content: newsContent });
+        if (m.status === 'scheduled') {
+           const newsTitle = `${m.home_team.name} ${hg} x ${ag} ${m.away_team.name}`;
+           const newsContent = hg === ag ? "Empate eletrizante em campo!" : `${hg > ag ? m.home_team.name : m.away_team.name} domina o adversário e garante 3 pontos.`;
+           await sb.from('world_league_news').insert({ league_id: m.league_id, match_id: m.id, title: newsTitle, content: newsContent });
 
-        // Update Match & Table
-        await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
-        
-        for (const t of [{ id: m.home_team_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag }, { id: m.away_team_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }]) {
-          const { data: row } = await sb.from("world_league_table").select("*").eq("team_id", t.id).eq("league_id", m.league_id).eq("season_month", m.season_month).eq("season_year", m.season_year).maybeSingle();
-          if (row) {
-            const res = t.win ? 'V' : (t.draw ? 'E' : 'D');
-            const newForm = ((row.last_5_games || '').replace(/-/g, '') + res).slice(-5);
-            await sb.from("world_league_table").update({
-              played: row.played + 1, wins: row.wins + (t.win ? 1 : 0), draws: row.draws + (t.draw ? 1 : 0),
-              losses: row.losses + (!t.win && !t.draw ? 1 : 0), goals_for: row.goals_for + t.gf, goals_against: row.goals_against + t.ga,
-              points: row.points + (t.win ? 3 : t.draw ? 1 : 0), last_5_games: newForm, win_rate: ((row.wins + (t.win ? 1 : 0)) / (row.played + 1)) * 100
-            }).eq("id", row.id);
-          }
+           await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
+           
+           for (const t of [{ id: m.home_team_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag }, { id: m.away_team_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }]) {
+             const { data: row } = await sb.from("world_league_table").select("*").eq("team_id", t.id).eq("league_id", m.league_id).eq("season_month", m.season_month).eq("season_year", m.season_year).maybeSingle();
+             if (row) {
+               const res = t.win ? 'V' : (t.draw ? 'E' : 'D');
+               const newForm = ((row.last_5_games || '').replace(/-/g, '') + res).slice(-5);
+               await sb.from("world_league_table").update({
+                 played: row.played + 1, wins: row.wins + (t.win ? 1 : 0), draws: row.draws + (t.draw ? 1 : 0),
+                 losses: row.losses + (!t.win && !t.draw ? 1 : 0), goals_for: row.goals_for + t.gf, goals_against: row.goals_against + t.ga,
+                 points: row.points + (t.win ? 3 : t.draw ? 1 : 0), last_5_games: newForm, win_rate: ((row.wins + (t.win ? 1 : 0)) / (row.played + 1)) * 100
+               }).eq("id", row.id);
+             }
+           }
         }
         totalProcessed++;
       }
@@ -173,18 +188,31 @@ Deno.serve(async (req: Request) => {
     const { data: cMatches } = await sb.from("national_cup_matches").select(`*, 
       home_team:national_cup_teams!national_cup_matches_home_team_id_fkey(*),
       away_team:national_cup_teams!national_cup_matches_away_team_id_fkey(*)
-    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
+    `).or(`status.eq.scheduled,status.eq.finished`).lte("scheduled_at", now.toISOString()).limit(50);
 
     if (cMatches) {
       for (const m of cMatches) {
+        if (m.status === 'finished') {
+          const { count } = await sb.from('cup_player_stats').select('*', { count: 'exact', head: true }).eq('cup_id', m.cup_id).eq('team_id', m.home_team_id).limit(1);
+          if (count && count > 0) continue;
+        }
+
         const { data: cs } = await sb.from('national_cups').select('status').eq('id', m.cup_id).single();
         if (cs?.status !== 'in_progress') continue;
 
-        const { home: hg, away: ag } = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
-        let winnerId = hg > ag ? m.home_team_id : (ag > hg ? m.away_team_id : null);
-        let hPen = null, aPen = null;
+        let hg = m.home_score || 0;
+        let ag = m.away_score || 0;
+        let winnerId = m.winner_team_id || (hg > ag ? m.home_team_id : (ag > hg ? m.away_team_id : null));
 
-        if (hg === ag) {
+        if (m.status === 'scheduled') {
+           const simulated = simulate(m.home_team?.strength || 65, m.away_team?.strength || 65);
+           hg = simulated.home;
+           ag = simulated.away;
+           winnerId = hg > ag ? m.home_team_id : (ag > hg ? m.away_team_id : null);
+        }
+
+        let hPen = m.home_penalties, aPen = m.away_penalties;
+        if (hg === ag && !winnerId) {
           hPen = Math.floor(Math.random() * 6) + 3;
           aPen = Math.floor(Math.random() * 6) + 3;
           while (hPen === aPen) aPen = Math.floor(Math.random() * 6) + 3;
@@ -200,11 +228,13 @@ Deno.serve(async (req: Request) => {
           if (stats.length > 0) await sb.rpc('batch_upsert_player_stats', { _table_name: 'cup_player_stats', _comp_id_field: 'cup_id', _comp_id: m.cup_id, _team_id_field: 'team_id', _updates: stats });
         }
 
-        await sb.from('cup_news').insert({ cup_id: m.cup_id, title: `Copa: ${m.home_team.club_name} ${hg}x${ag} ${m.away_team.club_name}`, content: `Duelo intenso na Copa Nacional. ${winnerId === m.home_team_id ? m.home_team.club_name : m.away_team.club_name} avança!` });
-        await sb.from("national_cup_matches").update({ home_score: hg, away_score: ag, home_penalties: hPen, away_penalties: aPen, status: "finished", winner_team_id: winnerId }).eq("id", m.id);
-        const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
-        await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
-        await sb.from('national_cup_prizes').insert({ cup_id: m.cup_id, team_id: winnerId, amount: 50000, description: `Vitória na Rodada ${m.round}` });
+        if (m.status === 'scheduled') {
+           await sb.from('cup_news').insert({ cup_id: m.cup_id, title: `Copa: ${m.home_team.club_name} ${hg}x${ag} ${m.away_team.club_name}`, content: `Duelo intenso na Copa Nacional. ${winnerId === m.home_team_id ? m.home_team.club_name : m.away_team.club_name} avança!` });
+           await sb.from("national_cup_matches").update({ home_score: hg, away_score: ag, home_penalties: hPen, away_penalties: aPen, status: "finished", winner_team_id: winnerId }).eq("id", m.id);
+           const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+           await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
+           await sb.from('national_cup_prizes').insert({ cup_id: m.cup_id, team_id: winnerId, amount: 50000, description: `Vitória na Rodada ${m.round}` });
+        }
         totalProcessed++;
       }
     }
