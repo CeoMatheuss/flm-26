@@ -428,7 +428,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       <LeagueStandingsMini userId={userId} />
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
         {/* Events Feed */}
         {recentEvents.length > 0 && (
           <Card className="game-card-accent">
