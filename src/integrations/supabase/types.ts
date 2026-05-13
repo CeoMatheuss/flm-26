@@ -1777,6 +1777,36 @@ export type Database = {
           },
         ]
       }
+      league_waiting_list: {
+        Row: {
+          country: string
+          division: number | null
+          enrolled_at: string | null
+          id: string
+          league_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          country: string
+          division?: number | null
+          enrolled_at?: string | null
+          id?: string
+          league_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          country?: string
+          division?: number | null
+          enrolled_at?: string | null
+          id?: string
+          league_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       live_match_substitutions: {
         Row: {
           created_at: string
