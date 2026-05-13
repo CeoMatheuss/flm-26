@@ -372,11 +372,6 @@ export function NewspaperFullPage({ onBack }: Props) {
                             {emoji}
                           </button>
                         ))}
-                            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
                         <div className="relative">
                           <button
                             onClick={() => setShowReactionPicker(showReactionPicker === item.id ? null : item.id)}
@@ -385,7 +380,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                             <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                           {showReactionPicker === item.id && (
-                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-lg z-10">
+                            <div className="absolute bottom-full left-0 mb-1 flex gap-0.5 bg-card border border-border rounded-lg p-1 shadow-2xl z-50">
                               {REACT_EMOJIS.map(emoji => (
                                 <button
                                   key={emoji}
