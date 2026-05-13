@@ -604,6 +604,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </div>
         </CardContent>
       </Card>
+
+      </div>
+      {/* === END RIGHT COLUMN === */}
+
+      </div>
+      {/* === END MAIN GRID === */}
     </div>
   );
 }
