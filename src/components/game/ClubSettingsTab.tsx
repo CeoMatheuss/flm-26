@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
-import { Pencil, Landmark, Check, Shield, X } from 'lucide-react';
+import { Pencil, Landmark, Check, Shield, X, Palette } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { ShieldCrest, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
@@ -34,6 +36,29 @@ export function ClubSettingsTab({
   const [newClubName, setNewClubName] = useState(clubName);
   const [newStadiumName, setNewStadiumName] = useState(stadiumName);
   const [shieldOpen, setShieldOpen] = useState(false);
+  const [hasColorProduct, setHasColorProduct] = useState(false);
+  const [newDetailColor, setNewDetailColor] = useState(detailColor || '#ffffff');
+
+  useEffect(() => {
+    async function checkProduct() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('shop_purchases').select('id').eq('user_id', user.id).eq('product_id', 'custom_name').eq('status', 'completed').maybeSingle();
+      setHasColorProduct(!!data);
+    }
+    checkProduct();
+  }, []);
+
+  const handleUpdateColor = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from('clubs').update({ detail_color: newDetailColor }).eq('user_id', user.id);
+    if (!error) {
+      toast.success('Cor do nome atualizada!');
+    } else {
+      toast.error('Erro ao atualizar cor.');
+    }
+  };
 
   // Build initial config for the editor: prefer shieldConfig, fallback to legacy fields
   const initialConfig: ShieldConfig = shieldConfig ?? defaultShieldConfig({
