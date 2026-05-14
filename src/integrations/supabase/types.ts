@@ -3022,6 +3022,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_daily_shop_bonus_at: string | null
           last_training_processed_at: string | null
           tutorial_completed: boolean
           user_id: string
@@ -3031,6 +3032,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_daily_shop_bonus_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id: string
@@ -3040,6 +3042,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_daily_shop_bonus_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id?: string
@@ -3372,6 +3375,92 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      shop_products: {
+        Row: {
+          active: boolean | null
+          bonus_data: Json | null
+          category: string
+          created_at: string
+          description: string | null
+          duration_days: number | null
+          id: string
+          min_fans_required: number | null
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category: string
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id: string
+          min_fans_required?: number | null
+          name: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          min_fans_required?: number | null
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_purchases: {
+        Row: {
+          activated_at: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_bonus_claim_at: string | null
+          product_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_bonus_claim_at?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_bonus_claim_at?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "shop_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_messages: {
         Row: {
@@ -4789,6 +4878,7 @@ export type Database = {
         Returns: Json
       }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
+      process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
       process_league_waiting_list: {
         Args: { _league_id: string }
         Returns: undefined
