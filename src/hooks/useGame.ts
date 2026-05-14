@@ -314,6 +314,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     friendliesPlayedSeason: matchState.friendliesPlayedSeason,
     alreadyPlayedToday: matchState.alreadyPlayedToday,
     lastFriendlyDate: matchState.lastFriendlyDate,
+    lastTrainingResult: clubState.lastTrainingResult,
 
     // Actions
     setTactics,
