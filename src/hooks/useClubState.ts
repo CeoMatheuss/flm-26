@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Club, Player, Scout, ScoutReport, PlayerAttributes, PhysicalStatus } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,8 @@ import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
 import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
 import { toast } from 'sonner';
+import { getTrainingManager, defaultStaff } from '@/training/TrainingManager';
+import { WeeklyTrainingResult } from '@/training/TrainingTypes';
 import {
   buildStadiumModules,
 } from '@/match/stadiumEconomics';
