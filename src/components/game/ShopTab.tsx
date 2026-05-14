@@ -186,58 +186,61 @@ export function ShopTab() {
           <TabsContent key={cat.id} value={cat.id} className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {items
-                .filter(item => cat.id === 'featured' ? item.rarity !== 'common' : item.category === cat.id)
-                .map(item => (
-                <Card 
-                  key={item.id} 
-                  className="group relative bg-[#121a12] border-emerald-500/10 hover:border-emerald-500/40 transition-all duration-500 cursor-pointer overflow-hidden shadow-lg hover:shadow-emerald-500/10"
-                  onClick={() => handleOpenPurchase(item)}
-                >
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${
-                    item.rarity === 'legendary' ? 'from-amber-400 to-yellow-600' :
-                    item.rarity === 'epic' ? 'from-purple-500 to-pink-600' :
-                    item.rarity === 'rare' ? 'from-blue-400 to-cyan-500' :
-                    'from-emerald-500 to-emerald-700'
-                  }`} />
+                .filter(item => {
+                  if (cat.id === 'featured') return item.rarity === 'legendary' || item.rarity === 'epic';
+                  if (cat.id === 'tournament') return item.category === 'ticket';
+                  return item.category === cat.id;
+                })
+                .map(item => {
+                  const r = RARITY_CONFIG[item.rarity as keyof typeof RARITY_CONFIG] || RARITY_CONFIG.common;
+                  return (
+                    <Card 
+                      key={item.id} 
+                      className={`group relative bg-[#121a12] ${r.border} hover:border-emerald-500/40 transition-all duration-500 cursor-pointer overflow-hidden shadow-lg hover:shadow-emerald-500/10`}
+                      onClick={() => handleOpenPurchase(item)}
+                    >
+                      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${
+                        item.rarity === 'legendary' ? 'from-amber-400 to-yellow-600' :
+                        item.rarity === 'epic' ? 'from-purple-500 to-pink-600' :
+                        item.rarity === 'rare' ? 'from-blue-400 to-cyan-500' :
+                        'from-emerald-500 to-emerald-700'
+                      }`} />
 
-                  <CardHeader className="pb-2 relative">
-                    <div className="absolute top-4 right-4">
-                       <Badge variant="outline" className={`text-[9px] uppercase font-black ${
-                         item.rarity === 'legendary' ? 'border-amber-500 text-amber-500' :
-                         item.rarity === 'epic' ? 'border-purple-500 text-purple-500' :
-                         item.rarity === 'rare' ? 'border-blue-500 text-blue-500' :
-                         'border-emerald-500 text-emerald-500'
-                       }`}>
-                         {item.rarity}
-                       </Badge>
-                    </div>
-                    <div className="w-full aspect-square bg-[#0a0f0a] rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-500 border border-white/5 shadow-inner">
-                      {item.category === 'currency' && <Wallet className="w-16 h-16 text-amber-500 opacity-80" />}
-                      {item.category === 'pack' && <Gift className="w-16 h-16 text-emerald-500 opacity-80" />}
-                      {item.category === 'boost' && <Zap className="w-16 h-16 text-blue-500 opacity-80" />}
-                      {item.category === 'vanity' && <Sparkles className="w-16 h-16 text-purple-500 opacity-80" />}
-                    </div>
-                    <CardTitle className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
-                      {item.name}
-                    </CardTitle>
-                    <CardDescription className="text-xs line-clamp-2 h-8 text-emerald-100/50">
-                      {item.description}
-                    </CardDescription>
-                  </CardHeader>
+                      <CardHeader className="pb-2 relative">
+                        <div className="absolute top-4 right-4">
+                           <Badge variant="outline" className={`text-[9px] uppercase font-black ${r.border} ${r.color} ${r.bg}`}>
+                             {r.label}
+                           </Badge>
+                        </div>
+                        <div className="w-full aspect-square bg-[#0a0f0a] rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-500 border border-white/5 shadow-inner">
+                          {item.category === 'currency' && <Coins className="w-16 h-16 text-amber-500 opacity-80" />}
+                          {item.category === 'pack' && <Gift className="w-16 h-16 text-emerald-500 opacity-80" />}
+                          {item.category === 'boost' && <Zap className="w-16 h-16 text-blue-500 opacity-80" />}
+                          {item.category === 'vanity' && <LayoutTemplate className="w-16 h-16 text-purple-500 opacity-80" />}
+                          {item.category === 'ticket' && <Trophy className="w-16 h-16 text-amber-400 opacity-80" />}
+                        </div>
+                        <CardTitle className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
+                          {item.name}
+                        </CardTitle>
+                        <CardDescription className="text-xs line-clamp-2 h-8 text-emerald-100/50">
+                          {item.description}
+                        </CardDescription>
+                      </CardHeader>
 
-                  <CardContent>
-                    <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-emerald-400/60">Preço</span>
-                        <span className="text-xl font-black text-white">R$ {(item.price_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg shadow-emerald-600/20">
-                        <ArrowRight className="text-white h-5 w-5" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <CardContent>
+                        <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] uppercase font-bold text-emerald-400/60">Preço</span>
+                            <span className="text-xl font-black text-white">R$ {(item.price_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg shadow-emerald-600/20">
+                            <ArrowRight className="text-white h-5 w-5" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </TabsContent>
         ))}
