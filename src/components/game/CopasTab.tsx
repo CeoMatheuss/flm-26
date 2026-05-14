@@ -381,7 +381,7 @@ export function CopasTab({ userId }: Props) {
         <TabsContent value="bracket" className="outline-none">
           <div className="w-full rounded-3xl border border-border/50 bg-card/20 overflow-hidden">
             <ScrollArea className="w-full">
-              <div className="flex gap-4 md:gap-12 p-4 md:p-8 min-w-max">
+              <div className="flex gap-4 md:gap-12 p-4 md:p-8 min-w-max items-stretch">
                 {[...Array(cup.total_rounds)].map((_, i) => {
                   const r = i + 1;
                   const rMatches = matches.filter(match => match.round === r);
@@ -392,13 +392,51 @@ export function CopasTab({ userId }: Props) {
                         <div className="h-1 w-8 md:h-1.5 md:w-12 bg-primary/20 rounded-full" />
                       </div>
                       <div className="space-y-3 md:space-y-6 flex flex-col justify-around h-full py-2 md:py-4">
-                        {rMatches.map(m => (
+                        {rMatches.length > 0 ? rMatches.map(m => (
                           <BracketMatch key={m.id} match={m} userId={userId} />
-                        ))}
+                        )) : (
+                          <div className="rounded-2xl border border-dashed border-border/40 bg-card/20 p-4 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            A definir
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
+                {(() => {
+                  const finalMatch = matches.find(m => m.round === cup.total_rounds);
+                  const champion = finalMatch?.status === 'finished'
+                    ? (finalMatch.winner_team_id === finalMatch.home_team_id ? finalMatch.home : finalMatch.away)
+                    : null;
+                  return (
+                    <div className="w-48 md:w-64 space-y-4 md:y-8 flex flex-col">
+                      <div className="flex flex-col items-center gap-1 md:gap-2">
+                        <span className="text-[8px] md:text-[10px] font-black text-yellow-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Campeão</span>
+                        <div className="h-1 w-8 md:h-1.5 md:w-12 bg-yellow-500/30 rounded-full" />
+                      </div>
+                      <div className="flex-1 flex items-center justify-center py-2 md:py-4">
+                        <div className={`relative w-full rounded-2xl border p-4 text-center space-y-3 shadow-xl transition-all ${champion ? 'border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent ring-1 ring-yellow-500/30' : 'border-dashed border-border/40 bg-card/20'}`}>
+                          <div className="flex justify-center">
+                            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${champion ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30' : 'bg-muted text-muted-foreground'}`}>
+                              <Trophy className="h-6 w-6" />
+                            </div>
+                          </div>
+                          {champion ? (
+                            <>
+                              <div className="flex justify-center">
+                                <ClubShield club={toShieldClub(champion) as any} size={40} />
+                              </div>
+                              <p className="text-xs font-black text-yellow-500 truncate">{champion.club_name}</p>
+                              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Campeão</p>
+                            </>
+                          ) : (
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Aguardando final</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </ScrollArea>
           </div>
