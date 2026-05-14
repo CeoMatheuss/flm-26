@@ -57,9 +57,9 @@ export interface Sponsor {
 export interface SponsorOffer extends Sponsor {}
 
 const sponsorNames = [
-  'TechBrasil', 'Banco Central+', 'NetPlay', 'AeroSport', 'VitaEnergy',
-  'MegaStore', 'AutoMax', 'CryptoFut', 'GlobalTel', 'SuperBet',
-  'DrinkMax', 'FastFood BR', 'TurboAuto', 'PixPay', 'CloudNet',
+  'BetGol', 'MegaBet', 'ArenaBank', 'SportPay', 'Nitro Energy',
+  'Vision Telecom', 'Max Cola', 'FlyAir', 'TechBrasil', 'Banco Central+',
+  'NetPlay', 'AeroSport', 'VitaEnergy', 'TurboAuto', 'PixPay',
 ];
 
 const sponsorTypes: SponsorType[] = ['camisa', 'estadio', 'treino', 'geral'];
