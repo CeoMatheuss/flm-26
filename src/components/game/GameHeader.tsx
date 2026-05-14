@@ -21,6 +21,18 @@ interface GameHeaderProps {
 }
 
 export function GameHeader({ club, season, infrastructure, listedPlayers, userId, isNewClub, onSignOut }: GameHeaderProps) {
+  const [cash, setCash] = useState(0);
+
+  useEffect(() => {
+    async function loadCash() {
+      const { data } = await supabase.from('shop_inventory').select('quantity').eq('user_id', userId).eq('item_id', 'cash_premium_50');
+      if (data) {
+        const total = data.reduce((acc, curr) => acc + (curr.quantity * 50), 0);
+        setCash(total);
+      }
+    }
+    loadCash();
+  }, [userId]);
   return (
     <header className="border-b border-border/20 bg-card/80 backdrop-blur-xl sticky top-0 z-10 safe-area-top shadow-sm shadow-black/10">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
