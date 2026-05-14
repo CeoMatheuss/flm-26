@@ -47,6 +47,7 @@ interface Props {
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
   trainingInvestment?: number;
   onSetTrainingInvestment?: (value: number) => void;
+  lastTrainingResult?: any;
 
   // Estádio
   stadiumProps?: any;
