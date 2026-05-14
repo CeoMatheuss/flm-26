@@ -112,7 +112,7 @@ export function NewsVisualTemplate({
               <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl group-hover:bg-white/10 transition-colors">
                 {opponentName ? (
                   <ClubShield 
-                    club={{ name: opponentName }} 
+                    club={{} as ShieldSourceLike} 
                     size={window.innerWidth < 640 ? 32 : 48} 
                     className="opacity-90"
                   />
