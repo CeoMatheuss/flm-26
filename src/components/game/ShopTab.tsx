@@ -337,7 +337,7 @@ export function ShopTab() {
                 </div>
                 <div className="flex gap-3">
                   <Button variant="ghost" onClick={() => setPaymentStep('details')} className="flex-1 border border-white/10 hover:bg-white/5">Voltar</Button>
-                  <Button onClick={startPayment} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest">Finalizar Compra</Button>
+                  <Button onClick={startPayment} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20">Finalizar Compra</Button>
                 </div>
               </>
             )}
