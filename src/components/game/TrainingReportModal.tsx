@@ -17,8 +17,7 @@ import {
   ArrowUpRight,
   Dumbbell
 } from 'lucide-react';
-import { WeeklyTrainingResult } from '@/training/WeeklyTrainingResult'; // Assuming this might be the path, but TrainingTypes is more likely
-import { focusLabels } from '@/training/TrainingTypes';
+import { WeeklyTrainingResult, focusLabels } from '@/training/TrainingTypes';
 
 interface TrainingReportModalProps {
   isOpen: boolean;
