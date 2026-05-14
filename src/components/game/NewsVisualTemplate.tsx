@@ -57,71 +57,99 @@ export function NewsVisualTemplate({
   const config = TEMPLATES[templateKey] || TEMPLATES.default;
   const Icon = config.icon;
 
+  // New Result-focused layout for match results
+  const isResult = ['league_win', 'league_loss', 'league_draw', 'league_champion', 'cup_advance', 'cup_eliminated', 'cup_champion'].includes(templateKey);
+
   return (
-    <div className={`relative w-full aspect-video sm:aspect-[21/9] overflow-hidden rounded-xl group bg-black ${className}`}>
+    <div className={`relative w-full overflow-hidden rounded-xl group bg-black ${isResult ? 'aspect-[21/7]' : 'aspect-video sm:aspect-[21/9]'} ${className}`}>
       {/* Background Image */}
       <img 
         src={config.bg} 
         alt="Background" 
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 opacity-60"
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 opacity-40"
       />
       
       {/* Overlay Gradients */}
-      <div className={`absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent`} />
-      <div className={`absolute inset-0 bg-gradient-to-r ${config.color} via-transparent to-transparent opacity-80`} />
+      <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent`} />
+      <div className={`absolute inset-0 bg-gradient-to-r ${config.color} via-transparent to-transparent opacity-60`} />
       
-      {/* Decorative Lines (FIFA/ESPN Style) */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-white/40 to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-2 bg-primary/20 backdrop-blur-sm" />
+      {/* Decorative Lines */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-white/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-primary/20 backdrop-blur-sm" />
       
       {/* Content */}
-      <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-between z-10">
+      <div className="relative h-full p-3 sm:p-5 flex flex-col justify-between z-10">
         <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-1">
-            <Badge className="bg-white text-black font-black text-[8px] sm:text-[10px] italic skew-x-[-12deg] tracking-widest px-3">
-              {config.label}
-            </Badge>
-            {competition && (
-              <span className="text-[7px] sm:text-[9px] font-bold text-white/70 uppercase tracking-tighter ml-1">
-                {competition} {phase ? `• ${phase}` : ''}
-              </span>
-            )}
-          </div>
-          <div className="bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/10">
-            <Icon className="h-3 w-3 sm:h-5 sm:h-5 text-white" />
+          <Badge className="bg-white text-black font-black text-[7px] sm:text-[9px] italic skew-x-[-12deg] tracking-widest px-2 py-0">
+            {config.label}
+          </Badge>
+          <div className="bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10">
+            <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-4">
-          <div className="flex-1">
-            {playerName ? (
-              <h2 className="text-xl sm:text-3xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl">
-                {playerName.toUpperCase()}
-              </h2>
-            ) : (
-              <div className="space-y-1">
-                <h2 className="text-lg sm:text-2xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl uppercase">
-                  {teamName}
+        {isResult && opponentName && score ? (
+          <div className="flex items-center justify-center gap-4 sm:gap-8 mb-2">
+            <div className="flex flex-col items-center gap-1">
+              <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl">
+                <ClubShield club={club} size={window.innerWidth < 640 ? 32 : 48} />
+              </div>
+              <span className="text-[8px] sm:text-[10px] font-black text-white uppercase truncate max-w-[60px] sm:max-w-[100px]">{teamName}</span>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-primary/90 text-white px-3 py-1 rounded-sm skew-x-[-10deg] shadow-lg border border-white/20">
+                <span className="text-lg sm:text-2xl font-black italic tracking-tighter tabular-nums">{score}</span>
+              </div>
+              {competition && (
+                <span className="text-[6px] sm:text-[8px] font-bold text-white/50 uppercase tracking-tighter mt-1">
+                  {competition}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl">
+                {/* We don't have the opponent club object here, but we can show a generic shield or just name */}
+                <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-black/20 rounded">
+                   <Target className="h-4 w-4 sm:h-6 sm:w-6 text-white/40" />
+                </div>
+              </div>
+              <span className="text-[8px] sm:text-[10px] font-black text-white/80 uppercase truncate max-w-[60px] sm:max-w-[100px]">{opponentName}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex-1">
+              {playerName ? (
+                <h2 className="text-lg sm:text-2xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl">
+                  {playerName.toUpperCase()}
                 </h2>
-                {opponentName && score && (
-                  <p className="text-xs sm:text-lg font-black text-primary italic skew-x-[-5deg] tracking-widest drop-shadow-lg">
-                    {score} vs {opponentName}
-                  </p>
-                )}
+              ) : (
+                <div className="space-y-0.5">
+                  <h2 className="text-sm sm:text-xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl uppercase">
+                    {teamName}
+                  </h2>
+                  {competition && (
+                    <span className="text-[7px] sm:text-[9px] font-bold text-white/70 uppercase tracking-tighter">
+                      {competition} {phase ? `• ${phase}` : ''}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {club && (
+              <div className="shrink-0 p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-2xl rotate-2 group-hover:rotate-0 transition-transform">
+                <ClubShield club={club} size={window.innerWidth < 640 ? 32 : 48} />
               </div>
             )}
           </div>
-          
-          {club && (
-            <div className="shrink-0 flex items-center justify-center p-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform">
-              <ClubShield club={club} size={window.innerWidth < 640 ? 40 : 60} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
       
       {/* Scanline overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+      <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
     </div>
   );
 }
