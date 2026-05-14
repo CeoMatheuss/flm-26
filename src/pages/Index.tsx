@@ -295,6 +295,12 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       }
     };
     initCompetitions();
+    // Process shop bonuses daily
+    supabase.rpc('process_daily_shop_bonuses', { p_user_id: userId }).then(({ data }) => {
+      if (data && (data as any).success) {
+        console.log('[Shop] Daily bonuses processed:', data);
+      }
+    });
   }, [userId, game.enrollWorldLeague]);
 
   // Check maintenance mode + tutorial status
