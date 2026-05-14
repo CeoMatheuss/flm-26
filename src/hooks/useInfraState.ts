@@ -204,7 +204,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         const academyLevel = infrastructure.youthAcademy.level;
         const minOvr = getYouthMinOverall(academyLevel);
         const maxOvr = getYouthMaxOverall(academyLevel);
-        const { generatePlayer } = require('@/utils/playerGenerator');
+        
         
         const newProspects: YouthProspect[] = [];
         for (let i = 0; i < playersToGen; i++) {
