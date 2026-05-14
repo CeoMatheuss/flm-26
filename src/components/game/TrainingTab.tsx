@@ -36,6 +36,7 @@ interface Props {
   userId?: string;
   budget?: number;
   onUpgradeCT?: () => void;
+  lastTrainingResult?: any;
 }
 
 const MAX_GROUP_SIZE = 5;
