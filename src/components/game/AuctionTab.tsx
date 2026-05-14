@@ -24,6 +24,7 @@ interface Auction {
   current_bidder_name: string | null;
   status: string;
   is_system: boolean;
+  rarity: 'comum' | 'raro' | 'epico' | 'lendario';
   created_at: string;
   expires_at: string;
 }
@@ -46,14 +47,11 @@ interface Props {
   onSellPlayer?: (playerId: string) => void;
 }
 
-// Tiered minimum increment (mirrors SQL `place_auction_bid`)
+// Tiered minimum increment
 function minIncrement(currentBid: number): number {
-  if (currentBid < 200_000) return 10_000;
-  if (currentBid < 500_000) return 25_000;
+  if (currentBid < 500_000) return 10_000;
   if (currentBid < 1_000_000) return 50_000;
-  if (currentBid < 5_000_000) return 100_000;
-  if (currentBid < 20_000_000) return 250_000;
-  return 500_000;
+  return 100_000;
 }
 
 function fmtMoney(v: number): string {
@@ -67,18 +65,37 @@ function fmtDateShort(iso: string): string {
 }
 
 /**
- * Lance mínimo padronizado por faixa de OVR (espelha a validação do servidor):
- *   <60  -> 100K
- *   60-69 -> 200K
- *   70-79 -> 300K
- *   80+   -> 500K
+ * Preço inicial baseado em OVR:
+ * OVR 50 = 50K, 55 = 75K, 60 = 100K, 65 = 150K, 70 = 200K, 75 = 350K, 80 = 600K, 85 = 1M, 90 = 3M, 95 = 8M
  */
 function startPriceByOverall(overall: number): number {
-  const ovr = Math.max(40, Math.min(99, overall || 60));
-  if (ovr >= 80) return 500_000;
-  if (ovr >= 70) return 300_000;
-  if (ovr >= 60) return 200_000;
-  return 100_000;
+  const ovr = overall || 60;
+  if (ovr >= 95) return 8_000_000;
+  if (ovr >= 90) return 3_000_000;
+  if (ovr >= 85) return 1_000_000;
+  if (ovr >= 80) return 600_000;
+  if (ovr >= 75) return 350_000;
+  if (ovr >= 70) return 200_000;
+  if (ovr >= 65) return 150_000;
+  if (ovr >= 60) return 100_000;
+  if (ovr >= 55) return 75_000;
+  return 50_000;
+}
+
+function getRarityByOverall(overall: number): 'comum' | 'raro' | 'epico' | 'lendario' {
+  if (overall >= 90) return 'lendario';
+  if (overall >= 80) return 'epico';
+  if (overall >= 70) return 'raro';
+  return 'comum';
+}
+
+function getRarityStyles(rarity: string): string {
+  switch (rarity) {
+    case 'lendario': return 'border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-500/10 via-card to-amber-900/20';
+    case 'epico': return 'border-purple-400/50 shadow-[0_0_10px_rgba(168,85,247,0.2)] bg-gradient-to-br from-purple-500/10 via-card to-purple-900/20';
+    case 'raro': return 'border-blue-400/50 shadow-[0_0_8px_rgba(59,130,246,0.1)] bg-gradient-to-br from-blue-500/10 via-card to-blue-900/20';
+    default: return 'border-border/50 bg-card';
+  }
 }
 
 export function AuctionTab({ userId, clubName, players, budget, isPremium, onSellPlayer: _onSellPlayer }: Props) {
@@ -134,11 +151,13 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       seller_id: userId,
       seller_club_name: clubName,
       player_data: player,
+      player_id: player.id,
       player_name: player.name,
       player_overall: player.overall,
       player_age: player.age || 25,
       min_price: startPrice,
       current_bid: startPrice,
+      rarity: getRarityByOverall(player.overall),
     }]);
     if (error) {
       toast.error('Erro ao criar leilão: ' + error.message);
@@ -305,9 +324,15 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 const isMyAuction = a.seller_id === userId && !a.is_system;
                 const isMyBid = a.current_bidder_id === userId;
                 const closing = isCloseToEnd(a.expires_at);
+                const rarityStyle = getRarityStyles(a.rarity);
                 return (
-                  <Card key={a.id} className={`border-border/50 ${isMyBid ? 'border-green-500/30' : isMyAuction ? 'border-purple-500/30' : ''} ${closing ? 'ring-1 ring-orange-500/40' : ''}`}>
+                  <Card key={a.id} className={`overflow-hidden transition-all duration-300 ${rarityStyle} ${isMyBid ? 'ring-2 ring-green-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'animate-pulse ring-2 ring-red-500/50' : ''}`}>
                     <CardContent className="p-3">
+                      {closing && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 animate-bounce">
+                          <Badge variant="destructive" className="text-[8px] h-4 py-0">FINALIZANDO</Badge>
+                        </div>
+                      )}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
