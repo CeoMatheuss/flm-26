@@ -318,6 +318,7 @@ export type Database = {
       clubs: {
         Row: {
           budget: number | null
+          cash: number | null
           country: string
           created_at: string
           detail_color: string | null
@@ -335,6 +336,7 @@ export type Database = {
         }
         Insert: {
           budget?: number | null
+          cash?: number | null
           country?: string
           created_at?: string
           detail_color?: string | null
@@ -352,6 +354,7 @@ export type Database = {
         }
         Update: {
           budget?: number | null
+          cash?: number | null
           country?: string
           created_at?: string
           detail_color?: string | null
@@ -2781,6 +2784,89 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_orders: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          delivered: boolean | null
+          external_reference: string | null
+          id: string
+          item_id: string
+          metadata: Json | null
+          payment_id: string | null
+          payment_method: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          delivered?: boolean | null
+          external_reference?: string | null
+          id?: string
+          item_id: string
+          metadata?: Json | null
+          payment_id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          delivered?: boolean | null
+          external_reference?: string | null
+          id?: string
+          item_id?: string
+          metadata?: Json | null
+          payment_id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_webhooks_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          processed: boolean | null
+          resource_id: string | null
+          topic: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean | null
+          resource_id?: string | null
+          topic?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean | null
+          resource_id?: string | null
+          topic?: string | null
+        }
+        Relationships: []
+      }
       player_auctions: {
         Row: {
           created_at: string
@@ -3373,6 +3459,89 @@ export type Database = {
           id?: string
           last_attempt?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      shop_inventory: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string
+          metadata: Json | null
+          quantity: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id: string
+          metadata?: Json | null
+          quantity?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          metadata?: Json | null
+          quantity?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_inventory_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_items: {
+        Row: {
+          active: boolean | null
+          bonus_data: Json | null
+          category: string
+          created_at: string | null
+          description: string | null
+          duration_days: number | null
+          id: string
+          image_url: string | null
+          min_fans: number | null
+          name: string
+          price_cents: number
+          rarity: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          id: string
+          image_url?: string | null
+          min_fans?: number | null
+          name: string
+          price_cents: number
+          rarity?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          image_url?: string | null
+          min_fans?: number | null
+          name?: string
+          price_cents?: number
+          rarity?: string | null
         }
         Relationships: []
       }
@@ -4648,6 +4817,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      deliver_shop_item: { Args: { p_order_id: string }; Returns: boolean }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined

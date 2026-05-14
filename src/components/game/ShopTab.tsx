@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
   ShoppingBag, Star, ShieldCheck, Zap, Sparkles, 
   Clock, Users, TrendingUp, DollarSign, Lock, 
-  CheckCircle2, Loader2, AlertCircle, History, Package
+  CheckCircle2, Loader2, AlertCircle, History, Package,
+  CreditCard, QrCode, ArrowRight, Wallet, Gem, Trophy, Ticket, 
+  Layout, Palette, Flag, Building2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+declare global {
+  interface Window {
+    MercadoPago: any;
+  }
+}
 
 interface Product {
   id: string;
@@ -28,30 +37,51 @@ interface Product {
   description: string;
   price_cents: number;
   duration_days: number | null;
-  min_fans_required: number;
+  min_fans: number;
   bonus_data: any;
+  image_url: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
 }
 
 interface Purchase {
   id: string;
-  product_id: string;
+  item_id: string;
   status: string;
-  activated_at: string;
+  created_at: string;
   expires_at: string | null;
-  product: Product;
+  item: Product;
 }
 
 export function ShopTab() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [myInventory, setMyInventory] = useState<any[]>([]);
   const [myPurchases, setMyPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; product: Product | null }>({ open: false, product: null });
-  const [clubFans, setClubFans] = useState(0);
+  const [checkoutModal, setCheckoutModal] = useState<{ open: boolean; product: Product | null }>({ open: false, product: null });
+  const [clubData, setClubData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('marketing');
+  const bricksBuilderRef = useRef<any>(null);
+  const mpRef = useRef<any>(null);
 
   useEffect(() => {
     fetchData();
+    initMP();
   }, []);
+
+  async function initMP() {
+    // We would need a PUBLIC KEY here. I'll use a placeholder or check if it exists in DB/Settings.
+    // For now, I'll assume the user will provide it or I'll use a generic one if possible (though v2 needs a real key).
+    const { data } = await supabase.from('system_settings').select('value').eq('key', 'mercadopago_public_key').maybeSingle();
+    const publicKey = (data?.value as any)?.key || 'TEST-APP-KEY-PLACEHOLDER';
+    
+    if (window.MercadoPago) {
+      mpRef.current = new window.MercadoPago(publicKey, {
+        locale: 'pt-BR'
+      });
+      bricksBuilderRef.current = mpRef.current.bricks();
+    }
+  }
 
   async function fetchData() {
     try {
@@ -59,15 +89,24 @@ export function ShopTab() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [productsRes, purchasesRes, clubRes] = await Promise.all([
-        supabase.from('shop_products').select('*').eq('active', true),
-        supabase.from('shop_purchases').select('*, product:shop_products(*)').eq('user_id', user.id).eq('status', 'completed'),
-        supabase.from('clubs').select('fans').eq('user_id', user.id).maybeSingle()
+      const [productsRes, inventoryRes, purchasesRes, clubRes] = await Promise.all([
+        supabase.from('shop_items').select('*').eq('active', true),
+        supabase.from('shop_inventory').select('*').eq('user_id', user.id),
+        supabase.from('payment_orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('clubs').select('*').eq('user_id', user.id).maybeSingle()
       ]);
 
-      if (productsRes.data) setProducts(productsRes.data);
-      if (purchasesRes.data) setMyPurchases(purchasesRes.data as any);
-      if (clubRes.data) setClubFans(clubRes.data.fans);
+      if (productsRes.data) setProducts(productsRes.data as any);
+      if (inventoryRes.data) setMyInventory(inventoryRes.data);
+      if (purchasesRes.data) {
+        // Map items to purchases
+        const mapped = purchasesRes.data.map(p => ({
+          ...p,
+          item: productsRes.data?.find(i => i.id === p.item_id)
+        })).filter(p => p.item);
+        setMyPurchases(mapped as any);
+      }
+      if (clubRes.data) setClubData(clubRes.data);
     } catch (error) {
       console.error('Error fetching shop data:', error);
       toast.error('Erro ao carregar dados da loja');
@@ -76,67 +115,88 @@ export function ShopTab() {
     }
   }
 
-  const handlePurchase = async (product: Product) => {
-    setConfirmModal({ open: true, product });
+  const handleStartCheckout = (product: Product) => {
+    setCheckoutModal({ open: true, product });
+    
+    // Initialize Brick after modal opens
+    setTimeout(() => {
+      renderCardPaymentBrick(product);
+    }, 500);
   };
 
-  const confirmPurchase = async () => {
-    const product = confirmModal.product;
-    if (!product) return;
+  const renderCardPaymentBrick = async (product: Product) => {
+    if (!bricksBuilderRef.current || !document.getElementById('cardPaymentBrick_container')) return;
 
+    const settings = {
+      initialization: {
+        amount: product.price_cents / 100,
+        payer: {
+          email: '', // will be filled by user
+        },
+      },
+      customization: {
+        visual: {
+          style: {
+            theme: 'default', // 'default' | 'dark' | 'bootstrap' | 'flat'
+          },
+        },
+        paymentMethods: {
+          maxInstallments: 1,
+        },
+      },
+      callbacks: {
+        onReady: () => {
+          console.log('Brick ready');
+        },
+        onSubmit: async (formData: any) => {
+          return new Promise((resolve, reject) => {
+            handleTransparentPayment(product.id, formData)
+              .then(() => resolve(true))
+              .catch((error) => {
+                console.error(error);
+                reject();
+              });
+          });
+        },
+        onError: (error: any) => {
+          console.error('Brick error:', error);
+        },
+      },
+    };
+
+    await bricksBuilderRef.current.create('cardPayment', 'cardPaymentBrick_container', settings);
+  };
+
+  const handleTransparentPayment = async (itemId: string, formData: any) => {
     try {
-      setPurchasingId(product.id);
-      setConfirmModal({ open: false, product: null });
+      setPurchasingId(itemId);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Check restrictions (only 1 active marketing/sponsorship)
-      if (product.category === 'marketing' || product.category === 'sponsorships') {
-        const activeInCategory = myPurchases.find(p => p.product.category === product.category);
-        if (activeInCategory) {
-          toast.error(`Você já possui uma campanha de ${product.category === 'marketing' ? 'marketing' : 'patrocínio'} ativa.`);
-          return;
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: {
+          item_id: itemId,
+          token: formData.token,
+          issuer_id: formData.issuer_id,
+          payment_method_id: formData.payment_method_id,
+          installments: formData.installments,
+          email: formData.payer.email
         }
-      }
-
-      // Check requirements
-      if (clubFans < product.min_fans_required) {
-        toast.error(`Requisito mínimo não atingido: ${product.min_fans_required} torcedores.`);
-        return;
-      }
-
-      // Simulate payment loading
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const expires_at = product.duration_days 
-        ? new Date(Date.now() + product.duration_days * 24 * 60 * 60 * 1000).toISOString()
-        : null;
-
-      const { error: purchaseError } = await supabase.from('shop_purchases').insert({
-        user_id: user.id,
-        product_id: product.id,
-        status: 'completed',
-        expires_at
       });
 
-      if (purchaseError) throw purchaseError;
+      if (error || data.error) throw new Error(data?.error || 'Erro no pagamento');
 
-      // Handle immediate bonuses (like sponsorship cash)
-      if (product.category === 'sponsorships' && product.bonus_data.immediate_cash) {
-        const { data: club } = await supabase.from('clubs').select('budget').eq('user_id', user.id).single();
-        if (club) {
-          await supabase.from('clubs').update({ 
-            budget: Number(club.budget) + Number(product.bonus_data.immediate_cash) 
-          }).eq('user_id', user.id);
-        }
+      if (data.status === 'approved') {
+        toast.success('Pagamento aprovado! Item entregue.');
+        setCheckoutModal({ open: false, product: null });
+        fetchData();
+        // Play success animation
+        const event = new CustomEvent('flm:purchase-success', { detail: { item_id: itemId } });
+        window.dispatchEvent(event);
+      } else {
+        toast.info(`Status do pagamento: ${data.status}`);
       }
-
-      toast.success(`${product.name} ativado com sucesso!`);
-      fetchData();
-    } catch (error) {
-      console.error('Purchase error:', error);
-      toast.error('Erro ao processar compra');
+    } catch (e: any) {
+      toast.error(e.message);
+      throw e;
     } finally {
       setPurchasingId(null);
     }
@@ -144,154 +204,218 @@ export function ShopTab() {
 
   const categories = [
     { id: 'marketing', name: 'Marketing', icon: <TrendingUp className="h-4 w-4" /> },
-    { id: 'memberships', name: 'Planos de Sócios', icon: <Users className="h-4 w-4" /> },
+    { id: 'memberships', name: 'Plano de Sócios', icon: <Users className="h-4 w-4" /> },
     { id: 'sponsorships', name: 'Patrocínios', icon: <DollarSign className="h-4 w-4" /> },
-    { id: 'customization', name: 'Personalização', icon: <Sparkles className="h-4 w-4" /> },
-    { id: 'my_items', name: 'Meus Produtos', icon: <Package className="h-4 w-4" /> },
+    { id: 'personalization', name: 'Personalização', icon: <Sparkles className="h-4 w-4" /> },
+    { id: 'currencies', name: 'Moedas & Cash', icon: <Wallet className="h-4 w-4" /> },
+    { id: 'inventory', name: 'Meus Itens', icon: <Package className="h-4 w-4" /> },
   ];
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">Carregando Loja FLM...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+        <p className="text-muted-foreground animate-pulse font-medium">Carregando Mercado FLM...</p>
       </div>
     );
   }
 
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'bg-slate-500/10 text-slate-600 border-slate-200';
+      case 'rare': return 'bg-blue-500/10 text-blue-600 border-blue-200';
+      case 'epic': return 'bg-purple-500/10 text-purple-600 border-purple-200';
+      case 'legendary': return 'bg-amber-500/10 text-amber-600 border-amber-200';
+      default: return 'bg-slate-500/10 text-slate-600';
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-[#1a2e1a] text-white p-6 rounded-xl shadow-lg border border-emerald-900/50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <ShoppingBag className="h-24 w-24" />
+    <div className="space-y-6 pb-20 animate-in fade-in duration-700">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#1a4a1a] p-8 text-white shadow-2xl border border-white/5">
+        <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 scale-150">
+          <ShoppingBag className="h-32 w-32" />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-black tracking-tighter flex items-center gap-2">
-              LOJA <span className="text-emerald-400">FLM</span>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
+              <Sparkles className="h-3 w-3 text-emerald-400" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Ofertas Exclusivas</span>
+            </div>
+            <h2 className="text-4xl font-black tracking-tighter leading-none uppercase">
+              Loja <span className="text-emerald-400">FLM</span>
             </h2>
-            <p className="text-emerald-100/70 text-sm mt-1">
-              Turbine seu clube com as melhores ferramentas de gestão e marketing do mercado.
+            <p className="text-emerald-100/70 text-sm max-w-md font-medium">
+              Evolua seu clube com itens premium, bônus de treino e personalizações exclusivas.
             </p>
           </div>
-          <div className="bg-black/20 backdrop-blur-md p-3 rounded-lg border border-white/10 flex items-center gap-3">
-            <div className="bg-emerald-500/20 p-2 rounded-full">
-              <Users className="h-5 w-5 text-emerald-400" />
+          
+          <div className="flex flex-wrap justify-center gap-4">
+            <div className="bg-black/40 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center gap-4 min-w-[140px]">
+              <div className="bg-emerald-500/20 p-2.5 rounded-xl">
+                <Wallet className="h-6 w-6 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-black text-emerald-400/80">Coins</p>
+                <p className="text-xl font-black tabular-nums">R$ {(clubData?.budget || 0).toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-emerald-400/80">Sua Torcida</p>
-              <p className="text-lg font-black leading-tight">{clubFans.toLocaleString()}</p>
+            <div className="bg-black/40 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center gap-4 min-w-[140px]">
+              <div className="bg-amber-500/20 p-2.5 rounded-xl">
+                <Gem className="h-6 w-6 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-black text-amber-400/80">Cash</p>
+                <p className="text-xl font-black tabular-nums">{clubData?.cash || 0}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="marketing" className="w-full">
-        <div className="bg-card/40 backdrop-blur-sm p-1 rounded-xl border border-border/40 sticky top-0 z-20">
-          <TabsList className="bg-transparent grid grid-cols-2 md:grid-cols-5 gap-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <ScrollArea className="w-full whitespace-nowrap rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm p-1">
+          <TabsList className="bg-transparent flex w-max gap-1">
             {categories.map(cat => (
               <TabsTrigger 
                 key={cat.id} 
                 value={cat.id}
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all py-2 text-xs md:text-sm"
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all duration-300 px-6 py-2.5 rounded-xl text-xs font-bold gap-2"
               >
-                <div className="flex items-center gap-2">
-                  {cat.icon}
-                  <span className="hidden md:inline">{cat.name}</span>
-                  <span className="md:hidden">{cat.id === 'my_items' ? 'Meus' : cat.name.split(' ')[0]}</span>
-                </div>
+                {cat.icon}
+                {cat.name}
               </TabsTrigger>
             ))}
           </TabsList>
-        </div>
+        </ScrollArea>
 
-        {categories.slice(0, 4).map(cat => (
-          <TabsContent key={cat.id} value={cat.id} className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.filter(p => p.category === cat.id).map(product => {
-                const isBlocked = clubFans < product.min_fans_required;
+        {/* Inventory View */}
+        <TabsContent value="inventory" className="mt-8 space-y-6">
+          {myInventory.length === 0 ? (
+            <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 flex flex-col items-center justify-center gap-4">
+              <Package className="h-16 w-16 text-muted-foreground opacity-10" />
+              <div className="space-y-1">
+                <h3 className="text-xl font-black tracking-tight">Inventário Vazio</h3>
+                <p className="text-sm text-muted-foreground font-medium">Você ainda não possui itens especiais.</p>
+              </div>
+              <Button onClick={() => setActiveTab('marketing')} variant="outline" className="mt-4 rounded-full px-8">
+                Ir para a Loja <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {myInventory.map(inv => {
+                const product = products.find(p => p.id === inv.item_id);
+                if (!product) return null;
+                return (
+                  <Card key={inv.id} className="bg-card/60 backdrop-blur-sm border-border/40 hover:border-emerald-500/30 transition-all group overflow-hidden rounded-2xl">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <Badge className={`${getRarityColor(product.rarity)} font-black uppercase text-[10px] px-2 py-0.5 rounded-full border`}>
+                          {product.rarity}
+                        </Badge>
+                        <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                          Qtd: {inv.quantity}
+                        </span>
+                      </div>
+                      <CardTitle className="text-lg font-black mt-2 group-hover:text-emerald-600 transition-colors">{product.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden relative">
+                         <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                         <div className="absolute inset-0 bg-black/5" />
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/10">
+                        Equipar / Usar
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Shop Content */}
+        {categories.slice(0, 5).map(cat => (
+          <TabsContent key={cat.id} value={cat.id} className="mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {products.filter(p => {
+                if (cat.id === 'currencies') return p.category === 'coins' || p.category === 'cash';
+                if (cat.id === 'memberships') return p.category === 'personalization' && p.id.includes('pass');
+                return p.category === cat.id;
+              }).map(product => {
+                const isBlocked = (clubData?.fans || 0) < product.min_fans;
                 const isPurchasing = purchasingId === product.id;
-                const hasActive = myPurchases.some(p => p.product_id === product.id);
 
                 return (
-                  <Card key={product.id} className={`group relative overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm hover:border-emerald-500/30 transition-all duration-300 ${isBlocked ? 'opacity-80 grayscale-[0.5]' : ''}`}>
-                    <div className="absolute top-0 right-0 p-3 z-10">
-                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-bold">
-                        R$ 0,01
-                      </Badge>
+                  <Card key={product.id} className={`group relative flex flex-col overflow-hidden rounded-3xl border-border/40 bg-card/60 backdrop-blur-sm hover:border-emerald-500/30 transition-all duration-500 ${isBlocked ? 'opacity-80 grayscale' : ''}`}>
+                    {/* Rarity Glow */}
+                    <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[60px] opacity-20 transition-opacity group-hover:opacity-40 
+                      ${product.rarity === 'legendary' ? 'bg-amber-500' : 
+                        product.rarity === 'epic' ? 'bg-purple-500' : 
+                        product.rarity === 'rare' ? 'bg-blue-500' : 'bg-slate-500'}`} 
+                    />
+
+                    <div className="relative aspect-[4/5] overflow-hidden">
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      
+                      <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        <Badge className={`${getRarityColor(product.rarity)} font-black uppercase text-[10px] px-3 py-1 rounded-full border-none shadow-xl backdrop-blur-md`}>
+                          {product.rarity}
+                        </Badge>
+                      </div>
+
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                        <p className="text-2xl font-black tracking-tighter uppercase leading-tight drop-shadow-md">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-bold text-emerald-400">R$ {(product.price_cents / 100).toFixed(2)}</span>
+                          {product.duration_days && (
+                            <span className="text-[10px] opacity-70 bg-white/10 px-2 py-0.5 rounded-full backdrop-blur-md">
+                              {product.duration_days} dias
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <CardHeader className="pb-4 pt-8">
-                      <div className="bg-emerald-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        {cat.id === 'marketing' && <TrendingUp className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'memberships' && <Users className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'sponsorships' && <DollarSign className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'customization' && <Sparkles className="h-6 w-6 text-emerald-600" />}
-                      </div>
-                      <CardTitle className="text-xl font-bold">{product.name}</CardTitle>
-                      <CardDescription className="text-xs leading-relaxed">
+                    <CardContent className="flex-1 p-6 space-y-4">
+                      <p className="text-xs text-muted-foreground font-medium leading-relaxed line-clamp-2">
                         {product.description}
-                      </CardDescription>
-                    </CardHeader>
+                      </p>
 
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-background/50 p-2 rounded-lg border border-border/20">
-                          <p className="text-[9px] uppercase font-bold text-muted-foreground">Duração</p>
-                          <p className="text-xs font-semibold">{product.duration_days ? `${product.duration_days} dias` : 'Permanente'}</p>
-                        </div>
-                        <div className={`bg-background/50 p-2 rounded-lg border border-border/20 ${isBlocked ? 'border-red-500/20' : ''}`}>
-                          <p className="text-[9px] uppercase font-bold text-muted-foreground">Torcida Mínima</p>
-                          <p className={`text-xs font-semibold ${isBlocked ? 'text-red-500' : ''}`}>
-                            {product.min_fans_required.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/10">
-                        <p className="text-[9px] uppercase font-bold text-emerald-600 mb-1">Benefícios</p>
-                        <ul className="space-y-1">
-                          {Object.entries(product.bonus_data).map(([key, val]: [string, any]) => (
-                            <li key={key} className="text-xs flex items-center gap-2 text-emerald-700">
-                              <CheckCircle2 className="h-3 w-3" />
-                              {key === 'min_daily_fans' && `+${val} a ${product.bonus_data.max_daily_fans} torcedores/dia`}
-                              {key === 'daily_members' && `+${val} sócios/dia`}
-                              {key === 'immediate_cash' && `+R$ ${val.toLocaleString()} imediatos`}
-                              {key === 'daily_cash' && `+R$ ${val.toLocaleString()}/dia`}
-                              {key === 'type' && (val === 'exclusive_badge' ? 'Badge Premium exclusiva' : 'Nome de clube colorido')}
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="space-y-2">
+                         {isBlocked && (
+                           <div className="flex items-center gap-2 text-red-500 bg-red-500/5 p-2 rounded-xl border border-red-500/10">
+                             <Lock className="h-3 w-3" />
+                             <span className="text-[10px] font-black uppercase tracking-tight">Faltam {product.min_fans - (clubData?.fans || 0)} torcedores</span>
+                           </div>
+                         )}
+                         <div className="flex items-center gap-2 text-emerald-600 bg-emerald-500/5 p-2 rounded-xl border border-emerald-500/10">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span className="text-[10px] font-black uppercase tracking-tight">Entrega Instantânea</span>
+                         </div>
                       </div>
                     </CardContent>
 
-                    <CardFooter>
-                      {isBlocked ? (
-                        <Button disabled className="w-full gap-2 bg-muted text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                          Bloqueado
-                        </Button>
-                      ) : hasActive ? (
-                        <Button disabled className="w-full gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Ativo
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => handlePurchase(product)} 
-                          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20"
-                          disabled={isPurchasing}
-                        >
-                          {isPurchasing ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <ShoppingBag className="h-4 w-4" />
-                              Ir para Pagamento
-                            </>
-                          )}
-                        </Button>
-                      )}
+                    <CardFooter className="p-6 pt-0">
+                      <Button 
+                        onClick={() => handleStartCheckout(product)} 
+                        disabled={isBlocked || isPurchasing}
+                        className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider text-xs shadow-xl shadow-emerald-500/20 group-hover:translate-y-[-2px] transition-transform"
+                      >
+                        {isPurchasing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>Comprar Agora <ArrowRight className="h-4 w-4 ml-2" /></>
+                        )}
+                      </Button>
                     </CardFooter>
                   </Card>
                 );
@@ -299,82 +423,35 @@ export function ShopTab() {
             </div>
           </TabsContent>
         ))}
-
-        <TabsContent value="my_items" className="mt-6">
-          {myPurchases.length === 0 ? (
-            <div className="text-center py-20 bg-card/20 rounded-xl border border-dashed border-border/40">
-              <History className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-              <h3 className="text-lg font-bold">Nenhum item ativo</h3>
-              <p className="text-sm text-muted-foreground">Você ainda não adquiriu nenhum produto na loja.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myPurchases.map(purchase => (
-                <Card key={purchase.id} className="bg-card/40 border-emerald-500/10 hover:border-emerald-500/30 transition-all">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-emerald-500/10 p-2 rounded-lg">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{purchase.product.name}</CardTitle>
-                        <Badge variant="outline" className="text-[10px] uppercase">{purchase.product.category}</Badge>
-                      </div>
-                    </div>
-                    {purchase.expires_at && (
-                      <div className="text-right">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1 justify-end">
-                          <Clock className="h-3 w-3" /> Expira em
-                        </p>
-                        <p className="text-xs font-bold text-emerald-600">
-                          {formatDistanceToNow(new Date(purchase.expires_at), { addSuffix: true, locale: ptBR })}
-                        </p>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-background/40 p-3 rounded-lg border border-border/10">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Status</p>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs font-medium">Ativo e Gerando Bônus</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
-      {/* Confirmation Modal */}
-      <Dialog open={confirmModal.open} onOpenChange={(open) => setConfirmModal({ open, product: confirmModal.product })}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar Ativação</DialogTitle>
-            <DialogDescription>
-              Você está prestes a ativar o item <strong>{confirmModal.product?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-emerald-700">Preço (Teste)</span>
-              <span className="font-bold">R$ 0,01</span>
-            </div>
-            <div className="flex justify-between text-sm border-t border-emerald-200 pt-2">
-              <span className="text-emerald-700">Duração</span>
-              <span className="font-bold">{confirmModal.product?.duration_days ? `${confirmModal.product.duration_days} dias` : 'Permanente'}</span>
+      {/* Checkout Modal */}
+      <Dialog open={checkoutModal.open} onOpenChange={(open) => setCheckoutModal({ open, product: checkoutModal.product })}>
+        <DialogContent className="sm:max-w-[480px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-[#0a2e0a] p-8 text-white relative">
+             <div className="absolute top-0 right-0 p-8 opacity-10">
+               <CreditCard className="h-20 w-20" />
+             </div>
+             <DialogHeader className="relative z-10">
+                <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Finalizar Compra</DialogTitle>
+                <DialogDescription className="text-emerald-100/70 font-medium">
+                  {checkoutModal.product?.name} • R$ {(checkoutModal.product?.price_cents || 0) / 100}
+                </DialogDescription>
+             </DialogHeader>
+          </div>
+
+          <div className="p-8 space-y-6 bg-white">
+            <div id="cardPaymentBrick_container" className="min-h-[300px]"></div>
+            
+            <div className="flex items-center gap-4 text-xs text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
+               <ShieldCheck className="h-6 w-6 text-emerald-600 shrink-0" />
+               <p className="font-medium">Pagamento processado com segurança via <strong>Mercado Pago</strong>. Seus dados estão criptografados.</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-            <p>O pagamento será simulado via PIX. Após a confirmação, o item será ativado automaticamente na sua conta.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmModal({ open: false, product: null })}>Cancelar</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={confirmPurchase}>
-              Confirmar e Pagar via PIX
+          
+          <DialogFooter className="p-8 pt-0 bg-white">
+            <Button variant="ghost" onClick={() => setCheckoutModal({ open: false, product: null })} className="rounded-xl font-bold">
+              Cancelar
             </Button>
           </DialogFooter>
         </DialogContent>
