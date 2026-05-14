@@ -43,6 +43,7 @@ const RARITY_CONFIG = {
 export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('destaques');
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState<{ open: boolean; itemName: string; type: string }>({ open: false, itemName: '', type: '' });
 
   const formatMoney = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
@@ -61,7 +62,9 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
     if (item.category === 'infra' && onUpgradeFacility) {
       onUpgradeFacility(item.facilityKey);
     } else {
+      setShowSuccess({ open: true, itemName: item.name, type: item.id?.includes('plano') || item.category === 'socios' ? 'fans' : 'default' });
       toast.success(`${item.name} adquirido com sucesso!`);
+      setTimeout(() => setShowSuccess(prev => ({ ...prev, open: false })), 4000);
     }
     setLoading(false);
   };
@@ -343,6 +346,49 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
           </TabsContent>
         </div>
       </Tabs>
+      </Tabs>
+
+      {/* ANIMAÇÃO DE SUCESSO */}
+      <AnimatePresence>
+        {showSuccess.open && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4"
+          >
+            <div className="bg-[#050810]/95 backdrop-blur-xl border border-amber-500/30 p-8 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.3)] text-center space-y-4 max-w-xs w-full">
+              <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto border border-amber-500/40">
+                {showSuccess.type === 'fans' ? (
+                  <Users className="h-10 w-10 text-amber-500 animate-bounce" />
+                ) : (
+                  <CheckCircle2 className="h-10 w-10 text-amber-500 animate-pulse" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white uppercase italic">Sucesso!</h3>
+                <p className="text-sm text-amber-500/80 font-bold uppercase tracking-tighter">{showSuccess.itemName}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">Adicionado ao seu clube</p>
+              </div>
+              
+              {showSuccess.type === 'fans' && (
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  className="h-1 bg-amber-500/20 rounded-full overflow-hidden"
+                >
+                  <motion.div 
+                    initial={{ x: '-100%' }}
+                    animate={{ x: '100%' }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                    className="h-full w-1/3 bg-amber-500"
+                  />
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
