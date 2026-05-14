@@ -166,6 +166,48 @@ export type Database = {
           },
         ]
       }
+      auction_history: {
+        Row: {
+          auction_id: string | null
+          completed_at: string | null
+          final_price: number | null
+          id: string
+          player_id: string | null
+          player_name: string | null
+          player_overall: number | null
+          seller_club_name: string | null
+          seller_id: string | null
+          winner_club_name: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          auction_id?: string | null
+          completed_at?: string | null
+          final_price?: number | null
+          id?: string
+          player_id?: string | null
+          player_name?: string | null
+          player_overall?: number | null
+          seller_club_name?: string | null
+          seller_id?: string | null
+          winner_club_name?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          auction_id?: string | null
+          completed_at?: string | null
+          final_price?: number | null
+          id?: string
+          player_id?: string | null
+          player_name?: string | null
+          player_overall?: number | null
+          seller_club_name?: string | null
+          seller_id?: string | null
+          winner_club_name?: string | null
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       auth_verification_codes: {
         Row: {
           attempts: number | null
@@ -2879,8 +2921,10 @@ export type Database = {
           min_price: number
           player_age: number
           player_data: Json
+          player_id: string | null
           player_name: string
           player_overall: number
+          rarity: string | null
           seller_club_name: string
           seller_id: string
           status: string
@@ -2896,8 +2940,10 @@ export type Database = {
           min_price: number
           player_age: number
           player_data: Json
+          player_id?: string | null
           player_name: string
           player_overall: number
+          rarity?: string | null
           seller_club_name?: string
           seller_id: string
           status?: string
@@ -2913,8 +2959,10 @@ export type Database = {
           min_price?: number
           player_age?: number
           player_data?: Json
+          player_id?: string | null
           player_name?: string
           player_overall?: number
+          rarity?: string | null
           seller_club_name?: string
           seller_id?: string
           status?: string
@@ -4898,6 +4946,7 @@ export type Database = {
       }
       generate_random_scout: { Args: never; Returns: undefined }
       generate_weekly_scout: { Args: never; Returns: undefined }
+      get_auction_start_price: { Args: { ovr: number }; Returns: number }
       get_available_league_for_country: {
         Args: { p_country_id: string }
         Returns: string
@@ -5049,6 +5098,7 @@ export type Database = {
       }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
+      process_expired_auctions: { Args: never; Returns: undefined }
       process_league_waiting_list: {
         Args: { _league_id: string }
         Returns: undefined

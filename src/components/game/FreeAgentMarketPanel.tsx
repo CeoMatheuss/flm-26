@@ -338,9 +338,9 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
               <Clock className="h-7 w-7 text-primary" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-foreground">Drop semanal de Agentes Livres</h3>
+              <h3 className="text-sm font-bold text-foreground">Novos Agentes Livres no Mercado</h3>
               <p className="text-[11px] text-muted-foreground leading-relaxed max-w-sm mx-auto">
-                Todo <span className="font-bold text-primary">sábado</span> são gerados <span className="font-bold text-foreground">10 novos jogadores livres</span> no mercado.
+                Jogadores que não receberam lances no leilão são enviados <span className="font-bold text-primary">automaticamente</span> para o mercado livre.
               </p>
             </div>
 
