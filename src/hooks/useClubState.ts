@@ -1,4 +1,6 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { getTrainingManager, defaultStaff } from "@/training/TrainingManager";
+import { WeeklyTrainingResult } from "@/training/TrainingTypes";
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Club, Player, Scout, ScoutReport, PlayerAttributes, PhysicalStatus } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
