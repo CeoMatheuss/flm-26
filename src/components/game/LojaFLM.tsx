@@ -225,12 +225,12 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
                   onAction={() => handleAction({ category: 'infra', facilityKey: 'stadium', price: 10000000 })}
                 />
                 <StoreCard 
-                  name="Centro Médico"
-                  description="Reduz o tempo de lesão em 30% e melhora triagem."
-                  price={5000000}
-                  rarity="raro"
-                  icon={HeartPulse}
-                  onAction={() => handleAction({ category: 'infra', facilityKey: 'physiotherapy', price: 5000000 })}
+                  name="Novo CT Moderno"
+                  description="Upgrade instantâneo para o seu Centro de Treinamento. Acelera evolução em 25%."
+                  price={2500000}
+                  rarity="epico"
+                  icon={Zap}
+                  onAction={() => handleAction({ category: 'infra', facilityKey: 'trainingCenter', price: 2500000 })}
                 />
                 <StoreCard 
                   name="Academia de Base"
@@ -240,6 +240,105 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
                   icon={Trophy}
                   onAction={() => handleAction({ category: 'infra', facilityKey: 'youthAcademy', price: 8000000 })}
                 />
+                <StoreCard 
+                  name="Modernização do Gramado"
+                  description="Reduz o cansaço dos jogadores durante partidas em casa."
+                  price={1200000}
+                  rarity="raro"
+                  icon={TrendingUp}
+                  onAction={() => handleAction({ name: 'Gramado Moderno', price: 1200000 })}
+                />
+             </div>
+          </TabsContent>
+
+          <TabsContent value="staff" className="space-y-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { name: 'Preparador Físico', desc: 'Melhora o ganho de stamina nos treinos.', price: 450000, rarity: 'comum' },
+                  { name: 'Olheiro Internacional', desc: 'Encontra talentos raros em outros países.', price: 800000, rarity: 'raro' },
+                  { name: 'Diretor Financeiro', desc: 'Reduz gastos fixos do clube em 10%.', price: 1500000, rarity: 'epico' },
+                  { name: 'Psicólogo Esportivo', desc: 'Mantém a moral do elenco sempre em alta.', price: 600000, rarity: 'raro' },
+                  { name: 'Médico Especialista', desc: 'Recuperação instantânea de lesões leves.', price: 1200000, rarity: 'epico' },
+                  { name: 'Analista Tático', desc: 'Desbloqueia insights sobre o adversário.', price: 5000000, rarity: 'lendario' },
+                ].map(s => (
+                  <StoreCard 
+                    key={s.name}
+                    name={s.name}
+                    description={s.desc}
+                    price={s.price}
+                    rarity={s.rarity as any}
+                    icon={HardHat}
+                    onAction={() => handleAction(s)}
+                  />
+                ))}
+             </div>
+          </TabsContent>
+
+          <TabsContent value="fisio" className="space-y-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { name: 'Câmara de Gelo', desc: 'Recuperação 2x mais rápida após jogos.', price: 350000, rarity: 'comum' },
+                  { name: 'Equipamentos Modernos', desc: 'Reduz risco de lesões musculares.', price: 900000, rarity: 'raro' },
+                  { name: 'Tratamento Intensivo', desc: 'Reduz tempo de lesão em 50%.', price: 2000000, rarity: 'epico' },
+                  { name: 'Laboratório Esportivo', desc: 'Análise detalhada de fadiga.', price: 5000000, rarity: 'lendario' },
+                  { name: 'Centro de Reabilitação', desc: 'Capacidade para 5 jogadores simultâneos.', price: 3000000, rarity: 'epico' },
+                ].map(f => (
+                  <StoreCard 
+                    key={f.name}
+                    name={f.name}
+                    description={f.desc}
+                    price={f.price}
+                    rarity={f.rarity as any}
+                    icon={HeartPulse}
+                    onAction={() => handleAction(f)}
+                  />
+                ))}
+             </div>
+          </TabsContent>
+
+          <TabsContent value="premium" className="space-y-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { name: 'Escudo Animado', desc: 'Efeito visual de brilho no seu escudo.', price: 1500, type: 'cash', rarity: 'lendario' },
+                  { name: 'Uniformes Exclusivos', desc: 'Template de uniforme lendário.', price: 800, type: 'cash', rarity: 'epico' },
+                  { name: 'Nome Colorido', desc: 'Destaque-se no chat global.', price: 500, type: 'cash', rarity: 'raro' },
+                  { name: 'Estádio Premium', desc: 'Visual 3D luxuoso para o seu estádio.', price: 2500, type: 'cash', rarity: 'lendario' },
+                  { name: 'Efeito de Torcida', desc: 'Fumaça e bandeirões personalizados.', price: 400, type: 'cash', rarity: 'comum' },
+                  { name: 'Molduras Especiais', desc: 'Borda dourada no perfil.', price: 300, type: 'cash', rarity: 'raro' },
+                ].map(p => (
+                  <StoreCard 
+                    key={p.name}
+                    name={p.name}
+                    description={p.desc}
+                    price={p.price}
+                    rarity={p.rarity as any}
+                    footerInfo={p.type === 'cash' ? `${p.price} Cash` : undefined}
+                    onAction={() => toast.success(`${p.name} ativado!`)}
+                  />
+                ))}
+             </div>
+          </TabsContent>
+
+          <TabsContent value="pacotes" className="space-y-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { name: 'Pack Inicial', desc: 'Tudo o que você precisa para começar.', price: 50000, rarity: 'comum', badge: 'OFERTA' },
+                  { name: 'Pack Campeão', desc: 'Itens de elite para quem quer títulos.', price: 5000000, rarity: 'lendario', badge: 'LIMITADO' },
+                  { name: 'Pack Torcida', desc: 'Impulsione sua base de fãs.', price: 1000000, rarity: 'raro' },
+                  { name: 'Pack Evolução', desc: 'Acelere o treino de todo o elenco.', price: 2000000, rarity: 'epico' },
+                  { name: 'Pack Financeiro', desc: 'Injeção de 2M no orçamento.', price: 1000, type: 'cash', rarity: 'epico' },
+                ].map(p => (
+                  <StoreCard 
+                    key={p.name}
+                    name={p.name}
+                    description={p.desc}
+                    price={p.price}
+                    rarity={p.rarity as any}
+                    badge={p.badge}
+                    footerInfo={p.type === 'cash' ? `${p.price} Cash` : undefined}
+                    onAction={() => handleAction(p)}
+                  />
+                ))}
              </div>
           </TabsContent>
         </div>
