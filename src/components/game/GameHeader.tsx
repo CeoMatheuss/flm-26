@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { shieldPropsFromClub, hasShield } from '@/components/game/shieldHelpers';
 import { NotificationBell } from '@/components/game/NotificationBell';
