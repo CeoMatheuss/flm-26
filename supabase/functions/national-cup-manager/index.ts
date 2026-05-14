@@ -78,9 +78,9 @@ serve(async (req) => {
       const { data: activeCups } = await sb.from('national_cups').select('*').eq('status', 'in_progress');
       if (!activeCups) return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 
-      // 12h overdue threshold: só auto-simula se a partida NÃO começou no horário marcado há mais de 12h
-      const OVERDUE_MS = 12 * 60 * 60 * 1000;
-      const overdueIso = new Date(Date.now() - OVERDUE_MS).toISOString();
+      // Tolerância: só auto-simula se a partida NÃO começou no horário marcado há mais de 5 minutos
+      const TOLERANCE_MS = 5 * 60 * 1000;
+      const overdueIso = new Date(Date.now() - TOLERANCE_MS).toISOString();
       let autoSimulated = 0;
 
       for (const cup of activeCups) {
