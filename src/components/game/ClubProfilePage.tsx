@@ -104,6 +104,15 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
   const [loanListings, setLoanListings] = useState<LoanListing[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
   const [negotiatingListing, setNegotiatingListing] = useState<TransferListing | null>(null);
+  const [myPurchases, setMyPurchases] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchPurchases() {
+      const { data } = await supabase.from('shop_purchases').select('product_id').eq('user_id', member.user_id).eq('status', 'completed');
+      if (data) setMyPurchases(data);
+    }
+    fetchPurchases();
+  }, [member.user_id]);
 
   const isBot = member.user_id.startsWith('bot_');
   const isUserTeam = member.user_id === userId;
@@ -299,7 +308,14 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <h2 className="text-2xl font-bold leading-tight">{member.club_name}</h2>
+                <h2 className="text-2xl font-bold leading-tight flex items-center gap-2">
+                  <span style={{ color: clubMeta.detailColor || 'inherit' }}>{member.club_name}</span>
+                  {myPurchases.some(p => p.product_id === 'custom_badge') && (
+                    <Badge className="bg-gradient-to-r from-amber-400 to-yellow-600 text-white border-none animate-pulse px-1.5 py-0">
+                      <Star className="h-3 w-3 fill-current" />
+                    </Badge>
+                  )}
+                </h2>
                 {isBot && <Badge variant="secondary" className="text-[9px]">BOT</Badge>}
                 {isUserTeam && <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Seu clube</Badge>}
               </div>
