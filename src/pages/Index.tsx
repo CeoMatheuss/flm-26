@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 import { ClubProfilePage } from '@/components/game/ClubProfilePage';
 import { QuickClubProfile } from '@/components/game/QuickClubProfile';
+import { PurchaseSuccessOverlay } from '@/components/game/PurchaseSuccessOverlay';
 
 const Index = () => {
   const { session, loading, signOut } = useAuth();
