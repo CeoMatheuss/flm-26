@@ -438,6 +438,7 @@ export function CopasTab({ userId }: Props) {
                   );
                 })()}
               </div>
+              <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
         </TabsContent>
