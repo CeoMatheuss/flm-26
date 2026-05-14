@@ -13,6 +13,7 @@ import { MatchReport } from '@/types/matchReport';
 import { simulateYouthMatch, formatYouthMatchNews, YouthMatchReport } from '@/utils/youthMatchSimulator';
 import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
+import { generatePlayer } from '@/utils/playerGenerator';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
