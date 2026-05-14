@@ -346,7 +346,6 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
           </TabsContent>
         </div>
       </Tabs>
-      </Tabs>
 
       {/* ANIMAÇÃO DE SUCESSO */}
       <AnimatePresence>
