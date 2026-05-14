@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     const { data: cMatches } = await sb.from("national_cup_matches").select(`*, 
       home_team:national_cup_teams!national_cup_matches_home_team_id_fkey(*),
       away_team:national_cup_teams!national_cup_matches_away_team_id_fkey(*)
-    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
+    `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
 
     if (cMatches) {
       for (const m of cMatches) {
