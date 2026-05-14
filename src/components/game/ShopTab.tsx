@@ -182,8 +182,8 @@ export function ShopTab() {
           </TabsList>
         </div>
 
-        {categories.slice(0, 5).map(cat => (
-          <TabsContent key={cat.id} value={cat.id} className="focus-visible:outline-none">
+        {categories.slice(0, 7).map(cat => (
+          <TabsContent key={cat.id} value={cat.id} className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {items
                 .filter(item => cat.id === 'featured' ? item.rarity !== 'common' : item.category === cat.id)
