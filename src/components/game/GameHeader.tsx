@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { shieldPropsFromClub, hasShield } from '@/components/game/shieldHelpers';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Users, Star, Trophy, LogOut } from 'lucide-react';
+import { Users, Star, Trophy, LogOut, Wallet, Gem } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import flmLogo from '@/assets/flm26-logo.png';
 import { Club } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
@@ -19,6 +21,18 @@ interface GameHeaderProps {
 }
 
 export function GameHeader({ club, season, infrastructure, listedPlayers, userId, isNewClub, onSignOut }: GameHeaderProps) {
+  const [cash, setCash] = useState(0);
+
+  useEffect(() => {
+    async function loadCash() {
+      const { data } = await supabase.from('shop_inventory').select('quantity').eq('user_id', userId).eq('item_id', 'cash_premium_50');
+      if (data) {
+        const total = data.reduce((acc, curr) => acc + (curr.quantity * 50), 0);
+        setCash(total);
+      }
+    }
+    loadCash();
+  }, [userId]);
   return (
     <header className="border-b border-border/20 bg-card/80 backdrop-blur-xl sticky top-0 z-10 safe-area-top shadow-sm shadow-black/10">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
@@ -35,12 +49,19 @@ export function GameHeader({ club, season, infrastructure, listedPlayers, userId
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-card" title="Online" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-bold truncate leading-tight">{club.name}</h1>
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-              <span className="game-badge bg-accent text-foreground">T{season.currentSeason}</span>
-              
-              <span>{club.stats.points}pts</span>
-              <span className="text-primary font-bold">R${(club.budget / 1000000).toFixed(1)}M</span>
+            <h1 className="text-sm sm:text-base font-bold truncate leading-tight flex items-center gap-1.5">
+              {club.name}
+              {cash > 100 && <Star className="h-3 w-3 fill-amber-500 text-amber-500 animate-pulse" />}
+            </h1>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 text-emerald-400 font-black">
+                <Wallet className="h-3 w-3" />
+                R${(club.budget / 1000000).toFixed(1)}M
+              </span>
+              <span className="flex items-center gap-1 text-amber-500 font-black">
+                <Gem className="h-3 w-3" />
+                {cash}
+              </span>
             </div>
           </div>
         </div>

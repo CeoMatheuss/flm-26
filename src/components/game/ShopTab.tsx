@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
   ShoppingBag, Star, ShieldCheck, Zap, Sparkles, 
   Clock, Users, TrendingUp, DollarSign, Lock, 
-  CheckCircle2, Loader2, AlertCircle, History, Package
+  CheckCircle2, Loader2, AlertCircle, History, Package,
+  CreditCard, QrCode, ArrowRight, Wallet, Crown, Gift,
+  Coins, LayoutTemplate, Trophy, UserPlus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,33 +23,40 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface Product {
+interface ShopItem {
   id: string;
-  category: string;
   name: string;
   description: string;
+  category: string;
+  rarity: string;
   price_cents: number;
-  duration_days: number | null;
-  min_fans_required: number;
   bonus_data: any;
+  image_url: string | null;
 }
 
-interface Purchase {
+interface InventoryItem {
   id: string;
-  product_id: string;
-  status: string;
-  activated_at: string;
-  expires_at: string | null;
-  product: Product;
+  item_id: string;
+  quantity: number;
+  item: ShopItem;
 }
+
+const RARITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  common: { label: 'Comum', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  rare: { label: 'Raro', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  epic: { label: 'Épico', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+  legendary: { label: 'Lendário', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+};
 
 export function ShopTab() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [myPurchases, setMyPurchases] = useState<Purchase[]>([]);
+  const [items, setItems] = useState<ShopItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [purchasingId, setPurchasingId] = useState<string | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; product: Product | null }>({ open: false, product: null });
-  const [clubFans, setClubFans] = useState(0);
+  const [activeCategory, setActiveCategory] = useState('featured');
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
+  const [paymentStep, setPaymentStep] = useState<'details' | 'method' | 'processing' | 'success'>('details');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card'>('pix');
+  const [clubData, setClubData] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,288 +68,209 @@ export function ShopTab() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [productsRes, purchasesRes, clubRes] = await Promise.all([
-        supabase.from('shop_products').select('*').eq('active', true),
-        supabase.from('shop_purchases').select('*, product:shop_products(*)').eq('user_id', user.id).eq('status', 'completed'),
-        supabase.from('clubs').select('fans').eq('user_id', user.id).maybeSingle()
+      const [itemsRes, invRes, clubRes] = await Promise.all([
+        supabase.from('shop_items').select('*').eq('active', true),
+        supabase.from('shop_inventory').select('*, item:shop_items(*)').eq('user_id', user.id),
+        supabase.from('clubs').select('*').eq('user_id', user.id).maybeSingle()
       ]);
 
-      if (productsRes.data) setProducts(productsRes.data);
-      if (purchasesRes.data) setMyPurchases(purchasesRes.data as any);
-      if (clubRes.data) setClubFans(clubRes.data.fans);
+      if (itemsRes.data) setItems(itemsRes.data);
+      if (invRes.data) setInventory(invRes.data as any);
+      if (clubRes.data) setClubData(clubRes.data);
     } catch (error) {
       console.error('Error fetching shop data:', error);
-      toast.error('Erro ao carregar dados da loja');
     } finally {
       setLoading(false);
     }
   }
 
-  const handlePurchase = async (product: Product) => {
-    setConfirmModal({ open: true, product });
+  const handleOpenPurchase = (item: ShopItem) => {
+    setSelectedItem(item);
+    setPaymentStep('details');
   };
 
-  const confirmPurchase = async () => {
-    const product = confirmModal.product;
-    if (!product) return;
+  const startPayment = async () => {
+    if (!selectedItem) return;
+    setPaymentStep('processing');
 
     try {
-      setPurchasingId(product.id);
-      setConfirmModal({ open: false, product: null });
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Check restrictions (only 1 active marketing/sponsorship)
-      if (product.category === 'marketing' || product.category === 'sponsorships') {
-        const activeInCategory = myPurchases.find(p => p.product.category === product.category);
-        if (activeInCategory) {
-          toast.error(`Você já possui uma campanha de ${product.category === 'marketing' ? 'marketing' : 'patrocínio'} ativa.`);
-          return;
-        }
-      }
-
-      // Check requirements
-      if (clubFans < product.min_fans_required) {
-        toast.error(`Requisito mínimo não atingido: ${product.min_fans_required} torcedores.`);
-        return;
-      }
-
-      // Simulate payment loading
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const expires_at = product.duration_days 
-        ? new Date(Date.now() + product.duration_days * 24 * 60 * 60 * 1000).toISOString()
-        : null;
-
-      const { error: purchaseError } = await supabase.from('shop_purchases').insert({
-        user_id: user.id,
-        product_id: product.id,
-        status: 'completed',
-        expires_at
+      // Simulate calling Mercado Pago transparent checkout
+      // In a real scenario, this would call our edge function to get preference/init payment
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: { itemId: selectedItem.id, paymentMethod }
       });
 
-      if (purchaseError) throw purchaseError;
+      if (error) throw error;
 
-      // Handle immediate bonuses (like sponsorship cash)
-      if (product.category === 'sponsorships' && product.bonus_data.immediate_cash) {
-        const { data: club } = await supabase.from('clubs').select('budget').eq('user_id', user.id).single();
-        if (club) {
-          await supabase.from('clubs').update({ 
-            budget: Number(club.budget) + Number(product.bonus_data.immediate_cash) 
-          }).eq('user_id', user.id);
-        }
-      }
+      // Simulation of success for local testing/preview
+      await new Promise(r => setTimeout(r, 2500));
+      setPaymentStep('success');
+      toast.success('Simulação de pagamento concluída!');
+      
+      // Update inventory after success animation
+      setTimeout(() => {
+        fetchData();
+        setSelectedItem(null);
+      }, 3000);
 
-      toast.success(`${product.name} ativado com sucesso!`);
-      fetchData();
     } catch (error) {
-      console.error('Purchase error:', error);
-      toast.error('Erro ao processar compra');
-    } finally {
-      setPurchasingId(null);
+      console.error('Payment failed:', error);
+      toast.error('Erro ao processar pagamento');
+      setPaymentStep('method');
     }
   };
 
   const categories = [
-    { id: 'marketing', name: 'Marketing', icon: <TrendingUp className="h-4 w-4" /> },
-    { id: 'memberships', name: 'Planos de Sócios', icon: <Users className="h-4 w-4" /> },
-    { id: 'sponsorships', name: 'Patrocínios', icon: <DollarSign className="h-4 w-4" /> },
-    { id: 'customization', name: 'Personalização', icon: <Sparkles className="h-4 w-4" /> },
-    { id: 'my_items', name: 'Meus Produtos', icon: <Package className="h-4 w-4" /> },
+    { id: 'featured', name: 'Destaques', icon: <Star className="h-4 w-4" /> },
+    { id: 'currency', name: 'Coins & Cash', icon: <Coins className="h-4 w-4" /> },
+    { id: 'pack', name: 'Packs', icon: <Gift className="h-4 w-4" /> },
+    { id: 'boost', name: 'Boosts', icon: <Zap className="h-4 w-4" /> },
+    { id: 'vanity', name: 'Visual', icon: <LayoutTemplate className="h-4 w-4" /> },
+    { id: 'tournament', name: 'Torneios', icon: <Trophy className="h-4 w-4" /> },
+    { id: 'inventory', name: 'Meu Inventário', icon: <Package className="h-4 w-4" /> },
   ];
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">Carregando Loja FLM...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+        <p className="text-muted-foreground animate-pulse">Acessando Loja Oficial FLM...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-[#1a2e1a] text-white p-6 rounded-xl shadow-lg border border-emerald-900/50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <ShoppingBag className="h-24 w-24" />
+    <div className="space-y-6 pb-10 animate-in fade-in duration-500">
+      {/* Premium Header/Banner */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-900 via-emerald-800 to-black p-8 shadow-2xl border border-emerald-500/20">
+        <div className="absolute top-0 right-0 w-1/3 h-full opacity-10">
+          <Crown className="w-full h-full rotate-12 translate-x-10" />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-black tracking-tighter flex items-center gap-2">
-              LOJA <span className="text-emerald-400">FLM</span>
-            </h2>
-            <p className="text-emerald-100/70 text-sm mt-1">
-              Turbine seu clube com as melhores ferramentas de gestão e marketing do mercado.
-            </p>
-          </div>
-          <div className="bg-black/20 backdrop-blur-md p-3 rounded-lg border border-white/10 flex items-center gap-3">
-            <div className="bg-emerald-500/20 p-2 rounded-full">
-              <Users className="h-5 w-5 text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-emerald-400/80">Sua Torcida</p>
-              <p className="text-lg font-black leading-tight">{clubFans.toLocaleString()}</p>
+        <div className="relative z-10 space-y-4">
+          <Badge className="bg-amber-500 text-black border-none font-bold uppercase tracking-wider">Promoção de Lançamento</Badge>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter">
+            ELEVE SEU CLUBE <br/><span className="text-emerald-400 text-5xl">AO TOPO</span>
+          </h1>
+          <p className="text-emerald-100/70 max-w-md text-sm leading-relaxed">
+            Adquira pacotes exclusivos, moedas e itens de personalização para transformar seu time em uma potência mundial.
+          </p>
+          <div className="flex gap-4">
+            <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+              <p className="text-[10px] uppercase font-bold text-emerald-400">Seu Saldo</p>
+              <p className="text-xl font-black text-white">R$ {(Number(clubData?.budget || 0) / 100).toLocaleString()}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="marketing" className="w-full">
-        <div className="bg-card/40 backdrop-blur-sm p-1 rounded-xl border border-border/40 sticky top-0 z-20">
-          <TabsList className="bg-transparent grid grid-cols-2 md:grid-cols-5 gap-1">
+      {/* Categories Bar */}
+      <Tabs defaultValue="featured" className="w-full" onValueChange={setActiveCategory}>
+        <div className="bg-[#0a0f0a]/90 backdrop-blur-xl p-2 rounded-2xl border border-emerald-500/10 mb-8 sticky top-0 z-30 shadow-2xl">
+          <TabsList className="bg-transparent flex w-full justify-between gap-1 overflow-x-auto no-scrollbar scroll-smooth">
             {categories.map(cat => (
               <TabsTrigger 
                 key={cat.id} 
                 value={cat.id}
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all py-2 text-xs md:text-sm"
+                className="flex-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl py-3 px-6 transition-all duration-300 min-w-[100px]"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-1">
                   {cat.icon}
-                  <span className="hidden md:inline">{cat.name}</span>
-                  <span className="md:hidden">{cat.id === 'my_items' ? 'Meus' : cat.name.split(' ')[0]}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest truncate w-full text-center">{cat.name}</span>
                 </div>
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
-        {categories.slice(0, 4).map(cat => (
-          <TabsContent key={cat.id} value={cat.id} className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.filter(p => p.category === cat.id).map(product => {
-                const isBlocked = clubFans < product.min_fans_required;
-                const isPurchasing = purchasingId === product.id;
-                const hasActive = myPurchases.some(p => p.product_id === product.id);
+        {categories.slice(0, 7).map(cat => (
+          <TabsContent key={cat.id} value={cat.id} className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {items
+                .filter(item => {
+                  if (cat.id === 'featured') return item.rarity === 'legendary' || item.rarity === 'epic';
+                  if (cat.id === 'tournament') return item.category === 'ticket';
+                  return item.category === cat.id;
+                })
+                .map(item => {
+                  const r = RARITY_CONFIG[item.rarity as keyof typeof RARITY_CONFIG] || RARITY_CONFIG.common;
+                  return (
+                    <Card 
+                      key={item.id} 
+                      className={`group relative bg-[#121a12] ${r.border} hover:border-emerald-500/40 transition-all duration-500 cursor-pointer overflow-hidden shadow-lg hover:shadow-emerald-500/10`}
+                      onClick={() => handleOpenPurchase(item)}
+                    >
+                      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${
+                        item.rarity === 'legendary' ? 'from-amber-400 to-yellow-600' :
+                        item.rarity === 'epic' ? 'from-purple-500 to-pink-600' :
+                        item.rarity === 'rare' ? 'from-blue-400 to-cyan-500' :
+                        'from-emerald-500 to-emerald-700'
+                      }`} />
 
-                return (
-                  <Card key={product.id} className={`group relative overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm hover:border-emerald-500/30 transition-all duration-300 ${isBlocked ? 'opacity-80 grayscale-[0.5]' : ''}`}>
-                    <div className="absolute top-0 right-0 p-3 z-10">
-                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-bold">
-                        R$ 0,01
-                      </Badge>
-                    </div>
-
-                    <CardHeader className="pb-4 pt-8">
-                      <div className="bg-emerald-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        {cat.id === 'marketing' && <TrendingUp className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'memberships' && <Users className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'sponsorships' && <DollarSign className="h-6 w-6 text-emerald-600" />}
-                        {cat.id === 'customization' && <Sparkles className="h-6 w-6 text-emerald-600" />}
-                      </div>
-                      <CardTitle className="text-xl font-bold">{product.name}</CardTitle>
-                      <CardDescription className="text-xs leading-relaxed">
-                        {product.description}
-                      </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-background/50 p-2 rounded-lg border border-border/20">
-                          <p className="text-[9px] uppercase font-bold text-muted-foreground">Duração</p>
-                          <p className="text-xs font-semibold">{product.duration_days ? `${product.duration_days} dias` : 'Permanente'}</p>
+                      <CardHeader className="pb-2 relative">
+                        <div className="absolute top-4 right-4">
+                           <Badge variant="outline" className={`text-[9px] uppercase font-black ${r.border} ${r.color} ${r.bg}`}>
+                             {r.label}
+                           </Badge>
                         </div>
-                        <div className={`bg-background/50 p-2 rounded-lg border border-border/20 ${isBlocked ? 'border-red-500/20' : ''}`}>
-                          <p className="text-[9px] uppercase font-bold text-muted-foreground">Torcida Mínima</p>
-                          <p className={`text-xs font-semibold ${isBlocked ? 'text-red-500' : ''}`}>
-                            {product.min_fans_required.toLocaleString()}
-                          </p>
+                        <div className="w-full aspect-square bg-[#0a0f0a] rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-500 border border-white/5 shadow-inner">
+                          {item.category === 'currency' && <Coins className="w-16 h-16 text-amber-500 opacity-80" />}
+                          {item.category === 'pack' && <Gift className="w-16 h-16 text-emerald-500 opacity-80" />}
+                          {item.category === 'boost' && <Zap className="w-16 h-16 text-blue-500 opacity-80" />}
+                          {item.category === 'vanity' && <LayoutTemplate className="w-16 h-16 text-purple-500 opacity-80" />}
+                          {item.category === 'ticket' && <Trophy className="w-16 h-16 text-amber-400 opacity-80" />}
                         </div>
-                      </div>
+                        <CardTitle className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
+                          {item.name}
+                        </CardTitle>
+                        <CardDescription className="text-xs line-clamp-2 h-8 text-emerald-100/50">
+                          {item.description}
+                        </CardDescription>
+                      </CardHeader>
 
-                      <div className="bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/10">
-                        <p className="text-[9px] uppercase font-bold text-emerald-600 mb-1">Benefícios</p>
-                        <ul className="space-y-1">
-                          {Object.entries(product.bonus_data).map(([key, val]: [string, any]) => (
-                            <li key={key} className="text-xs flex items-center gap-2 text-emerald-700">
-                              <CheckCircle2 className="h-3 w-3" />
-                              {key === 'min_daily_fans' && `+${val} a ${product.bonus_data.max_daily_fans} torcedores/dia`}
-                              {key === 'daily_members' && `+${val} sócios/dia`}
-                              {key === 'immediate_cash' && `+R$ ${val.toLocaleString()} imediatos`}
-                              {key === 'daily_cash' && `+R$ ${val.toLocaleString()}/dia`}
-                              {key === 'type' && (val === 'exclusive_badge' ? 'Badge Premium exclusiva' : 'Nome de clube colorido')}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-
-                    <CardFooter>
-                      {isBlocked ? (
-                        <Button disabled className="w-full gap-2 bg-muted text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                          Bloqueado
-                        </Button>
-                      ) : hasActive ? (
-                        <Button disabled className="w-full gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Ativo
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => handlePurchase(product)} 
-                          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20"
-                          disabled={isPurchasing}
-                        >
-                          {isPurchasing ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <ShoppingBag className="h-4 w-4" />
-                              Ir para Pagamento
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+                      <CardContent>
+                        <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] uppercase font-bold text-emerald-400/60">Preço</span>
+                            <span className="text-xl font-black text-white">R$ {(item.price_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg shadow-emerald-600/20">
+                            <ArrowRight className="text-white h-5 w-5" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </TabsContent>
         ))}
 
-        <TabsContent value="my_items" className="mt-6">
-          {myPurchases.length === 0 ? (
-            <div className="text-center py-20 bg-card/20 rounded-xl border border-dashed border-border/40">
-              <History className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-              <h3 className="text-lg font-bold">Nenhum item ativo</h3>
-              <p className="text-sm text-muted-foreground">Você ainda não adquiriu nenhum produto na loja.</p>
+        <TabsContent value="inventory" className="focus-visible:outline-none">
+          {inventory.length === 0 ? (
+            <div className="text-center py-32 bg-[#121a12] rounded-3xl border-2 border-dashed border-emerald-500/10">
+              <Package className="h-20 w-20 mx-auto text-emerald-500 opacity-10 mb-6" />
+              <h3 className="text-2xl font-black text-white mb-2">Inventário Vazio</h3>
+              <p className="text-emerald-100/40 text-sm">Suas compras aparecerão aqui após a aprovação.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myPurchases.map(purchase => (
-                <Card key={purchase.id} className="bg-card/40 border-emerald-500/10 hover:border-emerald-500/30 transition-all">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-emerald-500/10 p-2 rounded-lg">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{purchase.product.name}</CardTitle>
-                        <Badge variant="outline" className="text-[10px] uppercase">{purchase.product.category}</Badge>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {inventory.map(inv => (
+                <Card key={inv.id} className="bg-[#121a12] border-emerald-500/10 overflow-hidden group">
+                  <div className="p-4 flex gap-4">
+                    <div className="w-20 h-20 bg-[#0a0f0a] rounded-xl flex items-center justify-center shrink-0 border border-white/5 shadow-inner">
+                       <Package className="w-10 h-10 text-emerald-500/60" />
                     </div>
-                    {purchase.expires_at && (
-                      <div className="text-right">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1 justify-end">
-                          <Clock className="h-3 w-3" /> Expira em
-                        </p>
-                        <p className="text-xs font-bold text-emerald-600">
-                          {formatDistanceToNow(new Date(purchase.expires_at), { addSuffix: true, locale: ptBR })}
-                        </p>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-white group-hover:text-emerald-400 transition-colors">{inv.item.name}</h4>
+                        <Badge className="bg-emerald-600 text-[10px] px-2 py-0">Qtd: {inv.quantity}</Badge>
                       </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-background/40 p-3 rounded-lg border border-border/10">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Status</p>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs font-medium">Ativo e Gerando Bônus</span>
-                      </div>
+                      <p className="text-[10px] text-emerald-100/50 leading-relaxed line-clamp-2">{inv.item.description}</p>
+                      <Button size="sm" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 h-7 text-[10px] font-bold uppercase tracking-widest rounded-lg">
+                        Equipar / Usar
+                      </Button>
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -348,35 +278,108 @@ export function ShopTab() {
         </TabsContent>
       </Tabs>
 
-      {/* Confirmation Modal */}
-      <Dialog open={confirmModal.open} onOpenChange={(open) => setConfirmModal({ open, product: confirmModal.product })}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar Ativação</DialogTitle>
-            <DialogDescription>
-              Você está prestes a ativar o item <strong>{confirmModal.product?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-emerald-700">Preço (Teste)</span>
-              <span className="font-bold">R$ 0,01</span>
-            </div>
-            <div className="flex justify-between text-sm border-t border-emerald-200 pt-2">
-              <span className="text-emerald-700">Duração</span>
-              <span className="font-bold">{confirmModal.product?.duration_days ? `${confirmModal.product.duration_days} dias` : 'Permanente'}</span>
-            </div>
+      {/* Checkout Dialog */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="sm:max-w-[450px] bg-[#0a0f0a] border-emerald-500/20 text-white overflow-hidden p-0">
+          <div className={`p-8 space-y-6 ${paymentStep === 'success' ? 'bg-emerald-900/10' : ''}`}>
+            {paymentStep === 'details' && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black italic tracking-tighter">DETALHES DO ITEM</DialogTitle>
+                </DialogHeader>
+                <div className="flex gap-6 items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+                   <div className="w-24 h-24 bg-black rounded-xl flex items-center justify-center border border-emerald-500/20 shadow-2xl">
+                     <Gift className="w-12 h-12 text-emerald-500" />
+                   </div>
+                   <div>
+                     <h3 className="text-xl font-black text-emerald-400">{selectedItem?.name}</h3>
+                     <Badge className="bg-emerald-600 text-[10px] mt-1 uppercase">{selectedItem?.rarity}</Badge>
+                     <p className="text-xs text-emerald-100/60 mt-2 leading-relaxed">{selectedItem?.description}</p>
+                   </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm items-center">
+                    <span className="text-emerald-100/50">Valor total</span>
+                    <span className="text-2xl font-black tracking-tighter">R$ {(selectedItem?.price_cents! / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+                <Button onClick={() => setPaymentStep('method')} className="w-full bg-emerald-600 hover:bg-emerald-700 py-6 text-lg font-black italic tracking-tighter uppercase rounded-2xl shadow-lg shadow-emerald-600/20">
+                   Escolher Método de Pagamento
+                </Button>
+              </>
+            )}
+
+            {paymentStep === 'method' && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black italic tracking-tighter">FORMA DE PAGAMENTO</DialogTitle>
+                  <DialogDescription className="text-emerald-100/50">Checkout Transparente Mercado Pago</DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setPaymentMethod('pix')}
+                    className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-300 ${paymentMethod === 'pix' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-white/5 opacity-50'}`}
+                  >
+                    <QrCode className="w-10 h-10 text-emerald-400" />
+                    <span className="font-bold text-xs uppercase tracking-widest">PIX</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod('card')}
+                    className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-300 ${paymentMethod === 'card' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-white/5 opacity-50'}`}
+                  >
+                    <CreditCard className="w-10 h-10 text-emerald-400" />
+                    <span className="font-bold text-xs uppercase tracking-widest">Cartão</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/5 text-[10px] text-emerald-100/40">
+                  <ShieldCheck className="w-6 h-6 text-emerald-500 shrink-0" />
+                  Pagamento processado de forma segura pelo Mercado Pago. Seus dados estão protegidos.
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="ghost" onClick={() => setPaymentStep('details')} className="flex-1 border border-white/10 hover:bg-white/5">Voltar</Button>
+                  <Button onClick={startPayment} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20">Finalizar Compra</Button>
+                </div>
+              </>
+            )}
+
+            {paymentStep === 'processing' && (
+              <div className="py-12 flex flex-col items-center text-center space-y-6">
+                <div className="relative">
+                  <Loader2 className="w-24 h-24 text-emerald-500 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ShieldCheck className="w-8 h-8 text-emerald-500" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Validando Pagamento</h3>
+                  <p className="text-emerald-100/50 text-xs">Comunicando com o servidor do Mercado Pago...</p>
+                </div>
+              </div>
+            )}
+
+            {paymentStep === 'success' && (
+              <div className="py-12 flex flex-col items-center text-center space-y-6 animate-in zoom-in-95 duration-500">
+                <div className="w-32 h-32 bg-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 animate-bounce">
+                  <CheckCircle2 className="w-20 h-20 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-4xl font-black italic tracking-tighter text-emerald-400 uppercase mb-2">PAGAMENTO APROVADO!</h3>
+                  <p className="text-emerald-100/70 text-sm max-w-[250px]">
+                    O item <strong>{selectedItem?.name}</strong> foi adicionado ao seu inventário com sucesso!
+                  </p>
+                </div>
+                <div className="bg-emerald-600/10 border border-emerald-500/20 p-4 rounded-2xl w-full flex items-center gap-4">
+                   <div className="bg-emerald-500 p-2 rounded-lg">
+                      <Gift className="text-white h-5 w-5" />
+                   </div>
+                   <div className="text-left">
+                     <p className="text-[10px] font-bold uppercase text-emerald-400">Entrega Automática</p>
+                     <p className="text-xs text-white">Pronto para ser equipado.</p>
+                   </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-            <p>O pagamento será simulado via PIX. Após a confirmação, o item será ativado automaticamente na sua conta.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmModal({ open: false, product: null })}>Cancelar</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={confirmPurchase}>
-              Confirmar e Pagar via PIX
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
