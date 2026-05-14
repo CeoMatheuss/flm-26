@@ -113,10 +113,10 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
                   <NewsVisualTemplate 
                     templateKey={main.template_key} 
                     {...main.metadata}
-                    className="mb-3 shadow-lg shadow-black/20"
+                    className="mb-2 shadow-lg shadow-black/20"
                   />
                 ) : main.image_url ? (
-                  <div className="relative aspect-video rounded-xl overflow-hidden mb-3 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
+                  <div className="relative aspect-video rounded-lg overflow-hidden mb-2 border border-border/50 group-hover:border-primary/50 transition-all duration-500 shadow-lg shadow-black/20">
                     <img src={main.image_url} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                     <div className="absolute top-2 right-2">
@@ -125,24 +125,24 @@ export function NewspaperCard({ onOpenFullPage, userId }: Props) {
                        </div>
                     </div>
                     <div className="absolute bottom-2 left-2 right-2">
-                      <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-1 shadow-md`}>
+                      <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[7px] sm:text-[8px] font-black border-none mb-1 shadow-md`}>
                         {main.category}
                       </Badge>
                     </div>
                   </div>
                 ) : (
-                  <div className="border-b border-border/50 pb-2 mb-2">
-                     <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[8px] sm:text-[9px] font-black border-none mb-2`}>
+                  <div className="border-b border-border/50 pb-1 mb-1">
+                     <Badge className={`${categoryColors[main.category] || 'bg-primary'} text-[7px] sm:text-[8px] font-black border-none mb-1`}>
                         {main.category}
                       </Badge>
                   </div>
                 )}
                 
-                <h3 className={`text-sm sm:text-base font-black uppercase leading-tight mt-1 line-clamp-2 ${(main.image_url || main.template_key) ? 'text-white drop-shadow-lg italic' : 'text-foreground'}`}>
+                <h3 className={`text-xs sm:text-sm font-black uppercase leading-tight mt-0.5 line-clamp-2 ${(main.image_url || main.template_key) ? 'text-white drop-shadow-md italic' : 'text-foreground'}`}>
                   {main.text.includes(': ') ? main.text.split(': ')[1] : main.text}
                 </h3>
                 
-                <p className="text-[8px] text-muted-foreground mt-1.5 flex items-center gap-1.5 font-mono">
+                <p className="text-[7px] text-muted-foreground mt-1 flex items-center gap-1.5 font-mono">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   {new Date(main.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </p>
