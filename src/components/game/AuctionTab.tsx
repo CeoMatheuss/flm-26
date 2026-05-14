@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Gavel, Crown, Clock, TrendingUp, User, History, Sparkles } from 'lucide-react';
+import { Gavel, Crown, Clock, TrendingUp, User, History, Sparkles, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 
@@ -448,7 +448,11 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 Seu orçamento: {fmtMoney(budget)} • Lance máx (80%): <span className="font-semibold text-amber-400">{fmtMoney(Math.floor(budget * 0.8))}</span>
               </p>
               {bidAmount > Math.floor(budget * 0.8) && (
-                <p className="text-[10px] text-red-400 font-semibold">⚠️ Lance acima de 80% do seu orçamento — não permitido.</p>
+                <div className="p-2 rounded bg-red-500/10 border border-red-500/30 animate-shake">
+                  <p className="text-[10px] text-red-400 font-bold flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" /> Lance excede o limite financeiro permitido (80%).
+                  </p>
+                </div>
               )}
             </div>
           )}
