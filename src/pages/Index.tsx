@@ -738,6 +738,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </ScrollArea>
         </DialogContent>
       </Dialog>
+      <PurchaseSuccessOverlay />
+      <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
+      <DatabaseResetWidget userId={userId} />
 
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <DatabaseResetWidget userId={userId} />
