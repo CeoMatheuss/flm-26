@@ -437,6 +437,61 @@ export function useClubState(initialState: any, userId?: string) {
             configs,
             ctLevel,
             physioLevel,
+            defaultStaff,
+            (prev as any).tactics ?? { playStyle: 'equilibrado' },
+            (prev as any).season?.week ?? 1
+          );
+
+          setLastTrainingResult(result);
+          setLastTrainingCycleAt(new Date(now).toISOString());
+
+          if (result.developmentLogs.length > 0) {
+            toast.success(`🏋️ Treino Concluído! ${result.developmentLogs.length} jogadores evoluíram.`);
+          }
+
+          return { ...prev, players: updatedPlayers };
+        });
+      }
+    };
+
+    const interval = setInterval(checkTrainingCycle, 60_000);
+    checkTrainingCycle();
+    return () => clearInterval(interval);
+  }, [userId, lastTrainingCycleAt, trainingFocus, trainingIntensity, setClub]);
+
+  // 🏋️ Ciclo de Treino: 1 ciclo = 24h reais, 60s interval
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkTrainingCycle = () => {
+      const now = Date.now();
+      const lastCycle = new Date(lastTrainingCycleAt).getTime();
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+
+      if (now - lastCycle >= ONE_DAY) {
+        setClub(prev => {
+          console.log('[Training] Iniciando processamento do ciclo diário...');
+          
+          // Prepara configurações (foco/intensidade)
+          const configs: any = {};
+          prev.players.forEach(p => {
+            configs[p.id] = {
+              focus: trainingFocus[p.id] ?? 'none',
+              intensity: trainingIntensity[p.id] ?? 'moderado'
+            };
+          });
+
+          // Pega níveis da infra
+          const infrastructure = (prev as any).infrastructure;
+          const ctLevel = infrastructure?.trainingCenter?.level ?? 1;
+          const physioLevel = infrastructure?.physiotherapy?.level ?? 5;
+
+          // Executa processamento
+          const { players: updatedPlayers, result } = getTrainingManager().processWeek(
+            prev.players,
+            configs,
+            ctLevel,
+            physioLevel,
             defaultStaff, // Idealmente pegar do staff do clube
             (prev as any).tactics ?? { playStyle: 'equilibrado' },
             (prev as any).season?.week ?? 1
