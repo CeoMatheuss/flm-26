@@ -581,7 +581,7 @@ export function TrainingTab({
         </div>
       )}
 
-      <TrainingHelpPopup open={helpOpen} onOpenChange={setHelpOpen} section={helpSection} />
+      <TrainingHelpPopup open={helpOpen} onClose={() => setHelpOpen(false)} section={helpSection} />
       
       <TrainingReportModal 
         isOpen={reportOpen} 
