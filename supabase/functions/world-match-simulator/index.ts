@@ -33,6 +33,8 @@ function getHeadline(type: 'win' | 'draw' | 'loss', winner: string, loser: strin
   const template = list[Math.floor(Math.random() * list.length)];
   return template.replace(/{winner}/g, winner).replace(/{loser}/g, loser).replace(/{team1}/g, winner).replace(/{team2}/g, loser);
 }
+
+function getMatchTemplate(hg: number, ag: number, isHome: boolean) {
   if (hg === ag) return 'league_draw';
   if (isHome) return hg > ag ? 'league_win' : 'league_loss';
   return ag > hg ? 'league_win' : 'league_loss';
@@ -89,13 +91,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const now = new Date();
+  const tolerance = new Date(now.getTime() - 5 * 60 * 1000); // Wait 5 minutes
 
   try {
     // --- 1. LEAGUE MATCHES ---
     const { data: wMatches } = await sb.from("world_matches").select(`*, 
       home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength, user_id),
       away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength, user_id)
-    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
+    `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
 
     if (wMatches) {
       for (const m of wMatches) {
@@ -123,7 +126,6 @@ Deno.serve(async (req) => {
         });
 
         await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
-        // Table update omitted for brevity
       }
     }
 
@@ -131,7 +133,7 @@ Deno.serve(async (req) => {
     const { data: cMatches } = await sb.from("national_cup_matches").select(`*, 
       home_team:national_cup_teams!national_cup_matches_home_team_id_fkey(*),
       away_team:national_cup_teams!national_cup_matches_away_team_id_fkey(*)
-    `).eq("status", "scheduled").lte("scheduled_at", now.toISOString()).limit(20);
+    `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
 
     if (cMatches) {
       for (const m of cMatches) {
