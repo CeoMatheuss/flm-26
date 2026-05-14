@@ -1133,6 +1133,8 @@ export function useClubState(initialState: any, userId?: string) {
     toggleMembershipTier, buyModularUpgrade,
     applyFanChange,
     enrollWorldLeague,
+    lastTrainingResult,
+    setLastTrainingResult,
   };
 
 }
