@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GameEvent } from '@/types/events';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { toast } from 'sonner';
+import { computeMatchPenalty } from '@/match/stadiumExtras';
 
 export interface RankingHistory {
   season: number;
