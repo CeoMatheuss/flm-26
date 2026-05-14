@@ -71,9 +71,9 @@ const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
 const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
 
 function getOvrColor(val: number) {
-  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]' };
-  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30', glow: 'shadow-[0_0_15px_-5px_rgba(var(--primary),0.3)]' };
-  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(245,158,11,0.3)]' };
+  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]' };
+  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/20', border: 'border-primary/40', glow: 'shadow-[0_0_20px_-5px_rgba(var(--primary),0.5)]' };
+  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)]' };
   return { text: 'text-muted-foreground', bg: 'bg-muted/10', border: 'border-border/30', glow: '' };
 }
 
