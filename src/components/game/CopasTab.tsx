@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClubShield } from './ClubShield';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 // Maps a team row to a ClubShield-compatible object, ensuring the latest shield data is used.
 const toShieldClub = (t: any) => {
@@ -381,21 +381,21 @@ export function CopasTab({ userId }: Props) {
         <TabsContent value="bracket" className="outline-none">
           <div className="w-full rounded-3xl border border-border/50 bg-card/20 overflow-hidden">
             <ScrollArea className="w-full">
-              <div className="flex gap-4 md:gap-12 p-4 md:p-8 min-w-max items-stretch">
+              <div className="flex gap-2 sm:gap-4 md:gap-6 p-3 sm:p-4 md:p-6 min-w-max items-stretch">
                 {[...Array(cup.total_rounds)].map((_, i) => {
                   const r = i + 1;
                   const rMatches = matches.filter(match => match.round === r);
                   return (
-                    <div key={r} className="w-48 md:w-64 space-y-4 md:y-8">
+                    <div key={r} className="w-36 sm:w-44 md:w-52 space-y-3 md:space-y-4 flex flex-col">
                       <div className="flex flex-col items-center gap-1 md:gap-2">
-                        <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.1em] md:tracking-[0.2em]">{getPhaseName(r, cup.total_rounds)}</span>
+                        <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.1em] md:tracking-[0.2em] text-center">{getPhaseName(r, cup.total_rounds)}</span>
                         <div className="h-1 w-8 md:h-1.5 md:w-12 bg-primary/20 rounded-full" />
                       </div>
-                      <div className="space-y-3 md:space-y-6 flex flex-col justify-around h-full py-2 md:py-4">
+                      <div className="space-y-3 md:space-y-6 flex flex-col justify-around flex-1 py-2 md:py-4">
                         {rMatches.length > 0 ? rMatches.map(m => (
                           <BracketMatch key={m.id} match={m} userId={userId} />
                         )) : (
-                          <div className="rounded-2xl border border-dashed border-border/40 bg-card/20 p-4 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                          <div className="rounded-2xl border border-dashed border-border/40 bg-card/20 p-3 text-center text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
                             A definir
                           </div>
                         )}
@@ -409,7 +409,7 @@ export function CopasTab({ userId }: Props) {
                     ? (finalMatch.winner_team_id === finalMatch.home_team_id ? finalMatch.home : finalMatch.away)
                     : null;
                   return (
-                    <div className="w-48 md:w-64 space-y-4 md:y-8 flex flex-col">
+                    <div className="w-36 sm:w-44 md:w-52 space-y-3 md:space-y-4 flex flex-col">
                       <div className="flex flex-col items-center gap-1 md:gap-2">
                         <span className="text-[8px] md:text-[10px] font-black text-yellow-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Campeão</span>
                         <div className="h-1 w-8 md:h-1.5 md:w-12 bg-yellow-500/30 rounded-full" />
@@ -438,6 +438,7 @@ export function CopasTab({ userId }: Props) {
                   );
                 })()}
               </div>
+              <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
         </TabsContent>
