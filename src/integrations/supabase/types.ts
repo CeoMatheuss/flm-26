@@ -3022,6 +3022,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_daily_shop_bonus_at: string | null
           last_training_processed_at: string | null
           tutorial_completed: boolean
           user_id: string
@@ -3031,6 +3032,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_daily_shop_bonus_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id: string
@@ -3040,6 +3042,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_daily_shop_bonus_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id?: string
@@ -4875,6 +4878,7 @@ export type Database = {
         Returns: Json
       }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
+      process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
       process_league_waiting_list: {
         Args: { _league_id: string }
         Returns: undefined
