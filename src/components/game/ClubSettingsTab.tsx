@@ -170,6 +170,33 @@ export function ClubSettingsTab({
         </CardContent>
       </Card>
 
+      {/* Color Name Customization */}
+      {hasColorProduct && (
+        <Card className="border-emerald-500/20 bg-emerald-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Palette className="h-4 w-4 text-emerald-600" /> Cor Customizada do Nome
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <input 
+                type="color" 
+                value={newDetailColor} 
+                onChange={e => setNewDetailColor(e.target.value)}
+                className="w-10 h-10 rounded cursor-pointer border-none bg-transparent"
+              />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground mb-2">Seu clube agora tem acesso a cores premium!</p>
+                <Button size="sm" onClick={handleUpdateColor} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Check className="h-3 w-3 mr-1" /> Aplicar Cor
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Shield Editor Sheet */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
         <SheetContent side="right" className="w-full sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl overflow-y-auto">
