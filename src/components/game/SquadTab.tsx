@@ -36,12 +36,12 @@ interface Props {
 }
 
 const posColors: Record<string, string> = {
-  GOL: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)]',
-  ZAG: 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_-3px_rgba(59,130,246,0.2)]',
-  LAT: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_10px_-3px_rgba(6,182,212,0.2)]',
-  VOL: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_-3px_rgba(16,185,129,0.2)]',
-  MEI: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_-3px_rgba(168,85,247,0.2)]',
-  ATA: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_-3px_rgba(239,68,68,0.2)]',
+  GOL: 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-[0_0_15px_-5px_rgba(245,158,11,0.4)]',
+  ZAG: 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_15px_-5px_rgba(59,130,246,0.4)]',
+  LAT: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30 shadow-[0_0_15px_-5px_rgba(6,182,212,0.4)]',
+  VOL: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_-5px_rgba(16,185,129,0.4)]',
+  MEI: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_15px_-5px_rgba(168,85,247,0.4)]',
+  ATA: 'bg-red-500/20 text-red-400 border-red-500/30 shadow-[0_0_15px_-5px_rgba(239,68,68,0.4)]',
 };
 
 const posLabels: Record<string, string> = {
