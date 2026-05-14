@@ -116,6 +116,7 @@ export function NewsVisualTemplate({
                     club={{} as ShieldSourceLike} 
                     size={window.innerWidth < 640 ? 32 : 48} 
                     className="opacity-90"
+                    fallbackText={opponentName}
                   />
                 ) : (
                   <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-black/20 rounded">
