@@ -165,17 +165,17 @@ export function ShopTab() {
 
       {/* Categories Bar */}
       <Tabs defaultValue="featured" className="w-full" onValueChange={setActiveCategory}>
-        <div className="bg-[#0a0f0a] p-2 rounded-2xl border border-emerald-500/10 mb-8 sticky top-0 z-30 shadow-xl">
-          <TabsList className="bg-transparent flex w-full justify-between gap-1 overflow-x-auto no-scrollbar">
+        <div className="bg-[#0a0f0a]/90 backdrop-blur-xl p-2 rounded-2xl border border-emerald-500/10 mb-8 sticky top-0 z-30 shadow-2xl">
+          <TabsList className="bg-transparent flex w-full justify-between gap-1 overflow-x-auto no-scrollbar scroll-smooth">
             {categories.map(cat => (
               <TabsTrigger 
                 key={cat.id} 
                 value={cat.id}
-                className="flex-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl py-3 px-4 transition-all duration-300"
+                className="flex-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl py-3 px-6 transition-all duration-300 min-w-[100px]"
               >
                 <div className="flex flex-col items-center gap-1">
                   {cat.icon}
-                  <span className="text-[10px] font-bold uppercase tracking-widest">{cat.name}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest truncate w-full text-center">{cat.name}</span>
                 </div>
               </TabsTrigger>
             ))}
