@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ClubShield } from './ClubShield';
+import { ShieldSourceLike } from './shieldHelpers';
 import { Trophy, Star, TrendingUp, TrendingDown, Target, Zap, Activity, Newspaper } from 'lucide-react';
 import leagueBg from '@/assets/news-league-champion.jpg';
 import cupBg from '@/assets/news-cup-champion.jpg';
@@ -109,11 +110,19 @@ export function NewsVisualTemplate({
             </div>
 
             <div className="flex flex-col items-center gap-1">
-              <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl">
-                {/* We don't have the opponent club object here, but we can show a generic shield or just name */}
-                <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-black/20 rounded">
-                   <Target className="h-4 w-4 sm:h-6 sm:w-6 text-white/40" />
-                </div>
+              <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl group-hover:bg-white/10 transition-colors">
+                {opponentName ? (
+                  <ClubShield 
+                    club={{} as ShieldSourceLike} 
+                    size={window.innerWidth < 640 ? 32 : 48} 
+                    className="opacity-90"
+                    fallbackText={opponentName}
+                  />
+                ) : (
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-black/20 rounded">
+                    <Target className="h-4 w-4 sm:h-6 sm:w-6 text-white/40" />
+                  </div>
+                )}
               </div>
               <span className="text-[8px] sm:text-[10px] font-black text-white/80 uppercase truncate max-w-[60px] sm:max-w-[100px]">{opponentName}</span>
             </div>
