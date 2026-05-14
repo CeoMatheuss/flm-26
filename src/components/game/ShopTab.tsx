@@ -122,10 +122,11 @@ export function ShopTab() {
 
   const categories = [
     { id: 'featured', name: 'Destaques', icon: <Star className="h-4 w-4" /> },
-    { id: 'currency', name: 'Moedas', icon: <Wallet className="h-4 w-4" /> },
-    { id: 'pack', name: 'Pacotes', icon: <Gift className="h-4 w-4" /> },
-    { id: 'boost', name: 'Impulsos', icon: <Zap className="h-4 w-4" /> },
-    { id: 'vanity', name: 'Visual', icon: <Sparkles className="h-4 w-4" /> },
+    { id: 'currency', name: 'Coins & Cash', icon: <Coins className="h-4 w-4" /> },
+    { id: 'pack', name: 'Packs', icon: <Gift className="h-4 w-4" /> },
+    { id: 'boost', name: 'Boosts', icon: <Zap className="h-4 w-4" /> },
+    { id: 'vanity', name: 'Visual', icon: <LayoutTemplate className="h-4 w-4" /> },
+    { id: 'tournament', name: 'Torneios', icon: <Trophy className="h-4 w-4" /> },
     { id: 'inventory', name: 'Meu Inventário', icon: <Package className="h-4 w-4" /> },
   ];
 
