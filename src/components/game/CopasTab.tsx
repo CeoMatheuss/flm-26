@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClubShield } from './ClubShield';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 // Maps a team row to a ClubShield-compatible object, ensuring the latest shield data is used.
 const toShieldClub = (t: any) => {
