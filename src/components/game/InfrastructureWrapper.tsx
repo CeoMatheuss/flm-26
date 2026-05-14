@@ -47,6 +47,7 @@ interface Props {
   onUpgradeCTRoom?: (room: keyof CTRooms) => void;
   trainingInvestment?: number;
   onSetTrainingInvestment?: (value: number) => void;
+  lastTrainingResult?: any;
 
   // Estádio
   stadiumProps?: any;
@@ -145,7 +146,7 @@ export function InfrastructureWrapper({
           currentWeek={currentWeek}
           userId={userId}
           budget={budget}
-          onUpgradeCT={onUpgradeCT}
+          onUpgradeCT={onUpgradeCT} lastTrainingResult={lastTrainingResult}
         />
       )}
       {activeTab === 'training2d' && (

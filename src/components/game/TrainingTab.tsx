@@ -15,13 +15,14 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Dumbbell, HelpCircle, TrendingUp, AlertTriangle, Flame, Scale, Turtle, X, Users, CheckCircle2 } from 'lucide-react';
+import { Dumbbell, HelpCircle, TrendingUp, AlertTriangle, Flame, Scale, Turtle, X, Users, CheckCircle2, History } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrainingFocusKey, TrainingIntensity } from '@/training/TrainingTypes';
 import { focusLabels, intensityConfig, isGroupFocus, groupWeights } from '@/training/TrainingTypes';
 import { PlayerDevelopmentEngine, defaultStaff } from '@/training/PlayerDevelopmentEngine';
 import { TrainingHelpPopup, type HelpSection } from './TrainingHelpPopup';
 import { formatMoney } from '@/lib/formatMoney';
+import { TrainingReportModal } from './TrainingReportModal';
 
 interface Props {
   players: Player[];
@@ -36,6 +37,7 @@ interface Props {
   userId?: string;
   budget?: number;
   onUpgradeCT?: () => void;
+  lastTrainingResult?: any;
 }
 
 const MAX_GROUP_SIZE = 5;
@@ -246,7 +248,9 @@ function PlayerTrainingCard({
 export function TrainingTab({
   players, infrastructure, trainingFocus = {}, onSetTrainingFocus,
   trainingIntensity = {}, onSetTrainingIntensity, budget = 0, onUpgradeCT,
+  lastTrainingResult,
 }: Props) {
+  const [reportOpen, setReportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpSection, setHelpSection] = useState<HelpSection | undefined>(undefined);
   const [filterPos, setFilterPos] = useState('all');
@@ -347,7 +351,18 @@ export function TrainingTab({
               Centro de Treinamento
               <HelpButton onClick={() => openHelp('ct')} />
             </CardTitle>
-            <Badge variant="outline" className="text-xs">Nível {ctLevel}/30</Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-2 border-primary/30 hover:bg-primary/10"
+                onClick={() => setReportOpen(true)}
+              >
+                <History className="h-4 w-4" />
+                Resumo do Treino
+              </Button>
+              <Badge variant="outline" className="text-xs">Nível {ctLevel}/30</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -567,6 +582,12 @@ export function TrainingTab({
       )}
 
       <TrainingHelpPopup open={helpOpen} onClose={() => setHelpOpen(false)} section={helpSection} />
+      
+      <TrainingReportModal 
+        isOpen={reportOpen} 
+        onClose={() => setReportOpen(false)} 
+        result={lastTrainingResult} 
+      />
     </div>
   );
 }
