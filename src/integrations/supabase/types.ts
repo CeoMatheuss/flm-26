@@ -318,6 +318,7 @@ export type Database = {
       clubs: {
         Row: {
           budget: number | null
+          cash: number | null
           country: string
           created_at: string
           detail_color: string | null
@@ -335,6 +336,7 @@ export type Database = {
         }
         Insert: {
           budget?: number | null
+          cash?: number | null
           country?: string
           created_at?: string
           detail_color?: string | null
@@ -352,6 +354,7 @@ export type Database = {
         }
         Update: {
           budget?: number | null
+          cash?: number | null
           country?: string
           created_at?: string
           detail_color?: string | null
@@ -2785,6 +2788,7 @@ export type Database = {
         Row: {
           amount_cents: number
           created_at: string | null
+          delivered: boolean | null
           external_reference: string | null
           id: string
           item_id: string
@@ -2798,6 +2802,7 @@ export type Database = {
         Insert: {
           amount_cents: number
           created_at?: string | null
+          delivered?: boolean | null
           external_reference?: string | null
           id?: string
           item_id: string
@@ -2811,6 +2816,7 @@ export type Database = {
         Update: {
           amount_cents?: number
           created_at?: string | null
+          delivered?: boolean | null
           external_reference?: string | null
           id?: string
           item_id?: string
@@ -3501,8 +3507,10 @@ export type Database = {
           category: string
           created_at: string | null
           description: string | null
+          duration_days: number | null
           id: string
           image_url: string | null
+          min_fans: number | null
           name: string
           price_cents: number
           rarity: string | null
@@ -3513,8 +3521,10 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
+          duration_days?: number | null
           id: string
           image_url?: string | null
+          min_fans?: number | null
           name: string
           price_cents: number
           rarity?: string | null
@@ -3525,8 +3535,10 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
+          duration_days?: number | null
           id?: string
           image_url?: string | null
+          min_fans?: number | null
           name?: string
           price_cents?: number
           rarity?: string | null
@@ -4805,6 +4817,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      deliver_shop_item: { Args: { p_order_id: string }; Returns: boolean }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
