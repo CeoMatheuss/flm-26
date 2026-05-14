@@ -7,7 +7,8 @@ import {
   ShoppingBag, Star, ShieldCheck, Zap, Sparkles, 
   Clock, Users, TrendingUp, DollarSign, Lock, 
   CheckCircle2, Loader2, AlertCircle, History, Package,
-  CreditCard, QrCode, ArrowRight, Wallet, Crown, Gift
+  CreditCard, QrCode, ArrowRight, Wallet, Crown, Gift,
+  Coins, LayoutTemplate, Trophy, UserPlus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -39,6 +40,13 @@ interface InventoryItem {
   quantity: number;
   item: ShopItem;
 }
+
+const RARITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  common: { label: 'Comum', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  rare: { label: 'Raro', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  epic: { label: 'Épico', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+  legendary: { label: 'Lendário', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+};
 
 export function ShopTab() {
   const [items, setItems] = useState<ShopItem[]>([]);
