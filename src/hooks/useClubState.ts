@@ -9,8 +9,6 @@ import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
 import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
 import { toast } from 'sonner';
-import { getTrainingManager, defaultStaff } from '@/training/TrainingManager';
-import { WeeklyTrainingResult } from '@/training/TrainingTypes';
 import {
   buildStadiumModules,
 } from '@/match/stadiumEconomics';
