@@ -248,7 +248,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
             Leilão de Jogadores
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
-            Encerramento sempre <strong>domingo às 17:00</strong>. Lance mínimo escalonado (10k a 500k+ por incremento). Lances nos últimos 5 minutos estendem o leilão em +10 min (anti-snipe).
+            Encerramento global: <strong>Todos os Domingos às 17:00</strong>. Lances nos minutos finais estendem o leilão em +10 min (anti-snipe). Limite financeiro: 80% do saldo.
           </p>
         </CardHeader>
         {!isPremium && (
