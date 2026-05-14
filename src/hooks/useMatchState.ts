@@ -95,7 +95,6 @@ export function useMatchState(initialState: any, userId?: string) {
       let stadiumPenaltyMsg = '';
       if (isHome && !isFriendly && deps.stadiumOps) {
         try {
-          const { computeMatchPenalty } = require('@/match/stadiumExtras');
           const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
           if (pen) {
             stadiumPenaltyFine = pen.fine;
