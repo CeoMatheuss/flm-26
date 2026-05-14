@@ -49,12 +49,19 @@ export function GameHeader({ club, season, infrastructure, listedPlayers, userId
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-card" title="Online" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-bold truncate leading-tight">{club.name}</h1>
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-              <span className="game-badge bg-accent text-foreground">T{season.currentSeason}</span>
-              
-              <span>{club.stats.points}pts</span>
-              <span className="text-primary font-bold">R${(club.budget / 1000000).toFixed(1)}M</span>
+            <h1 className="text-sm sm:text-base font-bold truncate leading-tight flex items-center gap-1.5">
+              {club.name}
+              {cash > 100 && <Star className="h-3 w-3 fill-amber-500 text-amber-500 animate-pulse" />}
+            </h1>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 text-emerald-400 font-black">
+                <Wallet className="h-3 w-3" />
+                R${(club.budget / 1000000).toFixed(1)}M
+              </span>
+              <span className="flex items-center gap-1 text-amber-500 font-black">
+                <Gem className="h-3 w-3" />
+                {cash}
+              </span>
             </div>
           </div>
         </div>
