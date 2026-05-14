@@ -756,8 +756,9 @@ export function useClubState(initialState: any, userId?: string) {
           
           if (diffMinutes >= 5) { // Atualiza a cada 5 min de diferença acumulada
             changed = true;
-            const physioLevel = (prev as any).infrastructure?.physiotherapy?.level || 1;
-            const recoveryPerHour = 4 + (physioLevel * 0.5); 
+            // Lê nível do fisio do initialState (club não armazena infra). Fallback usa nível 5.
+            const physioLevel = (initialState as any)?.infrastructure?.physiotherapy?.level ?? 5;
+            const recoveryPerHour = 4 + (physioLevel * 0.8); 
             const recoveryPerMinute = recoveryPerHour / 60;
             const newStamina = Math.min(100, p.stamina + (recoveryPerMinute * diffMinutes));
             

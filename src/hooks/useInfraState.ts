@@ -5,7 +5,7 @@ import {
   getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
-  getYouthMinOverall, getYouthMaxOverall,
+  getYouthMinOverall, getYouthMaxOverall, getYouthMonthlyPlayers,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
@@ -185,42 +185,50 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     infrastructure.physiotherapy.upgradeCompletesAt,
   ]);
 
-  // V4 — Sistema de geração automática de jogadores da base (1 por semana se houver investimento)
+  // V5 — Geração automática da Base: 1 ciclo = 24h, gera N jogadores conforme tier de investimento.
+  // Requer academia nível >= 1 e investimento ativo.
   useEffect(() => {
     if (!userId || youthInvestment <= 0) return;
+    if (infrastructure.youthAcademy.level < 1) return;
     
     const checkYouthGen = () => {
       const now = Date.now();
       const lastGen = new Date(lastYouthGenAt).getTime();
-      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-      const weeksPassed = Math.floor((now - lastGen) / ONE_WEEK);
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+      const daysPassed = Math.floor((now - lastGen) / ONE_DAY);
       
-      if (weeksPassed >= 1) {
-        console.log(`[Base] Gerando ${weeksPassed} jogador(es) atrasados...`);
-        for (let i = 0; i < Math.min(weeksPassed, 4); i++) {
-          const academyLevel = infrastructure.youthAcademy.level;
-          const minOvr = getYouthMinOverall(academyLevel);
-          const maxOvr = getYouthMaxOverall(academyLevel);
-          const bonus = Math.min(10, Math.floor(youthInvestment / 250000));
-          
-          const { generatePlayer } = require('@/utils/playerGenerator');
-          const p = generatePlayer([minOvr + bonus, maxOvr + bonus], [16, 17]);
-          const newProspect: YouthProspect = {
+      if (daysPassed >= 7) {
+        const cycles = Math.min(Math.floor(daysPassed / 7), 4);
+        const playersPerCycle = getYouthMonthlyPlayers(youthInvestment);
+        const totalToGen = cycles * playersPerCycle;
+        console.log(`[Base] Gerando ${totalToGen} jogador(es) (${cycles} ciclos × ${playersPerCycle}/ciclo)`);
+        
+        const academyLevel = infrastructure.youthAcademy.level;
+        const minOvr = getYouthMinOverall(academyLevel);
+        const maxOvr = getYouthMaxOverall(academyLevel);
+        const { generatePlayer } = require('@/utils/playerGenerator');
+        
+        const newProspects: YouthProspect[] = [];
+        for (let i = 0; i < totalToGen; i++) {
+          const p = generatePlayer([minOvr, maxOvr], [16, 17]);
+          newProspects.push({
             ...p,
             potential: Math.min(99, p.overall + 15 + Math.floor(Math.random() * 15)),
             monthsInAcademy: 0,
-            potentialTier: getPotentialTier(p.potential),
+            potentialTier: getPotentialTier(p.overall + 15),
             evolutionStatus: 'evoluindo',
-          };
-          
-          setYouthProspects(prev => [...prev, newProspect]);
+          });
         }
-        setLastYouthGenAt(new Date(now).toISOString());
-        toast.success(`🌟 Novos jogadores surgiram na base!`);
+        
+        if (newProspects.length > 0) {
+          setYouthProspects(prev => [...prev, ...newProspects]);
+          setLastYouthGenAt(new Date(now).toISOString());
+          toast.success(`🌟 ${totalToGen} novo(s) jogador(es) surgiram na base!`);
+        }
       }
     };
     
-    const interval = setInterval(checkYouthGen, 300_000); // Checa a cada 5 min
+    const interval = setInterval(checkYouthGen, 60_000); // Checa a cada 1 min
     checkYouthGen();
     return () => clearInterval(interval);
   }, [userId, youthInvestment, lastYouthGenAt, infrastructure.youthAcademy.level]);
