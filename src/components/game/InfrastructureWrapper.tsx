@@ -146,7 +146,7 @@ export function InfrastructureWrapper({
           currentWeek={currentWeek}
           userId={userId}
           budget={budget}
-          onUpgradeCT={onUpgradeCT}
+          onUpgradeCT={onUpgradeCT} lastTrainingResult={lastTrainingResult}
         />
       )}
       {activeTab === 'training2d' && (
