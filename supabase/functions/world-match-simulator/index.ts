@@ -89,6 +89,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const now = new Date();
+  const tolerance = new Date(now.getTime() - 5 * 60 * 1000); // Wait 5 minutes
+
 
   try {
     // --- 1. LEAGUE MATCHES ---
