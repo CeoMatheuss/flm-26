@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GameEvent } from '@/types/events';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { toast } from 'sonner';
+import { computeMatchPenalty } from '@/match/stadiumExtras';
 
 export interface RankingHistory {
   season: number;
@@ -94,7 +95,6 @@ export function useMatchState(initialState: any, userId?: string) {
       let stadiumPenaltyMsg = '';
       if (isHome && !isFriendly && deps.stadiumOps) {
         try {
-          const { computeMatchPenalty } = require('@/match/stadiumExtras');
           const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
           if (pen) {
             stadiumPenaltyFine = pen.fine;

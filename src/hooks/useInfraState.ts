@@ -13,6 +13,7 @@ import { MatchReport } from '@/types/matchReport';
 import { simulateYouthMatch, formatYouthMatchNews, YouthMatchReport } from '@/utils/youthMatchSimulator';
 import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
+import { generatePlayer } from '@/utils/playerGenerator';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
@@ -203,7 +204,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         const academyLevel = infrastructure.youthAcademy.level;
         const minOvr = getYouthMinOverall(academyLevel);
         const maxOvr = getYouthMaxOverall(academyLevel);
-        const { generatePlayer } = require('@/utils/playerGenerator');
+        
         
         const newProspects: YouthProspect[] = [];
         for (let i = 0; i < playersToGen; i++) {
