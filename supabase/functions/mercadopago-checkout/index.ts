@@ -112,6 +112,15 @@ serve(async (req) => {
             unit_price: item.price_cents / 100,
             currency_id: 'BRL'
           }],
+          payment_methods: {
+            excluded_payment_types: [
+              { id: "ticket" },      // Exclui Boleto
+              { id: "bank_transfer" } // Exclui transferências (exceto PIX se for tratado separado, mas no MP PIX costuma ser bank_transfer ou específico)
+            ],
+            // Para garantir que PIX, crédito e débito fiquem ativos, podemos ser explícitos ou apenas excluir o que não queremos.
+            // No MP, excluindo "ticket" removemos o boleto.
+            installments: 12
+          },
           external_reference: order.id,
           notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
           back_urls: {
