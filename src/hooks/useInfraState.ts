@@ -206,7 +206,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         const { generatePlayer } = require('@/utils/playerGenerator');
         
         const newProspects: YouthProspect[] = [];
-        for (let i = 0; i < totalToGen; i++) {
+        for (let i = 0; i < playersToGen; i++) {
           const p = generatePlayer([minOvr, maxOvr], [16, 17]);
           newProspects.push({
             ...p,
