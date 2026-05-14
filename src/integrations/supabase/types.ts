@@ -3373,6 +3373,92 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_products: {
+        Row: {
+          active: boolean | null
+          bonus_data: Json | null
+          category: string
+          created_at: string
+          description: string | null
+          duration_days: number | null
+          id: string
+          min_fans_required: number | null
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category: string
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id: string
+          min_fans_required?: number | null
+          name: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          bonus_data?: Json | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          min_fans_required?: number | null
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_purchases: {
+        Row: {
+          activated_at: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_bonus_claim_at: string | null
+          product_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_bonus_claim_at?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_bonus_claim_at?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "shop_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_messages: {
         Row: {
           admin_response: string | null
