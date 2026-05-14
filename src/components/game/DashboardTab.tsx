@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
@@ -93,8 +93,6 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
-  const [showPromo, setShowPromo] = useState(true);
-  const promoRef = useRef<HTMLDivElement>(null);
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
@@ -175,36 +173,6 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">
-      {/* Shop Promo Banner */}
-      {showPromo && (
-        <Card className="relative overflow-hidden bg-gradient-to-r from-emerald-900 to-black border-emerald-500/30 group animate-in fade-in zoom-in-95 duration-700">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-[url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=500')] bg-cover opacity-20 group-hover:scale-110 transition-transform duration-1000" />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-900/80 to-transparent" />
-          <CardContent className="p-5 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1">
-              <Badge className="bg-amber-500 text-black font-black uppercase tracking-tighter mb-1">Oferta Especial</Badge>
-              <h3 className="text-xl font-black text-white italic tracking-tighter uppercase leading-none">Packs Premium Liberados!</h3>
-              <p className="text-xs text-emerald-100/60 max-w-[280px]">Turbine seu elenco agora com os novos pacotes de moedas e jogadores raros na loja.</p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-               <Button 
-                onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'shop' } }))}
-                className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-white font-bold italic tracking-tighter uppercase"
-               >
-                 Acessar Loja
-               </Button>
-               <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowPromo(false)}
-                className="text-white/40 hover:text-white"
-               >
-                 <XCircle className="h-5 w-5" />
-               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
       {/* Fatigue Warning V4 */}
       {showFatigueWarning && (
         <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
