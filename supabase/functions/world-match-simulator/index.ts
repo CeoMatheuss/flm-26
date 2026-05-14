@@ -33,6 +33,8 @@ function getHeadline(type: 'win' | 'draw' | 'loss', winner: string, loser: strin
   const template = list[Math.floor(Math.random() * list.length)];
   return template.replace(/{winner}/g, winner).replace(/{loser}/g, loser).replace(/{team1}/g, winner).replace(/{team2}/g, loser);
 }
+
+function getMatchTemplate(hg: number, ag: number, isHome: boolean) {
   if (hg === ag) return 'league_draw';
   if (isHome) return hg > ag ? 'league_win' : 'league_loss';
   return ag > hg ? 'league_win' : 'league_loss';
@@ -91,7 +93,6 @@ Deno.serve(async (req) => {
   const now = new Date();
   const tolerance = new Date(now.getTime() - 5 * 60 * 1000); // Wait 5 minutes
 
-
   try {
     // --- 1. LEAGUE MATCHES ---
     const { data: wMatches } = await sb.from("world_matches").select(`*, 
@@ -125,7 +126,6 @@ Deno.serve(async (req) => {
         });
 
         await sb.from("world_matches").update({ home_goals: hg, away_goals: ag, status: "finished", played_at: now.toISOString() }).eq("id", m.id);
-        // Table update omitted for brevity
       }
     }
 
