@@ -36,12 +36,12 @@ interface Props {
 }
 
 const posColors: Record<string, string> = {
-  GOL: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)]',
-  ZAG: 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_-3px_rgba(59,130,246,0.2)]',
-  LAT: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_10px_-3px_rgba(6,182,212,0.2)]',
-  VOL: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_-3px_rgba(16,185,129,0.2)]',
-  MEI: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_-3px_rgba(168,85,247,0.2)]',
-  ATA: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_-3px_rgba(239,68,68,0.2)]',
+  GOL: 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-[0_0_15px_-5px_rgba(245,158,11,0.4)]',
+  ZAG: 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_15px_-5px_rgba(59,130,246,0.4)]',
+  LAT: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30 shadow-[0_0_15px_-5px_rgba(6,182,212,0.4)]',
+  VOL: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_-5px_rgba(16,185,129,0.4)]',
+  MEI: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_15px_-5px_rgba(168,85,247,0.4)]',
+  ATA: 'bg-red-500/20 text-red-400 border-red-500/30 shadow-[0_0_15px_-5px_rgba(239,68,68,0.4)]',
 };
 
 const posLabels: Record<string, string> = {
@@ -71,9 +71,9 @@ const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
 const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
 
 function getOvrColor(val: number) {
-  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]' };
-  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30', glow: 'shadow-[0_0_15px_-5px_rgba(var(--primary),0.3)]' };
-  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', glow: 'shadow-[0_0_15px_-5px_rgba(245,158,11,0.3)]' };
+  if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]' };
+  if (val >= 70) return { text: 'text-primary', bg: 'bg-primary/20', border: 'border-primary/40', glow: 'shadow-[0_0_20px_-5px_rgba(var(--primary),0.5)]' };
+  if (val >= 60) return { text: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)]' };
   return { text: 'text-muted-foreground', bg: 'bg-muted/10', border: 'border-border/30', glow: '' };
 }
 

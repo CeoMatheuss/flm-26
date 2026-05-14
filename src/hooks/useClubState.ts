@@ -402,8 +402,9 @@ export function useClubState(initialState: any, userId?: string) {
     return () => clearInterval(id);
   }, []);
 
-  const trainPlayer = useCallback((_playerId: string) => {
-    toast.info('Selecione o foco de treino na aba Treinos!');
+  const trainPlayer = useCallback((playerId: string) => {
+    // A evolução agora é processada semanalmente pelo TrainingManager
+    toast.info("Treino intensificado. A evolução ocorre automaticamente a cada ciclo semanal.");
   }, []);
 
 

@@ -194,14 +194,11 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const checkYouthGen = () => {
       const now = Date.now();
       const lastGen = new Date(lastYouthGenAt).getTime();
-      const ONE_DAY = 24 * 60 * 60 * 1000;
-      const daysPassed = Math.floor((now - lastGen) / ONE_DAY);
+      const ONE_CYCLE = 24 * 60 * 60 * 1000; // 1 ciclo = 24h reais
       
-      if (daysPassed >= 7) {
-        const cycles = Math.min(Math.floor(daysPassed / 7), 4);
-        const playersPerCycle = getYouthMonthlyPlayers(youthInvestment);
-        const totalToGen = cycles * playersPerCycle;
-        console.log(`[Base] Gerando ${totalToGen} jogador(es) (${cycles} ciclos × ${playersPerCycle}/ciclo)`);
+      if (now - lastGen >= ONE_CYCLE) {
+        const playersToGen = getYouthMonthlyPlayers(youthInvestment);
+        console.log(`[Base] Gerando ${playersToGen} jogador(es) no ciclo de 24h`);
         
         const academyLevel = infrastructure.youthAcademy.level;
         const minOvr = getYouthMinOverall(academyLevel);
@@ -209,7 +206,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         const { generatePlayer } = require('@/utils/playerGenerator');
         
         const newProspects: YouthProspect[] = [];
-        for (let i = 0; i < totalToGen; i++) {
+        for (let i = 0; i < playersToGen; i++) {
           const p = generatePlayer([minOvr, maxOvr], [16, 17]);
           newProspects.push({
             ...p,
@@ -223,7 +220,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         if (newProspects.length > 0) {
           setYouthProspects(prev => [...prev, ...newProspects]);
           setLastYouthGenAt(new Date(now).toISOString());
-          toast.success(`🌟 ${totalToGen} novo(s) jogador(es) surgiram na base!`);
+          toast.success(`🌟 ${playersToGen} novo(s) jogador(es) surgiram na base!`);
         }
       }
     };
