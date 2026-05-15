@@ -95,7 +95,7 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4">
+    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto">
       {/* HEADER */}
       <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl">
         <div className="absolute top-4 right-6 opacity-10">
