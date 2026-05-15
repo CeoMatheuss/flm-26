@@ -57,7 +57,7 @@ function PlayerDetailContent({
   onAction?: Props['onAction'];
 }) {
   const tier = ovrTier(player.overall);
-  const sm = statusMeta[status];
+  const sm = statusMeta[status] || statusMeta.reserva;
   const value = getPlayerValue(player);
   const overallDelta = delta.overall ?? 0;
 
