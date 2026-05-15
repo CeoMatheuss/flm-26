@@ -339,7 +339,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
 
-        {isTabBlocked('youth') ? <BlockedMessage /> : (
+      <TabsContent value="youth">
+
           <InfrastructureWrapper
             initialSubTab="youth"
             players={game.club.players}
