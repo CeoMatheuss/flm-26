@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2, Key, AlertCircle } from 'lucide-react';
 
 type Club = {
   user_id: string;
