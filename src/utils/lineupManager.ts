@@ -93,8 +93,9 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
  * Intelligent Position Protection Rules
  */
 
-export function canChangePosition(player: Player, players: Player[]): { allowed: boolean; message?: string } {
-  const isStarter = players.findIndex(p => p.id === player.id) < 11;
+export function canChangePosition(player: Player | null | undefined, players: Player[] | null | undefined): { allowed: boolean; message?: string } {
+  if (!player || !Array.isArray(players)) return { allowed: true };
+  const isStarter = players.findIndex(p => p && p.id === player.id) < 11 && players.findIndex(p => p && p.id === player.id) >= 0;
   
   if (isStarter) {
     return { 
@@ -106,22 +107,23 @@ export function canChangePosition(player: Player, players: Player[]): { allowed:
   return { allowed: true };
 }
 
-export function validateLineup(players: Player[]): { valid: boolean; message?: string; autoFix?: Player[] } {
-  const starters = players.slice(0, 11);
+export function validateLineup(players: Player[] | null | undefined): { valid: boolean; message?: string; autoFix?: Player[] } {
+  if (!Array.isArray(players) || players.length === 0) return { valid: true };
+  
+  const safePlayers = players.filter((p): p is Player => !!p && typeof p === 'object' && !!p.position);
+  const starters = safePlayers.slice(0, 11);
   const goalkeepers = starters.filter(p => p.position === 'GOL');
   
   if (goalkeepers.length > 1) {
-    // Auto-fix: Move the redundant keepers to the bench
-    const keepers = [...goalkeepers].sort((a, b) => b.overall - a.overall);
-    const bestKeeper = keepers[0];
+    const keepers = [...goalkeepers].sort((a, b) => (b.overall || 0) - (a.overall || 0));
     const others = keepers.slice(1);
     
-    let newOrder = [...players];
+    let newOrder = [...safePlayers];
     others.forEach(k => {
       const idx = newOrder.findIndex(p => p.id === k.id);
       if (idx !== -1) {
         const [removed] = newOrder.splice(idx, 1);
-        newOrder.push(removed); // Push to the end of the squad
+        newOrder.push(removed);
       }
     });
 
@@ -132,7 +134,7 @@ export function validateLineup(players: Player[]): { valid: boolean; message?: s
     };
   }
 
-  if (goalkeepers.length === 0) {
+  if (starters.length >= 11 && goalkeepers.length === 0) {
     return {
       valid: false,
       message: "O time titular precisa de pelo menos 1 goleiro."
