@@ -490,11 +490,12 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                         <input 
                           type="text" 
                           placeholder="000.000.000-00"
-                          value={checkoutCpf}
+                          value={checkoutCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
                           onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, '').slice(0, 11);
                             setCheckoutCpf(val);
                           }}
+
                           className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-all"
                         />
                       </div>
