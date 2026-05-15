@@ -340,7 +340,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
 
       <TabsContent value="youth">
-
+        {isTabBlocked('youth') ? <BlockedMessage /> : (
           <InfrastructureWrapper
             initialSubTab="youth"
             players={game.club.players}
@@ -375,6 +375,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           />
         )}
       </TabsContent>
+
 
       <TabsContent value="journal">
         {isTabBlocked('newspaper') ? <BlockedMessage /> : <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />}
