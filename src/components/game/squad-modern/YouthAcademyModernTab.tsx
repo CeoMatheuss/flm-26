@@ -40,6 +40,7 @@ export function YouthAcademyModernTab({
   const [timeLeft, setTimeLeft] = useState<string>('');
   
   const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
+  const isConstructing = !!academyUpgradeCompletesAt && new Date(academyUpgradeCompletesAt).getTime() > Date.now();
 
   useEffect(() => {
     if (!lastYouthGenAt) return;
