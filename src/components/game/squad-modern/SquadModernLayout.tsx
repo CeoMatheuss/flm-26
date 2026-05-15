@@ -9,9 +9,9 @@ import { PlayerRow } from './PlayerRow';
 import { PremiumPlayerCard } from './cards/PremiumPlayerCard';
 import { PlayerDetailPanel } from './PlayerDetailPanel';
 import { useAttributeEvolution } from './useAttributeEvolution';
-import { getPlayerStatus } from './squadHelpers';
+import { getPlayerStatus, PlayerStatus } from './squadHelpers';
 import { toast } from 'sonner';
-import { LayoutGrid, List, Users, Shield, Sparkles, Trophy } from 'lucide-react';
+import { LayoutGrid, List, Users, Shield, Sparkles, Trophy, Ban, Stethoscope, Clock, Briefcase, Share2, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
