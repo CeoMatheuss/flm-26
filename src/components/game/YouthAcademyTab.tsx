@@ -401,7 +401,7 @@ export function YouthAcademyTab({
                 <div className="p-2 rounded bg-accent/40 text-center">
                   {hasScouts ? (
                     <>
-                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].color}`}>
+                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].color}`}>
                         {observed.potential}
                       </p>
                       <p className="text-[10px] text-muted-foreground uppercase">POT Máximo</p>
