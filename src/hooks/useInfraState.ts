@@ -315,12 +315,23 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       next = afterEvent;
 
       // Recompute derived fields
-      next = next.map(p => ({
-        ...p,
-        potentialTier: getPotentialTier(p.potential, p.overall),
-        evolutionStatus: computeEvolutionStatus(p),
-        youthTag: computeYouthTag(p),
-      }));
+      next = next.map(p => {
+        const evolutionStatus = computeEvolutionStatus(p);
+        const overall = p.overall;
+        const potential = p.potential;
+        const age = p.age;
+        
+        // Logic for Promotion Ready
+        const isReady = (overall >= 62) || (potential >= 88 && age >= 17 && overall >= 55) || (evolutionStatus === 'evoluindo' && overall >= 58 && Math.random() < 0.3);
+
+        return {
+          ...p,
+          potentialTier: getPotentialTier(potential, overall),
+          evolutionStatus,
+          youthTag: computeYouthTag(p),
+          promotionReady: p.promotionReady || isReady, // once ready, stays ready until promoted or decision
+        };
+      });
 
       // News entries
       if (userId) {
