@@ -8,7 +8,7 @@ import {
   ShoppingBag, Sparkles, DollarSign, Users, Building2, 
   Stethoscope, Crown, Package, Star, TrendingUp, 
   CheckCircle2, Lock, ArrowRight, Zap, Gem, Trophy,
-  ChevronRight, HeartPulse, HardHat, Rocket, Loader2
+  ChevronRight, HeartPulse, HardHat, Rocket, Loader2, History, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
