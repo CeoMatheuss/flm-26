@@ -364,14 +364,14 @@ export function CopasTab({ userId }: Props) {
               <CardContent className="p-4 md:p-5 space-y-4">
                 <div className="flex items-center justify-around gap-2">
                   <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={toShieldClub(myMatch.home) as any} size={40} md:size={48} />
+                    <ClubShield club={toShieldClub(myMatch.home) as any} size={48} />
                     <span className="text-[9px] md:text-[10px] font-bold text-white/80 truncate w-16 md:w-20 text-center">{myMatch.home?.club_name}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-xs font-black text-white/40 italic">VS</span>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={toShieldClub(myMatch.away) as any} size={40} md:size={48} />
+                    <ClubShield club={toShieldClub(myMatch.away) as any} size={48} />
                     <span className="text-[9px] md:text-[10px] font-bold text-white/80 truncate w-16 md:w-20 text-center">{myMatch.away?.club_name}</span>
                   </div>
                 </div>
