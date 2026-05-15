@@ -89,7 +89,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
   }, [game.club.matches]);
 
 
-  const isTabBlocked = (tab: string) => !isAdmin && blockedTabs.includes(tab);
+  const safeBlockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
+  const isTabBlocked = (tab: string) => !isAdmin && safeBlockedTabs.includes(tab);
 
   const BlockedMessage = () => (
     <Card className="border-orange-500/30 bg-gradient-to-br from-card to-orange-500/5">
