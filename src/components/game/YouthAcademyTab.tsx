@@ -33,12 +33,13 @@ interface Props {
 }
 
 const getLevelTier = (level: number) => {
-  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens fracos (OVR 40-55)' };
-  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Algum potencial (OVR 45-60)' };
-  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas promessas (OVR 50-70)' };
-  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Talentos raros (OVR 55-80)' };
-  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Craques geracionais (OVR 60-85, POT 99)' };
+  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens crus (OVR 45-58)' };
+  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Estrutura simples (OVR 48-62)' };
+  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas instalações (OVR 52-66)' };
+  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Referência nacional (OVR + Bônus)' };
+  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Fábrica de craques (OVR Alto, POT 99)' };
 };
+
 
 export function YouthAcademyTab({
   prospects, academyLevel, academyUpgradeCompletesAt, isPremium = false,
