@@ -173,7 +173,12 @@ export default function MatchPage() {
       fans: locState.fans || 1000,
       awayFans: locState.awayFans || 500,
       tieBreaker: locState.tieBreaker || 'none',
+      winStreak: locState.winStreak ?? 0,
+      loseStreak: locState.loseStreak ?? 0,
+      vipUnits: Object.values(locState.vipBoxesBuilt || {}).reduce((a, b) => a + (b || 0), 0),
+      ticketPrice: locState.ticketPrice ?? 30,
     });
+
     if (!result?.success) {
       toast.error(`Erro ao iniciar partida: ${(result as any)?.error || 'tente novamente'}`);
       navigate('/', { replace: true });
