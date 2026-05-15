@@ -161,6 +161,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- 3. TRIGGER PRIZE PROCESSING ---
+    try {
+      await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/process-tournament-prizes`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'process_all' })
+      });
+    } catch (e) {
+      console.error("Error triggering prizes:", e);
+    }
+
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) { return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
 });

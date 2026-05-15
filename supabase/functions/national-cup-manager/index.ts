@@ -105,8 +105,7 @@ serve(async (req) => {
 
             await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
 
-            const prize = getPrizeForRound(match.round, cup.total_rounds);
-            await grantPrize(sb, winnerId, prize, `Prêmio Rodada ${match.round} (auto)`, cup.id);
+            // Prize is now handled automatically by process-tournament-prizes when phase ends
             await assignGoalsToPlayers(sb, winnerId, result.winnerId === 'home' ? result.homeGoals : result.awayGoals, cup.id);
             await assignGoalsToPlayers(sb, loserId, result.winnerId === 'home' ? result.awayGoals : result.homeGoals, cup.id);
             autoSimulated++;
