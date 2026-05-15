@@ -17,7 +17,7 @@ import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
   AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
-  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench
+  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -113,6 +113,9 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBans, setGameBans] = useState<Array<{ id: string; user_id: string; reason: string; duration_months: number; banned_at: string; expires_at: string }>>([]);
   const [gameBanLoading, setGameBanLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('users');
+  const [directMsgTitle, setDirectMsgTitle] = useState('');
+  const [directMsgContent, setDirectMsgContent] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
@@ -122,7 +125,8 @@ export function AdminTab({ userId, isFounder }: Props) {
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
       finance:       ['finance_panel'],
       customization: ['customization_panel'],
-      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
+      maintenance:   ['maintenance', 'direct_msg'],
       simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
@@ -418,6 +422,25 @@ export function AdminTab({ userId, isFounder }: Props) {
     toast.success('ID copiado!');
   };
 
+  const sendDirectUpdate = async () => {
+    if (!directMsgTitle.trim() || !directMsgContent.trim()) return toast.error('Preencha título e conteúdo');
+    setSendingMsg(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+      const res = await supabase.functions.invoke('broadcast-notification', {
+        body: { title: directMsgTitle, message: directMsgContent, icon: '📢', type: 'info' }
+      });
+      if (res.error) throw res.error;
+      toast.success('✅ Atualização enviada para todos os Managers!');
+      setDirectMsgTitle('');
+      setDirectMsgContent('');
+    } catch (e: any) {
+      toast.error('Erro: ' + e.message);
+    }
+    setSendingMsg(false);
+  };
+
   const deleteMessage = async (msgId: string) => {
     const { error } = await supabase.from('global_chat_messages').delete().eq('id', msgId);
     if (error) toast.error('Erro ao deletar mensagem');
@@ -502,7 +525,8 @@ export function AdminTab({ userId, isFounder }: Props) {
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
     finance:       ['finance_panel'],
     customization: ['customization_panel'],
-    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
+    maintenance:   ['maintenance', 'direct_msg'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -520,11 +544,9 @@ export function AdminTab({ userId, isFounder }: Props) {
     cups_overview:     { label: 'Visão de Copas', icon: Trophy },
     simulation_panel:  { label: 'Simulação',      icon: FlaskConical },
     beta_access:       { label: 'BETA',           icon: ShieldCheck },
-    how_it_works:      { label: 'Como Funciona',  icon: BookOpen },
     moderation:        { label: 'Chat',           icon: MessageCircle },
     updates_mgmt:      { label: 'Atualizações',   icon: Megaphone },
     maintenance:       { label: 'Manutenção',     icon: Wrench },
-    announcements:     { label: 'Anúncios IA',    icon: Image },
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
     versions:          { label: 'Versões',        icon: Shield },
@@ -818,9 +840,6 @@ export function AdminTab({ userId, isFounder }: Props) {
             <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
           </TabsContent>
 
-          <TabsContent value="how_it_works" className="space-y-3 mt-3">
-            <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
-          </TabsContent>
 
           <TabsContent value="moderation" className="space-y-3 mt-3">
             {/* <ModerationPanel onDeleteMessage={deleteMessage} /> */}
@@ -832,6 +851,43 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="maintenance" className="space-y-3 mt-3">
             <MaintenanceToggle />
+          </TabsContent>
+
+          <TabsContent value="direct_msg" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary" /> Atualizações (Mensagem Direta)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Título da Atualização</label>
+                  <Input 
+                    placeholder="Ex: Nova Versão 2.1.0 disponível!"
+                    value={directMsgTitle}
+                    onChange={e => setDirectMsgTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Conteúdo / O que mudou?</label>
+                  <Textarea 
+                    placeholder="Descreva as novidades..."
+                    value={directMsgContent}
+                    onChange={e => setDirectMsgContent(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <Button 
+                  className="w-full gap-2" 
+                  onClick={sendDirectUpdate}
+                  disabled={sendingMsg}
+                >
+                  {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Enviar para TODOS os Managers
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-3 mt-3">
