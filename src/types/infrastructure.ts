@@ -422,6 +422,12 @@ export const youthTagInfo: Record<YouthTag, { label: string; emoji: string; colo
   revelacao: { label: 'Revelação', emoji: '🔥', color: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
 };
 
+export interface EvolutionPoint {
+  date: string;
+  overall: number;
+  attributes: Partial<PlayerAttributes>;
+}
+
 export interface YouthProspect extends Player {
   potential: number;
   monthsInAcademy: number;
@@ -434,6 +440,19 @@ export interface YouthProspect extends Player {
   dominantFoot?: string;
   rarity?: string;
   nationality?: string;
+  height?: number;
+  weight?: number;
+  secondaryPositions?: string[];
+  evolutionHistory?: EvolutionPoint[];
+  trainingIntensity?: 'leve' | 'moderado' | 'pesado';
+  trainingFocus?: string;
+  fatigue?: number;
+  energy?: number;
+  tacticalIQ?: number;
+  staminaStat?: number;
+  interception?: number;
+  contractStatus?: 'base' | 'observado' | 'pre-profissional' | 'profissional';
+  playerExpectation?: string;
 }
 
 /** Compute evolution status based on prospect stats */
