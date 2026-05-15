@@ -3,6 +3,7 @@ import { Formation } from '@/types/tactics';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { validateLineup } from '@/utils/lineupManager';
 
 interface Props {
   formation: Formation;
@@ -144,6 +145,14 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
   const [prevAssignedIds, setPrevAssignedIds] = useState<string>('');
   const [justUpdatedIds, setJustUpdatedIds] = useState<Set<string>>(new Set());
   
+  // Real-time validation
+  useEffect(() => {
+    const validation = validateLineup(players);
+    if (!validation.valid) {
+      toast.error(validation.message, { id: 'lineup-validation' });
+    }
+  }, [players]);
+
   const layout = formationLayouts[formation];
   const assigned = assignPlayersToSlots(players, formation);
   
