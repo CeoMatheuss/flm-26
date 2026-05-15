@@ -6,6 +6,7 @@ import { formatMoney } from '@/lib/formatMoney';
 import { avgStamina } from './squadHelpers';
 import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface Props {
   club: Club;
