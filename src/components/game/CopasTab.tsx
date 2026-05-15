@@ -33,6 +33,8 @@ const toShieldClub = (t: any) => {
 
 
 function StatsSection({ title, stats, field, icon, label, isRating = false }: { title: string; stats: any[]; field: string; icon: React.ReactNode; label: string; isRating?: boolean }) {
+  if (stats.length === 0) return null;
+  
   return (
     <Card className="bg-card/40 backdrop-blur-sm border-border/50 rounded-3xl overflow-hidden">
       <CardHeader className="border-b border-border/50 bg-muted/20 pb-3">
@@ -41,30 +43,26 @@ function StatsSection({ title, stats, field, icon, label, isRating = false }: { 
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {stats.length > 0 ? (
-          <div className="divide-y divide-border/30">
-            {stats.map((s, idx) => (
-              <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
-                  <ClubShield club={toShieldClub(s.team) as any} size={32} />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player_name || s.player?.name}</span>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team_name || s.team?.name}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-white">
-                    {isRating ? Number(s[field] || 0).toFixed(1) : s[field] || 0}
-                  </span>
-                  <span className="text-[9px] font-bold text-muted-foreground ml-1">{label}</span>
+        <div className="divide-y divide-border/30">
+          {stats.map((s, idx) => (
+            <div key={s.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group">
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-black text-muted-foreground w-4">{idx + 1}</span>
+                <ClubShield club={toShieldClub(s.team) as any} size={32} />
+                <div className="flex flex-col">
+                  <span className="text-xs font-black group-hover:text-primary transition-colors">{s.player_name || s.player?.name}</span>
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">{s.team_name || s.team?.name}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-20 text-center text-xs text-muted-foreground font-bold">Nenhum dado registrado.</div>
-        )}
+              <div className="text-right">
+                <span className="text-sm font-black text-white">
+                  {isRating ? Number(s[field] || 0).toFixed(1) : s[field] || 0}
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground ml-1">{label}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -289,25 +287,63 @@ export function CopasTab({ userId }: Props) {
       </div>
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a0a1a] via-[#12122b] to-[#0a0a1a] border border-primary/30 p-8 shadow-2xl shadow-primary/10 group">
-        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
-          <Trophy className="h-48 w-48 text-primary rotate-12" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a0a1a] via-[#12122b] to-[#0a0a1a] border border-primary/30 p-4 md:p-8 shadow-2xl shadow-primary/10 group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+          <Trophy className="h-24 md:h-48 w-24 md:w-48 text-primary rotate-12" />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-4 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/30">
-              <Sparkles className="h-3 w-3" /> Competição de Elite
+        
+        {/* Champion Spotlight - Show first if cup finished */}
+        {cup.status === 'finished' && (
+          <div className="absolute inset-0 bg-yellow-500/5 backdrop-blur-[2px] z-0" />
+        )}
+
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
+          <div className="space-y-3 md:space-y-4 text-center lg:text-left w-full lg:w-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/30 mx-auto lg:mx-0">
+              <Sparkles className="h-3 w-3" /> {cup.status === 'finished' ? 'Hall da Fama' : 'Competição de Elite'}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white drop-shadow-sm uppercase">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white drop-shadow-sm uppercase">
               {cup.name}
             </h1>
-            <p className="text-muted-foreground font-medium text-sm max-w-md">
-              A glória eterna aguarda. {cup.total_teams} clubes disputam fase a fase o troféu mais desejado do país.
+            <p className="text-muted-foreground font-medium text-xs md:text-sm max-w-md mx-auto lg:mx-0">
+              {cup.status === 'finished' 
+                ? 'A glória foi alcançada. Confira o campeão e as estatísticas finais da temporada.'
+                : `A glória eterna aguarda. ${cup.total_teams} clubes disputam fase a fase o troféu mais desejado do país.`
+              }
             </p>
           </div>
 
-          {myMatch && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match">
+          {cup.status === 'finished' ? (
+             <div className="relative flex-shrink-0 animate-in zoom-in duration-700">
+               {(() => {
+                 const finalMatch = matches.find(m => m.round === cup.total_rounds);
+                 const champion = finalMatch?.status === 'finished'
+                   ? (finalMatch.winner_team_id === finalMatch.home_team_id ? finalMatch.home : finalMatch.away)
+                   : null;
+                 
+                 if (!champion) return null;
+                 
+                 return (
+                   <div className="flex flex-col items-center space-y-4">
+                     <div className="relative">
+                        <div className="absolute -inset-4 bg-yellow-500/20 rounded-full blur-2xl animate-pulse" />
+                        <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-full border-4 border-yellow-500/50 bg-[#0a0a1a] flex items-center justify-center p-4 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
+                          <ClubShield club={toShieldClub(champion) as any} size={80} />
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 h-10 w-10 md:h-12 md:w-12 bg-yellow-500 rounded-full flex items-center justify-center text-black border-4 border-[#0a0a1a] shadow-lg">
+                          <Trophy className="h-5 w-5 md:h-6 md:w-6" />
+                        </div>
+                     </div>
+                     <div className="text-center">
+                       <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-1">Grande Campeão</span>
+                       <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">{champion.club_name}</h2>
+                     </div>
+                   </div>
+                 );
+               })()}
+             </div>
+          ) : myMatch && (
+            <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match shrink-0">
               <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
@@ -325,18 +361,18 @@ export function CopasTab({ userId }: Props) {
                   </span>
                 </div>
               </div>
-              <CardContent className="p-5 space-y-4">
+              <CardContent className="p-4 md:p-5 space-y-4">
                 <div className="flex items-center justify-around gap-2">
                   <div className="flex flex-col items-center gap-2">
                     <ClubShield club={toShieldClub(myMatch.home) as any} size={48} />
-                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.home?.club_name}</span>
+                    <span className="text-[9px] md:text-[10px] font-bold text-white/80 truncate w-16 md:w-20 text-center">{myMatch.home?.club_name}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-xs font-black text-white/40 italic">VS</span>
                   </div>
                   <div className="flex flex-col items-center gap-2">
                     <ClubShield club={toShieldClub(myMatch.away) as any} size={48} />
-                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.away?.club_name}</span>
+                    <span className="text-[9px] md:text-[10px] font-bold text-white/80 truncate w-16 md:w-20 text-center">{myMatch.away?.club_name}</span>
                   </div>
                 </div>
                 <Button
@@ -371,11 +407,25 @@ export function CopasTab({ userId }: Props) {
         </TabsList>
 
         <TabsContent value="matches" className="animate-in slide-in-from-bottom-2 duration-500 outline-none">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {matches.filter(m => m.round === cup.current_round).map(m => (
-              <MatchRow key={m.id} match={m} userId={userId} />
-            ))}
-          </div>
+          {cup.status === 'finished' ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-6 text-center">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse">
+                <Trophy className="h-10 w-10" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black uppercase tracking-tighter">Aguardando Próxima Copa</h3>
+                <p className="text-sm text-muted-foreground font-medium max-w-xs mx-auto">
+                  A competição atual chegou ao fim. Prepare seu elenco para os próximos desafios que virão em breve!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {matches.filter(m => m.round === cup.current_round).map(m => (
+                <MatchRow key={m.id} match={m} userId={userId} />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="bracket" className="outline-none">
