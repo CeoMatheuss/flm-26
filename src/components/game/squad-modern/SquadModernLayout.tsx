@@ -27,6 +27,9 @@ interface SquadModernProps {
   onUpdatePlayers: (players: Player[]) => void;
   youthProspects: YouthProspect[];
   onPromoteYouth: (id: string) => void;
+  onSellYouth?: (id: string) => void;
+  onEnrollCopinha?: () => void;
+  onUpgradeAcademy?: () => void;
   youthInvestment: number;
   onSetYouthInvestment: (amount: number) => void;
 }
