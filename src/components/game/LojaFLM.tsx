@@ -136,6 +136,41 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
             ))}
           </TabsContent>
         ))}
+
+        <TabsContent value="history" className="space-y-4">
+          <Card className="bg-black/40 border border-white/5">
+            <CardHeader>
+              <CardTitle className="text-sm font-black uppercase">Últimas Transações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {purchaseHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-10 text-center italic">Nenhuma transação registrada.</p>
+              ) : (
+                <div className="space-y-2">
+                  {purchaseHistory.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${p.status === 'approved' ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                          {p.status === 'approved' ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Info className="h-4 w-4 text-red-400" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{p.shop_items?.name || 'Item desconhecido'}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')} às {new Date(p.created_at).toLocaleTimeString('pt-BR')}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black">R$ {(p.amount_cents / 100).toLocaleString()}</p>
+                        <Badge className={`text-[9px] uppercase ${p.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} border-none`}>
+                          {p.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* SUCCESS MODAL */}
