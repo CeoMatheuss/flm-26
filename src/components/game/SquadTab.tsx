@@ -5,7 +5,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Target } from 'lucide-react';
+import { 
+  X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, 
+  Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, 
+  Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout, Activity, Heart
+} from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
@@ -15,6 +19,8 @@ import { toast } from 'sonner';
 import type { TacticsConfig } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
+import { SquadCard } from './squad/SquadCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   players: Player[];
@@ -49,6 +55,7 @@ const posColors: Record<string, string> = {
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
 };
+
 
 const attrLabels: Record<string, { label: string; icon: string }> = {
   speed: { label: 'Velocidade', icon: '⚡' },
@@ -300,53 +307,72 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const ovr = getOvrColor(player.overall);
 
     return (
-      <div className="space-y-3">
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={() => setViewingPlayer(null)}>
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Elenco
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+        <Button variant="ghost" size="sm" className="gap-2 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-xl" onClick={() => setViewingPlayer(null)}>
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Elenco
         </Button>
 
-        {/* Player Header Card */}
-        <div className={`relative rounded-xl border ${ovr.border} ${ovr.bg} p-4 overflow-hidden`}>
-          <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center ${ovr.bg} border-2 ${ovr.border} shadow-lg ${ovr.glow}`}>
-              <span className={`text-2xl font-black ${ovr.text}`}>{player.overall}</span>
-              <span className="text-[8px] text-muted-foreground font-medium -mt-0.5">OVR</span>
+
+        {/* Player Header Card - Modern AAA Style */}
+        <div className={`relative rounded-3xl border-2 ${ovr.border} bg-slate-900/80 backdrop-blur-xl p-6 overflow-hidden shadow-2xl`}>
+          {/* Decorative background elements */}
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-3xl rounded-full" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
+          
+          <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {/* OVR Card */}
+            <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex flex-col items-center justify-center border-2 ${ovr.border} ${ovr.bg} shadow-2xl ${ovr.glow} relative group`}>
+               <span className={`text-4xl sm:text-5xl font-black ${ovr.text} tracking-tighter`}>{player.overall}</span>
+               <span className="text-[10px] font-black opacity-60 uppercase tracking-widest -mt-1">Overall</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge className={`text-[10px] font-bold border ${posColors[player.position]}`} variant="outline">{player.position}</Badge>
+
+            <div className="flex-1 text-center sm:text-left min-w-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                <Badge className={`text-xs font-black px-3 py-1 border-2 uppercase tracking-wider ${posColors[player.position]}`} variant="outline">
+                  {player.position}
+                </Badge>
                 {player.shirtNumber != null && player.shirtNumber > 0 && (
-                  <span className="text-[10px] font-mono text-muted-foreground">#{player.shirtNumber}</span>
+                  <span className="text-sm font-mono font-black text-white/30 bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">#{player.shirtNumber}</span>
                 )}
                 {player.personality && personalityLabels[player.personality] && (
-                  <span className="text-sm" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5">
+                    <span className="text-lg">{personalityLabels[player.personality].emoji}</span>
+                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-tight">{personalityLabels[player.personality].label}</span>
+                  </div>
                 )}
-                {isPlayerGem(player) && <span className="text-amber-400" title="Joia!">💎</span>}
+                {isPlayerGem(player) && <span className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" title="Joia!">💎</span>}
               </div>
-              <h2 className="text-lg font-black text-foreground leading-tight">{player.name}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{posLabels[player.position]} • {player.age} anos</p>
+              <h2 className="text-3xl font-black text-white leading-none uppercase tracking-tight mb-2">{player.name}</h2>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm font-bold text-white/40 uppercase tracking-wider">
+                <span className="flex items-center gap-1.5"><ShieldCrest primaryColor="#10b981" secondaryColor="#064e3b" pattern="solid" shape="classic" size={18} /> {clubName}</span>
+                <span>•</span>
+                <span>{posLabels[player.position]}</span>
+                <span>•</span>
+                <span>{player.age} anos</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground">Contrato</p>
-              <p className={`text-sm font-bold ${player.contract <= 1 ? 'text-red-400' : 'text-foreground'}`}>{player.contract}a</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><FileText className="w-3 h-3" /> Contrato</p>
+              <p className={`text-xl font-black ${player.contract <= 1 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{player.contract}a</p>
             </div>
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground">Salário</p>
-              <p className="text-sm font-bold text-primary">R${(player.salary / 1000).toFixed(0)}k</p>
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><Tag className="w-3 h-3" /> Salário</p>
+              <p className="text-xl font-black text-primary">R${(player.salary / 1000).toFixed(0)}k</p>
             </div>
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground">Energia</p>
-              <p className={`text-sm font-bold ${player.stamina >= 70 ? 'text-emerald-400' : player.stamina >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{player.stamina}%</p>
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><Zap className="w-3 h-3" /> Energia</p>
+              <p className={`text-xl font-black ${player.stamina >= 70 ? 'text-emerald-400' : player.stamina >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{player.stamina}%</p>
             </div>
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground">Moral</p>
-              <p className={`text-sm font-bold ${player.morale >= 70 ? 'text-emerald-400' : player.morale >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{player.morale}%</p>
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><Heart className="w-3 h-3" /> Moral</p>
+              <p className={`text-xl font-black ${player.morale >= 70 ? 'text-emerald-400' : player.morale >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{player.morale}%</p>
             </div>
           </div>
         </div>
+
 
         {/* Injury Alert */}
         {player.injury && (
@@ -537,7 +563,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); setViewingPlayer(null); }}
           />
         )}
-      </div>
+        </motion.div>
     );
   }
 
@@ -737,25 +763,41 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="squad" className="space-y-3 mt-3">
-          <div className="grid grid-cols-4 gap-1.5">
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-primary/10 to-card border border-primary/20">
-              <p className="text-base font-black text-foreground leading-none">{players.length}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Plantel</p>
-            </div>
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-emerald-500/10 to-card border border-emerald-500/20">
-              <p className="text-base font-black text-emerald-400 leading-none">{avgOvr}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">OVR Médio</p>
-            </div>
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-amber-500/10 to-card border border-amber-500/20">
-              <p className="text-base font-black text-amber-400 leading-none">R${(totalSalary / 1000).toFixed(0)}k</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Folha/mês</p>
-            </div>
-            <div className={`text-center p-2 rounded-xl bg-gradient-to-br ${injuredCount > 0 ? 'from-red-500/10 border-red-500/20' : 'from-muted/20 border-border/20'} to-card border`}>
-              <p className={`text-base font-black leading-none ${injuredCount > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{injuredCount}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Lesionados</p>
-            </div>
+        <TabsContent value="squad" className="space-y-4 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users className="w-3 h-3" /> Plantel</p>
+                <p className="text-2xl font-black text-white">{players.length}</p>
+              </div>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Trophy className="w-3 h-3" /> OVR Médio</p>
+                <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Tag className="w-3 h-3" /> Folha/mês</p>
+                <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Lesionados</p>
+                <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
+              </div>
+            </motion.div>
           </div>
+
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             <button
@@ -901,7 +943,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {startersList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  startersList.map(({ player }) => renderPlayerRow(player, 'starters'))
+                  startersList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from !== 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
@@ -917,7 +973,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {reservesList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  reservesList.map(({ player }) => renderPlayerRow(player, 'reserves'))
+                  reservesList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from === 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
@@ -933,7 +1003,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {outList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  outList.map(({ player }) => renderPlayerRow(player, 'out'))
+                  outList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from === 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
