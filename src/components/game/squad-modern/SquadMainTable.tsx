@@ -41,11 +41,9 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       switch (activeTab) {
         case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
         case 'reservas': return !isStarter && status === 'reserva';
-        case 'afastados': return status === 'afastado' || status === 'indisponivel';
-        case 'lesionados': return status === 'lesionado' || !!p.injury;
+        case 'fora': return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
         case 'suspensos': return status === 'suspenso';
         case 'emprestados': return status === 'emprestado';
-        case 'transferencias': return status === 'lista-transferencia';
         default: return true;
       }
     }).sort((a, b) => {

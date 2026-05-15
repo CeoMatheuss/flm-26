@@ -110,11 +110,9 @@ export function SquadModernLayout({
                 <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
                 <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
                 <TabTrigger value="base" icon={<Sparkles className="w-3.5 h-3.5" />} label="Juniores" />
-                <TabTrigger value="afastados" icon={<Ban className="w-3.5 h-3.5" />} label="Afastados" />
-                <TabTrigger value="lesionados" icon={<Stethoscope className="w-3.5 h-3.5" />} label="Lesionados" />
+                <TabTrigger value="fora" icon={<Ban className="w-3.5 h-3.5" />} label="Fora" />
                 <TabTrigger value="suspensos" icon={<Clock className="w-3.5 h-3.5" />} label="Suspensos" />
                 <TabTrigger value="emprestados" icon={<Share2 className="w-3.5 h-3.5" />} label="Emprestados" />
-                <TabTrigger value="transferencias" icon={<ArrowRightLeft className="w-3.5 h-3.5" />} label="Mercado" />
               </TabsList>
             </div>
 
