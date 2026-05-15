@@ -34,6 +34,7 @@ interface SquadModernProps {
 export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
   youthProspects, onPromoteYouth, youthInvestment, onSetYouthInvestment,
+  userId,
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function SquadModernLayout({
       <SquadHeader 
         club={club} 
         season={season} 
-        viewMode="list" // Ignored but kept for prop safety
+        viewMode="list" 
         onViewModeChange={() => {}} 
       />
 
@@ -219,19 +220,5 @@ function TabTrigger({ value, icon, label }: { value: string; icon: React.ReactNo
       {icon}
       <span>{label}</span>
     </TabsTrigger>
-  );
-}
-
-function ViewToggle({ active, onClick, icon }: { active: boolean; onClick: () => void; icon: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-        active ? "bg-emerald-500 text-zinc-950" : "text-white/40 hover:text-white hover:bg-white/5"
-      )}
-    >
-      {icon}
-    </button>
   );
 }
