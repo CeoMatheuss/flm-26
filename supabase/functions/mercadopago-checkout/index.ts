@@ -21,7 +21,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) throw new Error('Unauthorized')
 
-    const { item_id } = await req.json()
+    const { item_id, method, email } = await req.json()
 
     // Get item details
     const { data: item, error: itemError } = await supabaseClient
@@ -40,7 +40,7 @@ serve(async (req) => {
         item_id: item.id,
         amount_cents: item.price_cents,
         status: 'pending',
-        metadata: { checkout_type: 'pix_native' }
+        metadata: { checkout_type: method === 'pix' ? 'pix_native' : 'preference', email: email || user.email }
       })
       .select()
       .single()
@@ -50,46 +50,81 @@ serve(async (req) => {
     const mpAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN')
     if (!mpAccessToken) throw new Error('Mercado Pago API key missing')
 
-    // Generate PIX Payment via Mercado Pago API
-    const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${mpAccessToken}`,
-        'Content-Type': 'application/json',
-        'X-Idempotency-Key': order.id
-      },
-      body: JSON.stringify({
-        transaction_amount: item.price_cents / 100,
-        description: `FLM 26: ${item.name}`,
-        payment_method_id: 'pix',
-        payer: {
-          email: user.email,
-          first_name: user.user_metadata?.display_name?.split(' ')[0] || 'Jogador',
-          last_name: user.user_metadata?.display_name?.split(' ').slice(1).join(' ') || 'FLM'
+    if (method === 'pix') {
+      // Generate PIX Payment via Mercado Pago API
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${mpAccessToken}`,
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': order.id
         },
-        external_reference: order.id,
-        notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`
+        body: JSON.stringify({
+          transaction_amount: item.price_cents / 100,
+          description: `FLM 26: ${item.name}`,
+          payment_method_id: 'pix',
+          payer: {
+            email: email || user.email,
+            first_name: user.user_metadata?.display_name?.split(' ')[0] || 'Jogador',
+            last_name: user.user_metadata?.display_name?.split(' ').slice(1).join(' ') || 'FLM'
+          },
+          external_reference: order.id,
+          notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`
+        })
       })
-    })
 
-    const mpData = await mpResponse.json()
-    
-    if (!mpResponse.ok) {
-      console.error('MP Error:', mpData)
-      throw new Error(mpData.message || 'Error generating PIX')
+      const mpData = await mpResponse.json()
+      
+      if (!mpResponse.ok) {
+        console.error('MP Error:', mpData)
+        throw new Error(mpData.message || 'Error generating PIX')
+      }
+
+      return new Response(JSON.stringify({ 
+        order_id: order.id,
+        payment_id: mpData.id,
+        pix_qr_code: mpData.point_of_interaction?.transaction_data?.qr_code,
+        pix_qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
+        status: mpData.status
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    } else {
+      // Preference (Checkout Pro) for Credit Card
+      const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${mpAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [{
+            title: item.name,
+            quantity: 1,
+            unit_price: item.price_cents / 100,
+            currency_id: 'BRL'
+          }],
+          payer: {
+            email: email || user.email
+          },
+          payment_methods: {
+            excluded_payment_methods: [{ id: "pix" }], // Pix is handled natively
+            excluded_payment_types: [{ id: "ticket" }], // No boleto
+            installments: 12
+          },
+          external_reference: order.id,
+          notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
+          auto_return: 'approved'
+        })
+      })
+
+      const mpData = await mpResponse.json()
+      return new Response(JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id, order_id: order.id }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
     }
-
-    // Return the PIX data to the frontend
-    return new Response(JSON.stringify({ 
-      order_id: order.id,
-      payment_id: mpData.id,
-      pix_qr_code: mpData.point_of_interaction?.transaction_data?.qr_code,
-      pix_qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
-      status: mpData.status
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
 
   } catch (error) {
     console.error('Checkout error:', error)
