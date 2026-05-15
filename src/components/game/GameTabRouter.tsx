@@ -47,7 +47,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock, Globe, Star, Instagram, ExternalLink } from 'lucide-react';
+import { Lock, Globe, Star, Instagram, ExternalLink, TrendingUp } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -505,6 +505,13 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             });
           }}
         />
+      </TabsContent>
+      <TabsContent value="stats">
+        <div className="p-8 text-center text-muted-foreground">
+          <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-20" />
+          <p className="text-sm font-bold">Estatísticas detalhadas</p>
+          <p className="text-xs">Em breve: artilharia, assistências e scouts avançados.</p>
+        </div>
       </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       <TabsContent value="clubprofile">

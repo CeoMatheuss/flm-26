@@ -809,14 +809,16 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         extraInfo={signingPlayer?.extraInfo}
       />
 
-      <GameHeader club={game.club} season={game.season} infrastructure={game.infrastructure} listedPlayers={game.listedForSale} userId={userId} isNewClub={isNewClub} onSignOut={onSignOut} />
+      {activeTab !== 'shop' && <GameHeader club={game.club} season={game.season} infrastructure={game.infrastructure} listedPlayers={game.listedForSale} userId={userId} isNewClub={isNewClub} onSignOut={onSignOut} />}
 
-      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+      <main className={`${activeTab === 'shop' ? 'w-full' : 'max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-            <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
-            <GameNavBar />
-          </div>
+          {activeTab !== 'shop' && (
+            <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
+              <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
+              <GameNavBar />
+            </div>
+          )}
           <ErrorBoundary label={`tab:${activeTab}`}>
             <GameTabRouter
               game={game}

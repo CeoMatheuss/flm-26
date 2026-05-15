@@ -2,7 +2,7 @@ import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { shieldPropsFromClub, hasShield } from '@/components/game/shieldHelpers';
 import { NotificationBell } from '@/components/game/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Users, Star, Trophy, LogOut } from 'lucide-react';
+import { Users, Star, Trophy, LogOut, ShoppingBag } from 'lucide-react';
 import flmLogo from '@/assets/flm26-logo.png';
 import { Club } from '@/types/game';
 import { Infrastructure } from '@/types/infrastructure';
@@ -63,6 +63,9 @@ export function GameHeader({ club, season, infrastructure, listedPlayers, userId
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <Button size="sm" variant="ghost" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'shop' } }))} className="h-8 w-8 p-0 text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10">
+            <ShoppingBag className="h-4 w-4" />
+          </Button>
           <NotificationBell players={club.players} budget={club.budget} listedPlayers={listedPlayers} clubName={club.name} infrastructure={infrastructure} isNewClub={isNewClub} userId={userId} />
           <Button size="sm" variant="ghost" onClick={onSignOut} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
             <LogOut className="h-3.5 w-3.5" />
