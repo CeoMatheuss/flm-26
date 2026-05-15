@@ -239,6 +239,15 @@ async function processLeaguePrizes(supabase: any) {
       }
     }
 
+    // Generate Global League News
+    await supabase.from('world_league_news').insert({
+      league_id: league.id,
+      title: `Temporada Encerrada: ${league.country}`,
+      content: `A temporada da liga foi oficialmente encerrada e todas as premiações por posição foram distribuídas aos clubes.`,
+      category: 'league',
+      importance: 3
+    })
+
     // Mark league as paid
     await supabase.from('world_leagues').update({ prizes_paid: true, status: 'finished' }).eq('id', league.id)
     processed.push({ league_id: league.id, season: league.season })
