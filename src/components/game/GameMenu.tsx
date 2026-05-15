@@ -69,7 +69,6 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         
         
         <DropdownMenuItem onClick={() => onTabChange('pacotinhos')} className="menu-item"><Gift className="h-3.5 w-3.5 text-primary/70" /> Pacotinhos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('shop')} className="menu-item font-bold text-primary"><ShoppingBag className="h-3.5 w-3.5 text-primary" /> Loja FLM <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🏆 Conquistas</p>
