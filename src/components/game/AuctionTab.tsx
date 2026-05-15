@@ -139,8 +139,13 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Eligible players: 60+ overall, <= 35 age
-  const eligiblePlayers = players.filter(p => p.overall >= 60 && (p.age || 25) <= 35);
+  // Eligible players: 60+ overall, <= 35 age, AND not already in active auctions
+  const activeAuctionPlayerIds = useMemo(() => auctions.map(a => a.player_data?.id).filter(Boolean), [auctions]);
+  const eligiblePlayers = players.filter(p => 
+    p.overall >= 60 && 
+    (p.age || 25) <= 35 && 
+    !activeAuctionPlayerIds.includes(p.id)
+  );
 
   const computeStartPrice = (player: any): number => startPriceByOverall(player.overall || 60);
 
