@@ -77,6 +77,20 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     getTrainingManager().setMonthlyTrainingInvestment(infraState.trainingInvestment ?? 0);
   }, [infraState.trainingInvestment]);
 
+  // 🔄 Auto-Lineup Trigger
+  useEffect(() => {
+    if (tactics.autoUpdateLineup && clubState.club.players.length > 0) {
+      const currentStartersIds = clubState.club.players.slice(0, 11).map(p => p.id).join(',');
+      const newOrder = autoLineup(clubState.club.players, tactics.formation);
+      const newStartersIds = newOrder.slice(0, 11).map(p => p.id).join(',');
+
+      if (currentStartersIds !== newStartersIds) {
+        clubState.setClub(prev => ({ ...prev, players: newOrder }));
+        console.log('[useGame] Escalação atualizada automaticamente devido a mudança tática ou de elenco.');
+      }
+    }
+  }, [tactics.formation, tactics.autoUpdateLineup, clubState.club.players, clubState.setClub]);
+
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
     matchId, homeGoals, awayGoals, isHome = true, competition,
