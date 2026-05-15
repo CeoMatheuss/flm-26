@@ -45,7 +45,14 @@ serve(async (req) => {
         item_id: item.id,
         amount_cents: item.price_cents,
         status: 'pending',
-        metadata: { checkout_type: method === 'pix' ? 'pix_native' : 'preference', email: email || user.email, full_name, cpf }
+        metadata: { 
+          checkout_type: method === 'pix' ? 'pix_native' : 'preference', 
+          email: email || user.email, 
+          full_name, 
+          cpf,
+          item_name: item.name
+        }
+
       })
       .select()
       .single()
