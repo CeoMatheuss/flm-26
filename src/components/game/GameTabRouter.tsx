@@ -245,7 +245,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       <TabsContent value="league">
-        <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />
+        {isTabBlocked('leagues') ? <BlockedMessage /> : <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />}
       </TabsContent>
       <TabsContent value="copas">
         <CopasTab userId={userId} />
