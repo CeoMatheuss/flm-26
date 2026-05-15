@@ -503,7 +503,8 @@ export function AdminTab({ userId, isFounder }: Props) {
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
     finance:       ['finance_panel'],
     customization: ['customization_panel'],
-    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
+    maintenance:   ['maintenance', 'direct_msg'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -819,9 +820,6 @@ export function AdminTab({ userId, isFounder }: Props) {
             <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
           </TabsContent>
 
-          <TabsContent value="how_it_works" className="space-y-3 mt-3">
-            <SystemPanel adminUserId={userId} sections={['how']} defaultSection="how" />
-          </TabsContent>
 
           <TabsContent value="moderation" className="space-y-3 mt-3">
             {/* <ModerationPanel onDeleteMessage={deleteMessage} /> */}
