@@ -924,7 +924,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {startersList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  startersList.map(({ player }) => renderPlayerRow(player, 'starters'))
+                  startersList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from !== 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
@@ -940,7 +954,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {reservesList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  reservesList.map(({ player }) => renderPlayerRow(player, 'reserves'))
+                  reservesList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from === 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
@@ -956,7 +984,21 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {outList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  outList.map(({ player }) => renderPlayerRow(player, 'out'))
+                  outList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => {
+                        if (pendingSwap && pendingSwap.from === 'starters') {
+                          completeSwap(player.id);
+                        } else {
+                          setViewingPlayer(player);
+                        }
+                      }}
+                      isPendingSwap={pendingSwap?.player.id === player.id}
+                    />
+                  ))
+
                 )}
               </div>
             </TabsContent>
