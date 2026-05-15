@@ -506,6 +506,13 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           }}
         />
       </TabsContent>
+      <TabsContent value="stats">
+        <div className="p-8 text-center text-muted-foreground">
+          <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-20" />
+          <p className="text-sm font-bold">Estatísticas detalhadas</p>
+          <p className="text-xs">Em breve: artilharia, assistências e scouts avançados.</p>
+        </div>
+      </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       <TabsContent value="clubprofile">
         <ClubProfileTab
