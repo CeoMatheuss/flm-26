@@ -124,67 +124,6 @@ export function TrainingCenterTab({
         </CardContent>
       </Card>
 
-      <Card className="game-card-accent overflow-hidden">
-        <CardHeader className="section-header pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-emerald-400" />
-            Investimento Mensal em Treino
-            <span className="game-badge bg-emerald-500/15 text-emerald-400 ml-auto">+{investBonus}%</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-3">
-          <p className="text-sm text-muted-foreground">
-            💡 Adiciona um bônus na <strong>chance de evolução</strong> de cada jogador. Cobrado mensalmente do orçamento.
-          </p>
-
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {trainingInvestmentTiers.map((value) => {
-              const bonus = getInvestmentEvolutionBonus(value);
-              const selected = trainingInvestment === value;
-              const unaffordable = value > budget && !selected;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => handleInvestmentChange(value)}
-                  disabled={unaffordable || !onSetTrainingInvestment}
-                  className={`rounded-lg border p-2 text-center transition-all text-[11px] sm:text-xs ${
-                    selected
-                      ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/40'
-                      : 'border-border/40 bg-card/40 hover:border-emerald-500/40'
-                  } ${unaffordable ? 'opacity-40 cursor-not-allowed' : ''}`}
-                >
-                  <p className="font-bold">{value === 0 ? 'Nenhum' : `R$ ${(value / 1000).toFixed(0)}k`}</p>
-                  <p className={`mt-1 font-mono ${bonus > 0 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
-                    +{bonus}%
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="rounded-lg bg-muted/20 border border-border/30 p-3 text-xs space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> CT Nv. {ct.level}</span>
-              <span className="font-mono font-bold text-foreground">{ctChance}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Investimento</span>
-              <span className="font-mono font-bold text-emerald-400">+{investBonus}%</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
-              <span className="text-muted-foreground">Idade do jogador (variável)</span>
-              <span className="font-mono text-muted-foreground">-30% a +20%</span>
-            </div>
-            <div className="flex items-center justify-between pt-1">
-              <span className="font-semibold">Faixa típica final</span>
-              <span className="font-mono font-bold text-primary">
-                {Math.max(2, ctChance + investBonus - 30)}% — {Math.min(70, ctChance + investBonus + 20)}%
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
