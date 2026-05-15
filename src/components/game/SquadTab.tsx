@@ -744,20 +744,41 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="squad" className="space-y-3 mt-3">
-          <div className="grid grid-cols-4 gap-1.5">
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-primary/10 to-card border border-primary/20">
-              <p className="text-base font-black text-foreground leading-none">{players.length}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Plantel</p>
-            </div>
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-emerald-500/10 to-card border border-emerald-500/20">
-              <p className="text-base font-black text-emerald-400 leading-none">{avgOvr}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">OVR Médio</p>
-            </div>
-            <div className="text-center p-2 rounded-xl bg-gradient-to-br from-amber-500/10 to-card border border-amber-500/20">
-              <p className="text-base font-black text-amber-400 leading-none">R${(totalSalary / 1000).toFixed(0)}k</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Folha/mês</p>
-            </div>
+        <TabsContent value="squad" className="space-y-4 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users className="w-3 h-3" /> Plantel</p>
+                <p className="text-2xl font-black text-white">{players.length}</p>
+              </div>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Trophy className="w-3 h-3" /> OVR Médio</p>
+                <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Tag className="w-3 h-3" /> Folha/mês</p>
+                <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <div className="relative">
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Lesionados</p>
+                <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
+              </div>
+            </motion.div>
+          </div>
+
             <div className={`text-center p-2 rounded-xl bg-gradient-to-br ${injuredCount > 0 ? 'from-red-500/10 border-red-500/20' : 'from-muted/20 border-border/20'} to-card border`}>
               <p className={`text-base font-black leading-none ${injuredCount > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{injuredCount}</p>
               <p className="text-[9px] text-muted-foreground mt-1">Lesionados</p>
