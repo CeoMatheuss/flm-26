@@ -384,6 +384,65 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     });
   }, []);
 
+  const handlePromotionDecision = useCallback((
+    prospectId: string, 
+    decision: PromotionDecision, 
+    contractDetails?: any,
+    addPlayerToClub?: (p: any) => void,
+    addFinance?: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addBudget?: (amount: number) => void
+  ) => {
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === prospectId);
+      if (!prospect) return prev;
+
+      if (decision === 'promoted' && addPlayerToClub) {
+        const player = {
+          id: prospect.id, 
+          name: prospect.name, 
+          position: prospect.position,
+          overall: prospect.overall, 
+          attributes: prospect.attributes,
+          age: prospect.age, 
+          salary: contractDetails?.salary ?? prospect.salary,
+          stamina: prospect.stamina, 
+          morale: 100, // Very happy to be promoted
+          goals: 0, 
+          assists: 0,
+          contract: contractDetails?.years ?? 3, 
+          gamesPlayed: 0, 
+          trainingProgress: 0, 
+          personality: prospect.personality,
+          isYouth: true,
+          squadRole: contractDetails?.squadRole ?? 'promessa',
+          marketValue: prospect.overall * 100000, // Value increases after turning pro
+        };
+        addPlayerToClub(player);
+        setYouthPromotedCount((c: number) => c + 1);
+        toast.success(`🎉 ${prospect.name} agora é profissional!`, {
+          description: `Contrato assinado por ${player.contract} anos.`
+        });
+        
+        if (userId) {
+          supabase.from('newspaper_entries').insert([{
+            user_id: userId,
+            text: `📝 OFICIAL: O jovem ${prospect.name} assinou seu primeiro contrato profissional com o clube!`,
+            category: 'BASE', is_event: true,
+          }]).then(() => {});
+        }
+      } else if (decision === 'released') {
+        toast.info(`${prospect.name} foi dispensado da academia.`);
+      } else if (decision === 'stayed') {
+        // No action needed, stays in base but we might want to unset promotionReady if we want to stop notifying
+        // Actually, we'll keep it in base.
+      } else if (decision === 'observing') {
+        // Stays in base
+      }
+
+      return prev.filter(p => p.id !== prospectId || (decision !== 'promoted' && decision !== 'released'));
+    });
+  }, [userId]);
+
   const sellYouth = useCallback((
     youthId: string,
     addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
