@@ -14,6 +14,19 @@ interface MaintenanceMode {
   message?: string;
 }
 
+const normalizeMaintenance = (value: unknown): MaintenanceMode => {
+  if (!value || typeof value !== 'object') {
+    return { active: false, blocked_tabs: [] };
+  }
+
+  const raw = value as Partial<MaintenanceMode>;
+  return {
+    active: raw.active === true,
+    blocked_tabs: Array.isArray(raw.blocked_tabs) ? raw.blocked_tabs : [],
+    message: typeof raw.message === 'string' ? raw.message : undefined,
+  };
+};
+
 const ALL_TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'squad', label: 'Elenco' },
@@ -48,9 +61,7 @@ export function MaintenanceToggle() {
         .maybeSingle();
 
       if (error) throw error;
-      if (data?.value) {
-        setMaintenance(data.value as any);
-      }
+      setMaintenance(normalizeMaintenance(data?.value));
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       toast.error('Erro ao carregar status de manutenção');
@@ -66,10 +77,11 @@ export function MaintenanceToggle() {
   };
 
   const handleToggleTab = async (tabId: string) => {
-    const isBlocked = maintenance.blocked_tabs.includes(tabId);
+    const blockedTabs = Array.isArray(maintenance.blocked_tabs) ? maintenance.blocked_tabs : [];
+    const isBlocked = blockedTabs.includes(tabId);
     const newBlocked = isBlocked
-      ? maintenance.blocked_tabs.filter(id => id !== tabId)
-      : [...maintenance.blocked_tabs, tabId];
+      ? blockedTabs.filter(id => id !== tabId)
+      : [...blockedTabs, tabId];
     
     const newVal = { ...maintenance, blocked_tabs: newBlocked };
     setMaintenance(newVal);
