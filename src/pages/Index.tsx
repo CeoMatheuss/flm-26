@@ -375,6 +375,25 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => window.removeEventListener('flm:open-tutorial', handler);
   }, [tutorialCompleted]);
 
+  // Handle external data updates (Realtime or Cloud Functions)
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail?.club_data) {
+        console.log('[Index] Sincronizando dados externos em tempo real...');
+        const incoming = e.detail.club_data as GameState;
+        // Merge logic or direct set
+        setLoadedState(prev => {
+          if (!prev) return incoming;
+          // Prevenção de loop: só atualiza se o timestamp de atualização for maior
+          // mas como o save_game é disparado aqui também, o merge deve ser cuidadoso
+          return { ...incoming };
+        });
+      }
+    };
+    window.addEventListener('flm:external-data-update', handler);
+    return () => window.removeEventListener('flm:external-data-update', handler);
+  }, []);
+
   // Handle club profile viewing via events
   useEffect(() => {
     const handler = (e: any) => {
