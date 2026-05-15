@@ -47,6 +47,7 @@ export function MaintenanceToggle() {
     active: false,
     blocked_tabs: [],
   });
+  const blockedTabs = Array.isArray(maintenance.blocked_tabs) ? maintenance.blocked_tabs : [];
 
   useEffect(() => {
     loadSettings();
@@ -150,7 +151,7 @@ export function MaintenanceToggle() {
             
             <div className="grid grid-cols-2 gap-2">
               {ALL_TABS.map(tab => {
-                const isBlocked = maintenance.blocked_tabs.includes(tab.id);
+                const isBlocked = blockedTabs.includes(tab.id);
                 return (
                   <Button
                     key={tab.id}
@@ -181,11 +182,11 @@ export function MaintenanceToggle() {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span>Abas Bloqueadas:</span>
-                <span className="font-mono text-orange-500">{maintenance.blocked_tabs.length}</span>
+                <span className="font-mono text-orange-500">{blockedTabs.length}</span>
               </div>
-              {maintenance.blocked_tabs.length > 0 && !maintenance.active && (
+              {blockedTabs.length > 0 && !maintenance.active && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {maintenance.blocked_tabs.map(id => (
+                  {blockedTabs.map(id => (
                     <Badge key={id} variant="secondary" className="text-[9px] h-4">
                       {ALL_TABS.find(t => t.id === id)?.label || id}
                     </Badge>
