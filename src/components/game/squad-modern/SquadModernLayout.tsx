@@ -96,11 +96,6 @@ export function SquadModernLayout({
 
   return (
     <div className="h-full flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
-      <PromotionManager 
-        youthProspects={youthProspects} 
-        onDecision={onPromotionDecision}
-        clubBudget={club.budget}
-      />
       <SquadHeader 
         club={club} 
         season={season} 
