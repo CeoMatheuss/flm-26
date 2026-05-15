@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Filter, GraduationCap, Coins, 
   Trophy, Info, Sparkles, ChevronRight,
-  TrendingUp, Award, Clock
+  TrendingUp, Award, Clock, Newspaper
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
