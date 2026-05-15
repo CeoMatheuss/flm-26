@@ -564,7 +564,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           />
         )}
         </motion.div>
-      </div>
     );
   }
 
