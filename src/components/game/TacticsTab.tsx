@@ -20,6 +20,7 @@ interface Props {
   tactics: TacticsConfig;
   players: Player[];
   onUpdate: (tactics: TacticsConfig) => void;
+  onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
   season?: number;
   userId?: string;
 }
