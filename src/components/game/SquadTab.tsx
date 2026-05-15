@@ -779,11 +779,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </motion.div>
           </div>
 
-            <div className={`text-center p-2 rounded-xl bg-gradient-to-br ${injuredCount > 0 ? 'from-red-500/10 border-red-500/20' : 'from-muted/20 border-border/20'} to-card border`}>
-              <p className={`text-base font-black leading-none ${injuredCount > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{injuredCount}</p>
-              <p className="text-[9px] text-muted-foreground mt-1">Lesionados</p>
-            </div>
-          </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             <button
