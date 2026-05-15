@@ -30,7 +30,23 @@ export function usePremiumStatus(userId?: string) {
     };
     check();
     const interval = setInterval(check, 60_000);
-    return () => clearInterval(interval);
+
+    const channel = supabase
+      .channel(`premium-status-${userId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'premium_users',
+        filter: `user_id=eq.${userId}`
+      }, () => {
+        check();
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   return { isPremium, daysLeft };
