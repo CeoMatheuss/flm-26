@@ -251,38 +251,35 @@ export function useMatchSimulation() {
     // 1. Identificar se o evento é um gol
     const isGoal = event.isGoal === true || event.type === 'goal' || event.description.toUpperCase().includes('GOL');
     
-    // 2. Usar ID único do evento ou combinação de minuto+tipo+desc para evitar duplicidade
+    // 2. Usar ID único do evento para evitar duplicidade
     const eventId = `${event.minute}-${event.type}-${event.team}-${event.playerName || ''}`;
-    if (notifiedEventsRef.current.has(eventId)) return null;
+    if (notifiedEventsRef.current.has(eventId)) {
+      console.log("[DUPLICATE EVENT IGNORED]", eventId);
+      return null;
+    }
     
     // 3. Marcar como processado
     notifiedEventsRef.current.add(eventId);
 
-    // 4. Acumular eventos (setEvents(prev => [...prev, event]))
+    // 4. Acumular eventos e garantir ordem
     const allEvents = [...currentVisibleEvents, event].sort((a, b) => {
       if (a.minute !== b.minute) return a.minute - b.minute;
-      return 0; // Se houver segundos no futuro, usar: (a.second || 0) - (b.second || 0)
+      return 0;
     });
     
-    // 5. Calcular placares baseados nos eventos processados até agora
-    let hG = 0, aG = 0;
-    for (const ev of allEvents) {
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
-      if (isEvGoal && ev.type !== 'penalty_shootout') {
-        if (ev.team === 'home') hG++;
-        else if (ev.team === 'away') aG++;
-      }
-    }
+    // 5. Calcular placares DERIVADOS da lista de eventos (Fonte única da verdade)
+    const { hG, aG } = recalculateScoreFromEvents(allEvents);
 
     if (isGoal) {
-      console.log("[GOAL PROCESSADO]", eventId, `${hG}x${aG}`);
+      console.log("[GOAL EVENT]", eventId);
+      console.log("[PLACAR ATUALIZADO]", { homeScore: hG, awayScore: aG });
     }
     
     console.log("[NOVO EVENTO]", event);
     console.log("[TOTAL EVENTOS]", allEvents.length);
 
     return { hG, aG, visibleEvents: allEvents };
-  }, []);
+  }, [recalculateScoreFromEvents]);
 
   const stopTick = useCallback(() => {
     if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
