@@ -78,8 +78,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
 
-          <div className="text-xs bg-muted/40 border border-border/40 rounded-lg p-3 text-muted-foreground font-mono break-words max-h-32 overflow-auto">
+          <div className="text-xs bg-muted/40 border border-border/40 rounded-lg p-3 text-muted-foreground font-mono break-words max-h-48 overflow-auto whitespace-pre-wrap">
             {message}
+            {this.state.error?.stack ? `\n\n${this.state.error.stack.split('\n').slice(0, 6).join('\n')}` : ''}
           </div>
 
           <p className="text-xs text-muted-foreground">
