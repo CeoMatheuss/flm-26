@@ -58,7 +58,7 @@ export function YouthAcademyTab({
   const maxOvr = getYouthMaxOverall(academyLevel);
   const nextMinOvr = academyLevel < 30 ? getYouthMinOverall(academyLevel + 1) : minOvr;
   const nextMaxOvr = academyLevel < 30 ? getYouthMaxOverall(academyLevel + 1) : maxOvr;
-  const currentTier = getYouthTierByCost(monthlyInvestment);
+  const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
   const copinhaUnlocked = currentSeason >= 2;
   const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
 
@@ -308,7 +308,7 @@ export function YouthAcademyTab({
               {prospects.map(p => {
                 const evoStatus = p.evolutionStatus ?? computeEvolutionStatus(p);
                 const tag = p.youthTag ?? computeYouthTag(p);
-                const potTier = p.potentialTier ?? getPotentialTier(p.potential);
+                const potTier = p.potentialTier ?? getPotentialTier(p.potential, p.overall);
                 const tagInfo = tag ? youthTagInfo[tag] : null;
                 const evoInfo = evolutionStatusInfo[evoStatus];
                 const potInfo = potentialTierInfo[potTier];
