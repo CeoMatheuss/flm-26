@@ -300,6 +300,47 @@ export function YouthAcademyTab({
               </CardContent>
            </Card>
         </TabsContent>
+
+        <TabsContent value="news" className="m-0 animate-in fade-in slide-in-from-bottom-2">
+           <Card className="game-card border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Newspaper className="h-5 w-5 text-primary" />
+                  Mural da Academia
+                </CardTitle>
+                <CardDescription>
+                  Fique por dentro do que acontece nos bastidores da nossa fábrica de talentos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Automatic News Items */}
+                  {[
+                    { title: 'Treino de Finalização em Alta', text: 'Os atacantes da base mostraram pontaria afiada no coletivo de hoje.', date: 'Hoje', type: 'training' },
+                    { title: 'Olheiro Impressionado', text: 'Um olheiro europeu foi visto nas arquibancadas observando nossos meias.', date: 'Ontem', type: 'market' },
+                    { title: 'Exemplo de Conduta', text: 'A nova safra de jogadores tem se destacado pela disciplina e moral elevada.', date: '2 dias atrás', type: 'morale' }
+                  ].map((news, i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:bg-muted/30 transition-all cursor-default group">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                        news.type === 'training' ? 'bg-primary/20 text-primary' : 
+                        news.type === 'market' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        {news.type === 'training' ? <Dumbbell className="h-6 w-6" /> : 
+                         news.type === 'market' ? <Search className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{news.title}</h4>
+                          <span className="text-[10px] text-muted-foreground">{news.date}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{news.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+           </Card>
+        </TabsContent>
       </Tabs>
 
       <YouthPlayerDetailModal 
