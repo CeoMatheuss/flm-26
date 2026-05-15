@@ -553,24 +553,50 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                   </div>
                 ))}
               </div>
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium">Atribuir função:</p>
-                {[
-                  { label: '©️ Capitão', key: 'captainId' as const },
-                  { label: '🎯 Falta', key: 'freeKickTakerId' as const },
-                  { label: '⚽ Pênalti', key: 'penaltyTakerId' as const },
-                  { label: '🚩 Escanteio', key: 'cornerTakerId' as const },
-                ].map(role => (
-                  <Button
-                    key={role.key}
-                    size="sm"
-                    variant={tactics[role.key] === selectedPlayer.id ? 'default' : 'outline'}
-                    className="w-full text-xs justify-start"
-                    onClick={() => setSpecialRole(role.key, selectedPlayer.id)}
-                  >
-                    {role.label} {tactics[role.key] === selectedPlayer.id && '✓'}
-                  </Button>
-                ))}
+              <div className="space-y-1.5 pt-2 border-t border-border/50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Alterar Posição (Experimental)
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
+                    <Button
+                      key={pos}
+                      size="sm"
+                      variant={selectedPlayer.position === pos ? 'default' : 'outline'}
+                      className={`h-8 text-[10px] font-bold ${selectedPlayer.position === pos ? 'shadow-md shadow-primary/20' : ''}`}
+                      onClick={() => {
+                        onChangePosition?.(selectedPlayer.id, pos as any);
+                        setSelectedPlayer(prev => prev ? { ...prev, position: pos as any } : null);
+                      }}
+                    >
+                      {pos}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-border/50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-primary" /> Atribuir função no time
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { label: '©️ Capitão', key: 'captainId' as const },
+                    { label: '🎯 Falta', key: 'freeKickTakerId' as const },
+                    { label: '⚽ Pênalti', key: 'penaltyTakerId' as const },
+                    { label: '🚩 Escanteio', key: 'cornerTakerId' as const },
+                  ].map(role => (
+                    <Button
+                      key={role.key}
+                      size="sm"
+                      variant={tactics[role.key] === selectedPlayer.id ? 'default' : 'outline'}
+                      className="text-[10px] h-8 justify-center font-medium"
+                      onClick={() => setSpecialRole(role.key, selectedPlayer.id)}
+                    >
+                      {role.label} {tactics[role.key] === selectedPlayer.id && '✓'}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
             );
