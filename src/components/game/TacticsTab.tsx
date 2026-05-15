@@ -109,9 +109,35 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, onChangePosition, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChangePosition, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const { isInLiveMatch } = useActiveMatch();
+
+  // Implement swap players directly in TacticsTab
+  const swapPlayers = (playerAId: string, playerBId: string) => {
+    if (!onUpdatePlayers) return;
+    const idxA = players.findIndex(p => p.id === playerAId);
+    const idxB = players.findIndex(p => p.id === playerBId);
+    if (idxA < 0 || idxB < 0) return;
+    
+    const newOrder = [...players];
+    [newOrder[idxA], newOrder[idxB]] = [newOrder[idxB], newOrder[idxA]];
+    
+    // Position Protection Validation
+    const validation = validateLineup(newOrder);
+    if (!validation.valid) {
+      toast.error(validation.message);
+      if (validation.autoFix) {
+        onUpdatePlayers(validation.autoFix);
+      }
+      return;
+    }
+
+    const pA = players[idxA];
+    const pB = players[idxB];
+    toast.success(`${pA.name} ↔ ${pB.name}`);
+    onUpdatePlayers(newOrder);
+  };
 
   const activePlayers = players.filter(p => !p.injury);
   const injuredCount = players.length - activePlayers.length;
