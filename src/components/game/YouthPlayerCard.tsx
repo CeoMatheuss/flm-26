@@ -13,9 +13,9 @@ interface Props {
 
 export function YouthPlayerCard({ prospect, onClick }: Props) {
   const potTier = prospect.potentialTier ?? 'comum';
-  const potInfo = potentialTierInfo[potTier];
+  const potInfo = potentialTierInfo[potTier] || potentialTierInfo.comum;
   const evoStatus = prospect.evolutionStatus ?? 'estavel';
-  const evoInfo = evolutionStatusInfo[evoStatus];
+  const evoInfo = evolutionStatusInfo[evoStatus] || evolutionStatusInfo.estavel;
   
   const isWonderkid = prospect.rarity === 'Promessa' || prospect.rarity === 'Joia da Base';
   const isGenerational = prospect.rarity === 'Craque geracional';
