@@ -153,6 +153,30 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Auto-Lineup Toggle */}
+      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-primary/20 p-1.5 rounded-lg">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          </div>
+          <div>
+            <Label htmlFor="auto-lineup" className="text-xs font-bold block">Sistema Inteligente Loja FLM</Label>
+            <p className="text-[9px] text-muted-foreground leading-tight">Atualização automática de escalação ativada</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+           <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-tighter">AI Active</span>
+           <Switch 
+            id="auto-lineup" 
+            checked={tactics.autoUpdateLineup} 
+            onCheckedChange={(val) => {
+              setField('autoUpdateLineup', val);
+              if (val) toast.success('Auto-Escalação Ativada', { description: 'O sistema reorganizará o time automaticamente.' });
+            }}
+          />
+        </div>
+      </div>
+
       {/* Season Start Widget — shows countdown / current season info */}
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
