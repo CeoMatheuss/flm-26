@@ -83,6 +83,23 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       setGameReady(true);
     };
     load();
+
+    // Sincronização Realtime para recarregar o estado se mudar no servidor
+    const channel = supabase.channel(`sync-app-${userId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'game_saves', 
+        filter: `user_id=eq.${userId}` 
+      }, (payload) => {
+        console.log('[Realtime] Mudança detectada no save do servidor:', payload);
+        if (payload.new && (payload.new as any).club_data) {
+          setLoadedState((payload.new as any).club_data as GameState);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
@@ -375,22 +392,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     return () => window.removeEventListener('flm:open-tutorial', handler);
   }, [tutorialCompleted]);
 
-  // Handle external data updates (Realtime or Cloud Functions)
-  useEffect(() => {
-    const handler = (e: any) => {
-      if (e.detail?.club_data) {
-        console.log('[Index] Sincronizando dados externos em tempo real...');
-        const incoming = e.detail.club_data as GameState;
-        
-        // Use functional update to ensure we use the current state if needed,
-        // but here we want to replace with what the server says is the truth.
-        // We use a custom event because setLoadedState is inside GameApp, not GameUI.
-        // Wait, setLoadedState IS in GameApp. This effect needs to be in GameApp.
-      }
-    };
-    window.addEventListener('flm:external-data-update', handler);
-    return () => window.removeEventListener('flm:external-data-update', handler);
-  }, []);
 
   // Handle club profile viewing via events
   useEffect(() => {
