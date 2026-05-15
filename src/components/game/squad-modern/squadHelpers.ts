@@ -52,6 +52,20 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     border: 'border-white/10',
     dot: 'bg-white/20'
   },
+  emprestado: { 
+    label: 'Emprestado', 
+    color: 'text-zinc-400', 
+    bg: 'bg-zinc-400/10', 
+    border: 'border-zinc-400/20',
+    dot: 'bg-zinc-400 border border-white/20'
+  },
+  afastado: { 
+    label: 'Afastado', 
+    color: 'text-red-400/70', 
+    bg: 'bg-red-400/5', 
+    border: 'border-red-400/10',
+    dot: 'bg-red-400/50'
+  },
 };
 
 export const positionColors: Record<string, string> = {
