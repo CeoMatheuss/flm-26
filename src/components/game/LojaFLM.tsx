@@ -18,6 +18,8 @@ interface LojaProps {
   club: any;
   infrastructure: any;
   userId: string;
+  onUpgradeFacility?: (facility: string) => void;
+  onAcceptSponsor?: (offer: any) => void;
 }
 
 const CATEGORIES = [
