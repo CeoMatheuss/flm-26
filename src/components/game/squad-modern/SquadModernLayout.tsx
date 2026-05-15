@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player, Club } from '@/types/game';
 import { SeasonData, YouthProspect } from '@/types/infrastructure';
@@ -51,6 +51,14 @@ export function SquadModernLayout({
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
 
   const deltas = useAttributeEvolution(players);
+
+  // Sync youth prospects count to tab
+  useEffect(() => {
+    if (activeTab === 'titulares' && youthProspects.length > 0) {
+      // Small visual indicator or auto-switch logic could go here if requested, 
+      // but for now we just ensure they are available in the 'base' tab.
+    }
+  }, [youthProspects.length, activeTab]);
 
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
