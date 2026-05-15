@@ -107,7 +107,7 @@ export default function MatchPage() {
     let effectiveCapacity = locState.stadiumCapacity;
     if (locState.isHome) {
       try {
-        const { computeExpectedAttendance } = await import('@/match/stadiumEconomics');
+        const { calculateStadiumEconomy } = await import('@/match/stadiumEconomyEngine');
         const { getEffectiveCapacity, isStadiumBlockedForBigMatch } = await import('@/match/stadiumEvents');
 
         const importance: 'amistoso' | 'liga' | 'classico' | 'final' =
@@ -128,20 +128,33 @@ export default function MatchPage() {
           }
         }
 
-        const expected = computeExpectedAttendance({
+        const vipUnits = Object.values(locState.vipBoxesBuilt || {}).reduce((a, b) => a + (b || 0), 0);
+        
+        // Attempt to get level from stadiumOps, or use a heuristic based on capacity
+        const stadiumLevel = (locState.stadiumOps as any)?.level || Math.max(1, Math.min(15, Math.ceil(locState.stadiumCapacity / 8000)));
+
+        const economy = calculateStadiumEconomy({
           fans: locState.fans || 1000,
           reputation: locState.reputation ?? 50,
           ticketPrice: locState.ticketPrice ?? 30,
           winStreak: locState.winStreak ?? 0,
           loseStreak: locState.loseStreak ?? 0,
-          capacity: physicalCapacity,
+          stadiumCapacity: physicalCapacity,
+          stadiumLevel: stadiumLevel,
           importance,
+          vipUnits
         });
-        effectiveCapacity = Math.max(1000, Math.min(physicalCapacity, expected));
-        console.log('[Stadium] Expected:', expected, '/ physical:', physicalCapacity, '/ raw:', locState.stadiumCapacity);
+        
+        effectiveCapacity = physicalCapacity;
+        (locState as any).resolvedAttendance = economy.expectedAttendance;
+        (locState as any).resolvedRevenue = economy.revenue.total;
+        
+        console.log('[Stadium] Economy Results:', economy);
       } catch (e) {
         console.warn('[Stadium] Failed to compute attendance, using raw capacity', e);
       }
+
+
     }
 
     const result = await startMatch({
@@ -160,7 +173,12 @@ export default function MatchPage() {
       fans: locState.fans || 1000,
       awayFans: locState.awayFans || 500,
       tieBreaker: locState.tieBreaker || 'none',
+      winStreak: locState.winStreak ?? 0,
+      loseStreak: locState.loseStreak ?? 0,
+      vipUnits: Object.values(locState.vipBoxesBuilt || {}).reduce((a, b) => a + (b || 0), 0),
+      ticketPrice: locState.ticketPrice ?? 30,
     });
+
     if (!result?.success) {
       toast.error(`Erro ao iniciar partida: ${(result as any)?.error || 'tente novamente'}`);
       navigate('/', { replace: true });

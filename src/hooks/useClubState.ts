@@ -332,6 +332,13 @@ export function useClubState(initialState: any, userId?: string) {
             changed = true;
           }
         }
+
+        // 9) Fase de Gestão: Sincronização de Preço do Ingresso (Piso R$ 5)
+        if (prev.ticketPrice && prev.ticketPrice < 5) {
+          next.ticketPrice = 5;
+          changed = true;
+        }
+
         const beforeContracts = nextOps.sponsorContracts.length;
         nextOps.sponsorContracts = nextOps.sponsorContracts.filter(c => new Date(c.endsAt).getTime() > now);
         if (nextOps.sponsorContracts.length !== beforeContracts) {

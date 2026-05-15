@@ -6,10 +6,12 @@ import { TrendingUp, TrendingDown, DollarSign, Users, Landmark, GraduationCap, E
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Sponsor, sponsorTypeLabels } from '@/types/sponsor';
 import { Player, Scout } from '@/types/game';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { formatMoney, formatMoneyFull } from '@/lib/formatMoney';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BudgetBreakdown } from './BudgetBreakdown';
+import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
+
 
 interface Props {
   budget: number;
@@ -35,10 +37,27 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
 
   // Costs breakdown
   const scoutSalaries = scouts.reduce((s, sc) => s + sc.salary, 0);
-  const stadiumCapacity = getStadiumCapacity(infrastructure.stadium.level);
-  const estimatedAttendance = Math.min(stadiumCapacity, Math.floor(fans * 0.1));
-  const estimatedMatchRevenue = estimatedAttendance * ticketPrice;
+
+  // Centralized Stadium Economy Engine for revenue projection
+  const stadiumEconomy = useMemo(() => {
+    return calculateStadiumEconomy({
+      fans: safeNumber(fans),
+      reputation: safeNumber(infrastructure.trainingCenter.level * 4 + 40), // Heuristic
+      ticketPrice: safeNumber(ticketPrice),
+      winStreak: 0, // Dashboard projection is average
+      loseStreak: 0,
+      importance: 'liga',
+      stadiumCapacity: getStadiumCapacity(infrastructure.stadium.level),
+      stadiumLevel: infrastructure.stadium.level,
+      vipUnits: Object.values((infrastructure as any).vipBoxesBuilt || {}).reduce((a: any, b: any) => a + (b || 0), 0) as number
+    });
+  }, [fans, infrastructure, ticketPrice]);
+
+  const estimatedMatchRevenue = stadiumEconomy.revenue.total;
+  const estimatedAttendance = stadiumEconomy.expectedAttendance;
   const sponsorMonthly = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+
+
 
   // Group finances by category
   const categoryTotals = finances.reduce((acc, f) => {

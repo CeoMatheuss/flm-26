@@ -6,6 +6,8 @@ import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
+
 import { ClubShield } from './ClubShield';
 import { PersonalizedCupWidget } from './PersonalizedCupWidget';
 import { Button } from '@/components/ui/button';
@@ -162,14 +164,30 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   }
 
   const stadiumLevel = infrastructure?.stadium?.level || 1;
-  const stadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel) : null;
+  const stadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel) : 0;
   const nextStadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel + 1) : null;
   const isMaxStadium = stadiumLevel >= (infrastructure?.stadium?.maxLevel || 15);
   const avgOvr = club.players.length > 0 ? Math.round(club.players.reduce((s, p) => s + (p.overall || 0), 0) / club.players.length) : 0;
+  
+  const stadiumEconomy = useMemo(() => {
+    return calculateStadiumEconomy({
+      fans: safeNumber(club.fans),
+      reputation: safeNumber(club.reputation || 50),
+      ticketPrice: safeNumber(club.ticketPrice || 30),
+      winStreak: recentWins,
+      loseStreak: recentLosses,
+      importance: 'liga',
+      stadiumCapacity: stadiumCapacity || 5000,
+      stadiumLevel: stadiumLevel,
+      vipUnits: Object.values((infrastructure as any)?.vipBoxesBuilt || {}).reduce((a: any, b: any) => a + (b || 0), 0) as number
+    });
+  }, [club.fans, club.reputation, club.ticketPrice, recentWins, recentLosses, stadiumCapacity, stadiumLevel, infrastructure]);
+
+  const estMatchRevenue = stadiumEconomy.revenue.total;
   const lastHomeMatch = [...club.matches].reverse().find((m: any) => m.played && m.isHome && (m as any).attendance);
   const lastAttendance = (lastHomeMatch as any)?.attendance as number | undefined;
   const occupancyPct = lastAttendance && stadiumCapacity ? Math.min(100, Math.round((lastAttendance / stadiumCapacity) * 100)) : null;
-  const estMatchRevenue = stadiumCapacity ? Math.round(stadiumCapacity * (club.ticketPrice || 0) * 0.85) : 0;
+
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">

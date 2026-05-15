@@ -57,9 +57,13 @@ export function MatchesTab({
         competition: isOnline ? 'Amistoso Online' : 'Amistoso vs BOT',
         fans: fans || 1000,
         isFriendly: true,
-        reputation: 50, // Default for friendlies
-        ticketPrice: 30,
+        reputation: teamStrength || 50,
+        ticketPrice: (players && (players as any).ticketPrice) || 30, // Heuristic or pass from props
+        winStreak: 0, // Should ideally come from props
+        loseStreak: 0,
+        vipUnits: 0,
       }
+
     });
   };
 
