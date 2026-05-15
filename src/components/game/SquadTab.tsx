@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { 
   X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, 
   Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, 
-  Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout
+  Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout, Activity
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
