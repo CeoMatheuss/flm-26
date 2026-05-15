@@ -232,7 +232,17 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="tactics">
-        {isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} onChangePosition={game.changePlayerPosition} season={game.season?.currentSeason ?? 1} userId={userId} />}
+        {isTabBlocked('tactics') ? <BlockedMessage /> : (
+          <TacticsTab 
+            tactics={game.tactics} 
+            players={game.club.players} 
+            onUpdate={game.setTactics} 
+            onUpdatePlayers={game.updatePlayers}
+            onChangePosition={game.changePlayerPosition} 
+            season={game.season?.currentSeason ?? 1} 
+            userId={userId} 
+          />
+        )}
       </TabsContent>
       
       <TabsContent value="fans">
