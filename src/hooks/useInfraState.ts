@@ -223,10 +223,17 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
               dominantFoot: p.dominant_foot,
               rarity: p.rarity,
               nationality: p.nationality,
-              morale: p.morale,
-              monthsInAcademy: p.months_in_academy,
+              morale: p.morale || 100,
+              monthsInAcademy: p.months_in_academy || 0,
               potentialTier: getPotentialTier(p.potential, p.overall),
               evolutionStatus: 'evoluindo',
+              salary: 500,
+              stamina: 100,
+              goals: 0,
+              assists: 0,
+              contract: 3,
+              gamesPlayed: 0,
+              trainingProgress: 0
             };
 
             setYouthProspects(prev => [...prev, newProspect]);
