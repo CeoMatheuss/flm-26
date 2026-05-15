@@ -1,25 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Player, personalityLabels } from '@/types/game';
-import { ClubShield } from '../ClubShield';
+import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
   Search, 
-  LayoutList, 
-  Target, 
-  Activity, 
   Heart, 
-  BarChart3, 
-  Hash, 
-  FileText,
-  Filter,
-  ArrowUpDown,
-  MoreVertical,
-  Star
+  Star,
+  Filter
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue, isPlayerGem } from '@/utils/playerGenerator';
@@ -29,9 +19,10 @@ interface SquadTableProps {
   players: Player[];
   selectedPlayer: Player | null;
   onPlayerSelect: (player: Player) => void;
+  onUpdatePlayers?: (players: Player[]) => void;
 }
 
-export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePlayers }: SquadTableProps & { onUpdatePlayers?: (players: Player[]) => void }) {
+export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePlayers }: SquadTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setFilterPos] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
@@ -46,14 +37,12 @@ export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePl
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#0a0c14]/40 backdrop-blur-xl rounded-t-[2rem] border-t border-x border-white/5 overflow-hidden shadow-2xl">
-      {/* Search & Filter Header */}
+    <div className="flex-1 flex flex-col min-w-0 bg-[#0a0c14]/40 backdrop-blur-xl rounded-t-[2rem] border-t border-x border-white/5 overflow-hidden shadow-2xl h-full">
       <div className="p-6 border-b border-white/5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1 rounded-xl">
              <TabsList className="bg-transparent h-8 p-0 gap-1">
                 <TabsTrigger value="all" className="text-[10px] font-black italic uppercase rounded-lg px-4 data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white transition-all duration-300">Elenco</TabsTrigger>
-                <TabsTrigger value="form" className="text-[10px] font-black italic uppercase rounded-lg px-4 data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white transition-all duration-300">Formação</TabsTrigger>
                 <TabsTrigger value="stats" className="text-[10px] font-black italic uppercase rounded-lg px-4 data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white transition-all duration-300">Estatísticas</TabsTrigger>
              </TabsList>
           </Tabs>
@@ -93,13 +82,9 @@ export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePl
               className="h-10 w-[200px] bg-white/5 border-white/5 pl-10 text-xs rounded-xl focus-visible:ring-[#8b5cf6]/50 focus-visible:border-[#8b5cf6]/50 transition-all duration-500"
             />
           </div>
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white/5 border-white/5 hover:bg-[#8b5cf6]/10 hover:text-[#8b5cf6] hover:border-[#8b5cf6]/30">
-            <Filter className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
-      {/* Table Area */}
       <div className="flex-1 overflow-y-auto smooth-scroll">
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-[#0a0c14] border-b border-white/5 shadow-md">
@@ -110,8 +95,6 @@ export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePl
               <th className="px-6 py-4 text-center">OVR</th>
               <th className="px-6 py-4">Condição</th>
               <th className="px-6 py-4">Moral</th>
-              <th className="px-6 py-4">Gols</th>
-              <th className="px-6 py-4">Assist.</th>
               <th className="px-6 py-4 text-right">Valor</th>
             </tr>
           </thead>
@@ -126,9 +109,7 @@ export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePl
                   onClick={() => onPlayerSelect(player)}
                   className={cn(
                     "group cursor-pointer transition-all duration-300",
-                    isSelected 
-                      ? "bg-[#8b5cf6]/10" 
-                      : "hover:bg-white/[0.02]"
+                    isSelected ? "bg-[#8b5cf6]/10" : "hover:bg-white/[0.02]"
                   )}
                 >
                   <td className="px-6 py-4">
@@ -192,12 +173,6 @@ export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePl
                        )} />
                        <span className="text-[10px] font-black text-white/60 italic">{player.morale}%</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-black text-white/40 italic">{player.goals || 0}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-black text-white/40 italic">{player.assists || 0}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="text-sm font-black text-[#10b981] italic tracking-tighter uppercase">
