@@ -309,24 +309,44 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       const { event, updatedProspects: afterEvent } = rollYouthEvent(next, infrastructure.youthAcademy.level);
       next = afterEvent;
 
-      // Recompute derived fields
+      // Recompute derived fields and process evolution
       next = next.map(p => {
+        let currentOverall = p.overall;
+        let currentProgress = p.trainingProgress ?? 0;
         const evolutionStatus = computeEvolutionStatus(p);
-        const overall = p.overall;
+
+        // Process evolution: every 100 points = +1 OVR
+        // Influenced by Academy Level (faster progress)
+        const academyBonus = Math.floor(infrastructure.youthAcademy.level / 10);
+        if (evolutionStatus === 'evoluindo') {
+          currentProgress += 5 + academyBonus;
+        }
+
+        if (currentProgress >= 100) {
+          if (currentOverall < p.potential) {
+            currentOverall += 1;
+            toast.info(`📈 ${p.name} evoluiu para OVR ${currentOverall}!`);
+          }
+          currentProgress -= 100;
+        }
+
         const potential = p.potential;
         const age = p.age;
         
         // Logic for Promotion Ready
-        const isReady = (overall >= 62) || (potential >= 88 && age >= 17 && overall >= 55) || (evolutionStatus === 'evoluindo' && overall >= 58 && Math.random() < 0.3);
+        const isReady = (currentOverall >= 62) || (potential >= 88 && age >= 17 && currentOverall >= 55) || (evolutionStatus === 'evoluindo' && currentOverall >= 58 && Math.random() < 0.3);
 
         return {
           ...p,
-          potentialTier: getPotentialTier(potential, overall),
+          overall: currentOverall,
+          trainingProgress: currentProgress,
+          potentialTier: getPotentialTier(potential, currentOverall),
           evolutionStatus,
           youthTag: computeYouthTag(p),
-          promotionReady: p.promotionReady || isReady, // once ready, stays ready until promoted or decision
+          promotionReady: p.promotionReady || isReady,
         };
       });
+
 
       // News entries
       if (userId) {
