@@ -630,16 +630,17 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
                   <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5" />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                 {Object.entries(selectedPlayer.attributes)
                   .filter(([key, val]) => val != null && !(selectedPlayer.position === 'GOL' && key === 'goalkeeping'))
+                  .sort((a, b) => (b[1] as number) - (a[1] as number)) // Sort by value
                   .map(([key, val]) => (
-                  <div key={key} className="bg-muted/30 rounded p-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
-                      <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                  <div key={key} className="bg-white/5 rounded-lg p-2 border border-white/5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest truncate max-w-[50px]">{attrLabels[key]?.label || key}</span>
+                      <span className={`text-[10px] font-black ${getAttrColor(val as number)}`}>{val}</span>
                     </div>
-                    <Progress value={val as number} className="h-1 mt-0.5" />
+                    <Progress value={val as number} className="h-1 bg-white/5" />
                   </div>
                 ))}
               </div>
