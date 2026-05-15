@@ -34,41 +34,22 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const starters: (Player | null)[] = new Array(11).fill(null);
   const allPlayers = [...players];
 
-  /**
-   * Posição Inteligente Score:
-   * 1. Ignorar lesionados completamente para o time titular
-   * 2. Overall base
-   * 3. Bônus por Stamina (evitar cansados)
-   * 4. Bônus por Moral
-   * 5. Penalidade se não for a posição natural
-   */
   const getPlayerScoreForPos = (player: Player, targetPos: string) => {
-    if (player.injury) return -1000; // Fora
-    
+    if (player.injury) return -1000;
     let score = player.overall;
-    
-    // Posição
-    if (player.position === targetPos) {
-      score += 15;
-    } else if (player.secondaryPosition === targetPos) {
-      score += 5;
-    } else {
-      score -= 20; // Fora de posição
-    }
+    if (player.position === targetPos) score += 15;
+    else if (player.secondaryPosition === targetPos) score += 5;
+    else score -= 20;
 
-    // Stamina
     if (player.stamina < 40) score -= 15;
     else if (player.stamina < 70) score -= 5;
     else score += 5;
 
-    // Moral
     if (player.morale > 80) score += 3;
     if (player.morale < 30) score -= 5;
-
     return score;
   };
 
-  // 1. First pass: Assign Goalkeeper (Critical)
   const gks = allPlayers
     .filter(p => !p.injury && p.position === 'GOL')
     .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'));
@@ -78,20 +59,17 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     used.add(gks[0].id);
   }
 
-  // 2. Second pass: Fill other positions based on requirements
   for (let i = 1; i < requirements.length; i++) {
     const reqPos = requirements[i];
     const bestPlayer = allPlayers
       .filter(p => !used.has(p.id))
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
-
     if (bestPlayer) {
       starters[i] = bestPlayer;
       used.add(bestPlayer.id);
     }
   }
 
-  // 3. Fallback: If some starters are still null, fill with any non-injured
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
       const fallback = allPlayers
@@ -104,18 +82,46 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   }
 
-  // 4. Bench: Best remaining players (including injured at the end)
   const remaining = allPlayers
     .filter(p => !used.has(p.id))
     .sort((a, b) => {
       if (a.injury && !b.injury) return 1;
       if (!a.injury && b.injury) return -1;
+      const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
+      const posA = posOrder.indexOf(a.position);
+      const posB = posOrder.indexOf(b.position);
+      if (posA !== posB) return posA - posB;
       return b.overall - a.overall;
     });
   
-  const finalLineup = [...starters.filter((p): p is Player => !!p), ...remaining];
+  return [...starters.filter((p): p is Player => !!p), ...remaining];
+}
+
+export function detectActualFormation(players: Player[]): Formation {
+  const starters = players.slice(0, 11);
+  if (starters.length < 11) return '4-4-2';
+
+  const counts: Record<string, number> = { ZAG: 0, LAT: 0, VOL: 0, MEI: 0, ATA: 0 };
+  starters.forEach(p => {
+    if (counts[p.position] !== undefined) counts[p.position]++;
+  });
+
+  const def = counts.ZAG + counts.LAT;
+  const mid = counts.VOL + counts.MEI;
+  const atk = counts.ATA;
+
+  // Se não houver atacantes, tentamos ser precisos com a nomenclatura
+  if (atk === 0) return '4-2-4-0'; // Especial para formações sem atacantes
+
+  const key = `${def}-${mid}-${atk}` as Formation;
   
-  return finalLineup;
+  // Mapeamento de formações baseadas na ocupação real
+  const map: Record<string, Formation> = {
+    '4-4-2': '4-4-2', '4-3-3': '4-3-3', '3-5-2': '3-5-2', '5-3-2': '5-3-2',
+    '3-4-3': '3-4-3', '5-4-1': '5-4-1', '4-5-1': '4-5-1',
+  };
+
+  return map[key] || '4-4-2';
 }
 
 /**

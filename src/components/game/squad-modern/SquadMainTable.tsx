@@ -34,10 +34,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       const isStarter = starterIds.has(p.id);
       const status = getPlayerStatus(p, isStarter);
       
-      // Filter by Search
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
 
-      // Filter by Tab
       switch (activeTab) {
         case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
         case 'reservas': return !isStarter && status === 'reserva';
@@ -47,6 +45,14 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         default: return true;
       }
     }).sort((a, b) => {
+      // Regra de Ouro: Organização fixa por posição
+      const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
+      const posA = posOrder.indexOf(a.position);
+      const posB = posOrder.indexOf(b.position);
+      
+      if (posA !== posB) return posA - posB;
+      
+      // Sub-ordenação por sortBy
       if (sortBy === 'overall') return b.overall - a.overall;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'age') return b.age - a.age;

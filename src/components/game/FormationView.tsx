@@ -112,23 +112,58 @@ const formationLayouts: Record<Formation, { position: string; x: number; y: numb
 };
 
 function assignPlayersToSlots(players: Player[], formation: Formation) {
-  const layout = formationLayouts[formation];
   const starters = players.slice(0, 11);
-  const available = [...starters].sort((a, b) => b.overall - a.overall);
-  const assigned: (Player | null)[] = layout.map(() => null);
+  if (starters.length < 11) return new Array(11).fill(null);
 
-  for (let i = 0; i < layout.length; i++) {
-    const slot = layout[i];
-    const idx = available.findIndex(p => p.position === slot.position);
-    if (idx >= 0) {
-      assigned[i] = available[idx];
-      available.splice(idx, 1);
-    }
-  }
+  // Group starters by their position category
+  const categories: Record<string, Player[]> = {
+    GOL: starters.filter(p => p.position === 'GOL').sort((a,b) => b.overall - a.overall),
+    DEF: starters.filter(p => ['ZAG', 'LAT'].includes(p.position)).sort((a,b) => b.overall - a.overall),
+    MID: starters.filter(p => ['VOL', 'MEI'].includes(p.position)).sort((a,b) => b.overall - a.overall),
+    ATK: starters.filter(p => p.position === 'ATA').sort((a,b) => b.overall - a.overall)
+  };
 
-  for (let i = 0; i < assigned.length; i++) {
-    if (!assigned[i] && available.length > 0) {
-      assigned[i] = available.shift()!;
+  // Find the actual formation based on these counts
+  const actualDef = categories.DEF.length;
+  const actualMid = categories.MID.length;
+  const actualAtk = categories.ATK.length;
+  const actualFormationKey = `${actualDef}-${actualMid}-${actualAtk}`;
+
+  // Use the requested formation layout, but map players by their natural category order
+  const layout = formationLayouts[formation] || formationLayouts['4-4-2'];
+  const assigned: (Player | null)[] = new Array(11).fill(null);
+
+  // Layout slots are generally ordered from back to front:
+  // 0: GOL
+  // 1-X: Defenders
+  // X-Y: Midfielders
+  // Y-11: Attackers
+  
+  // 1. Assign GOL
+  if (categories.GOL.length > 0) assigned[0] = categories.GOL[0];
+
+  // 2. Fill Defenders (slots 1 up to 1+actualDef)
+  let currentIdx = 1;
+  categories.DEF.forEach(p => {
+    if (currentIdx < 11) assigned[currentIdx++] = p;
+  });
+
+  // 3. Fill Midfielders
+  categories.MID.forEach(p => {
+    if (currentIdx < 11) assigned[currentIdx++] = p;
+  });
+
+  // 4. Fill Attackers
+  categories.ATK.forEach(p => {
+    if (currentIdx < 11) assigned[currentIdx++] = p;
+  });
+
+  // 5. Fill remaining slots with anyone left (shouldn't happen with 11 starters)
+  const allUsed = new Set(assigned.filter(Boolean).map(p => p!.id));
+  const remaining = starters.filter(p => !allUsed.has(p.id));
+  for (let i = 0; i < 11; i++) {
+    if (!assigned[i] && remaining.length > 0) {
+      assigned[i] = remaining.shift()!;
     }
   }
 

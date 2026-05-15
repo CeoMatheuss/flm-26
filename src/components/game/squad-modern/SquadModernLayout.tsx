@@ -10,6 +10,7 @@ import { SquadMainTable } from './SquadMainTable';
 import { PlayerDetailPanel } from './PlayerDetailPanel';
 import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
+import { detectActualFormation } from '@/utils/lineupManager';
 import { toast } from 'sonner';
 import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -70,6 +71,11 @@ export function SquadModernLayout({
   
   const selectedStatus = selectedPlayer ? getPlayerStatus(selectedPlayer, starterIds.has(selectedPlayer.id)) : null;
   const selectedDelta = selectedPlayer ? (deltas[selectedPlayer.id] ?? {}) : {};
+
+  // Escalação Dinâmica e Inteligente
+  const actualFormation = useMemo(() => {
+    return detectActualFormation(players);
+  }, [players]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
@@ -190,8 +196,9 @@ export function SquadModernLayout({
               </div>
               <div className="flex items-center gap-2">
                  <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
-                    {tactics.formation}
+                    {actualFormation}
                  </span>
+                 <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest ml-1">Real</span>
               </div>
            </div>
 
@@ -209,11 +216,16 @@ export function SquadModernLayout({
            {/* Quick Actions Footer */}
            <div className="p-6 border-t border-white/5 bg-zinc-950/80">
               <button 
-                 onClick={() => toast.success('Escalação Inteligente aplicada com sucesso!')}
+                 onClick={() => {
+                   const requirements = (actualFormation as any).split('-').map(Number);
+                   toast.success(`Formação Real: ${actualFormation}`, {
+                     description: `O time está jogando com ${requirements[0]} defensores, ${requirements[1]} meias e ${requirements[2]} atacantes.`
+                   });
+                 }}
                  className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3"
               >
                  <Sparkles className="w-5 h-5" />
-                 Otimizar Elenco
+                 Analisar Tática
               </button>
            </div>
         </div>
