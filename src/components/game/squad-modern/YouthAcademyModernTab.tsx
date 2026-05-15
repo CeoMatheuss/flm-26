@@ -84,6 +84,17 @@ export function YouthAcademyModernTab({
         </div>
       </section>
 
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+          Plantel da Base
+        </h3>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+            Próximo ciclo: 7 dias
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
         {/* Prospects List */}
         <div className="xl:col-span-3">
@@ -104,7 +115,7 @@ export function YouthAcademyModernTab({
                 <GraduationCap className="w-16 h-16 mb-4 text-white/40" />
                 <p className="text-lg font-black italic uppercase text-white">Academia Vazia</p>
                 <p className="text-xs font-bold uppercase tracking-widest text-white/60 mt-2">
-                  Novos jogadores chegarão conforme o investimento
+                  Um novo jogador chegará automaticamente a cada 7 dias
                 </p>
               </div>
             )}
