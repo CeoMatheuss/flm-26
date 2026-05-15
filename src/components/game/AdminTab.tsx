@@ -17,7 +17,7 @@ import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
   AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
-  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette
+  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,7 +27,7 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
 // import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
-// import { MaintenanceToggle } from './admin/MaintenanceToggle';
+import { MaintenanceToggle } from './admin/MaintenanceToggle';
 
 interface PendingUser {
   id: string;
@@ -122,7 +122,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
       finance:       ['finance_panel'],
       customization: ['customization_panel'],
-      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
       simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
@@ -502,7 +502,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
     finance:       ['finance_panel'],
     customization: ['customization_panel'],
-    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -523,6 +523,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     how_it_works:      { label: 'Como Funciona',  icon: BookOpen },
     moderation:        { label: 'Chat',           icon: MessageCircle },
     updates_mgmt:      { label: 'Atualizações',   icon: Megaphone },
+    maintenance:       { label: 'Manutenção',     icon: Wrench },
     announcements:     { label: 'Anúncios IA',    icon: Image },
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
@@ -827,6 +828,10 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="updates_mgmt" className="space-y-3 mt-3">
             <AdminUpdatesPanel />
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="space-y-3 mt-3">
+            <MaintenanceToggle />
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-3 mt-3">
