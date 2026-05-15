@@ -562,6 +562,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             onConfirm={async (p, fee) => { await onRescindPlayer(p, fee); setViewingPlayer(null); }}
           />
         )}
+        </motion.div>
       </div>
     );
   }
