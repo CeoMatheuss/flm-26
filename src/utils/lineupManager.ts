@@ -31,62 +31,91 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   if (!requirements) return players;
 
   const used = new Set<string>();
-  const starters: Player[] = [];
+  const starters: (Player | null)[] = new Array(11).fill(null);
   const allPlayers = [...players];
 
-  // 1. First pass: Assign players to their EXACT natural position
-  for (const reqPos of requirements) {
-    const candidates = allPlayers
-      .filter(p => !used.has(p.id) && p.position === reqPos)
-      .sort((a, b) => b.overall - a.overall);
-
-    if (candidates.length > 0) {
-      const selected = candidates[0];
-      starters.push(selected);
-      used.add(selected.id);
+  /**
+   * Posição Inteligente Score:
+   * 1. Ignorar lesionados completamente para o time titular
+   * 2. Overall base
+   * 3. Bônus por Stamina (evitar cansados)
+   * 4. Bônus por Moral
+   * 5. Penalidade se não for a posição natural
+   */
+  const getPlayerScoreForPos = (player: Player, targetPos: string) => {
+    if (player.injury) return -1000; // Fora
+    
+    let score = player.overall;
+    
+    // Posição
+    if (player.position === targetPos) {
+      score += 15;
+    } else if (player.secondaryPosition === targetPos) {
+      score += 5;
     } else {
-      // Placeholder for now
-      starters.push(null as any);
+      score -= 20; // Fora de posição
+    }
+
+    // Stamina
+    if (player.stamina < 40) score -= 15;
+    else if (player.stamina < 70) score -= 5;
+    else score += 5;
+
+    // Moral
+    if (player.morale > 80) score += 3;
+    if (player.morale < 30) score -= 5;
+
+    return score;
+  };
+
+  // 1. First pass: Assign Goalkeeper (Critical)
+  const gks = allPlayers
+    .filter(p => !p.injury && p.position === 'GOL')
+    .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'));
+  
+  if (gks.length > 0) {
+    starters[0] = gks[0];
+    used.add(gks[0].id);
+  }
+
+  // 2. Second pass: Fill other positions based on requirements
+  for (let i = 1; i < requirements.length; i++) {
+    const reqPos = requirements[i];
+    const bestPlayer = allPlayers
+      .filter(p => !used.has(p.id))
+      .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
+
+    if (bestPlayer) {
+      starters[i] = bestPlayer;
+      used.add(bestPlayer.id);
     }
   }
 
-  // 2. Second pass: Fill gaps using secondary positions
+  // 3. Fallback: If some starters are still null, fill with any non-injured
   for (let i = 0; i < starters.length; i++) {
-    if (starters[i] === null) {
-      const reqPos = requirements[i];
-      const candidates = allPlayers
-        .filter(p => !used.has(p.id) && p.secondaryPosition === reqPos)
-        .sort((a, b) => (b.overall - 5) - (a.overall - 5)); // Penalty for secondary
-
-      if (candidates.length > 0) {
-        const selected = candidates[0];
-        starters[i] = selected;
-        used.add(selected.id);
+    if (!starters[i]) {
+      const fallback = allPlayers
+        .filter(p => !used.has(p.id) && !p.injury)
+        .sort((a, b) => b.overall - a.overall)[0];
+      if (fallback) {
+        starters[i] = fallback;
+        used.add(fallback.id);
       }
     }
   }
 
-  // 3. Third pass: Fill gaps using highest overall remaining players (compatibility)
-  for (let i = 0; i < starters.length; i++) {
-    if (starters[i] === null) {
-      const candidates = allPlayers
-        .filter(p => !used.has(p.id))
-        .sort((a, b) => b.overall - a.overall);
-
-      if (candidates.length > 0) {
-        const selected = candidates[0];
-        starters[i] = selected;
-        used.add(selected.id);
-      }
-    }
-  }
-
-  const bench = allPlayers.filter(p => !used.has(p.id)).sort((a, b) => b.overall - a.overall);
+  // 4. Bench: Best remaining players (including injured at the end)
+  const remaining = allPlayers
+    .filter(p => !used.has(p.id))
+    .sort((a, b) => {
+      if (a.injury && !b.injury) return 1;
+      if (!a.injury && b.injury) return -1;
+      return b.overall - a.overall;
+    });
   
-  // Filter out any remaining nulls just in case (should not happen if enough players)
-  const validStarters = starters.filter(p => p !== null);
+  const finalLineup = [...starters.filter((p): p is Player => !!p), ...remaining];
   
-  return [...validStarters, ...bench];
+  return finalLineup;
 }
 
 /**

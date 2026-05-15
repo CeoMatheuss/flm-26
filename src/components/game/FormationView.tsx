@@ -17,97 +17,97 @@ interface Props {
 
 const formationLayouts: Record<Formation, { position: string; x: number; y: number }[]> = {
   '4-4-2': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
-    { position: 'MEI', x: 15, y: 45 }, { position: 'VOL', x: 38, y: 48 }, { position: 'VOL', x: 62, y: 48 }, { position: 'MEI', x: 85, y: 45 },
-    { position: 'ATA', x: 35, y: 20 }, { position: 'ATA', x: 65, y: 20 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
+    { position: 'MEI', x: 12, y: 48 }, { position: 'VOL', x: 37, y: 48 }, { position: 'VOL', x: 63, y: 48 }, { position: 'MEI', x: 88, y: 48 },
+    { position: 'ATA', x: 35, y: 22 }, { position: 'ATA', x: 65, y: 22 },
   ],
   '4-3-3': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
-    { position: 'VOL', x: 30, y: 48 }, { position: 'MEI', x: 50, y: 45 }, { position: 'MEI', x: 70, y: 48 },
-    { position: 'ATA', x: 20, y: 20 }, { position: 'ATA', x: 50, y: 15 }, { position: 'ATA', x: 80, y: 20 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
+    { position: 'VOL', x: 30, y: 50 }, { position: 'MEI', x: 50, y: 48 }, { position: 'MEI', x: 70, y: 50 },
+    { position: 'ATA', x: 15, y: 22 }, { position: 'ATA', x: 50, y: 18 }, { position: 'ATA', x: 85, y: 22 },
   ],
   '4-2-3-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
     { position: 'VOL', x: 35, y: 55 }, { position: 'VOL', x: 65, y: 55 },
-    { position: 'MEI', x: 20, y: 38 }, { position: 'MEI', x: 50, y: 35 }, { position: 'MEI', x: 80, y: 38 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'MEI', x: 15, y: 38 }, { position: 'MEI', x: 50, y: 35 }, { position: 'MEI', x: 85, y: 38 },
+    { position: 'ATA', x: 50, y: 18 },
   ],
   '3-5-2': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 74 }, { position: 'ZAG', x: 75, y: 72 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 72 }, { position: 'ZAG', x: 75, y: 72 },
     { position: 'VOL', x: 15, y: 50 }, { position: 'VOL', x: 85, y: 50 },
     { position: 'MEI', x: 30, y: 42 }, { position: 'MEI', x: 50, y: 40 }, { position: 'MEI', x: 70, y: 42 },
-    { position: 'ATA', x: 35, y: 18 }, { position: 'ATA', x: 65, y: 18 },
+    { position: 'ATA', x: 35, y: 20 }, { position: 'ATA', x: 65, y: 20 },
   ],
   '5-3-2': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 10, y: 68 }, { position: 'ZAG', x: 30, y: 72 }, { position: 'ZAG', x: 50, y: 74 }, { position: 'ZAG', x: 70, y: 72 }, { position: 'LAT', x: 90, y: 68 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 10, y: 70 }, { position: 'ZAG', x: 30, y: 72 }, { position: 'ZAG', x: 50, y: 72 }, { position: 'ZAG', x: 70, y: 72 }, { position: 'LAT', x: 90, y: 70 },
     { position: 'VOL', x: 30, y: 48 }, { position: 'MEI', x: 50, y: 45 }, { position: 'MEI', x: 70, y: 48 },
-    { position: 'ATA', x: 35, y: 18 }, { position: 'ATA', x: 65, y: 18 },
+    { position: 'ATA', x: 35, y: 20 }, { position: 'ATA', x: 65, y: 20 },
   ],
   '4-1-4-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
     { position: 'VOL', x: 50, y: 58 },
-    { position: 'MEI', x: 15, y: 40 }, { position: 'MEI', x: 38, y: 38 }, { position: 'MEI', x: 62, y: 38 }, { position: 'MEI', x: 85, y: 40 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'MEI', x: 15, y: 40 }, { position: 'MEI', x: 38, y: 40 }, { position: 'MEI', x: 62, y: 40 }, { position: 'MEI', x: 85, y: 40 },
+    { position: 'ATA', x: 50, y: 18 },
   ],
   '4-4-1-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
-    { position: 'MEI', x: 15, y: 48 }, { position: 'VOL', x: 38, y: 50 }, { position: 'VOL', x: 62, y: 50 }, { position: 'MEI', x: 85, y: 48 },
-    { position: 'MEI', x: 50, y: 32 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
+    { position: 'MEI', x: 12, y: 50 }, { position: 'VOL', x: 37, y: 50 }, { position: 'VOL', x: 63, y: 50 }, { position: 'MEI', x: 88, y: 50 },
+    { position: 'MEI', x: 50, y: 35 },
+    { position: 'ATA', x: 50, y: 18 },
   ],
   '3-4-3': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 74 }, { position: 'ZAG', x: 75, y: 72 },
-    { position: 'VOL', x: 15, y: 50 }, { position: 'MEI', x: 38, y: 48 }, { position: 'MEI', x: 62, y: 48 }, { position: 'VOL', x: 85, y: 50 },
-    { position: 'ATA', x: 20, y: 20 }, { position: 'ATA', x: 50, y: 15 }, { position: 'ATA', x: 80, y: 20 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 72 }, { position: 'ZAG', x: 75, y: 72 },
+    { position: 'VOL', x: 12, y: 50 }, { position: 'MEI', x: 38, y: 50 }, { position: 'MEI', x: 62, y: 50 }, { position: 'VOL', x: 88, y: 50 },
+    { position: 'ATA', x: 15, y: 22 }, { position: 'ATA', x: 50, y: 18 }, { position: 'ATA', x: 85, y: 22 },
   ],
   '5-4-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 10, y: 68 }, { position: 'ZAG', x: 30, y: 72 }, { position: 'ZAG', x: 50, y: 74 }, { position: 'ZAG', x: 70, y: 72 }, { position: 'LAT', x: 90, y: 68 },
-    { position: 'MEI', x: 18, y: 45 }, { position: 'VOL', x: 40, y: 48 }, { position: 'VOL', x: 60, y: 48 }, { position: 'MEI', x: 82, y: 45 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 10, y: 70 }, { position: 'ZAG', x: 30, y: 72 }, { position: 'ZAG', x: 50, y: 72 }, { position: 'ZAG', x: 70, y: 72 }, { position: 'LAT', x: 90, y: 70 },
+    { position: 'MEI', x: 18, y: 48 }, { position: 'VOL', x: 40, y: 48 }, { position: 'VOL', x: 60, y: 48 }, { position: 'MEI', x: 82, y: 48 },
+    { position: 'ATA', x: 50, y: 20 },
   ],
   '4-5-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
-    { position: 'VOL', x: 25, y: 52 }, { position: 'VOL', x: 75, y: 52 },
-    { position: 'MEI', x: 15, y: 38 }, { position: 'MEI', x: 50, y: 35 }, { position: 'MEI', x: 85, y: 38 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
+    { position: 'VOL', x: 25, y: 55 }, { position: 'VOL', x: 75, y: 55 },
+    { position: 'MEI', x: 15, y: 40 }, { position: 'MEI', x: 50, y: 38 }, { position: 'MEI', x: 85, y: 40 },
+    { position: 'ATA', x: 50, y: 18 },
   ],
   '4-3-2-1': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
     { position: 'VOL', x: 30, y: 55 }, { position: 'MEI', x: 50, y: 52 }, { position: 'VOL', x: 70, y: 55 },
-    { position: 'MEI', x: 35, y: 35 }, { position: 'MEI', x: 65, y: 35 },
-    { position: 'ATA', x: 50, y: 15 },
+    { position: 'MEI', x: 35, y: 38 }, { position: 'MEI', x: 65, y: 38 },
+    { position: 'ATA', x: 50, y: 18 },
   ],
   '4-2-4-0': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
     { position: 'VOL', x: 35, y: 55 }, { position: 'VOL', x: 65, y: 55 },
-    { position: 'MEI', x: 15, y: 30 }, { position: 'MEI', x: 40, y: 25 }, { position: 'MEI', x: 60, y: 25 }, { position: 'MEI', x: 85, y: 30 },
+    { position: 'MEI', x: 15, y: 35 }, { position: 'MEI', x: 40, y: 32 }, { position: 'MEI', x: 60, y: 32 }, { position: 'MEI', x: 85, y: 35 },
   ],
   '3-4-1-2': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 74 }, { position: 'ZAG', x: 75, y: 72 },
-    { position: 'VOL', x: 15, y: 52 }, { position: 'MEI', x: 38, y: 50 }, { position: 'MEI', x: 62, y: 50 }, { position: 'VOL', x: 85, y: 52 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'ZAG', x: 25, y: 72 }, { position: 'ZAG', x: 50, y: 72 }, { position: 'ZAG', x: 75, y: 72 },
+    { position: 'VOL', x: 15, y: 52 }, { position: 'MEI', x: 38, y: 52 }, { position: 'MEI', x: 62, y: 52 }, { position: 'VOL', x: 85, y: 52 },
     { position: 'MEI', x: 50, y: 35 },
-    { position: 'ATA', x: 35, y: 18 }, { position: 'ATA', x: 65, y: 18 },
+    { position: 'ATA', x: 35, y: 20 }, { position: 'ATA', x: 65, y: 20 },
   ],
   '4-1-2-1-2': [
-    { position: 'GOL', x: 50, y: 90 },
-    { position: 'LAT', x: 15, y: 70 }, { position: 'ZAG', x: 38, y: 72 }, { position: 'ZAG', x: 62, y: 72 }, { position: 'LAT', x: 85, y: 70 },
+    { position: 'GOL', x: 50, y: 88 },
+    { position: 'LAT', x: 12, y: 72 }, { position: 'ZAG', x: 37, y: 72 }, { position: 'ZAG', x: 63, y: 72 }, { position: 'LAT', x: 88, y: 72 },
     { position: 'VOL', x: 50, y: 58 },
-    { position: 'MEI', x: 30, y: 45 }, { position: 'MEI', x: 70, y: 45 },
-    { position: 'MEI', x: 50, y: 32 },
-    { position: 'ATA', x: 35, y: 18 }, { position: 'ATA', x: 65, y: 18 },
+    { position: 'MEI', x: 30, y: 48 }, { position: 'MEI', x: 70, y: 48 },
+    { position: 'MEI', x: 50, y: 35 },
+    { position: 'ATA', x: 35, y: 20 }, { position: 'ATA', x: 65, y: 20 },
   ],
 };
 
@@ -136,12 +136,12 @@ function assignPlayersToSlots(players: Player[], formation: Formation) {
 }
 
 const posColors: Record<string, string> = {
-  GOL: 'bg-amber-500',
-  ZAG: 'bg-blue-500',
-  LAT: 'bg-sky-400',
+  GOL: 'bg-yellow-400',
+  ZAG: 'bg-blue-600',
+  LAT: 'bg-blue-500',
   VOL: 'bg-emerald-500',
-  MEI: 'bg-orange-400',
-  ATA: 'bg-red-500',
+  MEI: 'bg-orange-500',
+  ATA: 'bg-red-600',
 };
 
 export function FormationView({ formation, players, captainId, onPlayerClick, onSwapPlayers, isInteractive = true }: Props) {
@@ -202,12 +202,15 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[2/3] bg-[#0a1a0f] rounded-3xl overflow-hidden border border-emerald-500/20 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] select-none">
-      {/* Premium Field Texture */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[4/5] lg:aspect-[2/3] bg-[#07140b] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] select-none">
+      {/* Pitch Pattern (Stripes) */}
+      <div className="absolute inset-0 flex flex-col pointer-events-none">
+        {[...Array(10)].map((_, i) => (
+          <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-emerald-500/[0.02]' : 'bg-transparent'}`} />
+        ))}
+      </div>
       
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-emerald-950/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-emerald-950/20 pointer-events-none" />
       
       {/* Pitch markings - Modern Style */}
       <div className="absolute inset-0 opacity-30">
@@ -257,25 +260,27 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
               <div className="relative">
                 {/* Glow for Starters */}
                 {player && (
-                  <div className={`absolute inset-0 rounded-full blur-md opacity-40 -z-10 group-hover:opacity-80 transition-opacity ${posColors[slot.position] || 'bg-white'}`} />
+                  <div className={`absolute inset-0 rounded-full blur-xl opacity-20 -z-10 group-hover:opacity-40 transition-opacity ${posColors[slot.position] || 'bg-white'}`} />
                 )}
                 
                 <motion.div 
-                  whileHover={{ scale: 1.2, rotate: 5, zIndex: 50 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-xl border-2 transition-all duration-300
-                    ${isInjured ? 'bg-slate-700 grayscale' : (posColors[slot.position] || 'bg-slate-800')}
-                    ${isCaptain ? 'border-yellow-400 ring-2 ring-yellow-400/20' : 'border-white/90'}
+                  whileHover={{ scale: 1.1, y: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg border-2 transition-all duration-300 relative
+                    ${isInjured ? 'bg-slate-700 grayscale border-slate-600' : (posColors[slot.position] || 'bg-slate-800')}
+                    ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/20' : 'border-white/90'}
                     ${isJustUpdated ? 'animate-pulse ring-4 ring-primary/50' : ''}
-                    ${isPendingSwap ? 'scale-125 ring-4 ring-primary border-primary shadow-[0_0_20px_rgba(var(--primary),0.6)]' : ''}`}
+                    ${isPendingSwap ? 'scale-110 ring-4 ring-primary border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]' : 'border-white/20'}`}
                 >
-                  <span className="drop-shadow-md">{player ? player.overall : '?'}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="drop-shadow-lg text-lg leading-none">{player ? player.overall : '?'}</span>
+                  </div>
                 </motion.div>
                 
                 {isCaptain && (
                   <motion.div 
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-4 h-4 flex items-center justify-center font-black text-[9px] shadow-lg border border-black/20"
+                    className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-4.5 h-4.5 flex items-center justify-center font-black text-[8px] shadow-lg border border-black/20 z-20"
                   >
                     C
                   </motion.div>
@@ -283,24 +288,29 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
 
                 {/* Status Indicators */}
                 {player && (
-                  <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                  <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-20">
                     {player.stamina < 50 && (
-                      <div className="bg-red-500 rounded-full w-3 h-3 flex items-center justify-center shadow-lg border border-white/20">
-                        <Zap className="w-2 h-2 text-white" />
+                      <div className="bg-red-500 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Cansado">
+                        <Zap className="w-2.5 h-2.5 text-white" />
                       </div>
                     )}
-                    {player.morale < 50 && (
-                      <div className="bg-amber-500 rounded-full w-3 h-3 flex items-center justify-center shadow-lg border border-white/20">
-                        <Heart className="w-2 h-2 text-white" />
+                    {isInjured && (
+                      <div className="bg-slate-900 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Lesionado">
+                        <Activity className="w-2.5 h-2.5 text-red-500" />
+                      </div>
+                    )}
+                    {player.morale > 80 && (
+                      <div className="bg-emerald-500 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Boa Forma">
+                        <Star className="w-2.5 h-2.5 text-white fill-current" />
                       </div>
                     )}
                   </div>
                 )}
               </div>
               
-              <div className={`bg-slate-900/90 backdrop-blur-md px-2 py-0.5 rounded-full border shadow-lg min-w-[50px] transition-all duration-300
-                ${isPendingSwap ? 'border-primary bg-primary/20 scale-110' : 'border-white/20 group-hover:border-primary/50'}`}>
-                <p className="text-[8px] sm:text-[10px] text-white font-black text-center leading-none uppercase tracking-tighter truncate max-w-[60px] sm:max-w-[80px]">
+              <div className={`mt-1 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md border shadow-sm transition-all duration-300
+                ${isPendingSwap ? 'border-primary bg-primary/20' : 'border-white/10 group-hover:border-white/30'}`}>
+                <p className="text-[9px] sm:text-[10px] text-white font-bold text-center leading-none uppercase tracking-wide truncate max-w-[70px] sm:max-w-[90px]">
                   {player ? player.name.split(' ').pop() : slot.position}
                 </p>
               </div>

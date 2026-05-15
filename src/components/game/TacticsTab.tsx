@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock, Sparkles, ArrowRightLeft } from 'lucide-react';
+import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock, Sparkles, ArrowRightLeft, Heart, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
@@ -21,6 +21,7 @@ interface Props {
   tactics: TacticsConfig;
   players: Player[];
   onUpdate: (tactics: TacticsConfig) => void;
+  onUpdatePlayers?: (players: Player[]) => void;
   onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
   season?: number;
   userId?: string;
@@ -108,9 +109,35 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, onChangePosition, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChangePosition, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const { isInLiveMatch } = useActiveMatch();
+
+  // Implement swap players directly in TacticsTab
+  const swapPlayers = (playerAId: string, playerBId: string) => {
+    if (!onUpdatePlayers) return;
+    const idxA = players.findIndex(p => p.id === playerAId);
+    const idxB = players.findIndex(p => p.id === playerBId);
+    if (idxA < 0 || idxB < 0) return;
+    
+    const newOrder = [...players];
+    [newOrder[idxA], newOrder[idxB]] = [newOrder[idxB], newOrder[idxA]];
+    
+    // Position Protection Validation
+    const validation = validateLineup(newOrder);
+    if (!validation.valid) {
+      toast.error(validation.message);
+      if (validation.autoFix) {
+        onUpdatePlayers(validation.autoFix);
+      }
+      return;
+    }
+
+    const pA = players[idxA];
+    const pB = players[idxB];
+    toast.success(`${pA.name} ↔ ${pB.name}`);
+    onUpdatePlayers(newOrder);
+  };
 
   const activePlayers = players.filter(p => !p.injury);
   const injuredCount = players.length - activePlayers.length;
@@ -185,29 +212,12 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Auto-Lineup Toggle */}
-      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-primary/20 p-1.5 rounded-lg">
-            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-          </div>
-          <div>
-            <Label htmlFor="auto-lineup" className="text-xs font-bold block">Sistema Inteligente Loja FLM</Label>
-            <p className="text-[9px] text-muted-foreground leading-tight">Atualização automática de escalação ativada</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-           <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-tighter">AI Active</span>
-           <Switch 
-            id="auto-lineup" 
-            checked={tactics.autoUpdateLineup} 
-            onCheckedChange={(val) => {
-              setField('autoUpdateLineup', val);
-              if (val) toast.success('Auto-Escalação Ativada', { description: 'O sistema reorganizará o time automaticamente.' });
-            }}
-          />
-        </div>
-      </div>
+      {/* Hidden Auto-Lineup Logic (Internal) */}
+      {!tactics.autoUpdateLineup && (
+         <div className="hidden">
+           {/* Logic to keep it active internally if requested by user, but here we just hide the toggle */}
+         </div>
+      )}
 
       {/* Season Start Widget — shows countdown / current season info */}
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
@@ -224,30 +234,79 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
         </Card>
       )}
 
-      {/* Tactical Overview Bar */}
-      <Card className="border-primary/20">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-xs sm:text-sm font-bold">{tactics.formation}</span>
-              <Badge variant="secondary" className="text-[9px] sm:text-[10px] capitalize">{tactics.playStyle}</Badge>
-              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-primary/5 text-primary border-primary/20">
-                OVR: {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {injuredCount > 0 && <Badge variant="destructive" className="text-[9px]">🏥 {injuredCount}</Badge>}
-              <Badge variant="outline" className="text-[9px]">{players.length} jog.</Badge>
-            </div>
+      {/* Tactical Hub - Side Panel Style */}
+      <div className="grid grid-cols-1 gap-3">
+        <Card className="border-primary/20 bg-slate-950/40 backdrop-blur-sm overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-2 opacity-10">
+            <Shield className="w-16 h-16 text-primary rotate-12" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">Organização Tática</span>
-            <Progress value={getTacticalRating()} className="flex-1 h-1.5" />
-            <span className="text-[10px] font-bold text-primary">{getTacticalRating()}%</span>
-          </div>
-        </CardContent>
-      </Card>
+          
+          <CardContent className="p-4 space-y-4 relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Formação & Estilo</p>
+                <div className="flex items-center gap-2">
+                  <select 
+                    className="bg-transparent text-2xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-colors"
+                    value={tactics.formation}
+                    onChange={(e) => setField('formation', e.target.value as any)}
+                  >
+                    {allFormations.map(f => <option key={f} value={f} className="bg-slate-900 text-sm font-sans">{f}</option>)}
+                  </select>
+                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 uppercase font-black">{tactics.playStyle}</Badge>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Força do Time</p>
+                <p className="text-2xl font-black text-primary tracking-tighter">
+                  {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
+                  <span className="text-muted-foreground">Organização</span>
+                  <span className="text-primary">{getTacticalRating()}%</span>
+                </div>
+                <Progress value={getTacticalRating()} className="h-1.5 bg-white/5" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
+                  <span className="text-muted-foreground">Entrosamento</span>
+                  <span className="text-emerald-400">
+                    {Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
+                  className="h-1.5 bg-white/5" 
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 pt-1">
+               <div className="flex -space-x-2">
+                 {players.slice(0, 5).map((p, i) => (
+                   <div key={p.id} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-black overflow-hidden">
+                     {p.name.charAt(0)}
+                   </div>
+                 ))}
+                 {players.length > 5 && (
+                   <div className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[8px] font-black text-white/50">
+                     +{players.length - 5}
+                   </div>
+                 )}
+               </div>
+               <p className="text-[10px] text-muted-foreground font-medium">Elenco ativo: <span className="text-white">{players.length} jogadores</span></p>
+               {injuredCount > 0 && (
+                 <Badge variant="destructive" className="ml-auto text-[9px] px-1.5 py-0 h-4 font-black">🏥 {injuredCount}</Badge>
+               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Presets - compact horizontal scroll */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
@@ -270,6 +329,8 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
             players={players}
             captainId={tactics.captainId}
             onPlayerClick={setSelectedPlayer}
+            onSwapPlayers={swapPlayers}
+            isInteractive={!isInLiveMatch}
           />
           <p className="text-[8px] sm:text-[10px] text-muted-foreground mt-2 text-center">Toque em um jogador para atribuir funções</p>
         </CardContent>
@@ -513,10 +574,14 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
 
       {/* Player detail dialog */}
       <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle className="text-sm">{selectedPlayer?.name}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-xs border-primary/20 bg-slate-900/95 backdrop-blur-xl p-0 overflow-hidden">
+          <div className="bg-primary/20 p-4 border-b border-white/10 flex items-center justify-between">
+            <div>
+               <h3 className="text-base font-black text-white uppercase tracking-tight">{selectedPlayer?.name}</h3>
+               <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{selectedPlayer?.position} • OVR {selectedPlayer?.overall}</p>
+            </div>
+            <Badge className="bg-white/10 text-white border-white/20">#{selectedPlayer?.shirtNumber || '—'}</Badge>
+          </div>
           {selectedPlayer && (() => {
             const attrLabels: Record<string, { label: string; icon: string }> = {
               speed: { label: 'Velocidade', icon: '⚡' },
@@ -544,47 +609,44 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
               return 'text-red-400';
             };
             return (
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                <Badge>{selectedPlayer.position}</Badge>
-                <Badge variant="secondary">OVR {selectedPlayer.overall}</Badge>
-                <Badge variant="outline">{selectedPlayer.age} anos</Badge>
-              </div>
+            <div className="p-4 space-y-4">
               {/* Energia e Moral */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Energia', icon: '⚡', value: selectedPlayer.stamina ?? 100 },
-                  { label: 'Moral', icon: '❤️', value: selectedPlayer.morale ?? 50 },
+                  { label: 'Energia', icon: <Zap className="w-3 h-3" />, value: selectedPlayer.stamina ?? 100, color: 'text-yellow-400' },
+                  { label: 'Moral', icon: <Heart className="w-3 h-3" />, value: selectedPlayer.morale ?? 50, color: 'text-emerald-400' },
                 ].map(stat => (
-                  <div key={stat.label} className="bg-muted/30 rounded-lg p-2 border border-border/50">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] text-muted-foreground">{stat.icon} {stat.label}</span>
-                      <span className={`text-[10px] font-bold ${stat.value >= 70 ? 'text-emerald-400' : stat.value >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>{stat.value}%</span>
+                  <div key={stat.label} className="bg-white/5 rounded-xl p-2.5 border border-white/10">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">{stat.icon} {stat.label}</span>
+                      <span className={`text-[10px] font-black ${stat.color}`}>{stat.value}%</span>
                     </div>
-                    <Progress value={stat.value} className="h-1.5" />
+                    <Progress value={stat.value} className="h-1.5 bg-white/5" />
                   </div>
                 ))}
               </div>
+
               {/* Goalkeeping highlight for GK */}
               {selectedPlayer.position === 'GOL' && selectedPlayer.attributes.goalkeeping != null && (
-                <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
-                    <span className={`text-sm font-bold ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">🧤 Defesa de Goleiro</span>
+                    <span className={`text-sm font-black ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
                   </div>
-                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5 mt-1" />
+                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5" />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                 {Object.entries(selectedPlayer.attributes)
                   .filter(([key, val]) => val != null && !(selectedPlayer.position === 'GOL' && key === 'goalkeeping'))
+                  .sort((a, b) => (b[1] as number) - (a[1] as number)) // Sort by value
                   .map(([key, val]) => (
-                  <div key={key} className="bg-muted/30 rounded p-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-muted-foreground">{attrLabels[key]?.icon} {attrLabels[key]?.label || key}</span>
-                      <span className={`text-[10px] font-bold ${getAttrColor(val as number)}`}>{val}</span>
+                  <div key={key} className="bg-white/5 rounded-lg p-2 border border-white/5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest truncate max-w-[50px]">{attrLabels[key]?.label || key}</span>
+                      <span className={`text-[10px] font-black ${getAttrColor(val as number)}`}>{val}</span>
                     </div>
-                    <Progress value={val as number} className="h-1 mt-0.5" />
+                    <Progress value={val as number} className="h-1 bg-white/5" />
                   </div>
                 ))}
               </div>
