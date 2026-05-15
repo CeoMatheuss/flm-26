@@ -34,6 +34,7 @@ interface Props {
   onReorderPlayers?: (newOrder: Player[]) => void;
   onRotateSquad?: () => void;
   tactics?: TacticsConfig;
+  onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
 }
 
 const posColors: Record<string, string> = {

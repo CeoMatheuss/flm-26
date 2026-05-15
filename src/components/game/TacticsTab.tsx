@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES } from '@/types/tactics';
-import { formationRequirements } from '@/utils/lineupManager';
+import { formationRequirements, validateLineup, canChangePosition } from '@/utils/lineupManager';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,6 +124,19 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
       });
       return;
     }
+    
+    // Validation for formation changes
+    const validation = validateLineup(players);
+    if (!validation.valid && next.formation !== tactics.formation) {
+       // If it's a formation change, we check if the current lineup is valid for it
+       // In this context, validateLineup mostly checks for GOL count which is formation-independent (always 1)
+       toast.error(validation.message);
+       if (validation.autoFix) {
+         // This is tricky because we don't have onReorderPlayers here
+         // But we can at least block the change or show a warning
+       }
+    }
+
     onUpdate(next);
   };
 
