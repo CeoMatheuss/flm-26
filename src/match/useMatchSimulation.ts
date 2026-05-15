@@ -366,7 +366,14 @@ export function useMatchSimulation() {
             supabase.from('live_matches')
               .update({ status: 'finished', current_minute: nextEvent.minute })
               .eq('id', data.matchDbId)
-              .then(() => {});
+              .then(async () => {
+                console.log("[MATCH] Sincronizando tabela da liga...");
+                // Aciona a atualização da tabela via Edge Function ou RPC
+                // A função start-match já lida com isso na persistência inicial, 
+                // mas garantimos aqui que o status 'finished' dispare qualquer gatilho necessário.
+                const { error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+                if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
+              });
           }
         }
       }
