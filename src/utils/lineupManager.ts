@@ -90,6 +90,59 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 }
 
 /**
+ * Intelligent Position Protection Rules
+ */
+
+export function canChangePosition(player: Player, players: Player[]): { allowed: boolean; message?: string } {
+  const isStarter = players.findIndex(p => p.id === player.id) < 11;
+  
+  if (isStarter) {
+    return { 
+      allowed: false, 
+      message: "Remova o jogador dos titulares antes de alterar sua posição." 
+    };
+  }
+  
+  return { allowed: true };
+}
+
+export function validateLineup(players: Player[]): { valid: boolean; message?: string; autoFix?: Player[] } {
+  const starters = players.slice(0, 11);
+  const goalkeepers = starters.filter(p => p.position === 'GOL');
+  
+  if (goalkeepers.length > 1) {
+    // Auto-fix: Move the redundant keepers to the bench
+    const keepers = [...goalkeepers].sort((a, b) => b.overall - a.overall);
+    const bestKeeper = keepers[0];
+    const others = keepers.slice(1);
+    
+    let newOrder = [...players];
+    others.forEach(k => {
+      const idx = newOrder.findIndex(p => p.id === k.id);
+      if (idx !== -1) {
+        const [removed] = newOrder.splice(idx, 1);
+        newOrder.push(removed); // Push to the end of the squad
+      }
+    });
+
+    return { 
+      valid: false, 
+      message: "Não é permitido possuir 2 goleiros no time titular.",
+      autoFix: newOrder
+    };
+  }
+
+  if (goalkeepers.length === 0) {
+    return {
+      valid: false,
+      message: "O time titular precisa de pelo menos 1 goleiro."
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Checks if a player's position change should trigger an auto-lineup update.
  */
 export function shouldUpdateLineup(oldPlayer: Player, newPlayer: Player): boolean {
