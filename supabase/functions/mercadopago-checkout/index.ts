@@ -18,13 +18,18 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
 
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) throw new Error('Unauthorized')
 
     const { item_id, method, email } = await req.json()
 
     // Get item details
-    const { data: item, error: itemError } = await supabaseClient
+    const { data: item, error: itemError } = await supabaseAdmin
       .from('shop_items')
       .select('*')
       .eq('id', item_id)
@@ -32,8 +37,8 @@ serve(async (req) => {
 
     if (itemError || !item) throw new Error('Item not found')
 
-    // Create payment order
-    const { data: order, error: orderError } = await supabaseClient
+    // Create payment order (using admin client to bypass RLS)
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('payment_orders')
       .insert({
         user_id: user.id,
