@@ -84,6 +84,17 @@ export function YouthAcademyModernTab({
         </div>
       </section>
 
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+          Plantel da Base
+        </h3>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+            Próximo ciclo: 7 dias
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
         {/* Prospects List */}
         <div className="xl:col-span-3">
@@ -104,7 +115,7 @@ export function YouthAcademyModernTab({
                 <GraduationCap className="w-16 h-16 mb-4 text-white/40" />
                 <p className="text-lg font-black italic uppercase text-white">Academia Vazia</p>
                 <p className="text-xs font-bold uppercase tracking-widest text-white/60 mt-2">
-                  Novos jogadores chegarão conforme o investimento
+                  Um novo jogador chegará automaticamente a cada 7 dias
                 </p>
               </div>
             )}
@@ -188,14 +199,32 @@ export function YouthAcademyModernTab({
                   </div>
 
                   {/* Raridade / Tag */}
-                  <div className="p-4 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                  <div className={cn(
+                    "p-4 rounded-3xl border flex items-center gap-4",
+                    selectedProspect.rarity === 'Craque geracional' ? "bg-amber-500/10 border-amber-500/20" :
+                    selectedProspect.rarity === 'Promessa' ? "bg-cyan-500/10 border-cyan-500/20" :
+                    selectedProspect.rarity === 'Bom talento' ? "bg-blue-500/10 border-blue-500/20" :
+                    "bg-emerald-500/5 border-emerald-500/10"
+                  )}>
+                    <div className={cn(
+                      "w-10 h-10 rounded-2xl flex items-center justify-center",
+                      selectedProspect.rarity === 'Craque geracional' ? "bg-amber-500/20 text-amber-400" :
+                      selectedProspect.rarity === 'Promessa' ? "bg-cyan-500/20 text-cyan-400" :
+                      selectedProspect.rarity === 'Bom talento' ? "bg-blue-500/20 text-blue-400" :
+                      "bg-emerald-500/10 text-emerald-400"
+                    )}>
                        <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Status da Joia</p>
-                      <p className="text-xs font-black text-emerald-400 uppercase italic">
-                         {potentialTierInfo[selectedProspect.potentialTier || 'comum'].label}
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Raridade</p>
+                      <p className={cn(
+                        "text-xs font-black uppercase italic",
+                        selectedProspect.rarity === 'Craque geracional' ? "text-amber-400" :
+                        selectedProspect.rarity === 'Promessa' ? "text-cyan-400" :
+                        selectedProspect.rarity === 'Bom talento' ? "text-blue-400" :
+                        "text-emerald-400"
+                      )}>
+                         {selectedProspect.rarity || 'Comum'}
                       </p>
                     </div>
                   </div>

@@ -434,6 +434,9 @@ export interface YouthProspect extends Player {
   highlightStreak?: number; // # of consecutive matches as standout
   stagnationCycles?: number; // remaining cycles "travado" by event
   injuredCycles?: number; // remaining cycles unavailable by event
+  dominantFoot?: string;
+  rarity?: string;
+  nationality?: string;
 }
 
 /** Compute evolution status based on prospect stats */

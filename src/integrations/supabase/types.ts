@@ -366,6 +366,7 @@ export type Database = {
           detail_color: string | null
           fans: number | null
           id: string
+          last_youth_generation_at: string | null
           logo_url: string | null
           name: string
           primary_color: string | null
@@ -384,6 +385,7 @@ export type Database = {
           detail_color?: string | null
           fans?: number | null
           id?: string
+          last_youth_generation_at?: string | null
           logo_url?: string | null
           name: string
           primary_color?: string | null
@@ -402,6 +404,7 @@ export type Database = {
           detail_color?: string | null
           fans?: number | null
           id?: string
+          last_youth_generation_at?: string | null
           logo_url?: string | null
           name?: string
           primary_color?: string | null
@@ -4842,6 +4845,74 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      youth_prospects: {
+        Row: {
+          age: number
+          attributes: Json
+          club_id: string
+          created_at: string
+          dominant_foot: string
+          id: string
+          market_value: number
+          months_in_academy: number | null
+          morale: number | null
+          name: string
+          nationality: string
+          overall: number
+          personality: string
+          position: string
+          potential: number
+          rarity: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          attributes: Json
+          club_id: string
+          created_at?: string
+          dominant_foot: string
+          id?: string
+          market_value: number
+          months_in_academy?: number | null
+          morale?: number | null
+          name: string
+          nationality: string
+          overall: number
+          personality: string
+          position: string
+          potential: number
+          rarity: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          attributes?: Json
+          club_id?: string
+          created_at?: string
+          dominant_foot?: string
+          id?: string
+          market_value?: number
+          months_in_academy?: number | null
+          morale?: number | null
+          name?: string
+          nationality?: string
+          overall?: number
+          personality?: string
+          position?: string
+          potential?: number
+          rarity?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youth_prospects_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
         ]

@@ -189,77 +189,71 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     infrastructure.physiotherapy.upgradeCompletesAt,
   ]);
 
-  // V5 — Geração automática da Base: 1 ciclo = 7 dias (Semanas), gera jogadores conforme tier de investimento.
-  // Requer academia nível >= 1 e investimento ativo.
+  // V5 — Geração automática da Base: 1 ciclo = 7 dias (Semanas).
+  // Agora utiliza o Edge Function centralizado para garantir integridade e sincronização.
   useEffect(() => {
-    if (!userId || youthInvestment <= 0) return;
-    if (infrastructure.youthAcademy.level < 1) return;
+    if (!userId || infrastructure.youthAcademy.level < 1) return;
     
-    const checkYouthGen = () => {
+    const checkYouthGen = async () => {
       const now = Date.now();
       const lastGen = new Date(lastYouthGenAt).getTime();
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
       
-      const weeksPassed = Math.floor((now - lastGen) / ONE_WEEK);
-      if (weeksPassed >= 1) {
-        const academyLevel = infrastructure.youthAcademy.level;
-        const minOvr = getYouthMinOverall(academyLevel);
-        const maxOvr = getYouthMaxOverall(academyLevel);
-        const investmentTierInfo = getYouthTierByMonthlyCost(youthInvestment);
-        
-        const allNewProspects: YouthProspect[] = [];
-        let currentLastGenTs = lastGen;
-
-        // Process each week (Catch-up mechanism)
-        for (let i = 0; i < weeksPassed; i++) {
-          currentLastGenTs += ONE_WEEK;
-          const weekDate = new Date(currentLastGenTs);
-          const dayOfMonth = weekDate.getDate();
-          const weekOfMonth = Math.ceil(dayOfMonth / 7);
+      if (now - lastGen >= ONE_WEEK) {
+        try {
+          const { data, error } = await supabase.functions.invoke('process-youth-generation');
           
-          const playersToGen = getYouthWeeklyPlayers(investmentTierInfo.tier, weekOfMonth, investmentTierInfo.maxPlayersPerMonth);
-          
-          for (let j = 0; j < playersToGen; j++) {
-            const p = generatePlayer([minOvr, maxOvr], [16, 17]);
-            // Apply quality bonus from investment
-            const qualityBoost = Math.floor(Math.random() * (investmentTierInfo.qualityBonus / 10));
-            const finalOverall = Math.min(85, p.overall + qualityBoost);
-            
-            const potential = Math.min(99, finalOverall + 15 + Math.floor(Math.random() * (15 + investmentTierInfo.qualityBonus / 5)));
-            const potTier = getPotentialTier(potential, finalOverall);
+          if (error) {
+            console.error('[Base] Erro ao processar geração:', error);
+            return;
+          }
 
+          if (data?.success && data?.prospect) {
+            const p = data.prospect;
             const newProspect: YouthProspect = {
-              ...p,
-              overall: finalOverall,
-              potential,
-              monthsInAcademy: 0,
-              potentialTier: potTier,
+              id: p.id,
+              name: p.name,
+              age: p.age,
+              position: p.position as any,
+              overall: p.overall,
+              potential: p.potential,
+              attributes: p.attributes as any,
+              marketValue: Number(p.market_value),
+              personality: p.personality as any,
+              dominantFoot: p.dominant_foot,
+              rarity: p.rarity,
+              nationality: p.nationality,
+              morale: p.morale || 100,
+              monthsInAcademy: p.months_in_academy || 0,
+              potentialTier: getPotentialTier(p.potential, p.overall),
               evolutionStatus: 'evoluindo',
+              salary: 500,
+              stamina: 100,
+              goals: 0,
+              assists: 0,
+              contract: 3,
+              gamesPlayed: 0,
+              trainingProgress: 0
             };
 
-            allNewProspects.push(newProspect);
-
-            // Special notifications for rare talents
-            if (potTier === 'joia_base' || potTier === 'geracao_dourada') {
-              toast.success(`💎 Joia da base descoberta: ${p.name}!`, {
-                description: `Um talento ${potentialTierInfo[potTier].label} surgiu na academia.`
-              });
-            }
+            setYouthProspects(prev => [...prev, newProspect]);
+            setLastYouthGenAt(new Date().toISOString());
+            
+            toast.success(`🌟 Novo junior chegou: ${p.name}!`, {
+              description: `${p.rarity === 'Comum' ? 'Um novo talento' : `Um talento ${p.rarity}`} surgiu na academia.`,
+              icon: '🎓'
+            });
           }
+        } catch (err) {
+          console.error('[Base] Exception na geração:', err);
         }
-        
-        if (allNewProspects.length > 0) {
-          setYouthProspects(prev => [...prev, ...allNewProspects]);
-          toast.success(`🌟 ${allNewProspects.length} novo(s) jogador(es) surgiram na base!`);
-        }
-        setLastYouthGenAt(new Date(now).toISOString());
       }
     };
     
-    const interval = setInterval(checkYouthGen, 60_000); // Check every minute
+    const interval = setInterval(checkYouthGen, 300_000); // Check every 5 minutes
     checkYouthGen();
     return () => clearInterval(interval);
-  }, [userId, youthInvestment, lastYouthGenAt, infrastructure.youthAcademy.level]);
+  }, [userId, lastYouthGenAt, infrastructure.youthAcademy.level]);
 
   const chargeYouthInvestment = useCallback((
     clubBudget: number,

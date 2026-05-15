@@ -1,9 +1,10 @@
 import { Player } from '@/types/game';
 import { motion } from 'framer-motion';
-import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
+import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ovrTier, positionColors, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';
+import { PotentialTier, potentialTierInfo } from '@/types/infrastructure';
 
 interface Props {
   player: Player;
@@ -28,9 +29,13 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
       className={cn(
         'relative w-full aspect-[2/3] rounded-[2rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
-        selected 
-          ? 'border-emerald-500 shadow-emerald-500/20' 
-          : 'border-white/10 hover:border-white/30 bg-zinc-900/40 backdrop-blur-md'
+        (player as any).rarity && (player as any).rarity !== 'Comum'
+          ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
+            (player as any).rarity === 'Promessa' ? 'border-cyan-400 shadow-cyan-400/20' :
+            'border-blue-400 shadow-blue-400/20'
+          : selected 
+            ? 'border-emerald-500 shadow-emerald-500/20' 
+            : 'border-white/10 hover:border-white/30 bg-zinc-900/40 backdrop-blur-md'
       )}
     >
       {/* Dynamic Background Gradient */}
@@ -50,6 +55,9 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
           <div className="flex flex-col items-center">
             <div className={cn(
               'text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
+              (player as any).rarity === 'Craque geracional' ? 'text-amber-400' :
+              (player as any).rarity === 'Promessa' ? 'text-cyan-400' :
+              (player as any).rarity === 'Bom talento' ? 'text-blue-400' :
               tier.color
             )}>
               {player.overall}
@@ -70,7 +78,17 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
           </div>
           
           <div className="flex flex-col items-end gap-1">
-             <span className="text-xl filter drop-shadow-md">{flagFor((player as any).country)}</span>
+             <span className="text-xl filter drop-shadow-md">{flagFor((player as any).country || (player as any).nationality)}</span>
+             {(player as any).rarity && (player as any).rarity !== 'Comum' && (
+               <div className={cn(
+                 "p-1 rounded-lg border",
+                 (player as any).rarity === 'Craque geracional' ? "bg-amber-500/20 border-amber-500/30 text-amber-400" :
+                 (player as any).rarity === 'Promessa' ? "bg-cyan-500/20 border-cyan-500/30 text-cyan-400" :
+                 "bg-blue-500/20 border-blue-500/30 text-blue-400"
+               )}>
+                 <Sparkles className="w-3 h-3" />
+               </div>
+             )}
              {isStarter && (
                <div className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30">
                  <Shield className="w-3 h-3 text-emerald-400" />
