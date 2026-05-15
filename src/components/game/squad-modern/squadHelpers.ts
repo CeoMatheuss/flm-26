@@ -1,6 +1,6 @@
 import { Player } from '@/types/game';
 
-export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado';
+export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora';
 
 export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
   titular: { 
@@ -65,6 +65,13 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     bg: 'bg-red-400/5', 
     border: 'border-red-400/10',
     dot: 'bg-red-400/50'
+  },
+  fora: { 
+    label: 'Fora', 
+    color: 'text-zinc-500', 
+    bg: 'bg-zinc-500/10', 
+    border: 'border-zinc-500/20',
+    dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.5)]'
   },
 };
 
