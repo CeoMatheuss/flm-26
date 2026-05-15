@@ -151,7 +151,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       seller_id: userId,
       seller_club_name: clubName,
       player_data: player,
-      player_id: player.id,
+      player_id: player.id.includes('-') ? player.id : null, // Only set player_id if it's a valid UUID
       player_name: player.name,
       player_overall: player.overall,
       player_age: player.age || 25,
