@@ -27,14 +27,13 @@ interface SquadModernProps {
   onUpdatePlayers: (players: Player[]) => void;
   youthProspects: YouthProspect[];
   onPromoteYouth: (id: string) => void;
-  onPromotionDecision: (id: string, decision: PromotionDecision, details?: any) => void;
   youthInvestment: number;
   onSetYouthInvestment: (amount: number) => void;
 }
 
 export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
-  youthProspects, onPromoteYouth, onPromotionDecision, youthInvestment, onSetYouthInvestment,
+  youthProspects, onPromoteYouth, youthInvestment, onSetYouthInvestment,
   userId,
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
