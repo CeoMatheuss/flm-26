@@ -7,7 +7,8 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   ShoppingBag, DollarSign, Users, Crown, Package, 
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
-  Loader2, History, Info, TrendingUp
+  Loader2, History, Info, TrendingUp, Building2, 
+  Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,43 +18,86 @@ interface LojaProps {
   club: any;
   infrastructure: any;
   userId: string;
+  isPremium?: boolean;
   onUpgradeFacility?: (facility: string) => void;
   onAcceptSponsor?: (offer: any) => void;
 }
 
 const CATEGORIES = [
-  { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign },
-  { id: 'marketing', name: 'Marketing', icon: Rocket },
-  { id: 'packs', name: 'Pacotes', icon: Package },
-  { id: 'history', name: 'Histórico', icon: History },
+  { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
+  { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
+  { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
+  { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
+  { id: 'saude', name: 'Saúde', icon: Stethoscope, db: 'physio' },
+  { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
-export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
+export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('patrocinios');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();
-    if (userId) fetchHistory();
+    if (userId) {
+      fetchHistory();
+      
+      // Real-time listener for purchase history
+      const channel = supabase
+        .channel('public:payment_orders_history')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'payment_orders',
+          filter: `user_id=eq.${userId}`
+        }, () => {
+          fetchHistory();
+        })
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [userId]);
 
   async function fetchItems() {
-    setLoading(true);
-    const { data } = await supabase.from('shop_items').select('*');
-    if (data) setItems(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error: fetchErr } = await supabase
+        .from('shop_items')
+        .select('*')
+        .order('price_cents', { ascending: true });
+        
+      if (fetchErr) throw fetchErr;
+      if (data) setItems(data);
+    } catch (e: any) {
+      console.error('Error fetching shop items:', e);
+      setError('Erro ao carregar itens da loja. Tente novamente.');
+      toast.error('Erro de conexão com a loja');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function fetchHistory() {
-    const { data } = await supabase
-      .from('payment_orders')
-      .select('*, shop_items(name)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    if (data) setPurchaseHistory(data);
+    try {
+      const { data, error: histErr } = await supabase
+        .from('payment_orders')
+        .select('*, shop_items(name)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+      if (histErr) throw histErr;
+      if (data) setPurchaseHistory(data);
+    } catch (e) {
+      console.error('Error fetching history:', e);
+    }
   }
 
   const handlePurchase = async (item: any) => {
@@ -80,7 +124,7 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
         window.location.href = data.init_point;
       } else if (data?.status === 'approved' || item.price_cents === 0) {
         setShowPremium(true);
-        toast.success(`Compra concluída: ${item.name}! Premium ativado.`);
+        toast.success(`Compra concluída: ${item.name}!`);
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
@@ -88,116 +132,215 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
       }
     } catch (e: any) {
       console.error(e);
-      toast.error('Erro ao processar compra');
+      toast.error('Erro ao processar compra. Verifique sua conexão.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto">
+    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto scrollbar-hide">
       {/* HEADER */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl">
+      <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
         <div className="absolute top-4 right-6 opacity-10">
           <ShoppingBag className="h-24 w-24 text-emerald-400" />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }))} className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2">
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-emerald-500/10 blur-[80px] rounded-full" />
+        
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }))} 
+            className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2 h-9"
+          >
              <ChevronRight className="h-4 w-4 rotate-180" /> Voltar ao Clube
           </Button>
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-none uppercase font-black text-[10px] tracking-widest px-3 py-1">Professional Store</Badge>
-        </div>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none">Loja <span className="text-emerald-500">FLM 26</span></h1>
-        <p className="text-emerald-100/60 text-xs font-medium mt-1">Overhaul completo: estratégia, torcida e Premium.</p>
-        
-        <div className="flex gap-4 mt-6">
-          <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3">
-            <DollarSign className="text-emerald-400 h-5 w-5" />
-            <p className="font-black text-sm sm:text-base">R$ {(club.budget || 0).toLocaleString()}</p>
+          <div className="flex gap-2">
+            {isPremium && (
+              <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase font-black text-[10px] tracking-widest px-3 py-1 gap-1">
+                <Crown className="h-3 w-3" /> Membro Premium
+              </Badge>
+            )}
+            <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 uppercase font-black text-[10px] tracking-widest px-3 py-1">Professional Store</Badge>
           </div>
-          <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3">
-            <Users className="text-emerald-400 h-5 w-5" />
-            <p className="font-black text-sm sm:text-base">{(club.fans || 0).toLocaleString()}</p>
+        </div>
+        
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none mb-1 relative z-10">
+          Loja <span className="text-emerald-500">FLM 26</span>
+        </h1>
+        <p className="text-emerald-100/60 text-xs font-medium relative z-10">Overhaul completo: estratégia, torcida e benefícios exclusivos.</p>
+        
+        <div className="flex flex-wrap gap-4 mt-8 relative z-10">
+          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
+            <div className="bg-emerald-500/20 p-2 rounded-lg">
+              <DollarSign className="text-emerald-400 h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
+              <p className="font-black text-lg">R$ {(club.budget || 0).toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
+            <div className="bg-emerald-500/20 p-2 rounded-lg">
+              <Users className="text-emerald-400 h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Torcedores</p>
+              <p className="font-black text-lg">{(club.fans || 0).toLocaleString()}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-        <ScrollArea className="w-full whitespace-nowrap pb-2">
-          <TabsList className="bg-transparent gap-2">
-            {CATEGORIES.map(cat => (
-              <TabsTrigger 
-                key={cat.id} value={cat.id}
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-full bg-black/40 border border-white/5 px-6"
-              >
-                <div className="flex items-center gap-2">
-                   <cat.icon className="h-3 w-3" />
-                   {cat.name}
-                </div>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </ScrollArea>
-
-        {CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
-          <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.filter(i => i.category === (cat.id === 'patrocinios' ? 'sponsorship' : cat.id)).map(item => (
-              <StoreCard key={item.id} item={item} clubFans={club.fans || 0} onPurchase={() => handlePurchase(item)} />
-            ))}
-          </TabsContent>
-        ))}
-
-        <TabsContent value="history" className="space-y-4">
-          <Card className="bg-black/40 border border-white/5">
-            <CardHeader>
-              <CardTitle className="text-sm font-black uppercase">Últimas Transações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {purchaseHistory.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-10 text-center italic">Nenhuma transação registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {purchaseHistory.map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${p.status === 'approved' ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-                          {p.status === 'approved' ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Info className="h-4 w-4 text-red-400" />}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold">{p.shop_items?.name || 'Item desconhecido'}</p>
-                          <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')} às {new Date(p.created_at).toLocaleTimeString('pt-BR')}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-black">R$ {(p.amount_cents / 100).toLocaleString()}</p>
-                        <Badge className={`text-[9px] uppercase ${p.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} border-none`}>
-                          {p.status}
-                        </Badge>
-                      </div>
+      <div className="flex flex-col gap-6">
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <div className="bg-black/20 p-1.5 rounded-2xl border border-white/5 mb-6">
+            <ScrollArea className="w-full whitespace-nowrap">
+              <TabsList className="bg-transparent gap-2 h-auto p-0">
+                {CATEGORIES.map(cat => (
+                  <TabsTrigger 
+                    key={cat.id} value={cat.id}
+                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl bg-transparent text-white/60 border border-transparent data-[state=active]:border-emerald-400/30 px-5 py-2.5 transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                       <cat.icon className="h-4 w-4" />
+                       <span className="text-xs font-black uppercase italic">{cat.name}</span>
                     </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <ScrollBar orientation="horizontal" className="opacity-0" />
+            </ScrollArea>
+          </div>
+
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+              <div className="relative">
+                <Loader2 className="h-12 w-12 text-emerald-500 animate-spin" />
+                <div className="absolute inset-0 bg-emerald-500/20 blur-xl animate-pulse" />
+              </div>
+              <p className="text-sm font-bold text-emerald-500/70 animate-pulse">Sincronizando com o servidor...</p>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="bg-red-500/10 border border-red-500/30 p-8 rounded-3xl text-center space-y-4 my-10">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+              <h3 className="text-lg font-black uppercase italic">Ops! Algo deu errado</h3>
+              <p className="text-sm text-red-400/80 max-w-xs mx-auto">{error}</p>
+              <Button onClick={fetchItems} className="bg-red-600 hover:bg-red-500 text-white rounded-xl gap-2 font-black uppercase italic">
+                <RefreshCw className="h-4 w-4" /> Tentar Novamente
+              </Button>
+            </div>
+          )}
+
+          {!loading && !error && CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
+            <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 outline-none">
+              <AnimatePresence mode="popLayout">
+                {items
+                  .filter(i => i.category === cat.db)
+                  .map((item, idx) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <StoreCard 
+                        item={item} 
+                        clubFans={club.fans || 0} 
+                        isPremium={isPremium}
+                        onPurchase={() => handlePurchase(item)} 
+                      />
+                    </motion.div>
                   ))}
+              </AnimatePresence>
+              
+              {items.filter(i => i.category === cat.db).length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                   <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
+                   <p className="text-sm text-white/40 font-medium italic">Nenhum item disponível nesta categoria no momento.</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          ))}
+
+          <TabsContent value="history" className="space-y-4 outline-none">
+            <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+              <CardHeader className="border-b border-white/5 bg-white/5 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2">
+                    <History className="h-4 w-4 text-emerald-400" /> Histórico de Compras
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={fetchHistory} className="h-8 text-[10px] font-black uppercase italic text-emerald-400">
+                    Atualizar
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {purchaseHistory.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div className="bg-white/5 p-4 rounded-full">
+                      <History className="h-8 w-8 text-white/10" />
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">Nenhuma transação registrada em sua conta.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {purchaseHistory.map((p: any) => (
+                      <div key={p.id} className="group flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-xl ${p.status === 'approved' ? 'bg-emerald-500/10' : 'bg-red-500/10'} border border-white/5`}>
+                            {p.status === 'approved' ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <AlertCircle className="h-5 w-5 text-red-400" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black uppercase italic">{p.shop_items?.name || 'Item do Sistema'}</p>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium">
+                              <span>{new Date(p.created_at).toLocaleDateString('pt-BR')}</span>
+                              <span className="w-1 h-1 rounded-full bg-white/10" />
+                              <span>{new Date(p.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-base font-black text-white">R$ {(p.amount_cents / 100).toLocaleString()}</p>
+                          <Badge className={`text-[8px] uppercase tracking-wider font-black ${p.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} border-none rounded-md px-1.5`}>
+                            {p.status === 'approved' ? 'Concluído' : p.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* SUCCESS MODAL */}
       <AnimatePresence>
         {showPremium && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm"
           >
             <motion.div 
-              initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-              className="bg-[#050810] border border-emerald-500/30 p-8 rounded-3xl text-center space-y-4 max-w-sm w-full"
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-[#050810] border border-emerald-500/30 p-8 rounded-[2.5rem] text-center space-y-6 max-w-sm w-full shadow-[0_0_50px_rgba(16,185,129,0.2)]"
             >
-              <Crown className="w-20 h-20 text-amber-500 mx-auto animate-pulse" />
-              <h2 className="text-2xl font-black italic uppercase text-emerald-400 tracking-tighter">Premium FLM Ativado</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">Você recebeu 30 dias de benefícios exclusivos: obras rápidas e bônus financeiros!</p>
-              <Button onClick={() => setShowPremium(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase w-full rounded-xl py-6">Continuar</Button>
+              <div className="relative mx-auto w-24 h-24">
+                <div className="absolute inset-0 bg-amber-500/20 blur-2xl animate-pulse rounded-full" />
+                <Crown className="w-full h-full text-amber-500 relative z-10" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-3xl font-black italic uppercase text-emerald-400 tracking-tighter">Pedido Confirmado!</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed px-4">Sua compra foi processada com sucesso. Os benefícios já foram aplicados à sua conta!</p>
+              </div>
+              <Button onClick={() => setShowPremium(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic w-full rounded-2xl py-7 text-lg shadow-lg shadow-emerald-900/20">
+                Acessar Clube
+              </Button>
             </motion.div>
           </motion.div>
         )}
@@ -206,55 +349,105 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
   );
 }
 
-function StoreCard({ item, clubFans, onPurchase }: any) {
+function StoreCard({ item, clubFans, isPremium, onPurchase }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
   const price = item.price_cents / 100;
+  const isFree = item.price_cents === 0;
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border ${isBlocked ? 'border-white/5 bg-black/40 grayscale' : `border-emerald-500/20 bg-[#0A0D14] hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]`} transition-all duration-300 flex flex-col h-full`}>
+    <div className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 flex flex-col h-full ${
+      isBlocked 
+        ? 'border-white/5 bg-black/40 grayscale' 
+        : `border-white/10 bg-[#0A0D14] hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.1)]`
+    }`}>
       {item.image_url && (
-        <div className="relative aspect-video overflow-hidden">
-           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] to-transparent" />
+        <div className="relative aspect-[16/10] overflow-hidden">
+           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/20 to-transparent" />
         </div>
       )}
-      <div className="relative z-10 space-y-3 p-4 flex-1 flex flex-col">
-        <div className="flex justify-between items-start">
-          <Badge className="bg-emerald-500/10 text-emerald-400 border-none uppercase font-black text-[9px]">{item.rarity}</Badge>
-          {isBlocked && <Lock className="h-4 w-4 text-red-500" />}
+      
+      {!item.image_url && (
+        <div className="h-24 bg-gradient-to-br from-emerald-500/10 to-transparent flex items-center justify-center">
+          <Package className="h-10 w-10 text-emerald-500/20" />
         </div>
-        <h3 className="text-lg font-black uppercase italic tracking-tight">{item.name}</h3>
-        <p className="text-[10px] text-muted-foreground leading-relaxed flex-1">{item.description}</p>
+      )}
+
+      <div className="relative z-10 space-y-4 p-5 flex-1 flex flex-col">
+        <div className="flex justify-between items-center">
+          <Badge className={`border-none uppercase font-black text-[9px] px-2.5 py-1 ${
+            item.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-400' :
+            item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400' :
+            'bg-emerald-500/10 text-emerald-400'
+          }`}>
+            {item.rarity || 'Comum'}
+          </Badge>
+          {isBlocked ? (
+            <div className="bg-red-500/20 p-1.5 rounded-lg border border-red-500/20">
+              <Lock className="h-3.5 w-3.5 text-red-400" />
+            </div>
+          ) : (
+            isPremium && item.id === 'premium-pass' ? (
+              <Badge className="bg-emerald-500 text-white font-black text-[8px] uppercase">Ativo</Badge>
+            ) : null
+          )}
+        </div>
+        
+        <div className="space-y-1">
+          <h3 className="text-xl font-black uppercase italic tracking-tighter leading-tight group-hover:text-emerald-400 transition-colors">
+            {item.name}
+          </h3>
+          <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-medium line-clamp-3">
+            {item.description}
+          </p>
+        </div>
         
         {isBlocked && (
-          <div className="text-[9px] font-bold text-red-400 bg-red-400/10 p-2 rounded-lg">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-red-400 bg-red-400/10 p-2.5 rounded-xl border border-red-500/10">
+            <Users className="h-3 w-3" />
             Requer {item.min_fans.toLocaleString()} torcedores
           </div>
         )}
 
         {item.category === 'sponsorship' && !isBlocked && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
-               <p className="text-[8px] text-muted-foreground uppercase font-black">Imediato</p>
-               <p className="text-xs font-black text-emerald-400">R$ {((item.bonus_data?.immediate_cash || 0)/1000).toLocaleString()}k</p>
+          <div className="grid grid-cols-2 gap-2 py-1">
+            <div className="bg-white/5 p-2 rounded-xl text-center border border-white/5 group-hover:border-emerald-500/20 transition-colors">
+               <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">Imediato</p>
+               <p className="text-sm font-black text-emerald-400">R$ {((item.bonus_data?.immediate_cash || 0)/1000).toLocaleString()}k</p>
             </div>
-            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
-               <p className="text-[8px] text-muted-foreground uppercase font-black">Diário</p>
-               <p className="text-xs font-black text-emerald-400">R$ {((item.bonus_data?.daily_cash || 0)/1000).toLocaleString()}k</p>
+            <div className="bg-white/5 p-2 rounded-xl text-center border border-white/5 group-hover:border-emerald-500/20 transition-colors">
+               <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">Bônus</p>
+               <p className="text-sm font-black text-emerald-400">R$ {((item.bonus_data?.daily_cash || 0)/1000).toLocaleString()}k</p>
             </div>
           </div>
         )}
 
-        <Button 
-          disabled={isBlocked} 
-          onClick={onPurchase}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic mt-auto rounded-xl"
-        >
-          {item.price_cents === 0 ? 'Assinar Contrato' : `Comprar · R$ ${price.toLocaleString()}`}
-        </Button>
+        <div className="pt-2 mt-auto">
+          <Button 
+            disabled={isBlocked} 
+            onClick={onPurchase}
+            className={`w-full font-black uppercase italic h-12 rounded-2xl transition-all duration-300 shadow-lg ${
+              isBlocked 
+                ? 'bg-white/5 text-white/40 border border-white/5' 
+                : isFree 
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20' 
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 group-hover:scale-[1.02] active:scale-95'
+            }`}
+          >
+            {isFree ? 'Assinar Contrato' : (
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-sm">R$ {price.toLocaleString()}</span>
+                <span className="opacity-40 font-normal">|</span>
+                <span className="text-[10px]">Comprar</span>
+              </div>
+            )}
+          </Button>
+        </div>
       </div>
       
-      {!isBlocked && <div className="absolute inset-0 bg-emerald-500/5 -z-0 opacity-0 hover:opacity-100 transition-opacity" />}
+      {!isBlocked && (
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] rounded-full -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-500/10 transition-all" />
+      )}
     </div>
   );
 }
