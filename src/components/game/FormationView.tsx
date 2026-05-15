@@ -202,12 +202,15 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[2/3] bg-[#0a1a0f] rounded-3xl overflow-hidden border border-emerald-500/20 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] select-none">
-      {/* Premium Field Texture */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[4/5] lg:aspect-[2/3] bg-[#07140b] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] select-none">
+      {/* Pitch Pattern (Stripes) */}
+      <div className="absolute inset-0 flex flex-col pointer-events-none">
+        {[...Array(10)].map((_, i) => (
+          <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-emerald-500/[0.02]' : 'bg-transparent'}`} />
+        ))}
+      </div>
       
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-emerald-950/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-emerald-950/20 pointer-events-none" />
       
       {/* Pitch markings - Modern Style */}
       <div className="absolute inset-0 opacity-30">
