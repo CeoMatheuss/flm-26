@@ -111,38 +111,76 @@ Deno.serve(async (req) => {
       }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Fetch academy info from game_saves
+    const { data: save, error: saveError } = await adminClient
+      .from('game_saves')
+      .select('club_data')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const clubData = save?.club_data || {};
+    const infrastructure = clubData.infrastructure || {};
+    const academyLevel = infrastructure.youthAcademy?.level || 1;
+    const investmentAmount = clubData.youthInvestment || 0;
+
+    // Determine nationality
     const nationality = Math.random() < 0.9 ? (club.country || 'Brasil') : getRandomElement(['Brasil', 'Portugal', 'Argentina']);
     const name = `${getRandomElement(NAMES_BY_COUNTRY[nationality] || NAMES_BY_COUNTRY['Brasil'])} ${getRandomElement(SURNAMES_BY_COUNTRY[nationality] || SURNAMES_BY_COUNTRY['Brasil'])}`;
+    
+    // Age: 15-17 only
     const age = Math.floor(Math.random() * 3) + 15;
     const position = getRandomElement(POSITIONS);
     
+    // OVR based on age (Realism update)
+    // 15: 45-58, 16: 48-62, 17: 52-66
+    let minOvr = 45;
+    let maxOvr = 58;
+    if (age === 16) { minOvr = 48; maxOvr = 62; }
+    if (age === 17) { minOvr = 52; maxOvr = 66; }
+
+    // Bonus based on academy level (0-10 OVR boost)
+    const academyBonus = Math.floor(academyLevel / 3);
+    minOvr += academyBonus;
+    maxOvr += academyBonus;
+
+    let baseOvr = minOvr + Math.floor(Math.random() * (maxOvr - minOvr + 1));
+    
+    // Investment bonus (0-5 OVR boost)
+    if (investmentAmount >= 2400000) baseOvr += 5;
+    else if (investmentAmount >= 1200000) baseOvr += 3;
+    else if (investmentAmount >= 600000) baseOvr += 1;
+
+    // Rarity and Potential logic
     const rand = Math.random();
     let rarity: 'Comum' | 'Bom talento' | 'Promessa' | 'Craque geracional' = 'Comum';
-    let baseOvr = 45 + Math.floor(Math.random() * 10);
-    let potential = baseOvr + 15 + Math.floor(Math.random() * 10);
+    
+    // Potentials: Comum: base+10 to 75, Talento: 76-85, Promessa: 86-94, Craque: 95-99
+    let potential = baseOvr + 10 + Math.floor(Math.random() * 15);
 
-    if (rand < 0.01) {
+    // Influenced by academy level and investment
+    const rarityLuck = rand + (academyLevel * 0.005) + (investmentAmount > 2000000 ? 0.05 : 0);
+
+    if (rarityLuck > 0.98) {
       rarity = 'Craque geracional';
-      baseOvr += 15;
       potential = 95 + Math.floor(Math.random() * 5);
-    } else if (rand < 0.05) {
+    } else if (rarityLuck > 0.90) {
       rarity = 'Promessa';
-      baseOvr += 10;
       potential = 88 + Math.floor(Math.random() * 7);
-    } else if (rand < 0.20) {
+    } else if (rarityLuck > 0.75) {
       rarity = 'Bom talento';
-      baseOvr += 5;
       potential = 80 + Math.floor(Math.random() * 8);
     }
 
+    potential = Math.max(potential, baseOvr + 5);
     potential = Math.min(99, potential);
-    const overall = Math.min(potential - 5, baseOvr);
+    const overall = baseOvr;
 
     const attributes = generatePlayerAttributes(overall, position);
     const personality = getRandomElement(PERSONALITIES);
     const dominantFoot = Math.random() < 0.7 ? 'Destro' : Math.random() < 0.9 ? 'Canhoto' : 'Ambidestro';
     
-    const marketValue = (overall * overall * 1000) + (potential * potential * 2000);
+    const marketValue = (overall * overall * 1200) + (potential * potential * 2500);
+
 
     const { data: prospect, error: insertError } = await adminClient
       .from('youth_prospects')

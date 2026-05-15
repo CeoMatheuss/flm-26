@@ -371,22 +371,17 @@ export function getYouthWeeklyPlayers(tier: YouthInvestmentTier, weekOfMonth: nu
   return 0;
 }
 
-// OVR ranges per academy level — Base V2
+// OVR ranges per age (Realism update)
 export function getYouthMinOverall(academyLevel: number): number {
-  if (academyLevel <= 5) return 40;
-  if (academyLevel <= 10) return 45;
-  if (academyLevel <= 20) return 50;
-  if (academyLevel <= 25) return 55;
-  return 60; // 26-30
+  const base = academyLevel <= 5 ? 45 : academyLevel <= 10 ? 48 : 52;
+  return base + Math.floor(academyLevel / 5);
 }
 
 export function getYouthMaxOverall(academyLevel: number): number {
-  if (academyLevel <= 5) return 55;
-  if (academyLevel <= 10) return 60;
-  if (academyLevel <= 20) return 70;
-  if (academyLevel <= 25) return 80;
-  return 85; // 26-30 (with chance of POT 99)
+  const base = academyLevel <= 5 ? 58 : academyLevel <= 10 ? 62 : 66;
+  return base + Math.floor(academyLevel / 4);
 }
+
 
 // Hidden potential tier (Rarities)
 export type PotentialTier = 'comum' | 'raro' | 'elite' | 'joia_base' | 'geracao_dourada';
@@ -399,13 +394,15 @@ export function getPotentialTier(potential: number, overall: number): PotentialT
   return 'comum';
 }
 
+
 export const potentialTierInfo: Record<PotentialTier, { label: string; emoji: string; color: string; border: string }> = {
   comum: { label: 'Comum', emoji: '⚪', color: 'text-white/40', border: 'border-white/10' },
-  raro: { label: 'Raro', emoji: '🔵', color: 'text-blue-400', border: 'border-blue-400/30' },
-  elite: { label: 'Elite', emoji: '🟣', color: 'text-purple-400', border: 'border-purple-400/30' },
+  raro: { label: 'Bom talento', emoji: '🔵', color: 'text-blue-400', border: 'border-blue-400/30' },
+  elite: { label: 'Promessa', emoji: '🟣', color: 'text-purple-400', border: 'border-purple-400/30' },
   joia_base: { label: 'Joia da Base', emoji: '💎', color: 'text-cyan-400', border: 'border-cyan-400/30' },
-  geracao_dourada: { label: 'Geração Dourada', emoji: '🌟', color: 'text-amber-400', border: 'border-amber-400/30' },
+  geracao_dourada: { label: 'Craque Geracional', emoji: '🌟', color: 'text-amber-400', border: 'border-amber-400/30' },
 };
+
 
 // Player evolution status
 export type EvolutionStatus = 'evoluindo' | 'estavel' | 'travado';

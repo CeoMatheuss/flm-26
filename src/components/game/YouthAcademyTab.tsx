@@ -33,12 +33,13 @@ interface Props {
 }
 
 const getLevelTier = (level: number) => {
-  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens fracos (OVR 40-55)' };
-  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Algum potencial (OVR 45-60)' };
-  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas promessas (OVR 50-70)' };
-  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Talentos raros (OVR 55-80)' };
-  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Craques geracionais (OVR 60-85, POT 99)' };
+  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens crus (OVR 45-58)' };
+  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Estrutura simples (OVR 48-62)' };
+  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas instalações (OVR 52-66)' };
+  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Referência nacional (OVR + Bônus)' };
+  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Fábrica de craques (OVR Alto, POT 99)' };
 };
+
 
 export function YouthAcademyTab({
   prospects, academyLevel, academyUpgradeCompletesAt, isPremium = false,
@@ -315,59 +316,79 @@ export function YouthAcademyTab({
                 const isInjured = (p.injuredCycles ?? 0) > 0;
 
                 return (
-                  <div key={p.id} className={`flex flex-col gap-2 p-3 rounded-lg bg-accent/30 border border-border/10 hover:bg-accent/50 transition-colors ${isInjured ? 'opacity-60' : ''}`}>
+                  <div key={p.id} className={`flex flex-col gap-2 p-3 rounded-lg bg-accent/30 border border-border/10 hover:bg-accent/50 transition-colors ${isInjured ? 'opacity-60' : ''} ${p.rarity !== 'Comum' ? 'border-primary/20 bg-primary/5' : ''}`}>
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <Badge variant="outline" className="text-[10px] shrink-0">{p.position}</Badge>
+                      <div className="relative">
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${p.rarity === 'Craque geracional' ? 'bg-amber-500 text-black font-black' : ''}`}>{p.position}</Badge>
+                        {p.rarity === 'Craque geracional' && (
+                          <div className="absolute -top-3 -left-3 animate-pulse">
+                            <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-medium text-xs sm:text-sm truncate">{p.name}</p>
+                          <p className={`font-medium text-xs sm:text-sm truncate ${p.rarity !== 'Comum' ? 'text-primary' : ''}`}>{p.name}</p>
                           {tagInfo && (
                             <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${tagInfo.color}`}>
                               {tagInfo.emoji} {tagInfo.label}
                             </span>
                           )}
+                          {p.rarity !== 'Comum' && (
+                            <Badge variant="secondary" className="text-[8px] bg-primary/20 text-primary border-primary/30 uppercase font-black">
+                              {p.rarity}
+                            </Badge>
+                          )}
                           {isInjured && <span className="text-[9px] px-1.5 py-0.5 rounded border bg-red-500/20 text-red-300 border-red-500/40">🏥 Lesionado</span>}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                           {p.age} anos • {p.monthsInAcademy ?? 0}m na base • <span className={evoInfo.color}>{evoInfo.emoji} {evoInfo.label}</span>
+                          {evoStatus === 'evoluindo' && <TrendingUp className="h-3 w-3 text-emerald-400 ml-0.5" />}
                         </p>
                       </div>
-                      <div className="text-center shrink-0">
-                        <p className="text-base font-bold">{p.overall}</p>
-                        <p className="text-[8px] text-muted-foreground uppercase">OVR</p>
+                      <div className="text-center shrink-0 bg-accent/50 p-1 rounded-md min-w-[35px]">
+                        <p className="text-base font-black leading-none">{p.overall}</p>
+                        <p className="text-[8px] text-muted-foreground uppercase mt-0.5">OVR</p>
                       </div>
                       {hasScouts ? (
-                        <div className="text-center shrink-0">
-                          <p className={`text-base font-bold ${potInfo.color}`}>{p.potential}</p>
-                          <p className="text-[8px] text-muted-foreground uppercase">POT</p>
+                        <div className="text-center shrink-0 bg-primary/10 p-1 rounded-md min-w-[35px] border border-primary/20">
+                          <p className={`text-base font-black leading-none ${potInfo.color}`}>{p.potential}</p>
+                          <p className="text-[8px] text-muted-foreground uppercase mt-0.5">POT</p>
                         </div>
                       ) : (
-                        <div className="text-center shrink-0">
-                          <p className="text-base font-bold text-muted-foreground/30">???</p>
-                          <p className="text-[8px] text-muted-foreground uppercase">POT</p>
+                        <div className="text-center shrink-0 bg-muted/20 p-1 rounded-md min-w-[35px]">
+                          <p className="text-base font-bold text-muted-foreground/30">??</p>
+                          <p className="text-[8px] text-muted-foreground uppercase mt-0.5">POT</p>
                         </div>
                       )}
                     </div>
                     {hasScouts && (
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-semibold ${potInfo.color} shrink-0`}>{potInfo.emoji} {potInfo.label}</span>
-                        <Progress value={(p.overall / Math.max(1, p.potential)) * 100} className="h-1.5 progress-glow flex-1" />
-                        <span className="text-[9px] text-muted-foreground shrink-0">{Math.round((p.overall / Math.max(1, p.potential)) * 100)}%</span>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-semibold ${potInfo.color} shrink-0`}>{potInfo.emoji} {potInfo.label}</span>
+                          <Progress value={(p.overall / Math.max(1, p.potential)) * 100} className="h-1.5 progress-glow flex-1" />
+                          <span className="text-[9px] text-muted-foreground shrink-0">{Math.round((p.overall / Math.max(1, p.potential)) * 100)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[9px] bg-accent/40 p-1.5 rounded">
+                          <span className="text-muted-foreground">Previsão de crescimento:</span>
+                          <span className="font-bold text-primary">+{p.potential - p.overall} OVR</span>
+                        </div>
                       </div>
                     )}
-                    <div className="flex gap-1.5">
-                      <Button size="sm" onClick={() => onPromote(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] gap-1">
+                    <div className="flex gap-1.5 mt-1">
+                      <Button size="sm" onClick={() => onPromote(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] font-black uppercase tracking-tighter gap-1">
                         <UserPlus className="h-3 w-3" /> Promover
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => onSell(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] gap-1">
-                        <DollarSign className="h-3 w-3" /> Vender ({formatMoney(p.overall * 50_000)})
+                      <Button size="sm" variant="outline" onClick={() => onSell(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] font-bold gap-1">
+                        <DollarSign className="h-3 w-3" /> Dispensar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setObserved(p)} className="h-8 text-[10px] gap-1 px-2">
+                      <Button size="sm" variant="ghost" onClick={() => setObserved(p)} className="h-8 text-[10px] gap-1 px-2 hover:bg-primary/10">
                         <Eye className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                 );
+
               })}
             </div>
           )}
