@@ -320,11 +320,13 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
                onCancelStadiumInsurance: game.cancelStadiumInsurance,
                onAcceptStadiumSponsor: game.acceptStadiumSponsor,
                onRejectStadiumSponsor: game.rejectStadiumSponsor,
-               onBuyModularUpgrade: game.buyModularUpgrade
+               onBuyModularUpgrade: game.buyModularUpgrade,
+               onToggleMembershipTier: game.toggleMembershipTier
             }}
           />
         )}
       </TabsContent>
+
       <TabsContent value="ctrooms">
         {isTabBlocked('ctrooms') ? <BlockedMessage /> : (
           <InfrastructureWrapper
