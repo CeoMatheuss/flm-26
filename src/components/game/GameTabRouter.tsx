@@ -319,8 +319,26 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           />
         )}
       </TabsContent>
+      <TabsContent value="ctrooms">
+        <InfrastructureWrapper
+          initialSubTab="ctrooms"
+          players={game.club.players}
+          infrastructure={game.infrastructure}
+          trainingFocus={game.trainingFocus || {}}
+          onSetTrainingFocus={game.setPlayerTrainingFocus}
+          tactics={game.tactics}
+          onPlayersUpdate={game.updatePlayers}
+          currentWeek={game.season.currentWeek}
+          clubName={game.club.name}
+          userId={userId}
+          budget={game.club.budget}
+          onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+          onUpgradeFacility={game.upgradeFacility}
+          onUpgradeCTRoom={game.upgradeCTRoom}
+          ctRooms={game.ctRooms}
+        />
+      </TabsContent>
 
-      <TabsContent value="youth">
         {isTabBlocked('youth') ? <BlockedMessage /> : (
           <InfrastructureWrapper
             initialSubTab="youth"
