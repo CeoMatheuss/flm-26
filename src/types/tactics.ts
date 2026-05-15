@@ -123,6 +123,7 @@ export const defaultTactics: TacticsConfig = {
   defenseLine: 'media',
   width: 'normal',
   playerInstructions: [],
+  autoUpdateLineup: true,
 };
 
 export const formationPositions: Record<Formation, Record<string, number>> = {
