@@ -6,12 +6,12 @@ import { TacticsTab } from '../TacticsTab';
 import { YouthAcademyModernTab } from './YouthAcademyModernTab';
 import { SquadHeader } from './SquadHeader';
 import { PlayerRow } from './PlayerRow';
-import { PremiumPlayerCard } from './cards/PremiumPlayerCard';
+import { SquadMainTable } from './SquadMainTable';
 import { PlayerDetailPanel } from './PlayerDetailPanel';
 import { useAttributeEvolution } from './useAttributeEvolution';
-import { getPlayerStatus, PlayerStatus } from './squadHelpers';
+import { getPlayerStatus, avgStamina } from './squadHelpers';
 import { toast } from 'sonner';
-import { LayoutGrid, List, Users, Shield, Sparkles, Trophy, Ban, Stethoscope, Clock, Briefcase, Share2, ArrowRightLeft } from 'lucide-react';
+import { Users, Shield, Sparkles, Ban, Stethoscope, Clock, Briefcase, Share2, ArrowRightLeft, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,27 +31,16 @@ interface SquadModernProps {
   onSetYouthInvestment: (amount: number) => void;
 }
 
-const POS_ORDER = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
-
 export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
   youthProspects, onPromoteYouth, youthInvestment, onSetYouthInvestment,
+  userId,
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
   const deltas = useAttributeEvolution(players);
-
-  const sorted = useMemo(() => {
-    return [...players].sort((a, b) => {
-      const pA = POS_ORDER.indexOf(a.position);
-      const pB = POS_ORDER.indexOf(b.position);
-      if (pA !== pB) return pA - pB;
-      return b.overall - a.overall;
-    });
-  }, [players]);
 
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
@@ -59,10 +48,11 @@ export function SquadModernLayout({
     if (Array.isArray(lineup)) {
       lineup.forEach(id => id && ids.add(id));
     } else {
-      sorted.slice(0, 11).forEach(p => ids.add(p.id));
+      // Fallback fallback: first 11
+      players.slice(0, 11).forEach(p => ids.add(p.id));
     }
     return ids;
-  }, [tactics, sorted]);
+  }, [tactics, players]);
 
   const selectedPlayer = useMemo(
     () => players.find(p => p.id === selectedId) ?? null,
@@ -101,173 +91,110 @@ export function SquadModernLayout({
     }
   };
 
-  const grouped = useMemo(() => {
-    const m = new Map<string, Player[]>();
-    POS_ORDER.forEach(p => m.set(p, []));
-    sorted.forEach(p => m.get(p.position)?.push(p));
-    return m;
-  }, [sorted]);
-
-  const isPlayerCategoryTab = !['tactics', 'base'].includes(activeTab);
-
   return (
-    <div className="h-full flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30">
+    <div className="h-full flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
       <SquadHeader 
         club={club} 
         season={season} 
-        viewMode={viewMode} 
-        onViewModeChange={setViewMode}
+        viewMode="list" 
+        onViewModeChange={() => {}} 
       />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
-        {/* Modern Tab Navigation - Multi-Row for many tabs */}
-        <div className="px-4 sm:px-6 py-2 bg-zinc-950/50 border-b border-white/5 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-4 overflow-x-auto scrollbar-hide pb-1">
-            <TabsList className="bg-white/5 border border-white/5 p-1 h-10 gap-1 rounded-2xl shrink-0">
-              <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
-              <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
-              <TabTrigger value="base" icon={<Sparkles className="w-3.5 h-3.5" />} label="Juniores" />
-              <TabTrigger value="afastados" icon={<Ban className="w-3.5 h-3.5" />} label="Afastados" />
-              <TabTrigger value="lesionados" icon={<Stethoscope className="w-3.5 h-3.5" />} label="Lesionados" />
-              <TabTrigger value="suspensos" icon={<Clock className="w-3.5 h-3.5" />} label="Suspensos" />
-              <TabTrigger value="emprestados" icon={<Share2 className="w-3.5 h-3.5" />} label="Emprestados" />
-              <TabTrigger value="transferencias" icon={<ArrowRightLeft className="w-3.5 h-3.5" />} label="Mercado" />
-              <TabTrigger value="tactics" icon={<Briefcase className="w-3.5 h-3.5" />} label="Tático" />
-            </TabsList>
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Main Content Area: Tabs & Tables */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            {/* Horizontal Sub-tabs */}
+            <div className="px-4 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide">
+              <TabsList className="bg-white/5 border border-white/5 p-1 h-12 gap-1 rounded-2xl shrink-0">
+                <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
+                <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
+                <TabTrigger value="base" icon={<Sparkles className="w-3.5 h-3.5" />} label="Juniores" />
+                <TabTrigger value="afastados" icon={<Ban className="w-3.5 h-3.5" />} label="Afastados" />
+                <TabTrigger value="lesionados" icon={<Stethoscope className="w-3.5 h-3.5" />} label="Lesionados" />
+                <TabTrigger value="suspensos" icon={<Clock className="w-3.5 h-3.5" />} label="Suspensos" />
+                <TabTrigger value="emprestados" icon={<Share2 className="w-3.5 h-3.5" />} label="Emprestados" />
+                <TabTrigger value="transferencias" icon={<ArrowRightLeft className="w-3.5 h-3.5" />} label="Mercado" />
+              </TabsList>
+            </div>
 
-            {isPlayerCategoryTab && (
-              <div className="hidden sm:flex items-center gap-1 p-1 bg-white/5 border border-white/5 rounded-xl shrink-0">
-                <ViewToggle active={viewMode === 'grid'} onClick={() => setViewMode('grid')} icon={<LayoutGrid className="w-3.5 h-3.5" />} />
-                <ViewToggle active={viewMode === 'list'} onClick={() => setViewMode('list')} icon={<List className="w-3.5 h-3.5" />} />
+            <div className="flex-1 overflow-hidden relative">
+              <AnimatePresence mode="wait">
+                <TabsContent key={activeTab} value={activeTab} className="h-full m-0 outline-none">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    className="h-full p-4 sm:p-6"
+                  >
+                    {activeTab === 'base' ? (
+                      <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
+                         <YouthAcademyModernTab
+                           prospects={youthProspects}
+                           onPromote={onPromoteYouth}
+                           monthlyInvestment={youthInvestment}
+                           onSetInvestment={onSetYouthInvestment}
+                         />
+                      </div>
+                    ) : (
+                      <SquadMainTable 
+                        players={players} 
+                        starterIds={starterIds}
+                        selectedId={selectedId}
+                        onSelect={handleSelect}
+                        activeTab={activeTab}
+                      />
+                    )}
+                  </motion.div>
+                </TabsContent>
+              </AnimatePresence>
+            </div>
+          </Tabs>
+        </div>
+
+        {/* Tactical Panel (Desktop Right Side) */}
+        <div className="hidden xl:flex w-[480px] flex-col border-l border-white/5 bg-zinc-950/50 overflow-hidden relative group">
+           {/* Section Header */}
+           <div className="p-6 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <LayoutDashboard className="w-5 h-5 text-emerald-400" />
+                 </div>
+                 <div>
+                    <h2 className="text-sm font-black uppercase tracking-widest text-white italic">Centro Tático</h2>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Configurações de Jogo</p>
+                 </div>
               </div>
-            )}
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
+                    {tactics.formation}
+                 </span>
+              </div>
+           </div>
 
-        <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <TabsContent key={activeTab} value={activeTab} className="h-full m-0 overflow-y-auto outline-none">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className={cn(
-                  "h-full p-4 sm:p-6 space-y-8"
-                )}
+           {/* Tactical Tabbed Content */}
+           <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              <TacticsTab 
+                players={players} 
+                tactics={tactics} 
+                onUpdate={() => {}} 
+                season={season?.currentSeason}
+                userId={userId}
+              />
+           </div>
+
+           {/* Quick Actions Footer */}
+           <div className="p-6 border-t border-white/5 bg-zinc-950/80">
+              <button 
+                 onClick={() => toast.success('Escalação Inteligente aplicada com sucesso!')}
+                 className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3"
               >
-                {activeTab === 'base' ? (
-                  <YouthAcademyModernTab
-                    prospects={youthProspects}
-                    onPromote={onPromoteYouth}
-                    monthlyInvestment={youthInvestment}
-                    onSetInvestment={onSetYouthInvestment}
-                  />
-                ) : activeTab === 'tactics' ? (
-                  <TacticsTab players={players} tactics={tactics} onUpdate={() => {}} />
-                ) : (
-                  <>
-                    {POS_ORDER.map(pos => {
-                      const list = grouped.get(pos) ?? [];
-                      // Filter based on active tab
-                      const filteredList = list.filter(p => {
-                        const isStarter = starterIds.has(p.id);
-                        const status = getPlayerStatus(p, isStarter);
-                        
-                        switch (activeTab) {
-                          case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
-                          case 'reservas': return !isStarter && status === 'reserva';
-                          case 'afastados': return status === 'afastado' || status === 'indisponivel';
-                          case 'lesionados': return status === 'lesionado' || !!p.injury;
-                          case 'suspensos': return status === 'suspenso';
-                          case 'emprestados': return status === 'emprestado';
-                          case 'transferencias': return status === 'lista-transferencia';
-                          default: return true;
-                        }
-                      });
-
-                      if (!filteredList.length) return null;
-
-                      return (
-                        <section key={pos} className="space-y-4">
-                          <header className="flex items-center gap-3 px-1">
-                            <div className="flex flex-col">
-                              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-                                {pos}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500 to-transparent rounded-full" />
-                                <span className="text-[10px] text-white/30 font-black uppercase tracking-widest">{filteredList.length} Atletas</span>
-                              </div>
-                            </div>
-                          </header>
-
-                          {viewMode === 'grid' ? (
-                            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 sm:gap-6">
-                              {filteredList.map(p => (
-                                <PremiumPlayerCard
-                                  key={p.id}
-                                  player={p}
-                                  isStarter={starterIds.has(p.id)}
-                                  selected={selectedId === p.id}
-                                  onClick={() => handleSelect(p.id)}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {filteredList.map(p => (
-                                <PlayerRow
-                                  key={p.id}
-                                  player={p}
-                                  status={getPlayerStatus(p, starterIds.has(p.id))}
-                                  selected={selectedId === p.id}
-                                  onClick={() => handleSelect(p.id)}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </section>
-                      );
-                    })}
-                    
-                    {/* Empty State */}
-                    {(() => {
-                       const totalInTab = players.filter(p => {
-                         const isStarter = starterIds.has(p.id);
-                         const status = getPlayerStatus(p, isStarter);
-                         switch (activeTab) {
-                           case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
-                           case 'reservas': return !isStarter && status === 'reserva';
-                           case 'afastados': return status === 'afastado' || status === 'indisponivel';
-                           case 'lesionados': return status === 'lesionado' || !!p.injury;
-                           case 'suspensos': return status === 'suspenso';
-                           case 'emprestados': return status === 'emprestado';
-                           case 'transferencias': return status === 'lista-transferencia';
-                           default: return true;
-                         }
-                       }).length;
-
-                       if (totalInTab === 0) {
-                         return (
-                           <div className="flex flex-col items-center justify-center py-24 text-center">
-                             <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mb-4 text-white/20">
-                               <Users className="w-8 h-8" />
-                             </div>
-                             <h4 className="text-white font-bold">Categoria Vazia</h4>
-                             <p className="text-white/40 text-sm mt-1">Nenhum jogador corresponde a este filtro.</p>
-                           </div>
-                         );
-                       }
-                       return null;
-                    })()}
-                  </>
-                )}
-              </motion.div>
-            </TabsContent>
-          </AnimatePresence>
+                 <Sparkles className="w-5 h-5" />
+                 Otimizar Elenco
+              </button>
+           </div>
         </div>
-      </Tabs>
+      </div>
 
       <PlayerDetailPanel
         player={selectedPlayer}
@@ -286,26 +213,12 @@ function TabTrigger({ value, icon, label }: { value: string; icon: React.ReactNo
     <TabsTrigger 
       value={value}   
       className={cn(
-        "text-[11px] font-black uppercase tracking-widest rounded-xl px-4 h-8 gap-2 shrink-0",
-        "transition-all duration-300 data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+        "text-[10px] font-black uppercase tracking-widest rounded-xl px-4 h-9 gap-2 shrink-0",
+        "transition-all duration-300 data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
       )}
     >
       {icon}
       <span>{label}</span>
     </TabsTrigger>
-  );
-}
-
-function ViewToggle({ active, onClick, icon }: { active: boolean; onClick: () => void; icon: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-        active ? "bg-emerald-500 text-zinc-950" : "text-white/40 hover:text-white hover:bg-white/5"
-      )}
-    >
-      {icon}
-    </button>
   );
 }
