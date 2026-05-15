@@ -157,7 +157,8 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       player_age: player.age || 25,
       min_price: startPrice,
       current_bid: startPrice,
-      rarity: getRarityByOverall(player.overall),
+      current_bidder_id: null, // Ensure seller is not the initial bidder
+      current_bidder_name: null,
     }]);
     if (error) {
       toast.error('Erro ao criar leilão: ' + error.message);
