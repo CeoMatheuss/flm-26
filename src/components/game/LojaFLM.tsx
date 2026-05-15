@@ -122,10 +122,28 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       return;
     }
 
+    setSelectedItem(item);
+    setShowCheckoutModal(true);
+  };
+
+  const executePayment = async () => {
+    if (!selectedItem) return;
+    
+    if (!checkoutEmail.includes('@')) {
+      toast.error('Por favor, insira um e-mail válido para receber o comprovante.');
+      return;
+    }
+
     setLoading(true);
+    setShowCheckoutModal(false);
+    
     try {
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
-        body: { item_id: item.id }
+        body: { 
+          item_id: selectedItem.id,
+          method: checkoutMethod,
+          email: checkoutEmail
+        }
       });
 
       if (error) throw error;
@@ -139,9 +157,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         setShowPixModal(true);
       } else if (data?.init_point) {
         window.location.href = data.init_point;
-      } else if (data?.status === 'approved' || item.price_cents === 0) {
+      } else if (data?.status === 'approved' || selectedItem.price_cents === 0) {
         setShowPremium(true);
-        toast.success(`Compra concluída: ${item.name}!`);
+        toast.success(`Compra concluída: ${selectedItem.name}!`);
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
