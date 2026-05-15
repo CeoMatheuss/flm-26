@@ -115,6 +115,15 @@ export interface Player {
   /** Stamina V4 — Status físico e controle de tempo */
   physicalStatus?: PhysicalStatus;
   staminaLastUpdatedAt?: string; // ISO string
+  /** Promotion & Contract V5 */
+  potential?: number;
+  isYouth?: boolean;
+  marketValue?: number;
+  squadRole?: 'promessa' | 'reserva' | 'rotacao' | 'titular-futuro' | 'titular' | 'estrela';
+  lastPerformanceHistory?: number[]; // rating of last games
+  recentHighlights?: string[];
+  evolutionTrend?: 'up' | 'stable' | 'down';
+  promotionReady?: boolean;
 }
 
 export interface Scout {
