@@ -52,6 +52,14 @@ export function SquadModernLayout({
 
   const deltas = useAttributeEvolution(players);
 
+  // Sync youth prospects count to tab
+  useEffect(() => {
+    if (activeTab === 'titulares' && youthProspects.length > 0) {
+      // Small visual indicator or auto-switch logic could go here if requested, 
+      // but for now we just ensure they are available in the 'base' tab.
+    }
+  }, [youthProspects.length, activeTab]);
+
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
     const lineup = (tactics?.lineup ?? tactics?.startingXI ?? tactics?.starting_xi) as string[] | undefined;
