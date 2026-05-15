@@ -179,8 +179,19 @@ Deno.serve(async (req) => {
     const personality = getRandomElement(PERSONALITIES);
     const dominantFoot = Math.random() < 0.7 ? 'Destro' : Math.random() < 0.9 ? 'Canhoto' : 'Ambidestro';
     
-    const marketValue = (overall * overall * 1200) + (potential * potential * 2500);
+    // Generate height and weight based on age and position
+    // GOL/ZAG tend to be taller
+    let baseHeight = 165 + (age - 15) * 3; // 15y: 165, 17y: 171
+    if (position === 'GOL' || position === 'ZAG') baseHeight += 8;
+    if (position === 'ATA') baseHeight += 3;
+    const height = baseHeight + Math.floor(Math.random() * 15); // Random variation
+    const weight = height - 100 - 5 + Math.floor(Math.random() * 15);
 
+    const tactical_iq = Math.floor(Math.random() * 20) + 30 + (overall / 5);
+    const interception = position === 'ZAG' || position === 'VOL' ? Math.min(99, overall + 10) : Math.max(10, overall - 15);
+    const stamina_stat = overall + Math.floor(Math.random() * 10) - 5;
+
+    const marketValue = (overall * overall * 1200) + (potential * potential * 2500);
 
     const { data: prospect, error: insertError } = await adminClient
       .from('youth_prospects')
@@ -198,7 +209,20 @@ Deno.serve(async (req) => {
         rarity,
         nationality,
         morale: 100,
-        months_in_academy: 0
+        months_in_academy: 0,
+        height,
+        weight,
+        tactical_iq,
+        interception,
+        stamina_stat,
+        energy: 100,
+        fatigue: 0,
+        contract_status: 'base',
+        evolution_history: JSON.stringify([{
+          date: new Date().toISOString(),
+          overall: overall,
+          attributes: attributes
+        }])
       })
       .select()
       .single();

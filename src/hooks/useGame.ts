@@ -330,6 +330,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     alreadyPlayedToday: matchState.alreadyPlayedToday,
     lastFriendlyDate: matchState.lastFriendlyDate,
     lastTrainingResult: clubState.lastTrainingResult,
+    lastYouthGenAt: infraState.lastYouthGenAt,
 
     // Actions
     setTactics,

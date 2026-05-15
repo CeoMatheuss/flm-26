@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react';
-import {
-  YouthProspect, getAcademyUpgradeCost, getYouthMinOverall, getYouthMaxOverall,
-  youthInvestmentTiers, getYouthTierByMonthlyCost, potentialTierInfo, evolutionStatusInfo, youthTagInfo,
-  computeEvolutionStatus, computeYouthTag, getPotentialTier,
-} from '@/types/infrastructure';
+import { useState, useMemo } from 'react';
+import { YouthProspect, getYouthTierByMonthlyCost, youthInvestmentTiers } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  UserPlus, Info, ArrowUp, Sparkles, GraduationCap, Coins, TrendingUp,
-  DollarSign, Eye, Trophy, Hammer, Crown,
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Search, Filter, GraduationCap, Coins, 
+  Trophy, Info, Sparkles, ChevronRight,
+  TrendingUp, Award, Clock, Newspaper, Dumbbell
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
+import { YouthAcademyHeader } from './YouthAcademyHeader';
+import { YouthPlayerCard } from './YouthPlayerCard';
+import { YouthPlayerDetailModal } from './YouthPlayerDetailModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   prospects: YouthProspect[];
@@ -25,6 +26,7 @@ interface Props {
   budget: number;
   hasScouts: boolean;
   currentSeason: number;
+  lastYouthGenAt?: string;
   onPromote: (id: string) => void;
   onSell: (id: string) => void;
   onEnrollCopinha: () => void;
@@ -32,19 +34,11 @@ interface Props {
   onUpgradeAcademy?: () => void;
 }
 
-const getLevelTier = (level: number) => {
-  if (level <= 5) return { label: 'Inicial', color: 'text-muted-foreground', emoji: '🔹', desc: 'Jovens crus (OVR 45-58)' };
-  if (level <= 10) return { label: 'Básico', color: 'text-blue-400', emoji: '🔸', desc: 'Estrutura simples (OVR 48-62)' };
-  if (level <= 20) return { label: 'Intermediário', color: 'text-emerald-400', emoji: '🔶', desc: 'Boas instalações (OVR 52-66)' };
-  if (level <= 25) return { label: 'Avançado', color: 'text-orange-400', emoji: '🟠', desc: 'Referência nacional (OVR + Bônus)' };
-  return { label: 'Elite Mundial', color: 'text-amber-400', emoji: '🌟', desc: 'Fábrica de craques (OVR Alto, POT 99)' };
-};
-
-
 export function YouthAcademyTab({
   prospects, academyLevel, academyUpgradeCompletesAt, isPremium = false,
-  monthlyInvestment, budget, hasScouts, currentSeason,
-  onPromote: _onPromote, onSell: _onSell, onEnrollCopinha: _onEnrollCopinha, onSetInvestment: _onSetInvestment, onUpgradeAcademy: _onUpgradeAcademy,
+  monthlyInvestment, budget, hasScouts, currentSeason, lastYouthGenAt,
+  onPromote: _onPromote, onSell: _onSell, onEnrollCopinha: _onEnrollCopinha, 
+  onSetInvestment: _onSetInvestment, onUpgradeAcademy: _onUpgradeAcademy,
 }: Props) {
   const { guard } = useLiveMatchGuard();
   const onPromote = guard(_onPromote);
@@ -52,26 +46,26 @@ export function YouthAcademyTab({
   const onEnrollCopinha = guard(_onEnrollCopinha);
   const onSetInvestment = guard(_onSetInvestment);
   const onUpgradeAcademy = _onUpgradeAcademy ? guard(_onUpgradeAcademy) : undefined;
-  const upgradeCost = getAcademyUpgradeCost(academyLevel);
-  const canUpgrade = budget >= upgradeCost && academyLevel < 30;
-  const tier = getLevelTier(academyLevel);
-  const minOvr = getYouthMinOverall(academyLevel);
-  const maxOvr = getYouthMaxOverall(academyLevel);
-  const nextMinOvr = academyLevel < 30 ? getYouthMinOverall(academyLevel + 1) : minOvr;
-  const nextMaxOvr = academyLevel < 30 ? getYouthMaxOverall(academyLevel + 1) : maxOvr;
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPos, setFilterPos] = useState('ALL');
+  const [selectedPlayer, setSelectedPlayer] = useState<YouthProspect | null>(null);
+
   const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
   const copinhaUnlocked = currentSeason >= 2;
   const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
 
-  const [observed, setObserved] = useState<YouthProspect | null>(null);
+  const filteredProspects = useMemo(() => {
+    return prospects.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPos = filterPos === 'ALL' || p.position === filterPos;
+      return matchesSearch && matchesPos;
+    }).sort((a, b) => (b.potential || 0) - (a.potential || 0));
+  }, [prospects, searchTerm, filterPos]);
 
-  // Live ticker for construction countdown (re-render every 30s)
-  const [, setNowTick] = useState(0);
-  useEffect(() => {
-    if (!academyUpgradeCompletesAt) return;
-    const interval = setInterval(() => setNowTick(t => t + 1), 30_000);
-    return () => clearInterval(interval);
-  }, [academyUpgradeCompletesAt]);
+  const avgPotential = prospects.length > 0 
+    ? prospects.reduce((acc, p) => acc + (p.potential || 0), 0) / prospects.length 
+    : 0;
 
   const isConstructing = !!academyUpgradeCompletesAt && new Date(academyUpgradeCompletesAt).getTime() > Date.now();
   const constructionProgress = (() => {
@@ -90,368 +84,272 @@ export function YouthAcademyTab({
   })();
 
   return (
-    <div className="space-y-4">
-      {/* Quick Guide */}
-      <Card className="game-card border-primary/20">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs sm:text-sm">
-              <p className="font-bold text-foreground">Como funciona a Base V2?</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-muted-foreground">
-                <p>🏗️ <strong className="text-foreground">Nível</strong> = Qualidade dos jovens (OVR/POT)</p>
-                <p>💰 <strong className="text-foreground">Investimento</strong> = Quantidade de jovens/mês</p>
-                <p>👶 Jovens surgem com <strong className="text-foreground">16 anos</strong></p>
-                <p>🔍 <strong className="text-foreground">Olheiros</strong> revelam o Potencial (POT)</p>
-                <p>⚽ Partidas da base aceleram a evolução</p>
-                <p>🏆 <strong className="text-foreground">Copinha</strong> dá grande boost (≤20 anos)</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <YouthAcademyHeader 
+        lastYouthGenAt={lastYouthGenAt || new Date().toISOString()}
+        totalPlayers={prospects.length}
+        academyLevel={academyLevel}
+        avgPotential={avgPotential}
+        isConstructing={isConstructing}
+        constructionRemaining={constructionRemaining}
+        constructionProgress={constructionProgress}
+      />
 
-      {/* Academy Level Card */}
-      <Card className="game-card-accent overflow-hidden">
-        <CardHeader className="section-header pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-purple-400" />
-            Nível da Base
-            <span className="game-badge bg-primary/15 text-primary ml-auto">Nv. {academyLevel}/30</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-3">
-          <div className="flex items-center gap-4 p-3 rounded-lg bg-accent/50 border border-border/20">
-            <div className="text-center min-w-[50px]">
-              <p className="text-3xl font-bold text-primary">{academyLevel}</p>
-              <p className="text-[10px] text-muted-foreground">/ 30</p>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className={`text-sm font-semibold ${tier.color}`}>{tier.emoji} {tier.label}</span>
-              </div>
-              <Progress value={(academyLevel / 30) * 100} className="h-2.5 mb-1 progress-glow" />
-              <p className="text-[10px] text-muted-foreground">{tier.desc}</p>
-            </div>
-          </div>
+      <Tabs defaultValue="list" className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="list" className="gap-2"><GraduationCap className="h-4 w-4" /> Elenco da Base</TabsTrigger>
+            <TabsTrigger value="investment" className="gap-2"><Coins className="h-4 w-4" /> Investimento</TabsTrigger>
+            <TabsTrigger value="copinha" className="gap-2"><Trophy className="h-4 w-4" /> Copinha</TabsTrigger>
+            <TabsTrigger value="news" className="gap-2"><Newspaper className="h-4 w-4" /> Notícias</TabsTrigger>
+          </TabsList>
 
-          <div className="flex items-center gap-3 p-2.5 rounded-lg bg-accent/30">
-            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs font-medium">Qualidade dos Jovens Gerados</p>
-              <p className="text-[10px] text-muted-foreground">Overall entre <strong className="text-foreground">{minOvr}</strong> e <strong className="text-foreground">{maxOvr}</strong></p>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Buscar jovem..." 
+                className="pl-9 bg-card/40 border-border/30 h-9 text-xs"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <Badge variant="outline" className="text-[10px]">OVR {minOvr}–{maxOvr}</Badge>
-          </div>
-
-          {isConstructing ? (
-            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <Hammer className="h-4 w-4 text-orange-400 animate-pulse" />
-                <p className="text-sm font-bold text-orange-300">Obra em andamento → Nv {academyLevel + 1}</p>
-                <Badge variant="outline" className="ml-auto text-[10px] border-orange-500/40 text-orange-300 font-mono">
-                  ⏱ {constructionRemaining}
-                </Badge>
-              </div>
-              <Progress value={constructionProgress} className="h-2.5" />
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{Math.round(constructionProgress)}% concluído</span>
-                <span>Free: 24h · ⭐ Premium: instantâneo</span>
-              </div>
-              <Button
-                size="sm"
-                disabled
-                className="w-full gap-1.5 h-9 bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20"
-              >
-                <Crown className="h-3.5 w-3.5" /> Concluir agora (Premium)
-              </Button>
-            </div>
-          ) : academyLevel < 30 ? (
-            <div className="p-3 rounded-lg bg-accent/30 border border-border/20">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium flex items-center gap-1.5">
-                    <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                    Melhorar para Nível {academyLevel + 1}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    OVR: {minOvr}–{maxOvr} → <strong className="text-primary">{nextMinOvr}–{nextMaxOvr}</strong>
-                  </p>
-                </div>
-                {!isPremium && (
-                  <Badge variant="outline" className="text-[9px] border-orange-500/30 text-orange-400 shrink-0">
-                    ⏱ 24h obra
-                  </Badge>
-                )}
-                {isPremium && (
-                  <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400 shrink-0">
-                    ⭐ Instantâneo
-                  </Badge>
-                )}
-              </div>
-              <Button
-                size="sm"
-                disabled={!canUpgrade}
-                onClick={onUpgradeAcademy}
-                className="w-full gap-1.5 h-10"
-              >
-                <Coins className="h-3.5 w-3.5" />
-                {formatMoney(upgradeCost)}
-                {!canUpgrade && budget < upgradeCost && <span className="text-[9px] opacity-70 ml-1">(sem orçamento)</span>}
-              </Button>
-            </div>
-          ) : (
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-              <p className="text-sm font-bold text-amber-400">🌟 Base no nível máximo!</p>
-              <p className="text-xs text-muted-foreground">Sua academia é referência mundial</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Investment Tiers — 2x3 grid */}
-      <Card className="game-card">
-        <CardHeader className="section-header pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Coins className="h-4 w-4 text-primary" />
-            Plano Mensal de Investimento
-          </CardTitle>
-          <CardDescription className="text-[10px]">
-            Mais investimento = mais jovens gerados por mês (qualidade depende do nível da base)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-2">
-          <div className="grid grid-cols-2 gap-2">
-            {youthInvestmentTiers.map(t => {
-              const isActive = currentTier.tier === t.tier;
-              return (
-                <button
-                  key={t.tier}
-                  onClick={() => onSetInvestment(t.monthlyCost)}
-                  className={`flex flex-col text-left rounded-xl border transition-all p-3 ${
-                    isActive
-                      ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
-                      : 'bg-card/40 border-border/30 hover:border-primary/40 hover:bg-card/60'
-                  }`}
-                >
-                  <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center mb-2 text-lg">
-                    {t.emoji}
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t.label}</span>
-                  <span className="text-base font-black mt-0.5">{formatMoney(t.monthlyCost)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {t.minPlayersPerMonth === 0 ? '0 jogadores' : t.minPlayersPerMonth === t.maxPlayersPerMonth ? `${t.minPlayersPerMonth} jogador${t.minPlayersPerMonth > 1 ? 'es' : ''}/mês` : `${t.minPlayersPerMonth}–${t.maxPlayersPerMonth} jogadores/mês`}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Copinha */}
-      <Card className={`game-card ${copinhaUnlocked ? 'border-amber-500/30' : ''}`}>
-        <CardHeader className="section-header pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-amber-400" />
-            Copinha Sub-20
-            {!copinhaUnlocked && <Badge variant="outline" className="text-[9px] ml-auto">Temporada 2+</Badge>}
-          </CardTitle>
-          <CardDescription className="text-[10px]">
-            {copinhaUnlocked
-              ? 'Inscreva sua base na Copinha — apenas jogadores ≤20 anos. Boost de até +15 OVR para os campeões!'
-              : 'Disponível a partir da 2ª temporada do save.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-2">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/30 border border-border/20">
-            <div className="flex-1">
-              <p className="text-xs font-medium">Jogadores elegíveis</p>
-              <p className="text-[10px] text-muted-foreground">{eligibleForCopinha} jovens com 20 anos ou menos</p>
-            </div>
-            <Button
-              size="sm"
-              disabled={!copinhaUnlocked || eligibleForCopinha < 5}
-              onClick={onEnrollCopinha}
-              className="gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30"
+            <select 
+              className="bg-card/40 border border-border/30 rounded-md h-9 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+              value={filterPos}
+              onChange={(e) => setFilterPos(e.target.value)}
             >
-              <Trophy className="h-3.5 w-3.5" />
-              Inscrever
-            </Button>
+              <option value="ALL">Todas as Posições</option>
+              <option value="GOL">Goleiros</option>
+              <option value="ZAG">Zagueiros</option>
+              <option value="LAT">Laterais</option>
+              <option value="VOL">Volantes</option>
+              <option value="MEI">Meias</option>
+              <option value="ATA">Atacantes</option>
+            </select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Prospects List */}
-      <Card className="game-card">
-        <CardHeader className="section-header pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Jovens na Base
-            <span className="game-badge bg-accent text-foreground ml-auto">{prospects.length}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-2">
+        <TabsContent value="list" className="space-y-4 m-0">
           {!hasScouts && prospects.length > 0 && (
-            <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <span className="text-sm">🔍</span>
-              <p className="text-[11px] text-amber-300">Contrate um <strong>olheiro</strong> para revelar o potencial (POT) e o tier dos jovens!</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Search className="h-5 w-5" />
+              </div>
+              <p className="text-xs">
+                Contrate um <strong>olheiro</strong> para revelar o potencial real e descobrir se você tem um craque geracional na base!
+              </p>
+              <Button size="sm" variant="outline" className="ml-auto shrink-0 border-amber-500/30 text-amber-300 hover:bg-amber-500/10 h-8 text-[10px]">
+                Ir para Staff
+              </Button>
+            </motion.div>
           )}
-          {prospects.length === 0 ? (
-            <div className="text-center py-8">
-              <GraduationCap className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhum jovem na base</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">Invista e aguarde a próxima geração mensal</p>
+
+          {filteredProspects.length === 0 ? (
+            <div className="text-center py-20 bg-card/20 rounded-2xl border-2 border-dashed border-border/20">
+              <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-10 w-10 text-muted-foreground/30" />
+              </div>
+              <h3 className="text-lg font-bold text-muted-foreground">Nenhum jovem encontrado</h3>
+              <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto mt-2">
+                Sua academia ainda não gerou talentos para esta busca. Continue investindo!
+              </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {prospects.map(p => {
-                const evoStatus = p.evolutionStatus ?? computeEvolutionStatus(p);
-                const tag = p.youthTag ?? computeYouthTag(p);
-                const potTier = p.potentialTier ?? getPotentialTier(p.potential, p.overall);
-                const tagInfo = tag ? youthTagInfo[tag] : null;
-                const evoInfo = evolutionStatusInfo[evoStatus];
-                const potInfo = potentialTierInfo[potTier];
-                const isInjured = (p.injuredCycles ?? 0) > 0;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AnimatePresence mode="popLayout">
+                {filteredProspects.map((p, idx) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <YouthPlayerCard 
+                      prospect={p} 
+                      onClick={setSelectedPlayer}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </TabsContent>
 
-                return (
-                  <div key={p.id} className={`flex flex-col gap-2 p-3 rounded-lg bg-accent/30 border border-border/10 hover:bg-accent/50 transition-colors ${isInjured ? 'opacity-60' : ''} ${p.rarity !== 'Comum' ? 'border-primary/20 bg-primary/5' : ''}`}>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="relative">
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${p.rarity === 'Craque geracional' ? 'bg-amber-500 text-black font-black' : ''}`}>{p.position}</Badge>
-                        {p.rarity === 'Craque geracional' && (
-                          <div className="absolute -top-3 -left-3 animate-pulse">
-                            <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
-                          </div>
-                        )}
+        <TabsContent value="investment" className="space-y-6 m-0 animate-in fade-in slide-in-from-bottom-2">
+          <Card className="game-card overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-border/20">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Coins className="h-5 w-5 text-primary" />
+                Plano de Investimento da Academia
+              </CardTitle>
+              <CardDescription>
+                A qualidade dos jovens depende do Nível da Base. O investimento mensal determina a quantidade de talentos gerados.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {youthInvestmentTiers.map((t, idx) => {
+                  const isActive = currentTier.tier === t.tier;
+                  return (
+                    <motion.button
+                      key={t.tier}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => onSetInvestment(t.monthlyCost)}
+                      className={`flex flex-col text-left rounded-2xl border transition-all p-5 relative overflow-hidden group ${
+                        isActive
+                          ? 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_20px_rgba(37,99,235,0.15)]'
+                          : 'bg-card/40 border-border/30 hover:border-primary/50 hover:bg-card/60'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-2xl ${isActive ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 transition-colors'}`}>
+                        {t.emoji}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className={`font-medium text-xs sm:text-sm truncate ${p.rarity !== 'Comum' ? 'text-primary' : ''}`}>{p.name}</p>
-                          {tagInfo && (
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${tagInfo.color}`}>
-                              {tagInfo.emoji} {tagInfo.label}
-                            </span>
-                          )}
-                          {p.rarity !== 'Comum' && (
-                            <Badge variant="secondary" className="text-[8px] bg-primary/20 text-primary border-primary/30 uppercase font-black">
-                              {p.rarity}
-                            </Badge>
-                          )}
-                          {isInjured && <span className="text-[9px] px-1.5 py-0.5 rounded border bg-red-500/20 text-red-300 border-red-500/40">🏥 Lesionado</span>}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          {p.age} anos • {p.monthsInAcademy ?? 0}m na base • <span className={evoInfo.color}>{evoInfo.emoji} {evoInfo.label}</span>
-                          {evoStatus === 'evoluindo' && <TrendingUp className="h-3 w-3 text-emerald-400 ml-0.5" />}
-                        </p>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{t.label}</span>
+                      <span className="text-xl font-black mb-1">
+                        {formatMoney(t.monthlyCost)}
+                        <span className="text-[10px] font-normal text-muted-foreground ml-1">/mês</span>
+                      </span>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">{t.description}</p>
+                      
+                      <div className="mt-auto pt-4 border-t border-border/10 flex items-center justify-between">
+                         <span className="text-[10px] font-bold text-primary flex items-center gap-1.5">
+                            <TrendingUp className="h-3 w-3" /> +{t.qualityBonus}% Qualidade
+                         </span>
+                         {isActive && <Badge className="bg-primary text-primary-foreground text-[8px] font-bold px-2 py-0.5">ATIVO</Badge>}
                       </div>
-                      <div className="text-center shrink-0 bg-accent/50 p-1 rounded-md min-w-[35px]">
-                        <p className="text-base font-black leading-none">{p.overall}</p>
-                        <p className="text-[8px] text-muted-foreground uppercase mt-0.5">OVR</p>
-                      </div>
-                      {hasScouts ? (
-                        <div className="text-center shrink-0 bg-primary/10 p-1 rounded-md min-w-[35px] border border-primary/20">
-                          <p className={`text-base font-black leading-none ${potInfo.color}`}>{p.potential}</p>
-                          <p className="text-[8px] text-muted-foreground uppercase mt-0.5">POT</p>
-                        </div>
-                      ) : (
-                        <div className="text-center shrink-0 bg-muted/20 p-1 rounded-md min-w-[35px]">
-                          <p className="text-base font-bold text-muted-foreground/30">??</p>
-                          <p className="text-[8px] text-muted-foreground uppercase mt-0.5">POT</p>
-                        </div>
-                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="copinha" className="m-0 animate-in fade-in slide-in-from-bottom-2">
+           <Card className="game-card-accent border-amber-500/30 overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Trophy className="h-48 w-48" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-amber-400" />
+                  Copa São Paulo de Juniores
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-bold">A maior vitrine do futebol de base</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        A Copinha é o momento onde os olheiros de todo o mundo estão de olho. 
+                        Participar garante um boost imenso na evolução dos seus jogadores Sub-20.
+                      </p>
                     </div>
-                    {hasScouts && (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[9px] font-semibold ${potInfo.color} shrink-0`}>{potInfo.emoji} {potInfo.label}</span>
-                          <Progress value={(p.overall / Math.max(1, p.potential)) * 100} className="h-1.5 progress-glow flex-1" />
-                          <span className="text-[9px] text-muted-foreground shrink-0">{Math.round((p.overall / Math.max(1, p.potential)) * 100)}%</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[9px] bg-accent/40 p-1.5 rounded">
-                          <span className="text-muted-foreground">Previsão de crescimento:</span>
-                          <span className="font-bold text-primary">+{p.potential - p.overall} OVR</span>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex gap-1.5 mt-1">
-                      <Button size="sm" onClick={() => onPromote(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] font-black uppercase tracking-tighter gap-1">
-                        <UserPlus className="h-3 w-3" /> Promover
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => onSell(p.id)} disabled={isInjured} className="flex-1 h-8 text-[10px] font-bold gap-1">
-                        <DollarSign className="h-3 w-3" /> Dispensar
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setObserved(p)} className="h-8 text-[10px] gap-1 px-2 hover:bg-primary/10">
-                        <Eye className="h-3 w-3" />
-                      </Button>
+
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="p-4 rounded-xl bg-card border border-border/50">
+                          <p className="text-2xl font-black text-amber-400">{eligibleForCopinha}</p>
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Elegíveis (≤20a)</p>
+                       </div>
+                       <div className="p-4 rounded-xl bg-card border border-border/50">
+                          <p className="text-2xl font-black text-primary">{currentSeason >= 2 ? 'Aberta' : 'Bloqueada'}</p>
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Status Inscrição</p>
+                       </div>
+                    </div>
+
+                    <Button 
+                      size="lg"
+                      disabled={!copinhaUnlocked || eligibleForCopinha < 11}
+                      onClick={onEnrollCopinha}
+                      className="w-full gap-2 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-700 hover:to-amber-500 text-black font-black"
+                    >
+                      <Trophy className="h-5 w-5" />
+                      Inscrever na Copinha
+                    </Button>
+                    {!copinhaUnlocked && <p className="text-[10px] text-center text-muted-foreground">Disponível a partir da Temporada 2</p>}
+                    {eligibleForCopinha < 11 && <p className="text-[10px] text-center text-red-400">Você precisa de pelo menos 11 jogadores Sub-20</p>}
+                  </div>
+
+                  <div className="relative aspect-video rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl">
+                    <img 
+                      src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800" 
+                      className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700"
+                      alt="Estádio lotado"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-black/60 backdrop-blur-sm border border-white/10">
+                       <p className="text-xs font-bold text-white mb-1 flex items-center gap-2">
+                          <Sparkles className="h-3 w-3 text-amber-400" /> Benefícios da Vitória
+                       </p>
+                       <ul className="text-[10px] text-gray-300 space-y-1">
+                          <li>• +15 OVR para os destaques do título</li>
+                          <li>• Valor de mercado quadriplicado</li>
+                          <li>• Reputação da base elevada ao máximo</li>
+                       </ul>
                     </div>
                   </div>
-                );
-
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Observe modal */}
-      <Dialog open={!!observed} onOpenChange={(o) => !o && setObserved(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-primary" /> Observar Jovem
-            </DialogTitle>
-          </DialogHeader>
-          {observed && (
-            <div className="space-y-3 text-sm">
-              <div className="p-3 rounded-lg bg-accent/40 space-y-1">
-                <p className="font-bold text-base">{observed.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {observed.position} • {observed.age} anos • {observed.monthsInAcademy ?? 0} meses na base
-                </p>
-                {observed.personality && (
-                  <p className="text-xs"><strong>Personalidade:</strong> <span className="capitalize">{observed.personality}</span></p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 rounded bg-accent/40 text-center">
-                  <p className="text-2xl font-bold">{observed.overall}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">OVR Atual</p>
                 </div>
-                <div className="p-2 rounded bg-accent/40 text-center">
-                  {hasScouts ? (
-                    <>
-                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].color}`}>
-                        {observed.potential}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground uppercase">POT Máximo</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold text-muted-foreground/30">???</p>
-                      <p className="text-[10px] text-muted-foreground uppercase">POT (precisa olheiro)</p>
-                    </>
-                  )}
+              </CardContent>
+           </Card>
+        </TabsContent>
+
+        <TabsContent value="news" className="m-0 animate-in fade-in slide-in-from-bottom-2">
+           <Card className="game-card border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Newspaper className="h-5 w-5 text-primary" />
+                  Mural da Academia
+                </CardTitle>
+                <CardDescription>
+                  Fique por dentro do que acontece nos bastidores da nossa fábrica de talentos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Automatic News Items */}
+                  {[
+                    { title: 'Treino de Finalização em Alta', text: 'Os atacantes da base mostraram pontaria afiada no coletivo de hoje.', date: 'Hoje', type: 'training' },
+                    { title: 'Olheiro Impressionado', text: 'Um olheiro europeu foi visto nas arquibancadas observando nossos meias.', date: 'Ontem', type: 'market' },
+                    { title: 'Exemplo de Conduta', text: 'A nova safra de jogadores tem se destacado pela disciplina e moral elevada.', date: '2 dias atrás', type: 'morale' }
+                  ].map((news, i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:bg-muted/30 transition-all cursor-default group">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                        news.type === 'training' ? 'bg-primary/20 text-primary' : 
+                        news.type === 'market' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        {news.type === 'training' ? <Dumbbell className="h-6 w-6" /> : 
+                         news.type === 'market' ? <Search className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{news.title}</h4>
+                          <span className="text-[10px] text-muted-foreground">{news.date}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{news.text}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div className="space-y-1 text-xs">
-                <p><strong>Status:</strong> <span className={evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].color}>
-                  {evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].emoji} {evolutionStatusInfo[observed.evolutionStatus ?? computeEvolutionStatus(observed)].label}
-                </span></p>
-                <p><strong>Jogos pela base:</strong> {observed.gamesPlayed ?? 0}</p>
-                <p><strong>Moral:</strong> {observed.morale ?? 0}/100</p>
-                <p><strong>Estamina:</strong> {observed.stamina ?? 0}/100</p>
-                {hasScouts && (
-                  <p><strong>Tier de potencial:</strong> <span className={potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].color}>
-                    {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].emoji} {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].label}
-                  </span></p>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+           </Card>
+        </TabsContent>
+      </Tabs>
+
+      <YouthPlayerDetailModal 
+        prospect={selectedPlayer}
+        isOpen={!!selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+        onPromote={(id) => { onPromote(id); setSelectedPlayer(null); }}
+        onSell={(id) => { onSell(id); setSelectedPlayer(null); }}
+      />
     </div>
   );
 }

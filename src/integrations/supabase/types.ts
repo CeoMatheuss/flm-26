@@ -4854,9 +4854,15 @@ export type Database = {
           age: number
           attributes: Json
           club_id: string
+          contract_status: string | null
           created_at: string
           dominant_foot: string
+          energy: number | null
+          evolution_history: Json | null
+          fatigue: number | null
+          height: number | null
           id: string
+          interception: number | null
           market_value: number
           months_in_academy: number | null
           morale: number | null
@@ -4864,18 +4870,31 @@ export type Database = {
           nationality: string
           overall: number
           personality: string
+          player_expectation: string | null
           position: string
           potential: number
           rarity: string
+          secondary_positions: string[] | null
+          stamina_stat: number | null
+          tactical_iq: number | null
+          training_focus: string | null
+          training_intensity: string | null
           updated_at: string
+          weight: number | null
         }
         Insert: {
           age: number
           attributes: Json
           club_id: string
+          contract_status?: string | null
           created_at?: string
           dominant_foot: string
+          energy?: number | null
+          evolution_history?: Json | null
+          fatigue?: number | null
+          height?: number | null
           id?: string
+          interception?: number | null
           market_value: number
           months_in_academy?: number | null
           morale?: number | null
@@ -4883,18 +4902,31 @@ export type Database = {
           nationality: string
           overall: number
           personality: string
+          player_expectation?: string | null
           position: string
           potential: number
           rarity: string
+          secondary_positions?: string[] | null
+          stamina_stat?: number | null
+          tactical_iq?: number | null
+          training_focus?: string | null
+          training_intensity?: string | null
           updated_at?: string
+          weight?: number | null
         }
         Update: {
           age?: number
           attributes?: Json
           club_id?: string
+          contract_status?: string | null
           created_at?: string
           dominant_foot?: string
+          energy?: number | null
+          evolution_history?: Json | null
+          fatigue?: number | null
+          height?: number | null
           id?: string
+          interception?: number | null
           market_value?: number
           months_in_academy?: number | null
           morale?: number | null
@@ -4902,10 +4934,17 @@ export type Database = {
           nationality?: string
           overall?: number
           personality?: string
+          player_expectation?: string | null
           position?: string
           potential?: number
           rarity?: string
+          secondary_positions?: string[] | null
+          stamina_stat?: number | null
+          tactical_iq?: number | null
+          training_focus?: string | null
+          training_intensity?: string | null
           updated_at?: string
+          weight?: number | null
         }
         Relationships: [
           {
