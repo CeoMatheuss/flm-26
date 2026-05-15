@@ -420,7 +420,7 @@ export function CopasTab({ userId }: Props) {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {matches.filter(m => m.round === cup.current_round).map(m => (
                 <MatchRow key={m.id} match={m} userId={userId} />
               ))}
