@@ -434,6 +434,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             club={game.club} 
             infrastructure={game.infrastructure} 
             userId={userId}
+            isPremium={isPremium}
           />
         )}
       </TabsContent>
