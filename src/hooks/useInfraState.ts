@@ -101,7 +101,8 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return;
     }
 
-    // Premium: instantâneo
+    // Premium (ou acelerado por item da loja): instantâneo
+    // Itens de acelerador (ct_upgrade, stadium_upgrade) também podem triggerar isso.
     setInfrastructure(prev => ({
       ...prev,
       [facility]: { ...prev[facility], level: prev[facility].level + 1, upgradeCompletesAt: undefined },

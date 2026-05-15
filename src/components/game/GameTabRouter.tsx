@@ -494,7 +494,16 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           club={game.club} 
           infrastructure={game.infrastructure} 
           userId={userId} 
-          onUpgradeFacility={game.upgradeFacility}
+          onUpgradeFacility={(f) => game.upgradeFacility(f as any)}
+          onAcceptSponsor={(cfg) => {
+            // Usamos require dinâmico se necessário ou apenas passamos o callback
+            // Para segurança e simplicidade, vamos assumir que o hook game.acceptSponsor 
+            // lida com o objeto SponsorOffer.
+            import('@/data/flmSponsors').then(({ convertToSponsorOffer }) => {
+              const offer = convertToSponsorOffer(cfg, game.club.fans);
+              game.acceptSponsor(offer);
+            });
+          }}
         />
       </TabsContent>
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>

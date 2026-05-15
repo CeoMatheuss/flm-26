@@ -17,7 +17,7 @@ export function usePremiumStatus(userId?: string) {
         .maybeSingle();
       if (data) {
         const activatedAt = new Date(data.activated_at).getTime();
-        const remaining = 30 * 24 * 60 * 60 * 1000 - (Date.now() - activatedAt);
+        const remaining = (30 * 24 * 60 * 60 * 1000) - (Date.now() - activatedAt);
         if (remaining > 0) {
           setIsPremium(true);
           setDaysLeft(Math.ceil(remaining / (24 * 60 * 60 * 1000)));
