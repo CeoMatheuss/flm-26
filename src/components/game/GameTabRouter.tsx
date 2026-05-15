@@ -302,6 +302,12 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
                onUpgrade: (f: any) => game.upgradeFacility(f),
                budget: game.club.budget,
                clubName: game.club.name,
+               fans: game.club.fans,
+               reputation: game.club.reputation,
+               ticketPrice: game.club.ticketPrice,
+               winStreak: winStreak,
+               loseStreak: 0,
+
                userId,
                onRenameStadium: game.renameStadium,
                onSetTicketPrice: game.setTicketPrice,
