@@ -1102,7 +1102,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </div>
             </TabsContent>
           </Tabs>
-        </TabsContent>
+        </div>
+      </div>
+    </TabsContent>
 
         <TabsContent value="contracts" className="space-y-3 mt-3">
           {expiringPlayers.length > 0 && (
