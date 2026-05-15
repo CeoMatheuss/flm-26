@@ -87,7 +87,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         supabase.removeChannel(channel);
       };
     }
-  }, [userId]);
+  }, [userId, currentOrderId, pixData]);
 
   async function fetchItems() {
     try {
