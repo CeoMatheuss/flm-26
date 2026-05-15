@@ -25,9 +25,6 @@ interface LojaProps {
 const CATEGORIES = [
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign },
   { id: 'marketing', name: 'Marketing', icon: Rocket },
-  { id: 'infrastructure', name: 'Infraestrutura', icon: Building2 },
-  { id: 'staff', name: 'Staff', icon: HardHat },
-  { id: 'physio', name: 'Fisioterapia', icon: HeartPulse },
   { id: 'packs', name: 'Pacotes', icon: Package },
   { id: 'history', name: 'Histórico', icon: History },
 ];
@@ -137,7 +134,7 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
           </TabsList>
         </ScrollArea>
 
-        {CATEGORIES.slice(0, 6).map(cat => (
+        {CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
           <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.filter(i => i.category === (cat.id === 'patrocinios' ? 'sponsorship' : cat.id)).map(item => (
               <StoreCard key={item.id} item={item} clubFans={club.fans || 0} onPurchase={() => handlePurchase(item)} />
