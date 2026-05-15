@@ -149,15 +149,36 @@ export function useMatchSimulation() {
   const notifiedEventsRef = useRef<Set<string>>(new Set());
 
   const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
-    const s: MatchStats = { ...EMPTY_STATS, possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0], corners: [0, 0], fouls: [0, 0], yellowCards: [0, 0], redCards: [0, 0], passes: [0, 0], tackles: [0, 0], saves: [0, 0], offsides: [0, 0] };
+    const s: MatchStats = { 
+      ...EMPTY_STATS, 
+      possession: [50, 50], 
+      shots: [0, 0], 
+      shotsOnTarget: [0, 0], 
+      corners: [0, 0], 
+      fouls: [0, 0], 
+      yellowCards: [0, 0], 
+      redCards: [0, 0], 
+      passes: [0, 0], 
+      tackles: [0, 0], 
+      saves: [0, 0], 
+      offsides: [0, 0] 
+    };
+    
     let homeActions = 0, awayActions = 0;
+    
     for (const ev of events) {
       const idx = ev.team === 'home' ? 0 : ev.team === 'away' ? 1 : -1;
       if (idx === -1) continue;
+      
       const opp = idx === 0 ? 1 : 0;
       if (ev.team === 'home') homeActions++; else if (ev.team === 'away') awayActions++;
+      
       const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
-      if (isEvGoal && ev.type !== 'penalty_shootout') { s.shots[idx]++; s.shotsOnTarget[idx]++; }
+      if (isEvGoal && ev.type !== 'penalty_shootout') { 
+        s.shots[idx]++; 
+        s.shotsOnTarget[idx]++; 
+      }
+      
       switch (ev.type) {
         case 'woodwork': s.shots[idx]++; s.shotsOnTarget[idx]++; break;
         case 'great_save': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
@@ -174,9 +195,22 @@ export function useMatchSimulation() {
         case 'counter_attack': case 'free_kick_near': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
       }
     }
+    
     const total = homeActions + awayActions;
     if (total > 0) s.possession = [Math.round((homeActions / total) * 100), Math.round((awayActions / total) * 100)];
     return s;
+  }, []);
+
+  const recalculateScoreFromEvents = useCallback((events: SimEvent[]) => {
+    let hG = 0, aG = 0;
+    for (const ev of events) {
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      if (isEvGoal && ev.type !== 'penalty_shootout') {
+        if (ev.team === 'home') hG++;
+        else if (ev.team === 'away') aG++;
+      }
+    }
+    return { hG, aG };
   }, []);
 
   const getAtmosphereDescription = (event: SimEvent, attendance: number, capacity: number): string => {
