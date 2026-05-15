@@ -6,10 +6,12 @@ import { TrendingUp, TrendingDown, DollarSign, Users, Landmark, GraduationCap, E
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { Sponsor, sponsorTypeLabels } from '@/types/sponsor';
 import { Player, Scout } from '@/types/game';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { formatMoney, formatMoneyFull } from '@/lib/formatMoney';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BudgetBreakdown } from './BudgetBreakdown';
+import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
+
 
 interface Props {
   budget: number;
