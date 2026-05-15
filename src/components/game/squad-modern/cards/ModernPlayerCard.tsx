@@ -10,8 +10,9 @@ interface ModernPlayerCardProps {
 }
 
 export function ModernPlayerCard({ player, onClick }: ModernPlayerCardProps) {
-  const potTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
-  const tierInfo = potentialTierInfo[potTier as PotentialTier];
+  const rawTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
+  const potTier: PotentialTier = (potentialTierInfo as any)[rawTier] ? rawTier : 'comum';
+  const tierInfo = potentialTierInfo[potTier];
 
   return (
     <motion.div
