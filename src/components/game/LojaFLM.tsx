@@ -49,7 +49,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     if (userId) {
       fetchHistory();
       
-      // Real-time listener for purchase history
       const channel = supabase
         .channel('public:payment_orders_history')
         .on('postgres_changes', { 
@@ -105,6 +104,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   }
 
   const handlePurchase = async (item: any) => {
+    if (!item) return;
     const isBlocked = (club.fans || 0) < (item.min_fans || 0);
     if (isBlocked) {
       toast.error(`Torcida insuficiente! Você precisa de ${item.min_fans.toLocaleString()} torcedores.`);
@@ -149,7 +149,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto scrollbar-hide">
-      {/* HEADER */}
       <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
         <div className="absolute top-4 right-6 opacity-10">
           <ShoppingBag className="h-24 w-24 text-emerald-400" />
@@ -261,6 +260,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                         clubFans={club.fans || 0} 
                         isPremium={isPremium}
                         onPurchase={() => handlePurchase(item)} 
+                        onViewDetails={() => openDetails(item)}
                       />
                     </motion.div>
                   ))}
@@ -328,7 +328,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         </Tabs>
       </div>
 
-      {/* SUCCESS MODAL */}
       <AnimatePresence>
         {showPremium && (
           <motion.div 
@@ -354,6 +353,14 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ShopItemDetails 
+        item={selectedItem}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onPurchase={() => handlePurchase(selectedItem)}
+        clubFans={club.fans || 0}
+      />
     </div>
   );
 }
@@ -364,7 +371,9 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
   const isFree = item.price_cents === 0;
 
   return (
-    <div className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 flex flex-col h-full ${
+    <div 
+      onClick={onViewDetails}
+      className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 flex flex-col h-full cursor-pointer ${
       isBlocked 
         ? 'border-white/5 bg-black/40 grayscale' 
         : `border-white/10 bg-[#0A0D14] hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.1)]`
@@ -431,11 +440,24 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
           </div>
         )}
 
-        <div className="pt-2 mt-auto">
+        <div className="pt-2 mt-auto flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails();
+            }}
+            className="flex-none w-12 h-12 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button 
             disabled={isBlocked} 
-            onClick={onPurchase}
-            className={`w-full font-black uppercase italic h-12 rounded-2xl transition-all duration-300 shadow-lg ${
+            onClick={(e) => {
+              e.stopPropagation();
+              onPurchase();
+            }}
+            className={`flex-1 font-black uppercase italic h-12 rounded-2xl transition-all duration-300 shadow-lg ${
               isBlocked 
                 ? 'bg-white/5 text-white/40 border border-white/5' 
                 : isFree 
@@ -443,11 +465,9 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 group-hover:scale-[1.02] active:scale-95'
             }`}
           >
-            {isFree ? 'Assinar Contrato' : (
+            {isFree ? 'Assinar' : (
               <div className="flex items-center justify-center gap-2">
                 <span className="text-sm">R$ {price.toLocaleString()}</span>
-                <span className="opacity-40 font-normal">|</span>
-                <span className="text-[10px]">Comprar</span>
               </div>
             )}
           </Button>
