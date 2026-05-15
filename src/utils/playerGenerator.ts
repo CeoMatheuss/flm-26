@@ -265,8 +265,9 @@ export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium
 
   // The rest are bench and reserves
   const others = squad.filter(p => !used.has(p.id)).sort((a, b) => b.overall - a.overall);
-  const bench = others.slice(0, 11).map(p => ({ ...p, squadRole: 'reserva' as const }));
-  const reserves = others.slice(11).map(p => ({ ...p, squadRole: (p.isYouth ? 'promessa' : 'reserva') as const }));
+  const bench = others.slice(0, 11).map(p => ({ ...p, squadRole: 'reserva' }));
+  const reserves = others.slice(11).map(p => ({ ...p, squadRole: p.isYouth ? 'promessa' : 'reserva' }));
+
 
   return [...starters, ...bench, ...reserves];
 }
