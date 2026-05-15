@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, Coins, HandCoins, AlertCircle } from 'lucide-react';
+import { ArrowLeftRight, Coins, HandCoins, AlertCircle, HelpCircle } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { formatMoney } from '@/lib/formatMoney';
 
 export type SalaryPayer = 'seller' | 'buyer' | 'split';
@@ -77,6 +78,30 @@ export function LoanNegotiationModal({
           <DialogTitle className="flex items-center gap-2 text-base">
             <ArrowLeftRight className="h-4 w-4 text-primary" />
             {mode === 'list' ? 'Listar para empréstimo' : 'Negociar empréstimo'}
+            <HoverCard openDelay={100} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                <button className="p-1 rounded-full hover:bg-white/10 transition-colors">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 bg-[#0a0c14] border-white/10 backdrop-blur-xl shadow-2xl p-4 z-[100]">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                    <ArrowLeftRight className="h-4 w-4 text-[#8b5cf6]" />
+                    <h4 className="text-sm font-black italic uppercase tracking-wider text-white">O que são Empréstimos?</h4>
+                  </div>
+                  <div className="space-y-2 text-xs text-white/70 leading-relaxed italic">
+                    <p>O <span className="text-white font-bold">Empréstimo</span> permite que um clube ceda temporariamente um jogador a outro, mantendo o vínculo federativo.</p>
+                    <div className="bg-white/5 rounded-lg p-2 border border-white/5 space-y-2">
+                      <p><span className="text-[#8b5cf6] font-bold">● Salários:</span> Pode ser pago integralmente por um dos clubes ou dividido entre ambos.</p>
+                      <p><span className="text-[#8b5cf6] font-bold">● Taxas:</span> O clube que recebe o jogador pode pagar uma taxa única de transferência temporária.</p>
+                      <p><span className="text-[#8b5cf6] font-bold">● Duração:</span> O contrato dura até o final da temporada atual ou conforme acordado.</p>
+                    </div>
+                    <p className="text-[10px] text-white/40 border-t border-white/5 pt-2 uppercase font-black">Ideal para dar rodagem a jovens talentos ou reduzir custos salariais.</p>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           </DialogTitle>
           <DialogDescription className="text-xs">
             {mode === 'list'
