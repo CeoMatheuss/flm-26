@@ -302,6 +302,12 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
                onUpgrade: (f: any) => game.upgradeFacility(f),
                budget: game.club.budget,
                clubName: game.club.name,
+               fans: game.club.fans,
+               reputation: game.club.reputation,
+               ticketPrice: game.club.ticketPrice,
+               winStreak: winStreak,
+               loseStreak: 0,
+
                userId,
                onRenameStadium: game.renameStadium,
                onSetTicketPrice: game.setTicketPrice,
@@ -314,11 +320,35 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
                onCancelStadiumInsurance: game.cancelStadiumInsurance,
                onAcceptStadiumSponsor: game.acceptStadiumSponsor,
                onRejectStadiumSponsor: game.rejectStadiumSponsor,
-               onBuyModularUpgrade: game.buyModularUpgrade
+               onBuyModularUpgrade: game.buyModularUpgrade,
+               onToggleMembershipTier: game.toggleMembershipTier
             }}
           />
         )}
       </TabsContent>
+
+      <TabsContent value="ctrooms">
+        {isTabBlocked('ctrooms') ? <BlockedMessage /> : (
+          <InfrastructureWrapper
+            initialSubTab="ctrooms"
+            players={game.club.players}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus || {}}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+            onUpgradeFacility={game.upgradeFacility}
+            onUpgradeCTRoom={game.upgradeCTRoom}
+            ctRooms={game.ctRooms}
+          />
+        )}
+      </TabsContent>
+
 
       <TabsContent value="youth">
         {isTabBlocked('youth') ? <BlockedMessage /> : (
@@ -356,6 +386,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           />
         )}
       </TabsContent>
+
 
       <TabsContent value="journal">
         {isTabBlocked('newspaper') ? <BlockedMessage /> : <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />}
