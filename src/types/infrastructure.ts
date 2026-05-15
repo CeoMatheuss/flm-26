@@ -1,4 +1,4 @@
-import { Player } from './game';
+import { Player, PlayerAttributes } from './game';
 
 export interface Infrastructure {
   trainingCenter: FacilityLevel;
