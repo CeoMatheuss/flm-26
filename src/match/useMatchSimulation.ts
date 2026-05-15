@@ -252,7 +252,7 @@ export function useMatchSimulation() {
 
   const tick = useCallback(() => {
     const data = dataRef.current;
-    if (!data || isAnimatingRef.current) return;
+    if (!data || isAnimatingRef.current || state.phase === 'finished') return;
 
     const now = Date.now();
     const virtualElapsed = (now - data.startTime);
