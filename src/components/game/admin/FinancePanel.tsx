@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2, Key, AlertCircle, RefreshCw } from 'lucide-react';
 
 type Club = {
   user_id: string;
@@ -46,6 +46,7 @@ export function FinancePanel() {
   const [lastResult, setLastResult] = useState<{ name: string; newBudget: number; delta: number } | null>(null);
   const [logs, setLogs] = useState<FinanceLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<{ loading: boolean; success?: boolean; message?: string; error?: string }>({ loading: false });
 
   // Carrega lista de clubes (uma vez)
   const loadClubs = useCallback(async () => {
@@ -102,6 +103,26 @@ export function FinancePanel() {
     if (data) setLogs(data as any);
     setLoadingLogs(false);
   }, []);
+
+  const validateToken = async () => {
+    setTokenStatus({ loading: true });
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-mercadopago-token');
+      if (error) throw error;
+      
+      if (data.success) {
+        setTokenStatus({ loading: false, success: true, message: `Conectado: ${data.app_name || 'App Mercado Pago'}` });
+        toast.success('Token validado com sucesso!');
+      } else {
+        setTokenStatus({ loading: false, success: false, error: data.error });
+        toast.error('Erro na validação do token');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setTokenStatus({ loading: false, success: false, error: 'Erro ao chamar função de validação.' });
+      toast.error('Falha na comunicação com o servidor');
+    }
+  };
 
   useEffect(() => {
     loadClubs();
@@ -398,6 +419,56 @@ export function FinancePanel() {
               })
             )}
           </div>
+        </CardContent>
+      </Card>
+      {/* MERCADO PAGO VALIDATION */}
+      <Card className={`border-${tokenStatus.success ? 'emerald' : tokenStatus.error ? 'red' : 'amber'}-500/20 bg-muted/10`}>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Key className={`h-4 w-4 ${tokenStatus.success ? 'text-emerald-500' : tokenStatus.error ? 'text-red-500' : 'text-amber-500'}`} />
+              <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
+                Status Mercado Pago
+              </h4>
+            </div>
+            {tokenStatus.success && (
+              <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[9px] uppercase font-black">Ativo</Badge>
+            )}
+          </div>
+
+          <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+            {tokenStatus.loading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+                Testando conexão com a API do Mercado Pago...
+              </div>
+            ) : tokenStatus.success ? (
+              <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                <CheckCircle2 className="h-3 w-3" />
+                {tokenStatus.message}
+              </div>
+            ) : tokenStatus.error ? (
+              <div className="flex items-start gap-2 text-xs text-red-400 font-medium leading-tight">
+                <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                {tokenStatus.error}
+              </div>
+            ) : (
+              <div className="text-[10px] text-muted-foreground italic">
+                O token não foi testado nesta sessão. Clique para validar a integração.
+              </div>
+            )}
+          </div>
+
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="w-full h-9 text-[10px] font-bold uppercase gap-2 bg-background hover:bg-muted"
+            onClick={validateToken}
+            disabled={tokenStatus.loading}
+          >
+            {tokenStatus.loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Testar Conexão do Token
+          </Button>
         </CardContent>
       </Card>
     </div>
