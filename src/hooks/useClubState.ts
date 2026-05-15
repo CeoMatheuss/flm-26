@@ -1119,6 +1119,19 @@ export function useClubState(initialState: any, userId?: string) {
     }
   }, []);
 
+  const changePlayerPosition = useCallback((playerId: string, newPosition: Player['position'], newSide?: 'L' | 'R' | 'C') => {
+    setClub(prev => {
+      const players = prev.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, position: newPosition, side: newSide };
+        }
+        return p;
+      });
+      return { ...prev, players };
+    });
+    toast.success('Posição do jogador atualizada!');
+  }, []);
+
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
