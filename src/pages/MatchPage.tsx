@@ -2120,16 +2120,28 @@ function EventFeed({ events, homeTeam, awayTeam, homeShield, awayShield }: {
   homeShield?: ShieldRenderProps; awayShield?: ShieldRenderProps;
 }) {
   const items: React.ReactNode[] = [];
-  let prevMinute: number | null = null;
-  events.forEach((ev, i) => {
-    if (ev.minute !== prevMinute) {
-      items.push(<MinuteSeparator key={`sep-${ev.minute}-${i}`} minute={ev.minute} />);
-      prevMinute = ev.minute;
+  // Agrupamos eventos por minuto para colocar o separador corretamente na ordem inversa
+  const groups: Record<number, SimEvent[]> = {};
+  const minutes: number[] = [];
+
+  events.forEach(ev => {
+    if (!groups[ev.minute]) {
+      groups[ev.minute] = [];
+      minutes.push(ev.minute);
     }
-    items.push(
-      <ChatEventRow key={`${ev.minute}-${i}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
-    );
+    groups[ev.minute].push(ev);
   });
+
+  // Ordenamos os minutos (já deve vir decrescente do sort anterior, mas garantimos)
+  minutes.sort((a, b) => b - a).forEach(min => {
+    items.push(<MinuteSeparator key={`sep-${min}`} minute={min} />);
+    groups[min].forEach((ev, i) => {
+      items.push(
+        <ChatEventRow key={`${ev.minute}-${i}-${ev.type}`} ev={ev} homeTeam={homeTeam} awayTeam={awayTeam} homeShield={homeShield} awayShield={awayShield} />
+      );
+    });
+  });
+
   return <>{items}</>;
 }
 
