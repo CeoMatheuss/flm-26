@@ -13,6 +13,7 @@ import {
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
+import { FormationView } from './FormationView';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
@@ -150,6 +151,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [activeTacticalView, setActiveTacticalView] = useState<'list' | 'pitch'>('pitch');
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
@@ -751,52 +753,130 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
   // ─── Main Squad View ───
   return (
-    <div className="space-y-3">
-      <Tabs defaultValue="squad" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full rounded-xl h-9">
-          <TabsTrigger value="squad" className="text-xs gap-1.5 rounded-lg">
-            <Users className="h-3.5 w-3.5" /> Elenco ({players.length})
-          </TabsTrigger>
-          <TabsTrigger value="contracts" className="text-xs gap-1.5 rounded-lg">
-            <FileText className="h-3.5 w-3.5" /> Contratos
-            {expiringPlayers.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[8px]">{expiringPlayers.length}</Badge>}
-          </TabsTrigger>
-        </TabsList>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <Tabs defaultValue="squad" className="w-full sm:max-w-md">
+          <TabsList className="grid grid-cols-2 w-full rounded-2xl h-10 bg-slate-900/40 border border-white/5 p-1">
+            <TabsTrigger value="squad" className="text-xs gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+              <Users className="h-4 w-4" /> Elenco
+            </TabsTrigger>
+            <TabsTrigger value="contracts" className="text-xs gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+              <FileText className="h-4 w-4" /> Contratos
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        <TabsContent value="squad" className="space-y-4 mt-4">
+        {/* View Toggle - ONLY Mobile */}
+        <div className="flex sm:hidden w-full gap-2 p-1 bg-slate-900/40 border border-white/5 rounded-2xl">
+          <Button 
+            variant={activeTacticalView === 'pitch' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="flex-1 rounded-xl gap-2"
+            onClick={() => setActiveTacticalView('pitch')}
+          >
+            <Layout className="w-4 h-4" /> Tático
+          </Button>
+          <Button 
+            variant={activeTacticalView === 'list' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="flex-1 rounded-xl gap-2"
+            onClick={() => setActiveTacticalView('list')}
+          >
+            <Users className="w-4 h-4" /> Lista
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="squad" value="squad" className="w-full">
+        <TabsContent value="squad" className="space-y-4 mt-0">
+          {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
-              <div className="relative">
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users className="w-3 h-3" /> Plantel</p>
-                <p className="text-2xl font-black text-white">{players.length}</p>
-              </div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Users className="w-3 h-3" /> Plantel</p>
+              <p className="text-2xl font-black text-white">{players.length}</p>
             </motion.div>
             
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-colors" />
-              <div className="relative">
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Trophy className="w-3 h-3" /> OVR Médio</p>
-                <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
-              </div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl" />
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Trophy className="w-3 h-3" /> OVR Médio</p>
+              <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-colors" />
-              <div className="relative">
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Tag className="w-3 h-3" /> Folha/mês</p>
-                <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
-              </div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl" />
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Tag className="w-3 h-3" /> Folha</p>
+              <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
-              <div className="relative">
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Lesionados</p>
-                <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
-              </div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Activity className="w-3 h-3" /> Lesões</p>
+              <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
             </motion.div>
           </div>
+
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Lado Esquerdo: Pitch (Exclusivo Mobile View ou Desktop Sidebar) */}
+            <AnimatePresence mode="wait">
+              {(activeTacticalView === 'pitch' || window.innerWidth > 1024) && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`w-full lg:w-[400px] shrink-0 ${activeTacticalView === 'pitch' ? 'block' : 'hidden lg:block'}`}
+                >
+                  <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <Layout className="w-4 h-4 text-primary" /> Painel Tático
+                      </h3>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black">
+                        {tactics?.formation || '4-4-2'}
+                      </Badge>
+                    </div>
+                    
+                    <FormationView 
+                      formation={tactics?.formation || '4-4-2'} 
+                      players={players} 
+                      onPlayerClick={setViewingPlayer}
+                      onSwapPlayers={swapPlayers}
+                      isInteractive={true}
+                    />
+                    
+                    <div className="mt-4 p-3 bg-white/5 rounded-2xl border border-white/5 text-[10px] text-white/40 font-bold uppercase tracking-wider text-center">
+                      Toque em dois jogadores para trocá-los de posição
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Lado Direito: Lista de Jogadores */}
+            <div className={`flex-1 space-y-4 ${activeTacticalView === 'list' || window.innerWidth > 1024 ? 'block' : 'hidden lg:block'}`}>
+              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
+                  {(['starters', 'reserves', 'out'] as const).map((tab) => (
+                    <Button
+                      key={tab}
+                      variant={squadSubTab === tab ? 'default' : 'ghost'}
+                      size="sm"
+                      className="rounded-xl px-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      onClick={() => setSquadSubTab(tab)}
+                    >
+                      {tab === 'starters' ? 'Titulares' : tab === 'reserves' ? 'Reservas' : 'Fora'}
+                    </Button>
+                  ))}
+                </div>
+                
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Input 
+                    placeholder="Filtrar..." 
+                    className="h-9 bg-white/5 border-white/10 text-xs rounded-xl"
+                    onChange={(e) => setFilterPos(e.target.value.toUpperCase())}
+                  />
+                </div>
+              </div>
 
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -1022,7 +1102,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </div>
             </TabsContent>
           </Tabs>
-        </TabsContent>
+        </div>
+      </div>
+    </TabsContent>
 
         <TabsContent value="contracts" className="space-y-3 mt-3">
           {expiringPlayers.length > 0 && (

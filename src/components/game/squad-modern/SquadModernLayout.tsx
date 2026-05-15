@@ -33,10 +33,11 @@ interface SquadModernProps {
   youthInvestment: number;
   onSetYouthInvestment: (amount: number) => void;
   infrastructure: any;
+  onUpdateTactics?: (tactics: any) => void;
 }
 
 export function SquadModernLayout({
-  club, season, players, tactics, onUpdatePlayers,
+  club, season, players, tactics, onUpdatePlayers, onUpdateTactics,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
   userId, infrastructure
@@ -44,6 +45,7 @@ export function SquadModernLayout({
   const [activeTab, setActiveTab] = useState<string>('titulares');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
 
   const deltas = useAttributeEvolution(players);
 
@@ -101,13 +103,16 @@ export function SquadModernLayout({
       <SquadHeader 
         club={club} 
         season={season} 
-        viewMode="list" 
-        onViewModeChange={() => {}} 
+        viewMode={viewMode} 
+        onViewModeChange={(mode) => setViewMode(mode as any)} 
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Main Content Area: Tabs & Tables */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className={cn(
+          "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500",
+          viewMode === 'pitch' ? "hidden xl:flex" : "flex"
+        )}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             {/* Horizontal Sub-tabs */}
             <div className="px-4 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide">
@@ -162,8 +167,11 @@ export function SquadModernLayout({
           </Tabs>
         </div>
 
-        {/* Tactical Panel (Desktop Right Side) */}
-        <div className="hidden xl:flex w-[480px] flex-col border-l border-white/5 bg-zinc-950/50 overflow-hidden relative group">
+        {/* Tactical Panel (Desktop Right Side or Mobile Overlay) */}
+        <div className={cn(
+          "w-full xl:w-[480px] flex-col border-l border-white/5 bg-zinc-950/50 overflow-hidden relative group transition-all duration-500",
+          viewMode === 'pitch' ? "flex" : "hidden xl:flex"
+        )}>
            {/* Section Header */}
            <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -187,7 +195,7 @@ export function SquadModernLayout({
               <TacticsTab 
                 players={players} 
                 tactics={tactics} 
-                onUpdate={() => {}} 
+                onUpdate={onUpdateTactics || (() => {})} 
                 season={season?.currentSeason}
                 userId={userId}
               />

@@ -143,7 +143,7 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       exit={{ opacity: 0, scale: 0.95 }}
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-2xl border flex flex-col md:grid md:grid-cols-12 md:items-center gap-4 px-4 py-3 transition-all duration-300 group relative overflow-hidden",
+        "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden",
         selected 
           ? "bg-emerald-500/10 border-emerald-500/30 shadow-xl" 
           : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"
@@ -153,14 +153,14 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       <div className={cn("absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity", tier.bg.split(' ')[0])} />
 
       {/* Shirt Number / Index */}
-      <div className="hidden md:flex col-span-1 items-center gap-2">
+      <div className="hidden sm:flex col-span-1 items-center gap-2">
         <span className="text-[10px] font-black text-white/20 italic tracking-tighter">
           {player.shirtNumber ? String(player.shirtNumber).padStart(2, '0') : String(idx).padStart(2, '0')}
         </span>
       </div>
 
       {/* Name & Position */}
-      <div className="col-span-4 flex items-center gap-3">
+      <div className="col-span-11 sm:col-span-4 flex items-center gap-3">
         <div className={cn(
           "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
           tier.ring, tier.glow, "bg-zinc-950/80"
@@ -168,8 +168,8 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
           <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
           <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
           {delta !== 0 && (
-             <span className="absolute top-0 right-0 p-0.5 z-10">
-               {delta > 0 ? <ArrowUp className="w-2 h-2 text-emerald-400" /> : <ArrowDown className="w-2 h-2 text-red-400" />}
+             <span className="absolute -top-1 -right-1 p-0.5 z-10">
+               {delta > 0 ? <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" /> : <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />}
              </span>
           )}
         </div>
@@ -193,7 +193,7 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       </div>
 
       {/* Age */}
-      <div className="hidden md:block col-span-1 text-center">
+      <div className="hidden sm:block col-span-1 text-center">
         <span className="text-xs font-bold text-white/50">{player.age}a</span>
       </div>
 
@@ -204,18 +204,24 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       </div>
 
       {/* Contract info */}
-      <div className="hidden md:flex col-span-2 flex-col items-end">
+      <div className="hidden sm:flex col-span-2 flex-col items-end">
          <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
       </div>
 
       {/* Market Value */}
-      <div className="col-span-2 flex items-center justify-end gap-3">
-        <div className="flex flex-col items-end">
-          <span className="text-xs font-black text-emerald-400 italic leading-none">{formatMoney(value)}</span>
-          <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Mkt Value</span>
+      <div className="col-span-11 sm:col-span-2 flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+        <div className="flex sm:hidden flex-col">
+          <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
+          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos • {player.age}a</span>
         </div>
-        <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1" />
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-xs font-black text-emerald-400 italic leading-none">{formatMoney(value)}</span>
+            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Mkt Value</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1" />
+        </div>
       </div>
     </motion.button>
   );
