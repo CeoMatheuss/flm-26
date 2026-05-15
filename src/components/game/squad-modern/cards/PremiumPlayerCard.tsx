@@ -16,7 +16,7 @@ interface Props {
 export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Props) {
   const tier = ovrTier(player.overall);
   const status = getPlayerStatus(player, isStarter);
-  const sm = statusMeta[status];
+  const sm = statusMeta[status] || statusMeta.reserva;
   
   const deltas = useAttributeEvolution([player]);
   const overallDelta = deltas[player.id]?.overall || 0;

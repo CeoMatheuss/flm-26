@@ -139,7 +139,7 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter);
-  const sm = statusMeta[status];
+  const sm = statusMeta[status] || statusMeta.reserva;
 
   return (
     <motion.button

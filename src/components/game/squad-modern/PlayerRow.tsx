@@ -23,7 +23,7 @@ interface Props {
 export function PlayerRow({ player, status, selected, onClick }: Props) {
   const value = getPlayerValue(player);
   const tier = ovrTier(player.overall);
-  const sm = statusMeta[status];
+  const sm = statusMeta[status] || statusMeta.reserva;
   
   const deltas = useAttributeEvolution([player]);
   const overallDelta = deltas[player.id]?.overall || 0;

@@ -31,9 +31,9 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
   if (!prospect) return null;
 
   const potTier = prospect.potentialTier ?? 'comum';
-  const potInfo = potentialTierInfo[potTier];
+  const potInfo = potentialTierInfo[potTier] || potentialTierInfo.comum;
   const evoStatus = prospect.evolutionStatus ?? 'estavel';
-  const evoInfo = evolutionStatusInfo[evoStatus];
+  const evoInfo = evolutionStatusInfo[evoStatus] || evolutionStatusInfo.estavel;
 
   const radarData = [
     { subject: 'Passe', A: prospect.attributes.passing, fullMark: 100 },
