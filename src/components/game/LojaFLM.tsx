@@ -49,12 +49,39 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
   }
 
   const handlePurchase = async (item: any) => {
+    if (club.budget < (item.price_cents / 100)) {
+      toast.error('Saldo insuficiente!');
+      return;
+    }
+
     setLoading(true);
-    // Simulação do checkout
-    await new Promise(r => setTimeout(r, 1000));
-    setShowPremium(true);
-    toast.success(`Compra concluída: ${item.name}! Premium ativado.`);
-    setLoading(false);
+    try {
+      // Invocamos a função de checkout do MercadoPago
+      // Se for gratuito (price_cents == 0), a função ou uma RPC deve lidar com isso.
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: { item_id: item.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.init_point) {
+        // Se for redirecionamento (Checkout Pro)
+        window.location.href = data.init_point;
+      } else if (data?.status === 'approved' || item.price_cents === 0) {
+        // Se foi aprovado direto ou é gratuito
+        setShowPremium(true);
+        toast.success(`Compra concluída: ${item.name}! Premium ativado.`);
+        // Play sound effect if possible
+        const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Erro ao processar compra');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
