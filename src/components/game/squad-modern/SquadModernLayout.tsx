@@ -32,6 +32,7 @@ interface SquadModernProps {
   onUpgradeAcademy?: () => void;
   youthInvestment: number;
   onSetYouthInvestment: (amount: number) => void;
+  infrastructure: any;
 }
 
 export function SquadModernLayout({
@@ -136,7 +137,7 @@ export function SquadModernLayout({
                            onPromote={onPromoteYouth}
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}
-                           academyLevel={club.infrastructure.youthAcademy.level}
+                           academyLevel={club.infrastructure?.youthAcademy?.level ?? infrastructure?.youthAcademy?.level ?? 0}
                            budget={club.budget}
                            hasScouts={(club.scouts || []).length > 0}
                            currentSeason={season?.currentSeason || 1}
