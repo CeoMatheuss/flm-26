@@ -16,6 +16,9 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
   const tier = ovrTier(player.overall);
   const status = getPlayerStatus(player, isStarter);
   const sm = statusMeta[status];
+  
+  const deltas = useAttributeEvolution([player]);
+  const overallDelta = deltas[player.id]?.overall || 0;
 
   return (
     <motion.button
