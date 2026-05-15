@@ -5421,6 +5421,10 @@ export type Database = {
       }
       sync_league_state: { Args: { _user_id: string }; Returns: Json }
       sync_league_team_count: { Args: never; Returns: undefined }
+      sync_match_persistence: {
+        Args: { _match_id: string }
+        Returns: undefined
+      }
       update_club_budget: {
         Args: { p_amount: number; p_description: string; p_user_id: string }
         Returns: undefined
