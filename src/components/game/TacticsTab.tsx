@@ -107,7 +107,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onChangePosition, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const { isInLiveMatch } = useActiveMatch();
 
