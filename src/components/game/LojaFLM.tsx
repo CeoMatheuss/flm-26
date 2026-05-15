@@ -74,7 +74,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
             audio.volume = 0.3;
             audio.play().catch(() => {});
-            toast.success("Pagamento confirmado! Benefícios liberados.");
+            window.dispatchEvent(new CustomEvent('flm:purchase-success', { 
+              detail: { item_name: payload.new.metadata?.item_name || 'Seu Item' } 
+            }));
+
           }
         })
 
