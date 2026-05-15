@@ -1,0 +1,236 @@
+import { useState, useMemo } from 'react';
+import { Player } from '@/types/game';
+import { formatMoney } from '@/lib/formatMoney';
+import { getPlayerValue } from '@/utils/playerGenerator';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAttributeEvolution } from './useAttributeEvolution';
+import {
+  PlayerStatus,
+  statusMeta,
+  ovrTier,
+  positionColors,
+  flagFor,
+  getPlayerStatus,
+} from './squadHelpers';
+
+interface Props {
+  players: Player[];
+  starterIds: Set<string>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  activeTab: string;
+}
+
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab }: Props) {
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
+
+  const deltas = useAttributeEvolution(players);
+
+  const filtered = useMemo(() => {
+    return players.filter(p => {
+      const isStarter = starterIds.has(p.id);
+      const status = getPlayerStatus(p, isStarter);
+      
+      // Filter by Search
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+
+      // Filter by Tab
+      switch (activeTab) {
+        case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
+        case 'reservas': return !isStarter && status === 'reserva';
+        case 'afastados': return status === 'afastado' || status === 'indisponivel';
+        case 'lesionados': return status === 'lesionado' || !!p.injury;
+        case 'suspensos': return status === 'suspenso';
+        case 'emprestados': return status === 'emprestado';
+        case 'transferencias': return status === 'lista-transferencia';
+        default: return true;
+      }
+    }).sort((a, b) => {
+      if (sortBy === 'overall') return b.overall - a.overall;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'age') return b.age - a.age;
+      if (sortBy === 'value') return getPlayerValue(b) - getPlayerValue(a);
+      return 0;
+    });
+  }, [players, starterIds, activeTab, search, sortBy]);
+
+  return (
+    <div className="flex flex-col h-full bg-zinc-900/30 rounded-[2rem] border border-white/5 overflow-hidden">
+      {/* Search & Filters */}
+      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+          <input 
+            type="text"
+            placeholder="Buscar jogador..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-bold focus:outline-none focus:border-emerald-500/50 transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+           <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mr-2">Ordenar por:</span>
+           <SortBtn active={sortBy === 'overall'} onClick={() => setSortBy('overall')} label="OVR" />
+           <SortBtn active={sortBy === 'value'} onClick={() => setSortBy('value')} label="VALOR" />
+           <SortBtn active={sortBy === 'age'} onClick={() => setSortBy('age')} label="IDADE" />
+        </div>
+      </div>
+
+      {/* Table Header */}
+      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-zinc-950/40 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5">
+        <div className="col-span-1">#</div>
+        <div className="col-span-4">Jogador / Posição</div>
+        <div className="col-span-1 text-center">Idade</div>
+        <div className="col-span-2 text-center">Fis / Mor</div>
+        <div className="col-span-2 text-right">Contrato</div>
+        <div className="col-span-2 text-right">Valor</div>
+      </div>
+
+      {/* List Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-4 space-y-2">
+        <AnimatePresence mode="popLayout">
+          {filtered.map((p, idx) => (
+            <PlayerListRow 
+              key={p.id} 
+              player={p} 
+              idx={idx + 1}
+              isStarter={starterIds.has(p.id)}
+              delta={deltas[p.id]?.overall || 0}
+              selected={selectedId === p.id}
+              onClick={() => onSelect(p.id)}
+            />
+          ))}
+        </AnimatePresence>
+        
+        {filtered.length === 0 && (
+          <div className="h-64 flex flex-col items-center justify-center text-center opacity-20">
+             <Filter className="w-12 h-12 mb-4" />
+             <p className="text-sm font-black uppercase italic">Nenhum jogador encontrado</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SortBtn({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-[9px] font-black transition-all",
+        active ? "bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/20" : "bg-white/5 text-white/40 hover:bg-white/10"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; delta: number; selected: boolean; onClick: () => void }) {
+  const tier = ovrTier(player.overall);
+  const value = getPlayerValue(player);
+  const status = getPlayerStatus(player, isStarter);
+  const sm = statusMeta[status];
+
+  return (
+    <motion.button
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      onClick={onClick}
+      className={cn(
+        "w-full text-left rounded-2xl border flex flex-col md:grid md:grid-cols-12 md:items-center gap-4 px-4 py-3 transition-all duration-300 group relative overflow-hidden",
+        selected 
+          ? "bg-emerald-500/10 border-emerald-500/30 shadow-xl" 
+          : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"
+      )}
+    >
+      {/* Decorative Glow */}
+      <div className={cn("absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity", tier.bg.split(' ')[0])} />
+
+      {/* Shirt Number / Index */}
+      <div className="hidden md:flex col-span-1 items-center gap-2">
+        <span className="text-[10px] font-black text-white/20 italic tracking-tighter">
+          {player.shirtNumber ? String(player.shirtNumber).padStart(2, '0') : String(idx).padStart(2, '0')}
+        </span>
+      </div>
+
+      {/* Name & Position */}
+      <div className="col-span-4 flex items-center gap-3">
+        <div className={cn(
+          "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
+          tier.ring, tier.glow, "bg-zinc-950/80"
+        )}>
+          <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
+          <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
+          {delta !== 0 && (
+             <span className="absolute top-0 right-0 p-0.5 z-10">
+               {delta > 0 ? <ArrowUp className="w-2 h-2 text-emerald-400" /> : <ArrowDown className="w-2 h-2 text-red-400" />}
+             </span>
+          )}
+        </div>
+        
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors">
+              {player.name}
+            </span>
+            <span className="text-sm">{flagFor((player as any).country)}</span>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+             <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>
+               {player.position}
+             </span>
+             <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-60", sm.color)}>
+               {sm.label}
+             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Age */}
+      <div className="hidden md:block col-span-1 text-center">
+        <span className="text-xs font-bold text-white/50">{player.age}a</span>
+      </div>
+
+      {/* Fitness / Morale */}
+      <div className="col-span-2 flex items-center justify-center gap-4">
+        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" />
+        <MiniStat value={player.morale} icon={<Heart className="w-3 h-3" />} color="text-pink-400" />
+      </div>
+
+      {/* Contract info */}
+      <div className="hidden md:flex col-span-2 flex-col items-end">
+         <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
+         <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
+      </div>
+
+      {/* Market Value */}
+      <div className="col-span-2 flex items-center justify-end gap-3">
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-black text-emerald-400 italic leading-none">{formatMoney(value)}</span>
+          <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Mkt Value</span>
+        </div>
+        <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1" />
+      </div>
+    </motion.button>
+  );
+}
+
+function MiniStat({ value, icon, color }: { value: number; icon: React.ReactNode; color: string }) {
+  const v = Math.round(value || 0);
+  return (
+    <div className="flex items-center gap-1.5 min-w-[40px]">
+      <div className={cn(color, "opacity-50")}>{icon}</div>
+      <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
+        {v}
+      </span>
+    </div>
+  );
+}
