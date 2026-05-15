@@ -46,6 +46,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [pixData, setPixData] = useState<{ qrCode: string; copyPaste: string; orderId: string } | null>(null);
   const [showPixModal, setShowPixModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutMethod, setCheckoutMethod] = useState<'pix' | 'card'>('pix');
+  const [checkoutEmail, setCheckoutEmail] = useState('');
 
   useEffect(() => {
     fetchItems();
