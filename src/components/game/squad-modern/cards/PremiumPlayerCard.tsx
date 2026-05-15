@@ -49,10 +49,17 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
         <div className="flex justify-between items-start">
           <div className="flex flex-col items-center">
             <div className={cn(
-              'text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg',
+              'text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
               tier.color
             )}>
               {player.overall}
+              {overallDelta !== 0 && (
+                <span className="flex items-center animate-in fade-in zoom-in duration-500">
+                  {overallDelta > 0 
+                    ? <ArrowUp className="w-3 h-3 text-emerald-400 fill-emerald-400/20" /> 
+                    : <ArrowDown className="w-3 h-3 text-red-400 fill-red-400/20" />}
+                </span>
+              )}
             </div>
             <div className={cn(
               'mt-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border',
