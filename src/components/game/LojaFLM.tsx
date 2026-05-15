@@ -29,6 +29,7 @@ const CATEGORIES = [
   { id: 'staff', name: 'Staff', icon: HardHat },
   { id: 'physio', name: 'Fisioterapia', icon: HeartPulse },
   { id: 'packs', name: 'Pacotes', icon: Package },
+  { id: 'history', name: 'Histórico', icon: History },
 ];
 
 export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
