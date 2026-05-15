@@ -157,6 +157,8 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       player_age: player.age || 25,
       min_price: startPrice,
       current_bid: startPrice,
+      current_bidder_id: null, // Ensure seller is not the initial bidder
+      current_bidder_name: null,
       rarity: getRarityByOverall(player.overall),
     }]);
     if (error) {
