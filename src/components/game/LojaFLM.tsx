@@ -9,7 +9,7 @@ import {
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye, QrCode, Copy, Check, X
+  Eye, QrCode, Copy, Check, X, CreditCard, Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +46,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [pixData, setPixData] = useState<{ qrCode: string; copyPaste: string; orderId: string } | null>(null);
   const [showPixModal, setShowPixModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutMethod, setCheckoutMethod] = useState<'pix' | 'card'>('pix');
+  const [checkoutEmail, setCheckoutEmail] = useState('');
 
   useEffect(() => {
     fetchItems();
@@ -119,10 +122,28 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       return;
     }
 
+    setSelectedItem(item);
+    setShowCheckoutModal(true);
+  };
+
+  const executePayment = async () => {
+    if (!selectedItem) return;
+    
+    if (!checkoutEmail.includes('@')) {
+      toast.error('Por favor, insira um e-mail válido para receber o comprovante.');
+      return;
+    }
+
     setLoading(true);
+    setShowCheckoutModal(false);
+    
     try {
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
-        body: { item_id: item.id }
+        body: { 
+          item_id: selectedItem.id,
+          method: checkoutMethod,
+          email: checkoutEmail
+        }
       });
 
       if (error) throw error;
@@ -136,9 +157,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         setShowPixModal(true);
       } else if (data?.init_point) {
         window.location.href = data.init_point;
-      } else if (data?.status === 'approved' || item.price_cents === 0) {
+      } else if (data?.status === 'approved' || selectedItem.price_cents === 0) {
         setShowPremium(true);
-        toast.success(`Compra concluída: ${item.name}!`);
+        toast.success(`Compra concluída: ${selectedItem.name}!`);
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
@@ -373,6 +394,91 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       />
 
       <AnimatePresence>
+        {showCheckoutModal && selectedItem && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[115] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-[#0A0D14] border border-emerald-500/30 p-8 rounded-[2.5rem] space-y-6 max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-none uppercase font-black text-[10px]">Finalizar Pedido</Badge>
+                <Button variant="ghost" size="icon" onClick={() => setShowCheckoutModal(false)} className="h-8 w-8 rounded-full hover:bg-white/5">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">Item Selecionado</p>
+                  <p className="text-xl font-black italic uppercase text-white tracking-tighter text-left">{selectedItem.name}</p>
+                  <p className="text-lg font-black text-emerald-400 text-left">R$ {(selectedItem.price_cents / 100).toLocaleString()}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">Seu E-mail (Receber Comprovante)</p>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                    <input 
+                      type="email" 
+                      placeholder="exemplo@gmail.com"
+                      value={checkoutEmail}
+                      onChange={(e) => setCheckoutEmail(e.target.value)}
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">Forma de Pagamento</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => setCheckoutMethod('pix')}
+                      className={`h-12 rounded-xl border flex items-center justify-center gap-2 transition-all ${
+                        checkoutMethod === 'pix' 
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
+                          : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'
+                      }`}
+                    >
+                      <QrCode className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest italic">PIX</span>
+                    </button>
+                    <button 
+                      onClick={() => setCheckoutMethod('card')}
+                      className={`h-12 rounded-xl border flex items-center justify-center gap-2 transition-all ${
+                        checkoutMethod === 'card' 
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
+                          : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'
+                      }`}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest italic">CARTÃO</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  onClick={executePayment}
+                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic rounded-2xl shadow-xl shadow-emerald-900/20 group transition-all duration-300 active:scale-95"
+                >
+                  <span className="flex items-center gap-2">
+                    {checkoutMethod === 'pix' ? 'Gerar PIX para Pagamento' : 'Prosseguir para o Cartão'}
+                    <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </Button>
+              </div>
+
+              <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                Segurança Mercado Pago • Processamento Instantâneo
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showPixModal && pixData && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
