@@ -61,6 +61,12 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
   }
 
   const handlePurchase = async (item: any) => {
+    const isBlocked = (club.fans || 0) < (item.min_fans || 0);
+    if (isBlocked) {
+      toast.error(`Torcida insuficiente! Você precisa de ${item.min_fans.toLocaleString()} torcedores.`);
+      return;
+    }
+
     if (item.price_cents > 0 && club.budget < (item.price_cents / 100)) {
       toast.error('Saldo insuficiente!');
       return;
