@@ -148,8 +148,44 @@ export function YouthAcademyModernTab({
         </div>
       </section>
 
+      <AnimatePresence>
+        {isConstructing && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="p-6 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 backdrop-blur-xl flex flex-col sm:flex-row items-center gap-6"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6 text-amber-400 animate-pulse" />
+            </div>
+            <div className="flex-1 w-full sm:w-auto">
+              <div className="flex items-center justify-between mb-2">
+                 <h4 className="text-sm font-black italic uppercase tracking-widest text-amber-400">Expansão da Academia</h4>
+                 <span className="text-xs font-black text-amber-400/60 uppercase tracking-widest">{constructionRemaining}</span>
+              </div>
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${constructionProgress}%` }}
+                  className="h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]" 
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/5 rounded-2xl overflow-x-auto scrollbar-hide">
+           <div className="px-4 py-2 flex items-center gap-2 border-r border-white/5 mr-2">
+              <Clock className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex flex-col">
+                 <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] leading-none mb-1">Próximo Talento</span>
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{timeLeft}</span>
+              </div>
+           </div>
+
            <TabButton 
              active={activeSubTab === 'plantel'} 
              onClick={() => setActiveSubTab('plantel')} 
