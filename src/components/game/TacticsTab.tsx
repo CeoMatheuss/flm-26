@@ -244,9 +244,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
           <CardContent className="p-4 space-y-4 relative">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Formação Atual</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Formação & Estilo</p>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-2xl font-black text-white tracking-tighter">{tactics.formation}</h3>
+                  <select 
+                    className="bg-transparent text-2xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-colors"
+                    value={tactics.formation}
+                    onChange={(e) => setField('formation', e.target.value as any)}
+                  >
+                    {allFormations.map(f => <option key={f} value={f} className="bg-slate-900 text-sm font-sans">{f}</option>)}
+                  </select>
                   <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 uppercase font-black">{tactics.playStyle}</Badge>
                 </div>
               </div>
