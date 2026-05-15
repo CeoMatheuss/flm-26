@@ -142,7 +142,7 @@ export const flagFor = (country?: string) => {
     Portugal: '🇵🇹',
     França: '🇫🇷',
     Espanha: '🇪🇸',
-    Inglaterra: '🏴\u{e0067}\u{e0062}\u{e0065}\u{e006en}\u{e0067}\u{e007f}',
+    Inglaterra: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     Alemanha: '🇩🇪',
     Itália: '🇮🇹',
   };
