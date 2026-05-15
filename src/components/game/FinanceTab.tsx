@@ -35,6 +35,9 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
   const totalDespesas = finances.filter(f => f.type === 'despesa').reduce((s, f) => s + f.amount, 0);
   const saldo = totalReceitas - totalDespesas;
 
+  // Costs breakdown
+  const scoutSalaries = scouts.reduce((s, sc) => s + sc.salary, 0);
+
   // Centralized Stadium Economy Engine for revenue projection
   const stadiumEconomy = useMemo(() => {
     return calculateStadiumEconomy({
@@ -51,7 +54,9 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
   }, [fans, infrastructure, ticketPrice]);
 
   const estimatedMatchRevenue = stadiumEconomy.revenue.total;
+  const estimatedAttendance = stadiumEconomy.expectedAttendance;
   const sponsorMonthly = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+
 
 
   // Group finances by category
