@@ -1,9 +1,10 @@
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, TrendingUp, ChevronRight } from 'lucide-react';
+import { Heart, Activity, Shield, TrendingUp, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useAttributeEvolution } from './useAttributeEvolution';
 import {
   PlayerStatus,
   statusMeta,
@@ -23,6 +24,9 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
   const value = getPlayerValue(player);
   const tier = ovrTier(player.overall);
   const sm = statusMeta[status];
+  
+  const deltas = useAttributeEvolution([player]);
+  const overallDelta = deltas[player.id]?.overall || 0;
 
   return (
     <motion.button
@@ -44,7 +48,14 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
         tier.ring, tier.glow, 'bg-zinc-950/80'
       )}>
         <div className={cn('absolute inset-0 opacity-10 bg-gradient-to-br', tier.bg)} />
-        <span className={cn('text-lg font-black italic leading-none z-10', tier.color)}>{player.overall}</span>
+        <span className={cn('text-lg font-black italic leading-none z-10 flex items-center gap-0.5', tier.color)}>
+          {player.overall}
+          {overallDelta !== 0 && (
+            <span className="shrink-0">
+              {overallDelta > 0 ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
+            </span>
+          )}
+        </span>
         <span className="text-[7px] uppercase font-black tracking-widest text-white/40 mt-0.5 z-10">OVR</span>
       </div>
 
