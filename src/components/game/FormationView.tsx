@@ -145,10 +145,11 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
   const [prevAssignedIds, setPrevAssignedIds] = useState<string>('');
   const [justUpdatedIds, setJustUpdatedIds] = useState<Set<string>>(new Set());
   
-  // Real-time validation
+  // Real-time validation (only when we have a full lineup)
   useEffect(() => {
+    if (!Array.isArray(players) || players.length < 11) return;
     const validation = validateLineup(players);
-    if (!validation.valid) {
+    if (!validation.valid && validation.message) {
       toast.error(validation.message, { id: 'lineup-validation' });
     }
   }, [players]);
