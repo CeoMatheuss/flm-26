@@ -568,10 +568,14 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
 
       {/* Player detail dialog */}
       <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle className="text-sm">{selectedPlayer?.name}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-xs border-primary/20 bg-slate-900/95 backdrop-blur-xl p-0 overflow-hidden">
+          <div className="bg-primary/20 p-4 border-b border-white/10 flex items-center justify-between">
+            <div>
+               <h3 className="text-base font-black text-white uppercase tracking-tight">{selectedPlayer?.name}</h3>
+               <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{selectedPlayer?.position} • OVR {selectedPlayer?.overall}</p>
+            </div>
+            <Badge className="bg-white/10 text-white border-white/20">#{selectedPlayer?.shirtNumber || '—'}</Badge>
+          </div>
           {selectedPlayer && (() => {
             const attrLabels: Record<string, { label: string; icon: string }> = {
               speed: { label: 'Velocidade', icon: '⚡' },
