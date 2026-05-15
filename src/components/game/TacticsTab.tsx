@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES } from '@/types/tactics';
+import { formationRequirements } from '@/utils/lineupManager';
 import { Player } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,17 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock } from 'lucide-react';
+import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock, Sparkles, ArrowRightLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { useActiveMatch } from '@/hooks/useActiveMatch';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 interface Props {
   tactics: TacticsConfig;
   players: Player[];
   onUpdate: (tactics: TacticsConfig) => void;
+  onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
   season?: number;
   userId?: string;
 }
@@ -104,7 +108,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onChangePosition, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const { isInLiveMatch } = useActiveMatch();
 
@@ -138,18 +142,60 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
 
   // Tactical rating based on config
   const getTacticalRating = () => {
-    let rating = 50;
+    let rating = 30; // Base rating
+    
+    // Positional alignment (Starters are first 11)
+    const starters = players.slice(0, 11);
+    const requirements = formationRequirements[tactics.formation];
+    if (requirements) {
+      let alignedCount = 0;
+      starters.forEach((p, i) => {
+        if (p.position === requirements[i]) alignedCount++;
+        else if (p.secondaryPosition === requirements[i]) alignedCount += 0.5;
+      });
+      rating += (alignedCount / 11) * 40; // Max 40 points from alignment
+    }
+
     if (tactics.playStyle === 'equilibrado') rating += 5;
     if (tactics.pressing === 'alto') rating += 5;
-    if (tactics.captainId) rating += 10;
-    if (tactics.freeKickTakerId) rating += 5;
-    if (tactics.penaltyTakerId) rating += 5;
-    if (tactics.cornerTakerId) rating += 5;
-    return Math.min(100, rating);
+    if (tactics.captainId) rating += 5;
+    if (tactics.freeKickTakerId) rating += 3;
+    if (tactics.penaltyTakerId) rating += 3;
+    if (tactics.cornerTakerId) rating += 3;
+    
+    // Chemistry based on age diversity and stamina
+    const avgStamina = starters.reduce((s, p) => s + p.stamina, 0) / 11;
+    rating += (avgStamina / 100) * 10;
+
+    return Math.min(100, Math.round(rating));
   };
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Auto-Lineup Toggle */}
+      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-primary/20 p-1.5 rounded-lg">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          </div>
+          <div>
+            <Label htmlFor="auto-lineup" className="text-xs font-bold block">Sistema Inteligente Loja FLM</Label>
+            <p className="text-[9px] text-muted-foreground leading-tight">Atualização automática de escalação ativada</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+           <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-tighter">AI Active</span>
+           <Switch 
+            id="auto-lineup" 
+            checked={tactics.autoUpdateLineup} 
+            onCheckedChange={(val) => {
+              setField('autoUpdateLineup', val);
+              if (val) toast.success('Auto-Escalação Ativada', { description: 'O sistema reorganizará o time automaticamente.' });
+            }}
+          />
+        </div>
+      </div>
+
       {/* Season Start Widget — shows countdown / current season info */}
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
@@ -173,6 +219,9 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-xs sm:text-sm font-bold">{tactics.formation}</span>
               <Badge variant="secondary" className="text-[9px] sm:text-[10px] capitalize">{tactics.playStyle}</Badge>
+              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-primary/5 text-primary border-primary/20">
+                OVR: {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+              </Badge>
             </div>
             <div className="flex items-center gap-1.5">
               {injuredCount > 0 && <Badge variant="destructive" className="text-[9px]">🏥 {injuredCount}</Badge>}
@@ -526,24 +575,50 @@ export function TacticsTab({ tactics, players, onUpdate, season, userId }: Props
                   </div>
                 ))}
               </div>
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium">Atribuir função:</p>
-                {[
-                  { label: '©️ Capitão', key: 'captainId' as const },
-                  { label: '🎯 Falta', key: 'freeKickTakerId' as const },
-                  { label: '⚽ Pênalti', key: 'penaltyTakerId' as const },
-                  { label: '🚩 Escanteio', key: 'cornerTakerId' as const },
-                ].map(role => (
-                  <Button
-                    key={role.key}
-                    size="sm"
-                    variant={tactics[role.key] === selectedPlayer.id ? 'default' : 'outline'}
-                    className="w-full text-xs justify-start"
-                    onClick={() => setSpecialRole(role.key, selectedPlayer.id)}
-                  >
-                    {role.label} {tactics[role.key] === selectedPlayer.id && '✓'}
-                  </Button>
-                ))}
+              <div className="space-y-1.5 pt-2 border-t border-border/50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Alterar Posição (Experimental)
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
+                    <Button
+                      key={pos}
+                      size="sm"
+                      variant={selectedPlayer.position === pos ? 'default' : 'outline'}
+                      className={`h-8 text-[10px] font-bold ${selectedPlayer.position === pos ? 'shadow-md shadow-primary/20' : ''}`}
+                      onClick={() => {
+                        onChangePosition?.(selectedPlayer.id, pos as any);
+                        setSelectedPlayer(prev => prev ? { ...prev, position: pos as any } : null);
+                      }}
+                    >
+                      {pos}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-border/50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-primary" /> Atribuir função no time
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { label: '©️ Capitão', key: 'captainId' as const },
+                    { label: '🎯 Falta', key: 'freeKickTakerId' as const },
+                    { label: '⚽ Pênalti', key: 'penaltyTakerId' as const },
+                    { label: '🚩 Escanteio', key: 'cornerTakerId' as const },
+                  ].map(role => (
+                    <Button
+                      key={role.key}
+                      size="sm"
+                      variant={tactics[role.key] === selectedPlayer.id ? 'default' : 'outline'}
+                      className="text-[10px] h-8 justify-center font-medium"
+                      onClick={() => setSpecialRole(role.key, selectedPlayer.id)}
+                    >
+                      {role.label} {tactics[role.key] === selectedPlayer.id && '✓'}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
             );

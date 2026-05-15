@@ -16,6 +16,7 @@ import { CTRooms } from '@/types/ctRooms';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
+import { autoLineup } from '@/utils/lineupManager';
 
 import { useClubState, LoanedPlayer } from './useClubState';
 import { useFinanceState } from './useFinanceState';
@@ -75,6 +76,20 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   useEffect(() => {
     getTrainingManager().setMonthlyTrainingInvestment(infraState.trainingInvestment ?? 0);
   }, [infraState.trainingInvestment]);
+
+  // 🔄 Auto-Lineup Trigger
+  useEffect(() => {
+    if (tactics.autoUpdateLineup && clubState.club.players.length > 0) {
+      const currentStartersIds = clubState.club.players.slice(0, 11).map(p => p.id).join(',');
+      const newOrder = autoLineup(clubState.club.players, tactics.formation);
+      const newStartersIds = newOrder.slice(0, 11).map(p => p.id).join(',');
+
+      if (currentStartersIds !== newStartersIds) {
+        clubState.setClub(prev => ({ ...prev, players: newOrder }));
+        console.log('[useGame] Escalação atualizada automaticamente devido a mudança tática ou de elenco.');
+      }
+    }
+  }, [tactics.formation, tactics.autoUpdateLineup, clubState.club.players, clubState.setClub]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
@@ -371,5 +386,6 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     addBonus,
     rescindPlayer: clubState.rescindPlayer,
     enrollWorldLeague: clubState.enrollWorldLeague,
+    changePlayerPosition: clubState.changePlayerPosition,
   };
 }
