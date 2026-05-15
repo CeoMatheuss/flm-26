@@ -212,6 +212,36 @@ export function useMatchSimulation() {
     return event.description;
   };
 
+  const processMatchEvent = useCallback((event: SimEvent, currentVisibleEvents: SimEvent[]) => {
+    // 1. Identificar se o evento é um gol
+    const isGoal = event.isGoal === true || event.type === 'goal' || event.description.toUpperCase().includes('GOL');
+    
+    // 2. Usar ID único do evento ou combinação de minuto+tipo+desc para evitar duplicidade
+    const eventId = `${event.minute}-${event.type}-${event.team}-${event.playerName || ''}`;
+    if (notifiedEventsRef.current.has(eventId)) return null;
+    
+    // 3. Marcar como processado
+    notifiedEventsRef.current.add(eventId);
+
+    // 4. Calcular placares baseados nos eventos processados até agora (incluindo o novo)
+    let hG = 0, aG = 0;
+    const allEvents = [...currentVisibleEvents, event];
+    
+    for (const ev of allEvents) {
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      if (isEvGoal && ev.type !== 'penalty_shootout') {
+        if (ev.team === 'home') hG++;
+        else if (ev.team === 'away') aG++;
+      }
+    }
+
+    if (isGoal) {
+      console.log("[GOAL PROCESSADO]", eventId, `${hG}x${aG}`);
+    }
+
+    return { hG, aG, visibleEvents: allEvents };
+  }, []);
+
   const tick = useCallback(() => {
     const data = dataRef.current;
     if (!data || isAnimatingRef.current) return;
@@ -224,43 +254,48 @@ export function useMatchSimulation() {
 
     const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
     if (nextEvent && nextEvent.minute <= currentMinute) {
-      const visibleEvents = data.allEvents.slice(0, nextVisibleEventIdxRef.current + 1);
-      nextVisibleEventIdxRef.current++;
-      if (isHighlightEvent(nextEvent.type)) isAnimatingRef.current = true;
+      const result = processMatchEvent(nextEvent, state.visibleEvents);
+      
+      if (result) {
+        const { hG, aG, visibleEvents } = result;
+        nextVisibleEventIdxRef.current++;
+        if (isHighlightEvent(nextEvent.type)) isAnimatingRef.current = true;
 
-      let hG = 0, aG = 0;
-      for (const ev of visibleEvents) if (ev.isGoal && ev.type !== 'penalty_shootout') { if (ev.team === 'home') hG++; else if (ev.team === 'away') aG++; }
+        const stats = computeStatsFromEvents(visibleEvents);
+        const stamina = visibleEvents.filter(e => e.staminaData).pop()?.staminaData || {};
+        const moment = visibleEvents.filter(e => e.momentPhase).pop()?.momentPhase || 'equilíbrio';
 
-      const stats = computeStatsFromEvents(visibleEvents);
-      const stamina = visibleEvents.filter(e => e.staminaData).pop()?.staminaData || {};
-      const moment = visibleEvents.filter(e => e.momentPhase).pop()?.momentPhase || 'equilíbrio';
+        nextEvent.description = getAtmosphereDescription(nextEvent, data.attendance, data.stadiumCapacity);
 
-      // --- Sincronização de Narração com Dados Oficiais ---
-      nextEvent.description = getAtmosphereDescription(nextEvent, data.attendance, data.stadiumCapacity);
-
-      setState(prev => ({
-        ...prev,
-        currentMinute: nextEvent.minute,
-        progress,
-        homeGoals: hG,
-        awayGoals: aG,
-        visibleEvents,
-        latestEvent: nextEvent,
-        stats,
-        stadiumName: data.stadiumName,
-        stadiumCapacity: data.stadiumCapacity,
-        attendance: data.attendance,
-        currentMoment: moment,
-        playerStamina: stamina,
-        assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
-        onAnimationComplete: () => { isAnimatingRef.current = false; },
-      }));
+        setState(prev => ({
+          ...prev,
+          currentMinute: nextEvent.minute,
+          progress,
+          homeGoals: hG,
+          awayGoals: aG,
+          visibleEvents,
+          latestEvent: nextEvent,
+          stats,
+          stadiumName: data.stadiumName,
+          stadiumCapacity: data.stadiumCapacity,
+          attendance: data.attendance,
+          currentMoment: moment,
+          playerStamina: stamina,
+          assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
+          onAnimationComplete: () => { isAnimatingRef.current = false; },
+        }));
+      }
       return;
     }
 
     let hG = state.homeGoals, aG = state.awayGoals;
     let phase: MatchState['phase'] = 'live';
-    if (isComplete) { phase = 'finished'; hG = Math.max(hG, data.finalHomeGoals); aG = Math.max(aG, data.finalAwayGoals); }
+    if (isComplete) { 
+      phase = 'finished'; 
+      // Garantir placar final oficial ao encerrar
+      hG = Math.max(hG, data.finalHomeGoals); 
+      aG = Math.max(aG, data.finalAwayGoals); 
+    }
     else if (currentMinute >= 45 && currentMinute <= 46) phase = 'halftime';
 
     setState(prev => ({ 
@@ -281,7 +316,7 @@ export function useMatchSimulation() {
       stopTick();
       supabase.from('live_matches').update({ status: 'finished', current_minute: data.maxMinute }).eq('id', data.matchDbId);
     }
-  }, [computeStatsFromEvents, state.homeGoals, state.awayGoals]);
+  }, [computeStatsFromEvents, state.homeGoals, state.awayGoals, state.visibleEvents, processMatchEvent]);
 
   const startTick = useCallback(() => {
     if (unsubscribeRef.current) return;
