@@ -39,7 +39,7 @@ export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
-  userId,
+  userId, infrastructure
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
   const [selectedId, setSelectedId] = useState<string | null>(null);
