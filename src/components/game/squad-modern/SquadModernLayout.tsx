@@ -16,6 +16,8 @@ interface SquadModernProps {
   onUpdatePlayers: (players: Player[]) => void;
   youthProspects: YouthProspect[];
   onPromoteYouth: (id: string) => void;
+  youthInvestment: number;
+  onSetYouthInvestment: (amount: number) => void;
 }
 
 export function SquadModernLayout({ 
