@@ -36,7 +36,8 @@ interface SquadModernProps {
 
 export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
-  youthProspects, onPromoteYouth, youthInvestment, onSetYouthInvestment,
+  youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
+  youthInvestment, onSetYouthInvestment,
   userId,
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
@@ -135,6 +136,13 @@ export function SquadModernLayout({
                            onPromote={onPromoteYouth}
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}
+                           academyLevel={club.infrastructure.youthAcademy.level}
+                           budget={club.budget}
+                           hasScouts={(club.scouts || []).length > 0}
+                           currentSeason={season?.currentSeason || 1}
+                           onSell={onSellYouth || (() => {})}
+                           onEnrollCopinha={onEnrollCopinha || (() => {})}
+                           onUpgradeAcademy={onUpgradeAcademy || (() => {})}
                          />
                       </div>
                     ) : (
