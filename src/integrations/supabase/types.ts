@@ -2656,6 +2656,7 @@ export type Database = {
           kickoff_time: string | null
           name: string
           prize_pool: Json | null
+          prizes_paid_current_round: number | null
           season: number
           season_start_date: string | null
           status: string
@@ -2672,6 +2673,7 @@ export type Database = {
           kickoff_time?: string | null
           name: string
           prize_pool?: Json | null
+          prizes_paid_current_round?: number | null
           season?: number
           season_start_date?: string | null
           status?: string
@@ -2688,6 +2690,7 @@ export type Database = {
           kickoff_time?: string | null
           name?: string
           prize_pool?: Json | null
+          prizes_paid_current_round?: number | null
           season?: number
           season_start_date?: string | null
           status?: string
@@ -4491,6 +4494,7 @@ export type Database = {
           id: string
           max_teams: number | null
           name: string
+          prizes_paid: boolean | null
           season_month: number | null
           season_year: number | null
         }
@@ -4505,6 +4509,7 @@ export type Database = {
           id?: string
           max_teams?: number | null
           name: string
+          prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
         }
@@ -4519,6 +4524,7 @@ export type Database = {
           id?: string
           max_teams?: number | null
           name?: string
+          prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
         }
@@ -5122,6 +5128,18 @@ export type Database = {
           scheduled_at: string
           stage: string
         }[]
+      }
+      grant_tournament_prize: {
+        Args: {
+          p_amount: number
+          p_club_id: string
+          p_competition_id: string
+          p_competition_name: string
+          p_competition_type: string
+          p_phase_or_rank: string
+          p_season_year: number
+        }
+        Returns: boolean
       }
       handle_team_league_entry: {
         Args: { _country_id: string; _team_id: string }
