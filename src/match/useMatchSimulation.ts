@@ -224,10 +224,14 @@ export function useMatchSimulation() {
     // 3. Marcar como processado
     notifiedEventsRef.current.add(eventId);
 
-    // 4. Calcular placares baseados nos eventos processados até agora (incluindo o novo)
-    let hG = 0, aG = 0;
-    const allEvents = [...currentVisibleEvents, event];
+    // 4. Acumular eventos (setEvents(prev => [...prev, event]))
+    const allEvents = [...currentVisibleEvents, event].sort((a, b) => {
+      if (a.minute !== b.minute) return a.minute - b.minute;
+      return 0; // Se houver segundos no futuro, usar: (a.second || 0) - (b.second || 0)
+    });
     
+    // 5. Calcular placares baseados nos eventos processados até agora
+    let hG = 0, aG = 0;
     for (const ev of allEvents) {
       const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
       if (isEvGoal && ev.type !== 'penalty_shootout') {
@@ -239,6 +243,9 @@ export function useMatchSimulation() {
     if (isGoal) {
       console.log("[GOAL PROCESSADO]", eventId, `${hG}x${aG}`);
     }
+    
+    console.log("[NOVO EVENTO]", event);
+    console.log("[TOTAL EVENTOS]", allEvents.length);
 
     return { hG, aG, visibleEvents: allEvents };
   }, []);
