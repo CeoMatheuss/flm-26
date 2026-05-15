@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2, Key } from 'lucide-react';
 
 type Club = {
   user_id: string;
@@ -397,6 +397,40 @@ export function FinancePanel() {
                 );
               })
             )}
+          </div>
+        </CardContent>
+      </Card>
+      {/* MERCADO PAGO ACCESS TOKEN */}
+      <Card className="border-amber-500/20 bg-amber-500/5">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Key className="h-4 w-4 text-amber-500" />
+            <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
+              Configuração Mercado Pago
+            </h4>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              O Access Token é necessário para processar pagamentos na Loja FLM. 
+              Ele é armazenado como uma variável de ambiente no servidor.
+            </p>
+            <div className="flex gap-2">
+              <Input 
+                type="password" 
+                placeholder="APP_USR-..." 
+                className="h-9 text-xs bg-background"
+                defaultValue="••••••••••••••••"
+                readOnly
+              />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-9 text-[10px] font-bold uppercase whitespace-nowrap"
+                onClick={() => toast.info('Para alterar o token, acesse as configurações da Lovable Cloud.')}
+              >
+                Gerenciar Token
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
