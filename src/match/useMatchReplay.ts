@@ -20,7 +20,6 @@ const INITIAL: MatchState = {
   stadiumName: '', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
-  simulationSpeed: 1,
 };
 
 const TICK_MS = 300;
@@ -101,7 +100,7 @@ export function useMatchReplay() {
       phase, currentMinute, progress, homeTeam: data.homeTeam, awayTeam: data.awayTeam,
       homeGoals, awayGoals, visibleEvents, latestEvent, stats: liveStats,
       stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
-      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
+      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
     });
 
     if (isComplete) stopTick();
@@ -127,24 +126,10 @@ export function useMatchReplay() {
     intervalRef.current = window.setInterval(tick, TICK_MS);
   }, [tick, stopTick]);
 
-  const skipToEnd = useCallback(() => {
-    const data = dataRef.current;
-    if (!data) return;
-    stopTick();
-    setState({
-      phase: 'finished', currentMinute: data.maxMinute, progress: 1,
-      homeTeam: data.homeTeam, awayTeam: data.awayTeam,
-      homeGoals: data.finalHomeGoals, awayGoals: data.finalAwayGoals,
-      visibleEvents: data.allEvents, latestEvent: data.allEvents[data.allEvents.length - 1] || null,
-      stats: data.stats, stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
-      competition: 'Campeonato', isHome: true,
-      currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [], simulationSpeed: 1,
-    });
-  }, [stopTick]);
 
   const destroy = useCallback(() => { stopTick(); dataRef.current = null; }, [stopTick]);
 
   useEffect(() => () => stopTick(), [stopTick]);
 
-  return { state, startReplay, skipToEnd, destroy };
+  return { state, startReplay, destroy };
 }

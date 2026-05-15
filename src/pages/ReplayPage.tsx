@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart3, FastForward, LogOut } from 'lucide-react';
+import { ArrowLeft, BarChart3, LogOut } from 'lucide-react';
 import { useMatchReplay } from '@/match/useMatchReplay';
 import { SimEvent, MatchStats } from '@/match';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
@@ -32,7 +32,7 @@ export default function ReplayPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const locState = location.state as ReplayPageState | null;
-  const { state, startReplay, skipToEnd, destroy } = useMatchReplay();
+  const { state, startReplay, destroy } = useMatchReplay();
 
   useEffect(() => {
     if (!locState) { navigate('/', { replace: true }); return; }
@@ -105,11 +105,6 @@ export default function ReplayPage() {
             {currentMinute}' {phaseLabel()}
           </Badge>
         </div>
-        {!isFinished && (
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] gap-1" onClick={skipToEnd}>
-            <FastForward className="h-3 w-3" /> Pular
-          </Button>
-        )}
       </div>
 
       {/* Scoreboard */}
