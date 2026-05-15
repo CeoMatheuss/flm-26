@@ -829,6 +829,10 @@ export function AdminTab({ userId, isFounder }: Props) {
             <AdminUpdatesPanel />
           </TabsContent>
 
+          <TabsContent value="maintenance" className="space-y-3 mt-3">
+            <MaintenanceToggle />
+          </TabsContent>
+
           <TabsContent value="announcements" className="space-y-3 mt-3">
             {/* <AdminAnnouncementsPanel userId={userId} /> */}
           </TabsContent>
