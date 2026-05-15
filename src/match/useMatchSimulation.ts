@@ -403,9 +403,12 @@ export function useMatchSimulation() {
     const elapsed = Math.max(0, Date.now() - startTime);
     const progress = Math.min(1, elapsed / durationMs);
     const currentMinute = data.status === 'finished' ? maxMinute : Math.floor(progress * maxMinute);
+    
+    // Filtra eventos visíveis com base no minuto atual
     const visibleEvents = events.filter(e => (Number(e.minute) || 0) <= currentMinute);
-    const homeGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'home').length;
-    const awayGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'away').length;
+    
+    // Recalcula o placar a partir dos eventos visíveis (Fonte Única da Verdade)
+    const { hG: homeGoals, aG: awayGoals } = recalculateScoreFromEvents(visibleEvents);
 
     dataRef.current = {
       allEvents: events,
@@ -427,6 +430,10 @@ export function useMatchSimulation() {
 
     persistedRef.current = data.status === 'finished';
     nextVisibleEventIdxRef.current = visibleEvents.length;
+    
+    // Popula o Set de eventos notificados para evitar duplicação no tick
+    notifiedEventsRef.current = new Set(visibleEvents.map(ev => `${ev.minute}-${ev.type}-${ev.team}-${ev.playerName || ''}`));
+
     setState(s => ({
       ...s,
       phase: data.status === 'finished' || progress >= 1 ? 'finished' : currentMinute >= 45 && currentMinute <= 46 ? 'halftime' : 'live',
@@ -434,8 +441,8 @@ export function useMatchSimulation() {
       progress,
       homeTeam: data.home_team || '',
       awayTeam: data.away_team || '',
-      homeGoals: data.status === 'finished' ? (data.home_goals || homeGoals) : homeGoals,
-      awayGoals: data.status === 'finished' ? (data.away_goals || awayGoals) : awayGoals,
+      homeGoals: data.status === 'finished' ? Math.max(data.home_goals || 0, homeGoals) : homeGoals,
+      awayGoals: data.status === 'finished' ? Math.max(data.away_goals || 0, awayGoals) : awayGoals,
       visibleEvents,
       latestEvent: visibleEvents[visibleEvents.length - 1] || null,
       stats: visibleEvents.length ? computeStatsFromEvents(visibleEvents) : ((data.stats as any) || EMPTY_STATS),
@@ -447,9 +454,10 @@ export function useMatchSimulation() {
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
     }));
+    
     if (data.status !== 'finished' && progress < 1) startTick();
     return true;
-  }, [computeStatsFromEvents, startTick]);
+  }, [computeStatsFromEvents, recalculateScoreFromEvents, startTick]);
 
   const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
