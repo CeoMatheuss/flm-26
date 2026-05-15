@@ -1141,6 +1141,7 @@ export function useClubState(initialState: any, userId?: string) {
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
     loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
+    changePlayerPosition,
     rescindPlayer,
     acceptStadiumEvent, rejectStadiumEvent, startStadiumRepair, buyStadiumInsurance, cancelStadiumInsurance,
     acceptStadiumSponsor, rejectStadiumSponsor,
