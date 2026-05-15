@@ -83,6 +83,23 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       setGameReady(true);
     };
     load();
+
+    // Sincronização Realtime para recarregar o estado se mudar no servidor
+    const channel = supabase.channel(`sync-app-${userId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'game_saves', 
+        filter: `user_id=eq.${userId}` 
+      }, (payload) => {
+        console.log('[Realtime] Mudança detectada no save do servidor:', payload);
+        if (payload.new && (payload.new as any).club_data) {
+          setLoadedState((payload.new as any).club_data as GameState);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
@@ -374,6 +391,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     window.addEventListener('flm:open-tutorial', handler);
     return () => window.removeEventListener('flm:open-tutorial', handler);
   }, [tutorialCompleted]);
+
 
   // Handle club profile viewing via events
   useEffect(() => {

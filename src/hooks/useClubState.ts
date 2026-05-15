@@ -800,9 +800,19 @@ export function useClubState(initialState: any, userId?: string) {
   }, []);
 
   const addBonus = useCallback((amount: number, description: string) => {
-    setClub(prev => ({ ...prev, budget: prev.budget + amount }));
+    setClub(prev => ({ ...prev, budget: (prev.budget ?? 0) + amount }));
+    // Sincronização imediata com banco de dados para bônus/finanças
+    if (userId) {
+      supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle().then(({ data }) => {
+        if (data?.club_data) {
+          const state = data.club_data as any;
+          state.club.budget = (state.club.budget || 0) + amount;
+          supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId).then(() => {});
+        }
+      });
+    }
     return { amount, description };
-  }, []);
+  }, [userId]);
   // ── Stamina V4: Recuperação gradual em tempo real ──
   useEffect(() => {
     const STAMINA_TICK = 60 * 1000; // 1 minuto
