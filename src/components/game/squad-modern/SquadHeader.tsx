@@ -1,4 +1,4 @@
-import { ArrowLeft, Menu, Wallet, Activity, Star, Info } from 'lucide-react';
+import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users } from 'lucide-react';
 import { ClubShield } from '../ClubShield';
 import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
@@ -13,8 +13,8 @@ interface Props {
   season?: SeasonData;
   onBack?: () => void;
   onMenu?: () => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
+  viewMode: 'list' | 'pitch';
+  onViewModeChange: (mode: 'list' | 'pitch') => void;
 }
 
 export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange }: Props) {
@@ -93,6 +93,30 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {/* Mobile View Toggle */}
+          <div className="flex xl:hidden bg-white/5 border border-white/10 p-1 rounded-2xl h-10 gap-1">
+             <button 
+               onClick={() => onViewModeChange('list')}
+               className={cn(
+                 "px-3 rounded-xl flex items-center gap-2 transition-all",
+                 viewMode === 'list' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
+               )}
+             >
+               <Users className="w-4 h-4" />
+               <span className="hidden sm:inline text-[10px] font-black uppercase">Lista</span>
+             </button>
+             <button 
+               onClick={() => onViewModeChange('pitch')}
+               className={cn(
+                 "px-3 rounded-xl flex items-center gap-2 transition-all",
+                 viewMode === 'pitch' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
+               )}
+             >
+               <LayoutDashboard className="w-4 h-4" />
+               <span className="hidden sm:inline text-[10px] font-black uppercase">Tático</span>
+             </button>
+          </div>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
