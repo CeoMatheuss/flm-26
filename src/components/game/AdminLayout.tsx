@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu, Wallet, Palette } from 'lucide-react';
+import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu, Wallet, Palette, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,7 +13,8 @@ export type AdminCategory =
   | 'finance'
   | 'customization'
   | 'system'
-  | 'simulation';
+  | 'simulation'
+  | 'maintenance';
 
 interface CategoryDef {
   id: AdminCategory;
@@ -29,6 +30,7 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'finance',       label: 'Financeiro',     icon: Wallet },
   { id: 'customization', label: 'Personalização', icon: Palette },
   { id: 'system',        label: 'Sistema',        icon: Settings },
+  { id: 'maintenance',   label: 'Manutenção',     icon: Wrench },
   { id: 'simulation',    label: 'Simulação',      icon: FlaskConical },
 ];
 

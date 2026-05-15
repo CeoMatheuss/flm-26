@@ -122,7 +122,8 @@ export function AdminTab({ userId, isFounder }: Props) {
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
       finance:       ['finance_panel'],
       customization: ['customization_panel'],
-      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
+      maintenance:   ['maintenance', 'direct_msg'],
       simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];

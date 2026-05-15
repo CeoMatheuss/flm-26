@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Globe, Trophy, Calendar, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react';
+import { Globe, Trophy, Calendar, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react';
 import { HowItWorksTab } from './HowItWorksTab';
 import { CountriesPyramidTab } from './CountriesPyramidTab';
 import { CupsOverviewTab } from './CupsOverviewTab';
@@ -10,7 +10,7 @@ import { SimulationValidationTab } from './SimulationValidationTab';
 import { BetaAccessPanel } from './BetaAccessPanel';
 import { LeaguesPreviewTab } from './LeaguesPreviewTab';
 
-export type SystemSection = 'beta' | 'preview' | 'how' | 'pyramid' | 'cups' | 'season' | 'sim';
+export type SystemSection = 'beta' | 'preview' | 'pyramid' | 'cups' | 'season' | 'sim';
 
 interface Props {
   adminUserId: string;
@@ -27,7 +27,6 @@ const ALL_SECTIONS: { id: SystemSection; label: string; icon: any }[] = [
 
   { id: 'season',  label: 'Temporada',             icon: Calendar },
   { id: 'sim',     label: 'Simulação & Validação', icon: FlaskConical },
-  { id: 'how',     label: 'Como Funciona',         icon: BookOpen },
 ];
 
 export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
@@ -73,9 +72,6 @@ export function SystemPanel({ adminUserId, sections, defaultSection }: Props) {
         )}
         {visible.some(s => s.id === 'sim') && (
           <TabsContent value="sim" className="mt-3"><SimulationValidationTab adminUserId={adminUserId} /></TabsContent>
-        )}
-        {visible.some(s => s.id === 'how') && (
-          <TabsContent value="how" className="mt-3"><HowItWorksTab /></TabsContent>
         )}
       </Tabs>
     </div>
