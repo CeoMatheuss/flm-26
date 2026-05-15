@@ -1,7 +1,7 @@
 import { Player } from '@/types/game';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Zap, Heart, TrendingUp, TrendingDown, Target, Shield, Activity } from 'lucide-react';
+import { Zap, Heart, TrendingUp, TrendingDown, Target, Shield, Activity, ArrowUp, ArrowDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
@@ -36,6 +36,11 @@ const getBarColor = (val: number) => {
 export function SquadCard({ player, onClick, isPendingSwap }: SquadCardProps) {
   const value = getPlayerValue(player);
   
+  // Simulated evolution data (in a real app, this would come from player history)
+  const isEvolving = player.overall > (player.potential || 0) * 0.9 && player.age < 25;
+  const isDeclining = player.age > 33;
+
+  
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -2 }}
@@ -52,7 +57,11 @@ export function SquadCard({ player, onClick, isPendingSwap }: SquadCardProps) {
         <div className="flex flex-col items-center gap-2">
           <div className="relative">
             <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl ${posColors[player.position]}`}>
-              <span className="text-2xl font-black leading-none">{player.overall}</span>
+              <div className="flex items-center gap-0.5">
+                <span className="text-2xl font-black leading-none">{player.overall}</span>
+                {isEvolving && <ArrowUp className="w-3 h-3 text-emerald-400 animate-bounce" />}
+                {isDeclining && <ArrowDown className="w-3 h-3 text-red-400 animate-bounce" />}
+              </div>
               <span className="text-[8px] font-bold opacity-70 uppercase">OVR</span>
             </div>
             {player.injury && (
