@@ -137,7 +137,7 @@ export function SquadModernLayout({
                            onPromote={onPromoteYouth}
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}
-                           academyLevel={club.infrastructure?.youthAcademy?.level ?? infrastructure?.youthAcademy?.level ?? 0}
+                           academyLevel={infrastructure?.youthAcademy?.level ?? 0}
                            budget={club.budget}
                            hasScouts={(club.scouts || []).length > 0}
                            currentSeason={season?.currentSeason || 1}
