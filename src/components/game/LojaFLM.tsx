@@ -8,86 +8,100 @@ import {
   ShoppingBag, Sparkles, DollarSign, Users, Building2, 
   Stethoscope, Crown, Package, Star, TrendingUp, 
   CheckCircle2, Lock, ArrowRight, Zap, Gem, Trophy,
-  ChevronRight, HeartPulse, HardHat, Info, History
+  ChevronRight, HeartPulse, HardHat, Info, History, Rocket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ClubShield } from './ClubShield';
+import { FLM_SPONSOR_CATALOG } from '@/data/flmSponsors';
 
 interface LojaProps {
   club: any;
   infrastructure: any;
   userId: string;
   onUpgradeFacility?: (facility: string) => void;
+  onAcceptSponsor?: (offer: any) => void;
 }
 
 const CATEGORIES = [
-  { id: 'destaques', name: 'Destaques', icon: Sparkles },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign },
-  { id: 'socios', name: 'Sócios', icon: Users },
+  { id: 'marketing', name: 'Marketing', icon: Rocket },
   { id: 'infra', name: 'Infraestrutura', icon: Building2 },
-  { id: 'staff', name: 'Staff', icon: HardHat },
-  { id: 'fisio', name: 'Fisioterapia', icon: Stethoscope },
-  { id: 'premium', name: 'Itens Premium', icon: Crown },
-  { id: 'pacotes', name: 'Pacotes', icon: Package },
+  { id: 'staff', name: 'Staff Especialista', icon: HardHat },
+  { id: 'fisio', name: 'Fisioterapia', icon: HeartPulse },
+  { id: 'pacotes', name: 'Pacotes Especiais', icon: Package },
 ];
 
 const RARITY_CONFIG = {
-  comum: { color: 'text-slate-400', bg: 'bg-slate-400/10', border: 'border-slate-400/20', glow: 'shadow-slate-400/5' },
-  raro: { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', glow: 'shadow-blue-400/10' },
-  epico: { color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20', glow: 'shadow-purple-400/15' },
-  lendario: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/30', glow: 'shadow-amber-400/25' },
+  common: { color: 'text-slate-400', bg: 'bg-slate-400/10', border: 'border-slate-400/20', glow: 'shadow-slate-400/5' },
+  rare: { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', glow: 'shadow-blue-400/10' },
+  epic: { color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20', glow: 'shadow-purple-400/15' },
+  legendary: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/30', glow: 'shadow-amber-400/25' },
 };
 
-export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('destaques');
+export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility, onAcceptSponsor }: LojaProps) {
+  const [activeCategory, setActiveCategory] = useState('patrocinios');
   const [loading, setLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState<{ open: boolean; itemName: string; type: string }>({ open: false, itemName: '', type: '' });
+  const [dbItems, setDbItems] = useState<any[]>([]);
+  const [showSuccess, setShowSuccess] = useState<{ open: boolean; itemName: string; isPremium?: boolean }>({ open: false, itemName: '', isPremium: false });
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  async function fetchItems() {
+    const { data } = await supabase.from('shop_items').select('*').eq('active', true);
+    if (data) setDbItems(data);
+  }
 
   const formatMoney = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
   };
 
-  const handleAction = async (item: any) => {
-    if (club.budget < item.price) {
+  const handlePurchase = async (item: any) => {
+    const price = item.price_cents / 100;
+    if (club.budget < price) {
       toast.error('Saldo insuficiente!');
       return;
     }
-    
+
     setLoading(true);
-    // Simulação de compra
-    await new Promise(r => setTimeout(r, 800));
-    
-    if (item.category === 'infra' && onUpgradeFacility) {
-      onUpgradeFacility(item.facilityKey);
-    } else {
-      setShowSuccess({ open: true, itemName: item.name, type: item.id?.includes('plano') || item.category === 'socios' ? 'fans' : 'default' });
-      toast.success(`${item.name} adquirido com sucesso!`);
+    try {
+      // Registrar transação local simulada para feedback visual imediato
+      // Em produção, isso seria via Edge Function + Webhook
+      await new Promise(r => setTimeout(r, 1000));
+      
+      setShowSuccess({ open: true, itemName: item.name, isPremium: true });
+      toast.success(`${item.name} adquirido com sucesso! Premium ativado por 30 dias.`);
+      
       setTimeout(() => setShowSuccess(prev => ({ ...prev, open: false })), 4000);
+      fetchItems();
+    } catch (e) {
+      toast.error('Erro ao processar compra');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="space-y-4 pb-10 animate-in fade-in duration-500">
-      {/* HEADER PREMIUM */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#050810] border border-amber-500/20 p-6 shadow-2xl">
+      {/* HEADER PROFESSIONAL */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#050810] border border-emerald-500/20 p-6 shadow-2xl">
         <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 scale-150">
-          <ShoppingBag className="h-32 w-32 text-amber-500" />
+          <ShoppingBag className="h-32 w-32 text-emerald-500" />
         </div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-              <Sparkles className="h-3 w-3 text-amber-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Premium Experience</span>
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+              <Zap className="h-3 w-3 text-emerald-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">FLM Professional Store</span>
             </div>
             <h1 className="text-3xl font-black tracking-tighter uppercase italic">
-              Loja <span className="text-amber-500">FLM</span>
+              Loja <span className="text-emerald-500">FLM 26</span>
             </h1>
             <p className="text-muted-foreground text-xs font-medium max-w-xs">
-              O mercado oficial do Football Life Manager. Evolua seu clube ao nível de elite.
+              Estratégia e crescimento. Qualquer compra ativa <span className="text-amber-400 font-bold">Premium FLM</span> por 30 dias.
             </p>
           </div>
 
@@ -97,24 +111,23 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
                 <DollarSign className="h-5 w-5 text-emerald-400" />
               </div>
               <div>
-                <p className="text-[8px] uppercase font-black text-emerald-400/80 tracking-tighter">Saldo do Clube</p>
+                <p className="text-[8px] uppercase font-black text-emerald-400/80 tracking-tighter">Saldo</p>
                 <p className="text-lg font-black tabular-nums">{formatMoney(club.budget)}</p>
               </div>
             </div>
             <div className="bg-black/60 backdrop-blur-md px-4 py-3 rounded-xl border border-white/5 flex items-center gap-3 min-w-[140px]">
-              <div className="bg-amber-500/20 p-2 rounded-lg">
-                <Gem className="h-5 w-5 text-amber-400" />
+              <div className="bg-emerald-500/20 p-2 rounded-lg">
+                <Users className="h-5 w-5 text-emerald-400" />
               </div>
               <div>
-                <p className="text-[8px] uppercase font-black text-amber-400/80 tracking-tighter">FLM Cash</p>
-                <p className="text-lg font-black tabular-nums">{club.cash || 0}</p>
+                <p className="text-[8px] uppercase font-black text-emerald-400/80 tracking-tighter">Torcida</p>
+                <p className="text-lg font-black tabular-nums">{(club.fans || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* CATEGORIAS SCROLL AREA */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
         <ScrollArea className="w-full whitespace-nowrap rounded-xl bg-black/40 border border-white/5 p-1">
           <TabsList className="bg-transparent flex w-max gap-1">
@@ -122,7 +135,7 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
               <TabsTrigger 
                 key={cat.id} 
                 value={cat.id}
-                className="data-[state=active]:bg-amber-500 data-[state=active]:text-black transition-all duration-300 px-5 py-2 rounded-lg text-xs font-black gap-2 uppercase tracking-tighter"
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all duration-300 px-5 py-2 rounded-lg text-xs font-black gap-2 uppercase tracking-tighter"
               >
                 <cat.icon className="h-3.5 w-3.5" />
                 {cat.name}
@@ -133,258 +146,87 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
         </ScrollArea>
 
         <div className="mt-6">
-          <TabsContent value="destaques" className="space-y-6">
+          {/* PATROCÍNIOS - SISTEMA BASEADO EM TORCIDA */}
+          <TabsContent value="patrocinios" className="space-y-6">
              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-black uppercase italic text-amber-500">Produtos em Destaque</h2>
-                <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400 bg-amber-500/5">NOVIDADES</Badge>
+                <h2 className="text-lg font-black uppercase italic text-emerald-500">Contratos de Patrocínio</h2>
+                <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-400">BASEADO EM TORCIDA</Badge>
              </div>
              
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StoreCard 
-                  name="Pack Elite FLM"
-                  description="Acesso total ao plano de sócios Elite + 500k de bônus imediato."
-                  price={5000000}
-                  rarity="lendario"
-                  image="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&auto=format&fit=crop&q=60"
-                  badge="OFERTA"
-                  onAction={() => handleAction({ name: 'Pack Elite', price: 5000000 })}
-                />
-                <StoreCard 
-                  name="Novo CT Moderno"
-                  description="Upgrade instantâneo para o seu Centro de Treinamento. Acelera evolução em 25%."
-                  price={2500000}
-                  rarity="epico"
-                  image="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&auto=format&fit=crop&q=60"
-                  onAction={() => handleAction({ name: 'CT Moderno', price: 2500000 })}
-                />
-                <StoreCard 
-                  name="Patrocínio BetGol"
-                  description="Torne-se parceiro da maior casa de apostas. Bônus de R$ 100k por vitória."
-                  price={0}
-                  type="contract"
-                  rarity="raro"
-                  image="https://images.unsplash.com/photo-1518152006812-edab29b069ac?w=500&auto=format&fit=crop&q=60"
-                  onAction={() => toast.success('Proposta enviada!')}
-                />
-             </div>
-          </TabsContent>
-
-          <TabsContent value="patrocinios" className="space-y-6">
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: 'BetGol', desc: 'Bônus por vitória agressivo.', value: 'R$ 150k/mês', rep: 40 },
-                  { name: 'ArenaBank', desc: 'Pagamento mensal estável.', value: 'R$ 200k/mês', rep: 50 },
-                  { name: 'Nitro Energy', desc: 'Bônus por título de liga.', value: 'R$ 100k/mês', rep: 30 },
-                  { name: 'SportPay', desc: 'Bônus por artilharia.', value: 'R$ 120k/mês', rep: 35 },
-                  { name: 'FlyAir', desc: 'Foco em competições mundiais.', value: 'R$ 300k/mês', rep: 70 },
-                  { name: 'Max Cola', desc: 'Patrocínio de estádio.', value: 'R$ 180k/mês', rep: 45 },
-                ].map(s => (
-                  <StoreCard 
-                    key={s.name}
-                    name={s.name}
-                    description={s.desc}
-                    price={0}
-                    type="contract"
-                    rarity={s.rep > 60 ? 'lendario' : s.rep > 45 ? 'epico' : 'raro'}
-                    footerInfo={s.value}
-                    minRep={s.rep}
-                    currentRep={club.reputation}
-                    onAction={() => toast.success(`Proposta de ${s.name} analisada!`)}
+                {FLM_SPONSOR_CATALOG.map(s => (
+                  <SponsorCard 
+                    key={s.id}
+                    sponsor={s}
+                    clubFans={club.fans || 0}
+                    onAccept={() => onAcceptSponsor?.(s)}
+                    onGoToMarketing={() => setActiveCategory('marketing')}
                   />
                 ))}
              </div>
           </TabsContent>
 
-          <TabsContent value="socios" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {[
-                  { id: 'bronze', name: 'Plano Bronze', price: 500000, color: 'comum' },
-                  { id: 'prata', name: 'Plano Prata', price: 1200000, color: 'raro' },
-                  { id: 'ouro', name: 'Plano Ouro', price: 3000000, color: 'epico' },
-                  { id: 'diamante', name: 'Plano Diamante', price: 7500000, color: 'lendario' },
-                  { id: 'elite', name: 'Elite FLM', price: 15000000, color: 'lendario', special: true },
-                ].map(p => (
-                  <StoreCard 
-                    key={p.id}
-                    name={p.name}
-                    description={`Ative o plano ${p.name} para aumentar sua renda mensal e base de fãs.`}
-                    price={p.price}
-                    rarity={p.color as any}
-                    badge={p.special ? 'EXCLUSIVE' : undefined}
-                    onAction={() => handleAction(p)}
+          {/* DEMAIS CATEGORIAS - ITENS DO BANCO */}
+          {CATEGORIES.slice(1).map(cat => (
+            <TabsContent key={cat.id} value={cat.id} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {dbItems.filter(i => i.category === cat.id).map(item => (
+                  <StoreItemCard 
+                    key={item.id}
+                    item={item}
+                    clubFans={club.fans || 0}
+                    onPurchase={() => handlePurchase(item)}
                   />
                 ))}
-             </div>
-          </TabsContent>
-
-          <TabsContent value="infra" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StoreCard 
-                  name="Reforma do Estádio"
-                  description="Aumenta a capacidade em 5.000 lugares e moderniza os assentos."
-                  price={10000000}
-                  rarity="epico"
-                  icon={Building2}
-                  onAction={() => handleAction({ category: 'infra', facilityKey: 'stadium', price: 10000000 })}
-                />
-                <StoreCard 
-                  name="Novo CT Moderno"
-                  description="Upgrade instantâneo para o seu Centro de Treinamento. Acelera evolução em 25%."
-                  price={2500000}
-                  rarity="epico"
-                  icon={Zap}
-                  onAction={() => handleAction({ category: 'infra', facilityKey: 'trainingCenter', price: 2500000 })}
-                />
-                <StoreCard 
-                  name="Academia de Base"
-                  description="Gera jovens com maior potencial de OVR."
-                  price={8000000}
-                  rarity="epico"
-                  icon={Trophy}
-                  onAction={() => handleAction({ category: 'infra', facilityKey: 'youthAcademy', price: 8000000 })}
-                />
-                <StoreCard 
-                  name="Modernização do Gramado"
-                  description="Reduz o cansaço dos jogadores durante partidas em casa."
-                  price={1200000}
-                  rarity="raro"
-                  icon={TrendingUp}
-                  onAction={() => handleAction({ name: 'Gramado Moderno', price: 1200000 })}
-                />
-             </div>
-          </TabsContent>
-
-          <TabsContent value="staff" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { name: 'Preparador Físico', desc: 'Melhora o ganho de stamina nos treinos.', price: 450000, rarity: 'comum' },
-                  { name: 'Olheiro Internacional', desc: 'Encontra talentos raros em outros países.', price: 800000, rarity: 'raro' },
-                  { name: 'Diretor Financeiro', desc: 'Reduz gastos fixos do clube em 10%.', price: 1500000, rarity: 'epico' },
-                  { name: 'Psicólogo Esportivo', desc: 'Mantém a moral do elenco sempre em alta.', price: 600000, rarity: 'raro' },
-                  { name: 'Médico Especialista', desc: 'Recuperação instantânea de lesões leves.', price: 1200000, rarity: 'epico' },
-                  { name: 'Analista Tático', desc: 'Desbloqueia insights sobre o adversário.', price: 5000000, rarity: 'lendario' },
-                ].map(s => (
-                  <StoreCard 
-                    key={s.name}
-                    name={s.name}
-                    description={s.desc}
-                    price={s.price}
-                    rarity={s.rarity as any}
-                    icon={HardHat}
-                    onAction={() => handleAction(s)}
-                  />
-                ))}
-             </div>
-          </TabsContent>
-
-          <TabsContent value="fisio" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { name: 'Câmara de Gelo', desc: 'Recuperação 2x mais rápida após jogos.', price: 350000, rarity: 'comum' },
-                  { name: 'Equipamentos Modernos', desc: 'Reduz risco de lesões musculares.', price: 900000, rarity: 'raro' },
-                  { name: 'Tratamento Intensivo', desc: 'Reduz tempo de lesão em 50%.', price: 2000000, rarity: 'epico' },
-                  { name: 'Laboratório Esportivo', desc: 'Análise detalhada de fadiga.', price: 5000000, rarity: 'lendario' },
-                  { name: 'Centro de Reabilitação', desc: 'Capacidade para 5 jogadores simultâneos.', price: 3000000, rarity: 'epico' },
-                ].map(f => (
-                  <StoreCard 
-                    key={f.name}
-                    name={f.name}
-                    description={f.desc}
-                    price={f.price}
-                    rarity={f.rarity as any}
-                    icon={HeartPulse}
-                    onAction={() => handleAction(f)}
-                  />
-                ))}
-             </div>
-          </TabsContent>
-
-          <TabsContent value="premium" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: 'Escudo Animado', desc: 'Efeito visual de brilho no seu escudo.', price: 1500, type: 'cash', rarity: 'lendario' },
-                  { name: 'Uniformes Exclusivos', desc: 'Template de uniforme lendário.', price: 800, type: 'cash', rarity: 'epico' },
-                  { name: 'Nome Colorido', desc: 'Destaque-se no chat global.', price: 500, type: 'cash', rarity: 'raro' },
-                  { name: 'Estádio Premium', desc: 'Visual 3D luxuoso para o seu estádio.', price: 2500, type: 'cash', rarity: 'lendario' },
-                  { name: 'Efeito de Torcida', desc: 'Fumaça e bandeirões personalizados.', price: 400, type: 'cash', rarity: 'comum' },
-                  { name: 'Molduras Especiais', desc: 'Borda dourada no perfil.', price: 300, type: 'cash', rarity: 'raro' },
-                ].map(p => (
-                  <StoreCard 
-                    key={p.name}
-                    name={p.name}
-                    description={p.desc}
-                    price={p.price}
-                    rarity={p.rarity as any}
-                    footerInfo={p.type === 'cash' ? `${p.price} Cash` : undefined}
-                    onAction={() => toast.success(`${p.name} ativado!`)}
-                  />
-                ))}
-             </div>
-          </TabsContent>
-
-          <TabsContent value="pacotes" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { name: 'Pack Inicial', desc: 'Tudo o que você precisa para começar.', price: 50000, rarity: 'comum', badge: 'OFERTA' },
-                  { name: 'Pack Campeão', desc: 'Itens de elite para quem quer títulos.', price: 5000000, rarity: 'lendario', badge: 'LIMITADO' },
-                  { name: 'Pack Torcida', desc: 'Impulsione sua base de fãs.', price: 1000000, rarity: 'raro' },
-                  { name: 'Pack Evolução', desc: 'Acelere o treino de todo o elenco.', price: 2000000, rarity: 'epico' },
-                  { name: 'Pack Financeiro', desc: 'Injeção de 2M no orçamento.', price: 1000, type: 'cash', rarity: 'epico' },
-                ].map(p => (
-                  <StoreCard 
-                    key={p.name}
-                    name={p.name}
-                    description={p.desc}
-                    price={p.price}
-                    rarity={p.rarity as any}
-                    badge={p.badge}
-                    footerInfo={p.type === 'cash' ? `${p.price} Cash` : undefined}
-                    onAction={() => handleAction(p)}
-                  />
-                ))}
-             </div>
-          </TabsContent>
+              </div>
+            </TabsContent>
+          ))}
         </div>
       </Tabs>
 
-      {/* ANIMAÇÃO DE SUCESSO */}
+      {/* ANIMAÇÃO DE SUCESSO / PREMIUM */}
       <AnimatePresence>
         {showSuccess.open && (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           >
-            <div className="bg-[#050810]/95 backdrop-blur-xl border border-amber-500/30 p-8 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.3)] text-center space-y-4 max-w-xs w-full">
-              <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto border border-amber-500/40">
-                {showSuccess.type === 'fans' ? (
-                  <Users className="h-10 w-10 text-amber-500 animate-bounce" />
-                ) : (
-                  <CheckCircle2 className="h-10 w-10 text-amber-500 animate-pulse" />
-                )}
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-white uppercase italic">Sucesso!</h3>
-                <p className="text-sm text-amber-500/80 font-bold uppercase tracking-tighter">{showSuccess.itemName}</p>
-                <p className="text-[10px] text-muted-foreground uppercase">Adicionado ao seu clube</p>
+            <motion.div 
+              initial={{ scale: 0.8, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-[#050810] border border-amber-500/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.3)] text-center space-y-6 max-w-sm w-full relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+              
+              <div className="w-24 h-24 bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/30">
+                <Crown className="h-12 w-12 text-amber-500 animate-bounce" />
               </div>
               
-              {showSuccess.type === 'fans' && (
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: '100%' }}
-                  className="h-1 bg-amber-500/20 rounded-full overflow-hidden"
-                >
-                  <motion.div 
-                    initial={{ x: '-100%' }}
-                    animate={{ x: '100%' }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                    className="h-full w-1/3 bg-amber-500"
-                  />
-                </motion.div>
-              )}
-            </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Premium Ativado!</h3>
+                <p className="text-amber-500 font-bold uppercase text-xs tracking-widest">30 dias de benefícios FLM</p>
+              </div>
+
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-black">Item Adquirido</p>
+                <p className="text-lg font-black text-white">{showSuccess.itemName}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold uppercase">
+                <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/5 p-2 rounded-lg">
+                  <Zap className="h-3 w-3" /> Obras Rápidas
+                </div>
+                <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/5 p-2 rounded-lg">
+                  <TrendingUp className="h-3 w-3" /> Bônus Renda
+                </div>
+              </div>
+
+              <Button onClick={() => setShowSuccess({ ...showSuccess, open: false })} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black uppercase italic">
+                Continuar
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -392,85 +234,129 @@ export function LojaFLM({ club, infrastructure, userId, onUpgradeFacility }: Loj
   );
 }
 
-function StoreCard({ 
-  name, description, price, rarity = 'comum', image, badge, type = 'buy', 
-  onAction, icon: Icon, footerInfo, minRep, currentRep 
-}: any) {
-  const cfg = RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG];
-  const isBlocked = minRep && currentRep < minRep;
+function SponsorCard({ sponsor, clubFans, onAccept, onGoToMarketing }: any) {
+  const isBlocked = clubFans < sponsor.minFans;
+  
+  return (
+    <motion.div
+      whileHover={!isBlocked ? { y: -5 } : {}}
+      className={`relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col h-full
+        ${isBlocked ? 'border-white/5 bg-black/40 grayscale' : 'border-emerald-500/20 bg-[#0A0D14] hover:border-emerald-500/40 shadow-xl'}
+      `}
+    >
+      <div className="p-5 space-y-4 flex-1">
+        <div className="flex justify-between items-start">
+          <div className={`p-3 rounded-xl ${isBlocked ? 'bg-white/5' : 'bg-emerald-500/10'}`}>
+            <DollarSign className={`h-6 w-6 ${isBlocked ? 'text-muted-foreground' : 'text-emerald-400'}`} />
+          </div>
+          {isBlocked ? (
+             <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400 bg-red-500/5">BLOQUEADO</Badge>
+          ) : (
+             <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-400 bg-emerald-500/5">DISPONÍVEL</Badge>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-lg font-black text-white uppercase tracking-tight">{sponsor.name}</h3>
+          <p className="text-[10px] text-muted-foreground font-medium">Contrato de {sponsor.duration} temporada(s)</p>
+        </div>
+
+        <div className="space-y-2">
+           <div className="flex justify-between text-[11px]">
+              <span className="text-muted-foreground">Mensal:</span>
+              <span className="font-black text-emerald-400">R$ {(sponsor.monthlyPay / 1000).toLocaleString()}k</span>
+           </div>
+           <div className="flex justify-between text-[11px]">
+              <span className="text-muted-foreground">Bônus Vitória:</span>
+              <span className="font-black text-emerald-400">R$ {(sponsor.winBonus / 1000).toLocaleString()}k</span>
+           </div>
+           <div className="flex justify-between text-[11px]">
+              <span className="text-muted-foreground">Bônus Título:</span>
+              <span className="font-black text-amber-400">R$ {(sponsor.titleBonus / 1000).toLocaleString()}k</span>
+           </div>
+        </div>
+
+        {isBlocked && (
+          <div className="pt-2 space-y-3">
+             <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+                <Lock className="h-3 w-3 text-red-400" />
+                <p className="text-[9px] text-red-400 leading-tight">
+                  Para desbloquear, você precisa de pelo menos <strong>{sponsor.minFans.toLocaleString()}</strong> torcedores.
+                </p>
+             </div>
+             <Button 
+               variant="outline" 
+               size="sm" 
+               onClick={onGoToMarketing}
+               className="w-full h-8 text-[10px] font-black uppercase border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10"
+             >
+               Comprar campanha de marketing
+             </Button>
+          </div>
+        )}
+      </div>
+
+      {!isBlocked && (
+        <CardFooter className="p-4 pt-0">
+          <Button onClick={onAccept} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic text-xs h-10 rounded-xl transition-all">
+            Assinar Contrato
+          </Button>
+        </CardFooter>
+      )}
+    </motion.div>
+  );
+}
+
+function StoreItemCard({ item, clubFans, onPurchase }: any) {
+  const isBlocked = clubFans < (item.min_fans || 0);
+  const cfg = RARITY_CONFIG[item.rarity as keyof typeof RARITY_CONFIG] || RARITY_CONFIG.common;
+  const price = item.price_cents / 100;
 
   return (
     <motion.div
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.2 }}
-      className={`group relative overflow-hidden rounded-2xl border ${cfg.border} bg-[#0A0D14] flex flex-col ${isBlocked ? 'opacity-60 grayscale' : ''}`}
+      whileHover={!isBlocked ? { y: -5 } : {}}
+      className={`relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col h-full
+        ${isBlocked ? 'border-white/5 bg-black/40 grayscale' : `bg-[#0A0D14] ${cfg.border} hover:shadow-2xl`}
+      `}
     >
-      {/* Rarity Glow Effect */}
-      <div className={`absolute -top-10 -right-10 w-32 h-32 blur-[40px] opacity-10 transition-opacity group-hover:opacity-25 ${cfg.bg}`} />
+      {!isBlocked && (
+         <div className={`absolute -top-10 -right-10 w-32 h-32 blur-[40px] opacity-10 ${cfg.bg}`} />
+      )}
       
-      {/* Image / Icon Section */}
-      <div className="relative aspect-video overflow-hidden bg-black/40">
-        {image ? (
-          <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-        ) : Icon ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
-            <Icon className={`h-12 w-12 ${cfg.color}`} />
-          </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
-            <ShoppingBag className={`h-12 w-12 ${cfg.color} opacity-20`} />
-          </div>
-        )}
-        
-        {badge && (
-          <div className="absolute top-3 left-3">
-            <Badge className="bg-amber-500 text-black font-black text-[9px] px-2 py-0 border-none animate-pulse">
-              {badge}
-            </Badge>
-          </div>
-        )}
-
-        <div className="absolute bottom-3 right-3">
-          <Badge variant="outline" className={`text-[9px] font-black uppercase ${cfg.bg} ${cfg.color} border-none backdrop-blur-md`}>
-            {rarity}
-          </Badge>
+      <div className="p-5 space-y-4 flex-1">
+        <div className="flex justify-between items-start">
+          <Badge className={`${cfg.bg} ${cfg.color} border-none font-black text-[9px] uppercase`}>{item.rarity}</Badge>
+          {item.duration_days && <span className="text-[9px] font-bold text-muted-foreground">{item.duration_days} DIAS</span>}
         </div>
-      </div>
 
-      <CardContent className="p-4 flex-1 flex flex-col gap-2">
-        <h3 className="text-sm font-black text-white uppercase tracking-tight group-hover:text-amber-500 transition-colors">
-          {name}
-        </h3>
-        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
-          {description}
-        </p>
+        <div>
+          <h3 className="text-base font-black text-white uppercase tracking-tight">{item.name}</h3>
+          <p className="text-[10px] text-muted-foreground leading-relaxed mt-1">
+            {item.description}
+          </p>
+        </div>
 
         {isBlocked && (
-          <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-red-400 bg-red-400/10 p-1.5 rounded-lg border border-red-400/20">
-             <Lock className="h-3 w-3" /> REP. MÍNIMA: {minRep}
-          </div>
+           <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+              <Lock className="h-3 w-3 text-red-400" />
+              <p className="text-[9px] text-red-400 font-bold uppercase tracking-tighter">
+                Requer {item.min_fans.toLocaleString()} torcedores
+              </p>
+           </div>
         )}
-
-        {footerInfo && (
-          <div className="mt-auto pt-2 flex items-center gap-2">
-             <div className="h-1 w-1 rounded-full bg-amber-500" />
-             <span className="text-[10px] font-black text-amber-500/80 uppercase tracking-tighter">{footerInfo}</span>
-          </div>
-        )}
-      </CardContent>
+      </div>
 
       <CardFooter className="p-4 pt-0">
         <Button 
-          onClick={onAction}
           disabled={isBlocked}
-          className={`w-full rounded-xl h-10 font-black uppercase tracking-tighter text-xs transition-all duration-300
-            ${rarity === 'lendario' ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 
-              rarity === 'epico' ? 'bg-purple-600 text-white hover:bg-purple-500' :
+          onClick={onPurchase}
+          className={`w-full h-10 rounded-xl font-black uppercase italic text-xs transition-all
+            ${item.rarity === 'legendary' ? 'bg-amber-500 text-black hover:bg-amber-400' :
+              item.rarity === 'epic' ? 'bg-purple-600 text-white hover:bg-purple-500' :
               'bg-white/5 text-white hover:bg-white/10 border border-white/10'}
           `}
         >
-          {type === 'contract' ? 'Analisar Contrato' : price === 0 ? 'Grátis' : `Comprar · R$ ${(price / 1000).toLocaleString()}k`}
-          <ChevronRight className="h-3.5 w-3.5 ml-2" />
+          {`Comprar · R$ ${price.toLocaleString()}`}
         </Button>
       </CardFooter>
     </motion.div>
