@@ -13,6 +13,7 @@ import {
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
+import { FormationView } from './FormationView';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
@@ -150,6 +151,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [activeTacticalView, setActiveTacticalView] = useState<'list' | 'pitch'>('pitch');
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
