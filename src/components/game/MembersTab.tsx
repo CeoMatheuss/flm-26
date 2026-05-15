@@ -15,6 +15,8 @@ import { Crown, Users, TrendingUp, Star, DollarSign, Pencil, Sparkles, Heart, Tr
 import { formatMoney } from '@/lib/formatMoney';
 import { calculateTotalMembers, MEMBER_TIER_RATIOS } from '@/lib/membersCalc';
 import { toast } from 'sonner';
+import { safeNumber } from '@/match/stadiumEconomyEngine';
+
 
 interface MemberPlan {
   id: string;
