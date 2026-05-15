@@ -1052,6 +1052,43 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
         </TabsContent>
+
+        {negotiateLoan && (
+          <LoanNegotiationModal
+            open={!!negotiateLoan}
+            onOpenChange={(open) => {
+              if (!open) setNegotiateLoan(null);
+            }}
+            mode="negotiate"
+            player={{
+              name: negotiateLoan.player_name,
+              position: negotiateLoan.player_position,
+              age: negotiateLoan.player_age,
+              overall: negotiateLoan.player_overall,
+              salary: negotiateLoan.salary || 0,
+            }}
+            listedTerms={negotiateLoan._isHelpOnly ? undefined : {
+              salaryPayer: negotiateLoan.salary_payer,
+              salarySplitPct: negotiateLoan.salary_split_pct,
+              loanFee: negotiateLoan.loan_fee,
+            }}
+            openToOffers={!negotiateLoan._isHelpOnly && (negotiateLoan.open_to_offers ?? true)}
+            onSubmit={negotiateLoan._isHelpOnly ? () => setNegotiateLoan(null) : async (terms) => {
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: { 
+                  action: 'loan-propose', 
+                  listingId: negotiateLoan.id, 
+                  terms,
+                  clubName 
+                }
+              });
+              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
+              else toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
+              setNegotiateLoan(null);
+            }}
+            loading={loading}
+          />
+        )}
         </div>
       </Tabs>
     </div>
