@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
-  ShoppingBag, Sparkles, DollarSign, Users, Building2, 
-  Stethoscope, Crown, Package, Star, TrendingUp, 
-  CheckCircle2, Lock, ArrowRight, Zap, Gem, Trophy,
-  ChevronRight, HeartPulse, HardHat, Rocket, Loader2, History, Info
+  ShoppingBag, DollarSign, Users, Crown, Package, 
+  CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
+  Loader2, History, Info, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
