@@ -310,6 +310,22 @@ export function YouthAcademyModernTab({
                     )}
                   </div>
 
+function TabButton({ active, onClick, label, icon }: { active: boolean; onClick: () => void; label: string; icon: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+        active 
+          ? "bg-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]" 
+          : "text-white/40 hover:text-white hover:bg-white/5"
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
                   <div className="relative aspect-[16/10] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
                     <img 
                       src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800" 
