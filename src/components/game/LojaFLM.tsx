@@ -101,17 +101,23 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
         <div className="absolute top-4 right-6 opacity-10">
           <ShoppingBag className="h-24 w-24 text-emerald-400" />
         </div>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter">Loja <span className="text-emerald-500">FLM 26</span></h1>
-        <p className="text-emerald-100/60 text-xs font-medium">Overhaul completo: estratégia, torcida e Premium.</p>
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="outline" size="sm" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }))} className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2">
+             <ChevronRight className="h-4 w-4 rotate-180" /> Voltar ao Clube
+          </Button>
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-none uppercase font-black text-[10px] tracking-widest px-3 py-1">Professional Store</Badge>
+        </div>
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none">Loja <span className="text-emerald-500">FLM 26</span></h1>
+        <p className="text-emerald-100/60 text-xs font-medium mt-1">Overhaul completo: estratégia, torcida e Premium.</p>
         
         <div className="flex gap-4 mt-6">
           <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3">
             <DollarSign className="text-emerald-400 h-5 w-5" />
-            <p className="font-black">R$ {(club.budget || 0).toLocaleString()}</p>
+            <p className="font-black text-sm sm:text-base">R$ {(club.budget || 0).toLocaleString()}</p>
           </div>
           <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3">
             <Users className="text-emerald-400 h-5 w-5" />
-            <p className="font-black">{(club.fans || 0).toLocaleString()}</p>
+            <p className="font-black text-sm sm:text-base">{(club.fans || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>
