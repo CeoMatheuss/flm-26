@@ -179,20 +179,30 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
   }, [currentAssignedIds, prevAssignedIds]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[2/3] bg-emerald-800 rounded-xl overflow-hidden border border-emerald-600/30 shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/10 to-transparent pointer-events-none" />
+    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[2/3] bg-[#0a1a0f] rounded-3xl overflow-hidden border border-emerald-500/20 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)]">
+      {/* Premium Field Texture */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
-      {/* Pitch markings */}
-      <div className="absolute inset-0 opacity-50">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-28 sm:h-28 border-2 border-white/20 rounded-full" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/30 rounded-full" />
-        <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-white/20" />
-        <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[55%] h-[16%] border-2 border-t-0 border-white/20 rounded-b-lg" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[55%] h-[16%] border-2 border-b-0 border-white/20 rounded-t-lg" />
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-emerald-950/40 pointer-events-none" />
+      
+      {/* Pitch markings - Modern Style */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-32 sm:h-32 border border-white/40 rounded-full" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/60 rounded-full shadow-[0_0_10px_white]" />
+        <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/40" />
+        
+        {/* Goal Areas */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[60%] h-[18%] border border-t-0 border-white/40 rounded-b-xl bg-white/5" />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[60%] h-[18%] border border-b-0 border-white/40 rounded-t-xl bg-white/5" />
+        
+        {/* Penalty Arcs */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-[18%] w-[25%] h-[6%] border border-t-0 border-white/40 rounded-b-full" />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-[18%] w-[25%] h-[6%] border border-b-0 border-white/40 rounded-t-full" />
       </div>
 
       {/* Players */}
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {layout.map((slot, i) => {
           const player = assigned[i];
           const isCaptain = player && captainId === player.id;
@@ -203,51 +213,52 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
             <motion.div
               key={player?.id || `empty-${i}`}
               layout
-              initial={{ scale: 0, opacity: 0 }}
+              initial={{ scale: 0.5, opacity: 0 }}
               animate={{ 
                 scale: 1, 
                 opacity: 1,
                 left: `${slot.x}%`, 
                 top: `${slot.y}%` 
               }}
-              exit={{ scale: 0, opacity: 0 }}
+              exit={{ scale: 0.5, opacity: 0 }}
               transition={{ 
                 type: "spring", 
-                stiffness: 260, 
-                damping: 20,
-                layout: { duration: 0.5 }
+                stiffness: 300, 
+                damping: 25,
+                layout: { duration: 0.4 }
               }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 ${onPlayerClick && player ? 'cursor-pointer' : ''} z-10`}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 ${onPlayerClick && player ? 'cursor-pointer' : ''} z-10 group`}
               onClick={() => onPlayerClick && player && onPlayerClick(player)}
             >
-              <div className="relative group">
-                {/* Glow effect for recently updated players */}
-                {isJustUpdated && (
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1.5, opacity: 1 }}
-                    className="absolute inset-0 rounded-full bg-primary/40 blur-md -z-10"
-                  />
+              <div className="relative">
+                {/* Glow for Starters */}
+                {player && (
+                  <div className={`absolute inset-0 rounded-full blur-md opacity-40 -z-10 group-hover:opacity-80 transition-opacity ${posColors[slot.position] || 'bg-white'}`} />
                 )}
                 
                 <motion.div 
-                  whileHover={{ scale: 1.15, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${isInjured ? 'bg-slate-500' : posColors[slot.position] || 'bg-muted'} flex items-center justify-center text-white text-[10px] sm:text-[12px] font-black shadow-[0_4px_10px_rgba(0,0,0,0.3)] border-2 ${isCaptain ? 'border-yellow-400' : 'border-white/40'} ${isJustUpdated ? 'ring-2 ring-primary ring-offset-1 ring-offset-transparent animate-pulse' : ''}`}
+                  whileHover={{ scale: 1.2, rotate: 5, zIndex: 50 }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-xl border-2 transition-colors
+                    ${isInjured ? 'bg-slate-700 grayscale' : (posColors[slot.position] || 'bg-slate-800')}
+                    ${isCaptain ? 'border-yellow-400 ring-2 ring-yellow-400/20' : 'border-white/90'}
+                    ${isJustUpdated ? 'animate-pulse ring-4 ring-primary/50' : ''}`}
                 >
-                  {player ? player.overall : '?'}
+                  <span className="drop-shadow-md">{player ? player.overall : '?'}</span>
                 </motion.div>
                 
                 {isCaptain && (
-                  <span className="absolute -top-1 -right-1 text-[8px] bg-yellow-400 text-black rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold shadow-sm border border-black/10">C</span>
-                )}
-                {isInjured && (
-                  <span className="absolute -top-1 -left-1 text-[8px] bg-red-600 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center shadow-sm">🏥</span>
+                  <motion.div 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-4 h-4 flex items-center justify-center font-black text-[9px] shadow-lg border border-black/20"
+                  >
+                    C
+                  </motion.div>
                 )}
               </div>
               
-              <div className="bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-white/10">
-                <p className="text-[7px] sm:text-[9px] text-white font-bold text-center leading-tight max-w-[50px] sm:max-w-[70px] truncate">
+              <div className="bg-slate-900/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 shadow-lg min-w-[50px] group-hover:border-primary/50 transition-colors">
+                <p className="text-[8px] sm:text-[10px] text-white font-black text-center leading-none uppercase tracking-tighter truncate max-w-[60px] sm:max-w-[80px]">
                   {player ? player.name.split(' ').pop() : slot.position}
                 </p>
               </div>
@@ -256,5 +267,6 @@ export function FormationView({ formation, players, captainId, onPlayerClick }: 
         })}
       </AnimatePresence>
     </div>
+
   );
 }
