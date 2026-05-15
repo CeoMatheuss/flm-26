@@ -258,15 +258,16 @@ export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium
     }
     
     if (candidates[0]) {
-      starters.push({ ...candidates[0], squadRole: 'titular' });
+      starters.push({ ...candidates[0], squadRole: 'titular' as const });
       used.add(candidates[0].id);
     }
   }
 
   // The rest are bench and reserves
   const others = squad.filter(p => !used.has(p.id)).sort((a, b) => b.overall - a.overall);
-  const bench = others.slice(0, 11).map(p => ({ ...p, squadRole: 'reserva' }));
-  const reserves = others.slice(11).map(p => ({ ...p, squadRole: p.isYouth ? 'promessa' : 'reserva' }));
+  const bench = others.slice(0, 11).map(p => ({ ...p, squadRole: 'reserva' as const }));
+  const reserves = others.slice(11).map(p => ({ ...p, squadRole: (p.isYouth ? 'promessa' : 'reserva') as const }));
+
 
 
   return [...starters, ...bench, ...reserves];
