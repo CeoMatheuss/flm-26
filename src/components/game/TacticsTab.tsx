@@ -603,35 +603,31 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
               return 'text-red-400';
             };
             return (
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                <Badge>{selectedPlayer.position}</Badge>
-                <Badge variant="secondary">OVR {selectedPlayer.overall}</Badge>
-                <Badge variant="outline">{selectedPlayer.age} anos</Badge>
-              </div>
+            <div className="p-4 space-y-4">
               {/* Energia e Moral */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Energia', icon: '⚡', value: selectedPlayer.stamina ?? 100 },
-                  { label: 'Moral', icon: '❤️', value: selectedPlayer.morale ?? 50 },
+                  { label: 'Energia', icon: <Zap className="w-3 h-3" />, value: selectedPlayer.stamina ?? 100, color: 'text-yellow-400' },
+                  { label: 'Moral', icon: <Heart className="w-3 h-3" />, value: selectedPlayer.morale ?? 50, color: 'text-emerald-400' },
                 ].map(stat => (
-                  <div key={stat.label} className="bg-muted/30 rounded-lg p-2 border border-border/50">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] text-muted-foreground">{stat.icon} {stat.label}</span>
-                      <span className={`text-[10px] font-bold ${stat.value >= 70 ? 'text-emerald-400' : stat.value >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>{stat.value}%</span>
+                  <div key={stat.label} className="bg-white/5 rounded-xl p-2.5 border border-white/10">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">{stat.icon} {stat.label}</span>
+                      <span className={`text-[10px] font-black ${stat.color}`}>{stat.value}%</span>
                     </div>
-                    <Progress value={stat.value} className="h-1.5" />
+                    <Progress value={stat.value} className="h-1.5 bg-white/5" />
                   </div>
                 ))}
               </div>
+
               {/* Goalkeeping highlight for GK */}
               {selectedPlayer.position === 'GOL' && selectedPlayer.attributes.goalkeeping != null && (
-                <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold">🧤 Defesa de Goleiro</span>
-                    <span className={`text-sm font-bold ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">🧤 Defesa de Goleiro</span>
+                    <span className={`text-sm font-black ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
                   </div>
-                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5 mt-1" />
+                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5" />
                 </div>
               )}
               <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto">
