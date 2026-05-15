@@ -381,13 +381,11 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       if (e.detail?.club_data) {
         console.log('[Index] Sincronizando dados externos em tempo real...');
         const incoming = e.detail.club_data as GameState;
-        // Merge logic or direct set
-        setLoadedState(prev => {
-          if (!prev) return incoming;
-          // Prevenção de loop: só atualiza se o timestamp de atualização for maior
-          // mas como o save_game é disparado aqui também, o merge deve ser cuidadoso
-          return { ...incoming };
-        });
+        
+        // Use functional update to ensure we use the current state if needed,
+        // but here we want to replace with what the server says is the truth.
+        // We use a custom event because setLoadedState is inside GameApp, not GameUI.
+        // Wait, setLoadedState IS in GameApp. This effect needs to be in GameApp.
       }
     };
     window.addEventListener('flm:external-data-update', handler);

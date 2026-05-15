@@ -803,13 +803,13 @@ export function useClubState(initialState: any, userId?: string) {
     setClub(prev => ({ ...prev, budget: (prev.budget ?? 0) + amount }));
     // Sincronização imediata com banco de dados para bônus/finanças
     if (userId) {
-      supabase.from('club_transactions').insert({
-        user_id: userId,
-        amount: amount,
-        type: 'income',
-        description: description,
-        category: 'bonus'
-      }).then(() => {});
+      supabase.from('game_saves').select('club_data').eq('user_id', userId).single().then(({ data }) => {
+        if (data?.club_data) {
+          const state = data.club_data as any;
+          state.club.budget = (state.club.budget || 0) + amount;
+          supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId).then(() => {});
+        }
+      });
     }
     return { amount, description };
   }, [userId]);
