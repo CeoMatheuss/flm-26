@@ -72,6 +72,11 @@ export function SquadModernLayout({
   const selectedStatus = selectedPlayer ? getPlayerStatus(selectedPlayer, starterIds.has(selectedPlayer.id)) : null;
   const selectedDelta = selectedPlayer ? (deltas[selectedPlayer.id] ?? {}) : {};
 
+  // Escalação Dinâmica e Inteligente
+  const actualFormation = useMemo(() => {
+    return detectActualFormation(players);
+  }, [players]);
+
   const handleSelect = (id: string) => {
     setSelectedId(id);
     setPanelOpen(true);
