@@ -207,30 +207,73 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
         </Card>
       )}
 
-      {/* Tactical Overview Bar */}
-      <Card className="border-primary/20">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-xs sm:text-sm font-bold">{tactics.formation}</span>
-              <Badge variant="secondary" className="text-[9px] sm:text-[10px] capitalize">{tactics.playStyle}</Badge>
-              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-primary/5 text-primary border-primary/20">
-                OVR: {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {injuredCount > 0 && <Badge variant="destructive" className="text-[9px]">🏥 {injuredCount}</Badge>}
-              <Badge variant="outline" className="text-[9px]">{players.length} jog.</Badge>
-            </div>
+      {/* Tactical Hub - Side Panel Style */}
+      <div className="grid grid-cols-1 gap-3">
+        <Card className="border-primary/20 bg-slate-950/40 backdrop-blur-sm overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-2 opacity-10">
+            <Shield className="w-16 h-16 text-primary rotate-12" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">Organização Tática</span>
-            <Progress value={getTacticalRating()} className="flex-1 h-1.5" />
-            <span className="text-[10px] font-bold text-primary">{getTacticalRating()}%</span>
-          </div>
-        </CardContent>
-      </Card>
+          
+          <CardContent className="p-4 space-y-4 relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Formação Atual</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-2xl font-black text-white tracking-tighter">{tactics.formation}</h3>
+                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 uppercase font-black">{tactics.playStyle}</Badge>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Força do Time</p>
+                <p className="text-2xl font-black text-primary tracking-tighter">
+                  {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
+                  <span className="text-muted-foreground">Organização</span>
+                  <span className="text-primary">{getTacticalRating()}%</span>
+                </div>
+                <Progress value={getTacticalRating()} className="h-1.5 bg-white/5" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
+                  <span className="text-muted-foreground">Entrosamento</span>
+                  <span className="text-emerald-400">
+                    {Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
+                  className="h-1.5 bg-white/5" 
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 pt-1">
+               <div className="flex -space-x-2">
+                 {players.slice(0, 5).map((p, i) => (
+                   <div key={p.id} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-black overflow-hidden">
+                     {p.name.charAt(0)}
+                   </div>
+                 ))}
+                 {players.length > 5 && (
+                   <div className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[8px] font-black text-white/50">
+                     +{players.length - 5}
+                   </div>
+                 )}
+               </div>
+               <p className="text-[10px] text-muted-foreground font-medium">Elenco ativo: <span className="text-white">{players.length} jogadores</span></p>
+               {injuredCount > 0 && (
+                 <Badge variant="destructive" className="ml-auto text-[9px] px-1.5 py-0 h-4 font-black">🏥 {injuredCount}</Badge>
+               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Presets - compact horizontal scroll */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
