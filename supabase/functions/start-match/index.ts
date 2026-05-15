@@ -1565,6 +1565,7 @@ Deno.serve(async (req) => {
       stadium_capacity: resolvedStadiumCapacity,
       attendance: result.attendance,
       ticket_revenue: result.ticketRevenue,
+
       is_home: callerIsHomeOnInsert,
       competition: competition || 'Amistoso',
       duration_seconds: durationSeconds,
