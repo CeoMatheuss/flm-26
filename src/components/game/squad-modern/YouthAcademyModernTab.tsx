@@ -5,7 +5,7 @@ import {
 import { Player } from '@/types/game';
 import { PremiumPlayerCard } from './cards/PremiumPlayerCard';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, TrendingUp, Star, ArrowUpRight, Trophy, Info, Sparkles, Coins } from 'lucide-react';
+import { GraduationCap, TrendingUp, Star, ArrowUpRight, Trophy, Info, Sparkles, Coins, Search, Newspaper, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
 import { cn } from '@/lib/utils';
