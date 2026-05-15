@@ -16,6 +16,7 @@ import { CTRooms } from '@/types/ctRooms';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
+import { autoLineup } from '@/utils/lineupManager';
 
 import { useClubState, LoanedPlayer } from './useClubState';
 import { useFinanceState } from './useFinanceState';
