@@ -136,9 +136,11 @@ export const attrColorClass = (val: number) => {
 };
 
 export const getPlayerStatus = (p: Player, isStarter: boolean): PlayerStatus => {
-  if ((p as any).isInjured) return 'lesionado';
+  if ((p as any).isLoaned) return 'emprestado';
+  if ((p as any).isInjured || p.injury) return 'lesionado';
   if ((p as any).isSuspended) return 'suspenso';
   if ((p as any).onTransferList) return 'lista-transferencia';
+  if ((p as any).isAfastado) return 'afastado';
   if (isStarter) return 'titular';
   if (p.age <= 20 && p.overall >= 70) return 'promessa';
   return 'reserva';
