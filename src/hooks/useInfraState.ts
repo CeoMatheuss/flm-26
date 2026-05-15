@@ -11,6 +11,7 @@ import {
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
 import { MatchReport } from '@/types/matchReport';
+import { PromotionDecision } from '@/types/promotion';
 import { simulateYouthMatch, formatYouthMatchNews, YouthMatchReport } from '@/utils/youthMatchSimulator';
 import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
@@ -315,12 +316,23 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       next = afterEvent;
 
       // Recompute derived fields
-      next = next.map(p => ({
-        ...p,
-        potentialTier: getPotentialTier(p.potential, p.overall),
-        evolutionStatus: computeEvolutionStatus(p),
-        youthTag: computeYouthTag(p),
-      }));
+      next = next.map(p => {
+        const evolutionStatus = computeEvolutionStatus(p);
+        const overall = p.overall;
+        const potential = p.potential;
+        const age = p.age;
+        
+        // Logic for Promotion Ready
+        const isReady = (overall >= 62) || (potential >= 88 && age >= 17 && overall >= 55) || (evolutionStatus === 'evoluindo' && overall >= 58 && Math.random() < 0.3);
+
+        return {
+          ...p,
+          potentialTier: getPotentialTier(potential, overall),
+          evolutionStatus,
+          youthTag: computeYouthTag(p),
+          promotionReady: p.promotionReady || isReady, // once ready, stays ready until promoted or decision
+        };
+      });
 
       // News entries
       if (userId) {
@@ -372,6 +384,65 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return prev.filter(p => p.id !== youthId);
     });
   }, []);
+
+  const handlePromotionDecision = useCallback((
+    prospectId: string, 
+    decision: PromotionDecision, 
+    contractDetails?: any,
+    addPlayerToClub?: (p: any) => void,
+    addFinance?: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addBudget?: (amount: number) => void
+  ) => {
+    setYouthProspects(prev => {
+      const prospect = prev.find(p => p.id === prospectId);
+      if (!prospect) return prev;
+
+      if (decision === 'promoted' && addPlayerToClub) {
+        const player = {
+          id: prospect.id, 
+          name: prospect.name, 
+          position: prospect.position,
+          overall: prospect.overall, 
+          attributes: prospect.attributes,
+          age: prospect.age, 
+          salary: contractDetails?.salary ?? prospect.salary,
+          stamina: prospect.stamina, 
+          morale: 100, // Very happy to be promoted
+          goals: 0, 
+          assists: 0,
+          contract: contractDetails?.years ?? 3, 
+          gamesPlayed: 0, 
+          trainingProgress: 0, 
+          personality: prospect.personality,
+          isYouth: true,
+          squadRole: contractDetails?.squadRole ?? 'promessa',
+          marketValue: prospect.overall * 100000, // Value increases after turning pro
+        };
+        addPlayerToClub(player);
+        setYouthPromotedCount((c: number) => c + 1);
+        toast.success(`🎉 ${prospect.name} agora é profissional!`, {
+          description: `Contrato assinado por ${player.contract} anos.`
+        });
+        
+        if (userId) {
+          supabase.from('newspaper_entries').insert([{
+            user_id: userId,
+            text: `📝 OFICIAL: O jovem ${prospect.name} assinou seu primeiro contrato profissional com o clube!`,
+            category: 'BASE', is_event: true,
+          }]).then(() => {});
+        }
+      } else if (decision === 'released') {
+        toast.info(`${prospect.name} foi dispensado da academia.`);
+      } else if (decision === 'stayed') {
+        // No action needed, stays in base but we might want to unset promotionReady if we want to stop notifying
+        // Actually, we'll keep it in base.
+      } else if (decision === 'observing') {
+        // Stays in base
+      }
+
+      return prev.filter(p => p.id !== prospectId || (decision !== 'promoted' && decision !== 'released'));
+    });
+  }, [userId]);
 
   const sellYouth = useCallback((
     youthId: string,
@@ -485,5 +556,6 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     lastYouthMatchReport, setLastYouthMatchReport,
     upgradeFacility, promoteYouth, sellYouth, enrollCopinha,
     processYouthCycle, upgradeCTRoom, chargeYouthInvestment, chargeTrainingInvestment,
+    handlePromotionDecision,
   };
 }

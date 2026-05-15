@@ -387,5 +387,15 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     rescindPlayer: clubState.rescindPlayer,
     enrollWorldLeague: clubState.enrollWorldLeague,
     changePlayerPosition: clubState.changePlayerPosition,
+    handlePromotionDecision: (prospectId: string, decision: any, details?: any) => {
+      infraState.handlePromotionDecision(
+        prospectId, 
+        decision, 
+        details,
+        (p: any) => clubState.setClub(prev => ({ ...prev, players: [...prev.players, p] })),
+        financeState.addFinance,
+        (amt: number) => clubState.setClub(prev => ({ ...prev, budget: prev.budget + amt }))
+      );
+    }
   };
 }

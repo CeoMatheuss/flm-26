@@ -13,6 +13,7 @@ import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
 import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';
+import { PromotionManager } from '@/components/game/promotion/PromotionManager';
 import { useVersionGuard } from '@/hooks/useVersionGuard';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
@@ -741,11 +742,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <PurchaseSuccessOverlay />
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <DatabaseResetWidget userId={userId} />
-
-      <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
-      <DatabaseResetWidget userId={userId} />
       <UpdatePopupWidget userId={userId} />
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
+      <PromotionManager 
+        youthProspects={game.youthProspects} 
+        onDecision={(game as any).handlePromotionDecision}
+        clubBudget={game.club.budget}
+      />
       <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} onNavigateTab={setActiveTab} onComplete={async () => {
         try {
           // Marca local imediatamente para nunca travar a UI
