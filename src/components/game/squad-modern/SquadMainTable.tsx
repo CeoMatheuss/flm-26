@@ -167,19 +167,23 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
 
       {/* Name & Position */}
       <div className="col-span-11 sm:col-span-4 flex items-center gap-3">
-        <div className={cn(
-          "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
-          tier.ring, tier.glow, "bg-zinc-950/80"
-        )}>
-          <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
-          <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
-          {delta !== 0 && (
-             <span className="absolute -top-1 -right-1 p-0.5 z-10">
-               {delta > 0 ? <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" /> : <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />}
-             </span>
-          )}
-        </div>
-        
+          <div className={cn(
+            "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
+            tier.ring, tier.glow, "bg-zinc-950/80"
+          )}>
+            <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
+            <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
+            {delta !== 0 && (
+               <span className="absolute -top-1 -right-1 p-0.5 z-10">
+                 {delta > 0 ? (
+                   <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                 ) : (
+                   <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+                 )}
+               </span>
+            )}
+          </div>
+
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors">

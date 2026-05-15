@@ -152,7 +152,7 @@ export function StadiumTab({
               </Badge>
               <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{stadiumName}</h2>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                Nv {stadium.level}/{stadium.maxLevel} • Capacidade {modules.seatingCapacity.toLocaleString()}
+                Nv {stadium.level}/{stadium.maxLevel} • Capacidade {getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()}
               </p>
             </div>
             <div className="text-left sm:text-right shrink-0">
