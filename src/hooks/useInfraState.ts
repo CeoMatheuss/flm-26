@@ -556,5 +556,6 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     lastYouthMatchReport, setLastYouthMatchReport,
     upgradeFacility, promoteYouth, sellYouth, enrollCopinha,
     processYouthCycle, upgradeCTRoom, chargeYouthInvestment, chargeTrainingInvestment,
+    handlePromotionDecision,
   };
 }
