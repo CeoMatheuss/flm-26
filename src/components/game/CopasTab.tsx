@@ -420,7 +420,7 @@ export function CopasTab({ userId }: Props) {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {matches.filter(m => m.round === cup.current_round).map(m => (
                 <MatchRow key={m.id} match={m} userId={userId} />
               ))}
@@ -431,21 +431,37 @@ export function CopasTab({ userId }: Props) {
         <TabsContent value="bracket" className="outline-none">
           <div className="w-full rounded-3xl border border-border/50 bg-card/20 overflow-hidden">
             <ScrollArea className="w-full">
-              <div className="flex gap-2 sm:gap-4 md:gap-6 p-3 sm:p-4 md:p-6 min-w-max items-stretch">
+              <div className="relative flex gap-12 p-8 min-w-max items-stretch">
                 {[...Array(cup.total_rounds)].map((_, i) => {
                   const r = i + 1;
                   const rMatches = matches.filter(match => match.round === r);
                   return (
-                    <div key={r} className="w-36 sm:w-44 md:w-52 space-y-3 md:space-y-4 flex flex-col">
-                      <div className="flex flex-col items-center gap-1 md:gap-2">
-                        <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.1em] md:tracking-[0.2em] text-center">{getPhaseName(r, cup.total_rounds)}</span>
-                        <div className="h-1 w-8 md:h-1.5 md:w-12 bg-primary/20 rounded-full" />
+                    <div key={r} className="w-56 space-y-6 flex flex-col relative">
+                      <div className="flex flex-col items-center gap-2 mb-4">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] text-center">{getPhaseName(r, cup.total_rounds)}</span>
+                        <div className="h-1.5 w-12 bg-primary/20 rounded-full" />
                       </div>
-                      <div className="space-y-3 md:space-y-6 flex flex-col justify-around flex-1 py-2 md:py-4">
-                        {rMatches.length > 0 ? rMatches.map(m => (
-                          <BracketMatch key={m.id} match={m} userId={userId} />
+                      <div className="space-y-12 flex flex-col justify-around flex-1 py-4 relative">
+                        {rMatches.length > 0 ? rMatches.map((m, idx) => (
+                          <div key={m.id} className="relative group">
+                            <BracketMatch match={m} userId={userId} />
+                            {/* SVG Bracket Lines */}
+                            {r < cup.total_rounds && (
+                              <div className="absolute top-1/2 -right-12 w-12 h-[200%] pointer-events-none">
+                                <svg className="w-full h-full" overflow="visible">
+                                  <path 
+                                    d={`M 0 0 L 24 0 L 24 ${idx % 2 === 0 ? '50%' : '-50%'} L 48 ${idx % 2 === 0 ? '50%' : '-50%'}`}
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    strokeWidth="2" 
+                                    className="text-border/40 group-hover:text-primary/40 transition-colors"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
                         )) : (
-                          <div className="rounded-2xl border border-dashed border-border/40 bg-card/20 p-3 text-center text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                          <div className="rounded-2xl border border-dashed border-border/40 bg-card/20 p-4 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                             A definir
                           </div>
                         )}
@@ -459,28 +475,32 @@ export function CopasTab({ userId }: Props) {
                     ? (finalMatch.winner_team_id === finalMatch.home_team_id ? finalMatch.home : finalMatch.away)
                     : null;
                   return (
-                    <div className="w-36 sm:w-44 md:w-52 space-y-3 md:space-y-4 flex flex-col">
-                      <div className="flex flex-col items-center gap-1 md:gap-2">
-                        <span className="text-[8px] md:text-[10px] font-black text-yellow-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Campeão</span>
-                        <div className="h-1 w-8 md:h-1.5 md:w-12 bg-yellow-500/30 rounded-full" />
+                    <div className="w-56 space-y-4 flex flex-col">
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em]">Campeão</span>
+                        <div className="h-1.5 w-12 bg-yellow-500/30 rounded-full" />
                       </div>
-                      <div className="flex-1 flex items-center justify-center py-2 md:py-4">
-                        <div className={`relative w-full rounded-2xl border p-4 text-center space-y-3 shadow-xl transition-all ${champion ? 'border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent ring-1 ring-yellow-500/30' : 'border-dashed border-border/40 bg-card/20'}`}>
+                      <div className="flex-1 flex items-center justify-center py-4">
+                        <div className={`relative w-full rounded-2xl border p-6 text-center space-y-4 shadow-2xl transition-all duration-500 ${champion ? 'border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent scale-110 ring-1 ring-yellow-500/30' : 'border-dashed border-border/40 bg-card/20'}`}>
                           <div className="flex justify-center">
-                            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${champion ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30' : 'bg-muted text-muted-foreground'}`}>
-                              <Trophy className="h-6 w-6" />
+                            <div className={`h-16 w-16 rounded-3xl flex items-center justify-center ${champion ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/40 animate-bounce' : 'bg-muted text-muted-foreground'}`}>
+                              <Trophy className="h-8 w-8" />
                             </div>
                           </div>
                           {champion ? (
                             <>
                               <div className="flex justify-center">
-                                <ClubShield club={toShieldClub(champion) as any} size={40} />
+                                <div className="p-2 bg-white/5 rounded-2xl border border-white/10">
+                                  <ClubShield club={toShieldClub(champion) as any} size={56} />
+                                </div>
                               </div>
-                              <p className="text-xs font-black text-yellow-500 truncate">{champion.club_name}</p>
-                              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Campeão</p>
+                              <div>
+                                <p className="text-sm font-black text-yellow-500 truncate uppercase">{champion.club_name}</p>
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Soberano</p>
+                              </div>
                             </>
                           ) : (
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Aguardando final</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Aguardando a Glória</p>
                           )}
                         </div>
                       </div>
@@ -630,27 +650,42 @@ function BracketMatch({ match, userId }: { match: any; userId: string }) {
   const isHomeWinner = match.winner_team_id === match.home_team_id;
   const isAwayWinner = match.winner_team_id === match.away_team_id;
   const isMine = match.home?.user_id === userId || match.away?.user_id === userId;
+  const isLive = match.status === 'live';
 
   return (
-    <div className={`relative w-full rounded-2xl bg-card/60 border border-border/50 p-3 space-y-2 transition-all hover:scale-105 shadow-xl ${isMine ? 'ring-1 ring-primary' : ''}`}>
+    <div 
+      className={`relative w-full rounded-2xl bg-[#0f0f1a] border border-white/5 p-3 space-y-2 transition-all hover:scale-[1.02] hover:border-primary/30 shadow-xl cursor-pointer overflow-hidden ${isMine ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
+      onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-match-details', { detail: { matchId: match.id } }))}
+    >
+      {isLive && (
+        <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500 text-[8px] font-black text-white uppercase tracking-widest rounded-bl-lg animate-pulse">
+          AO VIVO
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <ClubShield club={toShieldClub(match.home) as any} size={20} />
-          <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isHomeWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.home?.club_name } }))}>
-            {match.home?.club_name || 'TBD'}
-          </span>
+          <ClubShield club={toShieldClub(match.home) as any} size={22} />
+          <div className="flex flex-col truncate">
+            <span className={`text-[10px] font-bold truncate ${isHomeWinner ? 'text-white' : 'text-muted-foreground'} ${isMine && match.home?.user_id === userId ? 'text-primary' : ''}`}>
+              {match.home?.club_name || 'TBD'}
+            </span>
+            {match.home?.is_bot && <span className="text-[7px] font-black text-white/20 uppercase">BOT</span>}
+          </div>
         </div>
-        <span className="text-[10px] font-black tabular-nums">{match.home_score ?? ''}</span>
+        <span className={`text-[11px] font-black tabular-nums ${isHomeWinner ? 'text-primary' : 'text-white'}`}>{match.home_score ?? '-'}</span>
       </div>
-      <div className="h-px w-full bg-border/20" />
+      <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <ClubShield club={toShieldClub(match.away) as any} size={20} />
-          <span className={`text-[10px] font-bold truncate cursor-pointer hover:text-primary ${isAwayWinner ? 'text-white' : 'text-muted-foreground'}`} onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: match.away?.club_name } }))}>
-            {match.away?.club_name || 'TBD'}
-          </span>
+          <ClubShield club={toShieldClub(match.away) as any} size={22} />
+          <div className="flex flex-col truncate">
+            <span className={`text-[10px] font-bold truncate ${isAwayWinner ? 'text-white' : 'text-muted-foreground'} ${isMine && match.away?.user_id === userId ? 'text-primary' : ''}`}>
+              {match.away?.club_name || 'TBD'}
+            </span>
+            {match.away?.is_bot && <span className="text-[7px] font-black text-white/20 uppercase">BOT</span>}
+          </div>
         </div>
-        <span className="text-[10px] font-black tabular-nums">{match.away_score ?? ''}</span>
+        <span className={`text-[11px] font-black tabular-nums ${isAwayWinner ? 'text-primary' : 'text-white'}`}>{match.away_score ?? '-'}</span>
       </div>
     </div>
   );
