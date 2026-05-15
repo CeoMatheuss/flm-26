@@ -16,6 +16,8 @@ interface SquadModernProps {
   onUpdatePlayers: (players: Player[]) => void;
   youthProspects: YouthProspect[];
   onPromoteYouth: (id: string) => void;
+  youthInvestment: number;
+  onSetYouthInvestment: (amount: number) => void;
 }
 
 export function SquadModernLayout({ 
@@ -27,7 +29,9 @@ export function SquadModernLayout({
   onRest, 
   onUpdatePlayers,
   youthProspects,
-  onPromoteYouth
+  onPromoteYouth,
+  youthInvestment,
+  onSetYouthInvestment
 }: SquadModernProps) {
   const [activeSubTab, setActiveSubTab] = useState('starters');
 
@@ -54,7 +58,12 @@ export function SquadModernLayout({
             <SquadTable players={players.slice(11)} selectedPlayer={null} onPlayerSelect={() => {}} onUpdatePlayers={onUpdatePlayers} />
           </TabsContent>
           <TabsContent value="youth" className="h-full m-0 overflow-auto">
-            <YouthAcademyModernTab prospects={youthProspects} onPromote={onPromoteYouth} />
+            <YouthAcademyModernTab 
+              prospects={youthProspects} 
+              onPromote={onPromoteYouth} 
+              monthlyInvestment={youthInvestment}
+              onSetInvestment={onSetYouthInvestment}
+            />
           </TabsContent>
           <TabsContent value="tactics" className="h-full m-0 overflow-auto">
             <TacticsTab players={players} tactics={tactics} onUpdate={() => {}} />

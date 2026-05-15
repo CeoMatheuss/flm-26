@@ -5,7 +5,8 @@ import {
   getPhysioUpgradeCost,
   YouthProspect, SeasonData, defaultSeason,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
-  getYouthMinOverall, getYouthMaxOverall, getYouthMonthlyPlayers,
+  getYouthMinOverall, getYouthMaxOverall, getYouthWeeklyPlayers,
+  getYouthTierByMonthlyCost, getYouthInvestmentInfo, potentialTierInfo,
 } from '@/types/infrastructure';
 import { CTRooms, defaultCTRooms, getCTRoomUpgradeCost } from '@/types/ctRooms';
 import { Achievement } from '@/types/achievements';
@@ -24,7 +25,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const list: YouthProspect[] = initialState?.youthProspects ?? [];
     return list.map(p => ({
       ...p,
-      potentialTier: p.potentialTier ?? getPotentialTier(p.potential ?? 60),
+      potentialTier: p.potentialTier ?? getPotentialTier(p.potential ?? 60, p.overall ?? 40),
       evolutionStatus: p.evolutionStatus ?? 'estavel',
       youthTag: p.youthTag ?? computeYouthTag(p as YouthProspect),
       highlightStreak: p.highlightStreak ?? 0,
@@ -187,7 +188,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     infrastructure.physiotherapy.upgradeCompletesAt,
   ]);
 
-  // V5 — Geração automática da Base: 1 ciclo = 24h, gera N jogadores conforme tier de investimento.
+  // V5 — Geração automática da Base: 1 ciclo = 7 dias (Semanas), gera jogadores conforme tier de investimento.
   // Requer academia nível >= 1 e investimento ativo.
   useEffect(() => {
     if (!userId || youthInvestment <= 0) return;
@@ -196,38 +197,65 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     const checkYouthGen = () => {
       const now = Date.now();
       const lastGen = new Date(lastYouthGenAt).getTime();
-      const ONE_CYCLE = 24 * 60 * 60 * 1000; // 1 ciclo = 24h reais
+      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
       
-      if (now - lastGen >= ONE_CYCLE) {
-        const playersToGen = getYouthMonthlyPlayers(youthInvestment);
-        console.log(`[Base] Gerando ${playersToGen} jogador(es) no ciclo de 24h`);
-        
+      const weeksPassed = Math.floor((now - lastGen) / ONE_WEEK);
+      if (weeksPassed >= 1) {
         const academyLevel = infrastructure.youthAcademy.level;
         const minOvr = getYouthMinOverall(academyLevel);
         const maxOvr = getYouthMaxOverall(academyLevel);
+        const investmentTierInfo = getYouthTierByMonthlyCost(youthInvestment);
         
-        
-        const newProspects: YouthProspect[] = [];
-        for (let i = 0; i < playersToGen; i++) {
-          const p = generatePlayer([minOvr, maxOvr], [16, 17]);
-          newProspects.push({
-            ...p,
-            potential: Math.min(99, p.overall + 15 + Math.floor(Math.random() * 15)),
-            monthsInAcademy: 0,
-            potentialTier: getPotentialTier(p.overall + 15),
-            evolutionStatus: 'evoluindo',
-          });
+        const allNewProspects: YouthProspect[] = [];
+        let currentLastGenTs = lastGen;
+
+        // Process each week (Catch-up mechanism)
+        for (let i = 0; i < weeksPassed; i++) {
+          currentLastGenTs += ONE_WEEK;
+          const weekDate = new Date(currentLastGenTs);
+          const dayOfMonth = weekDate.getDate();
+          const weekOfMonth = Math.ceil(dayOfMonth / 7);
+          
+          const playersToGen = getYouthWeeklyPlayers(investmentTierInfo.tier, weekOfMonth, investmentTierInfo.maxPlayersPerMonth);
+          
+          for (let j = 0; j < playersToGen; j++) {
+            const p = generatePlayer([minOvr, maxOvr], [16, 17]);
+            // Apply quality bonus from investment
+            const qualityBoost = Math.floor(Math.random() * (investmentTierInfo.qualityBonus / 10));
+            const finalOverall = Math.min(85, p.overall + qualityBoost);
+            
+            const potential = Math.min(99, finalOverall + 15 + Math.floor(Math.random() * (15 + investmentTierInfo.qualityBonus / 5)));
+            const potTier = getPotentialTier(potential, finalOverall);
+
+            const newProspect: YouthProspect = {
+              ...p,
+              overall: finalOverall,
+              potential,
+              monthsInAcademy: 0,
+              potentialTier: potTier,
+              evolutionStatus: 'evoluindo',
+            };
+
+            allNewProspects.push(newProspect);
+
+            // Special notifications for rare talents
+            if (potTier === 'joia_base' || potTier === 'geracao_dourada') {
+              toast.success(`💎 Joia da base descoberta: ${p.name}!`, {
+                description: `Um talento ${potentialTierInfo[potTier].label} surgiu na academia.`
+              });
+            }
+          }
         }
         
-        if (newProspects.length > 0) {
-          setYouthProspects(prev => [...prev, ...newProspects]);
-          setLastYouthGenAt(new Date(now).toISOString());
-          toast.success(`🌟 ${playersToGen} novo(s) jogador(es) surgiram na base!`);
+        if (allNewProspects.length > 0) {
+          setYouthProspects(prev => [...prev, ...allNewProspects]);
+          toast.success(`🌟 ${allNewProspects.length} novo(s) jogador(es) surgiram na base!`);
         }
+        setLastYouthGenAt(new Date(now).toISOString());
       }
     };
     
-    const interval = setInterval(checkYouthGen, 60_000); // Checa a cada 1 min
+    const interval = setInterval(checkYouthGen, 60_000); // Check every minute
     checkYouthGen();
     return () => clearInterval(interval);
   }, [userId, youthInvestment, lastYouthGenAt, infrastructure.youthAcademy.level]);
@@ -238,12 +266,15 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     deductBudget: (cost: number) => void,
   ) => {
     if (youthInvestment <= 0) return false;
-    if (clubBudget < youthInvestment) {
-      toast.error('Orçamento insuficiente para investimento na Base!');
+    const tierInfo = getYouthTierByMonthlyCost(youthInvestment);
+    const weeklyCost = tierInfo.weeklyCost;
+    
+    if (clubBudget < weeklyCost) {
+      toast.error('Orçamento insuficiente para manter a Academia de Base!');
       return false;
     }
-    deductBudget(youthInvestment);
-    addFinance('despesa', 'Base', youthInvestment, `Investimento Base (ciclo de geração)`);
+    deductBudget(weeklyCost);
+    addFinance('despesa', 'Base', weeklyCost, `Custo Semanal Academia (${tierInfo.label})`);
     return true;
   }, [youthInvestment]);
 
@@ -286,7 +317,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       // Recompute derived fields
       next = next.map(p => ({
         ...p,
-        potentialTier: getPotentialTier(p.potential),
+        potentialTier: getPotentialTier(p.potential, p.overall),
         evolutionStatus: computeEvolutionStatus(p),
         youthTag: computeYouthTag(p),
       }));

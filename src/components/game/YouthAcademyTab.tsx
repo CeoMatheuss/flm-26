@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   YouthProspect, getAcademyUpgradeCost, getYouthMinOverall, getYouthMaxOverall,
-  youthInvestmentTiers, getYouthTierByCost, potentialTierInfo, evolutionStatusInfo, youthTagInfo,
+  youthInvestmentTiers, getYouthTierByMonthlyCost, potentialTierInfo, evolutionStatusInfo, youthTagInfo,
   computeEvolutionStatus, computeYouthTag, getPotentialTier,
 } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -58,7 +58,7 @@ export function YouthAcademyTab({
   const maxOvr = getYouthMaxOverall(academyLevel);
   const nextMinOvr = academyLevel < 30 ? getYouthMinOverall(academyLevel + 1) : minOvr;
   const nextMaxOvr = academyLevel < 30 ? getYouthMaxOverall(academyLevel + 1) : maxOvr;
-  const currentTier = getYouthTierByCost(monthlyInvestment);
+  const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
   const copinhaUnlocked = currentSeason >= 2;
   const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
 
@@ -226,7 +226,7 @@ export function YouthAcademyTab({
               return (
                 <button
                   key={t.tier}
-                  onClick={() => onSetInvestment(t.cost)}
+                  onClick={() => onSetInvestment(t.monthlyCost)}
                   className={`flex flex-col text-left rounded-xl border transition-all p-3 ${
                     isActive
                       ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
@@ -237,9 +237,9 @@ export function YouthAcademyTab({
                     {t.emoji}
                   </div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t.label}</span>
-                  <span className="text-base font-black mt-0.5">{formatMoney(t.cost)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></span>
+                  <span className="text-base font-black mt-0.5">{formatMoney(t.monthlyCost)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></span>
                   <span className="text-[10px] text-muted-foreground">
-                    {t.minPlayers === 0 ? '0 jogadores' : t.minPlayers === t.maxPlayers ? `${t.minPlayers} jogador${t.minPlayers > 1 ? 'es' : ''}/mês` : `${t.minPlayers}–${t.maxPlayers} jogadores/mês`}
+                    {t.minPlayersPerMonth === 0 ? '0 jogadores' : t.minPlayersPerMonth === t.maxPlayersPerMonth ? `${t.minPlayersPerMonth} jogador${t.minPlayersPerMonth > 1 ? 'es' : ''}/mês` : `${t.minPlayersPerMonth}–${t.maxPlayersPerMonth} jogadores/mês`}
                   </span>
                 </button>
               );
@@ -308,7 +308,7 @@ export function YouthAcademyTab({
               {prospects.map(p => {
                 const evoStatus = p.evolutionStatus ?? computeEvolutionStatus(p);
                 const tag = p.youthTag ?? computeYouthTag(p);
-                const potTier = p.potentialTier ?? getPotentialTier(p.potential);
+                const potTier = p.potentialTier ?? getPotentialTier(p.potential, p.overall);
                 const tagInfo = tag ? youthTagInfo[tag] : null;
                 const evoInfo = evolutionStatusInfo[evoStatus];
                 const potInfo = potentialTierInfo[potTier];
@@ -401,7 +401,7 @@ export function YouthAcademyTab({
                 <div className="p-2 rounded bg-accent/40 text-center">
                   {hasScouts ? (
                     <>
-                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].color}`}>
+                      <p className={`text-2xl font-bold ${potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].color}`}>
                         {observed.potential}
                       </p>
                       <p className="text-[10px] text-muted-foreground uppercase">POT Máximo</p>
@@ -422,8 +422,8 @@ export function YouthAcademyTab({
                 <p><strong>Moral:</strong> {observed.morale ?? 0}/100</p>
                 <p><strong>Estamina:</strong> {observed.stamina ?? 0}/100</p>
                 {hasScouts && (
-                  <p><strong>Tier de potencial:</strong> <span className={potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].color}>
-                    {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].emoji} {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential)].label}
+                  <p><strong>Tier de potencial:</strong> <span className={potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].color}>
+                    {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].emoji} {potentialTierInfo[observed.potentialTier ?? getPotentialTier(observed.potential, observed.overall)].label}
                   </span></p>
                 )}
               </div>

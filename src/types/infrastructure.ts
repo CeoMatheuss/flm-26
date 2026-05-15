@@ -244,31 +244,100 @@ export function getTrainingBoost(level: number): number {
   return 0.5 + level * 0.15;
 }
 
-// Investment tiers — Base V2 (reduced costs)
-export type YouthInvestmentTier = 'none' | 'basic' | 'intermediate' | 'advanced' | 'elite';
+// Investment tiers — Base V2 (rebalanced for Weekly/Monthly flow)
+export type YouthInvestmentTier = 'none' | 'low' | 'intermediate' | 'high' | 'advanced' | 'elite';
 
 export interface YouthInvestmentTierInfo {
   tier: YouthInvestmentTier;
-  cost: number;
-  minPlayers: number;
-  maxPlayers: number;
+  monthlyCost: number;
+  weeklyCost: number;
+  minPlayersPerMonth: number;
+  maxPlayersPerMonth: number;
+  playersPerWeek: number | 'random';
   label: string;
   emoji: string;
   description: string;
+  qualityBonus: number; // 0-100 scale for quality boost
 }
 
 export const youthInvestmentTiers: YouthInvestmentTierInfo[] = [
-  { tier: 'none', cost: 0, minPlayers: 0, maxPlayers: 0, label: 'Sem Investimento', emoji: '❌', description: 'Nenhum jovem será gerado' },
-  { tier: 'basic', cost: 250_000, minPlayers: 1, maxPlayers: 1, label: 'Básico', emoji: '🔹', description: 'Gera 1 jogador/mês' },
-  { tier: 'intermediate', cost: 500_000, minPlayers: 2, maxPlayers: 3, label: 'Intermediário', emoji: '🔸', description: 'Gera 2 a 3 jogadores/mês' },
-  { tier: 'advanced', cost: 1_000_000, minPlayers: 4, maxPlayers: 4, label: 'Avançado', emoji: '🔶', description: 'Gera 4 jogadores/mês' },
-  { tier: 'elite', cost: 2_000_000, minPlayers: 5, maxPlayers: 5, label: 'Elite', emoji: '🔴', description: 'Máximo: 5 jogadores/mês' },
+  { 
+    tier: 'none', 
+    monthlyCost: 0, 
+    weeklyCost: 0,
+    minPlayersPerMonth: 0, 
+    maxPlayersPerMonth: 0, 
+    playersPerWeek: 0,
+    label: 'Sem Investimento', 
+    emoji: '❌', 
+    description: 'Nenhum jovem será gerado',
+    qualityBonus: 0
+  },
+  { 
+    tier: 'low', 
+    monthlyCost: 200_000, 
+    weeklyCost: 50_000,
+    minPlayersPerMonth: 1, 
+    maxPlayersPerMonth: 1, 
+    playersPerWeek: 'random',
+    label: 'Investimento Baixo', 
+    emoji: '🔹', 
+    description: 'Gera 1 jogador por MÊS. Overall baixo/médio.',
+    qualityBonus: 5
+  },
+  { 
+    tier: 'intermediate', 
+    monthlyCost: 600_000, 
+    weeklyCost: 150_000,
+    minPlayersPerMonth: 2, 
+    maxPlayersPerMonth: 3, 
+    playersPerWeek: 'random',
+    label: 'Intermediário', 
+    emoji: '🔸', 
+    description: 'Gera 2 a 3 jogadores por MÊS. Geração aleatória.',
+    qualityBonus: 15
+  },
+  { 
+    tier: 'high', 
+    monthlyCost: 1_200_000, 
+    weeklyCost: 300_000,
+    minPlayersPerMonth: 4, 
+    maxPlayersPerMonth: 4, 
+    playersPerWeek: 1,
+    label: 'Investimento Alto', 
+    emoji: '🔶', 
+    description: 'Obrigatoriamente 1 jogador por SEMANA. Melhor qualidade.',
+    qualityBonus: 30
+  },
+  { 
+    tier: 'advanced', 
+    monthlyCost: 2_400_000, 
+    weeklyCost: 600_000,
+    minPlayersPerMonth: 4, 
+    maxPlayersPerMonth: 4, 
+    playersPerWeek: 1,
+    label: 'Avançado', 
+    emoji: '💎', 
+    description: '1 por semana. Maior chance de jogadores raros.',
+    qualityBonus: 50
+  },
+  { 
+    tier: 'elite', 
+    monthlyCost: 5_000_000, 
+    weeklyCost: 1_250_000,
+    minPlayersPerMonth: 5, 
+    maxPlayersPerMonth: 5, 
+    playersPerWeek: 1, // At least 1, some weeks 2
+    label: 'Elite', 
+    emoji: '🔴', 
+    description: 'Até 5 por mês. Alta chance de Geração Dourada.',
+    qualityBonus: 80
+  },
 ];
 
-export function getYouthTierByCost(cost: number): YouthInvestmentTierInfo {
-  // Match closest tier
+export function getYouthTierByMonthlyCost(cost: number): YouthInvestmentTierInfo {
   return youthInvestmentTiers.reduce((prev, curr) =>
-    Math.abs(curr.cost - cost) < Math.abs(prev.cost - cost) ? curr : prev
+    Math.abs(curr.monthlyCost - cost) < Math.abs(prev.monthlyCost - cost) ? curr : prev
   , youthInvestmentTiers[0]);
 }
 
@@ -276,10 +345,30 @@ export function getYouthInvestmentInfo(tier: YouthInvestmentTier): YouthInvestme
   return youthInvestmentTiers.find(t => t.tier === tier) ?? youthInvestmentTiers[0];
 }
 
-export function getYouthMonthlyPlayers(investmentPerMonth: number): number {
-  const tier = getYouthTierByCost(investmentPerMonth);
-  if (tier.minPlayers === tier.maxPlayers) return tier.minPlayers;
-  return Math.floor(Math.random() * (tier.maxPlayers - tier.minPlayers + 1)) + tier.minPlayers;
+export function getYouthWeeklyPlayers(tier: YouthInvestmentTier, weekOfMonth: number, monthlyCount: number): number {
+  const info = getYouthInvestmentInfo(tier);
+  if (info.tier === 'none') return 0;
+  
+  if (info.playersPerWeek === 1) {
+    // Advanced/Elite/High: 1 per week. Elite gets +1 on a random week to reach 5.
+    if (info.tier === 'elite' && weekOfMonth === 4) return 2; // Elite generates 2 on the last week or random
+    return 1;
+  }
+  
+  if (info.tier === 'low') {
+    return weekOfMonth === 1 ? 1 : 0; // Low generates 1 on the first week
+  }
+  
+  if (info.tier === 'intermediate') {
+    // Random 2 or 3 per month
+    const totalToGen = monthlyCount || (Math.random() < 0.5 ? 2 : 3);
+    if (weekOfMonth === 1) return 1;
+    if (weekOfMonth === 2 && totalToGen >= 2) return 1;
+    if (weekOfMonth === 3 && totalToGen >= 3) return 1;
+    return 0;
+  }
+  
+  return 0;
 }
 
 // OVR ranges per academy level — Base V2
@@ -299,23 +388,23 @@ export function getYouthMaxOverall(academyLevel: number): number {
   return 85; // 26-30 (with chance of POT 99)
 }
 
-// Hidden potential tier
-export type PotentialTier = 'comum' | 'promissor' | 'alto_potencial' | 'talento_raro' | 'geracional';
+// Hidden potential tier (Rarities)
+export type PotentialTier = 'comum' | 'raro' | 'elite' | 'joia_base' | 'geracao_dourada';
 
-export function getPotentialTier(potential: number): PotentialTier {
-  if (potential >= 95) return 'geracional';
-  if (potential >= 89) return 'talento_raro';
-  if (potential >= 81) return 'alto_potencial';
-  if (potential >= 71) return 'promissor';
+export function getPotentialTier(potential: number, overall: number): PotentialTier {
+  if (potential >= 95) return 'geracao_dourada';
+  if (potential >= 90) return 'joia_base';
+  if (potential >= 85) return 'elite';
+  if (potential >= 78) return 'raro';
   return 'comum';
 }
 
-export const potentialTierInfo: Record<PotentialTier, { label: string; emoji: string; color: string }> = {
-  comum: { label: 'Comum', emoji: '⚪', color: 'text-muted-foreground' },
-  promissor: { label: 'Promissor', emoji: '🔵', color: 'text-blue-400' },
-  alto_potencial: { label: 'Alto Potencial', emoji: '🟢', color: 'text-emerald-400' },
-  talento_raro: { label: 'Talento Raro', emoji: '🟣', color: 'text-purple-400' },
-  geracional: { label: 'Geracional', emoji: '🌟', color: 'text-amber-400' },
+export const potentialTierInfo: Record<PotentialTier, { label: string; emoji: string; color: string; border: string }> = {
+  comum: { label: 'Comum', emoji: '⚪', color: 'text-white/40', border: 'border-white/10' },
+  raro: { label: 'Raro', emoji: '🔵', color: 'text-blue-400', border: 'border-blue-400/30' },
+  elite: { label: 'Elite', emoji: '🟣', color: 'text-purple-400', border: 'border-purple-400/30' },
+  joia_base: { label: 'Joia da Base', emoji: '💎', color: 'text-cyan-400', border: 'border-cyan-400/30' },
+  geracao_dourada: { label: 'Geração Dourada', emoji: '🌟', color: 'text-amber-400', border: 'border-amber-400/30' },
 };
 
 // Player evolution status
