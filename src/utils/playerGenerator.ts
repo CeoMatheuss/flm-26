@@ -450,7 +450,7 @@ export function generateYouthProspect(academyLevel: number): YouthProspect {
     potential,
     monthsInAcademy: 0,
     personality: randomPersonality(),
-    potentialTier: getPotentialTier(potential),
+    potentialTier: getPotentialTier(potential, overall),
     highlightStreak: 0,
     stagnationCycles: 0,
     injuredCycles: 0,
