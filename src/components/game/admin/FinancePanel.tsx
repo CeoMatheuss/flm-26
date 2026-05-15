@@ -46,6 +46,7 @@ export function FinancePanel() {
   const [lastResult, setLastResult] = useState<{ name: string; newBudget: number; delta: number } | null>(null);
   const [logs, setLogs] = useState<FinanceLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<{ loading: boolean; success?: boolean; message?: string; error?: string }>({ loading: false });
 
   // Carrega lista de clubes (uma vez)
   const loadClubs = useCallback(async () => {
@@ -102,6 +103,26 @@ export function FinancePanel() {
     if (data) setLogs(data as any);
     setLoadingLogs(false);
   }, []);
+
+  const validateToken = async () => {
+    setTokenStatus({ loading: true });
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-mercadopago-token');
+      if (error) throw error;
+      
+      if (data.success) {
+        setTokenStatus({ loading: false, success: true, message: `Conectado: ${data.app_name || 'App Mercado Pago'}` });
+        toast.success('Token validado com sucesso!');
+      } else {
+        setTokenStatus({ loading: false, success: false, error: data.error });
+        toast.error('Erro na validação do token');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setTokenStatus({ loading: false, success: false, error: 'Erro ao chamar função de validação.' });
+      toast.error('Falha na comunicação com o servidor');
+    }
+  };
 
   useEffect(() => {
     loadClubs();
