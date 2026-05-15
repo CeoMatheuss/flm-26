@@ -113,6 +113,9 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [gameBans, setGameBans] = useState<Array<{ id: string; user_id: string; reason: string; duration_months: number; banned_at: string; expires_at: string }>>([]);
   const [gameBanLoading, setGameBanLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('users');
+  const [directMsgTitle, setDirectMsgTitle] = useState('');
+  const [directMsgContent, setDirectMsgContent] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
@@ -417,6 +420,25 @@ export function AdminTab({ userId, isFounder }: Props) {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('ID copiado!');
+  };
+
+  const sendDirectUpdate = async () => {
+    if (!directMsgTitle.trim() || !directMsgContent.trim()) return toast.error('Preencha título e conteúdo');
+    setSendingMsg(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+      const res = await supabase.functions.invoke('broadcast-notification', {
+        body: { title: directMsgTitle, message: directMsgContent, icon: '📢', type: 'info' }
+      });
+      if (res.error) throw res.error;
+      toast.success('✅ Atualização enviada para todos os Managers!');
+      setDirectMsgTitle('');
+      setDirectMsgContent('');
+    } catch (e: any) {
+      toast.error('Erro: ' + e.message);
+    }
+    setSendingMsg(false);
   };
 
   const deleteMessage = async (msgId: string) => {
@@ -829,6 +851,43 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="maintenance" className="space-y-3 mt-3">
             <MaintenanceToggle />
+          </TabsContent>
+
+          <TabsContent value="direct_msg" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary" /> Atualizações (Mensagem Direta)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Título da Atualização</label>
+                  <Input 
+                    placeholder="Ex: Nova Versão 2.1.0 disponível!"
+                    value={directMsgTitle}
+                    onChange={e => setDirectMsgTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Conteúdo / O que mudou?</label>
+                  <Textarea 
+                    placeholder="Descreva as novidades..."
+                    value={directMsgContent}
+                    onChange={e => setDirectMsgContent(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <Button 
+                  className="w-full gap-2" 
+                  onClick={sendDirectUpdate}
+                  disabled={sendingMsg}
+                >
+                  {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Enviar para TODOS os Managers
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-3 mt-3">
