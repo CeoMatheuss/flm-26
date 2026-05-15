@@ -33,10 +33,11 @@ interface SquadModernProps {
   youthInvestment: number;
   onSetYouthInvestment: (amount: number) => void;
   infrastructure: any;
+  onUpdateTactics?: (tactics: any) => void;
 }
 
 export function SquadModernLayout({
-  club, season, players, tactics, onUpdatePlayers,
+  club, season, players, tactics, onUpdatePlayers, onUpdateTactics,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
   userId, infrastructure
@@ -194,7 +195,7 @@ export function SquadModernLayout({
               <TacticsTab 
                 players={players} 
                 tactics={tactics} 
-                onUpdate={() => {}} 
+                onUpdate={onUpdateTactics || (() => {})} 
                 season={season?.currentSeason}
                 userId={userId}
               />
