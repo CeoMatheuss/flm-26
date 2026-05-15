@@ -3151,6 +3151,36 @@ export type Database = {
           },
         ]
       }
+      prize_configurations: {
+        Row: {
+          amount: number
+          competition_id: string | null
+          competition_type: string
+          created_at: string | null
+          id: string
+          rank_or_phase: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          competition_id?: string | null
+          competition_type: string
+          created_at?: string | null
+          id?: string
+          rank_or_phase: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          competition_id?: string | null
+          competition_type?: string
+          created_at?: string | null
+          id?: string
+          rank_or_phase?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -3789,6 +3819,53 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      tournament_prizes_history: {
+        Row: {
+          amount: number
+          club_id: string | null
+          competition_id: string | null
+          competition_name: string | null
+          competition_type: string
+          created_at: string | null
+          id: string
+          phase_or_rank: string | null
+          season_month: number | null
+          season_year: number | null
+        }
+        Insert: {
+          amount: number
+          club_id?: string | null
+          competition_id?: string | null
+          competition_name?: string | null
+          competition_type: string
+          created_at?: string | null
+          id?: string
+          phase_or_rank?: string | null
+          season_month?: number | null
+          season_year?: number | null
+        }
+        Update: {
+          amount?: number
+          club_id?: string | null
+          competition_id?: string | null
+          competition_name?: string | null
+          competition_type?: string
+          created_at?: string | null
+          id?: string
+          phase_or_rank?: string | null
+          season_month?: number | null
+          season_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_prizes_history_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trade_proposals: {
         Row: {
@@ -5106,6 +5183,19 @@ export type Database = {
       process_season_transition:
         | { Args: never; Returns: undefined }
         | { Args: { _country: string }; Returns: undefined }
+      process_tournament_prize: {
+        Args: {
+          p_amount: number
+          p_club_id: string
+          p_comp_id: string
+          p_comp_name: string
+          p_comp_type: string
+          p_month: number
+          p_phase_rank: string
+          p_year: number
+        }
+        Returns: boolean
+      }
       publish_newspaper_event: {
         Args: {
           _category: string
