@@ -132,7 +132,13 @@ serve(async (req) => {
           },
           external_reference: order.id,
           notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
+          back_urls: {
+            success: `https://flm26.lovable.app`,
+            failure: `https://flm26.lovable.app`,
+            pending: `https://flm26.lovable.app`
+          },
           auto_return: 'approved'
+
         })
       })
 
