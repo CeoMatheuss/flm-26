@@ -1,8 +1,9 @@
 import { Player } from '@/types/game';
 import { motion } from 'framer-motion';
-import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin } from 'lucide-react';
+import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ovrTier, positionColors, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
+import { useAttributeEvolution } from '../useAttributeEvolution';
 
 interface Props {
   player: Player;
