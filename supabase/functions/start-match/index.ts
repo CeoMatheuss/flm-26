@@ -1033,24 +1033,53 @@ function simulateFullMatch(
   const finalEvents: SimEvent[] = [];
   const maxCapacity = stadiumCapacity || 5000;
 
-  // ── PUBLIC NO ESTÁDIO: torcida do mandante (85%) + visitante (até 5% / 10% capacidade)
-  const homePart = Math.floor((homeFans || 0) * 0.85);
-  const awayPart = Math.min(Math.floor((awayFans || 0) * 0.05), Math.floor(maxCapacity * 0.10));
-  const baseAttendance = homePart + awayPart;
-  const strengthMultiplier = 0.85 + (homeStrength / 200);
-  const estimatedCrowd = Math.min(maxCapacity, Math.floor(baseAttendance * strengthMultiplier));
-  const ticketRevenue = Math.floor(estimatedCrowd * 25); // R$ 25 médio por ingresso 
+  // ── PÚBLICO E RECEITA (Stadium Economy Engine) ──
+  // Usar a lógica centralizada de economia do estádio
+  // Consideramos humor e impacto de preço baseados nos inputs do cliente
+  const effectiveHomeStrength = (homeStrength || 60);
+  const reputation = homeStrength; // Simplified reputation for server calculation
+  
+  // Fatores de humor e sequência
+  const winStreakMod = Number(body.winStreak || 0);
+  const loseStreakMod = Number(body.loseStreak || 0);
+  const moodScore = (winStreakMod * 2) - (loseStreakMod * 1.5) + (reputation / 20);
+  const moodMult = moodScore >= 12 ? 1.5 : moodScore >= 6 ? 1.25 : moodScore >= 0 ? 1.0 : 0.7;
+  
+  // Multiplicador de tipo de partida
+  const compStr = String(competition || '').toLowerCase();
+  const matchMult = compStr.includes('final') ? 2.2 : compStr.includes('clás') ? 1.5 : compStr.includes('amistos') ? 0.6 : 1.0;
+  
+  // Impacto de preço (curva de tolerância)
+  const ticketPriceVal = Number(body.ticketPrice || 25);
+  const idealPrice = 20 + (reputation / 4);
+  const priceImpact = Math.min(1.2, Math.max(0.25, 1 - ((ticketPriceVal - idealPrice) / (idealPrice * 2.5))));
+  
+  // Conversão de fãs (5% base * reputação)
+  const conversionRate = 0.05 * (0.5 + (reputation / 100));
+  const expectedAttendance = Math.floor(resolvedHomeFans * conversionRate * moodMult * matchMult * priceImpact);
+  const estimatedCrowd = Math.min(maxCapacity, Math.max(100, expectedAttendance));
+  
+  // Receitas detalhadas
+  const ticketRevenue = estimatedCrowd * ticketPriceVal;
+  const vipPrice = 500 + (Math.floor(reputation/10) * 200);
+  const occupancy = estimatedCrowd / maxCapacity;
+  const vipUnits = Number(body.vipUnits || 0);
+  const vipRevenue = vipUnits * vipPrice * Math.min(1, occupancy + 0.2);
+  const commercialRevenue = estimatedCrowd * (10 + Math.floor(reputation/10) * 2);
+  const parkingRevenue = Math.min(Math.floor(maxCapacity / 8), Math.floor(estimatedCrowd / 6)) * (20 + Math.floor(reputation/10) * 2);
+  const totalRevenue = Math.round(ticketRevenue + vipRevenue + commercialRevenue + parkingRevenue);
 
   finalEvents.push({
     minute: 0, type: 'kickoff', team: 'neutral', animType: 'kickoff', ballX: 0.5, ballY: 0.5,
-    description: `🏟️ A partida começa no ${stadiumName}! 👥 Público: ${estimatedCrowd.toLocaleString('pt-BR')} (🏠 ${homePart.toLocaleString('pt-BR')} mandante · 🛫 ${awayPart.toLocaleString('pt-BR')} visitante) — ${homeTeam} x ${awayTeam} • ${competition}!`,
+    description: `🏟️ A partida começa no ${stadiumName}! 👥 Público: ${estimatedCrowd.toLocaleString('pt-BR')} (🏠 ${Math.round(occupancy * 100)}% de ocupação) — ${homeTeam} x ${awayTeam} • ${competition}!`,
     momentPhase: 'equilíbrio',
   });
 
   finalEvents.push({
     minute: 1, type: 'attendance', team: 'neutral', animType: 'pass', ballX: 0.5, ballY: 0.5,
-    description: `💰 Renda de bilheteria estimada: R$ ${ticketRevenue.toLocaleString('pt-BR')} (${estimatedCrowd.toLocaleString('pt-BR')} pagantes).`,
+    description: `💰 Receita Total da Partida: R$ ${totalRevenue.toLocaleString('pt-BR')} (Bilheteria: R$ ${Math.round(ticketRevenue).toLocaleString('pt-BR')} | Comercial: R$ ${Math.round(commercialRevenue).toLocaleString('pt-BR')}).`,
   });
+
 
 
   for (const ev of allPlanned.filter(e => e.minute <= 44)) finalEvents.push(ev);
