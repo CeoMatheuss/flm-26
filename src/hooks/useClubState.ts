@@ -803,7 +803,7 @@ export function useClubState(initialState: any, userId?: string) {
     setClub(prev => ({ ...prev, budget: (prev.budget ?? 0) + amount }));
     // Sincronização imediata com banco de dados para bônus/finanças
     if (userId) {
-      supabase.from('game_saves').select('club_data').eq('user_id', userId).single().then(({ data }) => {
+      supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle().then(({ data }) => {
         if (data?.club_data) {
           const state = data.club_data as any;
           state.club.budget = (state.club.budget || 0) + amount;
