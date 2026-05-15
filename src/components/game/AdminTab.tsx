@@ -27,7 +27,7 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { AdminScoutsAndStaffGenerators } from './admin/AdminScoutsAndStaffGenerators';
 // import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
-// import { MaintenanceToggle } from './admin/MaintenanceToggle';
+import { MaintenanceToggle } from './admin/MaintenanceToggle';
 
 interface PendingUser {
   id: string;
@@ -122,7 +122,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
       finance:       ['finance_panel'],
       customization: ['customization_panel'],
-      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+      system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
       simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
