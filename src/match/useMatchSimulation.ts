@@ -58,9 +58,7 @@ export interface MatchState {
   currentMoment: string;
   playerStamina: Record<string, number>;
   assistantTips: SimEvent[];
-  simulationSpeed: number;
   onAnimationComplete?: () => void;
-  setSpeed?: (s: number) => void;
 }
 
 const INITIAL: MatchState = {
@@ -84,7 +82,7 @@ const INITIAL: MatchState = {
   currentMoment: 'equilíbrio',
   playerStamina: {},
   assistantTips: [],
-  simulationSpeed: 1,
+  
 };
 
 interface MatchData {
@@ -142,7 +140,7 @@ function subscribeToLoop(fn: Subscriber): () => void {
 
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
-  const [simulationSpeed, setSimulationSpeed] = useState(1);
+  
   const dataRef = useRef<MatchData | null>(null);
   const nextVisibleEventIdxRef = useRef(0);
   const isAnimatingRef = useRef(false);
@@ -219,7 +217,7 @@ export function useMatchSimulation() {
     if (!data || isAnimatingRef.current) return;
 
     const now = Date.now();
-    const virtualElapsed = (now - data.startTime) * simulationSpeed;
+    const virtualElapsed = (now - data.startTime);
     const progress = Math.min(1, Math.max(0, virtualElapsed / data.durationMs));
     const currentMinute = Math.min(data.maxMinute, Math.floor(progress * data.maxMinute));
     const isComplete = virtualElapsed >= data.durationMs;
@@ -256,7 +254,6 @@ export function useMatchSimulation() {
         playerStamina: stamina,
         assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
         onAnimationComplete: () => { isAnimatingRef.current = false; },
-        setSpeed: (s: number) => { setSimulationSpeed(s); },
       }));
       return;
     }
@@ -276,9 +273,7 @@ export function useMatchSimulation() {
       stadiumName: data.stadiumName,
       stadiumCapacity: data.stadiumCapacity,
       attendance: data.attendance,
-      simulationSpeed,
       onAnimationComplete: () => { isAnimatingRef.current = false; },
-      setSpeed: (s: number) => { setSimulationSpeed(s); },
     }));
 
     if ((isComplete || virtualElapsed >= data.durationMs + 30000) && !persistedRef.current) {
@@ -286,7 +281,7 @@ export function useMatchSimulation() {
       stopTick();
       supabase.from('live_matches').update({ status: 'finished', current_minute: data.maxMinute }).eq('id', data.matchDbId);
     }
-  }, [simulationSpeed, computeStatsFromEvents, state.homeGoals, state.awayGoals]);
+  }, [computeStatsFromEvents, state.homeGoals, state.awayGoals]);
 
   const startTick = useCallback(() => {
     if (unsubscribeRef.current) return;
@@ -411,7 +406,5 @@ export function useMatchSimulation() {
   const destroy = useCallback(() => { stopTick(); dataRef.current = null; }, [stopTick]);
 
   const onAnimationComplete = useCallback(() => { isAnimatingRef.current = false; }, []);
-  const setSpeed = useCallback((s: number) => { setSimulationSpeed(s); }, []);
-
-  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, destroy, onAnimationComplete, setSpeed };
+  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, destroy, onAnimationComplete };
 }
