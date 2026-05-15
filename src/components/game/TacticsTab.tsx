@@ -142,14 +142,32 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
 
   // Tactical rating based on config
   const getTacticalRating = () => {
-    let rating = 50;
+    let rating = 30; // Base rating
+    
+    // Positional alignment (Starters are first 11)
+    const starters = players.slice(0, 11);
+    const requirements = formationRequirements[tactics.formation];
+    if (requirements) {
+      let alignedCount = 0;
+      starters.forEach((p, i) => {
+        if (p.position === requirements[i]) alignedCount++;
+        else if (p.secondaryPosition === requirements[i]) alignedCount += 0.5;
+      });
+      rating += (alignedCount / 11) * 40; // Max 40 points from alignment
+    }
+
     if (tactics.playStyle === 'equilibrado') rating += 5;
     if (tactics.pressing === 'alto') rating += 5;
-    if (tactics.captainId) rating += 10;
-    if (tactics.freeKickTakerId) rating += 5;
-    if (tactics.penaltyTakerId) rating += 5;
-    if (tactics.cornerTakerId) rating += 5;
-    return Math.min(100, rating);
+    if (tactics.captainId) rating += 5;
+    if (tactics.freeKickTakerId) rating += 3;
+    if (tactics.penaltyTakerId) rating += 3;
+    if (tactics.cornerTakerId) rating += 3;
+    
+    // Chemistry based on age diversity and stamina
+    const avgStamina = starters.reduce((s, p) => s + p.stamina, 0) / 11;
+    rating += (avgStamina / 100) * 10;
+
+    return Math.min(100, Math.round(rating));
   };
 
   return (
