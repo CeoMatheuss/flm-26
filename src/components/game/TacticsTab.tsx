@@ -323,6 +323,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
             players={players}
             captainId={tactics.captainId}
             onPlayerClick={setSelectedPlayer}
+            onSwapPlayers={swapPlayers}
+            isInteractive={!isInLiveMatch}
           />
           <p className="text-[8px] sm:text-[10px] text-muted-foreground mt-2 text-center">Toque em um jogador para atribuir funções</p>
         </CardContent>
