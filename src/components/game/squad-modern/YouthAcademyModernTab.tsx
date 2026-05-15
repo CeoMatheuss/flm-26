@@ -17,20 +17,42 @@ interface YouthAcademyModernTabProps {
   monthlyInvestment: number;
   onSetInvestment: (amount: number) => void;
   academyLevel: number;
+  academyUpgradeCompletesAt?: string;
   budget: number;
   hasScouts: boolean;
   currentSeason: number;
   onSell: (id: string) => void;
   onEnrollCopinha: () => void;
   onUpgradeAcademy: () => void;
+  lastYouthGenAt?: string;
+  isPremium?: boolean;
 }
 
 export function YouthAcademyModernTab({ 
   prospects, onPromote, monthlyInvestment, onSetInvestment,
-  academyLevel, budget, hasScouts, currentSeason, onSell, onEnrollCopinha, onUpgradeAcademy
+  academyLevel, academyUpgradeCompletesAt, budget, hasScouts, currentSeason, onSell, onEnrollCopinha, onUpgradeAcademy,
+  lastYouthGenAt, isPremium
 }: YouthAcademyModernTabProps) {
   const [selectedProspect, setSelectedProspect] = useState<YouthProspect | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<string>('plantel');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPos, setFilterPos] = useState('ALL');
+  
   const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
+
+  const filteredProspects = React.useMemo(() => {
+    return prospects.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPos = filterPos === 'ALL' || p.position === filterPos;
+      return matchesSearch && matchesPos;
+    }).sort((a, b) => (b.potential || 0) - (a.potential || 0));
+  }, [prospects, searchTerm, filterPos]);
+
+  const copinhaUnlocked = currentSeason >= 2;
+  const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
+
+  const isConstructing = !!academyUpgradeCompletesAt && new Date(academyUpgradeCompletesAt).getTime() > Date.now();
+
 
   return (
     <div className="space-y-8 pb-20 sm:pb-0">
