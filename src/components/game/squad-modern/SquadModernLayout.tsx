@@ -48,10 +48,10 @@ export function SquadModernLayout({
 
         <div className="flex-1 overflow-hidden p-6">
           <TabsContent value="starters" className="h-full m-0">
-            <SquadTable players={players.slice(0, 11)} selectedPlayer={null} onPlayerSelect={() => {}} />
+            <SquadTable players={players.slice(0, 11)} selectedPlayer={null} onPlayerSelect={() => {}} onUpdatePlayers={onUpdatePlayers} />
           </TabsContent>
           <TabsContent value="reserves" className="h-full m-0">
-            <SquadTable players={players.slice(11)} selectedPlayer={null} onPlayerSelect={() => {}} />
+            <SquadTable players={players.slice(11)} selectedPlayer={null} onPlayerSelect={() => {}} onUpdatePlayers={onUpdatePlayers} />
           </TabsContent>
           <TabsContent value="youth" className="h-full m-0 overflow-auto">
             <YouthAcademyModernTab prospects={youthProspects} onPromote={onPromoteYouth} />
