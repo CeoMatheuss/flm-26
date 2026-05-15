@@ -754,7 +754,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           // Marca local imediatamente para nunca travar a UI
           setTutorialCompleted(true);
           setShowTutorial(false);
-...
 
           // Anti-exploit: verifica no servidor se já recebeu antes de creditar
           const { data: prof } = await supabase
