@@ -8,11 +8,13 @@ import {
   ShoppingBag, DollarSign, Users, Crown, Package, 
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
-  Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw
+  Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
+  Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ShopItemDetails } from './ShopItemDetails';
 
 interface LojaProps {
   club: any;
@@ -39,6 +41,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [showPremium, setShowPremium] = useState(false);
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -136,6 +140,11 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     } finally {
       setLoading(false);
     }
+  };
+
+  const openDetails = (item: any) => {
+    setSelectedItem(item);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -349,7 +358,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   );
 }
 
-function StoreCard({ item, clubFans, isPremium, onPurchase }: any) {
+function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
   const price = item.price_cents / 100;
   const isFree = item.price_cents === 0;
