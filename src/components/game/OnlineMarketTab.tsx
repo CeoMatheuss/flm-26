@@ -778,7 +778,25 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         {/* ── LOANS ── */}
         <TabsContent value="loans" className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm flex items-center gap-2"><ArrowLeftRight className="h-4 w-4 text-primary" /> Empréstimos Online</h3>
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <ArrowLeftRight className="h-4 w-4 text-primary" /> 
+              Empréstimos Online
+              <button 
+                onClick={() => {
+                  setNegotiateLoan({
+                    player_name: "Guia de Empréstimos",
+                    player_position: "?",
+                    player_age: 0,
+                    player_overall: 0,
+                    salary: 0,
+                    _isHelpOnly: true
+                  });
+                }}
+                className="p-1 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
+              </button>
+            </h3>
             <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
             </Button>
@@ -1034,6 +1052,43 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
         </TabsContent>
+
+        {negotiateLoan && (
+          <LoanNegotiationModal
+            open={!!negotiateLoan}
+            onOpenChange={(open) => {
+              if (!open) setNegotiateLoan(null);
+            }}
+            mode="negotiate"
+            player={{
+              name: negotiateLoan.player_name,
+              position: negotiateLoan.player_position,
+              age: negotiateLoan.player_age,
+              overall: negotiateLoan.player_overall,
+              salary: negotiateLoan.salary || 0,
+            }}
+            listedTerms={negotiateLoan._isHelpOnly ? undefined : {
+              salaryPayer: negotiateLoan.salary_payer,
+              salarySplitPct: negotiateLoan.salary_split_pct,
+              loanFee: negotiateLoan.loan_fee,
+            }}
+            openToOffers={!negotiateLoan._isHelpOnly && (negotiateLoan.open_to_offers ?? true)}
+            onSubmit={negotiateLoan._isHelpOnly ? () => setNegotiateLoan(null) : async (terms) => {
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: { 
+                  action: 'loan-propose', 
+                  listingId: negotiateLoan.id, 
+                  terms,
+                  clubName 
+                }
+              });
+              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
+              else toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
+              setNegotiateLoan(null);
+            }}
+            loading={loading}
+          />
+        )}
         </div>
       </Tabs>
     </div>
