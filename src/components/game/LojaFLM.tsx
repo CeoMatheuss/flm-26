@@ -9,7 +9,7 @@ import {
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye
+  Eye, QrCode, Copy, Check, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +43,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [pixData, setPixData] = useState<{ qrCode: string; copyPaste: string; orderId: string } | null>(null);
+  const [showPixModal, setShowPixModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -124,7 +127,14 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
       if (error) throw error;
 
-      if (data?.init_point) {
+      if (data?.pix_qr_code) {
+        setPixData({
+          qrCode: data.pix_qr_code_base64,
+          copyPaste: data.pix_qr_code,
+          orderId: data.order_id
+        });
+        setShowPixModal(true);
+      } else if (data?.init_point) {
         window.location.href = data.init_point;
       } else if (data?.status === 'approved' || item.price_cents === 0) {
         setShowPremium(true);
@@ -361,6 +371,72 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         onPurchase={() => handlePurchase(selectedItem)}
         clubFans={club.fans || 0}
       />
+
+      <AnimatePresence>
+        {showPixModal && pixData && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-[#0A0D14] border border-emerald-500/30 p-8 rounded-[2.5rem] text-center space-y-6 max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-none uppercase font-black text-[10px]">Pagamento via PIX</Badge>
+                <Button variant="ghost" size="icon" onClick={() => setShowPixModal(false)} className="h-8 w-8 rounded-full hover:bg-white/5">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded-3xl mx-auto w-fit shadow-inner">
+                  <img src={`data:image/jpeg;base64,${pixData.qrCode}`} alt="QR Code PIX" className="w-48 h-48" />
+                </div>
+                
+                <div className="space-y-2 text-center">
+                  <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Escaneie o QR Code</h3>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Ou use a chave copia e cola abaixo</p>
+                </div>
+
+                <div className="bg-black/40 border border-white/5 p-3 rounded-2xl flex items-center gap-3 group">
+                  <div className="bg-emerald-500/10 p-2 rounded-xl">
+                    <QrCode className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-[9px] text-emerald-400/60 font-black uppercase tracking-widest mb-0.5 text-left">Chave Copia e Cola</p>
+                    <p className="text-xs text-white truncate font-mono text-left">{pixData.copyPaste}</p>
+                  </div>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(pixData.copyPaste);
+                      setCopied(true);
+                      toast.success('Chave PIX copiada!');
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="h-10 w-10 shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-2xl flex items-center gap-3">
+                  <Loader2 className="h-4 w-4 text-emerald-400 animate-spin" />
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider text-left">
+                    Aguardando confirmação do pagamento... O item será liberado automaticamente.
+                  </p>
+                </div>
+              </div>
+
+              <Button onClick={() => setShowPixModal(false)} variant="outline" className="w-full h-12 border-white/10 hover:bg-white/5 text-white/60 font-black uppercase italic rounded-xl">
+                Fechar Janela
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
