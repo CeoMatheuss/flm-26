@@ -15,7 +15,7 @@ interface PromotionDialogProps {
 }
 
 export function PromotionDialog({ open, onOpenChange, prospect, onDecision }: PromotionDialogProps) {
-  const potInfo = potentialTierInfo[prospect.potentialTier || 'comum'];
+  const potInfo = potentialTierInfo[(prospect.potentialTier as any)] || potentialTierInfo.comum;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
