@@ -502,7 +502,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
     finance:       ['finance_panel'],
     customization: ['customization_panel'],
-    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
+    system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'maintenance', 'announcements', 'direct_msg', 'support', 'versions', 'how_it_works'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -523,6 +523,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     how_it_works:      { label: 'Como Funciona',  icon: BookOpen },
     moderation:        { label: 'Chat',           icon: MessageCircle },
     updates_mgmt:      { label: 'Atualizações',   icon: Megaphone },
+    maintenance:       { label: 'Manutenção',     icon: Wrench },
     announcements:     { label: 'Anúncios IA',    icon: Image },
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
