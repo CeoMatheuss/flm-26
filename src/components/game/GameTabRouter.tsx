@@ -337,7 +337,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
               onSell: game.sellYouth,
               onEnrollCopinha: game.enrollCopinha,
               onSetInvestment: game.setYouthInvestment,
-              onUpgradeAcademy: () => game.upgradeFacility('youthAcademy')
+              onUpgradeAcademy: () => game.upgradeFacility('youthAcademy'),
+              lastYouthGenAt: game.lastYouthGenAt
             }}
           />
         )}
