@@ -9,7 +9,7 @@ import {
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye, QrCode, Copy, Check
+  Eye, QrCode, Copy, Check, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
