@@ -250,9 +250,13 @@ export function useMatchSimulation() {
     return { hG, aG, visibleEvents: allEvents };
   }, []);
 
+  const stopTick = useCallback(() => {
+    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+  }, []);
+
   const tick = useCallback(() => {
     const data = dataRef.current;
-    if (!data || isAnimatingRef.current) return;
+    if (!data || isAnimatingRef.current || state.phase === 'finished') return;
 
     const now = Date.now();
     const virtualElapsed = (now - data.startTime);
@@ -261,12 +265,41 @@ export function useMatchSimulation() {
     const isComplete = virtualElapsed >= data.durationMs;
 
     const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    
+    // Se a partida deveria estar encerrada, forçar encerramento e não processar mais nada
+    if (isComplete) {
+      console.log("[MATCH] Partida encerrada pelo cronômetro.");
+      stopTick();
+      setState(prev => ({
+        ...prev,
+        phase: 'finished',
+        currentMinute: data.maxMinute,
+        progress: 1,
+        homeGoals: Math.max(prev.homeGoals, data.finalHomeGoals),
+        awayGoals: Math.max(prev.awayGoals, data.finalAwayGoals),
+        onAnimationComplete: () => { isAnimatingRef.current = false; },
+      }));
+      
+      if (!persistedRef.current) {
+        persistedRef.current = true;
+        supabase.from('live_matches')
+          .update({ status: 'finished', current_minute: data.maxMinute })
+          .eq('id', data.matchDbId)
+          .then(() => {});
+      }
+      return;
+    }
+
     if (nextEvent && nextEvent.minute <= currentMinute) {
       const result = processMatchEvent(nextEvent, state.visibleEvents);
       
       if (result) {
         const { hG, aG, visibleEvents } = result;
         nextVisibleEventIdxRef.current++;
+        
+        // Se o evento processado for o apito final, travar imediatamente
+        const isFinalWhistle = nextEvent.type === 'final_whistle';
+        
         if (isHighlightEvent(nextEvent.type)) isAnimatingRef.current = true;
 
         const stats = computeStatsFromEvents(visibleEvents);
@@ -277,6 +310,7 @@ export function useMatchSimulation() {
 
         setState(prev => ({
           ...prev,
+          phase: isFinalWhistle ? 'finished' : prev.phase,
           currentMinute: nextEvent.minute,
           progress,
           homeGoals: hG,
@@ -292,49 +326,42 @@ export function useMatchSimulation() {
           assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
           onAnimationComplete: () => { isAnimatingRef.current = false; },
         }));
+
+        if (isFinalWhistle) {
+          console.log("[MATCH] Apito final detectado nos eventos.");
+          stopTick();
+          if (!persistedRef.current) {
+            persistedRef.current = true;
+            supabase.from('live_matches')
+              .update({ status: 'finished', current_minute: nextEvent.minute })
+              .eq('id', data.matchDbId)
+              .then(() => {});
+          }
+        }
       }
       return;
     }
 
-    let hG = state.homeGoals, aG = state.awayGoals;
     let phase: MatchState['phase'] = 'live';
-    if (isComplete) { 
-      phase = 'finished'; 
-      // Garantir placar final oficial ao encerrar
-      hG = Math.max(hG, data.finalHomeGoals); 
-      aG = Math.max(aG, data.finalAwayGoals); 
-    }
-    else if (currentMinute >= 45 && currentMinute <= 46) phase = 'halftime';
+    if (currentMinute >= 45 && currentMinute <= 46) phase = 'halftime';
 
     setState(prev => ({ 
       ...prev, 
       phase, 
       currentMinute, 
       progress, 
-      homeGoals: hG, 
-      awayGoals: aG, 
       stadiumName: data.stadiumName,
       stadiumCapacity: data.stadiumCapacity,
       attendance: data.attendance,
       onAnimationComplete: () => { isAnimatingRef.current = false; },
     }));
-
-    if ((isComplete || virtualElapsed >= data.durationMs + 30000) && !persistedRef.current) {
-      persistedRef.current = true;
-      stopTick();
-      supabase.from('live_matches').update({ status: 'finished', current_minute: data.maxMinute }).eq('id', data.matchDbId);
-    }
-  }, [computeStatsFromEvents, state.homeGoals, state.awayGoals, state.visibleEvents, processMatchEvent]);
+  }, [computeStatsFromEvents, state.visibleEvents, processMatchEvent, stopTick, getAtmosphereDescription]);
 
   const startTick = useCallback(() => {
     if (unsubscribeRef.current) return;
     unsubscribeRef.current = subscribeToLoop(() => tick());
     tick();
   }, [tick]);
-
-  const stopTick = useCallback(() => {
-    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
-  }, []);
 
   const hydrateMatchRow = useCallback((data: any): boolean => {
     if (!data) return false;
