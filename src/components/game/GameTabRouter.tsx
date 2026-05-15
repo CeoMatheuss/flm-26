@@ -381,7 +381,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
       
-      <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile?.trophies || []} /></TrophiesTab>
+      <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile?.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
       <TabsContent value="support"><SupportTab userId={userId} displayName={displayName} /></TabsContent>
       <TabsContent value="terms"><TermsTab /></TabsContent>
