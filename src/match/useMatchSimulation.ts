@@ -156,7 +156,8 @@ export function useMatchSimulation() {
       if (idx === -1) continue;
       const opp = idx === 0 ? 1 : 0;
       if (ev.team === 'home') homeActions++; else if (ev.team === 'away') awayActions++;
-      if (ev.isGoal && ev.type !== 'penalty_shootout') { s.shots[idx]++; s.shotsOnTarget[idx]++; }
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      if (isEvGoal && ev.type !== 'penalty_shootout') { s.shots[idx]++; s.shotsOnTarget[idx]++; }
       switch (ev.type) {
         case 'woodwork': s.shots[idx]++; s.shotsOnTarget[idx]++; break;
         case 'great_save': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
