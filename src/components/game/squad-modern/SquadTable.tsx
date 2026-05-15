@@ -31,13 +31,13 @@ interface SquadTableProps {
   onPlayerSelect: (player: Player) => void;
 }
 
-export function SquadTable({ players, selectedPlayer, onPlayerSelect }: SquadTableProps) {
+export function SquadTable({ players, selectedPlayer, onPlayerSelect, onUpdatePlayers }: SquadTableProps & { onUpdatePlayers?: (players: Player[]) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setFilterPos] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
   const filteredPlayers = useMemo(() => {
-    return players
+    return [...players]
       .filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()))
       .filter(p => !positionFilter || p.position === positionFilter)
       .sort((a, b) => b.overall - a.overall);
