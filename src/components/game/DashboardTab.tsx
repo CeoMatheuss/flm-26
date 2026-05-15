@@ -154,6 +154,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     { label: 'Torcida', value: (club.fans || 0) >= 1000 ? `${((club.fans || 0) / 1000).toFixed(0)}k` : (club.fans || 0).toLocaleString(), icon: Users, color: 'text-foreground' },
     { label: 'Pontos', value: club.stats.points.toString(), icon: Trophy, color: 'text-foreground' },
     { label: 'Aproveit.', value: `${winRate}%`, icon: TrendingUp, color: 'text-foreground' },
+    { label: 'Reputação', value: `${club.reputation}`, icon: Star, color: 'text-primary' },
   ];
 
   function formatMoneyShort(val: number) {
