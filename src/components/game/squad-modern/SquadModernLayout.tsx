@@ -3,8 +3,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player } from '@/types/game';
 import { SquadTable } from './SquadTable';
 import { TacticsTab } from '../TacticsTab';
-// Importação de novos componentes de sub-abas (serão criados na sequência)
-// import { YouthAcademyModernTab } from './YouthAcademyModernTab';
+import { YouthAcademyModernTab } from './YouthAcademyModernTab';
+import { YouthProspect } from '@/types/infrastructure';
 
 interface SquadModernProps {
   players: Player[];
