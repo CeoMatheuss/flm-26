@@ -1,8 +1,6 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { DashboardTab } from '@/components/game/DashboardTab';
-import { SquadTab } from '@/components/game/SquadTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
@@ -23,7 +21,7 @@ import { MembersTab } from '@/components/game/MembersTab';
 import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
-import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
+import { UniformsTab } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
@@ -36,18 +34,17 @@ import { RulesTab } from '@/components/game/RulesTab';
 import { CopasTab } from './CopasTab';
 import { WorldLeagues } from './WorldLeagues';
 
-// StaffTab removido (sistema de equipe técnica desativado)
 import { AdminTab } from '@/components/game/AdminTab';
 import { PacotinhosTab } from '@/components/game/PacotinhosTab';
 import { LojaFLM } from '@/components/game/LojaFLM';
 import { SupportTab } from '@/components/game/SupportTab';
-import { TermsTab } from '@/components/game/TermsTab';
+import { TermsTab } from "@/components/game/TermsTab";
+import { SquadModernLayout } from "./squad-modern/SquadModernLayout";
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Lock, Globe, Star, Instagram, ExternalLink, TrendingUp } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Lock, TrendingUp } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -63,8 +60,8 @@ interface GameTabRouterProps {
   setActiveTab: (tab: string) => void;
   activeTournamentId: string | null;
   setActiveTournamentId: (id: string | null) => void;
-  onSigningPlayer: (data: { name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string }) => void;
-  saveSigningNews: (playerName: string, position: string, overall: number, age: number, eventType?: 'signing' | 'renewal' | 'loan', extraInfo?: string) => void;
+  onSigningPlayer: (data: any) => void;
+  saveSigningNews: (playerName: string, position: string, overall: number, age: number, eventType?: string, extraInfo?: string) => void;
   blockedTabs?: string[];
   isAdmin?: boolean;
   isPremium?: boolean;
@@ -73,21 +70,18 @@ interface GameTabRouterProps {
 }
 
 export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFounder, activeTab, setActiveTab, activeTournamentId, setActiveTournamentId, onSigningPlayer, saveSigningNews, blockedTabs = [], isAdmin = false, isPremium = false, marketSubTab, setMarketSubTab }: GameTabRouterProps) {
-  const [uniforms, setUniforms] = useState<UniformsData | undefined>(undefined);
-
-  const { winStreak, loseStreak } = useMemo(() => {
+  
+  const { winStreak } = useMemo(() => {
     const playedMatches = game.club.matches.filter(m => m.played);
-    let ws = 0, ls = 0;
+    let ws = 0;
     for (let i = playedMatches.length - 1; i >= 0; i--) {
       const r = playedMatches[i].result;
       if (!r) break;
-      if (r.home > r.away) { if (ls > 0) break; ws++; }
-      else if (r.home < r.away) { if (ws > 0) break; ls++; }
+      if (r.home > r.away) { ws++; }
       else break;
     }
-    return { winStreak: ws, loseStreak: ls };
+    return { winStreak: ws };
   }, [game.club.matches]);
-
 
   const safeBlockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
   const isTabBlocked = (tab: string) => !isAdmin && safeBlockedTabs.includes(tab);
@@ -125,13 +119,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           />
         )}
       </TabsContent>
-      <TabsContent value="tournament">
-        {activeTournamentId ? (
-          <div className="p-4 text-center text-xs text-muted-foreground">Torneio desativado</div>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-8">Nenhum campeonato selecionado</p>
-        )}
-      </TabsContent>
       
       <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
 
@@ -148,107 +135,22 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
       </TabsContent>
 
-      <TabsContent value="squad">
+      <TabsContent value="squad" className="m-0 h-full">
         {isTabBlocked('squad') ? <BlockedMessage /> : (
-          <SquadTab
+          <SquadModernLayout
             players={game.club.players}
             budget={game.club.budget}
             clubName={game.club.name}
-            trainingLevel={game.infrastructure.trainingCenter.level}
-            onRest={game.restPlayer}
-            onRenewContract={(playerId, newSalary, newDuration) => {
-              const player = game.club.players.find(p => p.id === playerId);
-              game.renewContract(playerId, newSalary, newDuration);
-              if (player) {
-                const extra = `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês`;
-                onSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: extra });
-                saveSigningNews(player.name, player.position, player.overall, player.age, 'renewal', extra);
-              }
-            }}
-            onListForSale={async (playerId: string) => {
-              const player = game.club.players.find(p => p.id === playerId);
-              if (!player) return;
-              if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para vender!'); return; }
-              const askingPrice = (await import('@/utils/playerGenerator')).getPlayerValue(player);
-              const res = await supabase.functions.invoke('process-transfer', {
-                body: {
-                  action: 'list',
-                  playerData: player,
-                  playerName: player.name,
-                  playerPosition: player.position,
-                  playerOverall: player.overall,
-                  playerAge: player.age,
-                  askingPrice,
-                  clubName: game.club.name,
-                  sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
-                },
-              });
-              if (res.error || res.data?.error) {
-                toast.error(res.data?.error || 'Erro ao listar jogador');
-              } else {
-                toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
-              }
-            }}
-            onLoanOut={async (playerId, terms) => {
-              const player = game.club.players.find(p => p.id === playerId);
-              if (!player) return;
-              if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
-              const res = await supabase.functions.invoke('process-transfer', {
-                body: {
-                  action: 'loan-list',
-                  playerData: player,
-                  playerName: player.name,
-                  playerPosition: player.position,
-                  playerOverall: player.overall,
-                  playerAge: player.age,
-                  salary: player.salary || 0,
-                  clubName: game.club.name,
-                  sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
-                  salaryPayer: terms?.salaryPayer ?? 'buyer',
-                  salarySplitPct: terms?.salarySplitPct ?? 0,
-                  loanFee: terms?.loanFee ?? 0,
-                  openToOffers: true,
-                },
-              });
-              if (res.error || res.data?.error) {
-                toast.error(res.data?.error || 'Erro ao anunciar empréstimo');
-              } else {
-                toast.success(`${player.name} anunciado no Mercado de Empréstimos! 🔄`);
-              }
-            }}
-            onChangeNumber={game.changeShirtNumber}
-            canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
             userId={userId}
-            onAuction={async (player) => {
-              const baseValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
-              const ovr = player.overall;
-              const minByOvr = ovr >= 80 ? 500000 : ovr >= 70 ? 300000 : ovr >= 60 ? 200000 : 100000;
-              const halfValue = Math.max(baseValue, minByOvr);
-              const { error } = await supabase.from('player_auctions').insert([{
-                seller_id: userId,
-                seller_club_name: game.club.name,
-                player_data: player as any,
-                player_name: player.name,
-                player_overall: player.overall,
-                player_age: player.age,
-                min_price: halfValue,
-                current_bid: halfValue,
-              }]);
-              if (error) {
-                toast.error('Erro ao criar leilão');
-              } else {
-                toast.success(`${player.name} colocado em leilão!`);
-              }
-            }}
-            transferBudget={(game as any).transferBudget}
-            onRescindPlayer={(game as any).rescindPlayer}
-            onReorderPlayers={game.updatePlayers}
-            onRotateSquad={(game as any).rotateSquad}
             tactics={game.tactics}
-            onChangePosition={game.changePlayerPosition}
+            onRest={game.restPlayer}
+            onUpdatePlayers={game.updatePlayers}
+            youthProspects={game.youthProspects}
+            onPromoteYouth={game.promoteYouth}
           />
         )}
       </TabsContent>
+
       <TabsContent value="league">
         {isTabBlocked('leagues') ? <BlockedMessage /> : <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />}
       </TabsContent>
@@ -264,8 +166,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           stats={game.club.stats} 
           season={game.season?.currentSeason ?? 1} 
         />
-
       </TabsContent>
+      
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
         <OnlineMarketTab
@@ -292,7 +194,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onLoanOut={async (playerId: string) => {
             const player = game.club.players.find(p => p.id === playerId);
             if (!player) return;
-            if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
+            if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para vender!'); return; }
             const res = await supabase.functions.invoke('process-transfer', {
               body: {
                 action: 'loan-list',
@@ -317,22 +219,26 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         />
         )}
       </TabsContent>
-      <TabsContent value="tactics">{isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} onChangePosition={game.changePlayerPosition} season={game.season?.currentSeason ?? 1} userId={userId} />}</TabsContent>
-      <TabsContent value="fans">
-        <FansTab club={game.club} winStreak={winStreak} loseStreak={loseStreak} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
+      
+      <TabsContent value="tactics">
+        {isTabBlocked('tactics') ? <BlockedMessage /> : <TacticsTab tactics={game.tactics} players={game.club.players} onUpdate={game.setTactics} onChangePosition={game.changePlayerPosition} season={game.season?.currentSeason ?? 1} userId={userId} />}
       </TabsContent>
+      
+      <TabsContent value="fans">
+        <FansTab club={game.club} winStreak={winStreak} loseStreak={0} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
+      </TabsContent>
+      
       <TabsContent value="members">
         <MembersTab totalFans={game.club.fans || 1000} reputation={game.club.reputation || 50} wins={game.club.stats?.wins ?? 0} draws={game.club.stats?.draws ?? 0} losses={game.club.stats?.losses ?? 0} />
       </TabsContent>
 
-      {/* INFRAESTRUTURA — abas independentes (cada item é uma tela própria no menu principal) */}
       <TabsContent value="training">
         {isTabBlocked('training') ? <BlockedMessage /> : (
           <InfrastructureWrapper
             initialSubTab="training"
             players={game.club.players}
             infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
+            trainingFocus={game.trainingFocus || {}}
             onSetTrainingFocus={game.setPlayerTrainingFocus}
             trainingIntensity={game.trainingIntensity}
             onSetTrainingIntensity={game.setPlayerTrainingIntensity}
@@ -348,92 +254,18 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onUpgradeCTRoom={game.upgradeCTRoom}
             trainingInvestment={game.trainingInvestment}
             onSetTrainingInvestment={game.setTrainingInvestment}
-            lastTrainingResult={game.lastTrainingResult} standalone
           />
         )}
       </TabsContent>
-      <TabsContent value="physio">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <InfrastructureTab
-            infrastructure={game.infrastructure}
-            budget={game.club.budget}
-            players={game.club.players}
-            onUpgrade={game.upgradeFacility}
-          />
-        )}
-      </TabsContent>
+
       <TabsContent value="stadium">
         {isTabBlocked('stadium') ? <BlockedMessage /> : (
-          <StadiumTab
-            infrastructure={game.infrastructure}
-            budget={game.club.budget}
-            fans={game.club.fans}
-            stadiumName={game.club.stadiumName || 'Arena'}
-            ticketPrice={game.club.ticketPrice || 30}
-            reputation={game.club.reputation}
-            winStreak={winStreak}
-            loseStreak={loseStreak}
-            vipBoxesBuilt={game.club.vipBoxesBuilt}
-            stadiumOps={game.club.stadiumOps}
-            upcomingHomeMatches={(game.club.matches || []).filter((m: any) => !m.played && (m.isHome ?? true)).map((m: any) => ({ id: m.id, date: m.date, isHome: m.isHome ?? true, opponent: m.opponent, competition: (m as any).competition }))}
-            onUpgrade={game.upgradeFacility}
-            onSetTicketPrice={game.setTicketPrice}
-            onRenameStadium={game.renameStadium}
-            onBuildVipBox={game.buildVipBox}
-            onAcceptStadiumEvent={game.acceptStadiumEvent}
-            onRejectStadiumEvent={game.rejectStadiumEvent}
-            onStartStadiumRepair={game.startStadiumRepair}
-            onBuyStadiumInsurance={game.buyStadiumInsurance}
-            onCancelStadiumInsurance={game.cancelStadiumInsurance}
-            onAcceptStadiumSponsor={game.acceptStadiumSponsor}
-            onRejectStadiumSponsor={game.rejectStadiumSponsor}
-            onToggleMembershipTier={game.toggleMembershipTier}
-            onBuyModularUpgrade={game.buyModularUpgrade}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="youth">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          <YouthAcademyTab
-            prospects={game.youthProspects}
-            academyLevel={game.infrastructure.youthAcademy.level}
-            academyUpgradeCompletesAt={game.infrastructure.youthAcademy.upgradeCompletesAt}
-            isPremium={isPremium}
-            monthlyInvestment={game.youthInvestment}
-            budget={game.club.budget}
-            hasScouts={(game.club.scouts?.length ?? 0) > 0}
-            currentSeason={game.season?.currentSeason ?? 1}
-            onPromote={game.promoteYouth}
-            onSell={game.sellYouth}
-            onEnrollCopinha={game.enrollCopinha}
-            onSetInvestment={game.setYouthInvestment}
-            onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="ctrooms">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
-          game.ctRooms ? (
-            <CTRoomsTab
-              rooms={game.ctRooms}
-              budget={game.club.budget}
-              trainingCenterLevel={game.infrastructure?.trainingCenter?.level ?? 1}
-              onUpgradeRoom={game.upgradeCTRoom}
-            />
-          ) : <p className="text-xs text-muted-foreground text-center py-8">Carregando salas do CT...</p>
-        )}
-      </TabsContent>
-      {/* Rota legada 'infra' continua redirecionando para Treinos por compatibilidade */}
-      <TabsContent value="infra">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
           <InfrastructureWrapper
-            initialSubTab="training"
+            initialSubTab="stadium"
             players={game.club.players}
             infrastructure={game.infrastructure}
-            trainingFocus={game.trainingFocus}
+            trainingFocus={game.trainingFocus || {}}
             onSetTrainingFocus={game.setPlayerTrainingFocus}
-            trainingIntensity={game.trainingIntensity}
-            onSetTrainingIntensity={game.setPlayerTrainingIntensity}
             tactics={game.tactics}
             onPlayersUpdate={game.updatePlayers}
             currentWeek={game.season.currentWeek}
@@ -442,74 +274,126 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             budget={game.club.budget}
             onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
             onUpgradeFacility={game.upgradeFacility}
-            ctRooms={game.ctRooms}
             onUpgradeCTRoom={game.upgradeCTRoom}
-            trainingInvestment={game.trainingInvestment}
-            onSetTrainingInvestment={game.setTrainingInvestment}
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="scouts">
-        {isTabBlocked('scouts') ? <BlockedMessage /> : (
-          <ScoutsTab 
-            userId={userId} 
-            budget={game.club.budget} 
-          />
-        )}
-      </TabsContent>
-      <TabsContent value="finance">{isTabBlocked('finances') ? <BlockedMessage /> : <FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} />}</TabsContent>
-      <TabsContent value="sponsors">
-        <SponsorsTab
-          sponsors={game.sponsors}
-          offers={game.sponsorOffers}
-          reputation={game.club.reputation}
-          onAccept={game.acceptSponsor}
-          onRefreshOffers={game.refreshSponsorOffers}
-          userId={userId}
-          addBonus={game.addBonus}
-        />
-      </TabsContent>
-      <TabsContent value="rules"><RulesTab /></TabsContent>
-      
-      <TabsContent value="settings"><SettingsTab /></TabsContent>
-      {/* clubsettings deep-link redirect: render ClubProfileTab so existing links keep working */}
-      <TabsContent value="clubsettings">
-        <ClubProfileTab
-          club={game.club}
-          season={game.season.currentSeason}
-          profile={game.clubProfile}
-          onSave={game.updateClubProfile}
-          onRenameClub={game.renameClub}
-          onRenameStadium={game.renameStadium}
-          onUpdateShield={game.updateShield}
-        />
-      </TabsContent>
-      {/* Aba "staff" removida — sistema de equipe técnica desativado. */}
-
-      <TabsContent value="chat">{isTabBlocked('chat') ? <BlockedMessage /> : <GlobalChatTab userId={userId} displayName={displayName} clubName={game.club.name} />}</TabsContent>
-      <TabsContent value="journal"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
-      <TabsContent value="newspaper"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
-      <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} sponsors={game.sponsors} players={game.club.players} clubReputation={game.club.reputation} /></TabsContent>
-      <TabsContent value="auction">{isTabBlocked('auctions') ? <BlockedMessage /> : <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />}</TabsContent>
-      <TabsContent value="pacotinhos">
-        {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
-      </TabsContent>
-      <TabsContent value="shop">
-        {isTabBlocked('shop') ? <BlockedMessage /> : (
-          <LojaFLM 
-            club={game.club} 
-            infrastructure={game.infrastructure} 
-            userId={userId} 
-            onUpgradeFacility={(f) => game.upgradeFacility(f as any)}
-            onAcceptSponsor={(cfg) => {
-              import('@/data/flmSponsors').then(({ convertToSponsorOffer }) => {
-                const offer = convertToSponsorOffer(cfg, game.club.fans);
-                game.acceptSponsor(offer);
-              });
+            stadiumProps={{
+               stadiumName: game.club.stadiumName,
+               infrastructure: game.infrastructure,
+               onUpgrade: (f: any) => game.upgradeFacility(f),
+               budget: game.club.budget,
+               clubName: game.club.name,
+               userId,
+               onRenameStadium: game.renameStadium,
+               onSetTicketPrice: game.setTicketPrice,
+               onBuildVipBox: game.buildVipBox,
+               stadiumOps: game.club.stadiumOps,
+               onAcceptStadiumEvent: game.acceptStadiumEvent,
+               onRejectStadiumEvent: game.rejectStadiumEvent,
+               onStartStadiumRepair: game.startStadiumRepair,
+               onBuyStadiumInsurance: game.buyStadiumInsurance,
+               onCancelStadiumInsurance: game.cancelStadiumInsurance,
+               onAcceptStadiumSponsor: game.acceptStadiumSponsor,
+               onRejectStadiumSponsor: game.rejectStadiumSponsor,
+               onBuyModularUpgrade: game.buyModularUpgrade
             }}
           />
         )}
       </TabsContent>
+
+      <TabsContent value="youth">
+        {isTabBlocked('youth') ? <BlockedMessage /> : (
+          <InfrastructureWrapper
+            initialSubTab="youth"
+            players={game.club.players}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus || {}}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+            onUpgradeFacility={game.upgradeFacility}
+            onUpgradeCTRoom={game.upgradeCTRoom}
+            youthProps={{
+              prospects: game.youthProspects,
+              academyLevel: game.infrastructure.youthAcademy.level,
+              academyUpgradeCompletesAt: game.infrastructure.youthAcademy.upgradeCompletesAt,
+              isPremium,
+              monthlyInvestment: game.youthInvestment,
+              budget: game.club.budget,
+              hasScouts: (game.club.scouts || []).length > 0,
+              currentSeason: game.season.currentSeason,
+              onPromote: game.promoteYouth,
+              onSell: game.sellYouth,
+              onEnrollCopinha: game.enrollCopinha,
+              onSetInvestment: game.setYouthInvestment,
+              onUpgradeAcademy: () => game.upgradeFacility('youthAcademy')
+            }}
+          />
+        )}
+      </TabsContent>
+
+      <TabsContent value="journal">
+        {isTabBlocked('newspaper') ? <BlockedMessage /> : <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />}
+      </TabsContent>
+      
+      <TabsContent value="staff">
+        {isTabBlocked('staff') ? <BlockedMessage /> : (
+          <InfrastructureWrapper
+            initialSubTab="training"
+            players={game.club.players}
+            infrastructure={game.infrastructure}
+            trainingFocus={game.trainingFocus || {}}
+            onSetTrainingFocus={game.setPlayerTrainingFocus}
+            tactics={game.tactics}
+            onPlayersUpdate={game.updatePlayers}
+            currentWeek={game.season.currentWeek}
+            clubName={game.club.name}
+            userId={userId}
+            budget={game.club.budget}
+            onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
+            onUpgradeFacility={game.upgradeFacility}
+            onUpgradeCTRoom={game.upgradeCTRoom}
+          />
+        )}
+      </TabsContent>
+      
+      <TabsContent value="finance">
+        {isTabBlocked('finances') ? <BlockedMessage /> : (
+          <FinanceTab 
+            budget={game.club.budget} 
+            finances={game.finances} 
+            totalSalaries={game.totalSalaries} 
+            players={game.club.players} 
+            scouts={game.club.scouts || []} 
+            sponsors={game.sponsors}
+            infrastructure={game.infrastructure} 
+            fans={game.club.fans}
+            ticketPrice={game.club.ticketPrice || 30}
+            youthInvestment={game.youthInvestment}
+          />
+        )}
+      </TabsContent>
+      
+      <TabsContent value="settings"><SettingsTab /></TabsContent>
+      <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} /></TabsContent>
+      
+      <TabsContent value="sponsors">
+        {isTabBlocked('sponsors') ? <BlockedMessage /> : (
+          <SponsorsTab 
+            sponsors={game.sponsors}
+            offers={game.sponsorOffers}
+            reputation={game.club.reputation}
+            onAccept={game.acceptSponsor}
+            onRefreshOffers={game.refreshSponsorOffers}
+            userId={userId}
+            addBonus={game.addBonus}
+          />
+        )}
+      </TabsContent>
+      
       <TabsContent value="stats">
         <div className="p-8 text-center text-muted-foreground">
           <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-20" />
@@ -517,7 +401,9 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           <p className="text-xs">Em breve: artilharia, assistências e scouts avançados.</p>
         </div>
       </TabsContent>
+      
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
+      
       <TabsContent value="clubprofile">
         <ClubProfileTab
           club={game.club}
@@ -529,7 +415,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           onUpdateShield={game.updateShield}
         />
       </TabsContent>
-      <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile.trophies || []} /></TabsContent>
+      
+      <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile?.trophies || []} /></TabsContent>
       <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
       <TabsContent value="support"><SupportTab userId={userId} displayName={displayName} /></TabsContent>
       <TabsContent value="terms"><TermsTab /></TabsContent>
