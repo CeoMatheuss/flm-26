@@ -311,7 +311,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       if (data?.value) {
         const val = data.value as any;
         setIsMaintenanceMode(val.active === true);
-        setBlockedTabs(val.blocked_tabs || []);
+        setBlockedTabs(Array.isArray(val.blocked_tabs) ? val.blocked_tabs : []);
       }
       setMaintenanceChecked(true);
     };
