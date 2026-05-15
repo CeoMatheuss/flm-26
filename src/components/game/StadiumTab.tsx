@@ -151,9 +151,24 @@ export function StadiumTab({
                 <Sparkles className="h-3 w-3 mr-1" /> Gestão de Estádio
               </Badge>
               <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{stadiumName}</h2>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                Nv {stadium.level}/{stadium.maxLevel} • Capacidade {getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()}
-              </p>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1.5">
+                  Nv {stadium.level}/{stadium.maxLevel} • Capacidade {getEffectiveCapacity(modules.seatingCapacity, ops.damages).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[8px] h-3.5 px-1 py-0 uppercase bg-muted/50 border-muted-foreground/20 text-muted-foreground font-medium">
+                    Base: {modules.seatingCapacity.toLocaleString()}
+                  </Badge>
+                  {ops.damages.length > 0 && (
+                    <Badge variant="outline" className="text-[8px] h-3.5 px-1 py-0 uppercase bg-red-500/10 border-red-500/30 text-red-400 font-medium">
+                      Efeito Danos: -{(modules.seatingCapacity - getEffectiveCapacity(modules.seatingCapacity, ops.damages)).toLocaleString()}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-[8px] h-3.5 px-1 py-0 uppercase bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-medium">
+                    DB: REAL
+                  </Badge>
+                </div>
+              </div>
             </div>
             <div className="text-left sm:text-right shrink-0">
               <p className="text-[10px] uppercase text-muted-foreground">Receita estimada</p>
