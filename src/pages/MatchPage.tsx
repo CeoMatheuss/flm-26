@@ -107,7 +107,7 @@ export default function MatchPage() {
     let effectiveCapacity = locState.stadiumCapacity;
     if (locState.isHome) {
       try {
-        const { computeExpectedAttendance } = await import('@/match/stadiumEconomics');
+        const { calculateStadiumEconomy } = await import('@/match/stadiumEconomyEngine');
         const { getEffectiveCapacity, isStadiumBlockedForBigMatch } = await import('@/match/stadiumEvents');
 
         const importance: 'amistoso' | 'liga' | 'classico' | 'final' =
@@ -128,20 +128,29 @@ export default function MatchPage() {
           }
         }
 
-        const expected = computeExpectedAttendance({
+        const vipUnits = Object.values(locState.vipBoxesBuilt || {}).reduce((a, b) => a + (b || 0), 0);
+        
+        const economy = calculateStadiumEconomy({
           fans: locState.fans || 1000,
           reputation: locState.reputation ?? 50,
           ticketPrice: locState.ticketPrice ?? 30,
           winStreak: locState.winStreak ?? 0,
           loseStreak: locState.loseStreak ?? 0,
-          capacity: physicalCapacity,
+          stadiumCapacity: physicalCapacity,
+          stadiumLevel: locState.stadiumOps?.stadiumLevel ?? 1,
           importance,
+          vipUnits
         });
-        effectiveCapacity = Math.max(1000, Math.min(physicalCapacity, expected));
-        console.log('[Stadium] Expected:', expected, '/ physical:', physicalCapacity, '/ raw:', locState.stadiumCapacity);
+        
+        effectiveCapacity = physicalCapacity;
+        (locState as any).resolvedAttendance = economy.expectedAttendance;
+        (locState as any).resolvedRevenue = economy.revenue.total;
+        
+        console.log('[Stadium] Economy Results:', economy);
       } catch (e) {
         console.warn('[Stadium] Failed to compute attendance, using raw capacity', e);
       }
+
     }
 
     const result = await startMatch({
