@@ -5,7 +5,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, Armchair, Repeat, Zap, Target } from 'lucide-react';
+import { 
+  X, CheckCircle, Tag, HeartPulse, ArrowLeft, Hash, ArrowLeftRight, Gavel, 
+  Users, FileText, ChevronRight, Trash2, ArrowUp, ArrowDown, Package, Shirt, 
+  Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout
+} from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
@@ -15,6 +19,8 @@ import { toast } from 'sonner';
 import type { TacticsConfig } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
+import { SquadCard } from './squad/SquadCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   players: Player[];
@@ -49,6 +55,7 @@ const posColors: Record<string, string> = {
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
 };
+
 
 const attrLabels: Record<string, { label: string; icon: string }> = {
   speed: { label: 'Velocidade', icon: '⚡' },
