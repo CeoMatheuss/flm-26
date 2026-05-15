@@ -102,6 +102,22 @@ async function processCupPrizes(supabase: any) {
             p_amount: getPrize('Final_Winner'),
             p_season_year: cup.season
           })
+
+          // Generate news for Champion
+          await supabase.from('cup_news').insert({
+            cup_id: cup.id,
+            title: `🏆 ${winnerTeam.club_name} É CAMPEÃO!`,
+            content: `O ${winnerTeam.club_name} venceu a final e faturou o bônus milionário de campeão!`,
+            template_key: 'cup_champion',
+            metadata: { team_name: winnerTeam.club_name, competition: cup.name }
+          })
+          
+          await supabase.from('world_league_news').insert({
+            title: `🏆 ${winnerTeam.club_name} Campeão da Copa!`,
+            content: `Com uma campanha histórica, o ${winnerTeam.club_name} conquista o título e recebe a premiação máxima.`,
+            category: 'cup',
+            importance: 3
+          })
         }
         
         if (loserTeam) {
@@ -118,7 +134,7 @@ async function processCupPrizes(supabase: any) {
       } else {
         // Winner gets phase prize
         const winnerId = match.winner_team_id
-        const { data: winnerTeam } = await supabase.from('national_cup_teams').select('club_id').eq('id', winnerId).single()
+        const { data: winnerTeam } = await supabase.from('national_cup_teams').select('club_id, club_name').eq('id', winnerId).single()
         
         if (winnerTeam) {
           const amount = getPrize(phaseName) || getPrize(`Fase ${currentRound}`) || 0
@@ -131,6 +147,15 @@ async function processCupPrizes(supabase: any) {
               p_phase_or_rank: phaseName,
               p_amount: amount,
               p_season_year: cup.season
+            })
+
+            // Notification news
+            await supabase.from('cup_news').insert({
+              cup_id: cup.id,
+              title: `Premiação: ${winnerTeam.club_name}`,
+              content: `${winnerTeam.club_name} recebeu a premiação pela classificação para a próxima fase (${phaseName}).`,
+              template_key: 'cup_advance',
+              metadata: { team_name: winnerTeam.club_name, competition: cup.name, phase: phaseName }
             })
           }
         }
