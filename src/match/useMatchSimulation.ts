@@ -149,15 +149,36 @@ export function useMatchSimulation() {
   const notifiedEventsRef = useRef<Set<string>>(new Set());
 
   const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
-    const s: MatchStats = { ...EMPTY_STATS, possession: [50, 50], shots: [0, 0], shotsOnTarget: [0, 0], corners: [0, 0], fouls: [0, 0], yellowCards: [0, 0], redCards: [0, 0], passes: [0, 0], tackles: [0, 0], saves: [0, 0], offsides: [0, 0] };
+    const s: MatchStats = { 
+      ...EMPTY_STATS, 
+      possession: [50, 50], 
+      shots: [0, 0], 
+      shotsOnTarget: [0, 0], 
+      corners: [0, 0], 
+      fouls: [0, 0], 
+      yellowCards: [0, 0], 
+      redCards: [0, 0], 
+      passes: [0, 0], 
+      tackles: [0, 0], 
+      saves: [0, 0], 
+      offsides: [0, 0] 
+    };
+    
     let homeActions = 0, awayActions = 0;
+    
     for (const ev of events) {
       const idx = ev.team === 'home' ? 0 : ev.team === 'away' ? 1 : -1;
       if (idx === -1) continue;
+      
       const opp = idx === 0 ? 1 : 0;
       if (ev.team === 'home') homeActions++; else if (ev.team === 'away') awayActions++;
+      
       const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
-      if (isEvGoal && ev.type !== 'penalty_shootout') { s.shots[idx]++; s.shotsOnTarget[idx]++; }
+      if (isEvGoal && ev.type !== 'penalty_shootout') { 
+        s.shots[idx]++; 
+        s.shotsOnTarget[idx]++; 
+      }
+      
       switch (ev.type) {
         case 'woodwork': s.shots[idx]++; s.shotsOnTarget[idx]++; break;
         case 'great_save': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
@@ -174,9 +195,22 @@ export function useMatchSimulation() {
         case 'counter_attack': case 'free_kick_near': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
       }
     }
+    
     const total = homeActions + awayActions;
     if (total > 0) s.possession = [Math.round((homeActions / total) * 100), Math.round((awayActions / total) * 100)];
     return s;
+  }, []);
+
+  const recalculateScoreFromEvents = useCallback((events: SimEvent[]) => {
+    let hG = 0, aG = 0;
+    for (const ev of events) {
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      if (isEvGoal && ev.type !== 'penalty_shootout') {
+        if (ev.team === 'home') hG++;
+        else if (ev.team === 'away') aG++;
+      }
+    }
+    return { hG, aG };
   }, []);
 
   const getAtmosphereDescription = (event: SimEvent, attendance: number, capacity: number): string => {
@@ -217,38 +251,35 @@ export function useMatchSimulation() {
     // 1. Identificar se o evento é um gol
     const isGoal = event.isGoal === true || event.type === 'goal' || event.description.toUpperCase().includes('GOL');
     
-    // 2. Usar ID único do evento ou combinação de minuto+tipo+desc para evitar duplicidade
+    // 2. Usar ID único do evento para evitar duplicidade
     const eventId = `${event.minute}-${event.type}-${event.team}-${event.playerName || ''}`;
-    if (notifiedEventsRef.current.has(eventId)) return null;
+    if (notifiedEventsRef.current.has(eventId)) {
+      console.log("[DUPLICATE EVENT IGNORED]", eventId);
+      return null;
+    }
     
     // 3. Marcar como processado
     notifiedEventsRef.current.add(eventId);
 
-    // 4. Acumular eventos (setEvents(prev => [...prev, event]))
+    // 4. Acumular eventos e garantir ordem
     const allEvents = [...currentVisibleEvents, event].sort((a, b) => {
       if (a.minute !== b.minute) return a.minute - b.minute;
-      return 0; // Se houver segundos no futuro, usar: (a.second || 0) - (b.second || 0)
+      return 0;
     });
     
-    // 5. Calcular placares baseados nos eventos processados até agora
-    let hG = 0, aG = 0;
-    for (const ev of allEvents) {
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
-      if (isEvGoal && ev.type !== 'penalty_shootout') {
-        if (ev.team === 'home') hG++;
-        else if (ev.team === 'away') aG++;
-      }
-    }
+    // 5. Calcular placares DERIVADOS da lista de eventos (Fonte única da verdade)
+    const { hG, aG } = recalculateScoreFromEvents(allEvents);
 
     if (isGoal) {
-      console.log("[GOAL PROCESSADO]", eventId, `${hG}x${aG}`);
+      console.log("[GOAL EVENT]", eventId);
+      console.log("[PLACAR ATUALIZADO]", { homeScore: hG, awayScore: aG });
     }
     
     console.log("[NOVO EVENTO]", event);
     console.log("[TOTAL EVENTOS]", allEvents.length);
 
     return { hG, aG, visibleEvents: allEvents };
-  }, []);
+  }, [recalculateScoreFromEvents]);
 
   const stopTick = useCallback(() => {
     if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
@@ -372,9 +403,12 @@ export function useMatchSimulation() {
     const elapsed = Math.max(0, Date.now() - startTime);
     const progress = Math.min(1, elapsed / durationMs);
     const currentMinute = data.status === 'finished' ? maxMinute : Math.floor(progress * maxMinute);
+    
+    // Filtra eventos visíveis com base no minuto atual
     const visibleEvents = events.filter(e => (Number(e.minute) || 0) <= currentMinute);
-    const homeGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'home').length;
-    const awayGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'away').length;
+    
+    // Recalcula o placar a partir dos eventos visíveis (Fonte Única da Verdade)
+    const { hG: homeGoals, aG: awayGoals } = recalculateScoreFromEvents(visibleEvents);
 
     dataRef.current = {
       allEvents: events,
@@ -396,6 +430,10 @@ export function useMatchSimulation() {
 
     persistedRef.current = data.status === 'finished';
     nextVisibleEventIdxRef.current = visibleEvents.length;
+    
+    // Popula o Set de eventos notificados para evitar duplicação no tick
+    notifiedEventsRef.current = new Set(visibleEvents.map(ev => `${ev.minute}-${ev.type}-${ev.team}-${ev.playerName || ''}`));
+
     setState(s => ({
       ...s,
       phase: data.status === 'finished' || progress >= 1 ? 'finished' : currentMinute >= 45 && currentMinute <= 46 ? 'halftime' : 'live',
@@ -403,8 +441,8 @@ export function useMatchSimulation() {
       progress,
       homeTeam: data.home_team || '',
       awayTeam: data.away_team || '',
-      homeGoals: data.status === 'finished' ? (data.home_goals || homeGoals) : homeGoals,
-      awayGoals: data.status === 'finished' ? (data.away_goals || awayGoals) : awayGoals,
+      homeGoals: data.status === 'finished' ? Math.max(data.home_goals || 0, homeGoals) : homeGoals,
+      awayGoals: data.status === 'finished' ? Math.max(data.away_goals || 0, awayGoals) : awayGoals,
       visibleEvents,
       latestEvent: visibleEvents[visibleEvents.length - 1] || null,
       stats: visibleEvents.length ? computeStatsFromEvents(visibleEvents) : ((data.stats as any) || EMPTY_STATS),
@@ -416,9 +454,10 @@ export function useMatchSimulation() {
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
     }));
+    
     if (data.status !== 'finished' && progress < 1) startTick();
     return true;
-  }, [computeStatsFromEvents, startTick]);
+  }, [computeStatsFromEvents, recalculateScoreFromEvents, startTick]);
 
   const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
