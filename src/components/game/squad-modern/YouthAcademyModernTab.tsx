@@ -113,12 +113,24 @@ export function YouthAcademyModernTab({
               <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white">
                 Centro de Formação
               </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Nível {currentTier.label}</span>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Nível {academyLevel}/30</span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em]">
                   {prospects.length} Talentos em Observação
                 </span>
+                {academyLevel < 30 && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <button 
+                      onClick={onUpgradeAcademy}
+                      disabled={isConstructing}
+                      className="text-[10px] font-black text-emerald-400 hover:text-emerald-300 uppercase tracking-widest flex items-center gap-1 transition-colors disabled:opacity-50"
+                    >
+                      <ArrowUpRight className="w-3 h-3" /> Melhorar Base
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
