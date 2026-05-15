@@ -16,9 +16,19 @@ interface YouthAcademyModernTabProps {
   onPromote: (id: string) => void;
   monthlyInvestment: number;
   onSetInvestment: (amount: number) => void;
+  academyLevel: number;
+  budget: number;
+  hasScouts: boolean;
+  currentSeason: number;
+  onSell: (id: string) => void;
+  onEnrollCopinha: () => void;
+  onUpgradeAcademy: () => void;
 }
 
-export function YouthAcademyModernTab({ prospects, onPromote, monthlyInvestment, onSetInvestment }: YouthAcademyModernTabProps) {
+export function YouthAcademyModernTab({ 
+  prospects, onPromote, monthlyInvestment, onSetInvestment,
+  academyLevel, budget, hasScouts, currentSeason, onSell, onEnrollCopinha, onUpgradeAcademy
+}: YouthAcademyModernTabProps) {
   const [selectedProspect, setSelectedProspect] = useState<YouthProspect | null>(null);
   const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
 

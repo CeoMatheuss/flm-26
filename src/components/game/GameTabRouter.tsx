@@ -149,8 +149,12 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onUpdatePlayers={game.updatePlayers}
             youthProspects={game.youthProspects}
             onPromoteYouth={game.promoteYouth}
+            onSellYouth={game.sellYouth}
+            onEnrollCopinha={game.enrollCopinha}
+            onUpgradeAcademy={() => game.upgradeFacility('youthAcademy')}
             youthInvestment={game.youthInvestment}
             onSetYouthInvestment={game.setYouthInvestment}
+            infrastructure={game.infrastructure}
           />
         )}
       </TabsContent>
