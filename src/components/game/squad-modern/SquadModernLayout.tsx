@@ -34,6 +34,8 @@ interface SquadModernProps {
   onSetYouthInvestment: (amount: number) => void;
   infrastructure: any;
   onUpdateTactics?: (tactics: any) => void;
+  lastYouthGenAt?: string;
+  isPremium?: boolean;
 }
 
 export function SquadModernLayout({
