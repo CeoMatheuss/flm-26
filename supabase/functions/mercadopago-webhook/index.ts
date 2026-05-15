@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import * as crypto from "https://deno.land/std@0.177.0/node/crypto.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,26 +18,65 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // 1. Mandatory WEBHOOK_SECRET Validation
+    const xSignature = req.headers.get('x-signature')
+    const xRequestId = req.headers.get('x-request-id')
+    const webhookSecret = Deno.env.get('MERCADO_PAGO_WEBHOOK_SECRET')
+
+    if (!webhookSecret) {
+      console.error('MERCADO_PAGO_WEBHOOK_SECRET is not configured')
+      throw new Error('Server configuration error')
+    }
+
+    if (!xSignature || !xRequestId) {
+      console.error('Missing Mercado Pago signature headers')
+      return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401, headers: corsHeaders })
+    }
+
+    // Capture raw body for signature verification
+    const rawBody = await req.text()
     const url = new URL(req.url)
-    const topic = url.searchParams.get('topic') || url.searchParams.get('type')
-    const id = url.searchParams.get('id') || url.searchParams.get('data.id')
+    const dataId = url.searchParams.get('data.id') || url.searchParams.get('id')
 
-    console.log(`Webhook received: Topic=${topic}, ID=${id}`)
+    // Mercado Pago Signature Verification V2
+    // Manifest: x-signature: ts=...,v1=...
+    const parts = xSignature.split(',')
+    const tsPart = parts.find(p => p.startsWith('ts='))?.split('=')[1]
+    const v1Part = parts.find(p => p.startsWith('v1='))?.split('=')[1]
 
-    // Log the raw webhook
-    const body = await req.json()
+    if (!tsPart || !v1Part) {
+      console.error('Invalid signature format')
+      return new Response(JSON.stringify({ error: 'Invalid signature format' }), { status: 401, headers: corsHeaders })
+    }
+
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${tsPart};`
+    const hmac = crypto.createHmac('sha256', webhookSecret)
+    hmac.update(manifest)
+    const sha = hmac.digest('hex')
+
+    if (sha !== v1Part) {
+      console.error('Signature mismatch')
+      return new Response(JSON.stringify({ error: 'Signature mismatch' }), { status: 401, headers: corsHeaders })
+    }
+
+    // 2. Process validated webhook
+    const body = JSON.parse(rawBody)
+    const topic = body.type || body.topic
+    const id = body.data?.id || body.id
+
+    console.log(`Validated Webhook received: Topic=${topic}, ID=${id}`)
+
+    // Log the validated webhook
     await supabaseAdmin.from('payment_webhooks_logs').insert({
       topic,
-      external_id: id,
-      raw_data: body
+      resource_id: id,
+      payload: body
     })
 
     const mpAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN')
 
-    if (topic === 'payment' || body.type === 'payment') {
-      const paymentId = id || body.data?.id
-      
-      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    if (topic === 'payment') {
+      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
         headers: { 'Authorization': `Bearer ${mpAccessToken}` }
       })
       const paymentData = await mpResponse.json()
@@ -47,7 +87,7 @@ serve(async (req) => {
         // Update order
         await supabaseAdmin.from('payment_orders').update({
           status: 'approved',
-          payment_id: paymentId.toString(),
+          payment_id: id.toString(),
           updated_at: new Date().toISOString()
         }).eq('id', orderId)
 
@@ -63,7 +103,7 @@ serve(async (req) => {
         // Update status for non-approved
         await supabaseAdmin.from('payment_orders').update({
           status: paymentData.status,
-          payment_id: paymentId.toString(),
+          payment_id: id.toString(),
           updated_at: new Date().toISOString()
         }).eq('id', paymentData.external_reference)
       }
