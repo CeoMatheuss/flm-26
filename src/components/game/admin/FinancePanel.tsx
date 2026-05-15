@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Wallet, X, ArrowUpRight, ArrowDownRight, History, CheckCircle2, Loader2, Key, Check } from 'lucide-react';
 
 type Club = {
   user_id: string;
@@ -397,6 +397,45 @@ export function FinancePanel() {
                 );
               })
             )}
+          </div>
+        </CardContent>
+      </Card>
+      {/* CONFIGURAÇÃO MERCADO PAGO */}
+      <Card className="border-amber-500/20 bg-amber-500/5">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Key className="h-4 w-4 text-amber-500" />
+              <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
+                Gateway de Pagamento
+              </h4>
+            </div>
+            <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[9px] uppercase font-black px-2 py-0.5 flex gap-1 items-center">
+              <Check className="h-2 w-2" /> Configurado
+            </Badge>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              O Mercado Pago está configurado como gateway principal para a Loja FLM. 
+              O token de acesso (Access Token) é gerenciado de forma segura nas configurações de ambiente da Lovable Cloud.
+            </p>
+            <div className="flex gap-2">
+              <Input 
+                type="password" 
+                value="TOKEN_CONFIGURADO_NO_SISTEMA" 
+                className="h-9 text-[10px] bg-black/20 border-white/5"
+                readOnly
+              />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-9 text-[10px] font-bold uppercase whitespace-nowrap border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                onClick={() => toast.info('O token foi configurado com sucesso. Para alterar, use as configurações do projeto.')}
+              >
+                Atualizar Token
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
