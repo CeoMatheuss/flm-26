@@ -51,9 +51,6 @@ export function YouthAcademyModernTab({
   const copinhaUnlocked = currentSeason >= 2;
   const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
 
-  const isConstructing = !!academyUpgradeCompletesAt && new Date(academyUpgradeCompletesAt).getTime() > Date.now();
-
-
   return (
     <div className="space-y-8 pb-20 sm:pb-0">
       {/* Academy Overview & Investment */}
@@ -107,7 +104,7 @@ export function YouthAcademyModernTab({
       </section>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/5 rounded-2xl">
+        <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/5 rounded-2xl overflow-x-auto scrollbar-hide">
            <TabButton 
              active={activeSubTab === 'plantel'} 
              onClick={() => setActiveSubTab('plantel')} 
@@ -164,7 +161,6 @@ export function YouthAcademyModernTab({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        {/* Prospects List / Sub-tab Content */}
         <div className="xl:col-span-3">
           <AnimatePresence mode="wait">
             {activeSubTab === 'plantel' && (
@@ -310,22 +306,6 @@ export function YouthAcademyModernTab({
                     )}
                   </div>
 
-function TabButton({ active, onClick, label, icon }: { active: boolean; onClick: () => void; label: string; icon: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-        active 
-          ? "bg-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]" 
-          : "text-white/40 hover:text-white hover:bg-white/5"
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
                   <div className="relative aspect-[16/10] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
                     <img 
                       src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800" 
@@ -527,7 +507,24 @@ function TabButton({ active, onClick, label, icon }: { active: boolean; onClick:
             )}
           </AnimatePresence>
         </div>
+      </div>
     </div>
-  </div>
+  );
+}
+
+function TabButton({ active, onClick, label, icon }: { active: boolean; onClick: () => void; label: string; icon: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
+        active 
+          ? "bg-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]" 
+          : "text-white/40 hover:text-white hover:bg-white/5"
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
