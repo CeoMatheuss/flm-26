@@ -37,8 +37,52 @@ export function YouthAcademyModernTab({
   const [activeSubTab, setActiveSubTab] = useState<string>('plantel');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPos, setFilterPos] = useState('ALL');
+  const [timeLeft, setTimeLeft] = useState<string>('');
   
   const currentTier = getYouthTierByMonthlyCost(monthlyInvestment);
+
+  useEffect(() => {
+    if (!lastYouthGenAt) return;
+    const calculateTimeLeft = () => {
+      const lastGen = new Date(lastYouthGenAt).getTime();
+      const nextGen = lastGen + 7 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const diff = nextGen - now;
+
+      if (diff <= 0) {
+        setTimeLeft('Disponível agora!');
+        return;
+      }
+
+      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+      const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+      const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+      const seconds = Math.floor((diff % (60 * 1000)) / 1000);
+
+      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [lastYouthGenAt]);
+
+  const constructionProgress = React.useMemo(() => {
+    if (!isConstructing || !academyUpgradeCompletesAt) return 0;
+    const target = new Date(academyUpgradeCompletesAt).getTime();
+    const start = target - 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - start;
+    return Math.max(0, Math.min(100, (elapsed / (24 * 60 * 60 * 1000)) * 100));
+  }, [isConstructing, academyUpgradeCompletesAt]);
+
+  const constructionRemaining = React.useMemo(() => {
+    if (!isConstructing || !academyUpgradeCompletesAt) return '';
+    const diff = new Date(academyUpgradeCompletesAt).getTime() - Date.now();
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+  }, [isConstructing, academyUpgradeCompletesAt]);
+
 
   const filteredProspects = React.useMemo(() => {
     return prospects.filter(p => {
