@@ -1371,7 +1371,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">⏳ Aguardando início...</p>
                   )}
                   <EventFeed
-                    events={[...visibleEvents, ...injectedSubEvents].sort((a, b) => a.minute - b.minute).reverse().slice(0, 40)}
+                    events={[...visibleEvents, ...injectedSubEvents].sort((a, b) => {
+                      if (a.minute !== b.minute) return b.minute - a.minute;
+                      return 0;
+                    }).slice(0, 100)}
                     homeTeam={homeTeam} awayTeam={awayTeam}
                     homeShield={homeShield} awayShield={awayShield}
                   />
