@@ -216,7 +216,7 @@ export function YouthAcademyModernTab({ prospects, onPromote, monthlyInvestment,
             )}
           </AnimatePresence>
         </div>
-      </div>
-    </section>
+    </div>
+  </div>
   );
 }
