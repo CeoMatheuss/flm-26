@@ -109,7 +109,8 @@ const formationLayouts: Record<Formation, { position: string; x: number; y: numb
 
 function assignPlayersToSlots(players: Player[], formation: Formation) {
   const layout = formationLayouts[formation];
-  const available = [...players].sort((a, b) => b.overall - a.overall);
+  const starters = players.slice(0, 11);
+  const available = [...starters].sort((a, b) => b.overall - a.overall);
   const assigned: (Player | null)[] = layout.map(() => null);
 
   for (let i = 0; i < layout.length; i++) {
