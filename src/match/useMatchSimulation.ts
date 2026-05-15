@@ -250,6 +250,10 @@ export function useMatchSimulation() {
     return { hG, aG, visibleEvents: allEvents };
   }, []);
 
+  const stopTick = useCallback(() => {
+    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+  }, []);
+
   const tick = useCallback(() => {
     const data = dataRef.current;
     if (!data || isAnimatingRef.current || state.phase === 'finished') return;
@@ -351,17 +355,13 @@ export function useMatchSimulation() {
       attendance: data.attendance,
       onAnimationComplete: () => { isAnimatingRef.current = false; },
     }));
-  }, [computeStatsFromEvents, state.visibleEvents, processMatchEvent, stopTick]);
+  }, [computeStatsFromEvents, state.visibleEvents, processMatchEvent, stopTick, getAtmosphereDescription]);
 
   const startTick = useCallback(() => {
     if (unsubscribeRef.current) return;
     unsubscribeRef.current = subscribeToLoop(() => tick());
     tick();
   }, [tick]);
-
-  const stopTick = useCallback(() => {
-    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
-  }, []);
 
   const hydrateMatchRow = useCallback((data: any): boolean => {
     if (!data) return false;
