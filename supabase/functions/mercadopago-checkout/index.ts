@@ -26,7 +26,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) throw new Error('Unauthorized')
 
-    const { item_id, method, email } = await req.json()
+    const { item_id, method, email, full_name, cpf } = await req.json()
 
     // Get item details
     const { data: item, error: itemError } = await supabaseAdmin
@@ -45,7 +45,14 @@ serve(async (req) => {
         item_id: item.id,
         amount_cents: item.price_cents,
         status: 'pending',
-        metadata: { checkout_type: method === 'pix' ? 'pix_native' : 'preference', email: email || user.email }
+        metadata: { 
+          checkout_type: method === 'pix' ? 'pix_native' : 'preference', 
+          email: email || user.email, 
+          full_name, 
+          cpf,
+          item_name: item.name
+        }
+
       })
       .select()
       .single()
@@ -70,9 +77,14 @@ serve(async (req) => {
           payment_method_id: 'pix',
           payer: {
             email: email || user.email,
-            first_name: user.user_metadata?.display_name?.split(' ')[0] || 'Jogador',
-            last_name: user.user_metadata?.display_name?.split(' ').slice(1).join(' ') || 'FLM'
+            first_name: full_name?.split(' ')[0] || user.user_metadata?.display_name?.split(' ')[0] || 'Jogador',
+            last_name: full_name?.split(' ').slice(1).join(' ') || user.user_metadata?.display_name?.split(' ').slice(1).join(' ') || 'FLM',
+            identification: cpf ? {
+              type: 'CPF',
+              number: cpf
+            } : undefined
           },
+
           external_reference: order.id,
           notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`
         })
@@ -111,8 +123,15 @@ serve(async (req) => {
             currency_id: 'BRL'
           }],
           payer: {
-            email: email || user.email
+            email: email || user.email,
+            name: full_name?.split(' ')[0] || 'Jogador',
+            surname: full_name?.split(' ').slice(1).join(' ') || 'FLM',
+            identification: cpf ? {
+              type: 'CPF',
+              number: cpf
+            } : undefined
           },
+
           payment_methods: {
             excluded_payment_methods: [{ id: "pix" }], // Pix is handled natively
             excluded_payment_types: [{ id: "ticket" }], // No boleto
@@ -120,7 +139,13 @@ serve(async (req) => {
           },
           external_reference: order.id,
           notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
+          back_urls: {
+            success: `https://flm26.lovable.app`,
+            failure: `https://flm26.lovable.app`,
+            pending: `https://flm26.lovable.app`
+          },
           auto_return: 'approved'
+
         })
       })
 

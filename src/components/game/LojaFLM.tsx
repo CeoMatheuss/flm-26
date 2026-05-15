@@ -49,6 +49,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutMethod, setCheckoutMethod] = useState<'pix' | 'card'>('pix');
   const [checkoutEmail, setCheckoutEmail] = useState('');
+  const [checkoutFullName, setCheckoutFullName] = useState('');
+  const [checkoutCpf, setCheckoutCpf] = useState('');
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+
 
   useEffect(() => {
     fetchItems();
@@ -62,16 +66,28 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           schema: 'public', 
           table: 'payment_orders',
           filter: `user_id=eq.${userId}`
-        }, () => {
+        }, (payload: any) => {
           fetchHistory();
+          if (payload.new.status === 'approved' && (payload.new.id === currentOrderId || (pixData && payload.new.id === pixData.orderId))) {
+            setShowPixModal(false);
+            setShowPremium(true);
+            const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+            window.dispatchEvent(new CustomEvent('flm:purchase-success', { 
+              detail: { item_name: payload.new.metadata?.item_name || 'Seu Item' } 
+            }));
+
+          }
         })
+
         .subscribe();
         
       return () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [userId]);
+  }, [userId, currentOrderId, pixData]);
 
   async function fetchItems() {
     try {
@@ -134,6 +150,18 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       return;
     }
 
+    if (checkoutMethod === 'card') {
+      if (!checkoutFullName || checkoutFullName.trim().split(' ').length < 2) {
+        toast.error('Por favor, insira seu nome completo.');
+        return;
+      }
+      if (!checkoutCpf || checkoutCpf.replace(/\D/g, '').length !== 11) {
+        toast.error('Por favor, insira um CPF válido (11 dígitos).');
+        return;
+      }
+    }
+
+
     setLoading(true);
     setShowCheckoutModal(false);
     
@@ -142,9 +170,12 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         body: { 
           item_id: selectedItem.id,
           method: checkoutMethod,
-          email: checkoutEmail
+          email: checkoutEmail,
+          full_name: checkoutFullName,
+          cpf: checkoutCpf.replace(/\D/g, '')
         }
       });
+
 
       if (error) throw error;
 
@@ -156,8 +187,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         });
         setShowPixModal(true);
       } else if (data?.init_point) {
+        setCurrentOrderId(data.order_id);
         window.location.href = data.init_point;
       } else if (data?.status === 'approved' || selectedItem.price_cents === 0) {
+
         setShowPremium(true);
         toast.success(`Compra concluída: ${selectedItem.name}!`);
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
@@ -431,7 +464,47 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                   </div>
                 </div>
 
+                {checkoutMethod === 'card' && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">Nome Completo</p>
+                      <div className="relative">
+                        <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                        <input 
+                          type="text" 
+                          placeholder="Como no cartão"
+                          value={checkoutFullName}
+                          onChange={(e) => setCheckoutFullName(e.target.value)}
+                          className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">CPF</p>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                        <input 
+                          type="text" 
+                          placeholder="000.000.000-00"
+                          value={checkoutCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                            setCheckoutCpf(val);
+                          }}
+
+                          className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 <div className="space-y-2">
+
                   <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-widest text-left">Forma de Pagamento</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button 
