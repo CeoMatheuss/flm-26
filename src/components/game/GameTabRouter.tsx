@@ -455,7 +455,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           />
         )}
       </TabsContent>
-      <TabsContent value="finance"><FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} /></TabsContent>
+      <TabsContent value="finance">{isTabBlocked('finances') ? <BlockedMessage /> : <FinanceTab budget={game.club.budget} finances={game.finances} totalSalaries={game.totalSalaries} players={game.club.players} scouts={game.club.scouts} sponsors={game.sponsors} infrastructure={game.infrastructure} fans={game.club.fans} ticketPrice={game.club.ticketPrice} youthInvestment={game.youthInvestment} />}</TabsContent>
       <TabsContent value="sponsors">
         <SponsorsTab
           sponsors={game.sponsors}
