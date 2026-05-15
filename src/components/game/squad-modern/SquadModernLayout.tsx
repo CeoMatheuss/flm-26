@@ -196,8 +196,9 @@ export function SquadModernLayout({
               </div>
               <div className="flex items-center gap-2">
                  <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
-                    {tactics.formation}
+                    {actualFormation}
                  </span>
+                 <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest ml-1">Real</span>
               </div>
            </div>
 
