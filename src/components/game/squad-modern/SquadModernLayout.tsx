@@ -37,7 +37,7 @@ export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers,
   youthProspects, onPromoteYouth, youthInvestment, onSetYouthInvestment,
 }: SquadModernProps) {
-  const [activeTab, setActiveTab] = useState<'squad' | 'youth' | 'tactics'>('squad');
+  const [activeTab, setActiveTab] = useState<string>('titulares');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -108,6 +108,8 @@ export function SquadModernLayout({
     return m;
   }, [sorted]);
 
+  const isPlayerCategoryTab = !['tactics', 'base'].includes(activeTab);
+
   return (
     <div className="h-full flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30">
       <SquadHeader 
@@ -118,20 +120,28 @@ export function SquadModernLayout({
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
-        {/* Modern Tab Navigation */}
-        <div className="px-4 sm:px-6 py-2 bg-zinc-950/50 border-b border-white/5 flex items-center justify-between">
-          <TabsList className="bg-white/5 border border-white/5 p-1 h-10 gap-1 rounded-2xl">
-            <TabTrigger value="squad" icon={<Users className="w-3.5 h-3.5" />} label="Elenco" />
-            <TabTrigger value="youth" icon={<Sparkles className="w-3.5 h-3.5" />} label="Base" />
-            <TabTrigger value="tactics" icon={<Shield className="w-3.5 h-3.5" />} label="Tático" />
-          </TabsList>
+        {/* Modern Tab Navigation - Multi-Row for many tabs */}
+        <div className="px-4 sm:px-6 py-2 bg-zinc-950/50 border-b border-white/5 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-4 overflow-x-auto scrollbar-hide pb-1">
+            <TabsList className="bg-white/5 border border-white/5 p-1 h-10 gap-1 rounded-2xl shrink-0">
+              <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
+              <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
+              <TabTrigger value="base" icon={<Sparkles className="w-3.5 h-3.5" />} label="Juniores" />
+              <TabTrigger value="afastados" icon={<Ban className="w-3.5 h-3.5" />} label="Afastados" />
+              <TabTrigger value="lesionados" icon={<Stethoscope className="w-3.5 h-3.5" />} label="Lesionados" />
+              <TabTrigger value="suspensos" icon={<Clock className="w-3.5 h-3.5" />} label="Suspensos" />
+              <TabTrigger value="emprestados" icon={<Share2 className="w-3.5 h-3.5" />} label="Emprestados" />
+              <TabTrigger value="transferencias" icon={<ArrowRightLeft className="w-3.5 h-3.5" />} label="Mercado" />
+              <TabTrigger value="tactics" icon={<Briefcase className="w-3.5 h-3.5" />} label="Tático" />
+            </TabsList>
 
-          {activeTab === 'squad' && (
-            <div className="hidden sm:flex items-center gap-1 p-1 bg-white/5 border border-white/5 rounded-xl">
-              <ViewToggle active={viewMode === 'grid'} onClick={() => setViewMode('grid')} icon={<LayoutGrid className="w-3.5 h-3.5" />} />
-              <ViewToggle active={viewMode === 'list'} onClick={() => setViewMode('list')} icon={<List className="w-3.5 h-3.5" />} />
-            </div>
-          )}
+            {isPlayerCategoryTab && (
+              <div className="hidden sm:flex items-center gap-1 p-1 bg-white/5 border border-white/5 rounded-xl shrink-0">
+                <ViewToggle active={viewMode === 'grid'} onClick={() => setViewMode('grid')} icon={<LayoutGrid className="w-3.5 h-3.5" />} />
+                <ViewToggle active={viewMode === 'list'} onClick={() => setViewMode('list')} icon={<List className="w-3.5 h-3.5" />} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-hidden relative">
@@ -143,15 +153,41 @@ export function SquadModernLayout({
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                  "h-full p-4 sm:p-6",
-                  activeTab === 'squad' ? "space-y-8" : ""
+                  "h-full p-4 sm:p-6 space-y-8"
                 )}
               >
-                {activeTab === 'squad' && (
+                {activeTab === 'base' ? (
+                  <YouthAcademyModernTab
+                    prospects={youthProspects}
+                    onPromote={onPromoteYouth}
+                    monthlyInvestment={youthInvestment}
+                    onSetInvestment={onSetYouthInvestment}
+                  />
+                ) : activeTab === 'tactics' ? (
+                  <TacticsTab players={players} tactics={tactics} onUpdate={() => {}} />
+                ) : (
                   <>
                     {POS_ORDER.map(pos => {
                       const list = grouped.get(pos) ?? [];
-                      if (!list.length) return null;
+                      // Filter based on active tab
+                      const filteredList = list.filter(p => {
+                        const isStarter = starterIds.has(p.id);
+                        const status = getPlayerStatus(p, isStarter);
+                        
+                        switch (activeTab) {
+                          case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
+                          case 'reservas': return !isStarter && status === 'reserva';
+                          case 'afastados': return status === 'afastado' || status === 'indisponivel';
+                          case 'lesionados': return status === 'lesionado' || !!p.injury;
+                          case 'suspensos': return status === 'suspenso';
+                          case 'emprestados': return status === 'emprestado';
+                          case 'transferencias': return status === 'lista-transferencia';
+                          default: return true;
+                        }
+                      });
+
+                      if (!filteredList.length) return null;
+
                       return (
                         <section key={pos} className="space-y-4">
                           <header className="flex items-center gap-3 px-1">
@@ -161,14 +197,14 @@ export function SquadModernLayout({
                               </h3>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500 to-transparent rounded-full" />
-                                <span className="text-[10px] text-white/30 font-black uppercase tracking-widest">{list.length} Atletas</span>
+                                <span className="text-[10px] text-white/30 font-black uppercase tracking-widest">{filteredList.length} Atletas</span>
                               </div>
                             </div>
                           </header>
 
                           {viewMode === 'grid' ? (
                             <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 sm:gap-6">
-                              {list.map(p => (
+                              {filteredList.map(p => (
                                 <PremiumPlayerCard
                                   key={p.id}
                                   player={p}
@@ -180,7 +216,7 @@ export function SquadModernLayout({
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              {list.map(p => (
+                              {filteredList.map(p => (
                                 <PlayerRow
                                   key={p.id}
                                   player={p}
@@ -194,29 +230,38 @@ export function SquadModernLayout({
                         </section>
                       );
                     })}
-                    {!players.length && (
-                      <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mb-4 text-white/20">
-                          <Users className="w-8 h-8" />
-                        </div>
-                        <h4 className="text-white font-bold">Nenhum jogador</h4>
-                        <p className="text-white/40 text-sm mt-1">Seu elenco está vazio.</p>
-                      </div>
-                    )}
+                    
+                    {/* Empty State */}
+                    {(() => {
+                       const totalInTab = players.filter(p => {
+                         const isStarter = starterIds.has(p.id);
+                         const status = getPlayerStatus(p, isStarter);
+                         switch (activeTab) {
+                           case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
+                           case 'reservas': return !isStarter && status === 'reserva';
+                           case 'afastados': return status === 'afastado' || status === 'indisponivel';
+                           case 'lesionados': return status === 'lesionado' || !!p.injury;
+                           case 'suspensos': return status === 'suspenso';
+                           case 'emprestados': return status === 'emprestado';
+                           case 'transferencias': return status === 'lista-transferencia';
+                           default: return true;
+                         }
+                       }).length;
+
+                       if (totalInTab === 0) {
+                         return (
+                           <div className="flex flex-col items-center justify-center py-24 text-center">
+                             <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mb-4 text-white/20">
+                               <Users className="w-8 h-8" />
+                             </div>
+                             <h4 className="text-white font-bold">Categoria Vazia</h4>
+                             <p className="text-white/40 text-sm mt-1">Nenhum jogador corresponde a este filtro.</p>
+                           </div>
+                         );
+                       }
+                       return null;
+                    })()}
                   </>
-                )}
-
-                {activeTab === 'youth' && (
-                  <YouthAcademyModernTab
-                    prospects={youthProspects}
-                    onPromote={onPromoteYouth}
-                    monthlyInvestment={youthInvestment}
-                    onSetInvestment={onSetYouthInvestment}
-                  />
-                )}
-
-                {activeTab === 'tactics' && (
-                  <TacticsTab players={players} tactics={tactics} onUpdate={() => {}} />
                 )}
               </motion.div>
             </TabsContent>
@@ -241,7 +286,7 @@ function TabTrigger({ value, icon, label }: { value: string; icon: React.ReactNo
     <TabsTrigger 
       value={value}   
       className={cn(
-        "text-[11px] font-black uppercase tracking-widest rounded-xl px-4 h-8 gap-2",
+        "text-[11px] font-black uppercase tracking-widest rounded-xl px-4 h-8 gap-2 shrink-0",
         "transition-all duration-300 data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
       )}
     >
