@@ -312,6 +312,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <ArrowLeft className="h-4 w-4" /> Voltar ao Elenco
         </Button>
 
+
         {/* Player Header Card - Modern AAA Style */}
         <div className={`relative rounded-3xl border-2 ${ovr.border} bg-slate-900/80 backdrop-blur-xl p-6 overflow-hidden shadow-2xl`}>
           {/* Decorative background elements */}
