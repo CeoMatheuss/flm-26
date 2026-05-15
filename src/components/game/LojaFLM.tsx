@@ -37,16 +37,27 @@ export function LojaFLM({ club, infrastructure, userId }: LojaProps) {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
+  const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
 
   useEffect(() => {
     fetchItems();
-  }, []);
+    if (userId) fetchHistory();
+  }, [userId]);
 
   async function fetchItems() {
     setLoading(true);
     const { data } = await supabase.from('shop_items').select('*');
     if (data) setItems(data);
     setLoading(false);
+  }
+
+  async function fetchHistory() {
+    const { data } = await supabase
+      .from('payment_orders')
+      .select('*, shop_items(name)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (data) setPurchaseHistory(data);
   }
 
   const handlePurchase = async (item: any) => {
