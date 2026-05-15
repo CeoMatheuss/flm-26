@@ -219,6 +219,9 @@ export function TacticsTab({ tactics, players, onUpdate, onChangePosition, seaso
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-xs sm:text-sm font-bold">{tactics.formation}</span>
               <Badge variant="secondary" className="text-[9px] sm:text-[10px] capitalize">{tactics.playStyle}</Badge>
+              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-primary/5 text-primary border-primary/20">
+                OVR: {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+              </Badge>
             </div>
             <div className="flex items-center gap-1.5">
               {injuredCount > 0 && <Badge variant="destructive" className="text-[9px]">🏥 {injuredCount}</Badge>}
