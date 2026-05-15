@@ -11,7 +11,7 @@ import { PlayerDetailPanel } from './PlayerDetailPanel';
 import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
 import { toast } from 'sonner';
-import { Users, Shield, Sparkles, Ban, Stethoscope, Clock, Briefcase, Share2, ArrowRightLeft, LayoutDashboard } from 'lucide-react';
+import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
