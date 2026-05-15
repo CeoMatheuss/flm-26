@@ -145,12 +145,15 @@ export function SquadModernLayout({
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}
                            academyLevel={infrastructure?.youthAcademy?.level ?? 0}
+                           academyUpgradeCompletesAt={infrastructure?.youthAcademy?.upgradeCompletesAt}
                            budget={club.budget}
                            hasScouts={(club.scouts || []).length > 0}
                            currentSeason={season?.currentSeason || 1}
                            onSell={onSellYouth || (() => {})}
                            onEnrollCopinha={onEnrollCopinha || (() => {})}
                            onUpgradeAcademy={onUpgradeAcademy || (() => {})}
+                           lastYouthGenAt={lastYouthGenAt}
+                           isPremium={isPremium}
                          />
                       </div>
                     ) : (
