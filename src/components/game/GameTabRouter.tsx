@@ -104,23 +104,25 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
   return (
     <>
       <TabsContent value="dashboard">
-        <DashboardTab 
-          club={game.club} 
-          events={game.events} 
-          infrastructure={game.infrastructure} 
-          onOpenNewspaper={() => setActiveTab('journal')} 
-          onGoToFriendly={() => setActiveTab('matches')} 
-          userId={userId} 
-          onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} 
-          onExploreOtherModes={() => setActiveTab('copas')}
-          clubProfile={game.clubProfile} 
-          season={game.season?.currentSeason} 
-          currentWeek={game.season?.currentWeek} 
-          totalWeeks={game.season?.totalWeeks} 
-          onViewClub={(name) => { toast.info(`Perfil de ${name}`); }} 
-          onGoToSquad={() => setActiveTab('squad')}
-          onRestAll={(game as any).restAllPlayers}
-        />
+        {isTabBlocked('dashboard') ? <BlockedMessage /> : (
+          <DashboardTab 
+            club={game.club} 
+            events={game.events} 
+            infrastructure={game.infrastructure} 
+            onOpenNewspaper={() => setActiveTab('journal')} 
+            onGoToFriendly={() => setActiveTab('matches')} 
+            userId={userId} 
+            onOpenTournament={(id: string) => { setActiveTournamentId(id); setActiveTab('tournament'); }} 
+            onExploreOtherModes={() => setActiveTab('copas')}
+            clubProfile={game.clubProfile} 
+            season={game.season?.currentSeason} 
+            currentWeek={game.season?.currentWeek} 
+            totalWeeks={game.season?.totalWeeks} 
+            onViewClub={(name) => { toast.info(`Perfil de ${name}`); }} 
+            onGoToSquad={() => setActiveTab('squad')}
+            onRestAll={(game as any).restAllPlayers}
+          />
+        )}
       </TabsContent>
       <TabsContent value="tournament">
         {activeTournamentId ? (
@@ -146,103 +148,104 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
 
       <TabsContent value="squad">
-        <SquadTab
-          players={game.club.players}
-          budget={game.club.budget}
-          clubName={game.club.name}
-          trainingLevel={game.infrastructure.trainingCenter.level}
-          onRest={game.restPlayer}
-          onRenewContract={(playerId, newSalary, newDuration) => {
-            const player = game.club.players.find(p => p.id === playerId);
-            game.renewContract(playerId, newSalary, newDuration);
-            if (player) {
-              const extra = `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês`;
-              onSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: extra });
-              saveSigningNews(player.name, player.position, player.overall, player.age, 'renewal', extra);
-            }
-          }}
-          onListForSale={async (playerId: string) => {
-            const player = game.club.players.find(p => p.id === playerId);
-            if (!player) return;
-            if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para vender!'); return; }
-            const askingPrice = (await import('@/utils/playerGenerator')).getPlayerValue(player);
-            const res = await supabase.functions.invoke('process-transfer', {
-              body: {
-                action: 'list',
-                playerData: player,
-                playerName: player.name,
-                playerPosition: player.position,
-                playerOverall: player.overall,
-                playerAge: player.age,
-                askingPrice,
-                clubName: game.club.name,
-                sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
-              },
-            });
-            if (res.error || res.data?.error) {
-              toast.error(res.data?.error || 'Erro ao listar jogador');
-            } else {
-              toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
-            }
-          }}
-          onLoanOut={async (playerId, terms) => {
-            const player = game.club.players.find(p => p.id === playerId);
-            if (!player) return;
-            if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
-            const res = await supabase.functions.invoke('process-transfer', {
-              body: {
-                action: 'loan-list',
-                playerData: player,
-                playerName: player.name,
-                playerPosition: player.position,
-                playerOverall: player.overall,
-                playerAge: player.age,
-                salary: player.salary || 0,
-                clubName: game.club.name,
-                sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
-                salaryPayer: terms?.salaryPayer ?? 'buyer',
-                salarySplitPct: terms?.salarySplitPct ?? 0,
-                loanFee: terms?.loanFee ?? 0,
-                openToOffers: true,
-              },
-            });
-            if (res.error || res.data?.error) {
-              toast.error(res.data?.error || 'Erro ao anunciar empréstimo');
-            } else {
-              toast.success(`${player.name} anunciado no Mercado de Empréstimos! 🔄`);
-            }
-          }}
-          onChangeNumber={game.changeShirtNumber}
-          canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
-          userId={userId}
-          onAuction={async (player) => {
-            const baseValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
-            // Floor by OVR (matches validate_auction trigger)
-            const ovr = player.overall;
-            const minByOvr = ovr >= 80 ? 500000 : ovr >= 70 ? 300000 : ovr >= 60 ? 200000 : 100000;
-            const halfValue = Math.max(baseValue, minByOvr);
-            const { error } = await supabase.from('player_auctions').insert([{
-              seller_id: userId,
-              seller_club_name: game.club.name,
-              player_data: player as any,
-              player_name: player.name,
-              player_overall: player.overall,
-              player_age: player.age,
-              min_price: halfValue,
-              current_bid: halfValue,
-            }]);
-            if (error) {
-              toast.error('Erro ao criar leilão');
-            } else {
-              toast.success(`${player.name} colocado em leilão!`);
-            }
-          }}
-          transferBudget={(game as any).transferBudget}
-          onRescindPlayer={(game as any).rescindPlayer}
-          onReorderPlayers={game.updatePlayers}
-          onRotateSquad={(game as any).rotateSquad}
-          tactics={game.tactics}
-        />
+        {isTabBlocked('squad') ? <BlockedMessage /> : (
+          <SquadTab
+            players={game.club.players}
+            budget={game.club.budget}
+            clubName={game.club.name}
+            trainingLevel={game.infrastructure.trainingCenter.level}
+            onRest={game.restPlayer}
+            onRenewContract={(playerId, newSalary, newDuration) => {
+              const player = game.club.players.find(p => p.id === playerId);
+              game.renewContract(playerId, newSalary, newDuration);
+              if (player) {
+                const extra = `${newDuration} ano(s) • R$${(newSalary / 1000).toFixed(0)}k/mês`;
+                onSigningPlayer({ name: player.name, position: player.position, overall: player.overall, age: player.age, eventType: 'renewal', extraInfo: extra });
+                saveSigningNews(player.name, player.position, player.overall, player.age, 'renewal', extra);
+              }
+            }}
+            onListForSale={async (playerId: string) => {
+              const player = game.club.players.find(p => p.id === playerId);
+              if (!player) return;
+              if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para vender!'); return; }
+              const askingPrice = (await import('@/utils/playerGenerator')).getPlayerValue(player);
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: {
+                  action: 'list',
+                  playerData: player,
+                  playerName: player.name,
+                  playerPosition: player.position,
+                  playerOverall: player.overall,
+                  playerAge: player.age,
+                  askingPrice,
+                  clubName: game.club.name,
+                  sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+                },
+              });
+              if (res.error || res.data?.error) {
+                toast.error(res.data?.error || 'Erro ao listar jogador');
+              } else {
+                toast.success(`${player.name} anunciado no mercado por R$${(askingPrice / 1000).toFixed(0)}k! 🏷️`);
+              }
+            }}
+            onLoanOut={async (playerId, terms) => {
+              const player = game.club.players.find(p => p.id === playerId);
+              if (!player) return;
+              if (game.club.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return; }
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: {
+                  action: 'loan-list',
+                  playerData: player,
+                  playerName: player.name,
+                  playerPosition: player.position,
+                  playerOverall: player.overall,
+                  playerAge: player.age,
+                  salary: player.salary || 0,
+                  clubName: game.club.name,
+                  sellerShield: game.club.shieldPattern ? { primaryColor: game.club.primaryColor || '#2563EB', secondaryColor: game.club.secondaryColor || '#FFF', pattern: game.club.shieldPattern, shape: (game.club as any).shieldShape || 'classic' } : null,
+                  salaryPayer: terms?.salaryPayer ?? 'buyer',
+                  salarySplitPct: terms?.salarySplitPct ?? 0,
+                  loanFee: terms?.loanFee ?? 0,
+                  openToOffers: true,
+                },
+              });
+              if (res.error || res.data?.error) {
+                toast.error(res.data?.error || 'Erro ao anunciar empréstimo');
+              } else {
+                toast.success(`${player.name} anunciado no Mercado de Empréstimos! 🔄`);
+              }
+            }}
+            onChangeNumber={game.changeShirtNumber}
+            canLoanOut={game.loanedPlayers.filter(l => l.direction === 'out').length < 3}
+            userId={userId}
+            onAuction={async (player) => {
+              const baseValue = Math.floor((player.overall * 15000 * (player.age < 25 ? 1.3 : player.age > 30 ? 0.7 : 1)) / 2);
+              const ovr = player.overall;
+              const minByOvr = ovr >= 80 ? 500000 : ovr >= 70 ? 300000 : ovr >= 60 ? 200000 : 100000;
+              const halfValue = Math.max(baseValue, minByOvr);
+              const { error } = await supabase.from('player_auctions').insert([{
+                seller_id: userId,
+                seller_club_name: game.club.name,
+                player_data: player as any,
+                player_name: player.name,
+                player_overall: player.overall,
+                player_age: player.age,
+                min_price: halfValue,
+                current_bid: halfValue,
+              }]);
+              if (error) {
+                toast.error('Erro ao criar leilão');
+              } else {
+                toast.success(`${player.name} colocado em leilão!`);
+              }
+            }}
+            transferBudget={(game as any).transferBudget}
+            onRescindPlayer={(game as any).rescindPlayer}
+            onReorderPlayers={game.updatePlayers}
+            onRotateSquad={(game as any).rotateSquad}
+            tactics={game.tactics}
+          />
+        )}
       </TabsContent>
       <TabsContent value="league">
         {isTabBlocked('leagues') ? <BlockedMessage /> : <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />}
@@ -358,7 +361,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       <TabsContent value="stadium">
-        {isTabBlocked('training') ? <BlockedMessage /> : (
+        {isTabBlocked('stadium') ? <BlockedMessage /> : (
           <StadiumTab
             infrastructure={game.infrastructure}
             budget={game.club.budget}
@@ -485,26 +488,25 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="journal"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="newspaper"><NewspaperFullPage onBack={() => setActiveTab('dashboard')} /></TabsContent>
       <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} uniforms={uniforms} onSave={setUniforms} sponsors={game.sponsors} players={game.club.players} clubReputation={game.club.reputation} /></TabsContent>
-      <TabsContent value="auction">{isTabBlocked('auction') ? <BlockedMessage /> : <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />}</TabsContent>
+      <TabsContent value="auction">{isTabBlocked('auctions') ? <BlockedMessage /> : <AuctionTab userId={userId} clubName={game.club.name} players={game.club.players} budget={game.club.budget} isPremium={true} />}</TabsContent>
       <TabsContent value="pacotinhos">
         {isTabBlocked('pacotinhos') ? <BlockedMessage /> : <PacotinhosTab budget={game.club.budget} userId={userId} onBuyPack={(newPlayers, cost) => { game.addPackPlayers(newPlayers, cost); }} />}
       </TabsContent>
       <TabsContent value="shop">
-        <LojaFLM 
-          club={game.club} 
-          infrastructure={game.infrastructure} 
-          userId={userId} 
-          onUpgradeFacility={(f) => game.upgradeFacility(f as any)}
-          onAcceptSponsor={(cfg) => {
-            // Usamos require dinâmico se necessário ou apenas passamos o callback
-            // Para segurança e simplicidade, vamos assumir que o hook game.acceptSponsor 
-            // lida com o objeto SponsorOffer.
-            import('@/data/flmSponsors').then(({ convertToSponsorOffer }) => {
-              const offer = convertToSponsorOffer(cfg, game.club.fans);
-              game.acceptSponsor(offer);
-            });
-          }}
-        />
+        {isTabBlocked('shop') ? <BlockedMessage /> : (
+          <LojaFLM 
+            club={game.club} 
+            infrastructure={game.infrastructure} 
+            userId={userId} 
+            onUpgradeFacility={(f) => game.upgradeFacility(f as any)}
+            onAcceptSponsor={(cfg) => {
+              import('@/data/flmSponsors').then(({ convertToSponsorOffer }) => {
+                const offer = convertToSponsorOffer(cfg, game.club.fans);
+                game.acceptSponsor(offer);
+              });
+            }}
+          />
+        )}
       </TabsContent>
       <TabsContent value="stats">
         <div className="p-8 text-center text-muted-foreground">
