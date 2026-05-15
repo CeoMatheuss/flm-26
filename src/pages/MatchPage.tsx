@@ -130,6 +130,9 @@ export default function MatchPage() {
 
         const vipUnits = Object.values(locState.vipBoxesBuilt || {}).reduce((a, b) => a + (b || 0), 0);
         
+        // Attempt to get level from stadiumOps, or use a heuristic based on capacity
+        const stadiumLevel = (locState.stadiumOps as any)?.level || Math.max(1, Math.min(15, Math.ceil(locState.stadiumCapacity / 8000)));
+
         const economy = calculateStadiumEconomy({
           fans: locState.fans || 1000,
           reputation: locState.reputation ?? 50,
@@ -137,7 +140,7 @@ export default function MatchPage() {
           winStreak: locState.winStreak ?? 0,
           loseStreak: locState.loseStreak ?? 0,
           stadiumCapacity: physicalCapacity,
-          stadiumLevel: locState.stadiumOps?.stadiumLevel ?? 1,
+          stadiumLevel: stadiumLevel,
           importance,
           vipUnits
         });
@@ -150,6 +153,7 @@ export default function MatchPage() {
       } catch (e) {
         console.warn('[Stadium] Failed to compute attendance, using raw capacity', e);
       }
+
 
     }
 
