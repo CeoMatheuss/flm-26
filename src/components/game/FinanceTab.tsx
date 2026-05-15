@@ -33,12 +33,24 @@ export function FinanceTab({ budget, finances, totalSalaries, players, scouts, s
   const totalDespesas = finances.filter(f => f.type === 'despesa').reduce((s, f) => s + f.amount, 0);
   const saldo = totalReceitas - totalDespesas;
 
-  // Costs breakdown
-  const scoutSalaries = scouts.reduce((s, sc) => s + sc.salary, 0);
-  const stadiumCapacity = getStadiumCapacity(infrastructure.stadium.level);
-  const estimatedAttendance = Math.min(stadiumCapacity, Math.floor(fans * 0.1));
-  const estimatedMatchRevenue = estimatedAttendance * ticketPrice;
+  // Centralized Stadium Economy Engine for revenue projection
+  const stadiumEconomy = useMemo(() => {
+    return calculateStadiumEconomy({
+      fans: safeNumber(fans),
+      reputation: safeNumber(infrastructure.trainingCenter.level * 4 + 40), // Heuristic
+      ticketPrice: safeNumber(ticketPrice),
+      winStreak: 0, // Dashboard projection is average
+      loseStreak: 0,
+      importance: 'liga',
+      stadiumCapacity: getStadiumCapacity(infrastructure.stadium.level),
+      stadiumLevel: infrastructure.stadium.level,
+      vipUnits: Object.values((infrastructure as any).vipBoxesBuilt || {}).reduce((a: any, b: any) => a + (b || 0), 0) as number
+    });
+  }, [fans, infrastructure, ticketPrice]);
+
+  const estimatedMatchRevenue = stadiumEconomy.revenue.total;
   const sponsorMonthly = sponsors.reduce((s, sp) => s + sp.monthlyPay, 0);
+
 
   // Group finances by category
   const categoryTotals = finances.reduce((acc, f) => {
