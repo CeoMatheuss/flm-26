@@ -388,6 +388,8 @@ export type PotentialTier = 'comum' | 'raro' | 'elite' | 'joia_base' | 'geracao_
 
 export function getPotentialTier(potential: number, overall: number): PotentialTier {
   if (potential >= 95) return 'geracao_dourada';
+export function getPotentialTier(potential: number, overall: number): PotentialTier {
+  if (potential >= 95) return 'geracao_dourada';
   if (potential >= 90) return 'joia_base';
   if (potential >= 85) return 'elite';
   if (potential >= 78) return 'raro';
@@ -396,11 +398,12 @@ export function getPotentialTier(potential: number, overall: number): PotentialT
 
 export const potentialTierInfo: Record<PotentialTier, { label: string; emoji: string; color: string; border: string }> = {
   comum: { label: 'Comum', emoji: '⚪', color: 'text-white/40', border: 'border-white/10' },
-  raro: { label: 'Raro', emoji: '🔵', color: 'text-blue-400', border: 'border-blue-400/30' },
-  elite: { label: 'Elite', emoji: '🟣', color: 'text-purple-400', border: 'border-purple-400/30' },
+  raro: { label: 'Bom talento', emoji: '🔵', color: 'text-blue-400', border: 'border-blue-400/30' },
+  elite: { label: 'Promessa', emoji: '🟣', color: 'text-purple-400', border: 'border-purple-400/30' },
   joia_base: { label: 'Joia da Base', emoji: '💎', color: 'text-cyan-400', border: 'border-cyan-400/30' },
-  geracao_dourada: { label: 'Geração Dourada', emoji: '🌟', color: 'text-amber-400', border: 'border-amber-400/30' },
+  geracao_dourada: { label: 'Craque Geracional', emoji: '🌟', color: 'text-amber-400', border: 'border-amber-400/30' },
 };
+
 
 // Player evolution status
 export type EvolutionStatus = 'evoluindo' | 'estavel' | 'travado';
