@@ -106,6 +106,7 @@ export interface TacticsConfig {
   defenseLine: DefenseLine;
   width: Width;
   playerInstructions: PlayerInstruction[];
+  autoUpdateLineup?: boolean;
   captainId?: string;
   freeKickTakerId?: string;
   penaltyTakerId?: string;
