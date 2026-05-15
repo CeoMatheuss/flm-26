@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { YouthProspect, getYouthTierByMonthlyCost, youthInvestmentTiers } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
