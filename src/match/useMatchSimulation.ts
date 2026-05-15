@@ -338,8 +338,8 @@ export function useMatchSimulation() {
     const progress = Math.min(1, elapsed / durationMs);
     const currentMinute = data.status === 'finished' ? maxMinute : Math.floor(progress * maxMinute);
     const visibleEvents = events.filter(e => (Number(e.minute) || 0) <= currentMinute);
-    const homeGoals = visibleEvents.filter(e => e.isGoal && e.type !== 'penalty_shootout' && e.team === 'home').length;
-    const awayGoals = visibleEvents.filter(e => e.isGoal && e.type !== 'penalty_shootout' && e.team === 'away').length;
+    const homeGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'home').length;
+    const awayGoals = visibleEvents.filter(e => (e.isGoal === true || e.type === 'goal' || e.description.toUpperCase().includes('GOL')) && e.type !== 'penalty_shootout' && e.team === 'away').length;
 
     dataRef.current = {
       allEvents: events,
