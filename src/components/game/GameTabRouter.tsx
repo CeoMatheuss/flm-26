@@ -21,7 +21,7 @@ import { MembersTab } from '@/components/game/MembersTab';
 import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
 import { GlobalChatTab } from '@/components/game/GlobalChatTab';
 import { AuctionTab } from '@/components/game/AuctionTab';
-import { UniformsTab, UniformsData } from '@/components/game/UniformsTab';
+import { UniformsTab } from '@/components/game/UniformsTab';
 import { AchievementsTab } from '@/components/game/AchievementsTab';
 import { ClubProfileTab } from '@/components/game/ClubProfileTab';
 import { CTRoomsTab } from '@/components/game/CTRoomsTab';
@@ -43,7 +43,7 @@ import { SquadModernLayout } from "./squad-modern/SquadModernLayout";
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Lock, TrendingUp } from 'lucide-react';
 import { LeagueTab } from './LeagueTab';
 import type { useGame } from '@/hooks/useGame';
@@ -275,6 +275,26 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
             onUpgradeFacility={game.upgradeFacility}
             onUpgradeCTRoom={game.upgradeCTRoom}
+            stadiumProps={{
+               stadiumName: game.club.stadiumName,
+               infrastructure: game.infrastructure,
+               onUpgrade: (f: any) => game.upgradeFacility(f),
+               budget: game.club.budget,
+               clubName: game.club.name,
+               userId,
+               onRenameStadium: game.renameStadium,
+               onSetTicketPrice: game.setTicketPrice,
+               onBuildVipBox: game.buildVipBox,
+               stadiumOps: game.club.stadiumOps,
+               onAcceptStadiumEvent: game.acceptStadiumEvent,
+               onRejectStadiumEvent: game.rejectStadiumEvent,
+               onStartStadiumRepair: game.startStadiumRepair,
+               onBuyStadiumInsurance: game.buyStadiumInsurance,
+               onCancelStadiumInsurance: game.cancelStadiumInsurance,
+               onAcceptStadiumSponsor: game.acceptStadiumSponsor,
+               onRejectStadiumSponsor: game.rejectStadiumSponsor,
+               onBuyModularUpgrade: game.buyModularUpgrade
+            }}
           />
         )}
       </TabsContent>
@@ -296,12 +316,27 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onUpgradeCT={() => game.upgradeFacility('trainingCenter')}
             onUpgradeFacility={game.upgradeFacility}
             onUpgradeCTRoom={game.upgradeCTRoom}
+            youthProps={{
+              prospects: game.youthProspects,
+              academyLevel: game.infrastructure.youthAcademy.level,
+              academyUpgradeCompletesAt: game.infrastructure.youthAcademy.upgradeCompletesAt,
+              isPremium,
+              monthlyInvestment: game.youthInvestment,
+              budget: game.club.budget,
+              hasScouts: (game.club.scouts || []).length > 0,
+              currentSeason: game.season.currentSeason,
+              onPromote: game.promoteYouth,
+              onSell: game.sellYouth,
+              onEnrollCopinha: game.enrollCopinha,
+              onSetInvestment: game.setYouthInvestment,
+              onUpgradeAcademy: () => game.upgradeFacility('youthAcademy')
+            }}
           />
         )}
       </TabsContent>
 
       <TabsContent value="journal">
-        {isTabBlocked('newspaper') ? <BlockedMessage /> : <NewspaperFullPage userId={userId} clubName={game.club.name} />}
+        {isTabBlocked('newspaper') ? <BlockedMessage /> : <NewspaperFullPage onBack={() => setActiveTab('dashboard')} />}
       </TabsContent>
       
       <TabsContent value="staff">
@@ -332,7 +367,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             finances={game.finances} 
             totalSalaries={game.totalSalaries} 
             players={game.club.players} 
-            scouts={game.club.scouts} 
+            scouts={game.club.scouts || []} 
             sponsors={game.sponsors}
             infrastructure={game.infrastructure} 
             fans={game.club.fans}
@@ -342,7 +377,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="settings"><SettingsTab userId={userId} userEmail="" displayName={displayName} onSignOut={() => {}} /></TabsContent>
+      <TabsContent value="settings"><SettingsTab /></TabsContent>
       <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} /></TabsContent>
       
       <TabsContent value="sponsors">
