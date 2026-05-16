@@ -642,6 +642,7 @@ export type Database = {
           created_at: string
           current_uniform_launch_id: string | null
           detail_color: string | null
+          engagement_rate: number | null
           fans: number | null
           id: string
           last_youth_generation_at: string | null
@@ -649,9 +650,11 @@ export type Database = {
           name: string
           primary_color: string | null
           reputation: number | null
+          sales_bonus_multiplier: number | null
           secondary_color: string | null
           shield_config: Json | null
           stadium_name: string | null
+          total_members: number | null
           uniform_launches_available: number | null
           updated_at: string
           user_id: string | null
@@ -663,6 +666,7 @@ export type Database = {
           created_at?: string
           current_uniform_launch_id?: string | null
           detail_color?: string | null
+          engagement_rate?: number | null
           fans?: number | null
           id?: string
           last_youth_generation_at?: string | null
@@ -670,9 +674,11 @@ export type Database = {
           name: string
           primary_color?: string | null
           reputation?: number | null
+          sales_bonus_multiplier?: number | null
           secondary_color?: string | null
           shield_config?: Json | null
           stadium_name?: string | null
+          total_members?: number | null
           uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
@@ -684,6 +690,7 @@ export type Database = {
           created_at?: string
           current_uniform_launch_id?: string | null
           detail_color?: string | null
+          engagement_rate?: number | null
           fans?: number | null
           id?: string
           last_youth_generation_at?: string | null
@@ -691,9 +698,11 @@ export type Database = {
           name?: string
           primary_color?: string | null
           reputation?: number | null
+          sales_bonus_multiplier?: number | null
           secondary_color?: string | null
           shield_config?: Json | null
           stadium_name?: string | null
+          total_members?: number | null
           uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
@@ -5380,6 +5389,10 @@ export type Database = {
       calculate_match_scheduled_time: {
         Args: { p_date: string; p_league_id: string }
         Returns: string
+      }
+      calculate_merch_sales: {
+        Args: { p_base_amount: number; p_club_id: string }
+        Returns: number
       }
       check_and_advance_round: {
         Args: { p_league_id: string }

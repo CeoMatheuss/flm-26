@@ -3,10 +3,11 @@ import { getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Heart, Flame, Home, Baby, Shield, TrendingUp, TrendingDown, DollarSign, Zap } from 'lucide-react';
+import { Users, Heart, Flame, Home, Baby, Shield, TrendingUp, TrendingDown, DollarSign, Zap, Star } from 'lucide-react';
 import { calculateTotalMembers } from '@/lib/membersCalc';
 import { useMemo } from 'react';
 import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   club: Club;
@@ -18,6 +19,7 @@ interface Props {
 
 export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice }: Props) {
   const totalFans = safeNumber(club.fans);
+  const totalMembersFromDB = safeNumber(club.total_members); // Added via migration
   
   // 1. Centralize economy logic using the new engine
   const economy = useMemo(() => {
@@ -36,9 +38,10 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
       importance: importance as any,
       stadiumCapacity: getStadiumCapacity(stadiumLevel),
       stadiumLevel: stadiumLevel,
-      vipUnits: vipUnits
+      vipUnits: vipUnits,
+      manualMembers: totalMembersFromDB // Feed the members impact to economy
     });
-  }, [totalFans, club.reputation, club.vipBoxesBuilt, ticketPrice, winStreak, loseStreak, stadiumLevel]);
+  }, [totalFans, club.reputation, club.vipBoxesBuilt, ticketPrice, winStreak, loseStreak, stadiumLevel, totalMembersFromDB]);
 
   // 2. Derive visual states from economy result
   const fanMood = economy.mood.charAt(0).toUpperCase() + economy.mood.slice(1);
@@ -51,6 +54,7 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
     wins: club.stats?.wins ?? 0,
     draws: club.stats?.draws ?? 0,
     losses: club.stats?.losses ?? 0,
+    manualMembers: totalMembersFromDB
   });
 
   const familias = Math.floor(totalFans * 0.25);
@@ -74,10 +78,7 @@ export function FansTab({ club, winStreak, loseStreak, stadiumLevel, ticketPrice
   };
 
   const formatCurrency = (n: number) => {
-    const sn = safeNumber(n);
-    if (sn >= 1000000) return `R$ ${(sn / 1000000).toFixed(1)}M`;
-    if (sn >= 1000) return `R$ ${(sn / 1000).toFixed(0)}k`;
-    return `R$ ${sn}`;
+    return formatMoney(n);
   };
 
   return (

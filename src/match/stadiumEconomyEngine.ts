@@ -23,6 +23,7 @@ export interface StadiumEconomyState {
   stadiumLevel: number;
   vipUnits: number; // Unidades totais de camarotes construídos
   vipPrice?: number;
+  manualMembers?: number; // Added: Sócios comprados via planos/loja
 }
 
 export interface EconomyResult {

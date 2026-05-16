@@ -124,12 +124,39 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
         icon: Shirt,
         color: "text-purple-400"
       });
-    } else if (item.category === 'uniform' || item.id.includes('kit')) {
+    }
+
+    // Impactos de Sócios Torcedores (Novos)
+    if (data.initialMembers) {
       benefits.push({
-        label: "Visual",
-        value: "Novo uniforme oficial do clube",
-        icon: Shirt,
-        color: "text-purple-400"
+        label: "Novos Sócios",
+        value: `+${data.initialMembers.toLocaleString()} sócios imediatos`,
+        icon: ShieldCheck,
+        color: "text-yellow-400"
+      });
+    }
+    if (data.initialFans) {
+      benefits.push({
+        label: "Novos Fãs",
+        value: `+${data.initialFans.toLocaleString()} torcedores atraídos`,
+        icon: Users,
+        color: "text-blue-400"
+      });
+    }
+    if (data.salesMultiplier) {
+      benefits.push({
+        label: "Bônus Financeiro",
+        value: `+${Math.round((data.salesMultiplier - 1) * 100)}% em vendas de produtos`,
+        icon: Zap,
+        color: "text-emerald-400"
+      });
+    }
+    if (data.monthlyRevenue) {
+      benefits.push({
+        label: "Receita Recorrente",
+        value: `+R$ ${formatMoney(data.monthlyRevenue)} por mês`,
+        icon: DollarSign,
+        color: "text-emerald-400"
       });
     }
 

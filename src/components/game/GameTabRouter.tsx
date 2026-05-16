@@ -260,7 +260,14 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="members">
-        <MembersTab totalFans={game.club.fans || 1000} reputation={game.club.reputation || 50} wins={game.club.stats?.wins ?? 0} draws={game.club.stats?.draws ?? 0} losses={game.club.stats?.losses ?? 0} />
+        <MembersTab 
+          totalFans={game.club.fans || 1000} 
+          reputation={game.club.reputation || 50} 
+          totalMembersFromDB={game.club.total_members}
+          wins={game.club.stats?.wins ?? 0} 
+          draws={game.club.stats?.draws ?? 0} 
+          losses={game.club.stats?.losses ?? 0} 
+        />
       </TabsContent>
 
       <TabsContent value="training">
