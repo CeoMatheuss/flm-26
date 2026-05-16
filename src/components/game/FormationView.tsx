@@ -332,8 +332,13 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                     </span>
                   </div>
                   
-                  <div className="absolute -top-1 -right-1 flex flex-col gap-1">
-                    {isCaptain && (
+                  <div className="absolute -top-1 -right-1 flex flex-col gap-1 z-30">
+                    {isPendingSwap && (
+                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.8)] border-2 border-white animate-bounce">
+                        <ArrowRightLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </div>
+                    )}
+                    {isCaptain && !isPendingSwap && (
                       <div className="bg-yellow-400 text-yellow-950 rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center font-black text-[10px] shadow-lg border-2 border-white">
                         <Crown className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
