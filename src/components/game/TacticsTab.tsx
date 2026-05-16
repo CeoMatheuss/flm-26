@@ -40,10 +40,10 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`capitalize text-[9px] font-black px-1.5 py-2 rounded-lg transition-all border w-full min-w-0 truncate ${
+      className={`capitalize text-[8px] sm:text-[9px] font-black px-1 py-1.5 rounded-lg transition-all border w-full min-w-0 truncate shadow-sm active:scale-95 ${
         isActive
-          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-          : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'
+          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] ring-1 ring-emerald-400/50'
+          : 'bg-zinc-900/40 border-white/5 text-white/40 hover:border-white/20 hover:bg-zinc-800 hover:text-white/60'
       }`}
       onClick={() => onClick(value)}
     >
@@ -187,10 +187,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         <div className="flex items-center justify-between gap-4">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } }))}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-emerald-400 transition-all bg-white/5 px-4 h-11 rounded-2xl border border-white/10 group shadow-lg"
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-emerald-400 transition-all bg-emerald-500/10 hover:bg-emerald-500/20 px-4 h-11 rounded-xl border border-emerald-500/20 group shadow-lg"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
-            Voltar ao Elenco
+            Voltar ao Gerenciamento
           </button>
           
           <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
@@ -228,10 +228,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
       )}
 
       <div className={cn(
-        "grid grid-cols-1 gap-8 items-start transition-all duration-500",
+        "grid grid-cols-1 gap-4 items-start transition-all duration-500",
         isSidePanelOpen ? "xl:grid-cols-12" : "xl:grid-cols-1"
       )}>
-        <div className={cn("space-y-6 min-w-0", isSidePanelOpen ? "xl:col-span-8" : "xl:col-span-1")}>
+        <div className={cn("space-y-4 min-w-0", isSidePanelOpen ? "xl:col-span-9" : "xl:col-span-1")}>
           <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
@@ -240,7 +240,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6 relative">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">CENTRO TÁTICO PROFISSIONAL</p>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">CENTRO TÁTICO</p>
                   <div className="flex items-center gap-3">
                     <select 
                       className="bg-transparent text-xl sm:text-2xl lg:text-4xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300 max-w-full"
@@ -339,7 +339,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </div>
 
         {isSidePanelOpen && (
-        <div className="xl:col-span-4 space-y-4 min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="xl:col-span-3 space-y-4 min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
           <Tabs defaultValue="style" className="w-full">
             <TabsList className="w-full grid grid-cols-3 h-14 bg-zinc-950/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
               <TabsTrigger value="style" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
@@ -354,15 +354,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             </TabsList>
 
             <div className="mt-4">
-              <TabsContent value="style" className="m-0 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-2 gap-2">
+              <TabsContent value="style" className="m-0 space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-2 gap-1.5">
                   {tacticsPresets.slice(0, 4).map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[9px] font-black px-2 py-2.5 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[8px] font-black px-1.5 py-2 rounded-lg border transition-all duration-300 uppercase tracking-tighter
                         ${tactics.playStyle === preset.config.playStyle 
-                          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
-                          : 'bg-zinc-900/40 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'}`}
+                          ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+                          : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'}`}
                       onClick={() => applyPreset(preset)}
                     >
                       {preset.name}
@@ -372,15 +372,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
                 <div className="space-y-4">
                   <div>
-                    <SectionLabel icon={Target} label="Filosofia de Jogo" />
-                    <div className="grid grid-cols-2 gap-2">
+                    <SectionLabel icon={Target} label="Estilo de Jogo" />
+                    <div className="grid grid-cols-2 gap-1.5">
                       {MAIN_PLAY_STYLES.map(s => (
                         <button
                           key={s}
                           onClick={() => setField('playStyle', s)}
-                          className={`text-[9px] py-2.5 rounded-xl font-black transition-all border-2 uppercase tracking-widest ${
+                          className={`text-[8px] py-2 rounded-lg font-black transition-all border uppercase tracking-tighter ${
                             tactics.playStyle === s 
-                              ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                              ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
                               : 'bg-zinc-900/40 text-white/40 border-white/5 hover:border-white/10'
                           }`}
                         >
@@ -412,7 +412,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ].map(ctrl => (
                     <div key={ctrl.label}>
                       <SectionLabel icon={ctrl.icon} label={ctrl.label} />
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         {ctrl.options.map(opt => (
                           <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}

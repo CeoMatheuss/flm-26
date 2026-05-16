@@ -775,60 +775,72 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       <Tabs defaultValue="squad" value="squad" className="w-full">
         <TabsContent value="squad" className="space-y-4 mt-0">
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Users className="w-3 h-3" /> Plantel</p>
-              <p className="text-2xl font-black text-white">{players.length}</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Users className="w-3 h-3" /> Plantel</p>
+              <p className="text-xl font-black text-white">{players.length}</p>
             </motion.div>
             
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Trophy className="w-3 h-3" /> OVR Médio</p>
-              <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Trophy className="w-3 h-3" /> OVR Médio</p>
+              <p className="text-xl font-black text-emerald-400">{avgOvr}</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Zap className="w-3 h-3" /> Química</p>
+              <p className="text-xl font-black text-blue-400">{Math.round((avgOvr * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3)}%</p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Tag className="w-3 h-3" /> Folha</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Tag className="w-3 h-3" /> Folha</p>
               <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Activity className="w-3 h-3" /> Lesões</p>
-              <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-purple-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Activity className="w-3 h-3" /> Idade Média</p>
+              <p className="text-xl font-black text-purple-400">{(players.slice(0, 11).reduce((s, p) => s + p.age, 0) / 11).toFixed(1)}a</p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-red-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Heart className="w-3 h-3" /> Lesões</p>
+              <p className={`text-xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
             </motion.div>
           </div>
 
-          <div className="flex flex-col gap-6">
-            {/* Top Section: Large Pitch View */}
+          <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6 items-start">
+            {/* Left/Top Section: Large Pitch View */}
             <AnimatePresence mode="wait">
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="w-full"
+                className="w-full xl:col-span-8"
               >
-                <Card className="bg-slate-900/40 rounded-[2.5rem] border-white/5 p-6 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+                <Card className="bg-slate-900/40 rounded-[2.5rem] border-white/5 p-4 sm:p-6 backdrop-blur-xl shadow-2xl overflow-hidden relative">
                   <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                     <Layout className="w-40 h-40 text-primary" />
                   </div>
                   
-                  <div className="flex items-center justify-between mb-6 relative z-10">
+                  <div className="flex items-center justify-between mb-4 relative z-10">
                     <div>
-                      <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                        <Users className="w-6 h-6 text-emerald-400" /> CENTRO DE ESCALAÇÃO
+                      <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                        <Users className="w-5 h-5 text-emerald-400" /> ESCALAÇÃO
                       </h3>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Gerencie seu time titular no campo</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Time Titular</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-[9px] font-black text-muted-foreground uppercase">Formação Atual</p>
-                        <p className="text-lg font-black text-primary">{tactics?.formation || '4-4-2'}</p>
+                        <p className="text-base font-black text-primary">{tactics?.formation || '4-4-2'}</p>
                       </div>
-                      <Badge className="bg-primary/20 text-primary border-primary/30 h-10 px-4 flex items-center justify-center font-black">
-                        MODO EDIÇÃO
+                      <Badge className="bg-primary/20 text-primary border-primary/30 h-8 px-3 flex items-center justify-center font-black text-[10px]">
+                        EDICAO
                       </Badge>
                     </div>
                   </div>
@@ -844,253 +856,183 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </motion.div>
             </AnimatePresence>
 
-            {/* Bottom Section: Player List */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
+            <div className="space-y-3 xl:col-span-4 w-full">
+              <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-1">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
                     <Button
                       key={tab}
                       variant={squadSubTab === tab ? 'default' : 'ghost'}
                       size="sm"
-                      className="rounded-xl px-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
                       onClick={() => setSquadSubTab(tab)}
                     >
-                      {tab === 'starters' ? 'Titulares' : tab === 'reserves' ? 'Reservas' : 'Fora'}
+                      {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : 'OUT'}
                     </Button>
                   ))}
                 </div>
                 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
                   <Input 
-                    placeholder="Filtrar..." 
-                    className="h-9 bg-white/5 border-white/10 text-xs rounded-xl"
+                    placeholder="Busca..." 
+                    className="h-7 w-24 bg-white/5 border-white/10 text-[9px] rounded-lg"
                     onChange={(e) => setFilterPos(e.target.value.toUpperCase())}
                   />
                 </div>
               </div>
 
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                {(['overall', 'age', 'value'] as const).map(s => (
+                  <button
+                    key={s}
+                    className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-colors whitespace-nowrap ${sortBy === s ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-muted-foreground hover:text-white border border-transparent'}`}
+                    onClick={() => setSortBy(s)}
+                  >
+                    {s === 'overall' ? 'OVR ↓' : s === 'age' ? 'IDADE' : 'VALOR'}
+                  </button>
+                ))}
+                <div className="ml-auto flex items-center gap-1">
+                  {posOrder.map(pos => (
+                    <button
+                      key={pos}
+                      className={`w-6 h-6 flex items-center justify-center rounded text-[8px] font-black transition-all ${filterPos === pos ? 'bg-emerald-500 text-zinc-950 shadow-lg' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
+                      onClick={() => setFilterPos(filterPos === pos ? null : pos)}
+                    >
+                      {pos[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button
-              className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${!filterPos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
-              onClick={() => setFilterPos(null)}
-            >
-              Todos ({players.length})
-            </button>
-            {posOrder.map(pos => {
-              const count = players.filter(p => p.position === pos).length;
-              return (
-                <button
-                  key={pos}
-                  className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${filterPos === pos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
-                  onClick={() => setFilterPos(filterPos === pos ? null : pos)}
-                >
-                  {pos} ({count})
-                </button>
-              );
-            })}
-            <div className="shrink-0 ml-auto flex items-center gap-1 border-l border-border/30 pl-1.5">
-              <span className="text-[9px] text-muted-foreground shrink-0">↕</span>
-              {(['position', 'overall', 'age', 'value', 'salary'] as const).map(s => (
-                <button
-                  key={s}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${sortBy === s ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                  onClick={() => setSortBy(s)}
-                  title={
-                    s === 'position' ? 'Por posição' :
-                    s === 'overall' ? 'Melhor OVR primeiro' :
-                    s === 'age' ? 'Mais jovem primeiro' :
-                    s === 'value' ? 'Maior valor primeiro' :
-                    'Maior salário primeiro'
-                  }
-                >
-                  {s === 'position' ? 'Pos' : s === 'overall' ? 'OVR ↓' : s === 'age' ? 'Jovem ↑' : s === 'value' ? 'Valor ↓' : 'Salário ↓'}
-                </button>
-              ))}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                {([
+                  { v: 'all', label: 'Todos' },
+                  { v: '90+', label: '90+' },
+                  { v: '80-89', label: '80-89' },
+                  { v: '70-79', label: '70-79' },
+                  { v: '60-69', label: '60-69' },
+                  { v: '<60', label: '< 60' },
+                ] as const).map(({ v, label }) => {
+                  const count = v === 'all' ? players.length : players.filter(p => {
+                    if (v === '90+') return p.overall >= 90;
+                    if (v === '80-89') return p.overall >= 80 && p.overall < 90;
+                    if (v === '70-79') return p.overall >= 70 && p.overall < 80;
+                    if (v === '60-69') return p.overall >= 60 && p.overall < 70;
+                    return p.overall < 60;
+                  }).length;
+                  const active = filterOvr === v;
+                  return (
+                    <button
+                      key={v}
+                      className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-bold transition-all ${active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-transparent'}`}
+                      onClick={() => setFilterOvr(v)}
+                      disabled={count === 0 && v !== 'all'}
+                    >
+                      {label} <span className="opacity-60">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {pendingSwap && (
+                <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-2 flex items-center gap-2 shadow-lg">
+                  <div className="shrink-0 w-8 h-8 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[8px] uppercase tracking-wider text-primary font-bold">Trocando</p>
+                    <p className="text-[10px] font-bold text-foreground truncate">
+                      {pendingSwap.player.name}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[9px] text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
+                <TabsList className="grid grid-cols-3 w-full rounded-xl h-9 p-1 bg-black/20">
+                  <TabsTrigger value="starters" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
+                    TITULARES
+                  </TabsTrigger>
+                  <TabsTrigger value="reserves" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
+                    BANCO
+                  </TabsTrigger>
+                  <TabsTrigger value="out" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-muted data-[state=active]:text-foreground">
+                    FORA
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="starters" className="mt-2 space-y-1.5">
+                  {startersList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum titular encontrado</div>
+                  ) : (
+                    startersList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from !== 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'starters')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="reserves" className="mt-2 space-y-1.5">
+                  {reservesList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Banco vazio</div>
+                  ) : (
+                    reservesList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from === 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'reserves')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="out" className="mt-2 space-y-1.5">
+                  {outList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
+                  ) : (
+                    outList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from === 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'out')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
-
-          {/* Filtro por faixa de OVR */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="text-[9px] text-muted-foreground shrink-0 uppercase tracking-wider">OVR:</span>
-            {([
-              { v: 'all', label: 'Todos' },
-              { v: '90+', label: '90+' },
-              { v: '80-89', label: '80-89' },
-              { v: '70-79', label: '70-79' },
-              { v: '60-69', label: '60-69' },
-              { v: '<60', label: '< 60' },
-            ] as const).map(({ v, label }) => {
-              const count = v === 'all' ? players.length : players.filter(p => {
-                if (v === '90+') return p.overall >= 90;
-                if (v === '80-89') return p.overall >= 80 && p.overall < 90;
-                if (v === '70-79') return p.overall >= 70 && p.overall < 80;
-                if (v === '60-69') return p.overall >= 60 && p.overall < 70;
-                return p.overall < 60;
-              }).length;
-              const active = filterOvr === v;
-              return (
-                <button
-                  key={v}
-                  className={`shrink-0 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70 border border-transparent'}`}
-                  onClick={() => setFilterOvr(v)}
-                  disabled={count === 0 && v !== 'all'}
-                >
-                  {label} <span className="opacity-60">({count})</span>
-                </button>
-              );
-            })}
-          </div>
-
-
-
-          {pendingSwap && (
-            <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
-              <div className="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
-                <Zap className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-primary font-bold">⚡ Trocando</p>
-                <p className="text-xs font-bold text-foreground truncate">
-                  <Badge className={`text-[8px] px-1 mr-1 h-3.5 ${posColors[pendingSwap.player.position]}`} variant="outline">{pendingSwap.player.position}</Badge>
-                  {pendingSwap.player.name} ({pendingSwap.player.overall})
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  Toque em quem {pendingSwap.from === 'starters' ? 'entra no time' : 'sai do time'}
-                </p>
-              </div>
-              <Button size="sm" variant="ghost" className="h-8 px-2 text-[10px] gap-1 text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
-                <X className="h-3.5 w-3.5" /> Cancelar
-              </Button>
-            </div>
-          )}
-
-          <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
-            <TabsList className="grid grid-cols-3 w-full rounded-xl h-11 p-1">
-              <TabsTrigger value="starters" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400">
-                <div className="flex items-center gap-1">
-                  <Shirt className="h-3 w-3" /> <span className="font-bold">Titulares</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.starters.length}/11</span>
-              </TabsTrigger>
-              <TabsTrigger value="reserves" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-blue-500/15 data-[state=active]:text-blue-400">
-                <div className="flex items-center gap-1">
-                  <Armchair className="h-3 w-3" /> <span className="font-bold">Banco</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.reserves.length} reservas</span>
-              </TabsTrigger>
-              <TabsTrigger value="out" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-muted data-[state=active]:text-foreground">
-                <div className="flex items-center gap-1">
-                  <Package className="h-3 w-3" /> <span className="font-bold">Fora</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.out.length} jogadores</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="starters" className="mt-3 space-y-2">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <Shirt className="h-4 w-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time Titular</span>
-                </div>
-                {/* Rotation button removed from squad tab as per request */}
-              </div>
-              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
-                <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-emerald-400 font-bold">11 titulares</span> que começam as partidas. Listados primeiro na escalação tática.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {startersList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                  startersList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from !== 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'starters')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="reserves" className="mt-3 space-y-2">
-              <div className="rounded-lg bg-blue-500/5 border border-blue-500/15 p-2 flex items-start gap-2">
-                <Armchair className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-blue-400 font-bold">Banco de reservas</span> — disponíveis para substituições durante o jogo.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {reservesList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                  reservesList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from === 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'reserves')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="out" className="mt-3 space-y-2">
-              <div className="rounded-lg bg-muted/30 border border-border/20 p-2 flex items-start gap-2">
-                <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-foreground font-bold">Fora do elenco</span> — não convocados para os jogos. Treinam normalmente.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {outList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                outList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from === 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'out')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </TabsContent>
+        </TabsContent>
 
         <TabsContent value="contracts" className="space-y-3 mt-3">
           {expiringPlayers.length > 0 && (

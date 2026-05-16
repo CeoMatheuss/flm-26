@@ -226,7 +226,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [blockedTabs, setBlockedTabs] = useState<string[]>([]);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('squad');
   const [marketSubTab, setMarketSubTab] = useState('browse');
   const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
