@@ -206,14 +206,19 @@ function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; spon
             <circle cx="50" cy="13" r="0.8" fill={kit.shirtColor} />
           </>
         )}
+        {/* Shield placeholder */}
+        <circle cx="28" cy="22" r="4" fill="white" opacity="0.9" />
+        <circle cx="28" cy="22" r="3.5" fill={kit.shirtColor} opacity="0.8" />
+        <path d="M28,19 L29.5,21 L31,19 L30,22 L31,25 L29.5,23 L28,25 L29,22 Z" fill="white" transform="translate(-1, 0) scale(0.6)" />
+
         {/* Sponsor text */}
         {showSponsor && (
-          <text x="50" y="30" textAnchor="middle" fontSize={sponsorFontSize} fontWeight="bold" fill={kit.sponsorTextColor || '#FFFFFF'} fontFamily="sans-serif" opacity="0.85">
+          <text x="50" y="38" textAnchor="middle" fontSize={sponsorFontSize} fontWeight="bold" fill={kit.sponsorTextColor || '#FFFFFF'} fontFamily="sans-serif" opacity="0.85">
             {sponsorName.length > 12 ? sponsorName.slice(0, 12) : sponsorName}
           </text>
         )}
         {/* Number */}
-        <text x="50" y={showSponsor ? 50 : 44} textAnchor="middle" fontSize="14" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
+        <text x="50" y={showSponsor ? 55 : 44} textAnchor="middle" fontSize="14" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
         {/* Shorts - two rectangles side by side */}
         <rect x="28" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
         <rect x="52" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
