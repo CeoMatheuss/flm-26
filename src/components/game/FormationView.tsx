@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateLineup } from '@/utils/lineupManager';
-import { Zap, Heart, Activity, Star } from 'lucide-react';
+import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Minus, Crown, Sparkles, UserCircle2 } from 'lucide-react';
 
 interface Props {
   formation: Formation;
