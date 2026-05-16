@@ -87,6 +87,7 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
                 <div className="mt-3">
                   <p className="text-[10px] text-white/40 font-black uppercase tracking-wider">{metric.label}</p>
                   <p className="text-lg font-black italic uppercase tracking-tighter text-white">{metric.value}</p>
+                  <p className="text-[9px] text-white/20 font-medium italic mt-0.5">{metric.sub}</p>
                 </div>
               </CardContent>
             </Card>
