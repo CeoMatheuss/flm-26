@@ -811,7 +811,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <Layout className="w-4 h-4 text-primary" /> Painel Tático
+                        <Users className="w-4 h-4 text-emerald-400" /> Escalação
                       </h3>
                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black">
                         {tactics?.formation || '4-4-2'}
