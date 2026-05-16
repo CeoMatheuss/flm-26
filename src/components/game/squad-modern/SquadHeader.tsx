@@ -4,7 +4,7 @@ import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
 import { formatMoney } from '@/lib/formatMoney';
 import { avgStamina } from './squadHelpers';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
