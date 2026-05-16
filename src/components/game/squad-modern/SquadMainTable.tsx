@@ -160,10 +160,10 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; delta: number; selected: boolean; onClick: () => void }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
-  const status = getPlayerStatus(player, isStarter);
+  const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
 
   return (
