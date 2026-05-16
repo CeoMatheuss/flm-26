@@ -195,7 +195,7 @@ export function SquadModernLayout({
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-6 p-6">
         {/* Main Content Area: Tabs & Tables */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500",
+          "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500 bg-zinc-900/30 rounded-[2.5rem] border border-white/5",
           viewMode === 'pitch' ? "hidden xl:flex" : "flex"
         )}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
