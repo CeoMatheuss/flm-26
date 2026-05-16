@@ -180,7 +180,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-20">
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
       {isInLiveMatch && (
@@ -201,7 +201,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
               <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
             
-            <CardContent className="p-6 space-y-6 relative">
+            <CardContent className="p-8 space-y-8 relative">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2">CENTRO TÁTICO PROFISSIONAL</p>
