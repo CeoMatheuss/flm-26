@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Handshake, Plus, DollarSign, AlertTriangle, Target, Calendar,
-  Trophy, Crown, Lock, Sparkles, CheckCircle2, Clock,
+  Trophy, Crown, Lock, Sparkles, CheckCircle2, Clock, CreditCard
 } from 'lucide-react';
 import { usePremiumSponsorship } from '@/hooks/usePremiumSponsorship';
 
@@ -294,17 +294,37 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                   <Button
                     size="sm"
                     disabled={blocked}
-                    onClick={() => premium.activate({
-                      planId: plan.id,
-                      planName: plan.name,
-                      totalValue: plan.inGameValue,
-                      payoutDays: plan.payoutDays,
-                    })}
-                    className="w-full h-8 text-xs bg-yellow-500 hover:bg-yellow-600 text-black font-bold disabled:bg-yellow-500/40 disabled:text-black/60"
+                    onClick={() => {
+                      const priceCents = Number(plan.realPriceLabel.replace(/\D/g, '')) * 10 || 990; // R$ 9,90 -> 990
+                      window.dispatchEvent(new CustomEvent('flm:open-checkout', { 
+                        detail: { 
+                          item: {
+                            id: plan.id,
+                            name: plan.name,
+                            description: plan.description,
+                            price_cents: priceCents,
+                            category: 'sponsorship',
+                            rarity: 'legendary',
+                            bonus_data: {
+                              planId: plan.id,
+                              planName: plan.name,
+                              totalValue: plan.inGameValue,
+                              payoutDays: plan.payoutDays
+                            }
+                          }
+                        } 
+                      }));
+                      // Fallback: se não estiver na aba Loja, avisa o usuário
+                      toast.info('Redirecionando para o checkout na Loja...');
+                      window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'shop' } }));
+                    }}
+                    className="w-full h-10 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] border-b-2 border-emerald-800 active:border-b-0 active:translate-y-0.5 group relative overflow-hidden transition-all"
                   >
-                    {activePremium
-                      ? <><Lock className="h-3 w-3 mr-1" /> Já há um ativo</>
-                      : <><Sparkles className="h-3 w-3 mr-1" /> Ativar agora</>}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                    <div className="flex items-center justify-center gap-2 relative z-10">
+                      <CreditCard className="h-4 w-4" />
+                      <span>{activePremium ? 'PLANO ATIVO' : 'ADQUIRIR PATROCÍNIO'}</span>
+                    </div>
                   </Button>
                 </div>
               );
