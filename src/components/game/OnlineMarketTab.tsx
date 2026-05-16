@@ -223,6 +223,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       loadMyOffers();
       loadIncomingOffers();
       loadLoanListings();
+      loadMyRenewals();
     });
 
     const ch1 = supabase.channel('transfer-listings')
@@ -237,8 +238,17 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_listings' }, () => { loadLoanListings(); })
       .subscribe();
 
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); };
-  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, resolveDecisions]);
+    const ch4 = supabase.channel('player-negotiations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'player_negotiations', filter: `user_id=eq.${userId}` }, () => { loadMyRenewals(); })
+      .subscribe();
+
+    return () => { 
+      supabase.removeChannel(ch1); 
+      supabase.removeChannel(ch2); 
+      supabase.removeChannel(ch3);
+      supabase.removeChannel(ch4);
+    };
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadMyRenewals, resolveDecisions, userId]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
