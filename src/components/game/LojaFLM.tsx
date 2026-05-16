@@ -73,7 +73,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     const channel = supabase
       .channel('public:payment_orders_history')
       .on('postgres_changes', { 
-        event: 'UPDATE', 
+        event: '*', 
         schema: 'public', 
         table: 'payment_orders',
         filter: `user_id=eq.${userId}`
