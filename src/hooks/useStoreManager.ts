@@ -120,10 +120,9 @@ export function useStoreManager(club: Club, userId: string) {
       if (effectError) throw effectError;
 
       // 2. Handle category specific immediate effects
-      if (item.category === 'sponsorship') {
+      if (item.category === 'sponsorship' || item.category === 'members') {
         const immediateCash = item.bonus_data?.immediate_cash || 0;
         if (immediateCash > 0) {
-          // Use direct update if RPC is missing or just use existing one if possible
           await client.from('clubs').update({ 
             budget: (club.budget || 0) + immediateCash 
           }).eq('id', club.id);
@@ -131,14 +130,33 @@ export function useStoreManager(club: Club, userId: string) {
           toast.success(`Bônus de assinatura recebido: R$ ${immediateCash.toLocaleString()}`);
         }
 
-        await client.from('club_sponsorships').insert({
-          club_id: club.id,
-          sponsor_name: item.name,
-          contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
-          payment_type: 'weekly',
-          bonus_data: item.bonus_data,
-          expires_at: expiresAt.toISOString()
-        });
+        // Se for um plano premium SmartPit (do SponsorsTab)
+        if (item.bonus_data?.planId) {
+          const totalValue = item.bonus_data.totalValue || 0;
+          const payoutDays = item.bonus_data.payoutDays || 30;
+          const daily = Math.max(1, Math.floor(totalValue / payoutDays));
+
+          await client.from('premium_sponsorships').insert({
+            user_id: userId,
+            plan_id: item.bonus_data.planId,
+            plan_name: item.bonus_data.planName || item.name,
+            total_value: totalValue,
+            received_value: 0,
+            payout_days: payoutDays,
+            daily_value: daily,
+            active: true
+          });
+        } else {
+          // Patrocínio normal da loja
+          await client.from('club_sponsorships').insert({
+            club_id: club.id,
+            sponsor_name: item.name,
+            contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
+            payment_type: 'weekly',
+            bonus_data: item.bonus_data,
+            expires_at: expiresAt.toISOString()
+          });
+        }
       }
 
       if (item.category === 'uniform') {
