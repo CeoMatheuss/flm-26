@@ -2,7 +2,7 @@ import { Player } from '@/types/game';
 import { motion } from 'framer-motion';
 import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ovrTier, positionColors, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
+import { ovrTier, getPositionColor, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';
 import { PotentialTier, potentialTierInfo } from '@/types/infrastructure';
 
@@ -72,7 +72,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
             </div>
             <div className={cn(
               'mt-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border',
-              positionColors[player.position]
+              getPositionColor(player.position)
             )}>
               {player.position}
             </div>
