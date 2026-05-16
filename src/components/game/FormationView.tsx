@@ -227,7 +227,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-[900px] mx-auto aspect-[16/10] sm:aspect-[4/3] bg-[#0a1f0f] rounded-[2rem] overflow-hidden border-4 border-emerald-900/50 shadow-[0_0_80px_-20px_rgba(16,185,129,0.4)] select-none">
+    <div className="relative w-full max-w-[1200px] mx-auto aspect-[16/9] sm:aspect-[16/9] bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-8 border-emerald-900/50 shadow-[0_0_100px_-20px_rgba(16,185,129,0.5)] select-none">
       {/* Real-looking Pitch Texture */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none" />
       
