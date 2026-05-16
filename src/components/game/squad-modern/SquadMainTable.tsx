@@ -127,6 +127,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               player={p} 
               idx={idx + 1}
               isStarter={starterIds.has(p.id)}
+              isNegotiating={negotiations[p.id]}
               delta={deltas[p.id]?.overall || 0}
               selected={selectedId === p.id}
               onClick={() => onSelect(p.id)}
