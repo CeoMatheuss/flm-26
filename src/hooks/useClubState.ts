@@ -48,6 +48,8 @@ export function useClubState(initialState: any, userId?: string) {
   const [clubProfile, setClubProfile] = useState<ClubProfile>(initialState?.clubProfile ?? defaultClubProfile);
   const [lastTrainingResult, setLastTrainingResult] = useState<WeeklyTrainingResult | null>(initialState?.lastTrainingResult ?? null);
   const [lastTrainingCycleAt, setLastTrainingCycleAt] = useState<string>(initialState?.lastTrainingCycleAt ?? new Date().toISOString());
+  const [uniformLaunchesAvailable, setUniformLaunchesAvailable] = useState<number>(initialState?.club?.uniform_launches_available ?? 0);
+  const [activeUniformLaunch, setActiveUniformLaunch] = useState<any>(null);
 
   // Load active listings from database on mount
   useEffect(() => {

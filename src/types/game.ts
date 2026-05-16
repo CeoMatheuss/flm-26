@@ -221,6 +221,7 @@ export interface Club {
     bannerText?: string;
     bannerColor?: string;
   };
+  uniform_launches_available?: number;
 }
 
 export interface StaffMember {

@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy } from 'lucide-react';
+import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy, History, BarChart3, Info, Rocket, ArrowUpRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Sponsor } from '@/types/sponsor';
 
@@ -204,14 +206,19 @@ function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; spon
             <circle cx="50" cy="13" r="0.8" fill={kit.shirtColor} />
           </>
         )}
+        {/* Shield placeholder */}
+        <circle cx="28" cy="22" r="4" fill="white" opacity="0.9" />
+        <circle cx="28" cy="22" r="3.5" fill={kit.shirtColor} opacity="0.8" />
+        <path d="M28,19 L29.5,21 L31,19 L30,22 L31,25 L29.5,23 L28,25 L29,22 Z" fill="white" transform="translate(-1, 0) scale(0.6)" />
+
         {/* Sponsor text */}
         {showSponsor && (
-          <text x="50" y="30" textAnchor="middle" fontSize={sponsorFontSize} fontWeight="bold" fill={kit.sponsorTextColor || '#FFFFFF'} fontFamily="sans-serif" opacity="0.85">
+          <text x="50" y="38" textAnchor="middle" fontSize={sponsorFontSize} fontWeight="bold" fill={kit.sponsorTextColor || '#FFFFFF'} fontFamily="sans-serif" opacity="0.85">
             {sponsorName.length > 12 ? sponsorName.slice(0, 12) : sponsorName}
           </text>
         )}
         {/* Number */}
-        <text x="50" y={showSponsor ? 50 : 44} textAnchor="middle" fontSize="14" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
+        <text x="50" y={showSponsor ? 55 : 44} textAnchor="middle" fontSize="14" fontWeight="bold" fill={kit.numberColor} fontFamily="monospace">10</text>
         {/* Shorts - two rectangles side by side */}
         <rect x="28" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
         <rect x="52" y="64" width="20" height="16" rx="2" fill={kit.shortsColor} />
@@ -346,6 +353,59 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     third: defaultThird,
     goalkeeper: defaultGoalkeeper,
   });
+  const [launches, setLaunches] = useState<any[]>([]);
+  const [activeLaunch, setActiveLaunch] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+
+  useEffect(() => {
+    fetchLaunches();
+  }, []);
+
+  const fetchLaunches = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: clubData } = await supabase.from('clubs').select('id').eq('user_id', user.id).single();
+      if (!clubData) return;
+
+      const { data: launchData, error } = await supabase
+        .from('club_uniform_launches')
+        .select('*')
+        .eq('club_id', clubData.id)
+        .order('launched_at', { ascending: false });
+
+      if (error) throw error;
+      setLaunches(launchData || []);
+      if (launchData && launchData.length > 0) {
+        setActiveLaunch(launchData[0]);
+        // Trigger low sales notification if hype is low
+        const stats = calculateCurrentSales(launchData[0], clubReputation || 50, clubReputation || 50);
+        if (stats.hype < 20 && stats.daysSinceLaunch > 30) {
+          const { data: existingNotif } = await supabase
+            .from('user_notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('title', 'Vendas de Uniforme em Queda')
+            .maybeSingle();
+            
+          if (!existingNotif) {
+             await supabase.from('user_notifications').insert({
+              user_id: user.id,
+              type: 'info',
+              category: 'Marketing',
+              title: 'Vendas de Uniforme em Queda',
+              message: 'As vendas do uniforme atual começaram a cair drasticamente. Que tal lançar um novo modelo para reacender o interesse da torcida?',
+              icon: '📩'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching launches:', error);
+    }
+  };
 
   const currentKit = kits[activeKit];
   const shirtSponsor = sponsors?.find(s => s.type === 'camisa');
@@ -360,13 +420,167 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     setKits(prev => ({ ...prev, [activeKit]: updated }));
   };
 
+  const generateLaunchNews = async (userId: string, clubName: string, fans: number, reputation: number) => {
+    let newsText = '';
+
+    if (fans < 50000) {
+      newsText = `👕 ${clubName} apresenta novo uniforme para a temporada. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
+    } else if (fans < 500000) {
+      newsText = `👕 Novo uniforme do ${clubName} começa a movimentar a torcida. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas.`;
+    } else {
+      newsText = `👕 Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}. O lançamento do novo uniforme do gigante ${clubName} parou a cidade.`;
+    }
+
+    await (supabase.from('newspaper_entries') as any).insert({
+      user_id: userId,
+      text: newsText,
+      category: 'MARKETING',
+      importance: 1,
+      is_event: true
+    });
+  };
+
+  const handleLaunch = async () => {
+    try {
+      setIsLaunching(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: clubData } = await (supabase.from('clubs') as any).select('*').eq('user_id', user.id).single();
+      if (!clubData) return;
+
+      if ((clubData.uniform_launches_available || 0) <= 0) {
+        toast.error('Você não possui slots de lançamento disponíveis. Compre na Loja FLM!');
+        return;
+      }
+
+      // 1. Criar registro de lançamento
+      const { data: newLaunch, error: launchError } = await (supabase.from('club_uniform_launches') as any)
+        .insert({
+          club_id: clubData.id,
+          name: kits.home.name || 'Nova Coleção',
+          config: kits as any,
+          initial_fans: clubData.fans,
+          initial_reputation: clubData.reputation,
+          hype_score: 1.0
+        })
+        .select()
+        .single();
+
+      if (launchError) throw launchError;
+
+      // 2. Atualizar clube (consumir slot e definir uniforme atual)
+      await (supabase.from('clubs') as any).update({
+        uniform_launches_available: clubData.uniform_launches_available - 1,
+        current_uniform_launch_id: newLaunch.id,
+        primary_color: kits.home.shirtColor,
+        secondary_color: kits.home.shirtSecondaryColor
+      }).eq('id', clubData.id);
+
+      // 3. Gerar notícia
+      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+
+      toast.success('🚀 Novo uniforme lançado com sucesso!');
+      fetchLaunches();
+      window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+      onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
+    } catch (error: any) {
+      console.error('Launch error:', error);
+      toast.error('Erro ao lançar uniforme: ' + error.message);
+    } finally {
+      setIsLaunching(false);
+    }
+  };
+
+  const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
+    if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };
+    
+    const daysSinceLaunch = Math.max(0, (Date.now() - new Date(launch.launched_at).getTime()) / (24 * 3600 * 1000));
+    
+    const baseDaily = (clubFans * 0.005) * (clubRep / 100);
+    
+    let hype = 1.0;
+    if (daysSinceLaunch <= 15) {
+      hype = 1.5 - (daysSinceLaunch / 15) * 0.5;
+    } else {
+      hype = Math.max(0.1, 1.0 - ((daysSinceLaunch - 15) / 45));
+    }
+    
+    const dailySales = Math.floor(baseDaily * hype);
+    
+    return {
+      daily: dailySales,
+      revenue: dailySales * shirtPrice,
+      hype: Math.round(hype * 100),
+      daysSinceLaunch: Math.floor(daysSinceLaunch)
+    };
+  };
+
+  const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
+
   const handleSave = () => {
     onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     toast.success('🎽 Uniformes salvos com sucesso!');
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Launch Dashboard */}
+      {activeLaunch && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Rocket className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-[10px] font-black uppercase text-emerald-500/60">Vendas Hoje</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.daily.toLocaleString()} <span className="text-[10px] not-italic font-normal text-muted-foreground">unid.</span></p>
+              <div className="flex items-center gap-1 mt-1">
+                <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+                <span className="text-[10px] text-emerald-500 font-bold">+R$ {(salesStats.revenue).toLocaleString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Hype Atual</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.hype}%</p>
+              <div className="w-full bg-muted rounded-full h-1 mt-2">
+                <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: `${salesStats.hype}%` }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Info className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Dias de Lançamento</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.daysSinceLaunch} <span className="text-[10px] not-italic font-normal text-muted-foreground">dias</span></p>
+              <p className="text-[9px] text-muted-foreground mt-1">
+                {salesStats.daysSinceLaunch < 15 ? '🔥 Fase de Hype Máximo' : '📉 Queda natural de vendas'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Vendas Totais</span>
+              </div>
+              <p className="text-xl font-black italic">{(activeLaunch.total_sales_count || 0).toLocaleString()}</p>
+              <p className="text-[10px] text-amber-500 font-bold mt-1">R$ {(activeLaunch.total_revenue_cents / 100 || 0).toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -378,9 +592,20 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
             <p className="text-[10px] text-muted-foreground">Personalize seus 4 kits</p>
           </div>
         </div>
-        <Button size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
-          <Save className="h-3 w-3" /> Salvar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
+            <Save className="h-3 w-3" /> Salvar
+          </Button>
+          <Button 
+            size="sm" 
+            className="h-8 px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
+            onClick={handleLaunch}
+            disabled={isLaunching}
+          >
+            {isLaunching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+            Lançar Coleção
+          </Button>
+        </div>
       </div>
 
       {/* Kit Selector Tabs */}
@@ -531,6 +756,42 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           )}
         </CardContent>
       </Card>
+      {/* History Section */}
+      {launches.length > 1 && (
+        <Card className="border-0 bg-muted/10">
+          <CardHeader className="pb-2 pt-3 px-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <History className="h-3.5 w-3.5 text-primary" /> Histórico de Lançamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3">
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-2">
+                {launches.slice(1).map((launch, idx) => (
+                  <div key={launch.id} className="min-w-[150px] bg-background/50 p-2 rounded-xl border border-white/5 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] font-bold text-muted-foreground">{new Date(launch.launched_at).toLocaleDateString()}</span>
+                      <Badge variant="outline" className="text-[8px] h-4 px-1">#{launches.length - idx - 1}</Badge>
+                    </div>
+                    <p className="text-xs font-bold truncate">{launch.name}</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-muted-foreground">Vendas:</span>
+                        <span className="font-bold">{launch.total_sales_count?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-muted-foreground">Receita:</span>
+                        <span className="text-emerald-500 font-bold">R$ {(launch.total_revenue_cents / 100).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
