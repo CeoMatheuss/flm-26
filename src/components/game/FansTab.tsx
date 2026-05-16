@@ -3,10 +3,11 @@ import { getStadiumCapacity } from '@/types/infrastructure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Heart, Flame, Home, Baby, Shield, TrendingUp, TrendingDown, DollarSign, Zap } from 'lucide-react';
+import { Users, Heart, Flame, Home, Baby, Shield, TrendingUp, TrendingDown, DollarSign, Zap, Star } from 'lucide-react';
 import { calculateTotalMembers } from '@/lib/membersCalc';
 import { useMemo } from 'react';
 import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
+import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
   club: Club;
