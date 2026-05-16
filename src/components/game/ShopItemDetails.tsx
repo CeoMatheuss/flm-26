@@ -163,7 +163,7 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
             className="w-full h-full md:h-auto md:max-w-4xl bg-[#050810] border-0 md:border md:border-white/10 md:rounded-[2.5rem] overflow-hidden flex flex-col relative shadow-2xl"
           >
             {/* Header / Image Area */}
-            <div className="relative h-[40vh] md:h-[450px] overflow-hidden">
+            <div className="relative h-[200px] md:h-[260px] overflow-hidden">
               {item.image_url ? (
                 <img 
                   src={item.image_url} 
