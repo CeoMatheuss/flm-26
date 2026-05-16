@@ -164,7 +164,7 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
         </div>
 
         {/* Right Side: Price & Swap Button */}
-        <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-3 w-full md:w-auto md:min-w-[140px] border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-4">
+        <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-3 w-full md:w-auto md:min-w-[160px] border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-4">
           <div className="flex flex-col items-start md:items-center shrink-0">
             <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Valor</span>
             <span className="text-sm font-black text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.3)] whitespace-nowrap">{formatMoney(value)}</span>
