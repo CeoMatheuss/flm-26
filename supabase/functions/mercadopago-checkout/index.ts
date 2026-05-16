@@ -59,6 +59,18 @@ serve(async (req) => {
 
     if (orderError) throw orderError
 
+    // Add initial notification for order creation
+    await supabaseAdmin.from('user_notifications').insert({
+      user_id: user.id,
+      type: 'info',
+      category: 'Financeiro',
+      priority: 'medium',
+      title: 'Pedido Realizado',
+      message: `Seu pedido para "${item.name}" foi gerado. Aguardando pagamento.`,
+      icon: '🛍️',
+      data: { order_id: order.id, item_id: item.id }
+    })
+
     const mpAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN')
     if (!mpAccessToken) throw new Error('Mercado Pago API key missing')
 
