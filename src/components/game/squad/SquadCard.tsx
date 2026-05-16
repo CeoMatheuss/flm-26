@@ -97,7 +97,7 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
                  <Badge variant="outline" className="text-[8px] bg-amber-500/20 text-amber-400 border-amber-500/30 font-black uppercase">💎 Joia</Badge>
               )}
             </div>
-            <h3 className="text-base font-black text-white uppercase italic tracking-tighter truncate max-w-[140px]">{player.name}</h3>
+            <h3 className="text-base font-black text-white uppercase italic tracking-tighter truncate max-w-[160px] sm:max-w-[200px]">{player.name}</h3>
             <div className="flex items-center gap-2">
                <span className="text-[10px] font-bold text-white/40 uppercase">{player.age} anos</span>
                {player.personality && <span className="text-xs" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>}
@@ -106,7 +106,7 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
         </div>
 
         {/* Middle: Stats Grid */}
-        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full" onClick={onClick}>
+        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full min-w-0" onClick={onClick}>
           {/* Energy */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-white/30">
@@ -164,10 +164,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
         </div>
 
         {/* Right Side: Price & Swap Button */}
-        <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-3 w-full md:w-auto md:min-w-[120px] border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-4">
-          <div className="flex flex-col items-start md:items-center">
+        <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-3 w-full md:w-auto md:min-w-[140px] border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-4">
+          <div className="flex flex-col items-start md:items-center shrink-0">
             <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Valor</span>
-            <span className="text-sm font-black text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.3)]">{formatMoney(value)}</span>
+            <span className="text-sm font-black text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.3)] whitespace-nowrap">{formatMoney(value)}</span>
           </div>
           
           <Button
