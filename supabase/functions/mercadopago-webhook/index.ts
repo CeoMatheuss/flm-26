@@ -127,7 +127,36 @@ serve(async (req) => {
           // Don't throw here so we can still notify about payment if needed
         } else {
           console.log(`[PRODUTO LIBERADO] Result for order ${orderId}:`, deliverResult);
-          
+
+          // 4.5 ATIVAR/RENOVAR PREMIUM: qualquer compra aprovada concede 30 dias (reset)
+          try {
+            const { error: premiumError } = await supabaseAdmin
+              .from('premium_users')
+              .upsert({
+                user_id: orderData.user_id,
+                activated_at: new Date().toISOString(),
+                status: 'active',
+                pix_transaction_id: id.toString(),
+              }, { onConflict: 'user_id' });
+            if (premiumError) {
+              console.error('[PREMIUM] Falha ao ativar/renovar:', premiumError);
+            } else {
+              console.log(`[PREMIUM ATIVADO] user_id=${orderData.user_id} reset 30 dias`);
+              await supabaseAdmin.from('user_notifications').insert({
+                user_id: orderData.user_id,
+                type: 'success',
+                category: 'Premium',
+                priority: 'ultra',
+                title: 'Premium Ativado!',
+                message: 'Sua conta Premium foi ativada/renovada por 30 dias. Aproveite todos os benefícios!',
+                icon: '👑',
+                data: { source: 'auto_purchase', order_id: orderId }
+              });
+            }
+          } catch (e) {
+            console.error('[PREMIUM] Exceção ao ativar:', e);
+          }
+
           // 5. Notify user about payment and release in Real-Time
           if (orderData) {
             // First notification: Payment received
