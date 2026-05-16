@@ -112,7 +112,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Optimization Toggle */}
           <TooltipProvider>
             <Tooltip>
