@@ -31,7 +31,7 @@ interface Props {
   onOpenQuickSwap?: () => void;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
