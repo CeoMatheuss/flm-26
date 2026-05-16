@@ -9,7 +9,7 @@ interface ModernPlayerCardProps {
   onClick: () => void;
 }
 
-export function ModernPlayerCard({ player, onClick }: ModernPlayerCardProps) {
+export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPlayerCardProps & { onOpenQuickSwap?: () => void }) {
   const rawTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
   const potTier: PotentialTier = (potentialTierInfo as any)[rawTier] ? rawTier : 'comum';
   const tierInfo = potentialTierInfo[potTier];
@@ -24,8 +24,20 @@ export function ModernPlayerCard({ player, onClick }: ModernPlayerCardProps) {
       <div className={`absolute inset-0 bg-gradient-to-br ${tierInfo.color.replace('text', 'from')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
       
       <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 font-black text-xl italic ${tierInfo.color}`}>
-          {player.overall}
+        <div className="flex flex-col gap-2">
+          <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 font-black text-xl italic ${tierInfo.color}`}>
+            {player.overall}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenQuickSwap?.();
+            }}
+            className="w-12 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+            title="Troca Rápida"
+          >
+            🔄
+          </button>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider italic">{player.position}</p>

@@ -28,9 +28,10 @@ interface Props {
   userId: string;
   onRest: (id: string) => void;
   pendingSwapId?: string | null;
+  onOpenQuickSwap?: () => void;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
@@ -140,6 +141,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onRest={() => onRest(p.id)}
               onClick={() => onSelect(p.id)}
+              onOpenQuickSwap={onOpenQuickSwap}
               activeTab={activeTab}
             />
           ))}
@@ -170,7 +172,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
@@ -244,7 +246,19 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             <span className="text-sm sm:text-base font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tighter block">
               {player.name}
             </span>
-            <span className="text-[14px]">{flagFor((player as any).country)}</span>
+            <span className="text-[14px] flex items-center gap-1.5 shrink-0">
+              {flagFor((player as any).country)}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenQuickSwap?.();
+                }}
+                className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[10px] hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+                title="Troca Rápida"
+              >
+                🔄
+              </button>
+            </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
              <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>

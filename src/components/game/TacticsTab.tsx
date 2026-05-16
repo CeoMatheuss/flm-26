@@ -39,10 +39,10 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`flex-1 capitalize text-[11px] sm:text-sm min-w-0 px-3 py-2.5 sm:py-3 rounded-xl font-bold transition-all ${
+      className={`flex-1 capitalize text-[10px] font-black min-w-[70px] px-2 py-3 rounded-xl transition-all border-2 ${
         isActive
-          ? 'bg-primary text-primary-foreground shadow-sm'
-          : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+          : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'
       }`}
       onClick={() => onClick(value)}
     >
@@ -302,30 +302,30 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
           </div>
         </div>
 
-        <div className="xl:col-span-4 space-y-6 min-w-0 xl:min-w-[380px]">
+        <div className="xl:col-span-4 space-y-6 min-w-0">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/80 border border-white/10 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
-              <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-zinc-950/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
+              <TabsTrigger value="style" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
-              <TabsTrigger value="roles" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+              <TabsTrigger value="roles" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <Users className="w-4 h-4" />Banco
               </TabsTrigger>
-              <TabsTrigger value="details" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+              <TabsTrigger value="details" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <LayoutGrid className="w-4 h-4" />Funções
               </TabsTrigger>
             </TabsList>
 
             <div className="mt-4">
-              <TabsContent value="style" className="m-0 space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {tacticsPresets.map(preset => (
+              <TabsContent value="style" className="m-0 space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-2 gap-3">
+                  {tacticsPresets.slice(0, 4).map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[11px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[10px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
                         ${tactics.playStyle === preset.config.playStyle 
-                          ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]' 
-                          : 'bg-slate-900/60 border-white/5 text-muted-foreground hover:border-white/20 hover:bg-slate-800'}`}
+                          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                          : 'bg-zinc-900/40 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'}`}
                       onClick={() => applyPreset(preset)}
                     >
                       {preset.name}
@@ -333,7 +333,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ))}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <SectionLabel icon={Target} label="Filosofia de Jogo" />
                     <div className="grid grid-cols-2 gap-3">
@@ -341,8 +341,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                         <button
                           key={s}
                           onClick={() => setField('playStyle', s)}
-                          className={`text-[11px] py-4 rounded-xl font-black transition-all border-2 ${
-                            tactics.playStyle === s ? 'bg-primary border-primary text-primary-foreground' : 'bg-slate-900/40 text-muted-foreground border-white/5'
+                          className={`text-[10px] py-4 rounded-xl font-black transition-all border-2 uppercase tracking-widest ${
+                            tactics.playStyle === s 
+                              ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                              : 'bg-zinc-900/40 text-white/40 border-white/5 hover:border-white/10'
                           }`}
                         >
                           {playStyleEffects[s].label}
@@ -385,12 +387,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
               </TabsContent>
 
               <TabsContent value="roles" className="m-0">
-                <Card className="bg-slate-950/40 border-white/5">
-                  <CardContent className="p-4 space-y-3">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Users className="w-3 h-3 text-blue-400" /> BANCO DE RESERVAS ({reserves.length})
-                    </p>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-emerald-400" /> BANCO DE RESERVAS ({reserves.length})
+                  </p>
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                       {reserves.length === 0 ? (
                         <p className="text-[10px] text-muted-foreground italic text-center py-4">Nenhum reserva disponível</p>
                       ) : (
@@ -419,8 +420,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                         ))
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
               </TabsContent>
 
               <TabsContent value="details" className="m-0 space-y-3">
