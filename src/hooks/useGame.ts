@@ -407,7 +407,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
         clubState.club.budget,
         (fn) => clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) })),
         clubState.totalSalaries,
-        clubState.club.stadiumOps?.maintenance || 0, // Simplified for now
+        0, // Maintenance already handled by stadiumOps tick
         clubState.club.scouts?.reduce((acc: number, s: any) => acc + s.salary, 0) || 0
       );
     }
