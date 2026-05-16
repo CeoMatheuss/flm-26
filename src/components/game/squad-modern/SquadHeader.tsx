@@ -155,7 +155,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                 <button className="hidden sm:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 items-center justify-center text-white/40 hover:text-white transition-all">
+                 <button className="hidden sm:flex w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center text-white/40 hover:text-white transition-all">
                    <Info className="w-4 h-4" />
                  </button>
               </TooltipTrigger>
