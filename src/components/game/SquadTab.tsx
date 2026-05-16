@@ -1016,6 +1016,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                           setViewingPlayer(player);
                         }
                       }}
+                      onSwap={(p) => startSwap(p, 'starters')}
                       isPendingSwap={pendingSwap?.player.id === player.id}
                     />
                   ))
