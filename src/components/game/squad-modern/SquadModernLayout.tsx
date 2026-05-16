@@ -52,6 +52,17 @@ export function SquadModernLayout({
 
   const deltas = useAttributeEvolution(players);
 
+  // Sync event for automatic lineup
+  useEffect(() => {
+    const handler = () => {
+      const nextPlayers = autoLineup(players, tactics.formation);
+      onUpdatePlayers(nextPlayers);
+      toast.success('Escalação e banco otimizados automaticamente!');
+    };
+    window.addEventListener('flm:auto-lineup', handler);
+    return () => window.removeEventListener('flm:auto-lineup', handler);
+  }, [players, tactics.formation, onUpdatePlayers]);
+
   // Sync youth prospects count to tab
   useEffect(() => {
     if (activeTab === 'titulares' && youthProspects.length > 0) {
