@@ -249,8 +249,13 @@ export function FormationView({
           const player = assigned[i];
 
           // Mapeia coordenadas: portrait usa (x, y) direto; landscape rotaciona 90°
-          const left = isPortrait ? slot.x : 100 - slot.y;
-          const top = isPortrait ? slot.y : slot.x;
+          // Aplica inset de segurança p/ que chip + nome não vazem do campo (overflow-hidden)
+          const INSET_X = 8; // % de margem lateral
+          const INSET_Y = 4; // % de margem vertical
+          const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
+          const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
+          const left = isPortrait ? sx : 100 - sy;
+          const top = isPortrait ? sy : sx;
 
           const isCaptain = player && captainId === player.id;
           const isInjured = player?.injury;
