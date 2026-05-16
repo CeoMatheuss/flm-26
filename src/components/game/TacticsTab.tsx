@@ -113,6 +113,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
 export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId, hideSwapButton }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
 
   const { isInLiveMatch } = useActiveMatch();
 
