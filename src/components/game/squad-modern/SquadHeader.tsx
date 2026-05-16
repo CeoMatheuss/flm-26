@@ -165,7 +165,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
 
           <button
             onClick={handleMenu}
-            className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all active:scale-95"
+            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all active:scale-95"
           >
             <Menu className="h-5 w-5" />
           </button>
